@@ -1,1 +1,2 @@
-# hims_java
+# hims-java
+HIMS JAVA application
