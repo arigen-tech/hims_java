@@ -26,8 +26,8 @@ public record PatientDto(Long id, @Size(max = 50) String uhidNo, @Size(max = 50)
                          @Size(max = 20) String emerMobile, @Size(max = 50) String nokFn, @Size(max = 50) String nokLn,
                          @Size(max = 70) String nokEmail, @Size(max = 20) String nokMobileNumber,
                          @Size(max = 500) String nokAddress1, @Size(max = 500) String nokAddress2,
-                         @Size(max = 100) String nokCity, MasDistrict nokDistrict, MasState nokState,
-                         MasCountry nokCountry, @Size(max = 8) String nokPincode, MasRelation nokRelation,
+                         @Size(max = 100) String nokCity, MasDistrictDto nokDistrict, MasStateDto nokState,
+                         MasCountryDto nokCountry, @Size(max = 8) String nokPincode, MasRelationDto nokRelation,
                          @Size(max = 20) String patientStatus, LocalDate regDate, @NotNull Instant createdOn,
                          @NotNull Instant updatedOn, @Size(max = 200) String lastChgBy,
                          MasHospitalDto pHospital) implements Serializable {
