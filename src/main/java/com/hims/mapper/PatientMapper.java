@@ -2,13 +2,14 @@ package com.hims.mapper;
 
 import com.hims.dto.PatientDto;
 import com.hims.entity.Patient;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
 
-@org.mapstruct.Mapper(unmappedTargetPolicy = org.mapstruct.ReportingPolicy.IGNORE, componentModel = "spring")
+@Mapper(componentModel = "spring")
 public interface PatientMapper {
-    Patient toEntity(PatientDto patientDto);
+    PatientMapper INSTANCE = Mappers.getMapper(PatientMapper.class);
 
-    PatientDto toDto(Patient patient);
+    Patient toEntity(PatientDto dto);
 
-    @org.mapstruct.BeanMapping(nullValuePropertyMappingStrategy = org.mapstruct.NullValuePropertyMappingStrategy.IGNORE)
-    Patient partialUpdate(PatientDto patientDto, @org.mapstruct.MappingTarget Patient patient);
+    PatientDto toDto(Patient entity);
 }
