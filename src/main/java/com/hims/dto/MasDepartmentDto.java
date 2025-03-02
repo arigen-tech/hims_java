@@ -9,5 +9,5 @@ import java.io.Serializable;
  */
 public record MasDepartmentDto(Long id, @Size(max = 350) String departmentCode, @Size(max = 350) String departmentName,
                                MasDepartmentTypeDto departmentType, MasHospitalDto hospital,
-                               @Size(max = 50) String departmentNo) implements Serializable {
+                               @Size(max = 50) String departmentNo, String status) implements Serializable {
 }

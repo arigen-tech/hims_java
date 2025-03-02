@@ -8,5 +8,5 @@ import java.io.Serializable;
 /**
  * DTO for {@link com.hims.entity.MasDistrict}
  */
-public record MasDistrictDto(Long id, @NotNull @Size(max = 100) String districtName) implements Serializable {
+public record MasDistrictDto(Long id, @NotNull @Size(max = 100) String districtName, String status) implements Serializable {
 }

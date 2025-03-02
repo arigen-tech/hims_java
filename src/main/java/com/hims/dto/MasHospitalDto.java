@@ -11,5 +11,5 @@ public record MasHospitalDto(Integer id, @Size(max = 8) String hospitalCode, @Si
                              @Size(max = 50) String address, @Size(max = 12) String contactNumber,
                              @Size(max = 10) String pinCode, @Size(max = 1) String regCostApplicable,
                              @Size(max = 1) String appCostApplicable,
-                             @Size(max = 1) String preConsultationAvailable) implements Serializable {
+                             @Size(max = 1) String preConsultationAvailable, String status) implements Serializable {
 }

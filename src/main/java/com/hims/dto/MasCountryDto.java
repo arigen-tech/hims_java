@@ -8,5 +8,5 @@ import java.io.Serializable;
  * DTO for {@link com.hims.entity.MasCountry}
  */
 public record MasCountryDto(Long id, @Size(max = 8) String countryCode,
-                            @Size(max = 30) String countryName) implements Serializable {
+                            @Size(max = 30) String countryName, String status) implements Serializable {
 }

@@ -16,5 +16,5 @@ public record UserDto(Long userId, @Size(max = 12) String aadharNumber, @Size(ma
                       @Size(max = 20) String verificationMethod, @Size(max = 10) String panNumber,
                       LocalDate passportExpiryDate, @Size(max = 20) String passportNumber,
                       @Size(max = 50) String socialMediaProvider,
-                      @Size(max = 255) String socialMediaUserId) implements Serializable {
+                      @Size(max = 255) String socialMediaUserId, String status) implements Serializable {
 }

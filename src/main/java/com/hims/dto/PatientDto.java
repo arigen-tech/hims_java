@@ -14,21 +14,16 @@ import java.time.LocalDate;
 /**
  * DTO for {@link com.hims.entity.Patient}
  */
-public record PatientDto(Long id, @Size(max = 50) String uhidNo, @Size(max = 50) String pFn, @Size(max = 50) String pMn,
-                         @Size(max = 30) String pLn, LocalDate pDob, @Size(max = 50) String pAge, MasGenderDto pGender,
-                         @Size(max = 70) String pEmailId, @Size(max = 20) String pMobileNumber,
-                         @Size(max = 255) String patientImage, @Size(max = 50) String fileName,
-                         MasRelationDto pRelation, MasMaritalStatusDto pMaritalStatus, MasReligionDto pReligion,
-                         @Size(max = 500) String pAddress1, @Size(max = 500) String pAddress2,
-                         @Size(max = 100) String pCity, @Size(max = 10) String pPincode, MasDistrictDto pDistrict,
-                         MasStateDto pState, MasCountryDto pCountry, @Size(max = 8) String pincode,
-                         @Size(max = 50) String emerFn, @Size(max = 50) String emerLn, MasRelationDto emerRelation,
-                         @Size(max = 20) String emerMobile, @Size(max = 50) String nokFn, @Size(max = 50) String nokLn,
-                         @Size(max = 70) String nokEmail, @Size(max = 20) String nokMobileNumber,
-                         @Size(max = 500) String nokAddress1, @Size(max = 500) String nokAddress2,
-                         @Size(max = 100) String nokCity, MasDistrictDto nokDistrict, MasStateDto nokState,
-                         MasCountryDto nokCountry, @Size(max = 8) String nokPincode, MasRelationDto nokRelation,
-                         @Size(max = 20) String patientStatus, LocalDate regDate, @NotNull Instant createdOn,
-                         @NotNull Instant updatedOn, @Size(max = 200) String lastChgBy,
-                         MasHospitalDto pHospital) implements Serializable {
+public record PatientDto( Long id, String uhidNo, String patientFn, String patientMn,
+                         String patientLn, LocalDate patientDob, String patientAge, MasGenderDto patientGender,
+                         String patientEmailId, String patientMobileNumber, String patientImage, String fileName,
+                         MasRelationDto patientRelation, MasMaritalStatusDto patientMaritalStatus,
+                         MasReligionDto patientReligion, String patientAddress1, String patientAddress2,
+                         String patientCity, String patientPincode, MasDistrictDto patientDistrict,
+                         MasStateDto patientState, MasCountryDto patientCountry, String pincode, String emerFn,
+                         String emerLn, MasRelationDto emerRelation, String emerMobile, String nokFn, String nokLn,
+                         String nokEmail, String nokMobileNumber, String nokAddress1, String nokAddress2,
+                         String nokCity, MasDistrictDto nokDistrict, MasStateDto nokState, MasCountryDto nokCountry,
+                         String nokPincode, MasRelationDto nokRelation, String patientStatus, LocalDate regDate,
+                         MasHospitalDto patientHospital) implements Serializable {
 }

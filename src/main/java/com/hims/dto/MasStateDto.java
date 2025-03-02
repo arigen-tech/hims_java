@@ -8,5 +8,5 @@ import java.io.Serializable;
  * DTO for {@link com.hims.entity.MasState}
  */
 public record MasStateDto(Long id, @Size(max = 8) String stateCode,
-                          @Size(max = 30) String stateName) implements Serializable {
+                          @Size(max = 30) String stateName, String status) implements Serializable {
 }

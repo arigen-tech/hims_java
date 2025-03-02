@@ -25,34 +25,34 @@ public class Patient {
 
     @Size(max = 50)
     @Column(name = "p_fn", length = 50)
-    private String pFn;
+    private String patientFn;
 
     @Size(max = 50)
     @Column(name = "p_mn", length = 50)
-    private String pMn;
+    private String patientMn;
 
     @Size(max = 30)
     @Column(name = "p_ln", length = 30)
-    private String pLn;
+    private String patientLn;
 
     @Column(name = "p_dob")
-    private LocalDate pDob;
+    private LocalDate patientDob;
 
     @Size(max = 50)
     @Column(name = "p_age", length = 50)
-    private String pAge;
+    private String patientAge;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_gender_id")
-    private MasGender pGender;
+    private MasGender patientGender;
 
     @Size(max = 70)
     @Column(name = "p_email_id", length = 70)
-    private String pEmailId;
+    private String patientEmailId;
 
     @Size(max = 20)
     @Column(name = "p_mobile_number", length = 20)
-    private String pMobileNumber;
+    private String patientMobileNumber;
 
     @Size(max = 255)
     @Column(name = "patient_image")
@@ -64,43 +64,43 @@ public class Patient {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_relation_id")
-    private MasRelation pRelation;
+    private MasRelation patientRelation;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_marital_status_id")
-    private MasMaritalStatus pMaritalStatus;
+    private MasMaritalStatus patientMaritalStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_religion_id")
-    private MasReligion pReligion;
+    private MasReligion patientReligion;
 
     @Size(max = 500)
     @Column(name = "p_address1", length = 500)
-    private String pAddress1;
+    private String patientAddress1;
 
     @Size(max = 500)
     @Column(name = "p_address2", length = 500)
-    private String pAddress2;
+    private String patientAddress2;
 
     @Size(max = 100)
     @Column(name = "p_city", length = 100)
-    private String pCity;
+    private String patientCity;
 
     @Size(max = 10)
     @Column(name = "p_pincode", length = 10)
-    private String pPincode;
+    private String patientPincode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_district_id")
-    private MasDistrict pDistrict;
+    private MasDistrict patientDistrict;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_state_id")
-    private MasState pState;
+    private MasState patientState;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_country_id")
-    private MasCountry pCountry;
+    private MasCountry patientCountry;
 
     @Size(max = 8)
     @Column(name = "pincode", length = 8)
@@ -191,6 +191,6 @@ public class Patient {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_hospital_id")
-    private MasHospital pHospital;
+    private MasHospital patientHospital;
 
 }

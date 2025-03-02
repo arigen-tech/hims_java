@@ -13,5 +13,5 @@ import java.time.Instant;
 public record VisitDto(Integer id, @NotNull Long tokenNo, Instant visitDate, Long priority, Long departmentId,
                        UserDto doctor, @Size(max = 100) String doctorName, @NotNull PatientDto patient,
                        @NotNull MasHospitalDto hospital, User iniDoctor, MasOpdSessionDto session,
-                       @NotNull @Size(max = 1) String billingStatus) implements Serializable {
+                       @NotNull @Size(max = 1) String billingStatus, String visitStatus) implements Serializable {
 }
