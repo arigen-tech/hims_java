@@ -24,6 +24,7 @@ import java.util.List;
 public class PatientController {
     @Autowired
     PatientService patientService;
+
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Patient>> registerPatient(@RequestBody PatientRegistrationReq request) {
         ApiResponse<Patient> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail());
