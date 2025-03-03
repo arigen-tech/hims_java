@@ -1,6 +1,6 @@
 package com.hims.controller;
 
-import com.hims.dto.PatientDto;
+
 import com.hims.entity.Patient;
 import com.hims.request.PatientRegistrationReq;
 import com.hims.response.ApiResponse;
@@ -25,8 +25,8 @@ public class PatientController {
     @Autowired
     PatientService patientService;
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<PatientDto>> registerPatient(@RequestBody PatientRegistrationReq request) {
-        ApiResponse<PatientDto> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail());
+    public ResponseEntity<ApiResponse<Patient>> registerPatient(@RequestBody PatientRegistrationReq request) {
+        ApiResponse<Patient> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

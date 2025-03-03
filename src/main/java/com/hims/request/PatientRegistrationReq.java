@@ -1,12 +1,14 @@
 package com.hims.request;
 
-import com.hims.dto.OpdPatientDetailDto;
-import com.hims.dto.PatientDto;
+import com.hims.entity.OpdPatientDetail;
+import com.hims.entity.Patient;
 import lombok.Getter;
+import lombok.Setter;
 
 
 @Getter
+@Setter
 public class PatientRegistrationReq {
-     PatientDto patient;
-     OpdPatientDetailDto opdPatientDetail;
+     Patient patient;
+     OpdPatientDetail opdPatientDetail;
 }
