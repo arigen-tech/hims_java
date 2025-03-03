@@ -4,5 +4,5 @@ import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
 
 public interface AppSetupServices {
-    ApiResponse<AppsetupResponse> appointmentSetup(AppointmentReq appointmentReq);
+    ApiResponse<AppsetupResponse> appSetup(AppointmentReq appointmentReq);
 }

@@ -23,7 +23,7 @@ public class AppSetupController {
     AppSetupServices appSetupServices;
     @PostMapping("/setup")
     public ResponseEntity<ApiResponse<AppsetupResponse>> appSetupResponse(@RequestBody AppointmentReq request) {
-        return new ResponseEntity<>(appSetupServices.appointmentSetup(request), HttpStatus.OK);
+        return new ResponseEntity<>(appSetupServices.appSetup(request), HttpStatus.OK);
 
     }
 }

@@ -1,16 +1,24 @@
 package com.hims.request;
+import com.hims.entity.AppSetup;
+import com.hims.entity.MasDepartment;
+import com.hims.entity.MasOpdSession;
+import com.hims.entity.User;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
 public class AppointmentReq {
-    String departmentId;
-    String doctorId;
-    String sessionId;
+    Long departmentId;
+    //MasDepartment departmentId;
+    User doctorId;
+    MasOpdSession sessionId;
     String startTime;
     String endTime;
-    String timeTaken;
-    AppointmentReqDays days;
+    Integer timeTaken;
+    List<AppointmentReqDaysKeys> days;
+//    AppointmentReqDays days;
 //    AppointmentReqDaysKeys daysKeys;
 }
