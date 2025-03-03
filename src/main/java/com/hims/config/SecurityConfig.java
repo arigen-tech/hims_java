@@ -52,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/state/**").permitAll()
                         .requestMatchers("/country/**").permitAll()
                         .requestMatchers("/hospital/**").permitAll()
+                        .requestMatchers("/department/**").permitAll()
                         .requestMatchers("/v3/**", "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
