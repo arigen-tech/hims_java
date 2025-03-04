@@ -9,6 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PatientRegistrationReq {
-     Patient patient;
-     OpdPatientDetail opdPatientDetail;
+     PatientRequest patient;
+     OpdPatientDetailRequest opdPatientDetail;
+     VisitRequest visit;
 }

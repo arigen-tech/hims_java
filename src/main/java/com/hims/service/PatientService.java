@@ -1,9 +1,11 @@
 package com.hims.service;
 
-import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
+import com.hims.request.OpdPatientDetailRequest;
+import com.hims.request.PatientRequest;
+import com.hims.request.VisitRequest;
 import com.hims.response.ApiResponse;
 
 public interface PatientService {
-    ApiResponse<Patient> registerPatientWithOpd(Patient patient, OpdPatientDetail opdPatientDetail);
+    ApiResponse<Patient> registerPatientWithOpd(PatientRequest patient, OpdPatientDetailRequest opdPatientDetail, VisitRequest visit);
 }
