@@ -8,4 +8,6 @@ import com.hims.response.ApiResponse;
 
 public interface PatientService {
     ApiResponse<Patient> registerPatientWithOpd(PatientRequest patient, OpdPatientDetailRequest opdPatientDetail, VisitRequest visit);
+
+    ApiResponse<Patient> updatePatient(PatientRequest request);
 }
