@@ -11,4 +11,5 @@ public class MasGenderResponse {
     private String genderName;
     private String code;
     private String status;
+
 }
