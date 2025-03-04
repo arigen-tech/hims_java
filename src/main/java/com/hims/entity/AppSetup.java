@@ -63,8 +63,9 @@ public class AppSetup {
     @Column(name = "day_of_week")
     private Integer dayOfWeek;
 
-    @Column(name = "doctor_id")
-    private Integer doctorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "doctor_id")
+    private User doctorId;
 
     @Column(name = "total_token")
     private Integer totalToken;
