@@ -54,6 +54,7 @@ public class SecurityConfig {
                         .requestMatchers("/hospital/**").permitAll()
                         .requestMatchers("/department/**").permitAll()
                         .requestMatchers("/applications/**").permitAll()
+                        .requestMatchers("/mas-applications/**").permitAll()
                         .requestMatchers("/v3/**", "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
