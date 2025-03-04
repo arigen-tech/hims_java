@@ -1,11 +1,11 @@
-package com.hims.request;
+package com.hims.response;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class AppointmentReqDaysKeys {
+public class AppsetupgetResponse {
     String day;
     Integer tokenStartNo;
     Integer tokenInterval;

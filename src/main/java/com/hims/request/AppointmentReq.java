@@ -11,10 +11,11 @@ import java.util.List;
 @Getter
 @Setter
 public class AppointmentReq {
+    Long id;
     Long departmentId;
     //MasDepartment departmentId;
-    User doctorId;
-    MasOpdSession sessionId;
+    Long doctorId;
+    Long sessionId;
     String startTime;
     String endTime;
     Integer timeTaken;

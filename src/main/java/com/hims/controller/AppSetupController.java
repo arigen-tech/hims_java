@@ -8,14 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@Tag(name = "AppointmentController", description = "This controller is used for any Appointment Related task.")
-@RequestMapping("/appointment")
+@Tag(name = "AppSetup", description = "This controller is used for any AppSetup Related task.")
+@RequestMapping("/app")
 @Slf4j
 public class AppSetupController {
 
@@ -25,5 +22,12 @@ public class AppSetupController {
     public ResponseEntity<ApiResponse<AppsetupResponse>> appSetupResponse(@RequestBody AppointmentReq request) {
         return new ResponseEntity<>(appSetupServices.appSetup(request), HttpStatus.OK);
 
+    }
+
+
+    @GetMapping("/getappsetup/{departmentId}/{doctorId}/{sessionId}/")
+    public ResponseEntity<ApiResponse<AppsetupResponse>> getappsetupData(@PathVariable("departmentId") Long departmentId,@PathVariable(value = "doctorId") Long doctorId
+            ,@PathVariable(value = "sessionId") Long sessionId) {
+        return new ResponseEntity<>(appSetupServices.getappsetupData(departmentId,doctorId,sessionId), HttpStatus.OK);
     }
 }

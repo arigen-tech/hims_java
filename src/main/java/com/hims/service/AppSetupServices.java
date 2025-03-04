@@ -5,4 +5,6 @@ import com.hims.response.AppsetupResponse;
 
 public interface AppSetupServices {
     ApiResponse<AppsetupResponse> appSetup(AppointmentReq appointmentReq);
+
+    ApiResponse<AppsetupResponse> getappsetupData(Long deptId,Long doctorId,Long sessionId);
 }
