@@ -16,7 +16,7 @@ public class MasHospital {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "hospital_id", nullable = false)
-    private Integer id;
+    private Long id;
 
     @Size(max = 8)
     @Column(name = "hospital_code", length = 8)

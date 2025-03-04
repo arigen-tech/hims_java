@@ -8,7 +8,7 @@ import java.time.Instant;
 @Getter
 @Setter
 public class MasMaritalStatusResponse {
-    private Integer id;
+    private Long id;
     private String name;
     private String status;
     private String lastChgBy;

@@ -8,7 +8,7 @@ import java.time.Instant;
 @Getter
 @Setter
 public class MasHospitalResponse {
-    private Integer id;
+    private Long id;
     private String hospitalCode;
     private String hospitalName;
     private String status;
