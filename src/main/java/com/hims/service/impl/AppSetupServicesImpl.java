@@ -87,7 +87,7 @@ public class AppSetupServicesImpl implements AppSetupServices {
         AppsetupResponse res=new AppsetupResponse();
         try {
 
-            List<AppSetup> appSetupList = appSetupRepository.findByDepartmentIdAndDoctorIdAndSessionId(deptId, doctorId, sessionId);
+            List<AppSetup> appSetupList = appSetupRepository.findByDeptAndDoctorIdAndSessionId(departmentRepository.findById(deptId).get() , userRepo.findById(doctorId).get(), masOpdSessionRepository.findById(sessionId).get());
             List<AppsetupgetResponse> appsetupgetResponses = new ArrayList<AppsetupgetResponse>();
 
             for (Integer i = 0; i < appSetupList.size(); i++) {
