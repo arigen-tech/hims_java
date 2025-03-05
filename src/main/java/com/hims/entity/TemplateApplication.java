@@ -14,7 +14,7 @@ import java.time.Instant;
 public class TemplateApplication {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "template_application_id_gen")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "temp_app_id", nullable = false)
     private Long id;
 
