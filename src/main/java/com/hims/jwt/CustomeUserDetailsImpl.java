@@ -19,7 +19,7 @@ public class CustomeUserDetailsImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        User user = userRepo.findByUsernameAndStatus(username,"y");
+        User user = userRepo.findByUserNameAndStatus(username,"y");
         if (user== null) {
             throw new UsernameNotFoundException("User Not found !!");
         }

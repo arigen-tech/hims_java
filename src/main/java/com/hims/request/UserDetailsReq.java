@@ -14,8 +14,8 @@ import java.time.LocalDate;
 public class UserDetailsReq {
 
     private String email;
-    private String mobileNo;
-    private String curPassword;
+    private String getPhoneNumber;
+    private String getCurrentPassword;
     private String firstName;
     private String middleName;
     private String lastName;

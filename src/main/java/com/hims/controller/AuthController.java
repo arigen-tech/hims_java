@@ -60,19 +60,19 @@ public class AuthController {
     @Operation(summary = "This API is used to get user using username")
     @GetMapping("/getUsers/{userName}")
     public ResponseEntity<ApiResponse<User>> getUsers(@PathVariable(value = "userName") String userName) {
-        return new ResponseEntity<>(authService.getUsers(userName), HttpStatus.OK);
+        return new ResponseEntity<>(authService.getUser(userName), HttpStatus.OK);
     }
 
     @Operation(summary = "This API is used to create users")
     @PostMapping("/createUsers")
     public ResponseEntity<ApiResponse<DefaultResponse>> createUsers(@RequestBody UserDetailsReq userDetailsReq) {
-        return new ResponseEntity<>(authService.createUsers(userDetailsReq), HttpStatus.OK);
+        return new ResponseEntity<>(authService.createUser(userDetailsReq), HttpStatus.OK);
     }
 
     @Operation(summary = "This API is used to get update users")
     @PutMapping("/updateUsers")
     public ResponseEntity<ApiResponse<DefaultResponse>> updateUsers(@RequestBody UserDetailsReq userDetailsReq) {
-        return new ResponseEntity<>(authService.updateUsers(userDetailsReq), HttpStatus.OK);
+        return new ResponseEntity<>(authService.updateUser(userDetailsReq), HttpStatus.OK);
     }
 
 //    @Operation(summary = "This API is used to Assign users role")
@@ -90,7 +90,7 @@ public class AuthController {
     @Operation(summary = "This API is used to get all users list")
     @GetMapping("/getAllUsers")
     public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
-        return new ResponseEntity<>(authService.getAllUsers(), HttpStatus.OK);
+        return new ResponseEntity<>(authService.getAllUser(), HttpStatus.OK);
     }
 
     @Operation(summary = "This API is used to get only current active users")
@@ -120,7 +120,7 @@ public class AuthController {
     @Operation(summary = "This API is used to get Current User")
     @GetMapping("/currentUser")
     public ResponseEntity<ApiResponse<String>> getCurrentUsers(Principal principal) {
-        return new ResponseEntity<>(authService.getCurrentUsers(principal), HttpStatus.OK);
+        return new ResponseEntity<>(authService.getCurrentUser(principal), HttpStatus.OK);
     }
 
     @Operation(summary = "This API is used to change users status active or inactive")

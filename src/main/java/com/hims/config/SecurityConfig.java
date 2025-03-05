@@ -39,6 +39,8 @@ public class SecurityConfig {
 //                        .requestMatchers("/masterController/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/flight/**").permitAll()
+                        .requestMatchers("/app/**").permitAll()
+
                         .requestMatchers("/masterController/searchAirport/{query}").permitAll()
                         .requestMatchers("/masterController/frequentAirport").permitAll()
                         .requestMatchers("/authController/getEmpName/{empCode}").permitAll()

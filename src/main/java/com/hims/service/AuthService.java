@@ -26,13 +26,14 @@ public interface AuthService {
 
 //    ApiResponse<JwtResponce> loginWithOtp(OtpRequest request);
 
-    ApiResponse<User> getUsers(String userName);
+    ApiResponse<User> getUser(String userName);
+
 
     ApiResponse<List<RoleInfoResp>> getRole(String username);
 
-    ApiResponse<DefaultResponse> createUsers(UserDetailsReq userDetailsReq);
+    ApiResponse<DefaultResponse> createUser(UserDetailsReq userDetailsReq);
 
-    ApiResponse<DefaultResponse> updateUsers(UserDetailsReq userDetailsReq);
+    ApiResponse<DefaultResponse> updateUser(UserDetailsReq userDetailsReq);
 
 //    ApiResponse<DefaultResponse> assignUserRole(AssignRoleRequest assignRoleRequest);
 
@@ -40,7 +41,7 @@ public interface AuthService {
 
     ApiResponse<DefaultResponse> activeInactiveUser(String userName, boolean status);
 
-    ApiResponse<List<User>> getAllUsers();
+    ApiResponse<List<User>> getAllUser();
 
     ApiResponse<DefaultResponse> changePassword(PasswordChangeReq request);
 
@@ -48,7 +49,7 @@ public interface AuthService {
 
 //    ApiResponse<DefaultResponse> sendOtp(String username);
 
-    ApiResponse<String> getCurrentUsers(Principal principal);
+    ApiResponse<String> getCurrentUser(Principal principal);
 
     ApiResponse<DefaultResponse> logout(HttpServletRequest request);
 

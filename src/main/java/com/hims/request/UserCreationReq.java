@@ -3,19 +3,18 @@ package com.hims.request;
 import lombok.*;
 
 @Data
-@Getter
-@Setter
 @NoArgsConstructor
-@ToString
 @AllArgsConstructor
 @Builder
 public class UserCreationReq {
     private String email;
-    private String curPassword;
-    private String mobileNo;
+    private String currentPassword;
+    private String phoneNumber;
     private String firstName;
-    private String middleName;
     private String lastName;
-    private String rollCode;
-//    private Long genderid;
+    private Integer userFlag;
+    private Long employeeId;
+    private Long hospitalId;
+    private Long userTypeId;
+    private String userName;
 }

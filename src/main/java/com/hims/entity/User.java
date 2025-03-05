@@ -1,142 +1,132 @@
 package com.hims.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.util.Collection;
 
-
+@Entity
+@Table(name = "users")
 @Getter
 @Setter
-@Entity
-@Data
 @NoArgsConstructor
-@Table(name = "users")
+@AllArgsConstructor
+@Builder
 public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private Long userId;
 
-    @Size(max = 12)
-    @Column(name = "aadhar_number", length = 12)
-    private String aadharNumber;
+    @Column(name = "status", nullable = false, length = 1)
+    private String status;
 
-    @Size(max = 255)
-    @Column(name = "address_info")
-    private String addressInfo;
+    @Column(name = "user_name", nullable = false, length = 100)
+    private String userName;
+
+    @Column(name = "mobile_no", length = 15)
+    private String mobileNo;
+
+    @Column(name = "last_chg_by", length = 200)
+    private String lastChangedBy;
 
     @Column(name = "created_at")
     private Instant createdAt;
 
-    @Size(max = 255)
-    @Column(name = "created_by")
+    @Column(name = "created_by", length = 255)
     private String createdBy;
 
-    @Size(max = 255)
-    @Column(name = "current_password")
-    private String curPassword;
+    @Column(name = "current_password", length = 255)
+    private String currentPassword;
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
-    @Size(max = 255)
-    @Column(name = "first_name")
+    @Column(name = "first_name", length = 255)
     private String firstName;
-
-    @Size(max = 255)
-    @Column(name = "email")
-    private String username;
-
-    @Size(max = 20)
-    @Column(name = "phone_number", length = 20)
-    private String phoneNumber;
-
-    @Size(max = 255)
-    @Column(name = "old_password")
-    private String oldPassword;
 
     @Column(name = "is_verified")
     private Boolean isVerified;
 
-    @Size(max = 255)
-    @Column(name = "middle_name")
+    @Column(name = "last_chg_date")
+    private Instant lastChangeDate;
+
+    @Column(name = "last_name", length = 255)
+    private String lastName;
+
+    @Column(name = "middle_name", length = 255)
     private String middleName;
 
-    @Size(max = 255)
-    @Column(name = "last_chg_by")
-    private String lastChgBy;
-
-    @Column(name = "last_chg_date")
-    private Instant lastChgDate;
-
-    @Size(max = 255)
-    @Column(name = "last_name")
-    private String lastName;
-//
-//    @ManyToOne(fetch = FetchType.EAGER)
-//    @JoinColumn(name = "gender_id")
-//    private MasGender gender;
-
-    @Size(max = 100)
-    @Column(name = "nationality", length = 100)
-    private String nationality;
-
-    @Size(max = 6)
-    @Column(name = "pin_code", length = 6)
-    private String pinCode;
-
-//    @ManyToOne(fetch = FetchType.EAGER)
-//    @JoinColumn(name = "state_id")
-//    private MasState state;
-
-    @Size(max = 255)
-    @Column(name = "profile_picture")
+    @Column(name = "profile_picture", length = 255)
     private String profilePicture;
 
-    @Size(max = 20)
+    @Column(name = "email", length = 255)
+    private String email;
+
     @Column(name = "verification_method", length = 20)
     private String verificationMethod;
 
-    @Size(max = 10)
+    @Column(name = "user_flag", nullable = false, columnDefinition = "integer default 0")
+    private Integer userFlag;
+
+    @Column(name = "level_of_user", length = 1)
+    private String levelOfUser;
+
+    @Column(name = "role_id", length = 255)
+    private String roleId;
+
+    @Column(name = "aadhar_number", length = 12)
+    private String aadharNumber;
+
+    @Column(name = "address_info", length = 255)
+    private String addressInfo;
+
+    @Column(name = "nationality", length = 100)
+    private String nationality;
+
+    @Column(name = "old_password", length = 255)
+    private String oldPassword;
+
+    @Column(name = "temp_otp", length = 255)
+    private String tempOtp;
+
     @Column(name = "pan_number", length = 10)
     private String panNumber;
 
     @Column(name = "passport_expiry_date")
     private LocalDate passportExpiryDate;
 
-    @Size(max = 20)
     @Column(name = "passport_number", length = 20)
     private String passportNumber;
 
-//    @ManyToOne(fetch = FetchType.EAGER)
-//    @JoinColumn(name = "issue_authority")
-//    private MasCountry issueAuthority;
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
 
-    @Size(max = 50)
+    @Column(name = "pin_code", length = 6)
+    private String pinCode;
+
     @Column(name = "social_media_provider", length = 50)
     private String socialMediaProvider;
 
-    @Size(max = 255)
-    @Column(name = "social_media_user_id")
+    @Column(name = "social_media_user_id", length = 255)
     private String socialMediaUserId;
 
+    @ManyToOne
+    @JoinColumn(name = "employee_id", referencedColumnName = "emp_id", nullable = false)
+    private MasEmployee employee;
 
-    @Size(max = 255)
-    @Column(name = "temp_otp")
-    private String otp;
+    @ManyToOne
+    @JoinColumn(name = "hospital_id", referencedColumnName = "hospital_id", nullable = false)
+    private MasHospital hospital;
 
-    @Size(max = 1)
-    @Column(name = "status", length = 1)
-    private String status;
+    @ManyToOne
+    @JoinColumn(name = "user_type_id", referencedColumnName = "user_type_id", nullable = false)
+    private MasUserType userType;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -145,12 +135,12 @@ public class User implements UserDetails {
 
     @Override
     public String getPassword() {
-        return this.curPassword;
+        return this.currentPassword;
     }
 
     @Override
     public String getUsername() {
-        return this.username;
+        return this.userName;
     }
 
     @Override
@@ -172,6 +162,5 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-
 
 }
