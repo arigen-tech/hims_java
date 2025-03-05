@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/department/**").permitAll()
                         .requestMatchers("/applications/**").permitAll()
                         .requestMatchers("/mas-applications/**").permitAll()
+                        .requestMatchers("/mas-templates/**").permitAll()
                         .requestMatchers("/v3/**", "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
