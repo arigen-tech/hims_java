@@ -78,22 +78,21 @@ public class AppSetupServicesImpl implements AppSetupServices {
       }
     }
 
-
-
-
-
     @Override
     public ApiResponse<AppsetupResponse> getappsetupData(Long deptId,Long doctorId,Long sessionId) {
         AppsetupResponse res=new AppsetupResponse();
         try {
-
             List<AppSetup> appSetupList = appSetupRepository.findByDeptAndDoctorIdAndSessionId(departmentRepository.findById(deptId).get() , userRepo.findById(doctorId).get(), masOpdSessionRepository.findById(sessionId).get());
             List<AppsetupgetResponse> appsetupgetResponses = new ArrayList<AppsetupgetResponse>();
-
             for (Integer i = 0; i < appSetupList.size(); i++) {
                 AppsetupgetResponse appRes = new AppsetupgetResponse();
                 appRes.setDay(appSetupList.get(i).getDays());
-
+                appRes.setTokenStartNo(appSetupList.get(i).getStartToken());
+                appRes.setTotalToken(appSetupList.get(i).getTotalToken());
+                appRes.setTotalOnlineToken(appSetupList.get(i).getTotalOnlineToken());
+                appRes.setMaxNoOfDay(appSetupList.get(i).getMaxNoOfDays());
+                appRes.setMinNoOfday(appSetupList.get(i).getMinNoOfDays());
+                appsetupgetResponses.add(appRes);
             }
             res.setMsg("Success");
             return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {
