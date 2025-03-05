@@ -1,5 +1,6 @@
 package com.hims.controller;
 
+import com.hims.request.MasDepartmentRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDepartmentResponse;
 import com.hims.service.MasDepartmentService;
@@ -7,9 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,9 +20,28 @@ public class MasDepartmentController {
     @Autowired
     private MasDepartmentService masDepartmentService;
 
+    @PostMapping("/add")
+    public ResponseEntity<ApiResponse<MasDepartmentResponse>> addDepartment(@RequestBody MasDepartmentRequest request) {
+        return ResponseEntity.ok(masDepartmentService.addDepartment(request));
+    }
+
+    @PutMapping("/edit/{id}")
+    public ResponseEntity<ApiResponse<MasDepartmentResponse>> editDepartment(@PathVariable Long id, @RequestBody MasDepartmentRequest request) {
+        return ResponseEntity.ok(masDepartmentService.editDepartment(id, request));
+    }
+
+    @PatchMapping("/status/{id}")
+    public ResponseEntity<ApiResponse<String>> changeDepartmentStatus(@PathVariable Long id, @RequestParam String status) {
+        return ResponseEntity.ok(masDepartmentService.changeDepartmentStatus(id, status));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<MasDepartmentResponse>> getDepartmentById(@PathVariable Long id) {
+        return ResponseEntity.ok(masDepartmentService.getDepartmentById(id));
+    }
+
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<MasDepartmentResponse>>> getAllDepartments() {
-        ApiResponse<List<MasDepartmentResponse>> response = masDepartmentService.getAllDepartments();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(masDepartmentService.getAllDepartments());
     }
 }
