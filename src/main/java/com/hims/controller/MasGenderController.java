@@ -29,6 +29,13 @@ public class MasGenderController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<MasGenderResponse>> getGenderById(@PathVariable Long id) {
+        ApiResponse<MasGenderResponse> response = masGenderService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
     @PostMapping("/add")
     public ResponseEntity<ApiResponse<MasGenderResponse>> addGender(@RequestBody MasGenderRequest genderRequest) {
         ApiResponse<MasGenderResponse> response = masGenderService.addGender(genderRequest);

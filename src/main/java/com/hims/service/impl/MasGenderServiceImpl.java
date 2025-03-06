@@ -102,6 +102,16 @@ public class MasGenderServiceImpl implements MasGenderService {
         }
     }
 
+    @Override
+    @Transactional
+    public ApiResponse<MasGenderResponse> findById(Long id) {
+        Optional<MasGender> existingGenderOpt = masGenderRepository.findById(id);
+        if (existingGenderOpt.isPresent()) {
+            return ResponseUtils.createSuccessResponse(convertToResponse(existingGenderOpt.get()), new TypeReference<>() {});
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<MasGenderResponse>() {}, "Gender not found", 404);
+        }
+    }
 
 
 }

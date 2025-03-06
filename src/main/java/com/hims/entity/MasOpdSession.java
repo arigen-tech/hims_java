@@ -39,7 +39,7 @@ public class MasOpdSession {
 
     @Size(max = 255)
     @Column(name = "las_chg_vy")
-    private String lasChgVy;
+    private String lasChgBy;
 
     @Column(name = "last_chg_dt")
     private LocalDate lastChgDt;

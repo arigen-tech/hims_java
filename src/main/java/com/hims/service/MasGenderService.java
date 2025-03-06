@@ -12,5 +12,6 @@ public interface MasGenderService {
     public ApiResponse<MasGenderResponse> addGender(MasGenderRequest genderRequest);
     public ApiResponse<MasGenderResponse> updateGender(Long id, MasGenderResponse genderDetails);
     public ApiResponse<MasGenderResponse> changeStatus(Long id, String status);
+    public ApiResponse<MasGenderResponse> findById(Long id);
 
 }

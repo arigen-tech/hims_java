@@ -23,4 +23,7 @@ public class MasGenderRequest {
     private String status;
 
     private Instant lastChgDt;
+
+    @Size(max = 200)
+    private String lastChgBy;
 }
