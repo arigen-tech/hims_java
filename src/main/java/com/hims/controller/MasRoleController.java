@@ -23,7 +23,7 @@ public class MasRoleController {
         return masRoleService.addRole(request);
     }
 
-    @PatchMapping("/status/{id}")
+    @PutMapping("/status/{id}")
     public ApiResponse<String> changeRoleStatus(@PathVariable String id, @RequestParam Boolean isActive) {
         return masRoleService.changeRoleStatus(id, isActive);
     }
