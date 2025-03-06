@@ -1,8 +1,10 @@
 package com.hims.controller;
 
+import com.hims.entity.MasUserDepartment;
 import com.hims.request.MasDepartmentRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDepartmentResponse;
+import com.hims.response.MasUserDepartmentResponse;
 import com.hims.service.MasDepartmentService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,4 +46,16 @@ public class MasDepartmentController {
     public ResponseEntity<ApiResponse<List<MasDepartmentResponse>>> getAllDepartments() {
         return ResponseEntity.ok(masDepartmentService.getAllDepartments());
     }
+
+    @GetMapping("/allUserDepartment")
+    public ResponseEntity<ApiResponse<List<MasUserDepartmentResponse>>> getAllUserDepartments() {
+        return ResponseEntity.ok(masDepartmentService.getAllMasUserDepartments());
+    }
+    @GetMapping("/userDepartments/{departmentId}")
+    public ResponseEntity<ApiResponse<List<MasUserDepartmentResponse>>> getUserDepartmentsByDepartmentId(
+            @PathVariable Long departmentId) {
+        return ResponseEntity.ok(masDepartmentService.getMasUserDepartmentsByDepartmentId(departmentId));
+    }
+
+
 }

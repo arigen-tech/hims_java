@@ -1,8 +1,10 @@
 package com.hims.service;
 
+import com.hims.entity.MasUserDepartment;
 import com.hims.request.MasDepartmentRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDepartmentResponse;
+import com.hims.response.MasUserDepartmentResponse;
 
 import java.util.List;
 
@@ -12,4 +14,9 @@ public interface MasDepartmentService {
     ApiResponse<MasDepartmentResponse> editDepartment(Long id, MasDepartmentRequest request);
     ApiResponse<MasDepartmentResponse> getDepartmentById(Long id);
     ApiResponse<List<MasDepartmentResponse>> getAllDepartments();
+
+
+    ApiResponse<List<MasUserDepartmentResponse>> getAllMasUserDepartments();
+
+    ApiResponse<List<MasUserDepartmentResponse>> getMasUserDepartmentsByDepartmentId(Long departmentId);
 }

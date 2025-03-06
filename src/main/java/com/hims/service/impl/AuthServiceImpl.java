@@ -29,6 +29,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -120,6 +121,10 @@ public class AuthServiceImpl implements AuthService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER ALREADY EXISTS WITH THIS EMAIL ID", 400);
         }
         if (userRepo.findByPhoneNumber(userCreationReq.getPhoneNumber()) != null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER ALREADY EXISTS WITH THIS PHONE NO", 400);
+        }
+
+        if (userRepo.findByMobileNo(userCreationReq.getMobileNo()) != null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER ALREADY EXISTS WITH THIS MOBILE NO", 400);
         }
 
@@ -167,6 +172,7 @@ public class AuthServiceImpl implements AuthService {
             user.setUserName(userCreationReq.getUserName() != null ? userCreationReq.getUserName() : userCreationReq.getEmail());
             user.setEmail(userCreationReq.getEmail());
             user.setPhoneNumber(userCreationReq.getPhoneNumber());
+            user.setMobileNo(userCreationReq.getMobileNo());
             user.setCurrentPassword(passwordEncoder.encode(userCreationReq.getCurrentPassword()));
             user.setFirstName(userCreationReq.getFirstName());
             user.setLastName(userCreationReq.getLastName());
@@ -193,67 +199,45 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = {Exception.class})
     @Override
     public ApiResponse<JwtResponce> login(JwtRequest request) {
-        if (!request.isAgent()) {
-            request.setRole("101");
-        }
         if (request.getUsername() == null || request.getUsername().isEmpty()) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USERNAME CAN NOT BE BLANK", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USERNAME CANNOT BE BLANK", 400);
         }
         if (request.getPassword() == null || request.getPassword().isEmpty()) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "PASSWORD CAN NOT BE BLANK", 400);
-        }
-        if (request.getRole() == null || request.getRole().isEmpty()) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ROLE ID CAN NOT BE BLANK", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "PASSWORD CANNOT BE BLANK", 400);
         }
         JwtResponce response;
         try {
-            String username = "";
-            User emailObj = userRepo.findByUserName(request.getUsername());
-            if (emailObj == null) {
-                User mobObj = userRepo.findByPhoneNumber(request.getUsername());
-                if (mobObj != null) {
-                    username = mobObj.getUsername();
-                } else {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "INVALID USERNAME !", 401);
-                }
-            } else {
-                username = request.getUsername();
+            User user = userRepo.findByUserName(request.getUsername());
+            if (user == null) {
+                user = userRepo.findByPhoneNumber(request.getUsername());
             }
-            User isUser = userRepo.findByUserNameAndStatus(username,"y");
-            if (isUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ACTIVE USER NOT FOUND FROM THIS USERNAME", 400);
+            if (user == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "INVALID USERNAME!", 401);
             }
-//            MasRole obj =masRoleRepo.findByRoleCode(request.getRole());
-//            if (obj == null) {
-//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "INVALID ROLL, NOT FOUND IN MAS ROLE", 400);
-//            }
-//            UserRole roleObj = userRoleRepo.findByUserIdAndRoleAndStatus(isUser,obj, "y");
-//            if (roleObj== null) {
-//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},  "USER DON'T HAVE THIS ROLL ID", 400);
-//            }
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, request.getPassword());
+            if (!"y".equalsIgnoreCase(user.getStatus())) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ACTIVE USER NOT FOUND WITH THIS USERNAME", 400);
+            }
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(user.getUsername(), request.getPassword());
             try {
                 manager.authenticate(authentication);
             } catch (BadCredentialsException e) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},  " Invalid Username or Password  !!", 401);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "INVALID USERNAME OR PASSWORD!", 401);
             }
-            UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(username);
-            String token = this.helper.generateAccessToken(emailObj);
-//          String refreshToken = this.helper.generateRefreshToken(userDetails);
-            long expirationTime = helper.getExpirationTime(token);
+            UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(user.getUsername());
+            String token = helper.generateAccessToken(user);
+            String refreshToken = helper.generateRefreshToken(user);
             response = JwtResponce.builder()
                     .jwtToken(token)
-//                  .refreshToken(refreshToken)
-//                    .username(userDetails.getUsername() + " or " + roleObj.getUserId().getPhoneNumber())
-//                    .role(roleObj.getRole().getRoleDesc())
+                    .refreshToken(refreshToken)
+                    .username(userDetails.getUsername())
                     .build();
-            saveLoginAudit("password", username, request.getUsername(), request.getRole(), token, expirationTime);
+
         } catch (Exception e) {
-            logger.error("An error occurred while  User login with password", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "An error occurred while  User login with password", 404);
+            logger.error("An error occurred while user login with password", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "An error occurred while user login with password", 404);
         }
-        return ResponseUtils.createSuccessResponse(response, new TypeReference<JwtResponce>() {
-        });
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<JwtResponce>() {});
     }
 
 
@@ -399,117 +383,117 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = {Exception.class})
     @Override
     public ApiResponse<DefaultResponse> createUser(UserDetailsReq userDetailsReq) {
-
         DefaultResponse defaultResponse = new DefaultResponse();
-        User isUser = userRepo.findByUserName(userDetailsReq.getEmail());
-        if (isUser != null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER IS ALREADY EXISTS FROM THIS EMAIL ID", 400);
+
+        if (userRepo.findByUserName(userDetailsReq.getEmail()) != null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER ALREADY EXISTS WITH THIS EMAIL ID", 400);
         }
-        User mobObj= userRepo.findByPhoneNumber(userDetailsReq.getGetPhoneNumber());
-        if (mobObj != null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER IS AVAILABLE FROM THIS MOBILE NO", 400);
+
+        if (userRepo.findByPhoneNumber(userDetailsReq.getPhoneNumber()) != null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER ALREADY EXISTS WITH THIS PHONE NO", 400);
         }
+
+        if (userRepo.findByMobileNo(userDetailsReq.getMobileNo()) != null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER ALREADY EXISTS WITH THIS MOBILE NO", 400);
+        }
+
         if (userDetailsReq.getEmail() == null || userDetailsReq.getEmail().isEmpty()) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "EMAIL CAN NOT BE BLANK", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "EMAIL CANNOT BE BLANK", 400);
         }
-        if (userDetailsReq.getGetCurrentPassword() == null || userDetailsReq.getGetCurrentPassword().isEmpty()) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "PASSWORD CAN NOT BE BLANK", 400);
+        if (userDetailsReq.getCurrentPassword() == null || userDetailsReq.getCurrentPassword().isEmpty()) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "PASSWORD CANNOT BE BLANK", 400);
         }
-        if (userDetailsReq.getGetCurrentPassword() == null ) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "MOBILE NO CAN NOT BE BLANK", 400);
+        if (userDetailsReq.getPhoneNumber() == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "PHONE NO CANNOT BE BLANK", 400);
         }
         if (userDetailsReq.getFirstName() == null || userDetailsReq.getFirstName().isEmpty()) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "FIRST NAME CAN NOT BE BLANK", 400);
-        }
-        if (userDetailsReq.getMiddleName() == null || userDetailsReq.getMiddleName().isEmpty()) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "MIDDLE NAME CAN NOT BE BLANK", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "FIRST NAME CANNOT BE BLANK", 400);
         }
         if (userDetailsReq.getLastName() == null || userDetailsReq.getLastName().isEmpty()) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "LAST NAME CAN NOT BE BLANK", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "LAST NAME CANNOT BE BLANK", 400);
+        }
+        if (userDetailsReq.getEmployeeId() == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "EMPLOYEE ID CANNOT BE BLANK", 400);
+        }
+        if (userDetailsReq.getHospitalId() == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "HOSPITAL ID CANNOT BE BLANK", 400);
+        }
+        if (userDetailsReq.getUserTypeId() == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER TYPE ID CANNOT BE BLANK", 400);
         }
 
         try {
-            User obj = new User();
+            Optional<MasEmployee> optionalEmployee = masEmployeeRepository.findById(userDetailsReq.getEmployeeId());
+            Optional<MasHospital> optionalHospital = masHospitalRepository.findById(userDetailsReq.getHospitalId());
+            Optional<MasUserType> optionalUserType = masUserTypeRepository.findById(userDetailsReq.getUserTypeId());
 
-            if(userDetailsReq.getEmail() !=null){
-                obj.setUserName(userDetailsReq.getEmail());
+            if (optionalEmployee.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "INVALID EMPLOYEE ID", 400);
             }
-            if(userDetailsReq.getGetPhoneNumber() !=null){
-                obj.setPhoneNumber(userDetailsReq.getGetPhoneNumber());
+            if (optionalHospital.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "INVALID HOSPITAL ID", 400);
             }
-            if(userDetailsReq.getGetCurrentPassword() !=null){
-                obj.setCurrentPassword(passwordEncoder.encode(userDetailsReq.getGetCurrentPassword()));
+            if (optionalUserType.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "INVALID USER TYPE ID", 400);
             }
-            if(userDetailsReq.getGetCurrentPassword() !=null){
-                obj.setOldPassword(passwordEncoder.encode(userDetailsReq.getGetCurrentPassword()));
+
+            MasEmployee employee = optionalEmployee.get();
+            MasHospital hospital = optionalHospital.get();
+            MasUserType userType = optionalUserType.get();
+
+            User user = new User();
+            user.setUserName(Optional.ofNullable(userDetailsReq.getUserName()).orElse(userDetailsReq.getEmail()));
+            user.setEmail(userDetailsReq.getEmail());
+            user.setPhoneNumber(userDetailsReq.getPhoneNumber());
+            user.setMobileNo(userDetailsReq.getMobileNo());
+            user.setCurrentPassword(passwordEncoder.encode(userDetailsReq.getCurrentPassword()));
+            user.setFirstName(userDetailsReq.getFirstName());
+            user.setMiddleName(userDetailsReq.getMiddleName());
+            user.setLastName(userDetailsReq.getLastName());
+            user.setDateOfBirth(userDetailsReq.getDateOfBirth());
+            user.setNationality(userDetailsReq.getNationality());
+            user.setAddressInfo(userDetailsReq.getAddressInfo());
+            user.setPinCode(userDetailsReq.getPinCode());
+            user.setIsVerified(userDetailsReq.getIsVerified());
+            user.setVerificationMethod(userDetailsReq.getVerificationMethod());
+            user.setPanNumber(userDetailsReq.getPanNumber());
+            user.setAadharNumber(userDetailsReq.getAadharNumber());
+            user.setPassportNumber(userDetailsReq.getPassportNumber());
+            user.setPassportExpiryDate(userDetailsReq.getPassportExpiryDate());
+            user.setSocialMediaProvider(userDetailsReq.getSocialMediaProvider());
+            user.setSocialMediaUserId(userDetailsReq.getSocialMediaUserId());
+            user.setProfilePicture(userDetailsReq.getProfilePicture());
+            user.setUserFlag(userDetailsReq.getUserFlag());
+            user.setRoleId(userDetailsReq.getRoleId());
+
+            Long uId = null;
+
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof UserDetails) {
+                String email = ((UserDetails) principal).getUsername();
+                User loggedInUser = userRepo.findByUserName(email);
+                 uId = loggedInUser.getUserId();
             }
-            if(userDetailsReq.getFirstName() !=null){
-                obj.setFirstName(userDetailsReq.getFirstName());
-            }
-            if(userDetailsReq.getMiddleName() !=null){
-                obj.setMiddleName(userDetailsReq.getMiddleName());
-            }
-            if(userDetailsReq.getLastName() !=null){
-                obj.setLastName(userDetailsReq.getLastName());
-            }
-//            if(userDetailsReq.getGender() !=null){
-//                obj.setGender(masGenderRepository.findByGenderCode(userDetailsReq.getGender()));
-//            }
-            if(userDetailsReq.getDob() !=null){
-                obj.setDateOfBirth(userDetailsReq.getDob());
-            }
-            if(userDetailsReq.getNationality() !=null){
-                obj.setNationality(userDetailsReq.getNationality());
-            }
-            if(userDetailsReq.getAddress() !=null){
-                obj.setAddressInfo(userDetailsReq.getAddress());
-            }
-            if(userDetailsReq.getPinCode() !=null){
-                obj.setPinCode(userDetailsReq.getPinCode());
-            }
-//            if(userDetailsReq.getState() !=null){
-//                obj.setState(masStateRepository.findById(userDetailsReq.getState()));
-//            }
-            if(userDetailsReq.getProfilePic() !=null){
-                obj.setProfilePicture(userDetailsReq.getProfilePic());
-            }
-            if(userDetailsReq.getIsVerify() !=null){
-                obj.setIsVerified(userDetailsReq.getIsVerify());
-            }
-            if(userDetailsReq.getVerifyMethod() !=null){
-                obj.setVerificationMethod(userDetailsReq.getVerifyMethod());
-            }
-            if(userDetailsReq.getPanNo() !=null){
-                obj.setPanNumber(userDetailsReq.getPanNo());
-            }
-            if(userDetailsReq.getAadhaarNo() !=null){
-                obj.setAadharNumber(userDetailsReq.getAadhaarNo());
-            }
-            if(userDetailsReq.getPassportNo() !=null){
-                obj.setPassportNumber(userDetailsReq.getPassportNo());
-            }
-//            if(userDetailsReq.getPassportIssueAuthority() !=null){
-//                obj.setIssueAuthority(masCountryRepository.findById(Integer.valueOf(userDetailsReq.getPassportIssueAuthority())));
-//            }
-            if(userDetailsReq.getPassportExpiryDate() !=null){
-                obj.setPassportExpiryDate(userDetailsReq.getPassportExpiryDate());
-            }
-            if(userDetailsReq.getSocialMediaUserId() !=null){
-                obj.setSocialMediaUserId(userDetailsReq.getSocialMediaUserId());
-            }
-            if(userDetailsReq.getSocialMediaProvider() !=null){
-                obj.setSocialMediaProvider(userDetailsReq.getSocialMediaProvider());
-            }
-            obj.setStatus("y");
-            obj.setCreatedAt(Instant.now());
-            obj.setCreatedBy("1");
-            userRepo.save(obj);
-            defaultResponse.setMsg("USER Created successfully");
+
+
+            user.setEmployee(employee);
+            user.setHospital(hospital);
+            user.setUserType(userType);
+            user.setStatus("y");
+            user.setCreatedAt(Instant.now());
+            user.setCreatedBy(String.valueOf(uId));
+            user.setLastChangedBy(String.valueOf(uId));
+            user.setLastChangeDate(Instant.now());
+
+            userRepo.save(user);
+
+            defaultResponse.setMsg("User Created Successfully");
+            return ResponseUtils.createSuccessResponse(defaultResponse, new TypeReference<DefaultResponse>() {});
+
         } catch (Exception e) {
             logger.error("An error occurred while creating User", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "An error occurred while creating User", 500);
         }
-        return ResponseUtils.createSuccessResponse(defaultResponse, new TypeReference<DefaultResponse>() {
-        });
     }
 
 
@@ -517,7 +501,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ApiResponse<DefaultResponse> updateUser(UserDetailsReq userDetailsReq) {
         DefaultResponse defaultResponse = new DefaultResponse();
-        User mobObj= userRepo.findByPhoneNumber(userDetailsReq.getGetPhoneNumber());
+        User mobObj= userRepo.findByPhoneNumber(userDetailsReq.getPhoneNumber());
         if (mobObj != null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER IS AVAILABLE FROM THIS MOBILE NO", 400);
         }
@@ -527,8 +511,8 @@ public class AuthServiceImpl implements AuthService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER NOT FOUND FROM THIS EMAIL ID", 400);
         }
         try {
-            if(userDetailsReq.getGetPhoneNumber() !=null){
-                isUser.setPhoneNumber(userDetailsReq.getGetPhoneNumber());
+            if(userDetailsReq.getPhoneNumber() !=null){
+                isUser.setPhoneNumber(userDetailsReq.getPhoneNumber());
             }
             if(userDetailsReq.getFirstName() !=null){
                 isUser.setFirstName(userDetailsReq.getFirstName());
@@ -542,14 +526,14 @@ public class AuthServiceImpl implements AuthService {
 //            if(userDetailsReq.getGender() !=null){
 //                isUser.setGender(masGenderRepository.findByGenderCode(userDetailsReq.getGender()));
 //            }
-            if(userDetailsReq.getDob() !=null){
-                isUser.setDateOfBirth(userDetailsReq.getDob());
+            if(userDetailsReq.getDateOfBirth() !=null){
+                isUser.setDateOfBirth(userDetailsReq.getDateOfBirth());
             }
             if(userDetailsReq.getNationality() !=null){
                 isUser.setNationality(userDetailsReq.getNationality());
             }
-            if(userDetailsReq.getAddress() !=null){
-                isUser.setAddressInfo(userDetailsReq.getAddress());
+            if(userDetailsReq.getAddressInfo() !=null){
+                isUser.setAddressInfo(userDetailsReq.getAddressInfo());
             }
             if(userDetailsReq.getPinCode() !=null){
                 isUser.setPinCode(userDetailsReq.getPinCode());
@@ -557,23 +541,23 @@ public class AuthServiceImpl implements AuthService {
 //            if(userDetailsReq.getState() !=null){
 //                isUser.setState(masStateRepository.findById(userDetailsReq.getState()));
 //            }
-            if(userDetailsReq.getProfilePic() !=null){
-                isUser.setProfilePicture(userDetailsReq.getProfilePic());
+            if(userDetailsReq.getProfilePicture() !=null){
+                isUser.setProfilePicture(userDetailsReq.getProfilePicture());
             }
-            if(userDetailsReq.getIsVerify() !=null){
-                isUser.setIsVerified(userDetailsReq.getIsVerify());
+            if(userDetailsReq.getIsVerified() !=null){
+                isUser.setIsVerified(userDetailsReq.getIsVerified());
             }
-            if(userDetailsReq.getVerifyMethod() !=null){
-                isUser.setVerificationMethod(userDetailsReq.getVerifyMethod());
+            if(userDetailsReq.getVerificationMethod() !=null){
+                isUser.setVerificationMethod(userDetailsReq.getVerificationMethod());
             }
-            if(userDetailsReq.getPanNo() !=null){
-                isUser.setPanNumber(userDetailsReq.getPanNo());
+            if(userDetailsReq.getPanNumber() !=null){
+                isUser.setPanNumber(userDetailsReq.getPanNumber());
             }
-            if(userDetailsReq.getAadhaarNo() !=null){
-                isUser.setAadharNumber(userDetailsReq.getAadhaarNo());
+            if(userDetailsReq.getAadharNumber() !=null){
+                isUser.setAadharNumber(userDetailsReq.getAadharNumber());
             }
-            if(userDetailsReq.getPassportNo() !=null){
-                isUser.setPassportNumber(userDetailsReq.getPassportNo());
+            if(userDetailsReq.getPassportNumber() !=null){
+                isUser.setPassportNumber(userDetailsReq.getPassportNumber());
             }
 //            if(userDetailsReq.getPassportIssueAuthority() !=null){
 //                isUser.setIssueAuthority(masCountryRepository.findById(Integer.valueOf(userDetailsReq.getPassportIssueAuthority())));
@@ -802,66 +786,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
 
-
-    @Transactional(rollbackFor = {Exception.class})
-    public void saveLoginAudit(String loginType, String username, String userLogin, String role, String token, long expirationTime) {
-        DefaultResponse defaultResponse = new DefaultResponse();
-
-        if (username == null || username.isEmpty()) {
-            throw new SDDException(HttpStatus.BAD_REQUEST.value(), "USER NAME CAN NOT BE BLANK");
-        }
-        if (role == null || role.isEmpty()) {
-            throw new SDDException(HttpStatus.BAD_REQUEST.value(), " USER ROLE CAN NOT BE BLANK");
-        }
-        if (token == null || token.isEmpty()) {
-            throw new SDDException(HttpStatus.BAD_REQUEST.value(), " TOKEN CAN NOT BE BLANK");
-        }
-        if (expirationTime == 0 ) {
-            throw new SDDException(HttpStatus.BAD_REQUEST.value(), " TOKEN TIMESTAMP CAN NOT BE BLANK");
-        }
-
-        User isUser = userRepo.findByUserName(username);
-        if (isUser == null) {
-            throw new SDDException(HttpStatus.UNAUTHORIZED.value(), " USER NOT FOUND FROM THIS EMAIL ID");
-        }
-
-//        MasRole roleObj =masRoleRepo.findByRoleCode(role);
-//        if (roleObj == null) {
-//            throw new SDDException(HttpStatus.UNAUTHORIZED.value(), " ROLE CODE IS INCORRECT");
-//        }
-
-        String ipAddress = httpServletRequest.getHeader("X-Forwarded-For");
-        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
-            ipAddress = httpServletRequest.getHeader("X-Real-IP");
-        }
-        if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
-            ipAddress = httpServletRequest.getRemoteAddr();
-        }
-
-        try {
-//            LoginAudit obj = new LoginAudit();
-//            obj.setUser(isUser);
-//            obj.setUserName(userLogin);
-//            obj.setRole(roleObj);
-//            obj.setIpAddress(ipAddress);
-//            obj.setToken(token);
-//            obj.setTokenExpirationTime(Instant.ofEpochMilli(expirationTime));
-//            obj.setLoginTimestamp(Instant.now());
-//            obj.setLoginSuccess(true);
-//            obj.setLogoutTimestamp(new Timestamp(expirationTime));
-//            obj.setTokenBlacklisted(false);
-//            obj.setLoginMethod(loginType);
-//            obj.setAuthMethod(" ");
-//            obj.setSocialMediaUserId(" ");
-//            obj.setDeviceDetails(" ");
-//            obj.setFailureReason(" ");
-//            obj.setCreatedAt(Instant.now());
-//            loginAuditRepo.save(obj);
-            defaultResponse.setMsg("USER Login Details Capture successfully");
-        } catch (Exception e) {
-            logger.error("An error occurred while saving User LoginAudit", e);
-        }
-    }
 
     public ApiResponse<Long> getActiveUserCount() {
 //        System.out.println("hello time---"+HelperUtils.getCurrentTimeStamp());

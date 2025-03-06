@@ -99,7 +99,7 @@ public class User implements UserDetails {
     private String panNumber;
 
     @Column(name = "passport_expiry_date")
-    private LocalDate passportExpiryDate;
+    private Instant passportExpiryDate;
 
     @Column(name = "passport_number", length = 20)
     private String passportNumber;

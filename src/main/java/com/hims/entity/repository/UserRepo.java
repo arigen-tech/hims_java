@@ -12,7 +12,10 @@ public interface UserRepo extends JpaRepository<User, Long> {
 
     User findByUserName(String email);
 
-    User findByPhoneNumber(String userName);
+    User findByPhoneNumber(String phoneNo);
+
+    User findByMobileNo(String mobileNo);
+
 
     User findByPhoneNumberAndStatus(String userName , String isActive);
 }

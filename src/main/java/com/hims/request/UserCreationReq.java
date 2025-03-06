@@ -10,6 +10,7 @@ public class UserCreationReq {
     private String email;
     private String currentPassword;
     private String phoneNumber;
+    private String mobileNo;
     private String firstName;
     private String lastName;
     private Integer userFlag;

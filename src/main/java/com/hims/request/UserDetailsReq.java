@@ -2,6 +2,7 @@ package com.hims.request;
 
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Data
@@ -14,25 +15,30 @@ import java.time.LocalDate;
 public class UserDetailsReq {
 
     private String email;
-    private String getPhoneNumber;
-    private String getCurrentPassword;
+    private String mobileNo;
+    private String phoneNumber;
+    private String currentPassword;
     private String firstName;
     private String middleName;
     private String lastName;
-    private String gender;
-    private LocalDate dob;
+    private LocalDate dateOfBirth;
     private String nationality;
-    private String address;
+    private String addressInfo;
     private String pinCode;
-    private Integer state;
-    private String profilePic;
-    private Boolean isVerify;
-    private String verifyMethod;
-    private String panNo;
-    private String aadhaarNo;
-    private String passportNo;
-    private String passportIssueAuthority;
-    private LocalDate passportExpiryDate;
-    private String socialMediaUserId;
+    private Boolean isVerified;
+    private String verificationMethod;
+    private String panNumber;
+    private String aadharNumber;
+    private String passportNumber;
+    private Instant passportExpiryDate;
     private String socialMediaProvider;
+    private String socialMediaUserId;
+    private String status;
+    private String userName;
+    private String profilePicture;
+    private Long employeeId;
+    private Long hospitalId;
+    private Long userTypeId;
+    private String roleId;
+    private Integer userFlag;
 }

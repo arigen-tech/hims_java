@@ -5,9 +5,11 @@ import com.hims.entity.MasDepartment;
 import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasDepartmentTypeRepository;
 import com.hims.entity.repository.MasHospitalRepository;
+import com.hims.entity.repository.MasUserDepartmentRepository;
 import com.hims.request.MasDepartmentRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDepartmentResponse;
+import com.hims.response.MasUserDepartmentResponse;
 import com.hims.service.MasDepartmentService;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,8 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
 
+    @Autowired
+    MasUserDepartmentRepository masUserDepartmentRepository;
     @Autowired
     private MasDepartmentTypeRepository masDepartmentTypeRepository;
 
@@ -138,5 +142,21 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         response.setDepartmentNo(department.getDepartmentNo());
         return response;
     }
+
+
+    @Override
+    public ApiResponse<List<MasUserDepartmentResponse>> getAllMasUserDepartments() {
+        List<MasUserDepartmentResponse> departmentResponses = masUserDepartmentRepository.fetchAllUserDepartments();
+        return ResponseUtils.createSuccessResponse(departmentResponses, new TypeReference<>() {});
+    }
+
+    @Override
+    public ApiResponse<List<MasUserDepartmentResponse>> getMasUserDepartmentsByDepartmentId(Long departmentId) {
+        List<MasUserDepartmentResponse> departmentResponses = masUserDepartmentRepository.fetchByDepartmentId(departmentId);
+        return ResponseUtils.createSuccessResponse(departmentResponses, new TypeReference<>() {});
+    }
+
+
+
 
 }
