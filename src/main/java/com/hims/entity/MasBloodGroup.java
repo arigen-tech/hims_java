@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,7 +31,7 @@ public class MasBloodGroup {
     private String lastChangedBy;
 
     @Column(name = "last_chg_date")
-    private LocalDateTime lastChangedDate;
+    private Instant lastChangedDate;
 
     @Column(name = "last_chg_time", length = 10)
     private String lastChangedTime;
