@@ -13,7 +13,7 @@ import java.util.List;
 public interface AppSetupServices {
     ApiResponse<AppsetupResponse> appSetup(AppointmentReq appointmentReq);
 
-    ApiResponse<AppsetupResponse> getappsetupData(Long deptId,Long doctorId,Long sessionId);
+   /// ApiResponse<AppsetupResponse> getappsetupData(Long deptId,Long doctorId,Long sessionId);
 
 
     ApiResponse<AppSetupDTO> getAppSetupDTO(Long deptId, Long doctorId, Long sessionId);

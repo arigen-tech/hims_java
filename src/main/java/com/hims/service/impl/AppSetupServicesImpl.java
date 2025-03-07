@@ -55,7 +55,7 @@ public class AppSetupServicesImpl implements AppSetupServices {
         entry.setStartTime(appointmentReq.getStartTime());
         entry.setEndTime(appointmentReq.getEndTime());
         entry.setTimeTaken(appointmentReq.getTimeTaken());
-        entry.setId(appointmentReq.getId());
+        entry.setId(key.getId());
         ///
         entry.setStartToken(key.getTokenStartNo());
         entry.setTotalInterval(key.getTokenInterval());
@@ -63,7 +63,7 @@ public class AppSetupServicesImpl implements AppSetupServices {
         entry.setTotalOnlineToken(key.getTotalOnlineToken());
         entry.setMaxNoOfDays(key.getMaxNoOfDay());
         entry.setMinNoOfDays(key.getMinNoOfday());
-        entry.setLastChgDate(LocalDate.from(Instant.now()));
+        entry.setLastChgDate(LocalDate.now());
         entry.setLastChgBy(1);
         //entry.setHospital(1);
         entry.setLastChgTime(Calender.getCurrentTimeStamp());
@@ -79,31 +79,31 @@ public class AppSetupServicesImpl implements AppSetupServices {
       }
     }
 
-    @Override
-    public ApiResponse<AppsetupResponse> getappsetupData(Long deptId,Long doctorId,Long sessionId) {
-        AppsetupResponse res=new AppsetupResponse();
-        try {
-            List<AppSetup> appSetupList = appSetupRepository.findByDeptAndDoctorIdAndSessionId(departmentRepository.findById(deptId).get() , userRepo.findById(doctorId).get(), masOpdSessionRepository.findById(sessionId).get());
-            List<AppsetupgetResponse> appsetupgetResponses = new ArrayList<AppsetupgetResponse>();
-            for (Integer i = 0; i < appSetupList.size(); i++) {
-                AppsetupgetResponse appRes = new AppsetupgetResponse();
-                appRes.setDay(appSetupList.get(i).getDays());
-                appRes.setTokenStartNo(appSetupList.get(i).getStartToken());
-                appRes.setTotalToken(appSetupList.get(i).getTotalToken());
-                appRes.setTotalOnlineToken(appSetupList.get(i).getTotalOnlineToken());
-                appRes.setMaxNoOfDay(appSetupList.get(i).getMaxNoOfDays());
-                appRes.setMinNoOfday(appSetupList.get(i).getMinNoOfDays());
-                appsetupgetResponses.add(appRes);
-            }
-            res.setMsg("Success");
-            return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {
-            });
-        } catch (Exception e) {
-            res.setMsg("Fail");
-            return ResponseUtils.createFailureResponse(res,new TypeReference<AppsetupResponse>() {
-            },e.getMessage(),500);
-        }
-    }
+//    @Override
+//    public ApiResponse<AppsetupResponse> getappsetupData(Long deptId,Long doctorId,Long sessionId) {
+//        AppsetupResponse res=new AppsetupResponse();
+//        try {
+//            List<AppSetup> appSetupList = appSetupRepository.findByDeptAndDoctorIdAndSessionId(departmentRepository.findById(deptId).get() , userRepo.findById(doctorId).get(), masOpdSessionRepository.findById(sessionId).get());
+//            List<AppsetupgetResponse> appsetupgetResponses = new ArrayList<AppsetupgetResponse>();
+//            for (Integer i = 0; i < appSetupList.size(); i++) {
+//                AppsetupgetResponse appRes = new AppsetupgetResponse();
+//                appRes.setDay(appSetupList.get(i).getDays());
+//                appRes.setTokenStartNo(appSetupList.get(i).getStartToken());
+//                appRes.setTotalToken(appSetupList.get(i).getTotalToken());
+//                appRes.setTotalOnlineToken(appSetupList.get(i).getTotalOnlineToken());
+//                appRes.setMaxNoOfDay(appSetupList.get(i).getMaxNoOfDays());
+//                appRes.setMinNoOfday(appSetupList.get(i).getMinNoOfDays());
+//                appsetupgetResponses.add(appRes);
+//            }
+//            res.setMsg("Success");
+//            return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {
+//            });
+//        } catch (Exception e) {
+//            res.setMsg("Fail");
+//            return ResponseUtils.createFailureResponse(res,new TypeReference<AppsetupResponse>() {
+//            },e.getMessage(),500);
+//        }
+//    }
 
 
 

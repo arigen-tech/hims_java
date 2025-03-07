@@ -34,11 +34,11 @@ public class AppSetupController {
     }
 
 
-    @GetMapping("/getappsetup/{departmentId}/{doctorId}/{sessionId}/")
-    public ResponseEntity<ApiResponse<AppsetupResponse>> getappsetupData(@PathVariable("departmentId") Long departmentId,@PathVariable(value = "doctorId") Long doctorId
-            ,@PathVariable(value = "sessionId") Long sessionId) {
-        return new ResponseEntity<>(appSetupServices.getappsetupData(departmentId,doctorId,sessionId), HttpStatus.OK);
-    }
+//    @GetMapping("/getappsetup/{departmentId}/{doctorId}/{sessionId}/")
+//    public ResponseEntity<ApiResponse<AppsetupResponse>> getappsetupData(@PathVariable("departmentId") Long departmentId,@PathVariable(value = "doctorId") Long doctorId
+//            ,@PathVariable(value = "sessionId") Long sessionId) {
+//        return new ResponseEntity<>(appSetupServices.getappsetupData(departmentId,doctorId,sessionId), HttpStatus.OK);
+//    }
 
     @GetMapping("/find")
     public ResponseEntity<ApiResponse<AppSetupDTO>> findAppSetups(
