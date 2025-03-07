@@ -8,6 +8,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.AppointmentReq;
 import com.hims.request.AppointmentReqDaysKeys;
 import com.hims.response.ApiResponse;
+import com.hims.response.AppSetupDTO;
 import com.hims.response.AppsetupResponse;
 import com.hims.response.AppsetupgetResponse;
 import com.hims.service.AppSetupServices;
@@ -103,4 +104,63 @@ public class AppSetupServicesImpl implements AppSetupServices {
             },e.getMessage(),500);
         }
     }
+
+
+
+    @Override
+    public ApiResponse<AppSetupDTO> getAppSetupDTO(Long deptId, Long doctorId, Long sessionId) {
+        List<AppSetup> appSetups = appSetupRepository.findAppSetupsByIds(deptId, doctorId, sessionId);
+
+        if (appSetups.isEmpty()) {
+            return ResponseUtils.createSuccessResponse(null, new TypeReference<>() {});
+        }
+
+        AppSetupDTO wrapper = convertToWrapper(appSetups);
+        return ResponseUtils.createSuccessResponse(wrapper, new TypeReference<>() {});
+    }
+
+    private AppSetupDTO convertToWrapper(List<AppSetup> appSetups) {
+        AppSetupDTO wrapper = new AppSetupDTO();
+
+        if (!appSetups.isEmpty()) {
+            AppSetup firstAppSetup = appSetups.get(0);
+            wrapper.setFromTime(firstAppSetup.getFromTime());
+            wrapper.setToTime(firstAppSetup.getToTime());
+
+            if (firstAppSetup.getHospital() != null) {
+                wrapper.setHospitalId(firstAppSetup.getHospital().getId());
+            }
+
+            wrapper.setDeptId(firstAppSetup.getDept() != null ? firstAppSetup.getDept().getId() : null);
+            wrapper.setValidFrom(firstAppSetup.getValidFrom());
+            wrapper.setValidTo(firstAppSetup.getValidTo());
+            wrapper.setDayOfWeek(firstAppSetup.getDayOfWeek());
+            wrapper.setDoctorId(firstAppSetup.getDoctorId() != null ? firstAppSetup.getDoctorId().getUserId() : null);
+            wrapper.setSessionId(firstAppSetup.getSession() != null ? firstAppSetup.getSession().getId() : null);
+            wrapper.setStartTime(firstAppSetup.getStartTime());
+            wrapper.setEndTime(firstAppSetup.getEndTime());
+            wrapper.setTimeTaken(firstAppSetup.getTimeTaken());
+        }
+
+        // Create day-specific entries
+        List<AppSetupDTO.appSetupDTO> daysList = new ArrayList<>();
+
+        for (AppSetup appSetup : appSetups) {
+            AppSetupDTO.appSetupDTO dayDTO = new AppSetupDTO.appSetupDTO();
+            dayDTO.setId(appSetup.getId());
+            dayDTO.setDays(appSetup.getDays());
+            dayDTO.setMaxNoOfDays(appSetup.getMaxNoOfDays());
+            dayDTO.setMinNoOfDays(appSetup.getMinNoOfDays());
+            dayDTO.setTotalToken(appSetup.getTotalToken());
+            dayDTO.setTotalInterval(appSetup.getTotalInterval());
+            dayDTO.setStartToken(appSetup.getStartToken());
+            dayDTO.setTotalOnlineToken(appSetup.getTotalOnlineToken());
+            daysList.add(dayDTO);
+        }
+
+        wrapper.setDays(daysList);
+
+        return wrapper;
+    }
+
 }
