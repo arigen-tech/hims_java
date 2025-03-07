@@ -1,5 +1,6 @@
 package com.hims.controller;
 
+import com.hims.request.MasRelationRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasRelationResponse;
 import com.hims.service.MasRelationService;
@@ -7,9 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -26,4 +25,33 @@ public class MasRelationController {
         ApiResponse<List<MasRelationResponse>> response = masRelationService.getAllRelations();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<MasRelationResponse>> getRelationById(@PathVariable Long id) {
+        ApiResponse<MasRelationResponse> response = masRelationService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/add")
+    public ResponseEntity<ApiResponse<MasRelationResponse>> addRelation(@RequestBody MasRelationRequest relationRequest) {
+        ApiResponse<MasRelationResponse> response = masRelationService.addRelation(relationRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<ApiResponse<MasRelationResponse>> updateRelation(
+            @PathVariable Long id,
+            @RequestBody MasRelationResponse relationDetails) {
+        ApiResponse<MasRelationResponse> response = masRelationService.updateRelation(id, relationDetails);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/status/{id}")
+    public ResponseEntity<ApiResponse<MasRelationResponse>> changeStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        ApiResponse<MasRelationResponse> response = masRelationService.changeStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 }

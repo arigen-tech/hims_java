@@ -61,6 +61,7 @@ public class SecurityConfig {
                         .requestMatchers("/template-applications/**").permitAll()
                         .requestMatchers("/department-type/**").permitAll()
                         .requestMatchers("/opd-session/**").permitAll()
+                        .requestMatchers("/relation/**").permitAll()
                         .requestMatchers("/roles/**").permitAll()
                         .requestMatchers("/v3/**", "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated())
