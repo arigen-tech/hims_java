@@ -14,7 +14,7 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
 //    List<AppSetup> findByDeptAndDoctorIdAndSessionId(Long deptId,Long doctorId,Long sessionId);
     List<AppSetup> findByDeptAndDoctorIdAndSessionId(MasDepartment dept, User doctorId, MasOpdSession sessionId);
 
-    @Query("SELECT a FROM AppSetup a WHERE a.dept.id = :deptId AND a.doctorId.id = :doctorId AND a.session.id = :sessionId")
+    @Query("SELECT a FROM AppSetup a WHERE a.dept.id = :deptId AND a.doctorId.userId = :doctorId AND a.session.id = :sessionId")
     List<AppSetup> findAppSetupsByIds(@Param("deptId") Long deptId,
                                       @Param("doctorId") Long doctorId,
                                       @Param("sessionId") Long sessionId);

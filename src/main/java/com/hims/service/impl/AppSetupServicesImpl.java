@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -63,7 +64,9 @@ public class AppSetupServicesImpl implements AppSetupServices {
         entry.setTotalOnlineToken(key.getTotalOnlineToken());
         entry.setMaxNoOfDays(key.getMaxNoOfDay());
         entry.setMinNoOfDays(key.getMinNoOfday());
-        entry.setLastChgDate(LocalDate.now());
+//        entry.setLastChgDate(LocalDate.now());
+        entry.setLastChgDate(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate());
+
         entry.setLastChgBy(1);
         //entry.setHospital(1);
         entry.setLastChgTime(Calender.getCurrentTimeStamp());
