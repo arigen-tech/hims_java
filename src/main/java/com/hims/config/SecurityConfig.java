@@ -63,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers("/opd-session/**").permitAll()
                         .requestMatchers("/relation/**").permitAll()
                         .requestMatchers("/roles/**").permitAll()
+                        .requestMatchers("/religion/**").permitAll()
                         .requestMatchers("/v3/**", "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
