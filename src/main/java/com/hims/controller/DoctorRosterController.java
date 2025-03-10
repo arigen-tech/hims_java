@@ -38,12 +38,12 @@ public class DoctorRosterController {
 //        return new ResponseEntity<>(doctorRosterServices.getappsetupData(departmentId,doctorId,sessionId), HttpStatus.OK);
 
 
-@GetMapping("/rosterfind")
-public ResponseEntity<ApiResponse<DoctorRoaster>> findDoctorRoster(
-        @RequestParam Long deptId,
-        @RequestParam Long doctorId,
-        @RequestParam Date rosterDate) {
-
-    return ResponseEntity.ok(doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate));
-}
+//@GetMapping("/rosterfind")
+//public ResponseEntity<ApiResponse<DoctorRoaster>> findDoctorRoster(
+//        @RequestParam Long deptId,
+//        @RequestParam Long doctorId,
+//        @RequestParam Date rosterDate) {
+//
+//    return ResponseEntity.ok(doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate));
+//}
 }
