@@ -10,5 +10,5 @@ public class MasBloodGroupRequest {
     private String bloodGroupName; // Name of the blood group
     private String status;         // Status of the blood group ("Y" for active, "N" for inactive)
     private String lastChangedBy; // User who last changed the record
-    private String hicCode;       // HIC code for the blood group
+   // private String hicCode;       // HIC code for the blood group
 }
