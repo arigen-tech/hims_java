@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "mas_employee")
@@ -28,35 +29,27 @@ public class MasEmployee {
     @Column(name = "emp_ln", length = 100, nullable = false)
     private String lastName;
 
-    @Column(name = "gender_id")
-    private Integer genderId;
-
     @Column(name = "dob")
     private LocalDate dob;
 
-    @Column(name = "age")
-    private Integer age;
-
-    @Column(name = "mobile_no", length = 15)
-    private String mobileNo;
-
-    @Column(name = "email_id", length = 100)
-    private String email;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gender_id")
+    private MasGender genderId;
 
     @Column(name = "address_1", length = 255)
     private String address1;
 
-    @Column(name = "address_2", length = 255)
-    private String address2;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "country_id")
+    private MasCountry countryId;
 
-    @Column(name = "country_id")
-    private Integer countryId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "state_id")
+    private MasState stateId;
 
-    @Column(name = "state_id")
-    private Integer stateId;
-
-    @Column(name = "district_id")
-    private Integer districtId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "district_id")
+    private MasDistrict districtId;
 
     @Column(name = "city", length = 100)
     private String city;
@@ -64,17 +57,54 @@ public class MasEmployee {
     @Column(name = "pincode", length = 10)
     private String pincode;
 
+    @Column(name = "mobile_no", length = 15)
+    private String mobileNo;
+
     @Column(name = "registration_no", length = 100)
     private String registrationNo;
 
-    @Column(name = "employee_type_id")
-    private Integer employeeTypeId;
+    @ManyToOne
+    @JoinColumn(name = "employment_type_id", referencedColumnName = "id")
+    private MasEmploymentType employmentTypeId;
 
-    @Column(name = "employment_type_id")
-    private Integer employmentTypeId;
+    @Column(name = "profile_pic_name", length = 200)
+    private String profilePicName;
+
+    @Column(name = "id_document_name", length = 200)
+    private String idDocumentName;
+
+//    @ManyToOne
+//    @JoinColumn(name = "department_id", referencedColumnName = "department_id")
+//    private MasDepartment departmentId;
+
+    @Column(name = "from_dt")
+    private Instant fromDate;
+
+    @ManyToOne
+    @JoinColumn(name = "identification_type_id", referencedColumnName = "identification_type_id")
+    private MasIdentificationType identificationType;
+
+    @ManyToOne
+    @JoinColumn(name = "employee_type_id", referencedColumnName = "user_type_id")
+    private MasUserType employeeTypeId;
+
+    @Column(name = "age")
+    private Integer age;
+
+    @Column(name = "email_id", length = 100)
+    private String email;
+
+    @Column(name = "address_2", length = 255)
+    private String address2;
 
     @Column(name = "status", length = 1)
     private String status;
+
+    @Column(name = "approved_by", length = 200)
+    private String approvedBy;
+
+    @Column(name = "approved_dt")
+    private LocalDateTime approvedDate;
 
     @Column(name = "last_chg_by", length = 200)
     private String lastChangedBy;

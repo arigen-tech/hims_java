@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
 //    List<AppSetup> findByDeptAndDoctorIdAndSessionId(Long deptId,Long doctorId,Long sessionId);
@@ -18,11 +19,7 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
     List<AppSetup> findAppSetupsByIds(@Param("deptId") Long deptId,
                                       @Param("doctorId") Long doctorId,
                                       @Param("sessionId") Long sessionId);
+    Optional<AppSetup> findByDeptAndDoctorIdAndSession(MasDepartment dept, User doctorId, MasOpdSession session);
 
-    // Or if you prefer using native SQL
-    @Query(value = "SELECT * FROM public.app_setup WHERE dept_id = :deptId AND doctor_id = :doctorId AND session_id = :sessionId",
-            nativeQuery = true)
-    List<AppSetup> findAppSetupsByIdsNative(@Param("deptId") Long deptId,
-                                            @Param("doctorId") Long doctorId,
-                                            @Param("sessionId") Long sessionId);
+
 }

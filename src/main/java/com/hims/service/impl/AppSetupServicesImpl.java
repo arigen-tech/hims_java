@@ -5,6 +5,7 @@ import com.hims.entity.MasDepartment;
 import com.hims.entity.MasOpdSession;
 import com.hims.entity.User;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.request.AppointmentReq;
 import com.hims.request.AppointmentReqDaysKeys;
 import com.hims.response.ApiResponse;
@@ -38,49 +39,68 @@ public class AppSetupServicesImpl implements AppSetupServices {
     @Autowired
     UserRepo userRepo;
 
+
     @Override
     public ApiResponse<AppsetupResponse> appSetup(AppointmentReq appointmentReq) {
-        AppsetupResponse res=new AppsetupResponse();
- try {
-    Optional<MasDepartment> deDepartment = departmentRepository.findById(appointmentReq.getDepartmentId());
-    Optional<User> doctId = userRepo.findById(appointmentReq.getDoctorId());
-    Optional<MasOpdSession> sessionVal = masOpdSessionRepository.findById(appointmentReq.getSessionId());
-    for (AppointmentReqDaysKeys key : appointmentReq.getDays()) {
-        AppSetup entry = new AppSetup();
-        entry.setTimeTaken(appointmentReq.getTimeTaken());
-        entry.setDays(key.getDay());
-        entry.setDept(deDepartment.get());
-        entry.setDoctorId(doctId.get());
-        entry.setSession(sessionVal.get());
+        AppsetupResponse res = new AppsetupResponse();
+        try {
+            MasDepartment department = departmentRepository.findById(appointmentReq.getDepartmentId())
+                    .orElseThrow(() -> new SDDException("departmentId", 404, "Department not found"));
+            User doctor = userRepo.findById(appointmentReq.getDoctorId())
+                    .orElseThrow(() -> new SDDException("doctorId", 404, "Doctor not found"));
+            MasOpdSession session = masOpdSessionRepository.findById(appointmentReq.getSessionId())
+                    .orElseThrow(() -> new SDDException("sessionId", 404, "Session not found"));
 
-        entry.setStartTime(appointmentReq.getStartTime());
-        entry.setEndTime(appointmentReq.getEndTime());
-        entry.setTimeTaken(appointmentReq.getTimeTaken());
-        entry.setId(key.getId());
-        ///
-        entry.setStartToken(key.getTokenStartNo());
-        entry.setTotalInterval(key.getTokenInterval());
-        entry.setTotalToken(key.getTotalToken());
-        entry.setTotalOnlineToken(key.getTotalOnlineToken());
-        entry.setMaxNoOfDays(key.getMaxNoOfDay());
-        entry.setMinNoOfDays(key.getMinNoOfday());
-//        entry.setLastChgDate(LocalDate.now());
-        entry.setLastChgDate(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate());
+            for (AppointmentReqDaysKeys key : appointmentReq.getDays()) {
+                AppSetup entry;
 
-        entry.setLastChgBy(1);
-        //entry.setHospital(1);
-        entry.setLastChgTime(Calender.getCurrentTimeStamp());
-            appSetupRepository.save(entry);
+                if (key.getId() != null) {
+                    entry = appSetupRepository.findById(key.getId())
+                            .orElseThrow(() -> new SDDException("id", 404, "Appointment setup not found"));
+                } else {
+                    // Check if an entry with the same departmentId, doctorId, and sessionId already exists
+                    Optional<AppSetup> existingEntry = appSetupRepository.findByDeptAndDoctorIdAndSession(
+                            department, doctor, session);
+
+                    if (existingEntry.isPresent()) {
+                        throw new SDDException("duplicate_entry", 409, "An appointment setup with these details already exists");
+                    }
+
+                    entry = new AppSetup();
+                }
+
+                entry.setDept(department);
+                entry.setDoctorId(doctor);
+                entry.setSession(session);
+
+                entry.setStartTime(appointmentReq.getStartTime());
+                entry.setEndTime(appointmentReq.getEndTime());
+                entry.setTimeTaken(appointmentReq.getTimeTaken());
+
+                entry.setDays(key.getDay());
+                entry.setStartToken(key.getTokenStartNo());
+                entry.setTotalInterval(key.getTokenInterval());
+                entry.setTotalToken(key.getTotalToken());
+                entry.setTotalOnlineToken(key.getTotalOnlineToken());
+                entry.setMaxNoOfDays(key.getMaxNoOfDay());
+                entry.setMinNoOfDays(key.getMinNoOfday());
+
+                entry.setLastChgDate(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate());
+                entry.setLastChgBy(1);
+                entry.setLastChgTime(Calender.getCurrentTimeStamp());
+
+                appSetupRepository.save(entry);
+            }
+
+            res.setMsg("Success");
+            return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
+        } catch (SDDException e) {
+            return ResponseUtils.createFailureResponse(res, new TypeReference<AppsetupResponse>() {}, e.getMessage(), e.getStatus());
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(res, new TypeReference<AppsetupResponse>() {}, "Internal Server Error", 500);
+        }
     }
-    res.setMsg("Success");
-    return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {
-    });
-} catch (Exception e) {
-    res.setMsg("Fail");
-    return ResponseUtils.createFailureResponse(res,new TypeReference<AppsetupResponse>() {
-    },e.getMessage(),500);
-      }
-    }
+
 
 //    @Override
 //    public ApiResponse<AppsetupResponse> getappsetupData(Long deptId,Long doctorId,Long sessionId) {
