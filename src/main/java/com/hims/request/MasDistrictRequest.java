@@ -1,18 +1,15 @@
-package com.hims.response;
+package com.hims.request;
 
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.time.LocalDate;
 
 @Getter
 @Setter
-public class MasDistrictResponse {
-    private Long id;
+public class MasDistrictRequest {
     private String districtName;
     private String status;
     private String lasChBy;
-    private Instant lastChgDate;
     private Long stateId;
 }

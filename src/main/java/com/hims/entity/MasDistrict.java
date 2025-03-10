@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Getter
@@ -33,7 +34,7 @@ public class MasDistrict {
     private String lasChBy;
 
     @Column(name = "last_chg_date")
-    private LocalDate lastChgDate;
+    private Instant lastChgDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "state_id")
