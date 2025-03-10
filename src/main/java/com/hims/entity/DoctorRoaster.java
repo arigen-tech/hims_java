@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -15,17 +16,17 @@ public class DoctorRoaster {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private Integer id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private MasDepartment department;
 
     @Column(name = "doctor_id")
-    private Integer doctorId;
+    private Long doctorId;
 
     @Column(name = "roaster_date")
-    private LocalDate roasterDate;
+    private Date roasterDate;
 
     @Size(max = 2)
     @Column(name = "roaster_value", length = 2)
