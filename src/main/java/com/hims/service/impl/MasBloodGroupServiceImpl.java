@@ -50,7 +50,7 @@ public class MasBloodGroupServiceImpl implements MasBloodGroupService {
         bloodGroup.setLastChangedBy(bloodGroupRequest.getLastChangedBy());
         bloodGroup.setLastChangedDate(Instant.now());
         bloodGroup.setLastChangedTime(getCurrentTimeFormatted());
-        bloodGroup.setHicCode(bloodGroupRequest.getHicCode());
+        //bloodGroup.setHicCode(bloodGroupRequest.getHicCode());
 
         MasBloodGroup savedBloodGroup = masBloodGroupRepository.save(bloodGroup);
         return ResponseUtils.createSuccessResponse(convertToResponse(savedBloodGroup), new TypeReference<>() {});
@@ -68,7 +68,7 @@ public class MasBloodGroupServiceImpl implements MasBloodGroupService {
             existingBloodGroup.setLastChangedBy(bloodGroupDetails.getLastChangedBy());
             existingBloodGroup.setLastChangedDate(Instant.now());
             existingBloodGroup.setLastChangedTime(getCurrentTimeFormatted());
-            existingBloodGroup.setHicCode(bloodGroupDetails.getHicCode());
+            //existingBloodGroup.setHicCode(bloodGroupDetails.getHicCode());
 
             MasBloodGroup updatedBloodGroup = masBloodGroupRepository.save(existingBloodGroup);
             return ResponseUtils.createSuccessResponse(convertToResponse(updatedBloodGroup), new TypeReference<>() {});
