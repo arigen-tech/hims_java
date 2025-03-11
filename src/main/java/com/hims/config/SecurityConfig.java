@@ -37,8 +37,9 @@ public class SecurityConfig {
                         .requestMatchers("/authController/getUsersRole/{userName}").permitAll()
                         .requestMatchers("/apiTest/getTest").permitAll()
                         .requestMatchers("/users/**").permitAll()
+                        .requestMatchers("/patient/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/flight/**").permitAll()
+
                         .requestMatchers("/app/**").permitAll()
 
                         .requestMatchers("/masterController/searchAirport/{query}").permitAll()

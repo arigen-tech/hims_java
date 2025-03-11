@@ -11,17 +11,29 @@ import com.hims.service.PatientService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class PatientServiceImpl implements PatientService {
+    private static final String UPLOAD_DIR = "patientImage/";
+
+    @Value("${upload.image.path}")
+    private String baseUrl;
     @Autowired
     private PatientRepository patientRepository;
     @Autowired
@@ -345,6 +357,33 @@ public class PatientServiceImpl implements PatientService {
         patient = patientRepository.save(patient); // Save patient
     return ResponseUtils.createSuccessResponse(patient, new TypeReference<Patient>() {
     });
+    }
+
+    @Override
+    public ApiResponse<String> uploadImage(MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                throw new RuntimeException("File is empty");
+            }
+
+            // Ensure the upload directory exists
+            File uploadDir = new File(baseUrl+UPLOAD_DIR);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdirs();
+            }
+
+            // Generate a unique filename
+            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(baseUrl+UPLOAD_DIR, filename);
+
+            // Save file to the server
+            Files.write(filePath, file.getBytes());
+            return ResponseUtils.createSuccessResponse(baseUrl+UPLOAD_DIR + filename, new TypeReference<>() {
+            });
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error uploading file: " + e.getMessage());
+        }
     }
 
     private String generateUhid(Patient patient) {
