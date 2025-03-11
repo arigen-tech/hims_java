@@ -1,13 +1,12 @@
 package com.hims.request;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.time.Instant;
-
-@Data
-public class MasReligionRequest {
+@Getter
+@Setter
+public class MasMaritalStatusRequest {
     private String name;
     private String status;
     private String lastChgBy;
-
 }

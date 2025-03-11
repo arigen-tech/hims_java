@@ -100,12 +100,25 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
             department.setLastChgTime(getCurrentTimeFormatted());
             department.setLastChgDate(Instant.now());
 
+            if (request.getDepartmentTypeId() != null) {
+                department.setDepartmentType(masDepartmentTypeRepository.findById(request.getDepartmentTypeId()).orElse(null));
+            }
+
+            if (request.getHospitalId() != null) {
+                department.setHospital(masHospitalRepository.findById(request.getHospitalId()).orElse(null));
+            } else {
+                department.setHospital(null);
+            }
+
+            department.setDepartmentNo(request.getDepartmentNo());
+
             masDepartmentRepository.save(department);
             return ResponseUtils.createSuccessResponse(mapToResponse(department), new TypeReference<>() {});
         } else {
             return ResponseUtils.createNotFoundResponse("Department not found", 404);
         }
     }
+
 
     @Override
     public ApiResponse<MasDepartmentResponse> getDepartmentById(Long id) {

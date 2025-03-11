@@ -32,7 +32,7 @@ public class MasDepartmentController {
         return ResponseEntity.ok(masDepartmentService.editDepartment(id, request));
     }
 
-    @PatchMapping("/status/{id}")
+    @PutMapping("/status/{id}")
     public ResponseEntity<ApiResponse<String>> changeDepartmentStatus(@PathVariable Long id, @RequestParam String status) {
         return ResponseEntity.ok(masDepartmentService.changeDepartmentStatus(id, status));
     }

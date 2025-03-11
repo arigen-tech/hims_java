@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasMaritalStatus;
 import com.hims.entity.repository.MasMaritalStatusRepository;
+import com.hims.request.MasMaritalStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasMaritalStatusResponse;
 import com.hims.service.MasMaritalStatusService;
@@ -10,7 +11,9 @@ import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,17 +22,65 @@ public class MasMaritalStatusServiceImpl implements MasMaritalStatusService {
     @Autowired
     private MasMaritalStatusRepository masMaritalStatusRepository;
 
-    public ApiResponse<List<MasMaritalStatusResponse>> getAllMaritalStatuses() {
-        List<MasMaritalStatus> statuses = masMaritalStatusRepository.findAll();
+    @Override
+    public ApiResponse<MasMaritalStatusResponse> addMaritalStatus(MasMaritalStatusRequest request) {
+        MasMaritalStatus status = new MasMaritalStatus();
+        status.setName(request.getName());
+        status.setStatus(request.getStatus());
+        status.setLastChgBy(request.getLastChgBy());
+        status.setLastChgDate(Instant.now());
 
-        List<MasMaritalStatusResponse> responses = statuses.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-
-        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+        MasMaritalStatus savedStatus = masMaritalStatusRepository.save(status);
+        return ResponseUtils.createSuccessResponse(mapToResponse(savedStatus), new TypeReference<>() {});
     }
 
-    private MasMaritalStatusResponse convertToResponse(MasMaritalStatus status) {
+    @Override
+    public ApiResponse<String> changeMaritalStatus(Long id, String statusValue) {
+        Optional<MasMaritalStatus> statusOpt = masMaritalStatusRepository.findById(id);
+        if (statusOpt.isPresent()) {
+            MasMaritalStatus status = statusOpt.get();
+            status.setStatus(statusValue);
+            status.setLastChgDate(Instant.now());
+            masMaritalStatusRepository.save(status);
+            return ResponseUtils.createSuccessResponse("Marital status updated", new TypeReference<>() {});
+        } else {
+            return ResponseUtils.createNotFoundResponse("Marital status not found", 404);
+        }
+    }
+
+    @Override
+    public ApiResponse<MasMaritalStatusResponse> editMaritalStatus(Long id, MasMaritalStatusRequest request) {
+        Optional<MasMaritalStatus> statusOpt = masMaritalStatusRepository.findById(id);
+        if (statusOpt.isPresent()) {
+            MasMaritalStatus status = statusOpt.get();
+            status.setName(request.getName());
+            status.setStatus(request.getStatus());
+            status.setLastChgBy(request.getLastChgBy());
+            status.setLastChgDate(Instant.now());
+
+            masMaritalStatusRepository.save(status);
+            return ResponseUtils.createSuccessResponse(mapToResponse(status), new TypeReference<>() {});
+        } else {
+            return ResponseUtils.createNotFoundResponse("Marital status not found", 404);
+        }
+    }
+
+    @Override
+    public ApiResponse<MasMaritalStatusResponse> getMaritalStatusById(Long id) {
+        return masMaritalStatusRepository.findById(id)
+                .map(status -> ResponseUtils.createSuccessResponse(mapToResponse(status), new TypeReference<>() {}))
+                .orElseGet(() -> ResponseUtils.createNotFoundResponse("Marital status not found", 404));
+    }
+
+    @Override
+    public ApiResponse<List<MasMaritalStatusResponse>> getAllMaritalStatuses() {
+        List<MasMaritalStatusResponse> statuses = masMaritalStatusRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+        return ResponseUtils.createSuccessResponse(statuses, new TypeReference<>() {});
+    }
+
+    private MasMaritalStatusResponse mapToResponse(MasMaritalStatus status) {
         MasMaritalStatusResponse response = new MasMaritalStatusResponse();
         response.setId(status.getId());
         response.setName(status.getName());
