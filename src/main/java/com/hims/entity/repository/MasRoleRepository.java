@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface MasRoleRepository extends JpaRepository<MasRole, String> {
-    Optional<MasRole> findByDesc(String doctor);
+    Optional<MasRole> findByRoleDesc(String doctor);
 }
