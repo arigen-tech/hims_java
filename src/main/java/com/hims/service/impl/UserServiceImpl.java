@@ -39,13 +39,15 @@ public class UserServiceImpl implements UserService {
 
         List<UserDepartment> users = userDepartmentRepository.findByDepartment(masDepartmentRepository.findById(speciality).get());
         for(UserDepartment user:users){
-            if(user.getUser().getRoleId().contains(doctorRole.get().getId())){
-                UserResponse doctor =new UserResponse();
-                doctor.setFirstName(user.getUser().getFirstName());
-                doctor.setMiddleName(user.getUser().getMiddleName());
-                doctor.setLastName(user.getUser().getLastName());
-                doctor.setUserId(user.getUser().getUserId());
-                response.add(doctor);
+            if(user.getUser().getRoleId()!=null) {
+                if (user.getUser().getRoleId().contains(doctorRole.get().getId())) {
+                    UserResponse doctor = new UserResponse();
+                    doctor.setFirstName(user.getUser().getFirstName());
+                    doctor.setMiddleName(user.getUser().getMiddleName());
+                    doctor.setLastName(user.getUser().getLastName());
+                    doctor.setUserId(user.getUser().getUserId());
+                    response.add(doctor);
+                }
             }
         }
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
