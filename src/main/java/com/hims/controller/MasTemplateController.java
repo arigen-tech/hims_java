@@ -20,9 +20,9 @@ public class MasTemplateController {
     @Autowired
     private MasTemplateService masTemplateService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasTemplateResponse>>> getAllTemplates() {
-        return new ResponseEntity<>(masTemplateService.getAllTemplates(), HttpStatus.OK);
+    @GetMapping("/getAllTemplates/{flag}")
+    public ApiResponse<List<MasTemplateResponse>> getAllTemplates(@PathVariable int flag) {
+        return masTemplateService.getAllTemplates(flag);
     }
 
     @GetMapping("/{id}")

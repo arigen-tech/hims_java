@@ -20,9 +20,9 @@ public class UserApplicationController {
     @Autowired
     private UserApplicationService userApplicationService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<UserApplicationResponse>>> getAllApplications() {
-        return new ResponseEntity<>(userApplicationService.getAllApplications(), HttpStatus.OK);
+    @GetMapping("/getAllUserApplications/{flag}")
+    public ApiResponse<List<UserApplicationResponse>> getAllApplications(@PathVariable int flag) {
+        return userApplicationService.getAllApplications(flag);
     }
 
     @GetMapping("/{id}")

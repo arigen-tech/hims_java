@@ -20,9 +20,9 @@ public class MasApplicationController {
     @Autowired
     private MasApplicationService masApplicationService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasApplicationResponse>>> getAllApplications() {
-        return new ResponseEntity<>(masApplicationService.getAllApplications(), HttpStatus.OK);
+    @GetMapping("/getAllApplications/{flag}")
+    public ApiResponse<List<MasApplicationResponse>> getAllApplications(@PathVariable int flag) {
+        return masApplicationService.getAllApplications(flag);
     }
 
     @GetMapping("/{id}")

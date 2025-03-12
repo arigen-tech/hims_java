@@ -11,5 +11,5 @@ public interface MasCountryService {
     ApiResponse<String> changeCountryStatus(Long id, String status);
     ApiResponse<MasCountryResponse> editCountry(Long id, MasCountryRequest request);
     ApiResponse<MasCountryResponse> getCountryById(Long id);
-    ApiResponse<List<MasCountryResponse>> getAllCountries();
+    ApiResponse<List<MasCountryResponse>> getAllCountries(int flag);
 }

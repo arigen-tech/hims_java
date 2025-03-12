@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface MasApplicationService {
 
-    ApiResponse<List<MasApplicationResponse>> getAllApplications();
+    ApiResponse<List<MasApplicationResponse>> getAllApplications(int flag);
     ApiResponse<MasApplicationResponse> getApplicationById(String id);
     ApiResponse<MasApplicationResponse> createApplication(MasApplicationRequest request);
     ApiResponse<MasApplicationResponse> updateApplication(String id, MasApplicationRequest request);

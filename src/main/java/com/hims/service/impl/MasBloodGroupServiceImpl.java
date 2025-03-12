@@ -30,8 +30,19 @@ public class MasBloodGroupServiceImpl implements MasBloodGroupService {
     }
 
     @Override
-    public ApiResponse<List<MasBloodGroupResponse>> getAllBloodGroups() {
-        List<MasBloodGroup> bloodGroups = masBloodGroupRepository.findAll();
+    public ApiResponse<List<MasBloodGroupResponse>> getAllBloodGroups(int flag) {
+        List<MasBloodGroup> bloodGroups;
+
+        if (flag == 1) {
+            // Fetch only records with status 'Y'
+            bloodGroups = masBloodGroupRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            // Fetch all records with status 'Y' or 'N'
+            bloodGroups = masBloodGroupRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            // Handle invalid flag values
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
 
         List<MasBloodGroupResponse> responses = bloodGroups.stream()
                 .map(this::convertToResponse)

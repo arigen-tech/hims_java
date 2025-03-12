@@ -11,5 +11,5 @@ public interface MasMaritalStatusService {
     ApiResponse<String> changeMaritalStatus(Long id, String status);
     ApiResponse<MasMaritalStatusResponse> editMaritalStatus(Long id, MasMaritalStatusRequest request);
     ApiResponse<MasMaritalStatusResponse> getMaritalStatusById(Long id);
-    ApiResponse<List<MasMaritalStatusResponse>> getAllMaritalStatuses();
+    ApiResponse<List<MasMaritalStatusResponse>> getAllMaritalStatuses(int flag);
 }

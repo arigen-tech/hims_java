@@ -20,10 +20,9 @@ public class MasBloodGroupController {
     @Autowired
     private MasBloodGroupService masBloodGroupService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasBloodGroupResponse>>> getAllBloodGroups() {
-        ApiResponse<List<MasBloodGroupResponse>> response = masBloodGroupService.getAllBloodGroups();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/getAllBloodGroups/{flag}")
+    public ApiResponse<List<MasBloodGroupResponse>> getAllBloodGroups(@PathVariable int flag) {
+        return masBloodGroupService.getAllBloodGroups(flag);
     }
 
     @GetMapping("/{id}")

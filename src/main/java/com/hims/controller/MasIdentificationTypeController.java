@@ -36,8 +36,8 @@ public class MasIdentificationTypeController {
         return masIdentificationTypeService.getIdentificationTypeById(id);
     }
 
-    @GetMapping("/all")
-    public ApiResponse<List<MasIdentificationTypeResponse>> getAllIdentificationTypes() {
-        return masIdentificationTypeService.getAllIdentificationTypes();
+    @GetMapping("/getAllIdentificationTypes/{flag}")
+    public ApiResponse<List<MasIdentificationTypeResponse>> getAllIdentificationTypes(@PathVariable int flag) {
+        return masIdentificationTypeService.getAllIdentificationTypes(flag);
     }
 }

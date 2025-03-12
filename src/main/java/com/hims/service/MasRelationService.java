@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
 public interface MasRelationService {
-    ApiResponse<List<MasRelationResponse>> getAllRelations();
+    ApiResponse<List<MasRelationResponse>> getAllRelations(int flag);
     public ApiResponse<MasRelationResponse> changeStatus(Long id, String status);
     public ApiResponse<MasRelationResponse> findById(Long id);
     public ApiResponse<MasRelationResponse> addRelation(MasRelationRequest relationRequest);

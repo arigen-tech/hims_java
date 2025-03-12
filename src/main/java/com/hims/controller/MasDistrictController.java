@@ -20,10 +20,9 @@ public class MasDistrictController {
     @Autowired
     private MasDistrictService masDistrictService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasDistrictResponse>>> getAllDistricts() {
-        ApiResponse<List<MasDistrictResponse>> response = masDistrictService.getAllDistricts();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/getAllDistricts/{flag}")
+    public ApiResponse<List<MasDistrictResponse>> getAllDistricts(@PathVariable int flag) {
+        return masDistrictService.getAllDistricts(flag);
     }
 
     @PostMapping("/create")

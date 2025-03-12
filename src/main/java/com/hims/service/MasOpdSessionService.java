@@ -7,7 +7,7 @@ import com.hims.response.MasOpdSessionResponse;
 import java.util.List;
 
 public interface MasOpdSessionService {
-    ApiResponse<List<MasOpdSessionResponse>> getAllOpdSessions();
+    ApiResponse<List<MasOpdSessionResponse>> getAllOpdSessions(int flag);
     ApiResponse<MasOpdSessionResponse> findById(Long id);
     public ApiResponse<MasOpdSessionResponse> addSession(MasOpdSessionRequest request);
     public ApiResponse<MasOpdSessionResponse> updateSession(Long id, MasOpdSessionRequest request);

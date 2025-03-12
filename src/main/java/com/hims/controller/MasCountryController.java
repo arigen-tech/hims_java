@@ -20,10 +20,9 @@ public class MasCountryController {
     @Autowired
     private MasCountryService masCountryService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasCountryResponse>>> getAllCountries() {
-        ApiResponse<List<MasCountryResponse>> response = masCountryService.getAllCountries();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/getAllCountries/{flag}")
+    public ApiResponse<List<MasCountryResponse>> getAllCountries(@PathVariable int flag) {
+        return masCountryService.getAllCountries(flag);
     }
 
     @PostMapping("/create")

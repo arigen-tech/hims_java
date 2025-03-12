@@ -20,11 +20,11 @@ public class MasRelationController {
     @Autowired
     private MasRelationService masRelationService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasRelationResponse>>> getAllRelations() {
-        ApiResponse<List<MasRelationResponse>> response = masRelationService.getAllRelations();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/getAllRelations/{flag}")
+    public ApiResponse<List<MasRelationResponse>> getAllRelations(@PathVariable int flag) {
+        return masRelationService.getAllRelations(flag);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MasRelationResponse>> getRelationById(@PathVariable Long id) {

@@ -83,12 +83,24 @@ public class MasCountryServiceImpl implements MasCountryService {
     }
 
     @Override
-    public ApiResponse<List<MasCountryResponse>> getAllCountries() {
-        List<MasCountryResponse> countries = masCountryRepository.findAll().stream()
+    public ApiResponse<List<MasCountryResponse>> getAllCountries(int flag) {
+        List<MasCountry> countries;
+
+        if (flag == 1) {
+            countries = masCountryRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            countries = masCountryRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasCountryResponse> responses = countries.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return ResponseUtils.createSuccessResponse(countries, new TypeReference<>() {});
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
 
     private MasCountryResponse mapToResponse(MasCountry country) {
         MasCountryResponse response = new MasCountryResponse();

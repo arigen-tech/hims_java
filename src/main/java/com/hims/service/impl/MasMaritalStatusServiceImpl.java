@@ -73,12 +73,24 @@ public class MasMaritalStatusServiceImpl implements MasMaritalStatusService {
     }
 
     @Override
-    public ApiResponse<List<MasMaritalStatusResponse>> getAllMaritalStatuses() {
-        List<MasMaritalStatusResponse> statuses = masMaritalStatusRepository.findAll().stream()
+    public ApiResponse<List<MasMaritalStatusResponse>> getAllMaritalStatuses(int flag) {
+        List<MasMaritalStatus> statuses;
+
+        if (flag == 1) {
+            statuses = masMaritalStatusRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            statuses = masMaritalStatusRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasMaritalStatusResponse> responses = statuses.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return ResponseUtils.createSuccessResponse(statuses, new TypeReference<>() {});
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
 
     private MasMaritalStatusResponse mapToResponse(MasMaritalStatus status) {
         MasMaritalStatusResponse response = new MasMaritalStatusResponse();

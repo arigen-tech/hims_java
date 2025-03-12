@@ -100,12 +100,24 @@ public class MasStateServiceImpl implements MasStateService {
     }
 
     @Override
-    public ApiResponse<List<MasStateResponse>> getAllStates() {
-        List<MasStateResponse> states = masStateRepository.findAll().stream()
+    public ApiResponse<List<MasStateResponse>> getAllStates(int flag) {
+        List<MasState> states;
+
+        if (flag == 1) {
+            states = masStateRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            states = masStateRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasStateResponse> responses = states.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return ResponseUtils.createSuccessResponse(states, new TypeReference<>() {});
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
 
     @Override
     public ApiResponse<List<MasStateResponse>> getStatesByCountryId(Long countryId) {

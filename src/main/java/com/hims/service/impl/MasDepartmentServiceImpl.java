@@ -128,12 +128,24 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
     }
 
     @Override
-    public ApiResponse<List<MasDepartmentResponse>> getAllDepartments() {
-        List<MasDepartmentResponse> departments = masDepartmentRepository.findAll().stream()
+    public ApiResponse<List<MasDepartmentResponse>> getAllDepartments(int flag) {
+        List<MasDepartment> departments;
+
+        if (flag == 1) {
+            departments = masDepartmentRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            departments = masDepartmentRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasDepartmentResponse> responses = departments.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {});
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
 
     private MasDepartmentResponse mapToResponse(MasDepartment department) {
         MasDepartmentResponse response = new MasDepartmentResponse();

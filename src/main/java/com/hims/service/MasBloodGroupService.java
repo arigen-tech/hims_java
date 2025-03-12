@@ -7,7 +7,7 @@ import com.hims.response.MasBloodGroupResponse;
 import java.util.List;
 
 public interface MasBloodGroupService {
-    ApiResponse<List<MasBloodGroupResponse>> getAllBloodGroups();
+    ApiResponse<List<MasBloodGroupResponse>> getAllBloodGroups(int flag);
     ApiResponse<MasBloodGroupResponse> addBloodGroup(MasBloodGroupRequest bloodGroupRequest);
     ApiResponse<MasBloodGroupResponse> updateBloodGroup(Long id, MasBloodGroupResponse bloodGroupDetails);
     public ApiResponse<MasBloodGroupResponse> changeStatus(Long id, String status);

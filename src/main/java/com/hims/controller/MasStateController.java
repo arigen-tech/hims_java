@@ -20,10 +20,9 @@ public class MasStateController {
     @Autowired
     private MasStateService masStateService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasStateResponse>>> getAllStates() {
-        ApiResponse<List<MasStateResponse>> response = masStateService.getAllStates();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/getAllStates/{flag}")
+    public ApiResponse<List<MasStateResponse>> getAllStates(@PathVariable int flag) {
+        return masStateService.getAllStates(flag);
     }
 
     @PostMapping("/create")

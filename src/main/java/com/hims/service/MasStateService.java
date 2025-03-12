@@ -11,6 +11,6 @@ public interface MasStateService {
     ApiResponse<String> changeStateStatus(Long id, String status);
     ApiResponse<MasStateResponse> editState(Long id, MasStateRequest request);
     ApiResponse<MasStateResponse> getStateById(Long id);
-    ApiResponse<List<MasStateResponse>> getAllStates();
+    ApiResponse<List<MasStateResponse>> getAllStates(int flag);
     ApiResponse<List<MasStateResponse>> getStatesByCountryId(Long countryId);
 }

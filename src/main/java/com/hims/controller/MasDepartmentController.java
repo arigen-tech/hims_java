@@ -42,9 +42,9 @@ public class MasDepartmentController {
         return ResponseEntity.ok(masDepartmentService.getDepartmentById(id));
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasDepartmentResponse>>> getAllDepartments() {
-        return ResponseEntity.ok(masDepartmentService.getAllDepartments());
+    @GetMapping("/getAllDepartments/{flag}")
+    public ApiResponse<List<MasDepartmentResponse>> getAllDepartments(@PathVariable int flag) {
+        return masDepartmentService.getAllDepartments(flag);
     }
 
     @GetMapping("/allUserDepartment")

@@ -24,8 +24,16 @@ public class MasReligionServiceImpl implements MasReligionService {
     private MasReligionRepository masReligionRepository;
 
     @Override
-    public ApiResponse<List<MasReligionResponse>> getAllReligions() {
-        List<MasReligion> religions = masReligionRepository.findAll();
+    public ApiResponse<List<MasReligionResponse>> getAllReligions(int flag) {
+        List<MasReligion> religions;
+
+        if (flag == 1) {
+            religions = masReligionRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            religions = masReligionRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
 
         List<MasReligionResponse> responses = religions.stream()
                 .map(this::convertToResponse)
@@ -33,6 +41,7 @@ public class MasReligionServiceImpl implements MasReligionService {
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
 
     @Override
     @Transactional

@@ -22,11 +22,22 @@ public class MasApplicationServiceImpl implements MasApplicationService {
     @Autowired
     private MasApplicationRepository masApplicationRepository;
 
-    public ApiResponse<List<MasApplicationResponse>> getAllApplications() {
-        List<MasApplication> applications = masApplicationRepository.findAll();
+    @Override
+    public ApiResponse<List<MasApplicationResponse>> getAllApplications(int flag) {
+        List<MasApplication> applications;
+
+        if (flag == 1) {
+            applications = masApplicationRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            applications = masApplicationRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
         List<MasApplicationResponse> responses = applications.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 

@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface MasTemplateService {
 
-    ApiResponse<List<MasTemplateResponse>> getAllTemplates();
+    ApiResponse<List<MasTemplateResponse>> getAllTemplates(int flag);
     ApiResponse<MasTemplateResponse> getTemplateById(Long id);
     ApiResponse<MasTemplateResponse> createTemplate(MasTemplateRequest request);
     ApiResponse<MasTemplateResponse> updateTemplate(Long id, MasTemplateRequest request);

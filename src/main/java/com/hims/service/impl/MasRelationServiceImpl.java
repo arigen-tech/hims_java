@@ -1,4 +1,4 @@
-package com.hims.service;
+package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasRelation;
@@ -6,6 +6,7 @@ import com.hims.entity.repository.MasRelationRepository;
 import com.hims.request.MasRelationRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasRelationResponse;
+import com.hims.service.MasRelationService;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,27 @@ public class MasRelationServiceImpl implements MasRelationService {
 
     @Autowired
     private MasRelationRepository masRelationRepository;
+
+    public ApiResponse<List<MasRelationResponse>> getAllRelations(int flag) {
+        List<MasRelation> relations;
+
+        if (flag == 1) {
+            // Fetch only records with status 'Y'
+            relations = masRelationRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            // Fetch all records with status 'Y' or 'N'
+            relations = masRelationRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            // Handle invalid flag values
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasRelationResponse> responses = relations.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+    }
 
     public ApiResponse<List<MasRelationResponse>> getAllRelations() {
         List<MasRelation> relations = masRelationRepository.findAll();

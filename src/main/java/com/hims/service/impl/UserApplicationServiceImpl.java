@@ -24,13 +24,25 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     @Autowired
     private UserApplicationRepository userApplicationRepository;
 
-    public ApiResponse<List<UserApplicationResponse>> getAllApplications() {
-        List<UserApplication> applications = userApplicationRepository.findAll();
+    @Override
+    public ApiResponse<List<UserApplicationResponse>> getAllApplications(int flag) {
+        List<UserApplication> applications;
+
+        if (flag == 1) {
+            applications = userApplicationRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            applications = userApplicationRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
         List<UserApplicationResponse> responses = applications.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
 
     public ApiResponse<UserApplicationResponse> getApplicationById(Long id) {
         Optional<UserApplication> application = userApplicationRepository.findById(id);

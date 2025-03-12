@@ -10,5 +10,5 @@ public interface MasIdentificationTypeService {
     ApiResponse<String> changeIdentificationStatus(Long id, String status);
     ApiResponse<MasIdentificationTypeResponse> editIdentificationType(Long id, MasIdentificationTypeRequest request);
     ApiResponse<MasIdentificationTypeResponse> getIdentificationTypeById(Long id);
-    ApiResponse<List<MasIdentificationTypeResponse>> getAllIdentificationTypes();
+    ApiResponse<List<MasIdentificationTypeResponse>> getAllIdentificationTypes(int flag);
 }

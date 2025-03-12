@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface UserApplicationService {
 
-    ApiResponse<List<UserApplicationResponse>> getAllApplications();
+    ApiResponse<List<UserApplicationResponse>> getAllApplications(int flag);
     ApiResponse<UserApplicationResponse> getApplicationById(Long id);
     ApiResponse<UserApplicationResponse> createApplication(UserApplicationRequest request);
     ApiResponse<UserApplicationResponse> updateApplication(Long id, UserApplicationRequest request);

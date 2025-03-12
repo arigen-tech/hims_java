@@ -39,8 +39,8 @@ public class MasDepartmentTypeController {
         return ResponseEntity.ok(masDepartmentTypeService.getDepartmentTypeById(id));
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasDepartmentTypeResponse>>> getAllDepartmentTypes() {
-        return ResponseEntity.ok(masDepartmentTypeService.getAllDepartmentTypes());
+    @GetMapping("/getAllDepartmentTypes/{flag}")
+    public ApiResponse<List<MasDepartmentTypeResponse>> getAllDepartmentTypes(@PathVariable int flag) {
+        return masDepartmentTypeService.getAllDepartmentTypes(flag);
     }
 }

@@ -13,7 +13,7 @@ public interface MasDepartmentService {
     ApiResponse<String> changeDepartmentStatus(Long id, String status);
     ApiResponse<MasDepartmentResponse> editDepartment(Long id, MasDepartmentRequest request);
     ApiResponse<MasDepartmentResponse> getDepartmentById(Long id);
-    ApiResponse<List<MasDepartmentResponse>> getAllDepartments();
+    ApiResponse<List<MasDepartmentResponse>> getAllDepartments(int flag);
 
 
     ApiResponse<List<MasUserDepartmentResponse>> getAllMasUserDepartments();

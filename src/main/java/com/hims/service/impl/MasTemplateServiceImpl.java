@@ -22,13 +22,25 @@ public class MasTemplateServiceImpl implements MasTemplateService {
     @Autowired
     private MasTemplateRepository masTemplateRepository;
 
-    public ApiResponse<List<MasTemplateResponse>> getAllTemplates() {
-        List<MasTemplate> templates = masTemplateRepository.findAll();
+    @Override
+    public ApiResponse<List<MasTemplateResponse>> getAllTemplates(int flag) {
+        List<MasTemplate> templates;
+
+        if (flag == 1) {
+            templates = masTemplateRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            templates = masTemplateRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
         List<MasTemplateResponse> responses = templates.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
 
     public ApiResponse<MasTemplateResponse> getTemplateById(Long id) {
         Optional<MasTemplate> template = masTemplateRepository.findById(id);

@@ -34,9 +34,8 @@ public class TemplateApplicationController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<TemplateApplicationResponse>>> getAllTemplateApplications() {
-        ApiResponse<List<TemplateApplicationResponse>> response = templateApplicationService.getAllTemplateApplications();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/getAllTemplateApplications/{flag}")
+    public ApiResponse<List<TemplateApplicationResponse>> getAllTemplateApplications(@PathVariable int flag) {
+        return templateApplicationService.getAllTemplateApplications(flag);
     }
 }

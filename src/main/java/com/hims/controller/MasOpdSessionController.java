@@ -20,10 +20,9 @@ public class MasOpdSessionController {
     @Autowired
     private MasOpdSessionService masOpdSessionService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasOpdSessionResponse>>> getAllOpdSessions() {
-        ApiResponse<List<MasOpdSessionResponse>> response = masOpdSessionService.getAllOpdSessions();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/getAllOpdSessions/{flag}")
+    public ApiResponse<List<MasOpdSessionResponse>> getAllOpdSessions(@PathVariable int flag) {
+        return masOpdSessionService.getAllOpdSessions(flag);
     }
 
     @GetMapping("/{id}")

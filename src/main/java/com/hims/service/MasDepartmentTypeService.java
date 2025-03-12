@@ -10,5 +10,5 @@ public interface MasDepartmentTypeService {
     ApiResponse<String> changeDepartmentTypeStatus(Long id, String status);
     ApiResponse<MasDepartmentTypeResponse> editDepartmentType(Long id, MasDepartmentTypeRequest request);
     ApiResponse<MasDepartmentTypeResponse> getDepartmentTypeById(Long id);
-    ApiResponse<List<MasDepartmentTypeResponse>> getAllDepartmentTypes();
+    ApiResponse<List<MasDepartmentTypeResponse>> getAllDepartmentTypes(int flag);
 }

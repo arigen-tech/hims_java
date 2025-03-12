@@ -11,6 +11,6 @@ public interface MasDistrictService {
     ApiResponse<String> changeDistrictStatus(Long id, String status);
     ApiResponse<MasDistrictResponse> editDistrict(Long id, MasDistrictRequest request);
     ApiResponse<MasDistrictResponse> getDistrictById(Long id);
-    ApiResponse<List<MasDistrictResponse>> getAllDistricts();
+    ApiResponse<List<MasDistrictResponse>> getAllDistricts(int flag);
     ApiResponse<List<MasDistrictResponse>> getDistrictsByStateId(Long stateId);
 }

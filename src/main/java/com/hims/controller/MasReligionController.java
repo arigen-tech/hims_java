@@ -20,10 +20,9 @@ public class MasReligionController {
     @Autowired
     private MasReligionService masReligionService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasReligionResponse>>> getAllReligions() {
-        ApiResponse<List<MasReligionResponse>> response = masReligionService.getAllReligions();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/getAllReligions/{flag}")
+    public ApiResponse<List<MasReligionResponse>> getAllReligions(@PathVariable int flag) {
+        return masReligionService.getAllReligions(flag);
     }
 
     @GetMapping("/{id}")

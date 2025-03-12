@@ -7,4 +7,7 @@ import java.util.List;
 
 public interface MasStateRepository extends JpaRepository<MasState, Long> {
     List<MasState> findByCountryId(Long countryId);
+    List<MasState> findByStatusIgnoreCase(String status);
+    List<MasState> findByStatusInIgnoreCase(List<String> statuses);
+
 }

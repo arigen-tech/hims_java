@@ -81,13 +81,24 @@ public class MasIdentificationTypeServiceImpl implements MasIdentificationTypeSe
     }
 
     @Override
-    public ApiResponse<List<MasIdentificationTypeResponse>> getAllIdentificationTypes() {
-        List<MasIdentificationTypeResponse> types = masIdentificationTypeRepository.findAll().stream()
+    public ApiResponse<List<MasIdentificationTypeResponse>> getAllIdentificationTypes(int flag) {
+        List<MasIdentificationType> types;
+
+        if (flag == 1) {
+            types = masIdentificationTypeRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            types = masIdentificationTypeRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasIdentificationTypeResponse> responses = types.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return ResponseUtils.createSuccessResponse(types, new TypeReference<>() {
-        });
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
 
     private MasIdentificationTypeResponse mapToResponse(MasIdentificationType type) {
         MasIdentificationTypeResponse response = new MasIdentificationTypeResponse();

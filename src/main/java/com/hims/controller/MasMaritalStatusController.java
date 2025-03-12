@@ -40,8 +40,8 @@ public class MasMaritalStatusController {
         return masMaritalStatusService.getMaritalStatusById(id);
     }
 
-    @GetMapping("/all")
-    public ApiResponse<List<MasMaritalStatusResponse>> getAllMaritalStatuses() {
-        return masMaritalStatusService.getAllMaritalStatuses();
+    @GetMapping("/getAllMaritalStatuses/{flag}")
+    public ApiResponse<List<MasMaritalStatusResponse>> getAllMaritalStatuses(@PathVariable int flag) {
+        return masMaritalStatusService.getAllMaritalStatuses(flag);
     }
 }

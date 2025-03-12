@@ -87,11 +87,22 @@ public class MasDistrictServiceImpl implements MasDistrictService {
     }
 
     @Override
-    public ApiResponse<List<MasDistrictResponse>> getAllDistricts() {
-        List<MasDistrictResponse> districts = masDistrictRepository.findAll().stream()
+    public ApiResponse<List<MasDistrictResponse>> getAllDistricts(int flag) {
+        List<MasDistrict> districts;
+
+        if (flag == 1) {
+            districts = masDistrictRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            districts = masDistrictRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasDistrictResponse> responses = districts.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return ResponseUtils.createSuccessResponse(districts, new TypeReference<>() {});
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
     @Override

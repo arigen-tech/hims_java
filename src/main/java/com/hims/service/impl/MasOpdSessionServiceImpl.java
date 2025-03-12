@@ -29,8 +29,16 @@ public class MasOpdSessionServiceImpl implements MasOpdSessionService {
     private MasOpdSessionRepository masOpdSessionRepository;
 
     @Override
-    public ApiResponse<List<MasOpdSessionResponse>> getAllOpdSessions() {
-        List<MasOpdSession> sessions = masOpdSessionRepository.findAll();
+    public ApiResponse<List<MasOpdSessionResponse>> getAllOpdSessions(int flag) {
+        List<MasOpdSession> sessions;
+
+        if (flag == 1) {
+            sessions = masOpdSessionRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            sessions = masOpdSessionRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
 
         List<MasOpdSessionResponse> responses = sessions.stream()
                 .map(this::convertToResponse)
@@ -38,6 +46,7 @@ public class MasOpdSessionServiceImpl implements MasOpdSessionService {
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
 
     private MasOpdSessionResponse convertToResponse(MasOpdSession session) {
         MasOpdSessionResponse response = new MasOpdSessionResponse();

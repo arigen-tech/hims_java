@@ -7,4 +7,7 @@ import java.util.List;
 
 public interface MasDistrictRepository extends JpaRepository<MasDistrict, Long> {
     List<MasDistrict> findByStateId(Long stateId);
+    List<MasDistrict> findByStatusIgnoreCase(String status);
+    List<MasDistrict> findByStatusInIgnoreCase(List<String> statuses);
+
 }
