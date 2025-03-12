@@ -63,10 +63,15 @@ public class MasDistrictServiceImpl implements MasDistrictService {
         Optional<MasDistrict> districtOpt = masDistrictRepository.findById(id);
         if (districtOpt.isPresent()) {
             MasDistrict district = districtOpt.get();
+            MasState newState = masStateRepository.findById(request.getStateId()).orElse(null);
+            if (newState == null) {
+                return ResponseUtils.createNotFoundResponse("State not found", 404);
+            }
             district.setDistrictName(request.getDistrictName());
             district.setStatus(request.getStatus());
             district.setLasChBy(request.getLasChBy());
             district.setLastChgDate(Instant.now());
+            district.setState(newState);
             masDistrictRepository.save(district);
             return ResponseUtils.createSuccessResponse(mapToResponse(district), new TypeReference<>() {});
         } else {

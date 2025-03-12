@@ -77,6 +77,15 @@ public class MasStateServiceImpl implements MasStateService {
             state.setLastChgDate(Instant.now());
             state.setLastChgTime(getCurrentTimeFormatted());
 
+            if (request.getCountryId() != null) {
+                Optional<MasCountry> countryOpt = masCountryRepository.findById(request.getCountryId());
+                if (countryOpt.isPresent()) {
+                    state.setCountry(countryOpt.get());
+                } else {
+                    return ResponseUtils.createNotFoundResponse("Country not found", 404);
+                }
+            }
+
             masStateRepository.save(state);
             return ResponseUtils.createSuccessResponse(mapToResponse(state), new TypeReference<>() {});
         }
