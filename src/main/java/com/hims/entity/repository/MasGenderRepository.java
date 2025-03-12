@@ -12,4 +12,7 @@ public interface MasGenderRepository extends JpaRepository<MasGender, Long> {
 
     List<MasGender> findByStatusOrderByGenderNameAsc(String status);
     Optional<MasGender> findByGenderCode(String genderCode);
+    List<MasGender> findByStatusIgnoreCase(String status);
+    List<MasGender> findByStatusInIgnoreCase(List<String> statuses);
+
 }

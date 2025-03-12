@@ -23,10 +23,9 @@ public class MasGenderController {
     @Autowired
     private MasGenderService masGenderService;
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<MasGenderResponse>>> getAllGenders() {
-        ApiResponse<List<MasGenderResponse>> response = masGenderService.getAllGenders();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/getAll/{flag}")
+    public ApiResponse<List<MasGenderResponse>> getAllGenders(@PathVariable int flag) {
+        return masGenderService.getAllGenders(flag);
     }
 
     @GetMapping("/{id}")

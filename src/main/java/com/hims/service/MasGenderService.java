@@ -8,7 +8,7 @@ import com.hims.response.MasGenderResponse;
 import java.util.List;
 
 public interface MasGenderService {
-    ApiResponse<List<MasGenderResponse>> getAllGenders();
+    ApiResponse<List<MasGenderResponse>> getAllGenders(int flag);
     public ApiResponse<MasGenderResponse> addGender(MasGenderRequest genderRequest);
     public ApiResponse<MasGenderResponse> updateGender(Long id, MasGenderResponse genderDetails);
     public ApiResponse<MasGenderResponse> changeStatus(Long id, String status);

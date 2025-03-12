@@ -26,8 +26,16 @@ public class MasGenderServiceImpl implements MasGenderService {
     @Autowired
     private MasGenderRepository masGenderRepository;
 
-    public ApiResponse<List<MasGenderResponse>> getAllGenders() {
-        List<MasGender> genders = masGenderRepository.findAll();
+    public ApiResponse<List<MasGenderResponse>> getAllGenders(int flag) {
+        List<MasGender> genders;
+
+        if (flag == 1) {
+            genders = masGenderRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            genders = masGenderRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
 
         List<MasGenderResponse> responses = genders.stream()
                 .map(this::convertToResponse)
@@ -35,6 +43,7 @@ public class MasGenderServiceImpl implements MasGenderService {
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
 
     private MasGenderResponse convertToResponse(MasGender gender) {
         MasGenderResponse response = new MasGenderResponse();
