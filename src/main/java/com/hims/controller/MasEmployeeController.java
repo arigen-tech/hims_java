@@ -17,14 +17,14 @@ import java.util.List;
 
 @RestController
 @Tag(name = "EmployeeRegistrationController", description = "Controller for Employee Registration Page")
-@RequestMapping("/employees")
+@RequestMapping("/api/employee")
 @RequiredArgsConstructor
 public class MasEmployeeController {
     private static final Logger logger = LoggerFactory.getLogger(MasEmployeeController.class);
 
     private final MasEmployeeService masEmployeeService;
 
-    @PostMapping(value = "/employee", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<MasEmployee>> createEmployee(@ModelAttribute MasEmployeeRequest masEmployeeRequest) {
         logger.info("Received request to create a new Employee: {}", masEmployeeRequest);
         return ResponseEntity.ok(masEmployeeService.createEmployee(masEmployeeRequest));

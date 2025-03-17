@@ -58,16 +58,16 @@ public class AppSetupServicesImpl implements AppSetupServices {
                     entry = appSetupRepository.findById(key.getId())
                             .orElseThrow(() -> new SDDException("id", 404, "Appointment setup not found"));
                 } else {
-                    // Check if an entry with the same departmentId, doctorId, and sessionId already exists
-                    Optional<AppSetup> existingEntry = appSetupRepository.findByDeptAndDoctorIdAndSession(
-                            department, doctor, session);
+                    // Count the number of existing entries with the same departmentId, doctorId, and sessionId
+                    long existingCount = appSetupRepository.countByDeptAndDoctorIdAndSession(department, doctor, session);
 
-                    if (existingEntry.isPresent()) {
-                        throw new SDDException("duplicate_entry", 409, "An appointment setup with these details already exists");
+                    if (existingCount >= 7) {
+                        throw new SDDException("duplicate_entry", 409, "An appointment setup with these details already exists 7 times");
                     }
 
                     entry = new AppSetup();
                 }
+
 
                 entry.setDept(department);
                 entry.setDoctorId(doctor);

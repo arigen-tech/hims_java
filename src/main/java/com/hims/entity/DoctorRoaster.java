@@ -22,8 +22,9 @@ public class DoctorRoaster {
     @JoinColumn(name = "department_id")
     private MasDepartment department;
 
-    @Column(name = "doctor_id")
-    private Long doctorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "doctor_id")
+    private User doctorId;
 
     @Column(name = "roaster_date")
     private Date roasterDate;
