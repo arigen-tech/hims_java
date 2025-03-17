@@ -78,4 +78,20 @@ public class MasHospital {
     @Column(name = "pre_consultation_available", length = 1)
     private String preConsultationAvailable;
 
+    @Size(max = 20)
+    @Column(name = "gstn_no", length = 20)
+    private String gstnNo;
+
+    @Size(max = 20)
+    @Column(name = "contact_number2", length = 20)
+    private String contactNumber2;
+
+    @Size(max = 30)
+    @Column(name = "city", length = 30)
+    private String city;
+
+    @Size(max = 255)
+    @Column(name = "email", length = 255)
+    private String email;
+
 }
