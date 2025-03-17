@@ -6,6 +6,7 @@ import com.hims.request.DoctorRosterRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.AppSetupDTO;
 import com.hims.response.AppsetupResponse;
+import com.hims.response.DoctorRosterDTO;
 import com.hims.service.AppSetupServices;
 import com.hims.service.DoctorRosterServices;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @RestController
@@ -32,18 +34,22 @@ public class DoctorRosterController {
     }
 
 
+
+
 //    @GetMapping("/getdoctorroster/{departmentId}/{doctorId}/{sessionId}/")
 //    public ResponseEntity<ApiResponse<AppsetupResponse>> getappsetupData(@PathVariable("departmentId") Long departmentId,@PathVariable(value = "doctorId") Long doctorId
 //            ,@PathVariable(value = "sessionId") Long sessionId) {
 //        return new ResponseEntity<>(doctorRosterServices.getappsetupData(departmentId,doctorId,sessionId), HttpStatus.OK);
 
 
-//@GetMapping("/rosterfind")
-//public ResponseEntity<ApiResponse<DoctorRoaster>> findDoctorRoster(
-//        @RequestParam Long deptId,
-//        @RequestParam Long doctorId,
-//        @RequestParam Date rosterDate) {
-//
-//    return ResponseEntity.ok(doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate));
-//}
+    @GetMapping("/rosterfind")
+    public ResponseEntity<DoctorRosterDTO> findDoctorRoster(
+            @RequestParam Long deptId,
+            @RequestParam Long doctorId,
+            @RequestParam LocalDate rosterDate) {
+
+        DoctorRosterDTO doctorRoster = doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate);
+
+        return ResponseEntity.ok(doctorRoster);
+    }
 }

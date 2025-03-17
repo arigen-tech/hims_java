@@ -22,4 +22,11 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
     Optional<AppSetup> findByDeptAndDoctorIdAndSession(MasDepartment dept, User doctorId, MasOpdSession session);
 
 
+    @Query("SELECT COUNT(a) FROM AppSetup a WHERE a.dept = :department AND a.doctorId = :doctor AND a.session = :session")
+    long countByDeptAndDoctorIdAndSession(@Param("department") MasDepartment department,
+                                          @Param("doctor") User doctor,
+                                          @Param("session") MasOpdSession session);
+
+
+
 }
