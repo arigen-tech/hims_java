@@ -5,6 +5,8 @@ import com.hims.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface UserRepo extends JpaRepository<User, Long> {
 
@@ -18,4 +20,8 @@ public interface UserRepo extends JpaRepository<User, Long> {
 
 
     User findByPhoneNumberAndStatus(String userName , String isActive);
+
+    List<User> findByStatusIgnoreCase(String y);
+
+    List<User> findByStatusInIgnoreCase(List<String> y);
 }

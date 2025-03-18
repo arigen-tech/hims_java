@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface UserService {
     ApiResponse<List<UserResponse>> getAllDoctorsBySpeciality(Long speciality);
+
+    ApiResponse<List<UserResponse>> getAllUsers(int flag);
 }

@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasRole;
+import com.hims.entity.User;
 import com.hims.entity.UserDepartment;
 import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasRoleRepository;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -52,4 +54,43 @@ public class UserServiceImpl implements UserService {
         }
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
     }
+
+    @Override
+    public ApiResponse<List<UserResponse>> getAllUsers(int flag) {
+        List<User> users;
+
+        if (flag == 1) {
+            // Active users only (status = 'Y')
+            users = userRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            // All users (active and inactive)
+            users = userRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<UserResponse> responses = users.stream()
+                .map(this::convertToUserResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+    }
+
+    private UserResponse convertToUserResponse(User user) {
+        UserResponse response = new UserResponse();
+        response.setUserId(user.getUserId());
+        response.setFirstName(user.getFirstName());
+        response.setMiddleName(user.getMiddleName());
+        response.setLastName(user.getLastName());
+        response.setEmail(user.getEmail());
+        response.setUserName(user.getUsername());
+        response.setStatus(user.getStatus());
+        response.setMobileNo(user.getMobileNo());
+        response.setRoleId(user.getRoleId());
+       response.setUserType(user.getUserType() != null ? user.getUserType() : null);
+//        response.setVerified(user.getIsVerified());
+        return response;
+    }
+
 }
