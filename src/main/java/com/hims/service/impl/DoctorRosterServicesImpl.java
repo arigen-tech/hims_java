@@ -82,6 +82,7 @@ DoctorRoasterRepository doctorRoasterRepository;
     private DoctorRosterDTO convertToDTO(DoctorRoaster roster) {
         DoctorRosterDTO dto = new DoctorRosterDTO();
         dto.setFromTime(roster.getChgTime());
+        dto.setRosterVal(roster.getRoasterValue());
         dto.setToTime(roster.getChgTime());
         dto.setHospitalId(roster.getHospital() != null ? roster.getHospital().getId() : null);
         dto.setDeptId(roster.getDepartment() != null ? roster.getDepartment().getId() : null);

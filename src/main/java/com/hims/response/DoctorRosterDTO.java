@@ -12,4 +12,5 @@ public class DoctorRosterDTO {
     private Instant validFrom;
     private Instant validTo;
     private Long doctorId;
+    private String rosterVal;
 }
