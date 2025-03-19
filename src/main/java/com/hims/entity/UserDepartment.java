@@ -10,6 +10,7 @@ import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 
 @Getter
@@ -19,6 +20,7 @@ import java.time.OffsetDateTime;
 public class UserDepartment {
     @Id
     @Column(name = "user_department_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
