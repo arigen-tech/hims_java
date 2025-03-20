@@ -30,7 +30,7 @@ public class MasEmployeeController {
         return ResponseEntity.ok(masEmployeeService.createEmployee(masEmployeeRequest));
     }
     @GetMapping("/employee")
-    public ResponseEntity<ApiResponse<List<MasEmployeeDTO>>> getAllHotels() {
+    public ResponseEntity<ApiResponse<List<MasEmployeeDTO>>> getAllEmployees() {
         logger.info("Received request to fetch all Employees.");
         return ResponseEntity.ok(masEmployeeService.getAllEmployees());
     }
