@@ -8,5 +8,5 @@ import lombok.Setter;
 public class MasRoleRequest {
     private String roleCode;
     private String roleDesc;
-    private Boolean isActive;
+    private String status;
 }

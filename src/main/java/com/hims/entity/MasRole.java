@@ -22,8 +22,9 @@ public class MasRole {
     @Column(name = "created_on")
     private Instant createdOn;
 
-    @Column(name = "isactive")
-    private Boolean isactive;
+    @Size(max = 1)
+    @Column(name = "status", length = 1)
+    private String status;
 
     @Size(max = 255)
     @Column(name = "role_code")

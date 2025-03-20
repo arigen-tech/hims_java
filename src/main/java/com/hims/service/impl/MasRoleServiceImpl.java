@@ -22,13 +22,21 @@ public class MasRoleServiceImpl implements MasRoleService {
     @Autowired
     private MasRoleRepository masRoleRepository;
 
+    private boolean isValidStatus(String status) {
+        return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
+    }
+
     @Override
     public ApiResponse<MasRoleResponse> addRole(MasRoleRequest request) {
+        if (!isValidStatus(request.getStatus())) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status. Use 'Y' or 'N'.", 400);
+        }
+
         MasRole role = new MasRole();
         role.setId(java.util.UUID.randomUUID().toString());
         role.setRoleCode(request.getRoleCode());
         role.setRoleDesc(request.getRoleDesc());
-        role.setIsactive(request.getIsActive());
+        role.setStatus(request.getStatus().toUpperCase());
         role.setCreatedOn(Instant.now());
         role.setUpdatedOn(Instant.now());
 
@@ -37,11 +45,15 @@ public class MasRoleServiceImpl implements MasRoleService {
     }
 
     @Override
-    public ApiResponse<String> changeRoleStatus(String id, Boolean isActive) {
+    public ApiResponse<String> changeRoleStatus(String id, String status) {
+        if (!isValidStatus(status)) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status. Use 'Y' or 'N'.", 400);
+        }
+
         Optional<MasRole> roleOpt = masRoleRepository.findById(id);
         if (roleOpt.isPresent()) {
             MasRole role = roleOpt.get();
-            role.setIsactive(isActive);
+            role.setStatus(status.toUpperCase());
             role.setUpdatedOn(Instant.now());
             masRoleRepository.save(role);
             return ResponseUtils.createSuccessResponse("Role status updated", new TypeReference<>() {});
@@ -52,12 +64,16 @@ public class MasRoleServiceImpl implements MasRoleService {
 
     @Override
     public ApiResponse<MasRoleResponse> editRole(String id, MasRoleRequest request) {
+        if (!isValidStatus(request.getStatus())) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status. Use 'Y' or 'N'.", 400);
+        }
+
         Optional<MasRole> roleOpt = masRoleRepository.findById(id);
         if (roleOpt.isPresent()) {
             MasRole role = roleOpt.get();
             role.setRoleCode(request.getRoleCode());
             role.setRoleDesc(request.getRoleDesc());
-            role.setIsactive(request.getIsActive());
+            role.setStatus(request.getStatus().toUpperCase());
             role.setUpdatedOn(Instant.now());
 
             masRoleRepository.save(role);
@@ -75,11 +91,22 @@ public class MasRoleServiceImpl implements MasRoleService {
     }
 
     @Override
-    public ApiResponse<List<MasRoleResponse>> getAllRoles() {
-        List<MasRoleResponse> roles = masRoleRepository.findAll().stream()
+    public ApiResponse<List<MasRoleResponse>> getAllRoles(int flag) {
+        List<MasRole> roles;
+
+        if (flag == 1) {
+            roles = masRoleRepository.findByStatusIgnoreCase("Y");
+        } else if (flag == 0) {
+            roles = masRoleRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasRoleResponse> responses = roles.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return ResponseUtils.createSuccessResponse(roles, new TypeReference<>() {});
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
     private MasRoleResponse mapToResponse(MasRole role) {
@@ -87,7 +114,7 @@ public class MasRoleServiceImpl implements MasRoleService {
         response.setId(role.getId());
         response.setRoleCode(role.getRoleCode());
         response.setRoleDesc(role.getRoleDesc());
-        response.setIsActive(role.getIsactive());
+        response.setStatus(role.getStatus());
         response.setCreatedOn(role.getCreatedOn());
         response.setUpdatedOn(role.getUpdatedOn());
         return response;

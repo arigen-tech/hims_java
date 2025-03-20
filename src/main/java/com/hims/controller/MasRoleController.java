@@ -24,8 +24,8 @@ public class MasRoleController {
     }
 
     @PutMapping("/status/{id}")
-    public ApiResponse<String> changeRoleStatus(@PathVariable String id, @RequestParam Boolean isActive) {
-        return masRoleService.changeRoleStatus(id, isActive);
+    public ApiResponse<String> changeRoleStatus(@PathVariable String id, @RequestParam String status) {
+        return masRoleService.changeRoleStatus(id, status);
     }
 
     @PutMapping("/update/{id}")
@@ -38,8 +38,8 @@ public class MasRoleController {
         return masRoleService.getRoleById(id);
     }
 
-    @GetMapping("/all")
-    public ApiResponse<List<MasRoleResponse>> getAllRoles() {
-        return masRoleService.getAllRoles();
+    @GetMapping("/getAllRoles/{flag}")
+    public ApiResponse<List<MasRoleResponse>> getAllRoles(@PathVariable int flag) {
+        return masRoleService.getAllRoles(flag);
     }
 }

@@ -10,7 +10,7 @@ public class MasRoleResponse {
     private String id;
     private String roleCode;
     private String roleDesc;
-    private Boolean isActive;
+    private String status;
     private Instant createdOn;
     private Instant updatedOn;
 }
