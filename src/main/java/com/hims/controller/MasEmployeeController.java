@@ -50,4 +50,11 @@ public class MasEmployeeController {
         return ResponseEntity.ok(masEmployeeService.updateEmployeeStatus(id,status));
     }
 
+    @PutMapping("/employee/approve/{id}")
+    public ResponseEntity<ApiResponse<MasEmployee>> updateEmployeeApprovalStatus(@PathVariable Long id) {
+        logger.info("Received request to update Employee status with ID: {}", id);
+        return ResponseEntity.ok(masEmployeeService.updateEmployeeApprovalStatus(id));
+    }
+
+
 }

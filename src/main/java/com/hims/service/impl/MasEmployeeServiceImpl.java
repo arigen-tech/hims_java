@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -342,7 +343,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             employee.setIdDocumentName(documentPath);
             employee.setLastChangedDate(OffsetDateTime.now().toInstant());
             employee.setLastChangedBy(currentUser.getUserId().toString());
-            employee.setStatus("y");
+            employee.setStatus("S");
 
             MasEmployee savedEmployee = masEmployeeRepository.save(employee);
 
@@ -787,6 +788,47 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         MasEmployee updatedHotel= masEmployeeRepository.save(employeeObj);
         return ResponseUtils.createSuccessResponse(updatedHotel, new TypeReference<MasEmployee>() {});
     }
+
+    @Transactional(rollbackFor = {Exception.class})
+    @Override
+    public ApiResponse<MasEmployee> updateEmployeeApprovalStatus(Long empId) {
+        if (empId == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Employee ID CAN NOT BE BLANK", 400);
+        }
+        User currentUser = userRepo.findByUserName(SecurityContextHolder.getContext().getAuthentication().getName());
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "CURRENT USER NOT FOUND", 400);
+        }
+        MasEmployee employeeObj = masEmployeeRepository.findById(empId)
+                .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + empId));
+
+        employeeObj.setStatus("A");
+        employeeObj.setLastChangedDate(Instant.now());
+        employeeObj.setLastChangedBy(currentUser.getUserId().toString());
+
+        masEmployeeRepository.save(employeeObj);
+
+        Optional<User> existingUser = userRepo.findByEmployee(employeeObj);
+        if (existingUser.isEmpty()) {
+            User newUser = User.builder()
+                    .status("A")
+                    .userName(employeeObj.getEmail())
+                    .mobileNo(employeeObj.getMobileNo())
+                    .firstName(employeeObj.getFirstName())
+                    .lastName(employeeObj.getLastName())
+                    .middleName(employeeObj.getMiddleName())
+                    .email(employeeObj.getEmail())
+                    .createdAt(Instant.now())
+                    .createdBy(currentUser.getUserId().toString())
+                    .employee(employeeObj)
+                    .build();
+
+            userRepo.save(newUser);
+        }
+
+        return ResponseUtils.createSuccessResponse(employeeObj, new TypeReference<MasEmployee>() {});
+    }
+
 
 
     private String getFileExtension(String fileName) {
