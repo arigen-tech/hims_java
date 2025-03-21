@@ -11,7 +11,6 @@ import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
 import com.hims.response.DoctorRosterDTO;
 import com.hims.service.DoctorRosterServices;
-import com.hims.utils.Calender;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -100,7 +99,6 @@ DoctorRoasterRepository doctorRoasterRepository;
         dto.setDeptId(roster.getDepartment() != null ? roster.getDepartment().getId() : null);
         dto.setDoctorId(roster.getDoctorId() != null ? roster.getDoctorId().getUserId() : null);
 
-        // Fix: Convert LocalDate to Instant using Zone
         if (roster.getChgDate() != null) {
             dto.setValidFrom(roster.getChgDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
             dto.setValidTo(roster.getChgDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -109,5 +107,46 @@ DoctorRoasterRepository doctorRoasterRepository;
         return dto;
     }
 
+    @Override
+    public List<DoctorRosterDTO> getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate) {
+        Date startDate = convertToDate(rosterDate);
+        Date endDate = convertToDate(rosterDate.plusDays(6));
+
+        List<DoctorRoaster> docRoster;
+
+        if (doctorId != null) {
+            docRoster = doctorRoasterRepository.findDoctorRostersByDeptAndDoctor(deptId, doctorId, startDate, endDate);
+        } else {
+            docRoster = doctorRoasterRepository.findDoctorRostersByDept(deptId, startDate, endDate);
+        }
+
+        return docRoster.stream()
+                .map(this::convertToDTOs)
+                .collect(Collectors.toList());
+    }
+
+    private Date convertToDate(LocalDate localDate) {
+        return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    private DoctorRosterDTO convertToDTOs(DoctorRoaster roster) {
+        DoctorRosterDTO dto = new DoctorRosterDTO();
+
+        dto.setFromTime(roster.getChgTime());
+        dto.setToTime(roster.getChgTime());
+        dto.setRosterVal(roster.getRoasterValue());
+        dto.setRoasterDate(roster.getRoasterDate());
+
+        dto.setHospitalId(roster.getHospital() != null ? roster.getHospital().getId() : null);
+        dto.setDeptId(roster.getDepartment() != null ? roster.getDepartment().getId() : null);
+        dto.setDoctorId(roster.getDoctorId() != null ? roster.getDoctorId().getUserId() : null);
+
+        if (roster.getChgDate() != null) {
+            dto.setValidFrom(roster.getChgDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
+            dto.setValidTo(roster.getChgDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+
+        return dto;
+    }
 
 }

@@ -16,4 +16,6 @@ public interface DoctorRosterServices {
 
 
     List<DoctorRosterDTO> getDoctorRoster(Long deptId, Long doctorId, LocalDate rosterDate);
+
+    List<DoctorRosterDTO> getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate);
 }

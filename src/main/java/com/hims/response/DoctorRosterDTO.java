@@ -2,6 +2,7 @@ package com.hims.response;
 
 import lombok.Data;
 import java.time.Instant;
+import java.util.Date;
 
 @Data
 public class DoctorRosterDTO {
@@ -13,4 +14,6 @@ public class DoctorRosterDTO {
     private Instant validTo;
     private Long doctorId;
     private String rosterVal;
+    private Date roasterDate;
+
 }

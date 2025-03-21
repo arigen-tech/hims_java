@@ -20,4 +20,21 @@ public interface DoctorRoasterRepository extends JpaRepository<DoctorRoaster, In
     List<DoctorRoaster> findDoctorRosterByDeptAndDoctor(@Param("deptId") Long deptId,
                                                         @Param("doctorId") Long doctorId,
                                                         @Param("rosterDate") Date rosterDate);
+
+
+    @Query("SELECT dr FROM DoctorRoaster dr WHERE dr.department.id = :deptId AND dr.roasterDate BETWEEN :rosterDate AND :endDate")
+    List<DoctorRoaster> findDoctorRostersByDept(
+            @Param("deptId") Long deptId,
+            @Param("rosterDate") Date rosterDate,
+            @Param("endDate") Date endDate
+    );
+
+    @Query("SELECT dr FROM DoctorRoaster dr WHERE dr.department.id = :deptId AND dr.doctorId.userId = :doctorId AND dr.roasterDate BETWEEN :rosterDate AND :endDate")
+    List<DoctorRoaster> findDoctorRostersByDeptAndDoctor(
+            @Param("deptId") Long deptId,
+            @Param("doctorId") Long doctorId,
+            @Param("rosterDate") Date rosterDate,
+            @Param("endDate") Date endDate
+    );
+
 }

@@ -46,4 +46,16 @@ public class DoctorRosterController {
 
         return ResponseEntity.ok(doctorRosterList);
     }
+
+    @GetMapping("/rosterfindWithDays")
+    public ResponseEntity<List<DoctorRosterDTO>> findDoctorRostersWithDays(
+            @RequestParam Long deptId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam LocalDate rosterDate) {
+
+        List<DoctorRosterDTO> doctorRosterList = doctorRosterServices.getDoctorRostersWithDays(deptId, doctorId, rosterDate);
+
+        return ResponseEntity.ok(doctorRosterList);
+    }
+
 }
