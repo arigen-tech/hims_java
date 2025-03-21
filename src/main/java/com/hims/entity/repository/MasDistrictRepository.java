@@ -6,8 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface MasDistrictRepository extends JpaRepository<MasDistrict, Long> {
-    List<MasDistrict> findByStateId(Long stateId);
+    List<MasDistrict> findByStateIdAndStatusIgnoreCase(Long stateId, String status);
     List<MasDistrict> findByStatusIgnoreCase(String status);
     List<MasDistrict> findByStatusInIgnoreCase(List<String> statuses);
-
 }

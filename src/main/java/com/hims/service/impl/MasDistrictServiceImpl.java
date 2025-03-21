@@ -107,7 +107,7 @@ public class MasDistrictServiceImpl implements MasDistrictService {
 
     @Override
     public ApiResponse<List<MasDistrictResponse>> getDistrictsByStateId(Long stateId) {
-        List<MasDistrictResponse> districts = masDistrictRepository.findByStateId(stateId).stream()
+        List<MasDistrictResponse> districts = masDistrictRepository.findByStateIdAndStatusIgnoreCase(stateId, "y").stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
         return ResponseUtils.createSuccessResponse(districts, new TypeReference<>() {});
