@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -82,6 +83,9 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     @Autowired
     private EmployeeDocumentRepository employeeDocumentRepository;
 
+    @Autowired
+    private MasUserTypeRepository masUserTypeRepository;
+
 
     @Override
     public ApiResponse<List<MasEmployeeDTO>> getAllEmployees() {
@@ -130,320 +134,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Employee not found", 404);
         }
     }
-
-
-
-
-    @Transactional(rollbackFor = {Exception.class})
-    @Override
-    public ApiResponse<MasEmployee> createEmployee(MasEmployeeRequest masEmployeeRequest) {
-        log.debug("Creating new Employee: {}", masEmployeeRequest);
-        try {
-            // Validate required fields
-            if (masEmployeeRequest == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Employee object cannot be null", 400);
-            }
-
-            // First name validation
-            if (masEmployeeRequest.getFirstName() == null || masEmployeeRequest.getFirstName().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Employee NAME CAN NOT BE BLANK", 400);
-            }
-
-            // Gender validation
-            if (masEmployeeRequest.getGenderId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Employee GENDER ID CAN NOT BE BLANK", 400);
-            }
-
-            // Address validation
-            if (masEmployeeRequest.getAddress1() == null || masEmployeeRequest.getAddress1().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "ADDRESS1 CAN NOT BE BLANK", 400);
-            }
-
-            // Country validation
-            if (masEmployeeRequest.getCountryId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "COUNTRY ID CAN NOT BE BLANK", 400);
-            }
-
-            // State validation
-            if (masEmployeeRequest.getStateId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "STATE ID CAN NOT BE BLANK", 400);
-            }
-
-            // City validation
-            if (masEmployeeRequest.getCity() == null || masEmployeeRequest.getCity().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "CITY CAN NOT BE BLANK", 400);
-            }
-
-            // Pincode validation
-            if (masEmployeeRequest.getPincode() == null || masEmployeeRequest.getPincode().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "POSTAL CODE CAN NOT BE BLANK", 400);
-            }
-
-            // Mobile number validation
-            if (masEmployeeRequest.getMobileNo() == null || masEmployeeRequest.getMobileNo().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "PHONE NO CAN NOT BE BLANK", 400);
-            }
-
-            // Registration number validation
-            if (masEmployeeRequest.getRegistrationNo() == null || masEmployeeRequest.getRegistrationNo().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "ID NUMBER CAN NOT BE BLANK", 400);
-            }
-
-            // Date of birth validation
-            if (masEmployeeRequest.getDob() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "DATE OF BIRTH CAN NOT BE BLANK", 400);
-            }
-
-            // District validation
-            if (masEmployeeRequest.getDistrictId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "DISTRICT ID CAN NOT BE BLANK", 400);
-            }
-
-            // ID document validation
-            if (masEmployeeRequest.getIdDocumentName() == null || masEmployeeRequest.getIdDocumentName().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "ID DOCUMENT CAN NOT BE BLANK", 400);
-            }
-
-            // Profile picture validation
-            if (masEmployeeRequest.getProfilePicName() == null || masEmployeeRequest.getProfilePicName().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "PROFILE IMAGE CAN NOT BE BLANK", 400);
-            }
-
-            // From date validation
-            if (masEmployeeRequest.getFromDate() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "FROM DATE CAN NOT BE BLANK", 400);
-            }
-
-            // Qualification validation
-            if (masEmployeeRequest.getQualification() == null || masEmployeeRequest.getQualification().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "QUALIFICATION CAN NOT BE BLANK", 400);
-            }
-
-            // Document validation
-            if (masEmployeeRequest.getDocument() == null || masEmployeeRequest.getDocument().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "DOCUMENT CAN NOT BE BLANK", 400);
-            }
-
-            // Get current user
-            User currentUser = userRepo.findByUserName(SecurityContextHolder.getContext().getAuthentication().getName());
-            if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "CURRENT USER NOT FOUND", 400);
-            }
-
-            // Fetch required entities
-            MasCountry countryObj = masCountryRepository.findById(masEmployeeRequest.getCountryId())
-                    .orElseThrow(() -> new IllegalArgumentException("Country not found with ID: " + masEmployeeRequest.getCountryId()));
-
-            MasState stateObj = masStateRepository.findById(masEmployeeRequest.getStateId())
-                    .orElseThrow(() -> new IllegalArgumentException("State not found with ID: " + masEmployeeRequest.getStateId()));
-
-            MasDistrict districtObj = masDistrictRepository.findById(masEmployeeRequest.getDistrictId())
-                    .orElseThrow(() -> new IllegalArgumentException("District not found with ID: " + masEmployeeRequest.getDistrictId()));
-
-            MasGender genderObj = masGenderRepository.findById(masEmployeeRequest.getGenderId())
-                    .orElseThrow(() -> new IllegalArgumentException("Gender not found with ID: " + masEmployeeRequest.getGenderId()));
-
-            MasIdentificationType idTypeObj = masIdentificationTypeRepository.findById(masEmployeeRequest.getIdentificationType())
-                    .orElseThrow(() -> new IllegalArgumentException("ID Type not found with ID: " + masEmployeeRequest.getIdentificationType()));
-
-            // Create directory for file uploads if it doesn't exist
-            String fileUploadDir = this.uploadDir + "MAS_EMPLOYEE/";
-            File directory = new File(fileUploadDir);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-
-            String profileImagePath = "";
-            String documentPath = "";
-
-            // Process and save ID document
-            if (masEmployeeRequest.getIdDocumentName() != null && !masEmployeeRequest.getIdDocumentName().isEmpty()) {
-                String documentExtension = getFileExtension(masEmployeeRequest.getIdDocumentName().getOriginalFilename());
-                if (!isValidDocExtension(documentExtension)) {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                            "Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
-                }
-
-                String timestamp = String.valueOf(System.currentTimeMillis());
-                String newFilename = timestamp + "_" + masEmployeeRequest.getIdDocumentName().getOriginalFilename();
-
-                documentPath = Paths.get(fileUploadDir, newFilename)
-                        .toString()
-                        .replace("\\", "/");
-
-                try {
-                    Files.write(Paths.get(documentPath), masEmployeeRequest.getIdDocumentName().getBytes());
-                } catch (IOException e) {
-                    log.error("Failed to save ID document: {}", e.getMessage());
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                            "Failed to upload ID document: " + e.getMessage(), 400);
-                }
-            }
-
-            // Process and save profile picture
-            if (masEmployeeRequest.getProfilePicName() != null && !masEmployeeRequest.getProfilePicName().isEmpty()) {
-                String profileImageExtension = getFileExtension(masEmployeeRequest.getProfilePicName().getOriginalFilename());
-                if (!isValidPicExtension(profileImageExtension)) {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                            "Profile Image Invalid file type. Only JPG, JPEG and PNG are allowed.", 400);
-                }
-
-                String timestamp = String.valueOf(System.currentTimeMillis());
-                String newFilename = timestamp + "_" + masEmployeeRequest.getProfilePicName().getOriginalFilename();
-
-                profileImagePath = Paths.get(fileUploadDir, newFilename)
-                        .toString()
-                        .replace("\\", "/");
-
-                try {
-                    Files.write(Paths.get(profileImagePath), masEmployeeRequest.getProfilePicName().getBytes());
-                } catch (IOException e) {
-                    log.error("Failed to save profile picture: {}", e.getMessage());
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                            "Failed to upload profile picture: " + e.getMessage(), 400);
-                }
-            }
-
-            // Create and save employee
-            MasEmployee employee = new MasEmployee();
-            employee.setFirstName(masEmployeeRequest.getFirstName());
-            employee.setMiddleName(masEmployeeRequest.getMiddleName());
-            employee.setLastName(masEmployeeRequest.getLastName());
-            employee.setGenderId(genderObj);
-            employee.setDob(masEmployeeRequest.getDob());
-            employee.setAddress1(masEmployeeRequest.getAddress1());
-            employee.setCity(masEmployeeRequest.getCity());
-            employee.setMobileNo(masEmployeeRequest.getMobileNo());
-            employee.setRegistrationNo(masEmployeeRequest.getRegistrationNo());
-            employee.setFromDate(masEmployeeRequest.getFromDate());
-            employee.setCountryId(countryObj);
-            employee.setStateId(stateObj);
-            employee.setDistrictId(districtObj);
-            employee.setPincode(masEmployeeRequest.getPincode());
-            employee.setIdentificationType(idTypeObj);
-            employee.setProfilePicName(profileImagePath);
-            employee.setIdDocumentName(documentPath);
-            employee.setLastChangedDate(OffsetDateTime.now().toInstant());
-            employee.setLastChangedBy(currentUser.getUserId().toString());
-            employee.setStatus("S");
-
-            MasEmployee savedEmployee = masEmployeeRepository.save(employee);
-
-
-            // Process and save qualifications
-            for (EmployeeQualificationReq qualificationReq : masEmployeeRequest.getQualification()) {
-                String qualificationFilePath = "";
-                try {
-                    log.info("Processing qualification document...");
-
-                    if (qualificationReq.getFilePath() != null && !qualificationReq.getFilePath().isEmpty()) {
-                        String originalFilename = qualificationReq.getFilePath().getOriginalFilename();
-                        if (originalFilename == null || originalFilename.isBlank()) {
-                            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid qualification file name.", 400);
-                        }
-
-                        String fileExtension = getFileExtension(originalFilename);
-                        if (!isValidDocExtension(fileExtension)) {
-                            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                                    "Invalid qualification file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
-                        }
-
-                        Path uploadPath = Paths.get(fileUploadDir);
-                        if (!Files.exists(uploadPath)) {
-                            Files.createDirectories(uploadPath);
-                        }
-
-                        String timestamp = String.valueOf(System.currentTimeMillis());
-                        String newFilename = timestamp + "_" + originalFilename;
-
-                        qualificationFilePath = Paths.get(fileUploadDir, newFilename)
-                                .toString()
-                                .replace("\\", "/");
-
-                        Files.write(Paths.get(qualificationFilePath), qualificationReq.getFilePath().getBytes());
-                        log.info("Qualification file uploaded successfully to: {}", qualificationFilePath);
-                    } else {
-                        log.warn("Qualification file is missing or empty.");
-                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Qualification cannot be empty.", 400);
-                    }
-                } catch (IOException e) {
-                    log.error("Error while uploading image: {}", e.getMessage());
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload image.", 400);
-                }
-
-                EmployeeQualification imageObj = new EmployeeQualification();
-                imageObj.setEmployee(savedEmployee);
-                imageObj.setCompletionYear(qualificationReq.getCompletionYear());
-                imageObj.setQualificationName(qualificationReq.getQualificationName());
-                imageObj.setFilePath(qualificationFilePath);
-                imageObj.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
-                imageObj.setLastChangedBy(currentUser.getUserId().toString());
-                imageObj.setInstitutionName(qualificationReq.getInstitutionName());
-
-                employeeQualificationRepository.save(imageObj);
-            }
-
-
-
-            for (EmployeeDocumentReq objContent : masEmployeeRequest.getDocument()) {
-                String imagePaths = "";
-                try {
-                    log.debug("Received request to upload image in png or jpg....");
-
-                    if (objContent.getFilePath() != null && !objContent.getFilePath().isEmpty()) {
-                        String imageExtension = getFileExtension(objContent.getFilePath().getOriginalFilename());
-                        if (!isValidDocExtension(imageExtension)) {
-                            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                                    "Hotel Content Image Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
-                        }
-
-                        String timestamp = String.valueOf(System.currentTimeMillis());
-                        String newFilename = timestamp + "_" + objContent.getFilePath().getOriginalFilename();
-
-                        imagePaths = Paths.get(fileUploadDir, newFilename)
-                                .toString()
-                                .replace("\\", "/");
-                        Files.write(Paths.get(imagePaths), objContent.getFilePath().getBytes());
-                    }
-                } catch (IOException e) {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload image.", 400);
-                }
-
-                EmployeeDocument contentObj =new EmployeeDocument();
-                contentObj.setEmployee(savedEmployee);
-                contentObj.setDocumentName(objContent.getDocumentName());
-                contentObj.setFilePath(imagePaths);
-                contentObj.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
-                contentObj.setLastChangedBy(currentUser.getUserId().toString());
-                 employeeDocumentRepository.save(contentObj);
-            }
-            return ResponseUtils.createSuccessResponse(savedEmployee, new TypeReference<>() {});
-
-        } catch (ConstraintViolationException e) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<MasEmployee>() {}, "Validation failed for required fields: " + e.getMessage(), HttpStatus.BAD_REQUEST.value());
-        }
-
-    }
-
-
 
     @Transactional(rollbackFor = {Exception.class})
     @Override
@@ -785,8 +475,290 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         employeeObj.setStatus(status);
         employeeObj.setLastChangedDate(OffsetDateTime.now().toInstant());
         employeeObj.setLastChangedBy(obj.getUserId().toString());
-        MasEmployee updatedHotel= masEmployeeRepository.save(employeeObj);
-        return ResponseUtils.createSuccessResponse(updatedHotel, new TypeReference<MasEmployee>() {});
+        MasEmployee updatedEmp= masEmployeeRepository.save(employeeObj);
+        return ResponseUtils.createSuccessResponse(updatedEmp, new TypeReference<MasEmployee>() {});
+    }
+
+    @Transactional(rollbackFor = {Exception.class})
+    @Override
+    public ApiResponse<MasEmployee> createEmployee(MasEmployeeRequest masEmployeeRequest) {
+        log.debug("Creating new Employee: {}", masEmployeeRequest);
+        try {
+            if (masEmployeeRequest == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Employee object cannot be null", 400);
+            }
+
+            if (masEmployeeRequest.getFirstName() == null || masEmployeeRequest.getFirstName().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Employee NAME CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getGenderId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Employee GENDER ID CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getAddress1() == null || masEmployeeRequest.getAddress1().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "ADDRESS1 CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getCountryId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "COUNTRY ID CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getStateId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "STATE ID CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getCity() == null || masEmployeeRequest.getCity().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "CITY CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getPincode() == null || masEmployeeRequest.getPincode().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "POSTAL CODE CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getMobileNo() == null || masEmployeeRequest.getMobileNo().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "PHONE NO CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getRegistrationNo() == null || masEmployeeRequest.getRegistrationNo().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "ID NUMBER CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getDob() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "DATE OF BIRTH CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getDistrictId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "DISTRICT ID CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getIdDocumentName() == null || masEmployeeRequest.getIdDocumentName().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "ID DOCUMENT CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getProfilePicName() == null || masEmployeeRequest.getProfilePicName().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "PROFILE IMAGE CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getFromDate() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "FROM DATE CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getQualification() == null || masEmployeeRequest.getQualification().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "QUALIFICATION CAN NOT BE BLANK", 400);
+            }
+
+            if (masEmployeeRequest.getDocument() == null || masEmployeeRequest.getDocument().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "DOCUMENT CAN NOT BE BLANK", 400);
+            }
+
+            User currentUser = userRepo.findByUserName(SecurityContextHolder.getContext().getAuthentication().getName());
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "CURRENT USER NOT FOUND", 400);
+            }
+
+            MasCountry countryObj = masCountryRepository.findById(masEmployeeRequest.getCountryId())
+                    .orElseThrow(() -> new IllegalArgumentException("Country not found with ID: " + masEmployeeRequest.getCountryId()));
+
+            MasState stateObj = masStateRepository.findById(masEmployeeRequest.getStateId())
+                    .orElseThrow(() -> new IllegalArgumentException("State not found with ID: " + masEmployeeRequest.getStateId()));
+
+            MasDistrict districtObj = masDistrictRepository.findById(masEmployeeRequest.getDistrictId())
+                    .orElseThrow(() -> new IllegalArgumentException("District not found with ID: " + masEmployeeRequest.getDistrictId()));
+
+            MasGender genderObj = masGenderRepository.findById(masEmployeeRequest.getGenderId())
+                    .orElseThrow(() -> new IllegalArgumentException("Gender not found with ID: " + masEmployeeRequest.getGenderId()));
+
+            MasIdentificationType idTypeObj = masIdentificationTypeRepository.findById(masEmployeeRequest.getIdentificationType())
+                    .orElseThrow(() -> new IllegalArgumentException("ID Type not found with ID: " + masEmployeeRequest.getIdentificationType()));
+
+            // Create directory for file uploads if it doesn't exist
+            String fileUploadDir = this.uploadDir + "MAS_EMPLOYEE/";
+            File directory = new File(fileUploadDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            String profileImagePath = "";
+            String documentPath = "";
+
+            if (masEmployeeRequest.getIdDocumentName() != null && !masEmployeeRequest.getIdDocumentName().isEmpty()) {
+                String documentExtension = getFileExtension(masEmployeeRequest.getIdDocumentName().getOriginalFilename());
+                if (!isValidDocExtension(documentExtension)) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
+                }
+
+                String timestamp = String.valueOf(System.currentTimeMillis());
+                String newFilename = timestamp + "_" + masEmployeeRequest.getIdDocumentName().getOriginalFilename();
+
+                documentPath = Paths.get(fileUploadDir, newFilename)
+                        .toString()
+                        .replace("\\", "/");
+
+                try {
+                    Files.write(Paths.get(documentPath), masEmployeeRequest.getIdDocumentName().getBytes());
+                } catch (IOException e) {
+                    log.error("Failed to save ID document: {}", e.getMessage());
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Failed to upload ID document: " + e.getMessage(), 400);
+                }
+            }
+
+            if (masEmployeeRequest.getProfilePicName() != null && !masEmployeeRequest.getProfilePicName().isEmpty()) {
+                String profileImageExtension = getFileExtension(masEmployeeRequest.getProfilePicName().getOriginalFilename());
+                if (!isValidPicExtension(profileImageExtension)) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Profile Image Invalid file type. Only JPG, JPEG and PNG are allowed.", 400);
+                }
+
+                String timestamp = String.valueOf(System.currentTimeMillis());
+                String newFilename = timestamp + "_" + masEmployeeRequest.getProfilePicName().getOriginalFilename();
+
+                profileImagePath = Paths.get(fileUploadDir, newFilename)
+                        .toString()
+                        .replace("\\", "/");
+
+                try {
+                    Files.write(Paths.get(profileImagePath), masEmployeeRequest.getProfilePicName().getBytes());
+                } catch (IOException e) {
+                    log.error("Failed to save profile picture: {}", e.getMessage());
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Failed to upload profile picture: " + e.getMessage(), 400);
+                }
+            }
+
+            MasEmployee employee = new MasEmployee();
+            employee.setFirstName(masEmployeeRequest.getFirstName());
+            employee.setMiddleName(masEmployeeRequest.getMiddleName());
+            employee.setLastName(masEmployeeRequest.getLastName());
+            employee.setGenderId(genderObj);
+            employee.setDob(masEmployeeRequest.getDob());
+            employee.setAddress1(masEmployeeRequest.getAddress1());
+            employee.setCity(masEmployeeRequest.getCity());
+            employee.setMobileNo(masEmployeeRequest.getMobileNo());
+            employee.setRegistrationNo(masEmployeeRequest.getRegistrationNo());
+            employee.setFromDate(masEmployeeRequest.getFromDate());
+            employee.setCountryId(countryObj);
+            employee.setStateId(stateObj);
+            employee.setDistrictId(districtObj);
+            employee.setPincode(masEmployeeRequest.getPincode());
+            employee.setIdentificationType(idTypeObj);
+            employee.setProfilePicName(profileImagePath);
+            employee.setIdDocumentName(documentPath);
+            employee.setLastChangedDate(OffsetDateTime.now().toInstant());
+            employee.setLastChangedBy(currentUser.getUserId().toString());
+            employee.setStatus("S"); // Set status as Submitted
+
+            MasEmployee savedEmployee = masEmployeeRepository.save(employee);
+
+            for (EmployeeQualificationReq qualificationReq : masEmployeeRequest.getQualification()) {
+                String qualificationFilePath = "";
+                try {
+                    log.info("Processing qualification document...");
+
+                    if (qualificationReq.getFilePath() != null && !qualificationReq.getFilePath().isEmpty()) {
+                        String originalFilename = qualificationReq.getFilePath().getOriginalFilename();
+                        if (originalFilename == null || originalFilename.isBlank()) {
+                            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid qualification file name.", 400);
+                        }
+
+                        String fileExtension = getFileExtension(originalFilename);
+                        if (!isValidDocExtension(fileExtension)) {
+                            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                                    "Invalid qualification file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
+                        }
+
+                        Path uploadPath = Paths.get(fileUploadDir);
+                        if (!Files.exists(uploadPath)) {
+                            Files.createDirectories(uploadPath);
+                        }
+
+                        String timestamp = String.valueOf(System.currentTimeMillis());
+                        String newFilename = timestamp + "_" + originalFilename;
+
+                        qualificationFilePath = Paths.get(fileUploadDir, newFilename)
+                                .toString()
+                                .replace("\\", "/");
+
+                        Files.write(Paths.get(qualificationFilePath), qualificationReq.getFilePath().getBytes());
+                        log.info("Qualification file uploaded successfully to: {}", qualificationFilePath);
+                    } else {
+                        log.warn("Qualification file is missing or empty.");
+                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Qualification cannot be empty.", 400);
+                    }
+                } catch (IOException e) {
+                    log.error("Error while uploading image: {}", e.getMessage());
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload image.", 400);
+                }
+
+                EmployeeQualification imageObj = new EmployeeQualification();
+                imageObj.setEmployee(savedEmployee);
+                imageObj.setCompletionYear(qualificationReq.getCompletionYear());
+                imageObj.setQualificationName(qualificationReq.getQualificationName());
+                imageObj.setFilePath(qualificationFilePath);
+                imageObj.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
+                imageObj.setLastChangedBy(currentUser.getUserId().toString());
+                imageObj.setInstitutionName(qualificationReq.getInstitutionName());
+
+                employeeQualificationRepository.save(imageObj);
+            }
+
+            for (EmployeeDocumentReq objContent : masEmployeeRequest.getDocument()) {
+                String imagePaths = "";
+                try {
+                    log.debug("Received request to upload image in png or jpg....");
+
+                    if (objContent.getFilePath() != null && !objContent.getFilePath().isEmpty()) {
+                        String imageExtension = getFileExtension(objContent.getFilePath().getOriginalFilename());
+                        if (!isValidDocExtension(imageExtension)) {
+                            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                                    "Employee Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
+                        }
+
+                        String timestamp = String.valueOf(System.currentTimeMillis());
+                        String newFilename = timestamp + "_" + objContent.getFilePath().getOriginalFilename();
+
+                        imagePaths = Paths.get(fileUploadDir, newFilename)
+                                .toString()
+                                .replace("\\", "/");
+                        Files.write(Paths.get(imagePaths), objContent.getFilePath().getBytes());
+                    }
+                } catch (IOException e) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload image.", 400);
+                }
+
+                EmployeeDocument contentObj = new EmployeeDocument();
+                contentObj.setEmployee(savedEmployee);
+                contentObj.setDocumentName(objContent.getDocumentName());
+                contentObj.setFilePath(imagePaths);
+                contentObj.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
+                contentObj.setLastChangedBy(currentUser.getUserId().toString());
+                employeeDocumentRepository.save(contentObj);
+            }
+            return ResponseUtils.createSuccessResponse(savedEmployee, new TypeReference<>() {});
+
+        } catch (ConstraintViolationException e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<MasEmployee>() {}, "Validation failed for required fields: " + e.getMessage(), HttpStatus.BAD_REQUEST.value());
+        }
     }
 
     @Transactional(rollbackFor = {Exception.class})
@@ -805,14 +777,20 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         employeeObj.setStatus("A");
         employeeObj.setLastChangedDate(Instant.now());
         employeeObj.setLastChangedBy(currentUser.getUserId().toString());
+        employeeObj.setApprovedBy(currentUser.getUserId().toString());
+        employeeObj.setApprovedDate(LocalDateTime.now());
 
         masEmployeeRepository.save(employeeObj);
 
         Optional<User> existingUser = userRepo.findByEmployee(employeeObj);
+
+        MasUserType userTypeObj = masUserTypeRepository.findById(1L)
+                .orElseThrow(() -> new EntityNotFoundException("Usertype not found with ID: " + empId));
+
         if (existingUser.isEmpty()) {
             User newUser = User.builder()
                     .status("A")
-                    .userName(employeeObj.getEmail())
+                    .userName("abcdef@gmail.com")
                     .mobileNo(employeeObj.getMobileNo())
                     .firstName(employeeObj.getFirstName())
                     .lastName(employeeObj.getLastName())
@@ -821,6 +799,12 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .createdAt(Instant.now())
                     .createdBy(currentUser.getUserId().toString())
                     .employee(employeeObj)
+                    .userFlag(1)
+                    .employee(employeeObj)
+                    .hospital(currentUser.getHospital())
+                    .userType(userTypeObj)
+                    .isVerified(true)
+                    .lastChangeDate(Instant.now())
                     .build();
 
             userRepo.save(newUser);
@@ -829,7 +813,19 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         return ResponseUtils.createSuccessResponse(employeeObj, new TypeReference<MasEmployee>() {});
     }
 
+    @Transactional(rollbackFor = {Exception.class})
+    @Override
+    public ApiResponse<MasEmployee> createAndApproveEmployee(MasEmployeeRequest masEmployeeRequest) {
+        ApiResponse<MasEmployee> createResponse = createEmployee(masEmployeeRequest);
 
+        if (createResponse.getStatus() != HttpStatus.OK.value()) {
+            return createResponse;
+        }
+
+        MasEmployee createdEmployee = createResponse.getResponse();
+
+        return updateEmployeeApprovalStatus(createdEmployee.getEmployeeId());
+    }
 
     private String getFileExtension(String fileName) {
         if (fileName == null || !fileName.contains(".")) {
@@ -839,10 +835,10 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     }
 
     private boolean isValidDocExtension(String fileExtension) {
-        return Arrays.asList(ALLOWED_DOCUMENT_EXTENSIONS).contains(fileExtension);
+        return ALLOWED_DOC_EXTENSIONS.contains(fileExtension);
     }
 
     private boolean isValidPicExtension(String fileExtension) {
-        return Arrays.asList(ALLOWED_IMAGE_EXTENSIONS).contains(fileExtension);
+        return ALLOWED_PIC_EXTENSIONS.contains(fileExtension);
     }
 }

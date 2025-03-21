@@ -19,4 +19,7 @@ public interface MasEmployeeService {
 
     @Transactional(rollbackFor = {Exception.class})
     ApiResponse<MasEmployee> updateEmployeeApprovalStatus(Long empId);
+
+    @Transactional(rollbackFor = {Exception.class})
+    ApiResponse<MasEmployee> createAndApproveEmployee(MasEmployeeRequest masEmployeeRequest);
 }

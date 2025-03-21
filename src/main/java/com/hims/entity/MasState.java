@@ -1,5 +1,6 @@
 package com.hims.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -11,6 +12,7 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "mas_state")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class MasState {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

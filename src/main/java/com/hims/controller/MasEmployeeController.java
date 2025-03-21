@@ -24,11 +24,6 @@ public class MasEmployeeController {
 
     private final MasEmployeeService masEmployeeService;
 
-    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<MasEmployee>> createEmployee(@ModelAttribute MasEmployeeRequest masEmployeeRequest) {
-        logger.info("Received request to create a new Employee: {}", masEmployeeRequest);
-        return ResponseEntity.ok(masEmployeeService.createEmployee(masEmployeeRequest));
-    }
     @GetMapping("/employee")
     public ResponseEntity<ApiResponse<List<MasEmployeeDTO>>> getAllEmployees() {
         logger.info("Received request to fetch all Employees.");
@@ -50,11 +45,24 @@ public class MasEmployeeController {
         return ResponseEntity.ok(masEmployeeService.updateEmployeeStatus(id,status));
     }
 
-    @PutMapping("/employee/approve/{id}")
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<MasEmployee>> createEmployee(@ModelAttribute MasEmployeeRequest masEmployeeRequest) {
+        logger.info("Received request to create a new Employee: {}", masEmployeeRequest);
+        return ResponseEntity.ok(masEmployeeService.createEmployee(masEmployeeRequest));
+    }
+
+    @PutMapping("/approve/{id}")
     public ResponseEntity<ApiResponse<MasEmployee>> updateEmployeeApprovalStatus(@PathVariable Long id) {
-        logger.info("Received request to update Employee status with ID: {}", id);
+        logger.info("Received request to update Employee approval status with ID: {}", id);
         return ResponseEntity.ok(masEmployeeService.updateEmployeeApprovalStatus(id));
     }
+
+    @PostMapping(value = "/create-and-approve", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<MasEmployee>> createAndApproveEmployee(@ModelAttribute MasEmployeeRequest masEmployeeRequest) {
+        logger.info("Received request to create and approve a new Employee: {}", masEmployeeRequest);
+        return ResponseEntity.ok(masEmployeeService.createAndApproveEmployee(masEmployeeRequest));
+    }
+
 
 
 }

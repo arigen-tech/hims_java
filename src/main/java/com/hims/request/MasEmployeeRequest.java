@@ -24,6 +24,7 @@ public class MasEmployeeRequest {
     private Long countryId;
     private Long stateId;
     private Long districtId;
+    private Long departmentId;
     private String city;
     private String pincode;
     private String mobileNo;
