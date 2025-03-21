@@ -3,10 +3,7 @@ package com.hims.controller;
 import com.hims.entity.DoctorRoaster;
 import com.hims.request.AppointmentReq;
 import com.hims.request.DoctorRosterRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.AppSetupDTO;
-import com.hims.response.AppsetupResponse;
-import com.hims.response.DoctorRosterDTO;
+import com.hims.response.*;
 import com.hims.service.AppSetupServices;
 import com.hims.service.DoctorRosterServices;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
@@ -48,14 +46,19 @@ public class DoctorRosterController {
     }
 
     @GetMapping("/rosterfindWithDays")
-    public ResponseEntity<List<DoctorRosterDTO>> findDoctorRostersWithDays(
+    public ResponseEntity<DoctorRosterResponseDTO> findDoctorRostersWithDays(
             @RequestParam Long deptId,
             @RequestParam(required = false) Long doctorId,
-            @RequestParam LocalDate rosterDate) {
+            @RequestParam String rosterDate) {
 
-        List<DoctorRosterDTO> doctorRosterList = doctorRosterServices.getDoctorRostersWithDays(deptId, doctorId, rosterDate);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate parsedDate = LocalDate.parse(rosterDate, formatter);
 
-        return ResponseEntity.ok(doctorRosterList);
+        DoctorRosterResponseDTO doctorRoster = doctorRosterServices.getDoctorRostersWithDays(deptId, doctorId, parsedDate);
+
+        return ResponseEntity.ok(doctorRoster);
     }
+
+
 
 }

@@ -7,9 +7,7 @@ import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.request.DoctorRosterReqKeys;
 import com.hims.request.DoctorRosterRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.AppsetupResponse;
-import com.hims.response.DoctorRosterDTO;
+import com.hims.response.*;
 import com.hims.service.DoctorRosterServices;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,23 +105,23 @@ DoctorRoasterRepository doctorRoasterRepository;
         return dto;
     }
 
-    @Override
-    public List<DoctorRosterDTO> getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate) {
-        Date startDate = convertToDate(rosterDate);
-        Date endDate = convertToDate(rosterDate.plusDays(6));
-
-        List<DoctorRoaster> docRoster;
-
-        if (doctorId != null) {
-            docRoster = doctorRoasterRepository.findDoctorRostersByDeptAndDoctor(deptId, doctorId, startDate, endDate);
-        } else {
-            docRoster = doctorRoasterRepository.findDoctorRostersByDept(deptId, startDate, endDate);
-        }
-
-        return docRoster.stream()
-                .map(this::convertToDTOs)
-                .collect(Collectors.toList());
-    }
+//    @Override
+//    public List<DoctorRosterDTO> getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate) {
+//        Date startDate = convertToDate(rosterDate);
+//        Date endDate = convertToDate(rosterDate.plusDays(6));
+//
+//        List<DoctorRoaster> docRoster;
+//
+//        if (doctorId != null) {
+//            docRoster = doctorRoasterRepository.findDoctorRostersByDeptAndDoctor(deptId, doctorId, startDate, endDate);
+//        } else {
+//            docRoster = doctorRoasterRepository.findDoctorRostersByDept(deptId, startDate, endDate);
+//        }
+//
+//        return docRoster.stream()
+//                .map(this::convertToDTOs)
+//                .collect(Collectors.toList());
+//    }
 
     private Date convertToDate(LocalDate localDate) {
         return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -147,6 +145,43 @@ DoctorRoasterRepository doctorRoasterRepository;
         }
 
         return dto;
+    }
+
+
+    @Override
+    public DoctorRosterResponseDTO getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate) {
+        Date startDate = java.sql.Date.valueOf(rosterDate);
+        Date endDate = java.sql.Date.valueOf(rosterDate.plusDays(7));
+
+        List<DoctorRoaster> docRoster;
+        if (doctorId != null) {
+            docRoster = doctorRoasterRepository.findDoctorRostersByDeptAndDoctor(deptId, doctorId, startDate, endDate);
+        } else {
+            docRoster = doctorRoasterRepository.findDoctorRostersByDept(deptId, startDate, endDate);
+        }
+
+        DoctorRosterResponseDTO responseDTO = new DoctorRosterResponseDTO();
+        responseDTO.setDepartmentId(deptId);
+        responseDTO.setFromDate(rosterDate);
+
+        List<DoctorRosterResponseDTO.DateEntry> dateEntries = docRoster.stream()
+                .filter(roster -> {
+                    LocalDate rosterLocalDate = new java.sql.Date(roster.getRoasterDate().getTime()).toLocalDate();
+                    return !rosterLocalDate.isBefore(rosterDate);
+                })
+                .limit(7)
+                .map(roster -> {
+                    DoctorRosterResponseDTO.DateEntry entry = new DoctorRosterResponseDTO.DateEntry();
+                    entry.setId(roster.getId());
+                    entry.setDoctorId(roster.getDoctorId() != null ? roster.getDoctorId().getUserId() : null);
+                    entry.setRosterVale(roster.getRoasterValue());
+                    entry.setDates(roster.getRoasterDate().toInstant());
+                    return entry;
+                })
+                .collect(Collectors.toList());
+
+        responseDTO.setDates(dateEntries);
+        return responseDTO;
     }
 
 }

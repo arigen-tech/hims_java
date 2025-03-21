@@ -6,6 +6,7 @@ import com.hims.request.DoctorRosterRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
 import com.hims.response.DoctorRosterDTO;
+import com.hims.response.DoctorRosterResponseDTO;
 
 import java.time.LocalDate;
 import java.util.Date;
@@ -17,5 +18,5 @@ public interface DoctorRosterServices {
 
     List<DoctorRosterDTO> getDoctorRoster(Long deptId, Long doctorId, LocalDate rosterDate);
 
-    List<DoctorRosterDTO> getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate);
+    DoctorRosterResponseDTO getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate);
 }
