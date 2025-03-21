@@ -12,10 +12,12 @@ import java.util.Optional;
 
 public interface DoctorRoasterRepository extends JpaRepository<DoctorRoaster, Integer> {
 
+    @Query("SELECT dr FROM DoctorRoaster dr WHERE dr.department.id = :deptId AND dr.roasterDate = :rosterDate")
+    List<DoctorRoaster> findDoctorRosterByDept(@Param("deptId") Long deptId,
+                                               @Param("rosterDate") Date rosterDate);
+
     @Query("SELECT dr FROM DoctorRoaster dr WHERE dr.department.id = :deptId AND dr.doctorId.userId = :doctorId AND dr.roasterDate = :rosterDate")
-    List<DoctorRoaster> findDoctorRosterByIds(@Param("deptId") Long deptId,
-                                             @Param("doctorId") Long doctorId,
-                                             @Param("rosterDate") LocalDate rosterDate);
+    List<DoctorRoaster> findDoctorRosterByDeptAndDoctor(@Param("deptId") Long deptId,
+                                                        @Param("doctorId") Long doctorId,
+                                                        @Param("rosterDate") Date rosterDate);
 }
-
-

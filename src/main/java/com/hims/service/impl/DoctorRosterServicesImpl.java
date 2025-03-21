@@ -17,10 +17,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -55,7 +59,7 @@ DoctorRoasterRepository doctorRoasterRepository;
                 entry.setChgDate(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate());
                 entry.setChgBy(1);
                 //entry.setHospital(1);
-                entry.setChgTime(Calender.getCurrentTimeStamp());
+                entry.setChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
                 doctorRoasterRepository.save(entry);
             }
             res.setMsg("Success");
@@ -69,15 +73,23 @@ DoctorRoasterRepository doctorRoasterRepository;
     }
 
     @Override
-    public DoctorRosterDTO getDoctorRoster(Long deptId, Long doctorId, java.time.LocalDate rosterDate) {
-        List<DoctorRoaster> docRoster = doctorRoasterRepository.findDoctorRosterByIds(deptId, doctorId, rosterDate);
+    public List<DoctorRosterDTO> getDoctorRoster(Long deptId, Long doctorId, LocalDate rosterDate) {
+        Date convertedDate = java.sql.Date.valueOf(rosterDate);
 
-        if (docRoster.isEmpty()) {
-            return null;
+        List<DoctorRoaster> docRoster;
+
+        if (doctorId != null) {
+            docRoster = doctorRoasterRepository.findDoctorRosterByDeptAndDoctor(deptId, doctorId, convertedDate);
+        } else {
+            docRoster = doctorRoasterRepository.findDoctorRosterByDept(deptId, convertedDate);
         }
 
-        return convertToDTO(docRoster.get(0));
+        return docRoster.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
+
+
 
     private DoctorRosterDTO convertToDTO(DoctorRoaster roster) {
         DoctorRosterDTO dto = new DoctorRosterDTO();
@@ -87,10 +99,15 @@ DoctorRoasterRepository doctorRoasterRepository;
         dto.setHospitalId(roster.getHospital() != null ? roster.getHospital().getId() : null);
         dto.setDeptId(roster.getDepartment() != null ? roster.getDepartment().getId() : null);
         dto.setDoctorId(roster.getDoctorId() != null ? roster.getDoctorId().getUserId() : null);
-        dto.setValidFrom(Instant.from(roster.getChgDate()));
-        dto.setValidTo(Instant.from(roster.getChgDate()));
+
+        // Fix: Convert LocalDate to Instant using Zone
+        if (roster.getChgDate() != null) {
+            dto.setValidFrom(roster.getChgDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
+            dto.setValidTo(roster.getChgDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
 
         return dto;
     }
+
 
 }

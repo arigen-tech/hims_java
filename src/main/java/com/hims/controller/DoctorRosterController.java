@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.Date;
+import java.util.List;
 
 @RestController
 @Tag(name = "Doctor", description = "This controller is used for any Doctor Roster Related task.")
@@ -35,21 +36,14 @@ public class DoctorRosterController {
 
 
 
-
-//    @GetMapping("/getdoctorroster/{departmentId}/{doctorId}/{sessionId}/")
-//    public ResponseEntity<ApiResponse<AppsetupResponse>> getappsetupData(@PathVariable("departmentId") Long departmentId,@PathVariable(value = "doctorId") Long doctorId
-//            ,@PathVariable(value = "sessionId") Long sessionId) {
-//        return new ResponseEntity<>(doctorRosterServices.getappsetupData(departmentId,doctorId,sessionId), HttpStatus.OK);
-
-
     @GetMapping("/rosterfind")
-    public ResponseEntity<DoctorRosterDTO> findDoctorRoster(
+    public ResponseEntity<List<DoctorRosterDTO>> findDoctorRoster(
             @RequestParam Long deptId,
-            @RequestParam Long doctorId,
+            @RequestParam(required = false) Long doctorId,
             @RequestParam LocalDate rosterDate) {
 
-        DoctorRosterDTO doctorRoster = doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate);
+        List<DoctorRosterDTO> doctorRosterList = doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate);
 
-        return ResponseEntity.ok(doctorRoster);
+        return ResponseEntity.ok(doctorRosterList);
     }
 }
