@@ -23,7 +23,7 @@ public class MasRoleServiceImpl implements MasRoleService {
     private MasRoleRepository masRoleRepository;
 
     private boolean isValidStatus(String status) {
-        return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
+        return "y".equalsIgnoreCase(status) || "n".equalsIgnoreCase(status);
     }
 
     @Override
@@ -36,7 +36,7 @@ public class MasRoleServiceImpl implements MasRoleService {
         role.setId(java.util.UUID.randomUUID().toString());
         role.setRoleCode(request.getRoleCode());
         role.setRoleDesc(request.getRoleDesc());
-        role.setStatus(request.getStatus().toUpperCase());
+        role.setStatus(request.getStatus().toLowerCase());
         role.setCreatedOn(Instant.now());
         role.setUpdatedOn(Instant.now());
 
@@ -53,7 +53,7 @@ public class MasRoleServiceImpl implements MasRoleService {
         Optional<MasRole> roleOpt = masRoleRepository.findById(id);
         if (roleOpt.isPresent()) {
             MasRole role = roleOpt.get();
-            role.setStatus(status.toUpperCase());
+            role.setStatus(status.toLowerCase());
             role.setUpdatedOn(Instant.now());
             masRoleRepository.save(role);
             return ResponseUtils.createSuccessResponse("Role status updated", new TypeReference<>() {});
@@ -73,7 +73,7 @@ public class MasRoleServiceImpl implements MasRoleService {
             MasRole role = roleOpt.get();
             role.setRoleCode(request.getRoleCode());
             role.setRoleDesc(request.getRoleDesc());
-            role.setStatus(request.getStatus().toUpperCase());
+            role.setStatus(request.getStatus().toLowerCase());
             role.setUpdatedOn(Instant.now());
 
             masRoleRepository.save(role);
@@ -95,9 +95,9 @@ public class MasRoleServiceImpl implements MasRoleService {
         List<MasRole> roles;
 
         if (flag == 1) {
-            roles = masRoleRepository.findByStatusIgnoreCase("Y");
+            roles = masRoleRepository.findByStatusIgnoreCase("y");
         } else if (flag == 0) {
-            roles = masRoleRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            roles = masRoleRepository.findByStatusInIgnoreCase(List.of("y", "n"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
