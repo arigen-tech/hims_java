@@ -54,7 +54,7 @@ DoctorRoasterRepository doctorRoasterRepository;
                 entry.setRoasterDate(key.getDates());
                 entry.setDoctorId(doctor);
                 entry.setDepartment(deDepartment.get());
-                entry.setRoasterDate(date);
+                entry.setRoasterDate(key.getDates());
                 entry.setRoasterValue(key.getRosterVale());
                 entry.setChgDate(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate());
                 entry.setChgBy(1);
