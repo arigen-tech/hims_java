@@ -70,4 +70,10 @@ public class Visit {
     @Column(name = "billing_status", nullable = false, length = 1)
     private String billingStatus;
 
+    @Column(name = "start_time")
+    private Instant startTime;
+
+    @Column(name = "end_time")
+    private Instant endTime;
+
 }
