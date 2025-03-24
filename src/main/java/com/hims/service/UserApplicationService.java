@@ -13,5 +13,6 @@ public interface UserApplicationService {
     ApiResponse<UserApplicationResponse> createApplication(UserApplicationRequest request);
     ApiResponse<UserApplicationResponse> updateApplication(Long id, UserApplicationRequest request);
     ApiResponse<String> changeApplicationStatus(Long id, String status);
+    ApiResponse<List<UserApplicationResponse>> getAllApplicationsWithHashUrl(int flag);
 
 }

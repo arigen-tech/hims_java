@@ -44,4 +44,9 @@ public class UserApplicationController {
     public ResponseEntity<ApiResponse<UserApplicationResponse>> editApplication(@PathVariable Long id, @RequestBody UserApplicationRequest request) {
         return new ResponseEntity<>(userApplicationService.updateApplication(id, request), HttpStatus.OK);
     }
+
+    @GetMapping("/getAllParentId/{flag}")
+    public ApiResponse<List<UserApplicationResponse>> getAllApplicationsWithHashUrl(@PathVariable int flag) {
+        return userApplicationService.getAllApplicationsWithHashUrl(flag);
+    }
 }

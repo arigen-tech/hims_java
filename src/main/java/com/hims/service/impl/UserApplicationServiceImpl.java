@@ -95,6 +95,25 @@ public class UserApplicationServiceImpl implements UserApplicationService {
         }
     }
 
+    public ApiResponse<List<UserApplicationResponse>> getAllApplicationsWithHashUrl(int flag) {
+        List<UserApplication> applications;
+
+        if (flag == 1) {
+            applications = userApplicationRepository.findByStatusIgnoreCaseAndUrl("Y", "#");
+        } else if (flag == 0) {
+            applications = userApplicationRepository.findByStatusInIgnoreCaseAndUrl(List.of("Y", "N"), "#");
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<UserApplicationResponse> responses = applications.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+    }
+
+
     private boolean isValidStatus(String status) {
         return "y".equalsIgnoreCase(status) || "n".equalsIgnoreCase(status);
     }
