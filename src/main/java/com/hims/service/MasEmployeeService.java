@@ -14,11 +14,10 @@ public interface MasEmployeeService {
     ApiResponse<MasEmployee> getEmployeeById(Long id);
     ApiResponse<MasEmployee> createEmployee(MasEmployeeRequest masEmployeeRequest);
     ApiResponse<MasEmployee> updateEmployee(Long id, MasEmployeeRequest masEmployeeRequest);
-    ApiResponse<MasEmployee> updateEmployeeStatus(Long empId,String status);
 
 
     @Transactional(rollbackFor = {Exception.class})
-    ApiResponse<MasEmployee> updateEmployeeApprovalStatus(Long empId);
+    ApiResponse<MasEmployee> updateEmployeeApprovalStatus(Long empId, Long deptId);
 
     @Transactional(rollbackFor = {Exception.class})
     ApiResponse<MasEmployee> createAndApproveEmployee(MasEmployeeRequest masEmployeeRequest);

@@ -60,6 +60,9 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     private MasEmployeeRepository masEmployeeRepository;
 
     @Autowired
+    private UserDepartmentRepository userDepartmentRepository;
+
+    @Autowired
     private UserRepo userRepo;
 
     @Autowired
@@ -459,28 +462,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
     @Transactional(rollbackFor = {Exception.class})
     @Override
-    public ApiResponse<MasEmployee> updateEmployeeStatus(Long empId, String status) {
-        if (empId== null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Employee ID CAN NOT BE BLANK", 400);
-        }
-        User obj=userRepo.findByUserName(SecurityContextHolder.getContext().getAuthentication().getName());
-        if (obj == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, " CURRENT USER NOT FOUND", 400);
-        }
-        if (!"y".equals(status) && !"n".equals(status)) {
-            throw new IllegalArgumentException("Status must be either 'y' or 'n'");
-        }
-        MasEmployee employeeObj = masEmployeeRepository.findById(empId)
-                .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + empId));
-        employeeObj.setStatus(status);
-        employeeObj.setLastChangedDate(OffsetDateTime.now().toInstant());
-        employeeObj.setLastChangedBy(obj.getUserId().toString());
-        MasEmployee updatedEmp= masEmployeeRepository.save(employeeObj);
-        return ResponseUtils.createSuccessResponse(updatedEmp, new TypeReference<MasEmployee>() {});
-    }
-
-    @Transactional(rollbackFor = {Exception.class})
-    @Override
     public ApiResponse<MasEmployee> createEmployee(MasEmployeeRequest masEmployeeRequest) {
         log.debug("Creating new Employee: {}", masEmployeeRequest);
         try {
@@ -761,16 +742,22 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         }
     }
 
+
     @Transactional(rollbackFor = {Exception.class})
     @Override
-    public ApiResponse<MasEmployee> updateEmployeeApprovalStatus(Long empId) {
+    public ApiResponse<MasEmployee> updateEmployeeApprovalStatus(Long empId, Long deptId) {
         if (empId == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Employee ID CAN NOT BE BLANK", 400);
         }
+        if (deptId == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Department ID CAN NOT BE BLANK", 400);
+        }
+
         User currentUser = userRepo.findByUserName(SecurityContextHolder.getContext().getAuthentication().getName());
         if (currentUser == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "CURRENT USER NOT FOUND", 400);
         }
+
         MasEmployee employeeObj = masEmployeeRepository.findById(empId)
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + empId));
 
@@ -784,13 +771,18 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
         Optional<User> existingUser = userRepo.findByEmployee(employeeObj);
 
-        MasUserType userTypeObj = masUserTypeRepository.findById(1L)
-                .orElseThrow(() -> new EntityNotFoundException("Usertype not found with ID: " + empId));
-
         if (existingUser.isEmpty()) {
+            MasUserType userTypeObj = masUserTypeRepository.findById(1L)
+                    .orElseThrow(() -> new EntityNotFoundException("Usertype not found with ID: 1"));
+
+            String username = employeeObj.getEmail();
+            if (username == null || username.isEmpty()) {
+                username = employeeObj.getMobileNo();
+            }
+
             User newUser = User.builder()
-                    .status("A")
-                    .userName("abcdef@gmail.com")
+                    .status("y")
+                    .userName(username)
                     .mobileNo(employeeObj.getMobileNo())
                     .firstName(employeeObj.getFirstName())
                     .lastName(employeeObj.getLastName())
@@ -800,14 +792,21 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .createdBy(currentUser.getUserId().toString())
                     .employee(employeeObj)
                     .userFlag(1)
-                    .employee(employeeObj)
                     .hospital(currentUser.getHospital())
                     .userType(userTypeObj)
                     .isVerified(true)
                     .lastChangeDate(Instant.now())
                     .build();
 
-            userRepo.save(newUser);
+            User createNewUser = userRepo.save(newUser);
+
+            MasDepartment deptObj = masDepartmentRepository.findById(deptId)
+                    .orElseThrow(() -> new EntityNotFoundException("Department not found with ID: " + deptId));
+
+            UserDepartment newUserdept = new UserDepartment();
+            newUserdept.setUser(createNewUser);
+            newUserdept.setDepartment(deptObj);
+            userDepartmentRepository.save(newUserdept);
         }
 
         return ResponseUtils.createSuccessResponse(employeeObj, new TypeReference<MasEmployee>() {});
@@ -816,6 +815,10 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     @Transactional(rollbackFor = {Exception.class})
     @Override
     public ApiResponse<MasEmployee> createAndApproveEmployee(MasEmployeeRequest masEmployeeRequest) {
+        if (masEmployeeRequest.getDepartmentId() == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Department ID CAN NOT BE BLANK", 400);
+        }
+
         ApiResponse<MasEmployee> createResponse = createEmployee(masEmployeeRequest);
 
         if (createResponse.getStatus() != HttpStatus.OK.value()) {
@@ -824,7 +827,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
         MasEmployee createdEmployee = createResponse.getResponse();
 
-        return updateEmployeeApprovalStatus(createdEmployee.getEmployeeId());
+        return updateEmployeeApprovalStatus(createdEmployee.getEmployeeId(), masEmployeeRequest.getDepartmentId());
     }
 
     private String getFileExtension(String fileName) {
