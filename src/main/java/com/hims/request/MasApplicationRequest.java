@@ -11,4 +11,5 @@ public class MasApplicationRequest {
     private String url;
     private Long orderNo;
     private Long appSequenceNo;
+    private String status;
 }

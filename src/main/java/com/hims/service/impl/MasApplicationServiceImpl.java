@@ -54,7 +54,7 @@ public class MasApplicationServiceImpl implements MasApplicationService {
         application.setParentId(request.getParentId());
         application.setUrl(request.getUrl());
         application.setOrderNo(request.getOrderNo());
-        application.setStatus("Y"); // Default status to "Y"
+        application.setStatus(request.getStatus());
         application.setLastChgDate(Instant.now());
         application.setAppSequenceNo(request.getAppSequenceNo());
 
@@ -72,6 +72,7 @@ public class MasApplicationServiceImpl implements MasApplicationService {
             application.setOrderNo(request.getOrderNo());
             application.setAppSequenceNo(request.getAppSequenceNo());
             application.setLastChgDate(Instant.now());
+            application.setStatus(request.getStatus());
 
             MasApplication updatedApplication = masApplicationRepository.save(application);
             return ResponseUtils.createSuccessResponse(convertToResponse(updatedApplication), new TypeReference<>() {});
