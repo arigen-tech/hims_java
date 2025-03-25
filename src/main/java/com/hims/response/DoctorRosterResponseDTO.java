@@ -34,16 +34,16 @@ public class DoctorRosterResponseDTO {
     }
 
     public static class DateEntry {
-        private Instant dates;
+        private LocalDate dates;
         private String rosterVale;
         private Long doctorId;
         private Long id;
 
-        public Instant getDates() {
+        public LocalDate getDates() {
             return dates;
         }
 
-        public void setDates(Instant dates) {
+        public void setDates(LocalDate dates) {
             this.dates = dates;
         }
 
@@ -71,4 +71,5 @@ public class DoctorRosterResponseDTO {
             this.id = id;
         }
     }
+
 }

@@ -35,18 +35,19 @@ public class DoctorRosterController {
 
 
     @GetMapping("/rosterfind")
-    public ResponseEntity<List<DoctorRosterDTO>> findDoctorRoster(
+    public ResponseEntity<ApiResponse<List<DoctorRosterDTO>>> findDoctorRoster(
             @RequestParam Long deptId,
             @RequestParam(required = false) Long doctorId,
             @RequestParam LocalDate rosterDate) {
 
-        List<DoctorRosterDTO> doctorRosterList = doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate);
+        ApiResponse<List<DoctorRosterDTO>> doctorRosterList = doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate);
 
         return ResponseEntity.ok(doctorRosterList);
     }
 
+
     @GetMapping("/rosterfindWithDays")
-    public ResponseEntity<DoctorRosterResponseDTO> findDoctorRostersWithDays(
+    public ResponseEntity<ApiResponse<DoctorRosterResponseDTO>> findDoctorRostersWithDays(
             @RequestParam Long deptId,
             @RequestParam(required = false) Long doctorId,
             @RequestParam String rosterDate) {
@@ -54,9 +55,9 @@ public class DoctorRosterController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate parsedDate = LocalDate.parse(rosterDate, formatter);
 
-        DoctorRosterResponseDTO doctorRoster = doctorRosterServices.getDoctorRostersWithDays(deptId, doctorId, parsedDate);
+        ApiResponse<DoctorRosterResponseDTO> apiResponse = doctorRosterServices.getDoctorRostersWithDays(deptId, doctorId, parsedDate, false);
 
-        return ResponseEntity.ok(doctorRoster);
+        return ResponseEntity.ok(apiResponse);
     }
 
 

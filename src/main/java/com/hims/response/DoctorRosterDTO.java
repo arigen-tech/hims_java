@@ -2,18 +2,19 @@ package com.hims.response;
 
 import lombok.Data;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Date;
 
 @Data
 public class DoctorRosterDTO {
-    private String fromTime;
-    private String toTime;
+    private Long Id;
     private Long hospitalId;
-    private Long deptId;
-    private Instant validFrom;
-    private Instant validTo;
+    private Long deptmentId;
+    private Integer chgBy;
+    private LocalDate chgDate;
+    private String chgTime;
     private Long doctorId;
     private String rosterVal;
-    private Date roasterDate;
+    private String  roasterDate;
 
 }

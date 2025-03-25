@@ -11,6 +11,7 @@ import com.hims.response.*;
 import com.hims.service.DoctorRosterServices;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -70,86 +72,61 @@ DoctorRoasterRepository doctorRoasterRepository;
     }
 
     @Override
-    public List<DoctorRosterDTO> getDoctorRoster(Long deptId, Long doctorId, LocalDate rosterDate) {
+    public ApiResponse<List<DoctorRosterDTO>> getDoctorRoster(Long deptId, Long doctorId, LocalDate rosterDate) {
         Date convertedDate = java.sql.Date.valueOf(rosterDate);
 
-        List<DoctorRoaster> docRoster;
+        ApiResponse<List<DoctorRosterDTO>> apiResponse;
+
+        List<DoctorRoaster> docRosterList;
 
         if (doctorId != null) {
-            docRoster = doctorRoasterRepository.findDoctorRosterByDeptAndDoctor(deptId, doctorId, convertedDate);
+            docRosterList = doctorRoasterRepository.findDoctorRosterByDeptAndDoctor(deptId, doctorId, convertedDate);
         } else {
-            docRoster = doctorRoasterRepository.findDoctorRosterByDept(deptId, convertedDate);
+            docRosterList = doctorRoasterRepository.findDoctorRosterByDept(deptId, convertedDate);
         }
 
-        return docRoster.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        if (docRosterList != null && !docRosterList.isEmpty()) {
+            List<DoctorRosterDTO> doctorRosterDTOList = docRosterList.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+
+            apiResponse = ResponseUtils.createSuccessResponse(doctorRosterDTOList, new TypeReference<List<DoctorRosterDTO>>() {});
+        } else {
+            apiResponse = ResponseUtils.createFailureResponse(
+                    new ArrayList<>(),
+                    new TypeReference<List<DoctorRosterDTO>>() {},
+                    "No doctor roster found for the given parameters",
+                    HttpStatus.NOT_FOUND.value());
+        }
+
+        return apiResponse;
     }
 
+    private DoctorRosterDTO convertToDTO(DoctorRoaster doctorRoaster) {
 
 
-    private DoctorRosterDTO convertToDTO(DoctorRoaster roster) {
         DoctorRosterDTO dto = new DoctorRosterDTO();
-        dto.setFromTime(roster.getChgTime());
-        dto.setRosterVal(roster.getRoasterValue());
-        dto.setToTime(roster.getChgTime());
-        dto.setHospitalId(roster.getHospital() != null ? roster.getHospital().getId() : null);
-        dto.setDeptId(roster.getDepartment() != null ? roster.getDepartment().getId() : null);
-        dto.setDoctorId(roster.getDoctorId() != null ? roster.getDoctorId().getUserId() : null);
-
-        if (roster.getChgDate() != null) {
-            dto.setValidFrom(roster.getChgDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
-            dto.setValidTo(roster.getChgDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
-        }
-
+        dto.setDoctorId(doctorRoaster.getDoctorId().getUserId());
+        LocalDate roasterDate = doctorRoaster.getRoasterDate().toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formattedRoasterDate = roasterDate.format(formatter);
+        dto.setRoasterDate(formattedRoasterDate);
+        dto.setRosterVal(doctorRoaster.getRoasterValue());
+        dto.setHospitalId(doctorRoaster.getHospital().getId());
+        dto.setId(doctorRoaster.getId());
+        dto.setChgBy(doctorRoaster.getChgBy());
+        dto.setChgDate(doctorRoaster.getChgDate());
+        dto.setChgTime(doctorRoaster.getChgTime());
+        dto.setDeptmentId(doctorRoaster.getDepartment().getId());
         return dto;
     }
 
-//    @Override
-//    public List<DoctorRosterDTO> getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate) {
-//        Date startDate = convertToDate(rosterDate);
-//        Date endDate = convertToDate(rosterDate.plusDays(6));
-//
-//        List<DoctorRoaster> docRoster;
-//
-//        if (doctorId != null) {
-//            docRoster = doctorRoasterRepository.findDoctorRostersByDeptAndDoctor(deptId, doctorId, startDate, endDate);
-//        } else {
-//            docRoster = doctorRoasterRepository.findDoctorRostersByDept(deptId, startDate, endDate);
-//        }
-//
-//        return docRoster.stream()
-//                .map(this::convertToDTOs)
-//                .collect(Collectors.toList());
-//    }
-
-    private Date convertToDate(LocalDate localDate) {
-        return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-    }
-
-    private DoctorRosterDTO convertToDTOs(DoctorRoaster roster) {
-        DoctorRosterDTO dto = new DoctorRosterDTO();
-
-        dto.setFromTime(roster.getChgTime());
-        dto.setToTime(roster.getChgTime());
-        dto.setRosterVal(roster.getRoasterValue());
-        dto.setRoasterDate(roster.getRoasterDate());
-
-        dto.setHospitalId(roster.getHospital() != null ? roster.getHospital().getId() : null);
-        dto.setDeptId(roster.getDepartment() != null ? roster.getDepartment().getId() : null);
-        dto.setDoctorId(roster.getDoctorId() != null ? roster.getDoctorId().getUserId() : null);
-
-        if (roster.getChgDate() != null) {
-            dto.setValidFrom(roster.getChgDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
-            dto.setValidTo(roster.getChgDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
-        }
-
-        return dto;
-    }
 
 
     @Override
-    public DoctorRosterResponseDTO getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate) {
+    public ApiResponse<DoctorRosterResponseDTO> getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate, boolean isProduction) {
         Date startDate = java.sql.Date.valueOf(rosterDate);
         Date endDate = java.sql.Date.valueOf(rosterDate.plusDays(7));
 
@@ -158,6 +135,15 @@ DoctorRoasterRepository doctorRoasterRepository;
             docRoster = doctorRoasterRepository.findDoctorRostersByDeptAndDoctor(deptId, doctorId, startDate, endDate);
         } else {
             docRoster = doctorRoasterRepository.findDoctorRostersByDept(deptId, startDate, endDate);
+        }
+
+        if (docRoster.isEmpty()) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<DoctorRosterResponseDTO>() {},
+                    "No doctor rosters found for the given parameters",
+                    HttpStatus.NOT_FOUND.value()
+            );
         }
 
         DoctorRosterResponseDTO responseDTO = new DoctorRosterResponseDTO();
@@ -175,13 +161,13 @@ DoctorRoasterRepository doctorRoasterRepository;
                     entry.setId(roster.getId());
                     entry.setDoctorId(roster.getDoctorId() != null ? roster.getDoctorId().getUserId() : null);
                     entry.setRosterVale(roster.getRoasterValue());
-                    entry.setDates(roster.getRoasterDate().toInstant());
+                    entry.setDates(new java.sql.Date(roster.getRoasterDate().getTime()).toLocalDate());
                     return entry;
                 })
                 .collect(Collectors.toList());
 
         responseDTO.setDates(dateEntries);
-        return responseDTO;
-    }
 
+        return ResponseUtils.createSuccessResponse(responseDTO, new TypeReference<DoctorRosterResponseDTO>() {});
+    }
 }
