@@ -10,4 +10,5 @@ public interface TemplateApplicationService {
     ApiResponse<TemplateApplicationResponse> assignTemplateToApplication(TemplateApplicationRequest request);
     ApiResponse<String> changeTemplateApplicationStatus(Long id, String status);
     ApiResponse<List<TemplateApplicationResponse>> getAllTemplateApplications(int flag);
+    ApiResponse<List<TemplateApplicationResponse>> getAllTemplateById(Long templateId);
 }

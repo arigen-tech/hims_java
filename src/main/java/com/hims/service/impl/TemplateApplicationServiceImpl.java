@@ -88,6 +88,23 @@ public class TemplateApplicationServiceImpl implements TemplateApplicationServic
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
+    @Override
+    public ApiResponse<List<TemplateApplicationResponse>> getAllTemplateById(Long templateId) {
+        Optional<MasTemplate> templateOpt = masTemplateRepository.findById(templateId);
+
+        if (templateOpt.isEmpty()) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Template not found", 404);
+        }
+
+        List<TemplateApplication> templateApplications = templateApplicationRepository.findByTemplateId(templateId);
+
+        List<TemplateApplicationResponse> responses = templateApplications.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+    }
+
 
     private boolean isValidStatus(String status) {
         return "y".equals(status) || "n".equals(status);
@@ -98,6 +115,7 @@ public class TemplateApplicationServiceImpl implements TemplateApplicationServic
         response.setId(templateApplication.getId());
         response.setTemplateId(templateApplication.getTemplate().getId());
         response.setAppId(templateApplication.getApp().getAppId());
+        response.setAppName(templateApplication.getApp().getParentId());
         response.setStatus(templateApplication.getStatus());
         response.setLastChgDate(templateApplication.getLastChgDate());
         response.setLastChgBy(templateApplication.getLastChgBy());
