@@ -32,6 +32,7 @@ public class TemplateApplicationServiceImpl implements TemplateApplicationServic
     @Autowired
     private MasApplicationRepository masApplicationRepository;
 
+    @Override
     public ApiResponse<TemplateApplicationResponse> assignTemplateToApplication(TemplateApplicationRequest request) {
         Optional<MasTemplate> templateOpt = masTemplateRepository.findById(request.getTemplateId());
         Optional<MasApplication> appOpt = masApplicationRepository.findById(request.getAppId());
@@ -43,7 +44,7 @@ public class TemplateApplicationServiceImpl implements TemplateApplicationServic
         TemplateApplication templateApplication = new TemplateApplication();
         templateApplication.setTemplate(templateOpt.get());
         templateApplication.setApp(appOpt.get());
-        templateApplication.setStatus("y");
+        templateApplication.setStatus("Y");
         templateApplication.setLastChgDate(Instant.now());
         templateApplication.setLastChgBy(request.getLastChgBy());
         templateApplication.setOrderNo(request.getOrderNo());
@@ -52,6 +53,7 @@ public class TemplateApplicationServiceImpl implements TemplateApplicationServic
         return ResponseUtils.createSuccessResponse(convertToResponse(templateApplication), new TypeReference<>() {});
     }
 
+    @Override
     public ApiResponse<String> changeTemplateApplicationStatus(Long id, String status) {
         if (!isValidStatus(status)) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status. Status should be 'Y' or 'N'", 400);
@@ -105,9 +107,8 @@ public class TemplateApplicationServiceImpl implements TemplateApplicationServic
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
-
     private boolean isValidStatus(String status) {
-        return "y".equals(status) || "n".equals(status);
+        return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
     }
 
     private TemplateApplicationResponse convertToResponse(TemplateApplication templateApplication) {
@@ -115,7 +116,7 @@ public class TemplateApplicationServiceImpl implements TemplateApplicationServic
         response.setId(templateApplication.getId());
         response.setTemplateId(templateApplication.getTemplate().getId());
         response.setAppId(templateApplication.getApp().getAppId());
-        response.setAppName(templateApplication.getApp().getParentId());
+        response.setAppName(templateApplication.getApp().getName()); // Fixed mapping
         response.setStatus(templateApplication.getStatus());
         response.setLastChgDate(templateApplication.getLastChgDate());
         response.setLastChgBy(templateApplication.getLastChgBy());

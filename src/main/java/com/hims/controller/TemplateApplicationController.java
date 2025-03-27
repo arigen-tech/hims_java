@@ -20,13 +20,13 @@ public class TemplateApplicationController {
     @Autowired
     private TemplateApplicationService templateApplicationService;
 
-    @PostMapping("/assign")
+    @PostMapping("/assignAppTemplate")
     public ResponseEntity<ApiResponse<TemplateApplicationResponse>> assignTemplateToApplication(@RequestBody TemplateApplicationRequest request) {
         ApiResponse<TemplateApplicationResponse> response = templateApplicationService.assignTemplateToApplication(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PutMapping("/change-status")
+    @PutMapping("/changeStatus")
     public ResponseEntity<ApiResponse<String>> changeTemplateApplicationStatus(
             @RequestParam Long id,
             @RequestParam String status) {
