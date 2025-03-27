@@ -1,5 +1,6 @@
 package com.hims.controller;
 
+import com.hims.request.BatchUpdateRequest;
 import com.hims.request.MasApplicationRequest;
 import com.hims.request.UpdateStatusRequest;
 import com.hims.response.ApiResponse;
@@ -56,5 +57,10 @@ public class MasApplicationController {
         return new ResponseEntity<>(masApplicationService.getAllParentApplications(flag), HttpStatus.OK);
     }
 
+    @PostMapping("/assignUpdateTemplate")
+    public ResponseEntity<ApiResponse<String>> processBatchUpdates(@RequestBody BatchUpdateRequest request) {
+        ApiResponse<String> response = masApplicationService.processBatchUpdates(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
 }
