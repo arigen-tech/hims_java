@@ -321,12 +321,15 @@ public class MasApplicationServiceImpl implements MasApplicationService {
         List<MasApplication> applications;
 
         if (flag == 1) {
-            applications = masApplicationRepository.findByParentIdIsNullOrParentId("")
+            applications = masApplicationRepository.findByStatusIgnoreCase("Y")
                     .stream()
-                    .filter(app -> "Y".equalsIgnoreCase(app.getStatus()))
+                    .filter(app -> app.getAppId().equals(app.getParentId()))
                     .collect(Collectors.toList());
         } else if (flag == 0) {
-            applications = masApplicationRepository.findByParentIdIsNullOrParentId("");
+            applications = masApplicationRepository.findAll()
+                    .stream()
+                    .filter(app -> app.getAppId().equals(app.getParentId()))
+                    .collect(Collectors.toList());
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
