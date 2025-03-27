@@ -9,7 +9,5 @@ public class MasApplicationRequest {
     private String name;
     private String parentId;
     private String url;
-    private Long orderNo;
-    private Long appSequenceNo;
     private String status;
 }

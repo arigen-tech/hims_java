@@ -1,6 +1,7 @@
 package com.hims.controller;
 
 import com.hims.request.MasApplicationRequest;
+import com.hims.request.UpdateStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasApplicationResponse;
 import com.hims.service.MasApplicationService;
@@ -27,21 +28,33 @@ public class MasApplicationController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MasApplicationResponse>> getApplicationById(@PathVariable String id) {
-        return new ResponseEntity<>(masApplicationService.getApplicationById(id), HttpStatus.OK);
+        return ResponseEntity.ok(masApplicationService.getApplicationById(id));
     }
 
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<MasApplicationResponse>> createApplication(@RequestBody MasApplicationRequest request) {
-        return new ResponseEntity<>(masApplicationService.createApplication(request), HttpStatus.CREATED);
+        return ResponseEntity.status(201).body(masApplicationService.createApplication(request));
     }
 
     @PutMapping("/edit/{id}")
     public ResponseEntity<ApiResponse<MasApplicationResponse>> updateApplication(@PathVariable String id, @RequestBody MasApplicationRequest request) {
-        return new ResponseEntity<>(masApplicationService.updateApplication(id, request), HttpStatus.OK);
+        return ResponseEntity.ok(masApplicationService.updateApplication(id, request));
     }
 
-    @PutMapping("/status/{id}")
-    public ResponseEntity<ApiResponse<String>> changeApplicationStatus(@PathVariable String id, @RequestParam String status) {
-        return new ResponseEntity<>(masApplicationService.changeApplicationStatus(id, status), HttpStatus.OK);
+    @GetMapping("/getAllChildren/{parentId}")
+    public ResponseEntity<ApiResponse<List<MasApplicationResponse>>> getAllByParentId(@PathVariable String parentId) {
+        return new ResponseEntity<>(masApplicationService.getAllByParentId(parentId), HttpStatus.OK);
     }
+
+    @PutMapping("/updateBatchStatus")
+    public ResponseEntity<ApiResponse<String>> updateMultipleApplicationStatuses(@RequestBody UpdateStatusRequest request) {
+        return new ResponseEntity<>(masApplicationService.updateMultipleApplicationStatuses(request), HttpStatus.OK);
+    }
+
+    @GetMapping("/getAllParents/{flag}")
+    public ResponseEntity<ApiResponse<List<MasApplicationResponse>>> getAllParentApplications(@PathVariable int flag) {
+        return new ResponseEntity<>(masApplicationService.getAllParentApplications(flag), HttpStatus.OK);
+    }
+
+
 }

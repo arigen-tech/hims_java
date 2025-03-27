@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -17,7 +18,7 @@ import java.util.Set;
 public class MasApplication {
 
     @Id
-    @Column(name = "app_id", nullable = false, length = Integer.MAX_VALUE)
+    @Column(name = "app_id", nullable = false, length = 50)
     private String appId;
 
     @Size(max = 200)

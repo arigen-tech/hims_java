@@ -1,6 +1,7 @@
 package com.hims.service;
 
 import com.hims.request.MasApplicationRequest;
+import com.hims.request.UpdateStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasApplicationResponse;
 
@@ -12,5 +13,7 @@ public interface MasApplicationService {
     ApiResponse<MasApplicationResponse> getApplicationById(String id);
     ApiResponse<MasApplicationResponse> createApplication(MasApplicationRequest request);
     ApiResponse<MasApplicationResponse> updateApplication(String id, MasApplicationRequest request);
-    ApiResponse<String> changeApplicationStatus(String id, String status);
+    ApiResponse<List<MasApplicationResponse>> getAllByParentId(String parentId);
+    ApiResponse<String> updateMultipleApplicationStatuses(UpdateStatusRequest request);
+    ApiResponse<List<MasApplicationResponse>> getAllParentApplications(int flag);
 }
