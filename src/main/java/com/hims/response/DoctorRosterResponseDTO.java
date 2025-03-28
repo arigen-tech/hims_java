@@ -1,6 +1,5 @@
 package com.hims.response;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -34,16 +33,16 @@ public class DoctorRosterResponseDTO {
     }
 
     public static class DateEntry {
-        private LocalDate dates;
+        private String dates; // Changed to String for formatted date
         private String rosterVale;
         private Long doctorId;
         private Long id;
 
-        public LocalDate getDates() {
+        public String getDates() {
             return dates;
         }
 
-        public void setDates(LocalDate dates) {
+        public void setDates(String dates) {
             this.dates = dates;
         }
 
@@ -71,5 +70,4 @@ public class DoctorRosterResponseDTO {
             this.id = id;
         }
     }
-
 }

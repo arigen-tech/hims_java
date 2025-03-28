@@ -150,6 +150,8 @@ DoctorRoasterRepository doctorRoasterRepository;
         responseDTO.setDepartmentId(deptId);
         responseDTO.setFromDate(rosterDate);
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy"); // Format for the response
+
         List<DoctorRosterResponseDTO.DateEntry> dateEntries = docRoster.stream()
                 .filter(roster -> {
                     LocalDate rosterLocalDate = new java.sql.Date(roster.getRoasterDate().getTime()).toLocalDate();
@@ -161,7 +163,12 @@ DoctorRoasterRepository doctorRoasterRepository;
                     entry.setId(roster.getId());
                     entry.setDoctorId(roster.getDoctorId() != null ? roster.getDoctorId().getUserId() : null);
                     entry.setRosterVale(roster.getRoasterValue());
-                    entry.setDates(new java.sql.Date(roster.getRoasterDate().getTime()).toLocalDate());
+
+                    // Format the roster date to "dd/MM/yyyy"
+                    LocalDate rosterLocalDate = new java.sql.Date(roster.getRoasterDate().getTime()).toLocalDate();
+                    String formattedDate = rosterLocalDate.format(formatter); // Apply the formatter here
+                    entry.setDates(formattedDate);
+
                     return entry;
                 })
                 .collect(Collectors.toList());
@@ -170,4 +177,5 @@ DoctorRoasterRepository doctorRoasterRepository;
 
         return ResponseUtils.createSuccessResponse(responseDTO, new TypeReference<DoctorRosterResponseDTO>() {});
     }
+
 }
