@@ -14,9 +14,6 @@ public class ResponseUtils {
         response.setResponse(data);
         response.setStatus(HttpStatus.OK.value());
         response.setMessage("success");
-//        response.setAndroidVersion("prod_v1.1.0");
-//        response.setApiVersion("prod_v1.1.0");
-//        response.setIosVersion("prod_v1.1.0");
         return response;
     }
 
@@ -25,20 +22,9 @@ public class ResponseUtils {
         response.setResponse(data);
         response.setStatus(HttpStatus.OK.value());
         response.setMessage("success");
-
-        // Production
-
         response.setKey("4gcXBD");
         response.setSalt("uEUTeQqzQhwwHg0qZCpYVRA9ufPnR9zE");
         response.setProduction(true);
-
-
-        // Testing
-//        response.setKey("7rnFly");
-//        response.setSalt("pjVQAWpA");
-//        response.setProduction(false);
-
-
         return response;
     }
 
@@ -55,6 +41,10 @@ public class ResponseUtils {
         response.setStatus(status);
         response.setMessage(msg);
         return response;
+    }
+
+    public static String getReturnMsg(String status, String message) {
+        return "{\"status\": \"" + status + "\", \"message\": \"" + message + "\"}";
     }
 
 

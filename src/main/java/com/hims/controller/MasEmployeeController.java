@@ -29,11 +29,14 @@ public class MasEmployeeController {
         logger.info("Received request to fetch all Employees.");
         return ResponseEntity.ok(masEmployeeService.getAllEmployees());
     }
+
+
     @GetMapping("/employee/{id}")
     public ResponseEntity<ApiResponse<MasEmployee>> getEmployeeById(@PathVariable Long id) {
         logger.info("Received request to fetch Employee with ID: {}", id);
         return ResponseEntity.ok(masEmployeeService.getEmployeeById(id));
     }
+
     @PutMapping(value = "/employee/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<MasEmployee>> updateEmployee(@PathVariable Long id, @ModelAttribute MasEmployeeRequest masEmployeeRequest) {
         logger.info("Received request to update Employee with ID: {}", id);

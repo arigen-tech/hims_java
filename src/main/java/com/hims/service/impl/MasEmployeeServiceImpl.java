@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.helperUtil.HelperUtils;
 import com.hims.request.EmployeeDocumentReq;
 import com.hims.request.EmployeeQualificationReq;
 import com.hims.request.MasEmployeeRequest;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -88,6 +90,12 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
     @Autowired
     private MasUserTypeRepository masUserTypeRepository;
+
+    @Autowired
+    private HelperUtils helperUtils;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
 
     @Override
@@ -775,10 +783,23 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             MasUserType userTypeObj = masUserTypeRepository.findById(1L)
                     .orElseThrow(() -> new EntityNotFoundException("Usertype not found with ID: 1"));
 
-            String username = employeeObj.getEmail();
+
+            String otp = HelperUtils.generateOTP();
+            System.out.println("Generated OTP: " + otp);
+            if(otp.isEmpty()){
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Unable to Generate OTP", 400);
+            }else{
+                String respSms = HelperUtils.sendSMS(employeeObj.getMobileNo(),employeeObj.getFirstName(),otp);
+                if(respSms.isEmpty()){
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Unable to Send OTP", 400);
+                }
+            }
+
+            String username = employeeObj.getMobileNo();
             if (username == null || username.isEmpty()) {
                 username = employeeObj.getMobileNo();
             }
+
 
             User newUser = User.builder()
                     .status("y")
@@ -794,6 +815,8 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .userFlag(1)
                     .hospital(currentUser.getHospital())
                     .userType(userTypeObj)
+                    .oldPassword(passwordEncoder.encode(otp))
+                    .currentPassword(passwordEncoder.encode(otp))
                     .isVerified(true)
                     .lastChangeDate(Instant.now())
                     .build();
@@ -807,10 +830,17 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             newUserdept.setUser(createNewUser);
             newUserdept.setDepartment(deptObj);
             userDepartmentRepository.save(newUserdept);
+
+
+
+
         }
 
         return ResponseUtils.createSuccessResponse(employeeObj, new TypeReference<MasEmployee>() {});
     }
+
+
+
 
     @Transactional(rollbackFor = {Exception.class})
     @Override
