@@ -784,12 +784,12 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .orElseThrow(() -> new EntityNotFoundException("Usertype not found with ID: 1"));
 
 
-            String otp = HelperUtils.generateOTP();
+            String otp = helperUtils.generateOTP();
             System.out.println("Generated OTP: " + otp);
             if(otp.isEmpty()){
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Unable to Generate OTP", 400);
             }else{
-                String respSms = HelperUtils.sendSMS(employeeObj.getMobileNo(),employeeObj.getFirstName(),otp);
+                String respSms = helperUtils.sendSMS(employeeObj.getMobileNo(),employeeObj.getFirstName(),otp);
                 if(respSms.isEmpty()){
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Unable to Send OTP", 400);
                 }

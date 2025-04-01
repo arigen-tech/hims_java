@@ -1,6 +1,7 @@
 package com.hims.helperUtil;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -8,7 +9,7 @@ import org.springframework.web.client.RestTemplate;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.util.Date;
-
+@Service
 public class HelperUtils {
 
     // FOR dev  D:\BmsBackend\webapps\bmsreport
@@ -36,7 +37,7 @@ public class HelperUtils {
     }
 
 
-    public static String sendSMS(String mobile, String name,String password) {
+    public  String sendSMS(String mobile, String name,String password) {
         try {
             final String uri ="https://2factor.in/API/R1/?module=TRANS_SMS&apikey=5cdc6365-22b5-11ec-a13b-0200cd936042&to="+mobile+
                     "&from=CGMMSY&templatename=Username-New&var1="+name+"&var2="+mobile+"&var3="+password;
@@ -54,7 +55,7 @@ public class HelperUtils {
         }
     }
 
-    public static String generateOTP() {
+    public  String generateOTP() {
         SecureRandom random = new SecureRandom();
         int otp = 100000 + random.nextInt(900000); // Generates a 6-digit number
         return String.valueOf(otp); // Convert to string for OTP usage
