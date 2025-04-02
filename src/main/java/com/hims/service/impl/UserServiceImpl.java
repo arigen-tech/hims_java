@@ -22,27 +22,65 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
+
     @Autowired
     MasRoleRepository masRoleRepository;
+
     @Autowired
     UserDepartmentRepository userDepartmentRepository;
+
     @Autowired
     UserRepo userRepository;
+
     @Autowired
     MasDepartmentRepository masDepartmentRepository;
+
+//    @Override
+//    public ApiResponse<List<UserResponse>> getAllDoctorsBySpeciality(Long speciality) {
+//        List<UserResponse> response=new ArrayList<>();
+//        Optional<MasRole> doctorRole = masRoleRepository.findByRoleDesc("Doctor");
+//        if(doctorRole.get()==null){
+//            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+//            },"No role for Doctor Found",500);
+//        }
+//
+//        List<UserDepartment> users = userDepartmentRepository.findByDepartment(masDepartmentRepository.findById(speciality).get());
+//        for(UserDepartment user:users){
+//            if(user.getUser().getRoleId()!=null) {
+//                if (user.getUser().getRoleId().contains(doctorRole.get().getId())) {
+//                    UserResponse doctor = new UserResponse();
+//                    doctor.setFirstName(user.getUser().getFirstName());
+//                    doctor.setMiddleName(user.getUser().getMiddleName());
+//                    doctor.setLastName(user.getUser().getLastName());
+//                    doctor.setUserId(user.getUser().getUserId());
+//                    response.add(doctor);
+//                }
+//            }
+//        }
+//        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+//    }
+
     @Override
     public ApiResponse<List<UserResponse>> getAllDoctorsBySpeciality(Long speciality) {
-        List<UserResponse> response=new ArrayList<>();
+        List<UserResponse> response = new ArrayList<>();
         Optional<MasRole> doctorRole = masRoleRepository.findByRoleDesc("Doctor");
-        if(doctorRole.get()==null){
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            },"No role for Doctor Found",500);
+
+        if (doctorRole.isEmpty()) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "No role for Doctor Found", 500);
         }
 
-        List<UserDepartment> users = userDepartmentRepository.findByDepartment(masDepartmentRepository.findById(speciality).get());
-        for(UserDepartment user:users){
-            if(user.getUser().getRoleId()!=null) {
-                if (user.getUser().getRoleId().contains(doctorRole.get().getId())) {
+        List<UserDepartment> users = userDepartmentRepository.findByDepartment(masDepartmentRepository.findById(speciality).orElse(null));
+
+        for (UserDepartment user : users) {
+            if (user.getUser().getRoleId() != null) {
+                List<Long> roleIds = List.of(user.getUser().getRoleId().split(","))
+                        .stream()
+                        .map(String::trim)
+                        .map(Long::valueOf)
+                        .collect(Collectors.toList());
+
+                if (roleIds.contains(doctorRole.get().getId())) {
                     UserResponse doctor = new UserResponse();
                     doctor.setFirstName(user.getUser().getFirstName());
                     doctor.setMiddleName(user.getUser().getMiddleName());
@@ -54,6 +92,7 @@ public class UserServiceImpl implements UserService {
         }
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
     }
+
 
     @Override
     public ApiResponse<List<UserResponse>> getAllUsers(int flag) {

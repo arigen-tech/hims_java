@@ -24,17 +24,17 @@ public class MasRoleController {
     }
 
     @PutMapping("/status/{id}")
-    public ApiResponse<String> changeRoleStatus(@PathVariable String id, @RequestParam String status) {
+    public ApiResponse<String> changeRoleStatus(@PathVariable Long id, @RequestParam String status) {
         return masRoleService.changeRoleStatus(id, status);
     }
 
     @PutMapping("/update/{id}")
-    public ApiResponse<MasRoleResponse> editRole(@PathVariable String id, @RequestBody MasRoleRequest request) {
+    public ApiResponse<MasRoleResponse> editRole(@PathVariable Long id, @RequestBody MasRoleRequest request) {
         return masRoleService.editRole(id, request);
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<MasRoleResponse> getRoleById(@PathVariable String id) {
+    public ApiResponse<MasRoleResponse> getRoleById(@PathVariable Long id) {
         return masRoleService.getRoleById(id);
     }
 

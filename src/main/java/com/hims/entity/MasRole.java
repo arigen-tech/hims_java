@@ -15,9 +15,9 @@ import java.time.Instant;
 public class MasRole {
 
     @Id
-    @Size(max = 255)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private String id;
+    private Long id;
 
     @Column(name = "created_on")
     private Instant createdOn;

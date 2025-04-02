@@ -7,8 +7,8 @@ import java.util.List;
 
 public interface MasRoleService {
     ApiResponse<MasRoleResponse> addRole(MasRoleRequest request);
-    ApiResponse<String> changeRoleStatus(String id, String status);
-    ApiResponse<MasRoleResponse> editRole(String id, MasRoleRequest request);
-    ApiResponse<MasRoleResponse> getRoleById(String id);
+    ApiResponse<String> changeRoleStatus(Long id, String status);
+    ApiResponse<MasRoleResponse> editRole(Long id, MasRoleRequest request);
+    ApiResponse<MasRoleResponse> getRoleById(Long id);
     ApiResponse<List<MasRoleResponse>> getAllRoles(int flag);
 }

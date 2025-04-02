@@ -14,7 +14,7 @@ import java.time.Instant;
 public class RoleTemplate {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "role_template_id_gen")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "role_template_id", nullable = false)
     private Long id;
 
@@ -38,8 +38,5 @@ public class RoleTemplate {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hospital_id")
     private MasHospital hospital;
-
-    @Column(name = "mmu_id")
-    private Long mmuId;
 
 }

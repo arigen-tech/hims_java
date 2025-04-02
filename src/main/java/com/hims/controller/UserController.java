@@ -24,6 +24,7 @@ import java.util.List;
 public class UserController {
     @Autowired
     UserService userService;
+
     @GetMapping("/doctorBySpeciality/{speciality}")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllApplications(@PathVariable Long speciality) {
         return new ResponseEntity<>(userService.getAllDoctorsBySpeciality(speciality), HttpStatus.OK);

@@ -33,7 +33,6 @@ public class MasRoleServiceImpl implements MasRoleService {
         }
 
         MasRole role = new MasRole();
-        role.setId(java.util.UUID.randomUUID().toString());
         role.setRoleCode(request.getRoleCode());
         role.setRoleDesc(request.getRoleDesc());
         role.setStatus(request.getStatus().toLowerCase());
@@ -44,8 +43,7 @@ public class MasRoleServiceImpl implements MasRoleService {
         return ResponseUtils.createSuccessResponse(mapToResponse(savedRole), new TypeReference<>() {});
     }
 
-    @Override
-    public ApiResponse<String> changeRoleStatus(String id, String status) {
+    public ApiResponse<String> changeRoleStatus(Long id, String status) {
         if (!isValidStatus(status)) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status. Use 'Y' or 'N'.", 400);
         }
@@ -62,8 +60,7 @@ public class MasRoleServiceImpl implements MasRoleService {
         }
     }
 
-    @Override
-    public ApiResponse<MasRoleResponse> editRole(String id, MasRoleRequest request) {
+    public ApiResponse<MasRoleResponse> editRole(Long id, MasRoleRequest request) {
         if (!isValidStatus(request.getStatus())) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status. Use 'Y' or 'N'.", 400);
         }
@@ -83,8 +80,7 @@ public class MasRoleServiceImpl implements MasRoleService {
         }
     }
 
-    @Override
-    public ApiResponse<MasRoleResponse> getRoleById(String id) {
+    public ApiResponse<MasRoleResponse> getRoleById(Long id) {
         return masRoleRepository.findById(id)
                 .map(role -> ResponseUtils.createSuccessResponse(mapToResponse(role), new TypeReference<>() {}))
                 .orElseGet(() -> ResponseUtils.createNotFoundResponse("Role not found", 404));

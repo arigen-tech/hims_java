@@ -66,6 +66,7 @@ public class SecurityConfig {
                         .requestMatchers("/blood-group/**").permitAll()
                         .requestMatchers("/roles/**").permitAll()
                         .requestMatchers("/religion/**").permitAll()
+                        .requestMatchers("/role-template/**").permitAll()
                         .requestMatchers("/user-departments/**").permitAll()
                         .requestMatchers("/identification-types/**").permitAll()
                         .requestMatchers("/v3/**", "/swagger-ui/**").permitAll()
