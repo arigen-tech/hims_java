@@ -34,7 +34,7 @@ public class DoctorRoaster {
     private String roasterValue;
 
     @Column(name = "chg_by")
-    private Integer chgBy;
+    private Long chgBy;
 
     @Column(name = "chg_date")
     private LocalDate chgDate;

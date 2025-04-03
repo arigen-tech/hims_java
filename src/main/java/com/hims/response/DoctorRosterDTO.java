@@ -10,7 +10,7 @@ public class DoctorRosterDTO {
     private Long Id;
     private Long hospitalId;
     private Long deptmentId;
-    private Integer chgBy;
+    private Long chgBy;
     private LocalDate chgDate;
     private String chgTime;
     private Long doctorId;
