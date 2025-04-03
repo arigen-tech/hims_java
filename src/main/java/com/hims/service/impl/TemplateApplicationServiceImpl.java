@@ -44,7 +44,7 @@ public class TemplateApplicationServiceImpl implements TemplateApplicationServic
         TemplateApplication templateApplication = new TemplateApplication();
         templateApplication.setTemplate(templateOpt.get());
         templateApplication.setApp(appOpt.get());
-        templateApplication.setStatus("Y");
+        templateApplication.setStatus("y");
         templateApplication.setLastChgDate(Instant.now());
         templateApplication.setLastChgBy(request.getLastChgBy());
         templateApplication.setOrderNo(request.getOrderNo());
