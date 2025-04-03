@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -36,6 +37,6 @@ public class MasEmployeeRequest {
     private MultipartFile  profilePicName;
 
 
-    private ArrayList<EmployeeQualificationReq> qualification;
-    private ArrayList<EmployeeDocumentReq> document;
+    private List<EmployeeQualificationReq> qualification;
+    private List<EmployeeDocumentReq> document;
 }

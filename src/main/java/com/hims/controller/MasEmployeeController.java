@@ -1,6 +1,8 @@
 package com.hims.controller;
 
 import com.hims.entity.MasEmployee;
+import com.hims.request.EmployeeDocumentReq;
+import com.hims.request.EmployeeQualificationReq;
 import com.hims.request.MasEmployeeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasEmployeeDTO;
@@ -44,10 +46,12 @@ public class MasEmployeeController {
     }
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<MasEmployee>> createEmployee(@ModelAttribute MasEmployeeRequest masEmployeeRequest) {
-        logger.info("Received request to create a new Employee: {}", masEmployeeRequest);
+    public ResponseEntity<?> createEmployee(@ModelAttribute MasEmployeeRequest masEmployeeRequest) {
+        logger.info("📥 Received Employee Request: {}", masEmployeeRequest);
         return ResponseEntity.ok(masEmployeeService.createEmployee(masEmployeeRequest));
     }
+
+
 
     @PutMapping("/approve/{id}/{deptId}")
     public ResponseEntity<ApiResponse<MasEmployee>> approveEmpAndCreateUser(@PathVariable Long id, @PathVariable Long deptId) {

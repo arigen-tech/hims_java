@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/users/**").permitAll()
                         .requestMatchers("/patient/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/**").permitAll()
 
                         .requestMatchers("/app/**").permitAll()
 
