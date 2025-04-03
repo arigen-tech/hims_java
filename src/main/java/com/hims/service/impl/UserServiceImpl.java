@@ -63,7 +63,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public ApiResponse<List<UserResponse>> getAllDoctorsBySpeciality(Long speciality) {
         List<UserResponse> response = new ArrayList<>();
-        Optional<MasRole> doctorRole = masRoleRepository.findByRoleDesc("Doctor");
+        Optional<MasRole> doctorRole = masRoleRepository.findByRoleDesc("DOCTOR");
 
         if (doctorRole.isEmpty()) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
