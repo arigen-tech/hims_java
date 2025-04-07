@@ -132,19 +132,58 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     }
 
     @Override
-    public ApiResponse<MasEmployee> getEmployeeById(Long id) {
-        log.debug("Fetching Employee with ID: {}", id);
-        if (id == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Employee ID cannot be null", 400);
+    public ApiResponse<List<MasEmployeeDTO>> getEmployeesByStatus(String status) {
+        List<MasEmployee> employees = masEmployeeRepository.findByStatus(status);
+
+        if (employees.isEmpty()) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "RECORD NOT FOUND",
+                    400
+            );
         }
-        Optional<MasEmployee> emp = masEmployeeRepository.findById(id);
-        if (emp.isPresent()) {
-            log.debug("Employee found: {}", emp.get());
-            return ResponseUtils.createSuccessResponse(emp.get(), new TypeReference<>() {});
-        } else {
-            log.warn("Employee with ID: {} not found.", id);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Employee not found", 404);
-        }
+
+        List<MasEmployeeDTO> employeeDTOs = employees.stream().map(employee -> {
+            List<EmployeeQualificationDTO> qualifications = employeeQualificationRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeQualificationDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeDocumentDTO> documents = employeeDocumentRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeDocumentDTO::fromEntity)
+                    .toList();
+
+            return MasEmployeeDTO.fromEntity(employee, qualifications, documents);
+        }).toList();
+
+        return ResponseUtils.createSuccessResponse(employeeDTOs, new TypeReference<>() {});
+    }
+
+
+    @Override
+    public ApiResponse<MasEmployeeDTO> getEmployeeById(Long id) {
+        MasEmployee employee = masEmployeeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found with ID: " + id));
+
+        List<EmployeeQualificationDTO> qualifications = employeeQualificationRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeQualificationDTO::fromEntity)
+                .toList();
+
+        List<EmployeeDocumentDTO> documents = employeeDocumentRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeDocumentDTO::fromEntity)
+                .toList();
+
+        MasEmployeeDTO employeeDTO = MasEmployeeDTO.fromEntity(employee, qualifications, documents);
+
+        return ResponseUtils.createSuccessResponse(employeeDTO, new TypeReference<>() {});
     }
 
     @Transactional(rollbackFor = {Exception.class})
@@ -575,22 +614,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         return updateEmployeeApprovalStatus(createdEmployee.getEmployeeId(), masEmployeeRequest.getDepartmentId());
     }
 
-//    private String getFileExtension(String fileName) {
-//        if (fileName == null || !fileName.contains(".")) {
-//            return "";
-//        }
-//        return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-//    }
-//
-//    private boolean isValidDocExtension(String fileExtension) {
-//        return ALLOWED_DOC_EXTENSIONS.contains(fileExtension);
-//    }
-//
-//    private boolean isValidPicExtension(String fileExtension) {
-//        return ALLOWED_PIC_EXTENSIONS.contains(fileExtension);
-//    }
-//
-
     @Transactional(rollbackFor = {Exception.class})
     @Override
     public ApiResponse<MasEmployee> createEmployee(MasEmployeeRequest masEmployeeRequest) {
@@ -656,7 +679,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-
 
     private Map<String, String> validateEmployeeRequest(MasEmployeeRequest request) {
         Map<String, String> errors = new HashMap<>();
@@ -948,13 +970,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
-
-    // Custom exception classes for better error handling
-//    public static class EntityNotFoundException extends Exception {
-//        public EntityNotFoundException(String message) {
-//            super(message);
-//        }
-//    }
 
     public static class FileProcessingException extends Exception {
         public FileProcessingException(String message) {

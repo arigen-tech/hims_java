@@ -11,8 +11,14 @@ import java.util.List;
 
 public interface MasEmployeeService {
     ApiResponse<List<MasEmployeeDTO>> getAllEmployees();
-    ApiResponse<MasEmployee> getEmployeeById(Long id);
+
+    ApiResponse<List<MasEmployeeDTO>> getEmployeesByStatus(String status);
+
+
     ApiResponse<MasEmployee> createEmployee(MasEmployeeRequest masEmployeeRequest);
+
+    ApiResponse<MasEmployeeDTO> getEmployeeById(Long id);
+
     ApiResponse<MasEmployee> updateEmployee(Long id, MasEmployeeRequest masEmployeeRequest);
     @Transactional(rollbackFor = {Exception.class})
     ApiResponse<MasEmployee> updateEmployeeApprovalStatus(Long empId, Long deptId);

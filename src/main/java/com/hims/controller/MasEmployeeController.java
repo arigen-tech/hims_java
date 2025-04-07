@@ -32,9 +32,14 @@ public class MasEmployeeController {
         return ResponseEntity.ok(masEmployeeService.getAllEmployees());
     }
 
+    @GetMapping("/status/{status}")
+    public ResponseEntity<ApiResponse<List<MasEmployeeDTO>>> getEmployeesByStatus(@PathVariable String status) {
+        logger.info("Received request to fetch Employees with status: {}", status);
+        return ResponseEntity.ok(masEmployeeService.getEmployeesByStatus(status));
+    }
 
     @GetMapping("/employee/{id}")
-    public ResponseEntity<ApiResponse<MasEmployee>> getEmployeeById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<MasEmployeeDTO>> getEmployeeById(@PathVariable Long id) {
         logger.info("Received request to fetch Employee with ID: {}", id);
         return ResponseEntity.ok(masEmployeeService.getEmployeeById(id));
     }
@@ -51,8 +56,6 @@ public class MasEmployeeController {
         return ResponseEntity.ok(masEmployeeService.createEmployee(masEmployeeRequest));
     }
 
-
-
     @PutMapping("/approve/{id}/{deptId}")
     public ResponseEntity<ApiResponse<MasEmployee>> approveEmpAndCreateUser(@PathVariable Long id, @PathVariable Long deptId) {
         logger.info("Received request to approve Employee and create user with ID: {}", id);
@@ -65,7 +68,5 @@ public class MasEmployeeController {
         logger.info("Received request to create and approve a new Employee: {}", masEmployeeRequest);
         return ResponseEntity.ok(masEmployeeService.createAndApproveEmployee(masEmployeeRequest));
     }
-
-
 
 }

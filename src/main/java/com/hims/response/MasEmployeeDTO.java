@@ -24,7 +24,6 @@ public record MasEmployeeDTO(
         String mobileNo,
         String registrationNo,
         String identificationType,
-//        String department,
         Instant fromDate,
         String profilePicName,
         String idDocumentName,
@@ -54,7 +53,6 @@ public record MasEmployeeDTO(
                 .mobileNo(employee.getMobileNo())
                 .registrationNo(employee.getRegistrationNo())
                 .identificationType(employee.getIdentificationType() != null ? employee.getIdentificationType().getIdentificationName() : null)
-//                .department(employee.getDepartmentId() != null ? employee.getDepartmentId().getDepartmentName() : null)
                 .fromDate(employee.getFromDate())
                 .profilePicName(employee.getProfilePicName())
                 .idDocumentName(employee.getIdDocumentName())
