@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -64,6 +65,8 @@ public class PatientServiceImpl implements PatientService {
     VisitRepository visitRepository;
     @Autowired
     MasOpdSessionRepository masOpdSessionRepository;
+    @Autowired
+    AppSetupRepository appSetupRepository;
 
     @Override
     public ApiResponse<Patient> registerPatientWithOpd(PatientRequest request, OpdPatientDetailRequest opdPatientDetailRequest, VisitRequest visit) {
@@ -167,16 +170,40 @@ public class PatientServiceImpl implements PatientService {
         patient = patientRepository.save(patient); // Save patient
         if(visit!=null) {
             Visit newVisit = new Visit();
+            String todayDayName = LocalDate.now()
+                    .getDayOfWeek()
+                    .name()
+                    .substring(0, 1)
+                    .toUpperCase() + LocalDate.now()
+                    .getDayOfWeek()
+                    .name()
+                    .substring(1)
+                    .toLowerCase();
+            Optional<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(
+                    visit.getDoctorId(), visit.getHospitalId(), visit.getSessionId(),  todayDayName);
 
+
+            if (!optionalSetup.isPresent()) {
+                throw new IllegalStateException("AppSetup not configured for today’s session.");
+            }
+
+            AppSetup setup = optionalSetup.get();
+            Integer startToken = setup.getStartToken() != null ? setup.getStartToken() : 1;
+            Integer maxToken = setup.getTotalToken() != null ? setup.getTotalToken() : Integer.MAX_VALUE;
             // Map request fields to Visit entity
-            newVisit.setTokenNo(visit.getTokenNo());
+            List<Long> existingTokens = visitRepository
+                    .findAllTokensForSessionToday(visit.getDoctorId(), visit.getHospitalId(), visit.getSessionId());
+
+            Long nextToken = getNextAvailableToken(existingTokens, startToken, maxToken);
+
+            newVisit.setTokenNo(nextToken);
             newVisit.setVisitDate(visit.getVisitDate());
             newVisit.setLastChgDate(Instant.now());
-            newVisit.setVisitStatus(visit.getVisitStatus());
+            newVisit.setVisitStatus("y");
             newVisit.setPriority(visit.getPriority());
             newVisit.setDepartmentId(visit.getDepartmentId());
             newVisit.setDoctorName(visit.getDoctorName());
-            newVisit.setBillingStatus(visit.getBillingStatus());
+            newVisit.setBillingStatus("n");
             newVisit.setPatient(patient);
             if (visit.getDoctorId() != null) {
                 userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setDoctor);
@@ -197,7 +224,7 @@ public class PatientServiceImpl implements PatientService {
             // Save visit
             Visit savedVisit=visitRepository.save(newVisit);
 
-            if (patient.getPatientHospital().getPreConsultationAvailable() == "n") {
+            if (savedVisit.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
                 OpdPatientDetail opdPatientDetail = new OpdPatientDetail();
                 opdPatientDetail.setHeight(opdPatientDetailRequest.getHeight());
                 opdPatientDetail.setIdealWeight(opdPatientDetailRequest.getIdealWeight());
@@ -234,20 +261,11 @@ public class PatientServiceImpl implements PatientService {
 
                 opdPatientDetail.setVisit(savedVisit);
 
-                MasDepartment department = masDepartmentRepository.findById(opdPatientDetailRequest.getDepartmentId())
+                MasDepartment department = masDepartmentRepository.findById(savedVisit.getDepartmentId())
                         .orElseThrow(() -> new RuntimeException("Department not found"));
                 opdPatientDetail.setDepartment(department);
-
-                MasHospital hospital = masHospitalRepository.findById(opdPatientDetailRequest.getHospitalId())
-                        .orElseThrow(() -> new RuntimeException("Hospital not found"));
-                opdPatientDetail.setHospital(hospital);
-
-                if (opdPatientDetailRequest.getDoctorId() != null) {
-                    User doctor = userRepository.findById(opdPatientDetailRequest.getDoctorId())
-                            .orElseThrow(() -> new RuntimeException("Doctor not found"));
-                    opdPatientDetail.setDoctor(doctor);
-                }
-
+                opdPatientDetail.setHospital(savedVisit.getHospital());
+                opdPatientDetail.setDoctor(savedVisit.getDoctor());
                 opdPatientDetail.setLastChgDate(Instant.now());
                 opdPatientDetail.setLastChgBy(opdPatientDetailRequest.getLastChgBy());
                 opdPatientDetailRepository.save(opdPatientDetail); // Save OPD details
@@ -389,5 +407,17 @@ public class PatientServiceImpl implements PatientService {
     private String generateUhid(Patient patient) {
         List<Patient> existing =patientRepository.findByPatientMobileNumberAndPatientRelation(patient.getPatientMobileNumber(), patient.getPatientRelation());
         return (patient.getPatientMobileNumber()+patient.getPatientRelation().getCode()+(existing.size()+1));
+    }
+    private Long getNextAvailableToken(List<Long> existingTokens, int startToken, int maxToken) {
+        int expected = startToken;
+        for (Long token : existingTokens) {
+            if (token > maxToken) break;
+            if (token != expected) return (long) expected;
+            expected++;
+        }
+        if (expected > maxToken) {
+            throw new IllegalStateException("All tokens are already assigned.");
+        }
+        return (long) expected;
     }
 }
