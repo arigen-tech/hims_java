@@ -88,6 +88,10 @@ public class MasEmployee {
     @JoinColumn(name = "employee_type_id", referencedColumnName = "user_type_id")
     private MasUserType employeeTypeId;
 
+    @ManyToOne
+    @JoinColumn(name = "role_id", referencedColumnName = "id")
+    private MasRole roleId;
+
     @Column(name = "age")
     private Integer age;
 

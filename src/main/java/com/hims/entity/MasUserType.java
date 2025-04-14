@@ -23,7 +23,7 @@ public class MasUserType {
     @Column(name = "user_type_name", length = 180)
     private String userTypeName;
 
-    @Column(name = "status", length = 4)
+    @Column(name = "status", length = 1)
     private String status;
 
     @Column(name = "last_chg_by")

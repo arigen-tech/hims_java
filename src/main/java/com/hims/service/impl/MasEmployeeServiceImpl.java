@@ -36,6 +36,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -87,10 +89,16 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     private MasIdentificationTypeRepository masIdentificationTypeRepository;
 
     @Autowired
+    private MasEmploymentTypeRepository masEmploymentTypeRepository;
+
+    @Autowired
     private EmployeeDocumentRepository employeeDocumentRepository;
 
     @Autowired
     private MasUserTypeRepository masUserTypeRepository;
+
+    @Autowired
+    private MasRoleRepository masRoleRepository;
 
     @Autowired
     private HelperUtils helperUtils;
@@ -528,8 +536,8 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
         employeeObj.setStatus("A");
         employeeObj.setLastChangedDate(Instant.now());
-        employeeObj.setLastChangedBy(currentUser.getUserId().toString());
-        employeeObj.setApprovedBy(currentUser.getUserId().toString());
+        employeeObj.setLastChangedBy(currentUser.getUsername());
+        employeeObj.setApprovedBy(currentUser.getUsername());
         employeeObj.setApprovedDate(LocalDateTime.now());
 
         masEmployeeRepository.save(employeeObj);
@@ -567,15 +575,18 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .middleName(employeeObj.getMiddleName())
                     .email(employeeObj.getEmail())
                     .createdAt(Instant.now())
-                    .createdBy(currentUser.getUserId().toString())
+                    .createdBy(currentUser.getUsername())
                     .employee(employeeObj)
                     .userFlag(1)
                     .hospital(currentUser.getHospital())
                     .userType(userTypeObj)
+                    .roleId(employeeObj.getRoleId().getId().toString())
+                    .dateOfBirth(employeeObj.getDob())
                     .oldPassword(passwordEncoder.encode(otp))
                     .currentPassword(passwordEncoder.encode(otp))
                     .isVerified(true)
                     .lastChangeDate(Instant.now())
+                    .lastChangedBy(currentUser.getUsername())
                     .build();
 
             User createNewUser = userRepo.save(newUser);
@@ -700,6 +711,10 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         validateField(errors, request.getRegistrationNo(), "registrationNo", "ID number cannot be blank");
         validateField(errors, request.getDob(), "dob", "Date of birth cannot be blank");
         validateField(errors, request.getIdentificationType(), "identificationType", "Identification type cannot be blank");
+        validateField(errors, request.getIdentificationType(), "employeeTypeId", "Employee type cannot be blank");
+        validateField(errors, request.getEmploymentTypeId(), "employmentTypeId", "Employment type cannot be blank");
+        validateField(errors, request.getRoleId(), "roleId", "Role cannot be blank");
+
         validateField(errors, request.getFromDate(), "fromDate", "From date cannot be blank");
 
         if (request.getIdDocumentName() == null || request.getIdDocumentName().isEmpty()) {
@@ -758,6 +773,16 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         MasIdentificationType idTypeObj = masIdentificationTypeRepository.findById(request.getIdentificationType())
                 .orElseThrow(() -> new EntityNotFoundException("ID Type not found with ID: " + request.getIdentificationType()));
 
+        MasUserType empTypeObj = masUserTypeRepository.findById(request.getEmployeeTypeId())
+                .orElseThrow(() -> new EntityNotFoundException("Employee Type not found with ID: " + request.getIdentificationType()));
+
+        MasEmploymentType emptTypeObj = masEmploymentTypeRepository.findById(request.getEmploymentTypeId())
+                .orElseThrow(() -> new EntityNotFoundException("Employment Type not found with ID: " + request.getIdentificationType()));
+
+        MasRole roleObj = masRoleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new EntityNotFoundException("Role not found with ID: " + request.getIdentificationType()));
+
+
         String fileUploadDir = createUploadDirectory();
 
         String documentPath = processIdDocument(request.getIdDocumentName(), fileUploadDir);
@@ -780,10 +805,13 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         employee.setDistrictId(districtObj);
         employee.setPincode(request.getPincode());
         employee.setIdentificationType(idTypeObj);
+        employee.setRoleId(roleObj);
+        employee.setEmployeeTypeId(empTypeObj);
+        employee.setEmploymentTypeId(emptTypeObj);
         employee.setProfilePicName(profileImagePath);
         employee.setIdDocumentName(documentPath);
         employee.setLastChangedDate(OffsetDateTime.now().toInstant());
-        employee.setLastChangedBy(currentUser.getUserId().toString());
+        employee.setLastChangedBy(currentUser.getUsername());
         employee.setStatus("S");
 
         return employee;
@@ -1010,9 +1038,5 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     private boolean isValidPicExtension(String fileExtension) {
         return ALLOWED_PIC_EXTENSIONS.contains(fileExtension);
     }
-
-
-
-
 
 }

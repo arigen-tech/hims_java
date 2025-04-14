@@ -31,6 +31,9 @@ public class MasEmployeeRequest {
     private String mobileNo;
     private String registrationNo;
     private Long identificationType;
+    private Long employmentTypeId;
+    private Long employeeTypeId;
+    private Long roleId;
     private Instant fromDate;
 
     private MultipartFile idDocumentName;

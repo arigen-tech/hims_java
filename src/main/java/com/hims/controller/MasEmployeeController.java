@@ -26,7 +26,7 @@ public class MasEmployeeController {
 
     private final MasEmployeeService masEmployeeService;
 
-    @GetMapping("/employee")
+    @GetMapping("/getAllEmployee")
     public ResponseEntity<ApiResponse<List<MasEmployeeDTO>>> getAllEmployees() {
         logger.info("Received request to fetch all Employees.");
         return ResponseEntity.ok(masEmployeeService.getAllEmployees());

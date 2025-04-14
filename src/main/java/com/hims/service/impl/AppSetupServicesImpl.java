@@ -15,7 +15,11 @@ import com.hims.response.AppsetupgetResponse;
 import com.hims.service.AppSetupServices;
 import com.hims.utils.Calender;
 import com.hims.utils.ResponseUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +34,9 @@ import java.util.Optional;
 @Service
 @Transactional
 public class AppSetupServicesImpl implements AppSetupServices {
+
+    private static final Logger log = LoggerFactory.getLogger(AppSetupServicesImpl.class);
+
     @Autowired
     AppSetupRepository appSetupRepository;
     @Autowired
@@ -68,6 +75,12 @@ public class AppSetupServicesImpl implements AppSetupServices {
                     entry = new AppSetup();
                 }
 
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+
 
                 entry.setDept(department);
                 entry.setDoctorId(doctor);
@@ -86,8 +99,9 @@ public class AppSetupServicesImpl implements AppSetupServices {
                 entry.setMinNoOfDays(key.getMinNoOfday());
 
                 entry.setLastChgDate(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate());
-                entry.setLastChgBy(1);
+                entry.setLastChgBy(currentUser.getUserId().intValue());
                 entry.setLastChgTime(Calender.getCurrentTimeStamp());
+                entry.setHospital(currentUser.getHospital());
 
                 appSetupRepository.save(entry);
             }
@@ -99,6 +113,16 @@ public class AppSetupServicesImpl implements AppSetupServices {
         } catch (Exception e) {
             return ResponseUtils.createFailureResponse(res, new TypeReference<AppsetupResponse>() {}, "Internal Server Error", 500);
         }
+    }
+
+    private User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByUserName(username);
+        if (user == null) {
+            log.warn("User not found for username: {}", username);
+
+        }
+        return user;
     }
 
 
