@@ -277,6 +277,24 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                 existingEmployee.setIdentificationType(idTypeObj);
             }
 
+            if (masEmployeeRequest.getEmployeeTypeId() != null) {
+                MasUserType empTypeObj = masUserTypeRepository.findById(masEmployeeRequest.getEmployeeTypeId().longValue())
+                        .orElseThrow(() -> new IllegalArgumentException("Employee Type not found with ID: " + masEmployeeRequest.getEmployeeTypeId()));
+                existingEmployee.setEmployeeTypeId(empTypeObj);
+            }
+
+            if (masEmployeeRequest.getEmploymentTypeId() != null) {
+                MasEmploymentType employmentTypeObj = masEmploymentTypeRepository.findById(masEmployeeRequest.getEmploymentTypeId().longValue())
+                        .orElseThrow(() -> new IllegalArgumentException("Employment Type not found with ID: " + masEmployeeRequest.getEmploymentTypeId()));
+                existingEmployee.setEmploymentTypeId(employmentTypeObj);
+            }
+
+            if (masEmployeeRequest.getRoleId() != null) {
+                MasRole roleObj = masRoleRepository.findById(masEmployeeRequest.getRoleId().longValue())
+                        .orElseThrow(() -> new IllegalArgumentException("Role not found with ID: " + masEmployeeRequest.getRoleId()));
+                existingEmployee.setRoleId(roleObj);
+            }
+
             if (masEmployeeRequest.getPincode() != null && !masEmployeeRequest.getPincode().isEmpty()) {
                 existingEmployee.setPincode(masEmployeeRequest.getPincode());
             }
