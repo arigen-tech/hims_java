@@ -9,5 +9,7 @@ public interface UserApplicationRepository extends JpaRepository<UserApplication
     List<UserApplication> findByStatusInIgnoreCase(List<String> statuses);
     List<UserApplication> findByStatusIgnoreCaseAndUrl(String status, String url);
     List<UserApplication> findByStatusInIgnoreCaseAndUrl(List<String> statuses, String url);
+    UserApplication findByUserAppName(String userAppName);
+
 
 }

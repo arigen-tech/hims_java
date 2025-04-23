@@ -3,8 +3,10 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasApplication;
 import com.hims.entity.TemplateApplication;
+import com.hims.entity.UserApplication;
 import com.hims.entity.repository.MasApplicationRepository;
 import com.hims.entity.repository.TemplateApplicationRepository;
+import com.hims.entity.repository.UserApplicationRepository;
 import com.hims.request.BatchUpdateRequest;
 import com.hims.request.MasApplicationRequest;
 import com.hims.request.TemplateApplicationRequest;
@@ -38,6 +40,9 @@ public class MasApplicationServiceImpl implements MasApplicationService {
     @Autowired
     private TemplateApplicationRepository templateApplicationRepository;
 
+    @Autowired
+    private UserApplicationRepository userApplicationRepository;
+
     @Override
     public ApiResponse<List<MasApplicationResponse>> getAllApplications(int flag) {
         List<MasApplication> applications;
@@ -67,11 +72,12 @@ public class MasApplicationServiceImpl implements MasApplicationService {
 
     @Override
     public ApiResponse<MasApplicationResponse> createApplication(MasApplicationRequest request) {
+        // Create new MasApplication
         MasApplication application = new MasApplication();
         application.setName(request.getName());
         application.setParentId(request.getParentId());
         application.setUrl(request.getUrl());
-        application.setStatus(request.getStatus());
+        application.setStatus(request.getStatus()); // Keep original status logic for mas_application
         application.setLastChgDate(Instant.now());
 
         Long nextOrderNo = masApplicationRepository.getNextOrderNo();
@@ -82,9 +88,21 @@ public class MasApplicationServiceImpl implements MasApplicationService {
         application.setAppSequenceNo(sequenceNo);
 
         MasApplication savedApplication = masApplicationRepository.save(application);
+
+        // Find and update the existing record in user_applications table by name
+        UserApplication existingUserApp = userApplicationRepository.findByUserAppName(request.getName());
+        if (existingUserApp != null) {
+            // Only update the status to "n", keep other fields unchanged
+            existingUserApp.setStatus("n");
+            existingUserApp.setLastChgDate(Instant.now());
+            // If you have lastChgBy field, update it here
+            // existingUserApp.setLastChgBy(getCurrentUserId());
+
+            userApplicationRepository.save(existingUserApp);
+        }
+
         return ResponseUtils.createSuccessResponse(convertToResponse(savedApplication), new TypeReference<>() {});
     }
-
     @Override
     public ApiResponse<List<MasApplicationResponse>> getAllByParentId(String parentId) {
         List<MasApplication> applications = masApplicationRepository.findByParentId(parentId);
