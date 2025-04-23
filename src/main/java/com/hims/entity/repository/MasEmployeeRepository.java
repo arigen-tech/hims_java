@@ -7,12 +7,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MasEmployeeRepository extends JpaRepository<MasEmployee, Long> {
     List<MasEmployee> findByStatus(String status);
 
-    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM MasEmployee e WHERE e.id = :employeeId AND e.idDocumentName IS NOT NULL AND e.profilePicName IS NOT NULL")
-    boolean hasAllDocumentsUploaded(@Param("employeeId") Long employeeId);
+    Optional<MasEmployee> findByMobileNo(String mobileNo);
 
 }

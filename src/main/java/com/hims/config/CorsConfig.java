@@ -12,11 +12,13 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry
                 .addMapping("/**")
-//                .allowedOrigins("http://localhost:3000")
-                .allowedOriginPatterns("*")
+                .allowedOrigins("http://localhost:3000") // Be specific instead of using wildcards
+                // .allowedOriginPatterns("*")  // Comment this out
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
+                .allowedHeaders("Authorization", "Content-Type", "Accept", "X-Requested-With")
+                .exposedHeaders("Authorization")
+                .allowCredentials(true)
+                .maxAge(3600); // Cache preflight request for 1 hour
     }
 
     @Override

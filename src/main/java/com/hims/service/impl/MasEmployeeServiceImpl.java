@@ -13,6 +13,7 @@ import com.hims.response.EmployeeQualificationDTO;
 import com.hims.response.MasEmployeeDTO;
 import com.hims.service.MasEmployeeService;
 import com.hims.utils.ResponseUtils;
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
@@ -253,10 +254,14 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                 existingEmployee.setFromDate(masEmployeeRequest.getFromDate());
             }
 
-            if (masEmployeeRequest.getCountryId() != null) {
-                MasCountry countryObj = masCountryRepository.findById(masEmployeeRequest.getCountryId().longValue())
-                        .orElseThrow(() -> new IllegalArgumentException("Country not found with ID: " + masEmployeeRequest.getCountryId()));
-                existingEmployee.setCountryId(countryObj);
+            if (masEmployeeRequest.getMobileNo() != null && !masEmployeeRequest.getMobileNo().isEmpty()) {
+                Optional<MasEmployee> existingWithSameMobile = masEmployeeRepository.findByMobileNo(masEmployeeRequest.getMobileNo());
+
+                if (existingWithSameMobile.isPresent() && !existingWithSameMobile.get().getEmployeeId().equals(existingEmployee.getEmployeeId())) {
+                    throw new IllegalArgumentException("Mobile number already exists: " + masEmployeeRequest.getMobileNo());
+                }
+
+                existingEmployee.setMobileNo(masEmployeeRequest.getMobileNo());
             }
 
             if (masEmployeeRequest.getStateId() != null) {
@@ -775,6 +780,12 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
     private MasEmployee buildEmployeeFromRequest(MasEmployeeRequest request, User currentUser)
             throws EntityNotFoundException, FileProcessingException {
+
+        Optional<MasEmployee> existingEmp = masEmployeeRepository.findByMobileNo(request.getMobileNo());
+        if (existingEmp.isPresent()) {
+            throw new EntityExistsException("Mobile number " + request.getMobileNo() + " already exists with Emp: " + existingEmp.get().getFirstName() + " " + existingEmp.get().getMiddleName() + " " + existingEmp.get().getLastName());
+        }
+
 
         MasCountry countryObj = masCountryRepository.findById(request.getCountryId())
                 .orElseThrow(() -> new EntityNotFoundException("Country not found with ID: " + request.getCountryId()));
