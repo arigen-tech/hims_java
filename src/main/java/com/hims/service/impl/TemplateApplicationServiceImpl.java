@@ -116,11 +116,22 @@ public class TemplateApplicationServiceImpl implements TemplateApplicationServic
         response.setId(templateApplication.getId());
         response.setTemplateId(templateApplication.getTemplate().getId());
         response.setAppId(templateApplication.getApp().getAppId());
-        response.setAppName(templateApplication.getApp().getName()); // Fixed mapping
+        response.setAppName(templateApplication.getApp().getName());
         response.setStatus(templateApplication.getStatus());
         response.setLastChgDate(templateApplication.getLastChgDate());
         response.setLastChgBy(templateApplication.getLastChgBy());
         response.setOrderNo(templateApplication.getOrderNo());
+
+        // Get parent application name
+        String parentId = templateApplication.getApp().getParentId();
+        if (parentId != null) {
+            // Fetch parent application (you might want to cache this)
+            MasApplication parentApp = masApplicationRepository.findById(parentId).orElse(null);
+            response.setParentApplicationName(parentApp != null ? parentApp.getName() : null);
+        } else {
+            response.setParentApplicationName(null);
+        }
+
         return response;
     }
 }

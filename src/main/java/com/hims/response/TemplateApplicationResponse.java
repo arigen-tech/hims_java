@@ -12,6 +12,7 @@ public class TemplateApplicationResponse {
     private Long templateId;
     private String appId;
     private String appName;
+    private String ParentApplicationName;
     private String status;
     private Instant lastChgDate;
     private Long lastChgBy;

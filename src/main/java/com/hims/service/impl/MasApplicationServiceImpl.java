@@ -320,19 +320,19 @@ public class MasApplicationServiceImpl implements MasApplicationService {
     public ApiResponse<List<MasApplicationResponse>> getAllParentApplications(int flag) {
         List<MasApplication> applications;
 
+        // First get applications based on status flag
         if (flag == 1) {
-            applications = masApplicationRepository.findByStatusIgnoreCase("Y")
-                    .stream()
-                    .filter(app -> app.getAppId().equals(app.getParentId()))
-                    .collect(Collectors.toList());
+            applications = masApplicationRepository.findByStatusIgnoreCase("Y");
         } else if (flag == 0) {
-            applications = masApplicationRepository.findAll()
-                    .stream()
-                    .filter(app -> app.getAppId().equals(app.getParentId()))
-                    .collect(Collectors.toList());
+            applications = masApplicationRepository.findAll();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
+
+        // Filter to only get parent applications (where parentId is "0")
+        applications = applications.stream()
+                .filter(app -> app.getParentId() != null && app.getParentId().equals("0"))
+                .collect(Collectors.toList());
 
         List<MasApplicationResponse> responses = applications.stream()
                 .map(this::convertToResponse)
@@ -340,8 +340,6 @@ public class MasApplicationServiceImpl implements MasApplicationService {
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
-
-
     private boolean isValidStatus(String status) {
         return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
     }
