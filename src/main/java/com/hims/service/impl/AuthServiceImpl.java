@@ -233,6 +233,19 @@ public class AuthServiceImpl implements AuthService {
                     .username(userDetails.getUsername())
                     .build();
 
+            TokenWithExpiry accessTokenWithExpiry = helper.generateAccessTokenWithExpiry(user);
+            TokenWithExpiry refreshTokenWithExpiry = helper.generateRefreshTokenWithExpiry(user);
+
+            response = JwtResponce.builder()
+                    .jwtToken(accessTokenWithExpiry.getToken())
+                    .jwtTokenExpiry(accessTokenWithExpiry.getExpiryTime())
+                    .refreshToken(refreshTokenWithExpiry.getToken())
+                    .refreshTokenExpiry(refreshTokenWithExpiry.getExpiryTime())
+                    .username(userDetails.getUsername())
+                    .build();
+
+
+
         } catch (Exception e) {
             logger.error("An error occurred while user login with password", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "An error occurred while user login with password", 404);

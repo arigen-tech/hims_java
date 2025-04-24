@@ -27,8 +27,8 @@ import java.util.function.Function;
 public class JwtHelper {
 
 
-    public static final long JWT_TOKEN_VALIDITY = 7 * 24 * 60 * 60; // 30 minutes in seconds
-    public static final long REFRESH_TOKEN_VALIDITY = 7 * 24 * 60 * 60; // 7 days in seconds
+    public static final long JWT_TOKEN_VALIDITY = 7 * 24 * 60 * 60;
+    public static final long REFRESH_TOKEN_VALIDITY = 7 * 24 * 60 * 60;
 
     @Autowired
     private HttpServletRequest request;
@@ -173,5 +173,42 @@ public class JwtHelper {
         }
         return tokenWithoutBearer;
     }
+
+    public TokenWithExpiry generateAccessTokenWithExpiry(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
+        claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
+        claims.put("userId", user.getUserId());
+
+        long currentTimeMillis = System.currentTimeMillis();
+        String token = Jwts.builder()
+                .setClaims(claims)
+                .setSubject(user.getUsername())
+                .setIssuedAt(new Date(currentTimeMillis))
+                .setExpiration(new Date(currentTimeMillis + JWT_TOKEN_VALIDITY * 1000))
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+
+        return new TokenWithExpiry(token, currentTimeMillis + JWT_TOKEN_VALIDITY * 1000);
+    }
+
+    public TokenWithExpiry generateRefreshTokenWithExpiry(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
+        claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
+        claims.put("userId", user.getUserId());
+
+        long currentTimeMillis = System.currentTimeMillis();
+        String token = Jwts.builder()
+                .setClaims(claims)
+                .setSubject(user.getUsername())
+                .setIssuedAt(new Date(currentTimeMillis))
+                .setExpiration(new Date(currentTimeMillis + REFRESH_TOKEN_VALIDITY * 1000))
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+
+        return new TokenWithExpiry(token, currentTimeMillis + REFRESH_TOKEN_VALIDITY * 1000);
+    }
+
 
 }
