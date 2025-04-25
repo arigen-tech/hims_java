@@ -75,6 +75,7 @@ public class MasOpdSessionServiceImpl implements MasOpdSessionService {
     @Override
     public ApiResponse<MasOpdSessionResponse> addSession(MasOpdSessionRequest request) {
         MasOpdSession session = new MasOpdSession();
+
         session.setSessionName(request.getSessionName());
 
         // Convert String to LocalTime

@@ -16,5 +16,4 @@ public class DoctorRosterDTO {
     private Long doctorId;
     private String rosterVal;
     private String  roasterDate;
-
 }
