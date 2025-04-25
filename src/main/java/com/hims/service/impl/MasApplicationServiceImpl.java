@@ -103,21 +103,31 @@ public class MasApplicationServiceImpl implements MasApplicationService {
 
         return ResponseUtils.createSuccessResponse(convertToResponse(savedApplication), new TypeReference<>() {});
     }
+
     @Override
     public ApiResponse<List<MasApplicationResponse>> getAllByParentId(String parentId) {
-        List<MasApplication> applications = masApplicationRepository.findByParentId(parentId);
+        // First, fetch the parent application
+        MasApplication parentApplication = masApplicationRepository.findById(parentId)
+                .orElse(null);
 
-        if (applications.isEmpty()) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "No applications found for parentId: " + parentId, 404);
+        if (parentApplication == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Parent application not found with id: " + parentId, 404);
         }
 
-        List<MasApplicationResponse> responses = applications.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        // Then fetch all child applications
+        List<MasApplication> childApplications = masApplicationRepository.findByParentId(parentId);
+
+        // Create a combined list starting with the parent
+        List<MasApplicationResponse> responses = new ArrayList<>();
+
+        // Add parent first
+        responses.add(convertToResponse(parentApplication));
+
+        // Add all children
+        childApplications.forEach(child -> responses.add(convertToResponse(child)));
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
-
 
     @Override
     public ApiResponse<MasApplicationResponse> updateApplication(String id, MasApplicationRequest request) {

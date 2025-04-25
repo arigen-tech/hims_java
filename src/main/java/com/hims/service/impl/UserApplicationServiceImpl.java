@@ -1,15 +1,21 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.User;
 import com.hims.entity.UserApplication;
 import com.hims.entity.repository.UserApplicationRepository;
+import com.hims.entity.repository.UserRepo;
 import com.hims.request.UserApplicationRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.UserApplicationResponse;
 import com.hims.service.UserApplicationService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -21,8 +27,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserApplicationServiceImpl implements UserApplicationService {
 
+    private static final Logger log = LoggerFactory.getLogger(DoctorRosterServicesImpl.class);
+
     @Autowired
     private UserApplicationRepository userApplicationRepository;
+    @Autowired
+    UserRepo userRepo;
 
     @Override
     public ApiResponse<List<UserApplicationResponse>> getAllApplications(int flag) {
@@ -51,15 +61,32 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
 
     public ApiResponse<UserApplicationResponse> createApplication(UserApplicationRequest request) {
+
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
+        }
+
+
         UserApplication application = new UserApplication();
         application.setUserAppName(request.getUserAppName());
         application.setUrl(request.getUrl());
         application.setStatus("y"); // Default status to "Y"
-        application.setLastChgBy(request.getLastChgBy());
+        application.setLastChgBy(currentUser.getUserId());
         application.setLastChgDate(Instant.now());
 
         UserApplication savedApplication = userApplicationRepository.save(application);
         return ResponseUtils.createSuccessResponse(convertToResponse(savedApplication), new TypeReference<>() {});
+    }
+
+    private User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByUserName(username);
+        if (user == null) {
+            log.warn("User not found for username: {}", username);
+        }
+        return user;
     }
 
     public ApiResponse<UserApplicationResponse> updateApplication(Long id, UserApplicationRequest request) {
