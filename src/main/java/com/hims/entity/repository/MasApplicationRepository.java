@@ -17,4 +17,8 @@ public interface MasApplicationRepository extends JpaRepository<MasApplication, 
     Long getNextAppSequenceNo(@Param("parentId") String parentId);
     List<MasApplication> findByParentId(String parentId);
     List<MasApplication> findByParentIdIsNullOrParentId(String parentId);
+
+    List<MasApplication> findByParentIdAndStatusIgnoreCase(String parentId, String status);
+
+
 }

@@ -12,4 +12,7 @@ public interface RoleTemplateRepository extends JpaRepository<RoleTemplate, Long
 
     @Query("SELECT r FROM RoleTemplate r WHERE r.roleId = :roleId AND r.template.id = :templateId")
     Optional<RoleTemplate> findByRoleIdAndTemplateId(Long roleId, Long templateId);
+
+    List<RoleTemplate> findByRoleIdAndStatusIgnoreCase(Long roleId, String status);
+
 }

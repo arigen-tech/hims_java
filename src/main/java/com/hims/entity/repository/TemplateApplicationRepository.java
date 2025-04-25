@@ -10,4 +10,7 @@ public interface TemplateApplicationRepository extends JpaRepository<TemplateApp
     List<TemplateApplication> findByStatusInIgnoreCase(List<String> statuses);
     List<TemplateApplication> findByTemplateId(Long templateId);
     Optional<TemplateApplication> findByTemplate_IdAndApp_AppId(Long templateId, String appId);
+
+    List<TemplateApplication> findByTemplateIdAndStatusIgnoreCase(Long templateId, String status);
+
 }
