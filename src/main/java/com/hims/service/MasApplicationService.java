@@ -14,7 +14,7 @@ public interface MasApplicationService {
     ApiResponse<MasApplicationResponse> getApplicationById(String id);
     ApiResponse<MasApplicationResponse> createApplication(MasApplicationRequest request);
     ApiResponse<MasApplicationResponse> updateApplication(String id, MasApplicationRequest request);
-    public ApiResponse<List<MasApplicationResponse>> getAllByParentId(String parentId, Long templateId);
+    ApiResponse<List<MasApplicationResponse>> getAllByParentId(String parentId);
     ApiResponse<String> updateMultipleApplicationStatuses(UpdateStatusRequest request);
     ApiResponse<List<MasApplicationResponse>> getAllParentApplications(int flag);
     ApiResponse<String> processBatchUpdates(BatchUpdateRequest request);

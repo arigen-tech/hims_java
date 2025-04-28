@@ -43,14 +43,8 @@ public class MasApplicationController {
     }
 
     @GetMapping("/getAllChildren/{parentId}")
-    public ResponseEntity<ApiResponse<List<MasApplicationResponse>>> getAllByParentId(
-            @PathVariable String parentId,
-            @RequestParam(required = false) Long templateId) {  // Make templateId optional if needed
-
-        return new ResponseEntity<>(
-                masApplicationService.getAllByParentId(parentId, templateId),
-                HttpStatus.OK
-        );
+    public ResponseEntity<ApiResponse<List<MasApplicationResponse>>> getAllByParentId(@PathVariable String parentId) {
+        return new ResponseEntity<>(masApplicationService.getAllByParentId(parentId), HttpStatus.OK);
     }
 
     @PutMapping("/updateBatchStatus")
