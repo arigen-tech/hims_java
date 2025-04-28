@@ -16,4 +16,5 @@ public class MasApplicationResponse {
     private String status;
     private Instant lastChgDate;
     private Long appSequenceNo;
+    private boolean assigned;
 }

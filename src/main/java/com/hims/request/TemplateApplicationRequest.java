@@ -12,4 +12,5 @@ public class TemplateApplicationRequest {
     private String appId;
     private Long lastChgBy;
     private Long orderNo;
+    private String status;
 }
