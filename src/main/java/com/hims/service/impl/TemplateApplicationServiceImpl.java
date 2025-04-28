@@ -102,36 +102,34 @@ public class TemplateApplicationServiceImpl implements TemplateApplicationServic
 
         List<TemplateApplicationResponse> responses = templateApplications.stream()
                 .map(this::convertToResponse)
+                .filter(app -> app.getAppId() != null && "0".equals(app.getParentId()))  // Filter parent applications
                 .collect(Collectors.toList());
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+    }
+
+    private TemplateApplicationResponse convertToResponse(TemplateApplication application) {
+        TemplateApplicationResponse response = new TemplateApplicationResponse();
+
+        // Set fields from the relationship entities
+        if (application.getTemplate() != null) {
+            response.setTemplateId(application.getTemplate().getId());
+        }
+
+        if (application.getApp() != null) {
+            response.setAppId(application.getApp().getAppId());
+            response.setAppName(application.getApp().getName());
+            response.setParentId(application.getApp().getParentId());
+        }
+
+        response.setStatus(application.getStatus());
+        response.setLastChgDate(application.getLastChgDate());
+
+        return response;
     }
 
     private boolean isValidStatus(String status) {
         return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
     }
 
-    private TemplateApplicationResponse convertToResponse(TemplateApplication templateApplication) {
-        TemplateApplicationResponse response = new TemplateApplicationResponse();
-        response.setId(templateApplication.getId());
-        response.setTemplateId(templateApplication.getTemplate().getId());
-        response.setAppId(templateApplication.getApp().getAppId());
-        response.setAppName(templateApplication.getApp().getName());
-        response.setStatus(templateApplication.getStatus());
-        response.setLastChgDate(templateApplication.getLastChgDate());
-        response.setLastChgBy(templateApplication.getLastChgBy());
-        response.setOrderNo(templateApplication.getOrderNo());
-
-        // Get parent application name
-        String parentId = templateApplication.getApp().getParentId();
-        if (parentId != null) {
-            // Fetch parent application (you might want to cache this)
-            MasApplication parentApp = masApplicationRepository.findById(parentId).orElse(null);
-            response.setParentApplicationName(parentApp != null ? parentApp.getName() : null);
-        } else {
-            response.setParentApplicationName(null);
-        }
-
-        return response;
-    }
 }
