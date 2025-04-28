@@ -70,9 +70,9 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
         List<MasMainChargeCode> charge;
 
         if (flag == 1) {
-            charge = masMainChargeCodeRepository.findByStatusIgnoreCase("Y");
+            charge = masMainChargeCodeRepository.findByStatus("y");
         } else if (flag == 0) {
-            charge = masMainChargeCodeRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            charge = masMainChargeCodeRepository.findAll();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
