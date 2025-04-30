@@ -1,21 +1,43 @@
 package com.hims.response;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.List;
 
-@Getter
-@Setter
 public class UrlByRoleResponse {
-    private String parentName;
-    private String parentUrl;
-    private List<ChildUrl> children;
+    private String appId;
+    private String name;
+    private String url;
+    private List<UrlByRoleResponse> children;
 
-    @Getter
-    @Setter
-    public static class ChildUrl {
-        private String chiledName;
-        private String chiledUrl;
+    // Getters and setters
+    public String getAppId() {
+        return appId;
+    }
+
+    public void setAppId(String appId) {
+        this.appId = appId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public List<UrlByRoleResponse> getChildren() {
+        return children;
+    }
+
+    public void setChildren(List<UrlByRoleResponse> children) {
+        this.children = children;
     }
 }
