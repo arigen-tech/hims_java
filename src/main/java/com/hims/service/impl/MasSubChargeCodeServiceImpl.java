@@ -129,7 +129,7 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
             return ResponseUtils.createSuccessResponse(toResponse(subRepo.save(newCode)), new TypeReference<>() {});
         }
         else {
-            return ResponseUtils.createNotFoundResponse("MasItemType is not found", 404);
+            return ResponseUtils.createNotFoundResponse("SubCharge is not found", 404);
         }
     }
 
@@ -158,7 +158,7 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
             return ResponseUtils.createSuccessResponse(toResponse(newSubCode), new TypeReference<>() {});
         }else{
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "MasItemType is not found", 404);
+            }, "SubCharge is not found", 404);
         }
     }
 

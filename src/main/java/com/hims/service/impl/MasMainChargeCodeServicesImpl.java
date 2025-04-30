@@ -7,7 +7,6 @@ import com.hims.entity.repository.MasMainChargeCodeRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasMainChargeCodeRequest;
 import com.hims.response.ApiResponse;
-import com.hims.response.DgUomResponse;
 import com.hims.response.MasMainChargeCodeDTO;
 import com.hims.service.MasMainChargeCodeService;
 import com.hims.utils.ResponseUtils;
@@ -93,7 +92,7 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
                         toResponse(value),
                         new TypeReference<MasMainChargeCodeDTO>() {}
                 )
-        ).orElseGet(() -> ResponseUtils.createNotFoundResponse("Session not found", 404));
+        ).orElseGet(() -> ResponseUtils.createNotFoundResponse("Main Code not found", 404));
     }
 
     @Override
@@ -153,7 +152,7 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
             return ResponseUtils.createSuccessResponse(toResponse(masMainChargeCodeRepository.save(chargeCode)), new TypeReference<>() {});
         }
         else{
-            return ResponseUtils.createFailureResponse(null, new TypeReference<MasMainChargeCodeDTO>() {}, "FgUom data not found", 404);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<MasMainChargeCodeDTO>() {}, "MainCharge data not found", 404);
         }
     }
 
@@ -182,7 +181,7 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
                     }
             );
         } else {
-            return ResponseUtils.createNotFoundResponse("Session not found", 404);
+            return ResponseUtils.createNotFoundResponse("Main Code not found", 404);
         }
     }
 }
