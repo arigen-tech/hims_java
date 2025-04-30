@@ -21,4 +21,9 @@ public interface TemplateApplicationRepository extends JpaRepository<TemplateApp
             @Param("appId") String appId);
 
     List<TemplateApplication> findByTemplateIdAndStatusIgnoreCase(Long templateId, String y);
+
+    Optional<TemplateApplication> findByTemplateIdAndApp_AppId(Long templateId, String appId);
+
+    List<TemplateApplication> findByApp_AppIdAndStatusNot(String appId, String status);
+
 }
