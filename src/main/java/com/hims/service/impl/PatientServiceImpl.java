@@ -82,7 +82,7 @@ public class PatientServiceImpl implements PatientService {
                     },
                     "Patient already Registered", 500);
         }
-        Patient patient = savePatient(request);
+        Patient patient = savePatient(request,false);
         resp.setPatient(patient);
 
 
@@ -103,7 +103,7 @@ public class PatientServiceImpl implements PatientService {
     public ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq followUpRequest) {
         PatientRegFollowUpResp resp=new PatientRegFollowUpResp();
         PatientRequest request = followUpRequest.getPatientDetails().getPatient();
-        Patient patient = savePatient(request);
+        Patient patient = savePatient(request, true);
         resp.setPatient(patient);
         if (followUpRequest.isAppointmentFlag()) {
             VisitRequest visit = followUpRequest.getPatientDetails().getVisit();
@@ -111,11 +111,13 @@ public class PatientServiceImpl implements PatientService {
             if (visit != null) {
                 Visit savedVisit = createAppointment(visit, patient);
                 resp.setVisit(savedVisit);
-
+                OpdPatientDetail newOpd=new OpdPatientDetail();
                 if (savedVisit.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-                    OpdPatientDetail newOpd = addOpdDetaials(savedVisit, opdPatientDetailRequest, patient);
-                    resp.setOpdPatientDetail(newOpd);
+
+                    newOpd = addOpdDetaials(savedVisit, opdPatientDetailRequest, patient);
+
                 }
+                resp.setOpdPatientDetail(newOpd);
             }
         }
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {
@@ -152,15 +154,15 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public ApiResponse<List<Patient>> searchPatient(PatientSearchReq req) {
-        String mobileNo = req.getMobileNo();
-        if (mobileNo != null && mobileNo.trim().isEmpty()) {
-            mobileNo = null;
-        }
+        String mobileNo = req.getMobileNo().trim();
+//        if (mobileNo != null && mobileNo.trim().isEmpty()) {
+//            mobileNo = null;
+//        }
 
-        String uhidNo = req.getUhidNo();
-        if (uhidNo != null && uhidNo.trim().isEmpty()) {
-            uhidNo = null;
-        }
+        String uhidNo = req.getUhidNo().trim();
+//        if (uhidNo != null && uhidNo.trim().isEmpty()) {
+//            uhidNo = null;
+//        }
 
         LocalDate appointmentDate = req.getAppointmentDate();
         List<Patient> patientList;
@@ -174,10 +176,9 @@ public class PatientServiceImpl implements PatientService {
         });
     }
 
-    private Patient savePatient(PatientRequest request) {
+    private Patient savePatient(PatientRequest request, boolean followUp) {
         Patient patient = new Patient();
-        if (request.getId() != null)
-            patient.setId(request.getId());
+
         patient.setPatientFn(request.getPatientFn());
         patient.setPatientMn(request.getPatientMn());
         patient.setPatientLn(request.getPatientLn());
@@ -259,21 +260,13 @@ public class PatientServiceImpl implements PatientService {
         Optional.ofNullable(request.getPatientHospitalId())
                 .flatMap(masHospitalRepository::findById)
                 .ifPresent(patient::setPatientHospital);
-//        Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(
-//                patient.getPatientFn(),
-//                patient.getPatientLn(),
-//                patient.getPatientGender(),
-//                patient.getPatientDob() != null ? patient.getPatientDob() : null,
-//                patient.getPatientAge(),
-//                patient.getPatientMobileNumber(),
-//                patient.getPatientRelation()
-//        );
-//
-//        if (existingPatient.isPresent()) {
-//            return ResponseUtils.createFailureResponse(patient, new TypeReference<>() {},
-//                    "Patient already Registered",500);
-//        }
-        patient.setUhidNo(generateUhid(patient));
+        if(followUp){
+            patient.setUhidNo(request.getUhidNo());
+            patient.setId(request.getId());
+        }
+        else{
+            patient.setUhidNo(generateUhid(patient));
+        }
         patient = patientRepository.save(patient); // Save patient
         return patient;
     }
