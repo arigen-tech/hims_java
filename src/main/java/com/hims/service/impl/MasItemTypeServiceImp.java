@@ -52,7 +52,7 @@ public class MasItemTypeServiceImp implements MasItemTypeService
             masItemType.setLastChgTime(getCurrentTimeFormatted());
             masItemType.setStatus(masItemTypeRequest.getStatus());
             masItemType.setMasStoreGroupId(masStoreGroup.get());
-            return ResponseUtils.createSuccessResponse(convertedTOResponse(masItemTypeRepository.save( masItemType)), new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(convertedTOResponse(masItemTypeRepository.save(masItemType)), new TypeReference<>() {});
 
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
