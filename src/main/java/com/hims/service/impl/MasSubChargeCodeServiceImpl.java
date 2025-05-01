@@ -70,84 +70,100 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
     }
     @Override
     public ApiResponse<MasSubChargeCodeDTO> createSubCharge(MasSubChargeCodeReq codeReq){
+        try{
+            Optional<MasMainChargeCode> mainChargeCode = mainRepo.findById(codeReq.getMainChargeId());
+            if (mainChargeCode.isPresent()) {
 
-        Optional<MasMainChargeCode> mainChargeCode = mainRepo.findById(codeReq.getMainChargeId());
-        if(mainChargeCode.isPresent()){
-
-              MasSubChargeCode subCode = new MasSubChargeCode();
-            subCode.setMainChargeId(mainChargeCode.get());
-            if ("y".equalsIgnoreCase(codeReq.getStatus()) || "n".equalsIgnoreCase(codeReq.getStatus())) {
-                subCode.setSubCode(codeReq.getSubCode());
-                subCode.setSubName(codeReq.getSubName());
-                subCode.setStatus(codeReq.getStatus());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                MasSubChargeCode subCode = new MasSubChargeCode();
+                if ("y".equalsIgnoreCase(codeReq.getStatus()) || "n".equalsIgnoreCase(codeReq.getStatus())) {
+                    subCode.setSubCode(codeReq.getSubCode());
+                    subCode.setSubName(codeReq.getSubName());
+                    subCode.setStatus(codeReq.getStatus());
+                    User currentUser = getCurrentUser();
+                    if (currentUser == null) {
+                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                                },
+                                "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                    }
+                    subCode.setLastChgBy(currentUser.getUsername());
+                    subCode.setLastChgDate(Instant.now());
+                    subCode.setLastChgTime(getCurrentTimeFormatted());
+                    subCode.setMainChargeId(mainChargeCode.get());
+                    return ResponseUtils.createSuccessResponse(toResponse(subRepo.save(subCode)), new TypeReference<>() {
+                    });
+                } else {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, "Invalid status. Status should be 'Y' or 'N'", 400);
                 }
-                subCode.setLastChgBy(currentUser.getUsername());
-                subCode.setLastChgDate(Instant.now());
-                subCode.setLastChgTime(getCurrentTimeFormatted());
+            } else {
 
-                return ResponseUtils.createSuccessResponse(toResponse(subRepo.save(subCode)), new TypeReference<>() {});
-            }
-            else {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                }, "Invalid status. Status should be 'Y' or 'N'", 400);
+                return ResponseUtils.createNotFoundResponse("MainCharge not found with id", 404);
             }
         }
-        else{
-
-            return ResponseUtils.createNotFoundResponse("MainCharge not found with id", 404);
+        catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
     public ApiResponse<MasSubChargeCodeDTO> updateSubCharge(Long subId, MasSubChargeCodeReq codeReq){
-        Optional<MasSubChargeCode> newSubCode = subRepo.findById(subId);
-        if(newSubCode.isPresent()){
-            MasSubChargeCode newCode = newSubCode.get();
-            newCode.setSubCode(codeReq.getSubCode());
-            newCode.setSubName(codeReq.getSubName());
-            newCode.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
-            }
-            newCode.setLastChgBy(currentUser.getUsername());
-            newCode.setLastChgDate(Instant.now());
-            newCode.setLastChgTime(getCurrentTimeFormatted());
+        try{
+            Optional<MasSubChargeCode> newSubCode = subRepo.findById(subId);
+            if (newSubCode.isPresent()) {
+                MasSubChargeCode newCode = newSubCode.get();
+                newCode.setSubCode(codeReq.getSubCode());
+                newCode.setSubName(codeReq.getSubName());
+                newCode.setStatus("y");
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                newCode.setLastChgBy(currentUser.getUsername());
+                newCode.setLastChgDate(Instant.now());
+                newCode.setLastChgTime(getCurrentTimeFormatted());
 
-            Optional<MasMainChargeCode> mainChargeCode = mainRepo.findById(codeReq.getMainChargeId());
-            if(mainChargeCode.isPresent()){
-                newCode.setMainChargeId(mainChargeCode.get());
-            }
-            else {
-                return ResponseUtils.createNotFoundResponse("MainCharge not found with id: " + codeReq.getMainChargeId(), 404);
-            }
+                Optional<MasMainChargeCode> mainChargeCode = mainRepo.findById(codeReq.getMainChargeId());
+                if (mainChargeCode.isPresent()) {
+                    newCode.setMainChargeId(mainChargeCode.get());
+                } else {
+                    return ResponseUtils.createNotFoundResponse("MainCharge not found with id: " + codeReq.getMainChargeId(), 404);
+                }
 
-            return ResponseUtils.createSuccessResponse(toResponse(subRepo.save(newCode)), new TypeReference<>() {});
+                return ResponseUtils.createSuccessResponse(toResponse(subRepo.save(newCode)), new TypeReference<>() {
+                });
+            } else {
+                return ResponseUtils.createNotFoundResponse("SubCharge is not found", 404);
+            }
         }
-        else {
-            return ResponseUtils.createNotFoundResponse("SubCharge is not found", 404);
+        catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
     public ApiResponse<MasSubChargeCodeDTO> changeStatus(Long subId, String status){
-        Optional<MasSubChargeCode> newSubCode = subRepo.findById(subId);
-        if(newSubCode.isPresent()){
-            MasSubChargeCode subCode = newSubCode.get();
-            if ("Y".equalsIgnoreCase(status)|| "N".equalsIgnoreCase(status)){
-                subCode.setStatus(status);
-                return ResponseUtils.createSuccessResponse(toResponse(subRepo.save(subCode)), new TypeReference<>() {});
+        try{
+            Optional<MasSubChargeCode> newSubCode = subRepo.findById(subId);
+            if (newSubCode.isPresent()) {
+                MasSubChargeCode subCode = newSubCode.get();
+                if ("Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status)) {
+                    subCode.setStatus(status);
+                    return ResponseUtils.createSuccessResponse(toResponse(subRepo.save(subCode)), new TypeReference<>() {
+                    });
 
-            }
-            else{
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status. Status should be 'Y' or 'N'", 400);
+                } else {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, "Invalid status. Status should be 'Y' or 'N'", 400);
+                }
+            } else {
+                return ResponseUtils.createNotFoundResponse("MainCharge is not found", 404);
             }
         }
-        else{
-            return ResponseUtils.createNotFoundResponse("MainCharge is not found", 404);
+        catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 

@@ -13,6 +13,7 @@ import com.hims.request.UserDetailsReq;
 import com.hims.response.ApiResponse;
 import com.hims.response.DefaultResponse;
 import com.hims.response.RoleInfoResp;
+import com.hims.response.UserProfileResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.security.Principal;
@@ -28,6 +29,8 @@ public interface AuthService {
 
     ApiResponse<User> getUser(String userName);
 
+
+    ApiResponse<UserProfileResponse> getUserForProfile(String userName);
 
     ApiResponse<List<RoleInfoResp>> getRole(String username);
 
