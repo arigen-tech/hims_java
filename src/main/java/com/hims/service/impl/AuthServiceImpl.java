@@ -1,14 +1,8 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.MasEmployee;
-import com.hims.entity.MasHospital;
-import com.hims.entity.MasUserType;
-import com.hims.entity.User;
-import com.hims.entity.repository.MasEmployeeRepository;
-import com.hims.entity.repository.MasHospitalRepository;
-import com.hims.entity.repository.MasUserTypeRepository;
-import com.hims.entity.repository.UserRepo;
+import com.hims.entity.*;
+import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.helperUtil.ResponseUtils;
@@ -20,6 +14,7 @@ import com.hims.request.UserDetailsReq;
 import com.hims.response.ApiResponse;
 import com.hims.response.DefaultResponse;
 import com.hims.response.RoleInfoResp;
+import com.hims.response.UserProfileResponse;
 import com.hims.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -40,6 +35,7 @@ import java.security.Principal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -62,8 +58,8 @@ public class AuthServiceImpl implements AuthService {
 
 
 
-//    @Autowired
-//    private MasRoleRepo masRoleRepo;
+    @Autowired
+    private MasRoleRepository masRoleRepository;
 //    @Autowired
 //    private UserRoleRepo userRoleRepo;
 //    @Autowired
@@ -348,6 +344,43 @@ public class AuthServiceImpl implements AuthService {
 
     }
 
+    @Override
+    public ApiResponse<UserProfileResponse> getUserForProfile(String userName) {
+        if (userName == null || userName.isBlank()) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER NAME CANNOT BE BLANK", 400);
+        }
+
+        User isActiveUser = userRepo.findByUserNameAndStatus(userName, "y");
+        if (isActiveUser == null) {
+            isActiveUser = userRepo.findByPhoneNumberAndStatus(userName, "y");
+            if (isActiveUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ACTIVE USER NOT FOUND", 400);
+            }
+        }
+
+        String rolesCsv = Optional.ofNullable(isActiveUser.getRoleId()).orElse("");
+        List<Long> roleIds = Arrays.stream(rolesCsv.split(","))
+                .map(String::trim)
+                .filter(id -> !id.isEmpty())
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
+
+        List<MasRole> roles = masRoleRepository.findAllById(roleIds);
+        String roleNames = roles.stream()
+                .map(MasRole::getRoleDesc)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining(", "));
+
+        UserProfileResponse response = new UserProfileResponse();
+        response.setFirstName(isActiveUser.getFirstName());
+        response.setMiddleName(isActiveUser.getMiddleName());
+        response.setLastName(isActiveUser.getLastName());
+        response.setUserName(isActiveUser.getUsername());
+        response.setProfilePicture(isActiveUser.getProfilePicture());
+        response.setRolesName(roleNames);
+
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<UserProfileResponse>() {});
+    }
 
     @Override
     public ApiResponse<List<RoleInfoResp>> getRole(String username) {
