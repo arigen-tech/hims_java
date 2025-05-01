@@ -16,6 +16,7 @@ import java.util.List;
 @Tag(name = "Mas-Sub-Charge-Code-Controller", description = "Controller for Sub Charge Code")
 @RequestMapping("/sub-charge-code")
 public class MasSubChargeCodeController {
+
     @Autowired
     MasSubChargeCodeService subService;
 
@@ -24,7 +25,7 @@ public class MasSubChargeCodeController {
         return new ResponseEntity<>(subService.createSubCharge(codeReq), HttpStatus.CREATED);
     }
 
-    @PutMapping("/update")
+    @PutMapping("/update/{subId}")
     ResponseEntity<ApiResponse<MasSubChargeCodeDTO>> updateSubCharge(
             @PathVariable Long subId,
             @RequestBody MasSubChargeCodeReq codeReq){

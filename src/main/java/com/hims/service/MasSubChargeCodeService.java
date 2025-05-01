@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface MasSubChargeCodeService {
 
-   // @Transactional(rollbackFor = {Exception.class})
+    @Transactional(rollbackFor = {Exception.class})
     public ApiResponse<MasSubChargeCodeDTO> createSubCharge(MasSubChargeCodeReq codeReq);
 
     @Transactional(rollbackFor = {Exception.class})

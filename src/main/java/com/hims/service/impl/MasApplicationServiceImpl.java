@@ -5,6 +5,7 @@ import com.hims.entity.MasApplication;
 import com.hims.entity.TemplateApplication;
 import com.hims.entity.UserApplication;
 import com.hims.entity.repository.MasApplicationRepository;
+import com.hims.entity.repository.MasTemplateRepository;
 import com.hims.entity.repository.TemplateApplicationRepository;
 import com.hims.entity.repository.UserApplicationRepository;
 import com.hims.request.BatchUpdateRequest;
@@ -32,6 +33,9 @@ public class MasApplicationServiceImpl implements MasApplicationService {
 
     @Autowired
     private MasApplicationRepository masApplicationRepository;
+
+    @Autowired
+    private MasTemplateRepository masTemplateRepository;
 
     @Autowired
     private TemplateApplicationService templateApplicationService;
@@ -115,21 +119,56 @@ public class MasApplicationServiceImpl implements MasApplicationService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Parent application not found with id: " + parentId, 404);
         }
 
-        // Then fetch all child applications
-        List<MasApplication> childApplications = masApplicationRepository.findByParentId(parentId);
-
-        // Create a combined list starting with the parent
+        // Create a list to hold all applications hierarchically
         List<MasApplicationResponse> responses = new ArrayList<>();
 
         // Add parent first with template status
-        responses.add(convertToResponseWithTemplateStatus(parentApplication, templateId));
+        MasApplicationResponse parentResponse = convertToResponseWithTemplateStatus(parentApplication, templateId);
 
-        // Add all children with template status
-        childApplications.forEach(child ->
-                responses.add(convertToResponseWithTemplateStatus(child, templateId)));
+        // Recursively fetch all descendant applications (not just immediate children)
+        fetchDescendants(parentId, templateId, parentResponse);
+
+        // Add the parent with all its nested children to the response
+        responses.add(parentResponse);
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
+    /**
+     * Recursively fetches all descendants for a given parent application
+     * @param parentId The parent application ID
+     * @param templateId The template ID to check assignments
+     * @param parentResponse The parent response object to populate with children
+     */
+    private void fetchDescendants(String parentId, Long templateId, MasApplicationResponse parentResponse) {
+        // Fetch direct children of this parent
+        List<MasApplication> childApplications = masApplicationRepository.findByParentId(parentId);
+
+        // If no children, set children to empty list rather than null for consistency
+        if (childApplications.isEmpty()) {
+            parentResponse.setChildren(new ArrayList<>());
+            return;
+        }
+
+        // Process each child application
+        List<MasApplicationResponse> childResponses = new ArrayList<>();
+        for (MasApplication child : childApplications) {
+            // Convert child to response with template status
+            MasApplicationResponse childResponse = convertToResponseWithTemplateStatus(child, templateId);
+
+            // Recursively fetch its descendants
+            fetchDescendants(child.getAppId(), templateId, childResponse);
+
+            // Add to children list
+            childResponses.add(childResponse);
+        }
+
+        // Set children list on parent response
+        parentResponse.setChildren(childResponses);
+    }
+
+
+
 
     private MasApplicationResponse convertToResponseWithTemplateStatus(MasApplication application, Long templateId) {
         MasApplicationResponse response = convertToResponse(application);
@@ -203,8 +242,9 @@ public class MasApplicationServiceImpl implements MasApplicationService {
     @Override
     public ApiResponse<String> processBatchUpdates(BatchUpdateRequest request) {
         List<String> errors = new ArrayList<>();
+        List<String> successMessages = new ArrayList<>();
 
-        // Validate inputs
+        // Validate and filter valid template assignments
         if (request.getTemplateApplicationAssignments() != null) {
             request.setTemplateApplicationAssignments(
                     request.getTemplateApplicationAssignments().stream()
@@ -216,21 +256,20 @@ public class MasApplicationServiceImpl implements MasApplicationService {
             );
         }
 
+        // Validate and filter valid status updates
+        List<BatchUpdateRequest.ApplicationStatusUpdate> statusUpdates = new ArrayList<>();
         if (request.getApplicationStatusUpdates() != null) {
-            request.setApplicationStatusUpdates(
-                    request.getApplicationStatusUpdates().stream()
-                            .filter(update ->
+            statusUpdates = request.getApplicationStatusUpdates().stream()
+                    .filter(update ->
+                            update.getTemplateId() != null &&
                                     StringUtils.hasText(update.getAppId()) &&
-                                            StringUtils.hasText(update.getStatus()))
-                            .collect(Collectors.toList())
-            );
+                                    StringUtils.hasText(update.getStatus()))
+                    .peek(update -> update.setStatus(update.getStatus().toLowerCase()))
+                    .collect(Collectors.toList());
         }
 
-        // Validate input
-        if ((request.getTemplateApplicationAssignments() == null ||
-                request.getTemplateApplicationAssignments().isEmpty()) &&
-                (request.getApplicationStatusUpdates() == null ||
-                        request.getApplicationStatusUpdates().isEmpty())) {
+        if ((request.getTemplateApplicationAssignments() == null || request.getTemplateApplicationAssignments().isEmpty()) &&
+                statusUpdates.isEmpty()) {
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},
@@ -239,177 +278,106 @@ public class MasApplicationServiceImpl implements MasApplicationService {
             );
         }
 
-        List<String> successMessages = new ArrayList<>();
-
-        // Process status updates first to ensure we have the map of updates
-        Map<String, String> statusUpdates = new HashMap<>();
-        if (request.getApplicationStatusUpdates() != null) {
-            for (BatchUpdateRequest.ApplicationStatusUpdate update : request.getApplicationStatusUpdates()) {
-                String appId = update.getAppId();
-                String status = update.getStatus().toLowerCase();
-                statusUpdates.put(appId, status);
-
-                // Log status update for debugging
-                log.info("Status update request: appId={}, status={}", appId, status);
-            }
-        }
-
         // Process template application assignments
-        List<String> successfulAssignments = new ArrayList<>();
-        List<String> skippedAssignments = new ArrayList<>();
-        List<String> failedAssignments = new ArrayList<>();
+        Set<String> processedAppTemplateKeys = new HashSet<>();
+        if (request.getTemplateApplicationAssignments() != null && !request.getTemplateApplicationAssignments().isEmpty()) {
+            for (BatchUpdateRequest.TemplateApplicationAssignment assignment : request.getTemplateApplicationAssignments()) {
+                try {
+                    String appId = assignment.getAppId();
+                    Long templateId = assignment.getTemplateId();
+                    String key = appId + "_" + templateId;
 
-        if (request.getTemplateApplicationAssignments() != null &&
-                !request.getTemplateApplicationAssignments().isEmpty()) {
-            // Track newly created assignments
-            Set<String> newlyCreatedApps = new HashSet<>();
+                    Optional<TemplateApplication> optionalTemplateApp =
+                            templateApplicationRepository.findByTemplate_IdAndApp_AppId(templateId, appId);
 
-            for (BatchUpdateRequest.TemplateApplicationAssignment assignment :
-                    request.getTemplateApplicationAssignments()) {
-                String appId = assignment.getAppId();
-                Long templateId = assignment.getTemplateId();
-
-                // Check if template is already assigned to the application
-                Optional<TemplateApplication> existingAssignment =
-                        templateApplicationRepository.findByTemplate_IdAndApp_AppId(
-                                templateId,
-                                appId
-                        );
-
-                if (existingAssignment.isPresent()) {
-                    TemplateApplication templateApp = existingAssignment.get();
-
-                    // Update existing template application
-                    if (assignment.getOrderNo() != null) {
-                        templateApp.setOrderNo(assignment.getOrderNo());
-                    }
-
-                    // Apply status update if available
-                    if (statusUpdates.containsKey(appId)) {
-                        templateApp.setStatus(statusUpdates.get(appId));
-                        // Remove from status updates as we've already applied it
-                        statusUpdates.remove(appId);
-                    } else if (assignment.getStatus() != null) {
+                    TemplateApplication templateApp;
+                    if (optionalTemplateApp.isPresent()) {
+                        templateApp = optionalTemplateApp.get();
                         templateApp.setStatus(assignment.getStatus().toLowerCase());
-                    }
-
-                    templateApp.setLastChgDate(Instant.now());
-                    templateApp.setLastChgBy(assignment.getLastChgBy());
-
-                    try {
-                        templateApplicationRepository.save(templateApp);
-                        successfulAssignments.add(appId + " (updated)");
-                    } catch (Exception e) {
-                        failedAssignments.add(appId + " - Update failed: " + e.getMessage());
-                    }
-                } else {
-                    // Create new assignment
-                    TemplateApplicationRequest templateRequest = new TemplateApplicationRequest();
-                    templateRequest.setTemplateId(templateId);
-                    templateRequest.setAppId(appId);
-                    templateRequest.setLastChgBy(assignment.getLastChgBy());
-                    templateRequest.setOrderNo(assignment.getOrderNo());
-
-                    // Set status from assignment or status update
-                    String initialStatus = statusUpdates.getOrDefault(appId,
-                            (assignment.getStatus() != null) ? assignment.getStatus().toLowerCase() : "n");
-                    templateRequest.setStatus(initialStatus);
-
-                    // Remove from status updates as we've applied it
-                    statusUpdates.remove(appId);
-
-                    try {
-                        ApiResponse<TemplateApplicationResponse> assignmentResponse =
-                                templateApplicationService.assignTemplateToApplication(templateRequest);
-
-                        if (assignmentResponse.getStatus() == 200) {
-                            successfulAssignments.add(appId);
-                            newlyCreatedApps.add(appId);
-                        } else {
-                            failedAssignments.add(appId + " - Status: " +
-                                    assignmentResponse.getStatus() + ", Message: " +
-                                    assignmentResponse.getMessage());
-                        }
-                    } catch (Exception e) {
-                        failedAssignments.add(appId + " - Error: " + e.getMessage());
-                    }
-                }
-            }
-
-            // Prepare template assignment messages
-            if (!successfulAssignments.isEmpty()) {
-                successMessages.add("Successful template assignments: " +
-                        String.join(", ", successfulAssignments));
-            }
-            if (!skippedAssignments.isEmpty()) {
-                successMessages.add("Skipped template assignments (already exists): " +
-                        String.join(", ", skippedAssignments));
-            }
-            if (!failedAssignments.isEmpty()) {
-                errors.add("Failed template assignments: " +
-                        String.join(", ", failedAssignments));
-            }
-        }
-
-        // Process any remaining status updates
-        if (!statusUpdates.isEmpty()) {
-            int updatedCount = 0;
-            List<String> notFoundApps = new ArrayList<>();
-
-            for (Map.Entry<String, String> entry : statusUpdates.entrySet()) {
-                String appId = entry.getKey();
-                String status = entry.getValue();
-
-                log.info("Processing remaining status update: appId={}, status={}", appId, status);
-
-                // Find template application entries for this app
-                List<TemplateApplication> templateApps =
-                        templateApplicationRepository.findByApp_AppId(appId);
-
-                if (templateApps.isEmpty()) {
-                    notFoundApps.add(appId);
-                    log.warn("No template application found for appId={}", appId);
-                } else {
-                    // Update status in all template application entries for this app
-                    for (TemplateApplication templateApp : templateApps) {
-                        String oldStatus = templateApp.getStatus();
-                        templateApp.setStatus(status);
+                        templateApp.setOrderNo(assignment.getOrderNo());
+                        templateApp.setLastChgBy(assignment.getLastChgBy());
                         templateApp.setLastChgDate(Instant.now());
-                        templateApplicationRepository.save(templateApp);
-                        updatedCount++;
-
-                        log.info("Updated status for appId={} from {} to {}",
-                                appId, oldStatus, status);
+                        log.info("Updated template assignment for appId={}, templateId={}", appId, templateId);
+                    } else {
+                        // Create new assignment
+                        templateApp = new TemplateApplication();
+                        templateApp.setApp(masApplicationRepository.findById(appId).orElseThrow(() ->
+                                new IllegalArgumentException("App not found: " + appId)));
+                        templateApp.setTemplate(masTemplateRepository.findById(templateId).orElseThrow(() ->
+                                new IllegalArgumentException("Template not found: " + templateId)));
+                        templateApp.setOrderNo(assignment.getOrderNo());
+                        templateApp.setStatus(assignment.getStatus().toLowerCase());
+                        templateApp.setLastChgBy(assignment.getLastChgBy());
+                        templateApp.setLastChgDate(Instant.now());
+                        log.info("Created new template assignment for appId={}, templateId={}", appId, templateId);
                     }
+
+                    templateApplicationRepository.save(templateApp);
+                    successMessages.add("Processed assignment for appId=" + appId + ", templateId=" + templateId);
+                    processedAppTemplateKeys.add(key);
+
+                } catch (Exception ex) {
+                    log.error("Error processing template assignment: {}", ex.getMessage(), ex);
+                    errors.add("Failed to process assignment for appId=" + assignment.getAppId());
                 }
-            }
-
-            if (updatedCount > 0) {
-                successMessages.add("Updated status for " + updatedCount + " template applications");
-            }
-
-            if (!notFoundApps.isEmpty()) {
-                successMessages.add("Skipped status updates for apps not assigned to template: " +
-                        String.join(", ", notFoundApps));
             }
         }
 
-        // Handle errors if any
+        // Process status updates (only those not already handled above)
+        int updatedCount = 0;
+        List<String> notFoundApps = new ArrayList<>();
+
+        for (BatchUpdateRequest.ApplicationStatusUpdate update : statusUpdates) {
+            String appId = update.getAppId();
+            Long templateId = update.getTemplateId();
+            String status = update.getStatus();
+            String key = appId + "_" + templateId;
+
+            if (processedAppTemplateKeys.contains(key)) continue;
+
+            Optional<TemplateApplication> optionalTemplateApp =
+                    templateApplicationRepository.findByTemplate_IdAndApp_AppId(templateId, appId);
+
+            if (optionalTemplateApp.isPresent()) {
+                TemplateApplication templateApp = optionalTemplateApp.get();
+                String oldStatus = templateApp.getStatus();
+                templateApp.setStatus(status);
+                templateApp.setLastChgDate(Instant.now());
+                templateApplicationRepository.save(templateApp);
+                updatedCount++;
+                log.info("Updated status for appId={}, templateId={} from {} to {}", appId, templateId, oldStatus, status);
+            } else {
+                notFoundApps.add("appId=" + appId + ", templateId=" + templateId);
+                log.warn("No template application found for appId={}, templateId={}", appId, templateId);
+            }
+        }
+
+        if (updatedCount > 0) {
+            successMessages.add("Updated status for " + updatedCount + " template applications");
+        }
+        if (!notFoundApps.isEmpty()) {
+            successMessages.add("Skipped status updates for unassigned template applications: " + String.join(", ", notFoundApps));
+        }
+
+        // Return response
         if (!errors.isEmpty()) {
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},
                     String.join(". ", errors),
-                    !successMessages.isEmpty() ? 207 : 400  // 207 = Partial success
+                    !successMessages.isEmpty() ? 207 : 400  // 207 = Multi-Status (Partial Success)
             );
         }
 
         String finalMessage = String.join(". ", successMessages);
         return ResponseUtils.createSuccessResponse(
-                finalMessage.isEmpty() ? "No updates processed" : finalMessage,
+                finalMessage.isEmpty() ? "No updates processed." : finalMessage,
                 new TypeReference<>() {}
         );
     }
+
+
+
 
     @Override
     public ApiResponse<List<MasApplicationResponse>> getAllParentApplications(int flag) {
@@ -424,10 +392,13 @@ public class MasApplicationServiceImpl implements MasApplicationService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
 
-        // Filter to only get parent applications (where parentId is "0")
+
+        // Filter to get parent applications (where parentId is "0" OR url is "#")
         applications = applications.stream()
-                .filter(app -> app.getParentId() != null && app.getParentId().equals("0"))
+                .filter(app -> (app.getParentId() != null && app.getParentId().equals("0"))
+                        || (app.getUrl() != null && app.getUrl().equals("#")))
                 .collect(Collectors.toList());
+
 
         List<MasApplicationResponse> responses = applications.stream()
                 .map(this::convertToResponse)
@@ -435,6 +406,8 @@ public class MasApplicationServiceImpl implements MasApplicationService {
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
+
     private boolean isValidStatus(String status) {
         return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
     }

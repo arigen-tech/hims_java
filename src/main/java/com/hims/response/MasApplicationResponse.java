@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,4 +18,5 @@ public class MasApplicationResponse {
     private Instant lastChgDate;
     private Long appSequenceNo;
     private boolean assigned;
+    private List<MasApplicationResponse> children;
 }

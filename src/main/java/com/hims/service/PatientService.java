@@ -1,15 +1,18 @@
 package com.hims.service;
 
 import com.hims.entity.Patient;
-import com.hims.request.OpdPatientDetailRequest;
-import com.hims.request.PatientRequest;
-import com.hims.request.VisitRequest;
+import com.hims.request.*;
 import com.hims.response.ApiResponse;
+import com.hims.response.PatientRegFollowUpResp;
 import org.springframework.web.multipart.MultipartFile;
 
-public interface PatientService {
-    ApiResponse<Patient> registerPatientWithOpd(PatientRequest patient, OpdPatientDetailRequest opdPatientDetail, VisitRequest visit);
+import java.util.List;
 
-    ApiResponse<Patient> updatePatient(PatientRequest request);
+public interface PatientService {
+    ApiResponse<PatientRegFollowUpResp> registerPatientWithOpd(PatientRequest patient, OpdPatientDetailRequest opdPatientDetail, VisitRequest visit);
+
+    ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq request);
     ApiResponse<String> uploadImage(MultipartFile file);
+
+    ApiResponse<List<Patient>> searchPatient(PatientSearchReq substring);
 }

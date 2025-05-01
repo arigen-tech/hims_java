@@ -3,9 +3,12 @@ package com.hims.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.Patient;
+import com.hims.request.PatientFollowUpReq;
 import com.hims.request.PatientRegistrationReq;
 import com.hims.request.PatientRequest;
+import com.hims.request.PatientSearchReq;
 import com.hims.response.ApiResponse;
+import com.hims.response.PatientRegFollowUpResp;
 import com.hims.service.PatientService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,13 +30,13 @@ public class PatientController {
     PatientService patientService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Patient>> registerPatient(@RequestBody PatientRegistrationReq request) {
-        ApiResponse<Patient> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail(),request.getVisit());
+    public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> registerPatient(@RequestBody PatientRegistrationReq request) {
+        ApiResponse<PatientRegFollowUpResp> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail(),request.getVisit());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @PostMapping("/update")
-    public ResponseEntity<ApiResponse<Patient>> updatePatient(@RequestBody PatientRequest request) {
-        ApiResponse<Patient> response = patientService.updatePatient(request);
+    public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> updatePatient(@RequestBody PatientFollowUpReq request) {
+        ApiResponse<PatientRegFollowUpResp> response = patientService.updatePatient(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @PostMapping("/image")
@@ -45,5 +48,10 @@ public class PatientController {
             return new ResponseEntity<>(ResponseUtils.createFailureResponse(e.getMessage(), new TypeReference<String>() {
             },"Error uploading image",500), HttpStatus.OK);
         }
+    }
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<List<Patient>>> searchPatient(@RequestBody PatientSearchReq searchRequest){
+        ApiResponse<List<Patient>> response = patientService.searchPatient(searchRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
