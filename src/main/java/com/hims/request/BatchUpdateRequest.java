@@ -16,6 +16,7 @@ public class BatchUpdateRequest {
     public static class ApplicationStatusUpdate {
         private String appId;
         private String status;
+        private Long templateId;
     }
 
     @Getter
@@ -25,5 +26,6 @@ public class BatchUpdateRequest {
         private String appId;
         private Long lastChgBy;
         private Long orderNo;
+        private String status;
     }
 }

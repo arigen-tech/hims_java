@@ -24,10 +24,10 @@ public class UrlByRoleController {
     @Autowired
     private UrlByRoleService urlByRoleService;
 
-    @GetMapping("/getAllUrlByRole/{roleId}")
-    public ApiResponse getTemplatesByRoleId(@PathVariable Long roleId) {
-        return urlByRoleService.getAllUrlByRoleId(roleId);
-    }
+//    @GetMapping("/getAllUrlByRole/{roleId}")
+//    public ApiResponse getTemplatesByRoleId(@PathVariable Long roleId) {
+//        return urlByRoleService.getAllUrlByRoleId(roleId);
+//    }
 
     @GetMapping("/getAllUrlByRoles/{roleIds}")
     public ApiResponse getTemplatesByRoleIds(@PathVariable String roleIds) {

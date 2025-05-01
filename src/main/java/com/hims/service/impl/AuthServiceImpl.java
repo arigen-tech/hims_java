@@ -243,6 +243,7 @@ public class AuthServiceImpl implements AuthService {
                     .refreshTokenExpiry(refreshTokenWithExpiry.getExpiryTime())
                     .username(userDetails.getUsername())
                     .roleId(user.getRoleId())
+                    .hospitalId(user.getHospital().getId())
                     .build();
 
 

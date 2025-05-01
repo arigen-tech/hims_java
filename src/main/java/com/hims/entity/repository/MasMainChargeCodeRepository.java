@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface MasMainChargeCodeRepository extends JpaRepository<MasMainChargeCode, Long> {
-    List<MasMainChargeCode> findByStatusIgnoreCase(String status);
-    List<MasMainChargeCode> findByStatusInIgnoreCase(List<String> statuses);
+    List<MasMainChargeCode> findByStatus(String status);
 }
