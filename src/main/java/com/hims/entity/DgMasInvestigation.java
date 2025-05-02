@@ -57,7 +57,7 @@ public class DgMasInvestigation {
     @JoinColumn(name = "uom_id")
     private DgUom uomId;
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sub_charge_code_id")
+    @JoinColumn(name = "sub_chargecode_id")
     private MasSubChargeCode subChargeCodeId ;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sample_id")
