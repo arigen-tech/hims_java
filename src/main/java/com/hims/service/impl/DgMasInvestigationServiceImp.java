@@ -1,8 +1,11 @@
 package com.hims.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.repository.DgMasInvestigationRepository;
+import com.hims.response.ApiResponse;
 import com.hims.response.DgMasInvestigationResponse;
 import com.hims.service.DgMasInvestigationService;
+import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +19,10 @@ public class DgMasInvestigationServiceImp implements DgMasInvestigationService {
 
 
     @Override
-    public List<DgMasInvestigationResponse> getPriceDetails(String genderApplicable, String investigationName) {
+    public ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable, String investigationName) {
         List<Object[]> results = dgMasInvestigationRepository.findByPriceDetails(genderApplicable, investigationName);
 
-        return results.stream().map(obj -> {
+        List<DgMasInvestigationResponse>  response = results.stream().map(obj -> {
             DgMasInvestigationResponse dto = new DgMasInvestigationResponse();
             dto.setInvestigationId(obj[0] != null ? ((Number) obj[0]).longValue() : null);
             dto.setInvestigationName((String) obj[1]);
@@ -28,7 +31,7 @@ public class DgMasInvestigationServiceImp implements DgMasInvestigationService {
             dto.setPrice(obj[4] != null ? ((Number) obj[4]).doubleValue() : 0.0);
             return dto;
         }).collect(Collectors.toList());
-
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
     }
 
 }

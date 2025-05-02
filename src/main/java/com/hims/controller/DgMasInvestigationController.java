@@ -21,14 +21,10 @@ public class DgMasInvestigationController {
 
 
     @GetMapping("/price-details")
-    public List<DgMasInvestigationResponse> getInvestigationPriceDetails(
+    public ApiResponse<List<DgMasInvestigationResponse>> getInvestigationPriceDetails(
             @RequestParam String genderApplicable,
             @RequestParam String investigationName
-    ) {
-        System.out.println("genderApplicable: " + genderApplicable);
-        System.out.println("investigationName: " + investigationName);
-
-        return dgMasInvestigationService.getPriceDetails(genderApplicable, investigationName);
+    ) {return dgMasInvestigationService.getPriceDetails(genderApplicable, investigationName);
     }
 
 
