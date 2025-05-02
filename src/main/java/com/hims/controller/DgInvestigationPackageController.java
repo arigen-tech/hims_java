@@ -32,10 +32,10 @@ public class DgInvestigationPackageController {
         return new ResponseEntity<>(packService.updateInvestPack(packId, packReq), HttpStatus.ACCEPTED);
     }
 
-    @PutMapping("/status/{packId}")
+    @PutMapping("/status/{packId}/{status}")
     ResponseEntity<ApiResponse<DgInvestigationPackageDTO>> changeStatus(
             @PathVariable Long packId,
-            @RequestBody String status){
+            @PathVariable String status){
         return new ResponseEntity<>(packService.changeStatus(packId, status), HttpStatus.ACCEPTED);
     }
 

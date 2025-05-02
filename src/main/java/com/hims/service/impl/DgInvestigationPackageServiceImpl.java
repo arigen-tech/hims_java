@@ -71,35 +71,29 @@ public class DgInvestigationPackageServiceImpl implements DgInvestigationPackage
     public ApiResponse<DgInvestigationPackageDTO> createInvestPack(DgInvestigationPackageRequest packReq){
         try{
             DgInvestigationPackage pack = new DgInvestigationPackage();
-
-            if (!("y".equalsIgnoreCase(packReq.getStatus()) || "n".equalsIgnoreCase(packReq.getStatus()))) {
+            pack.setPackName(packReq.getPackName());
+            pack.setDescrp(packReq.getDescrp());
+            pack.setBaseCost(packReq.getBaseCost());
+            pack.setDisc(packReq.getDisc());
+            pack.setDiscPer(packReq.getDiscPer());
+            pack.setActualCost(packReq.getActualCost());
+            pack.setStatus("y");
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                }, "Invalid status. Status should be 'Y' or 'N'", 400);
-            } else {
-                pack.setPackName(packReq.getPackName());
-                pack.setDescrp(packReq.getDescrp());
-                pack.setBaseCost(packReq.getBaseCost());
-                pack.setDisc(packReq.getDisc());
-                pack.setDiscPer(packReq.getDiscPer());
-                pack.setActualCost(packReq.getActualCost());
-                pack.setStatus(packReq.getStatus());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                            },
-                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
-                }
-                pack.setCreatedBy(currentUser.getUsername());
-                pack.setCreatedDt(LocalDateTime.now());
-                pack.setUpdatedBy(null);
-                pack.setUpdatedDt(null);
-                pack.setFromDt(packReq.getFromDt());
-                pack.setToDt(packReq.getToDt());
-                pack.setCategory(packReq.getCategory());
-                pack.setDiscFlag(packReq.getDiscFlag());
-                return ResponseUtils.createSuccessResponse(toResponse(packRepo.save(pack)), new TypeReference<>() {
-                });
+                        },
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
+            pack.setCreatedBy(String.valueOf(currentUser.getUserId()));
+            pack.setCreatedDt(LocalDateTime.now());
+            pack.setUpdatedBy(null);
+            pack.setUpdatedDt(null);
+            pack.setFromDt(packReq.getFromDt());
+            pack.setToDt(packReq.getToDt());
+            pack.setCategory(packReq.getCategory());
+            pack.setDiscFlag(packReq.getDiscFlag());
+            return ResponseUtils.createSuccessResponse(toResponse(packRepo.save(pack)), new TypeReference<>() {
+            });
         }
         catch (Exception e) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
@@ -114,19 +108,12 @@ public class DgInvestigationPackageServiceImpl implements DgInvestigationPackage
 
             if (optionalPack.isPresent()) {
                 DgInvestigationPackage pack = optionalPack.get();
-                if ("y".equals(packReq.getStatus()) || "n".equals(packReq.getStatus())) {
-                    pack.setStatus(packReq.getStatus());
-                } else {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    }, "Invalid status. Status should be 'y' or 'n'", 400);
-                }
                 pack.setPackName(packReq.getPackName());
                 pack.setDescrp(packReq.getDescrp());
                 pack.setBaseCost(packReq.getBaseCost());
                 pack.setDisc(packReq.getDisc());
                 pack.setDiscPer(packReq.getDiscPer());
                 pack.setActualCost(packReq.getActualCost());
-                pack.setStatus(packReq.getStatus());
 
                 User currentUser = getCurrentUser();
                 if (currentUser == null) {
@@ -134,7 +121,7 @@ public class DgInvestigationPackageServiceImpl implements DgInvestigationPackage
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                pack.setUpdatedBy(currentUser.getUsername());
+                pack.setUpdatedBy(String.valueOf(currentUser.getUserId()));
                 pack.setUpdatedDt(LocalDateTime.now());
                 pack.setFromDt(packReq.getFromDt());
                 pack.setToDt(packReq.getToDt());
@@ -162,6 +149,16 @@ public class DgInvestigationPackageServiceImpl implements DgInvestigationPackage
                 DgInvestigationPackage pack = newPack.get();
                 if ("Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status)) {
                     pack.setStatus(status);
+
+                    User currentUser = getCurrentUser();
+                    if (currentUser == null) {
+                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                                },
+                                "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                    }
+                    pack.setUpdatedBy(String.valueOf(currentUser.getUserId()));
+                    pack.setUpdatedDt(LocalDateTime.now());
+
                     return ResponseUtils.createSuccessResponse(toResponse(packRepo.save(pack)), new TypeReference<>() {
                     });
 

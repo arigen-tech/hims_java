@@ -32,10 +32,10 @@ public class MasSubChargeCodeController {
         return new ResponseEntity<>(subService.updateSubCharge(subId, codeReq), HttpStatus.ACCEPTED);
     }
 
-    @PutMapping("/status/{subId}")
+    @PutMapping("/status/{subId}/{status}")
     ResponseEntity<ApiResponse<MasSubChargeCodeDTO>> changeStatus(
             @PathVariable Long subId,
-            @RequestBody String status){
+            @PathVariable String status){
         return new ResponseEntity<>(subService.changeStatus(subId, status), HttpStatus.ACCEPTED);
     }
 

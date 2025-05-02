@@ -67,26 +67,20 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
 
             if (investigationPackage.isPresent()) {
                 PackageInvestigationMapping packMap = new PackageInvestigationMapping();
-                if ("y".equalsIgnoreCase(mapRequest.getStatus()) || "n".equalsIgnoreCase(mapRequest.getStatus())) {
-
-                    packMap.setPackageId(investigationPackage.get());
-                    packMap.setStatus(mapRequest.getStatus());
-                    User currentUser = getCurrentUser();
-                    if (currentUser == null) {
-                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                                },
-                                "Current user not found", HttpStatus.UNAUTHORIZED.value());
-                    }
-                    packMap.setCreatedBy(currentUser.getUsername());
-                    packMap.setCreatedOn(LocalDateTime.now());
-                    packMap.setUpdatedBy(null);
-                    packMap.setUpdatedOn(null);
-                    return ResponseUtils.createSuccessResponse(toResponse(mapRepo.save(packMap)), new TypeReference<>() {
-                    });
-                } else {
+                packMap.setPackageId(investigationPackage.get());
+                packMap.setStatus("y");
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    }, "Invalid status. Status should be 'Y' or 'N'", 400);
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
+                packMap.setCreatedBy(String.valueOf(currentUser.getUserId()));
+                packMap.setCreatedOn(LocalDateTime.now());
+                packMap.setUpdatedBy(null);
+                packMap.setUpdatedOn(null);
+                return ResponseUtils.createSuccessResponse(toResponse(mapRepo.save(packMap)), new TypeReference<>() {
+                });
             } else {
 
                 return ResponseUtils.createNotFoundResponse("Package not found with Id", 404);
@@ -104,22 +98,19 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
             Optional<PackageInvestigationMapping> optionalMap = mapRepo.findById(pimId);
             if (optionalMap.isPresent()) {
                 PackageInvestigationMapping packMap = optionalMap.get();
-
                 Optional<DgInvestigationPackage> investigationPackage = packRepo.findById(mapRequest.getPackageId());
                 if (investigationPackage.isPresent()) {
                     packMap.setPackageId(investigationPackage.get());
                 } else {
                     return ResponseUtils.createNotFoundResponse("Package not found with Id: " + mapRequest.getPackageId(), 404);
                 }
-
-                packMap.setStatus(mapRequest.getStatus());
                 User currentUser = getCurrentUser();
                 if (currentUser == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                packMap.setUpdatedBy(currentUser.getUsername());
+                packMap.setUpdatedBy(String.valueOf(currentUser.getUserId()));
                 packMap.setUpdatedOn(LocalDateTime.now());
                 return ResponseUtils.createSuccessResponse(toResponse(mapRepo.save(packMap)), new TypeReference<>() {
                 });
@@ -136,20 +127,29 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
     @Override
     public ApiResponse<PackageInvestigationMappingDTO> changeStatus(Long pimId, String status){
         try{
-            Optional<PackageInvestigationMapping> newMap = mapRepo.findById(pimId);
-            if (newMap.isPresent()) {
-                PackageInvestigationMapping packMap = newMap.get();
-                if ("Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status)) {
+            Optional<PackageInvestigationMapping> optionalMap = mapRepo.findById(pimId);
+            if(optionalMap.isPresent()){
+                PackageInvestigationMapping packMap = optionalMap.get();
+                if ("Y".equalsIgnoreCase(status)|| "N".equalsIgnoreCase(status)){
                     packMap.setStatus(status);
-                    return ResponseUtils.createSuccessResponse(toResponse(mapRepo.save(packMap)), new TypeReference<>() {
-                    });
 
-                } else {
+                    User currentUser = getCurrentUser();
+                    if (currentUser == null) {
+                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                                },
+                                "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                    }
+                    packMap.setUpdatedBy(String.valueOf(currentUser.getUserId()));
+                    packMap.setUpdatedOn(LocalDateTime.now());
+
+                    return ResponseUtils.createSuccessResponse(toResponse(mapRepo.save(packMap)), new TypeReference<>() {});
+
+                }else{
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     }, "Invalid status. Status should be 'Y' or 'N'", 400);
                 }
-            } else {
-                return ResponseUtils.createNotFoundResponse("Investigation not found", 404);
+            }else{
+                return ResponseUtils.createNotFoundResponse("MasItemType is not found", 404);
             }
         }
         catch (Exception e) {

@@ -17,8 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -63,7 +62,6 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
         return user;
     }
 
-
     @Override
     public ApiResponse<List<MasMainChargeCodeDTO>> getAllChargeCode(int flag) {
         List<MasMainChargeCode> charge;
@@ -90,14 +88,9 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
         return code.map(value ->
                 ResponseUtils.createSuccessResponse(
                         toResponse(value),
-                        new TypeReference<MasMainChargeCodeDTO>() {}
+                        new TypeReference<>() {}
                 )
         ).orElseGet(() -> ResponseUtils.createNotFoundResponse("Main Code not found", 404));
-    }
-
-    @Override
-    public ApiResponse<MasMainChargeCodeDTO> getByStatus(String status) {
-        return null;
     }
 
 
@@ -106,10 +99,6 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
         try{
             MasMainChargeCode chargeCode = new MasMainChargeCode();
 
-            if (!("y".equalsIgnoreCase(codeRequest.getStatus()) || "n".equalsIgnoreCase(codeRequest.getStatus()))) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                }, "Invalid status. Status should be 'Y' or 'N'", 400);
-            } else {
                 chargeCode.setChargecodeCode(codeRequest.getChargecode_code());
                 chargeCode.setChargecodeName(codeRequest.getChargecode_name());
                 chargeCode.setStatus("y");
@@ -119,12 +108,10 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                chargeCode.setLastChgBy(currentUser.getUsername());
-                chargeCode.setLastChgDate(Instant.now());
+                chargeCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                chargeCode.setLastChgDate(LocalDate.now());
                 chargeCode.setLastChgTime(getCurrentTimeFormatted());
-                return ResponseUtils.createSuccessResponse(toResponse(masMainChargeCodeRepository.save(chargeCode)), new TypeReference<>() {
-                });
-            }
+                return ResponseUtils.createSuccessResponse(toResponse(masMainChargeCodeRepository.save(chargeCode)), new TypeReference<>() {});
         }
         catch (Exception e) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
@@ -140,12 +127,6 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
 
             if (optionalCode.isPresent()) {
                 MasMainChargeCode chargeCode = optionalCode.get();
-                if ("y".equals(codeRequest.getStatus()) || "n".equals(codeRequest.getStatus())) {
-                    chargeCode.setStatus(codeRequest.getStatus());
-                } else {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    }, "Invalid status. Status should be 'y' or 'n'", 400);
-                }
                 chargeCode.setChargecodeCode(codeRequest.getChargecode_code());
                 chargeCode.setChargecodeName(codeRequest.getChargecode_name());
                 User currentUser = getCurrentUser();
@@ -154,14 +135,14 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                chargeCode.setLastChgBy(currentUser.getUsername());
-                chargeCode.setLastChgDate(Instant.now());
+                chargeCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                chargeCode.setLastChgDate(LocalDate.now());
                 chargeCode.setLastChgTime(getCurrentTimeFormatted());
 
                 return ResponseUtils.createSuccessResponse(toResponse(masMainChargeCodeRepository.save(chargeCode)), new TypeReference<>() {
                 });
             } else {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<MasMainChargeCodeDTO>() {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                 }, "MainCharge data not found", 404);
             }
         }
@@ -181,14 +162,24 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
                 if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n")) {
                     return ResponseUtils.createFailureResponse(
                             null,
-                            new TypeReference<MasMainChargeCodeDTO>() {
+                            new TypeReference<>() {
                             },
                             "Invalid status value. Use 'Y' for Active and 'N' for Inactive.",
                             400
                     );
                 }
-
                 codes.setStatus(status);
+
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                codes.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                codes.setLastChgDate(LocalDate.now());
+                codes.setLastChgTime(getCurrentTimeFormatted());
+
                 MasMainChargeCode existingCode = masMainChargeCodeRepository.save(codes);
 
                 return ResponseUtils.createSuccessResponse(

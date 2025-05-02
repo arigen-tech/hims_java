@@ -32,10 +32,10 @@ public class PackageInvestigationMappingController {
         return new ResponseEntity<>(mapService.updatePackMap(pimId, mapRequest), HttpStatus.CREATED);
     }
 
-    @PutMapping("/status/{packId}")
+    @PutMapping("/updateStatus/{pimId}/{status}")
     ResponseEntity<ApiResponse<PackageInvestigationMappingDTO>> changeStatus(
             @PathVariable Long pimId,
-            @RequestBody String status){
+            @PathVariable String status){
         return new ResponseEntity<>(mapService.changeStatus(pimId, status), HttpStatus.ACCEPTED);
     }
 

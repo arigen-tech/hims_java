@@ -3,6 +3,7 @@ package com.hims.response;
 import lombok.Data;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Data
 public class MasMainChargeCodeDTO {
@@ -11,6 +12,6 @@ public class MasMainChargeCodeDTO {
     private String chargecodeName;
     private String status;
     private String lastChgBy;
-    private Instant lastChgDate;
+    private LocalDate lastChgDate;
     private String lastChgTime;
 }

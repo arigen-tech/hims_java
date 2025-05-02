@@ -19,8 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -75,28 +74,22 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
             if (mainChargeCode.isPresent()) {
 
                 MasSubChargeCode subCode = new MasSubChargeCode();
-                if ("y".equalsIgnoreCase(codeReq.getStatus()) || "n".equalsIgnoreCase(codeReq.getStatus())) {
                     subCode.setSubCode(codeReq.getSubCode());
                     subCode.setSubName(codeReq.getSubName());
-                    subCode.setStatus(codeReq.getStatus());
+                    subCode.setStatus("y");
                     User currentUser = getCurrentUser();
                     if (currentUser == null) {
                         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                                 },
                                 "Current user not found", HttpStatus.UNAUTHORIZED.value());
                     }
-                    subCode.setLastChgBy(currentUser.getUsername());
-                    subCode.setLastChgDate(Instant.now());
+                    subCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                    subCode.setLastChgDate(LocalDate.now());
                     subCode.setLastChgTime(getCurrentTimeFormatted());
                     subCode.setMainChargeId(mainChargeCode.get());
-                    return ResponseUtils.createSuccessResponse(toResponse(subRepo.save(subCode)), new TypeReference<>() {
-                    });
-                } else {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    }, "Invalid status. Status should be 'Y' or 'N'", 400);
-                }
-            } else {
-
+                    return ResponseUtils.createSuccessResponse(toResponse(subRepo.save(subCode)), new TypeReference<>() {});
+            }
+            else {
                 return ResponseUtils.createNotFoundResponse("MainCharge not found with id", 404);
             }
         }
@@ -113,15 +106,14 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
                 MasSubChargeCode newCode = newSubCode.get();
                 newCode.setSubCode(codeReq.getSubCode());
                 newCode.setSubName(codeReq.getSubName());
-                newCode.setStatus("y");
                 User currentUser = getCurrentUser();
                 if (currentUser == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                newCode.setLastChgBy(currentUser.getUsername());
-                newCode.setLastChgDate(Instant.now());
+                newCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                newCode.setLastChgDate(LocalDate.now());
                 newCode.setLastChgTime(getCurrentTimeFormatted());
 
                 Optional<MasMainChargeCode> mainChargeCode = mainRepo.findById(codeReq.getMainChargeId());
@@ -150,6 +142,17 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
                 MasSubChargeCode subCode = newSubCode.get();
                 if ("Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status)) {
                     subCode.setStatus(status);
+
+                    User currentUser = getCurrentUser();
+                    if (currentUser == null) {
+                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                                },
+                                "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                    }
+                    subCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                    subCode.setLastChgDate(LocalDate.now());
+                    subCode.setLastChgTime(getCurrentTimeFormatted());
+
                     return ResponseUtils.createSuccessResponse(toResponse(subRepo.save(subCode)), new TypeReference<>() {
                     });
 

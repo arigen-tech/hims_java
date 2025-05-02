@@ -6,5 +6,4 @@ import lombok.Data;
 public class PackageInvestigationMappingRequest {
     private Long packageId;
 //    private Long investId;
-    private String status;
 }
