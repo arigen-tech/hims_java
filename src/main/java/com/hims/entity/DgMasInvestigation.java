@@ -80,7 +80,5 @@ public class DgMasInvestigation {
     private String discount;
     @Column(name = "price", length=255)
     private Double price;
-   @OneToMany(mappedBy = "investigation", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-     private List<InvestigationPriceDetails> priceDetails;
 
 }

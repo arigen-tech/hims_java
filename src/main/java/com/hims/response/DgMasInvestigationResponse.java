@@ -17,20 +17,15 @@ import java.time.Instant;
 @Setter
 @Data
 public class DgMasInvestigationResponse {
+    private Long investigationId;
     private String investigationName;
     private String status;
     private String genderApplicable;
     private Double price;
 
-    public DgMasInvestigationResponse(String investigationName, String status, String genderApplicable, Double price) {
-        this.investigationName = investigationName;
-        this.status = status;
-        this.genderApplicable = genderApplicable;
-        this.price = price;
-    }
-    public DgMasInvestigationResponse() {
+
 
     }
 
 
-}
+

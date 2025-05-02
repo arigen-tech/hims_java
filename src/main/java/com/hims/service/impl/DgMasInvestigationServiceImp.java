@@ -1,21 +1,13 @@
 package com.hims.service.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.DgMasInvestigation;
 import com.hims.entity.repository.DgMasInvestigationRepository;
-import com.hims.response.ApiResponse;
 import com.hims.response.DgMasInvestigationResponse;
-import com.hims.response.DgUomResponse;
 import com.hims.service.DgMasInvestigationService;
-import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class DgMasInvestigationServiceImp implements DgMasInvestigationService {
@@ -24,15 +16,19 @@ public class DgMasInvestigationServiceImp implements DgMasInvestigationService {
 
 
     @Override
-    public ApiResponse<List<DgMasInvestigationResponse>> getInvestigationWithPriceDetails(String investigationName, String genderApplicable) {
-        LocalDate currentDate = LocalDate.now();
-        List<DgMasInvestigationResponse> responseList =dgMasInvestigationRepository.findByPriceDetails( investigationName,  genderApplicable,currentDate );
-       // System.out.println(responseList);
-        if (responseList.isEmpty()) {
-            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "data not found", 404);
-        } else {
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
-        }
+    public List<DgMasInvestigationResponse> getPriceDetails(String genderApplicable, String investigationName) {
+        List<Object[]> results = dgMasInvestigationRepository.findByPriceDetails(genderApplicable, investigationName);
+
+        return results.stream().map(obj -> {
+            DgMasInvestigationResponse dto = new DgMasInvestigationResponse();
+            dto.setInvestigationId(obj[0] != null ? ((Number) obj[0]).longValue() : null);
+            dto.setInvestigationName((String) obj[1]);
+            dto.setStatus(obj[2] != null ? obj[2].toString() : null);
+            dto.setGenderApplicable(obj[3] != null ? obj[3].toString() : null);
+            dto.setPrice(obj[4] != null ? ((Number) obj[4]).doubleValue() : 0.0);
+            return dto;
+        }).collect(Collectors.toList());
 
     }
+
 }

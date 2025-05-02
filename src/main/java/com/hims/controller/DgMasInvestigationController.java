@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,14 +20,17 @@ public class DgMasInvestigationController {
     private DgMasInvestigationService dgMasInvestigationService;
 
 
-    @GetMapping("dgMasInvestigationById/{investigationName}/{genderApplicable}")
-    public ResponseEntity<ApiResponse<List<DgMasInvestigationResponse>>> getInvestigationDetails(
-            @PathVariable String investigationName,
-            @PathVariable String genderApplicable) {
+    @GetMapping("/price-details")
+    public List<DgMasInvestigationResponse> getInvestigationPriceDetails(
+            @RequestParam String genderApplicable,
+            @RequestParam String investigationName
+    ) {
+        System.out.println("genderApplicable: " + genderApplicable);
+        System.out.println("investigationName: " + investigationName);
 
-
-        return new ResponseEntity<>(dgMasInvestigationService.getInvestigationWithPriceDetails(investigationName, genderApplicable), HttpStatus.OK);
-
+        return dgMasInvestigationService.getPriceDetails(genderApplicable, investigationName);
     }
 
-    }
+
+
+}

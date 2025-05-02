@@ -6,8 +6,7 @@ import com.hims.response.DgMasInvestigationResponse;
 import java.util.List;
 
 public interface DgMasInvestigationService {
-
-    ApiResponse<List<DgMasInvestigationResponse>> getInvestigationWithPriceDetails(String investigationName, String genderApplicable);
+    List<DgMasInvestigationResponse> getPriceDetails(String genderApplicable, String investigationName);
 
 
 }
