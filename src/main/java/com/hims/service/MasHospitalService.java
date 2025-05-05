@@ -11,5 +11,5 @@ public interface MasHospitalService {
     ApiResponse<MasHospitalResponse> changeStatus(Long id, String status);
     ApiResponse<MasHospitalResponse> findById(Long id);
     ApiResponse<MasHospitalResponse> addHospital(MasHospitalRequest hospitalRequest);
-    ApiResponse<MasHospitalResponse> updateHospital(Long id, MasHospitalResponse hospitalDetails);
+    ApiResponse<MasHospitalResponse> updateHospital(Long id, MasHospitalRequest hospitalRequest);
 }

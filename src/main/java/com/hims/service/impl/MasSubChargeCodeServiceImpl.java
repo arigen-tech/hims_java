@@ -33,13 +33,13 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
     private static final Logger log = LoggerFactory.getLogger(MasSubChargeCodeServiceImpl.class);
 
     @Autowired
-    MasSubChargeCodeRepository subRepo;
+    private MasSubChargeCodeRepository subRepo;
 
     @Autowired
-    MasMainChargeCodeRepository mainRepo;
+    private MasMainChargeCodeRepository mainRepo;
 
     @Autowired
-    UserRepo userRepo;
+    private UserRepo userRepo;
 
     private String getCurrentTimeFormatted(){
         return LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));

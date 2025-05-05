@@ -30,13 +30,13 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
     private static final Logger log = LoggerFactory.getLogger(PackageInvestigationMappingServicesImpl.class);
 
     @Autowired
-    PackageInvestigationMappingRepository mapRepo;
+    private PackageInvestigationMappingRepository mapRepo;
 
     @Autowired
-    DgInvestigationPackageRepository packRepo;
+    private DgInvestigationPackageRepository packRepo;
 
     @Autowired
-    UserRepo userRepo;
+    private UserRepo userRepo;
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();

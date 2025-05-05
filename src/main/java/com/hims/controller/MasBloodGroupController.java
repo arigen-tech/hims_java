@@ -40,8 +40,8 @@ public class MasBloodGroupController {
     @PutMapping("/update/{id}")
     public ResponseEntity<ApiResponse<MasBloodGroupResponse>> updateBloodGroup(
             @PathVariable Long id,
-            @RequestBody MasBloodGroupResponse bloodGroupDetails) {
-        ApiResponse<MasBloodGroupResponse> response = masBloodGroupService.updateBloodGroup(id, bloodGroupDetails);
+            @RequestBody MasBloodGroupRequest bloodGroupRequest) {
+        ApiResponse<MasBloodGroupResponse> response = masBloodGroupService.updateBloodGroup(id, bloodGroupRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -44,7 +45,7 @@ public class MasHospital {
     private String lastChgBy;
 
     @Column(name = "last_chg_date")
-    private Instant lastChgDate;
+    private LocalDate lastChgDate;
 
     @Size(max = 10)
     @Column(name = "last_chg_time", length = 10)

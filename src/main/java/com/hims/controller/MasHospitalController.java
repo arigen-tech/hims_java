@@ -40,8 +40,8 @@ public class MasHospitalController {
     @PutMapping("/update/{id}")
     public ResponseEntity<ApiResponse<MasHospitalResponse>> updateHospital(
             @PathVariable Long id,
-            @RequestBody MasHospitalResponse hospitalDetails) {
-        ApiResponse<MasHospitalResponse> response = masHospitalService.updateHospital(id, hospitalDetails);
+            @RequestBody MasHospitalRequest hospitalRequest) {
+        ApiResponse<MasHospitalResponse> response = masHospitalService.updateHospital(id, hospitalRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

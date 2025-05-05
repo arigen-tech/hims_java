@@ -13,17 +13,11 @@ public class MasGenderRequest {
     @NotNull
     @Size(max = 1)
     private String genderCode;
-
     @NotNull
     private String genderName;
-
-    @Size(max = 5)
-    private String code;
-
     private String status;
 
-    private Instant lastChgDt;
+//    @Size(max = 5)
+//    private String code;
 
-    @Size(max = 200)
-    private String lastChgBy;
 }

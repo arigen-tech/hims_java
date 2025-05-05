@@ -41,10 +41,10 @@ public class MasMainChargeCodeController {
         return new ResponseEntity<> (masMainChargeCodeService.updateChargeCode(chargecodeId, codeRequest), HttpStatus.ACCEPTED);
     }
 
-    @PutMapping ("/status/{chargecodeId}/{status}")
+    @PutMapping ("/status/{chargecodeId}")
     public ResponseEntity<ApiResponse<MasMainChargeCodeDTO>> changeStatus(
             @PathVariable Long chargecodeId,
-            @PathVariable String status) {
+            @RequestParam String status) {
         return new ResponseEntity<>(masMainChargeCodeService.changeStatus(chargecodeId, status), HttpStatus.ACCEPTED);
     }
 }

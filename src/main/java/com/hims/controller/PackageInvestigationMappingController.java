@@ -18,34 +18,34 @@ import java.util.List;
 public class PackageInvestigationMappingController {
 
     @Autowired
-    PackageInvestigationMappingService mapService;
+    private PackageInvestigationMappingService mapService;
 
     @PostMapping("/add")
-    ResponseEntity<ApiResponse<PackageInvestigationMappingDTO>> createPackMap(@RequestBody PackageInvestigationMappingRequest mapRequest){
+    public ResponseEntity<ApiResponse<PackageInvestigationMappingDTO>> createPackMap(@RequestBody PackageInvestigationMappingRequest mapRequest){
         return new ResponseEntity<>(mapService.createPackMap(mapRequest), HttpStatus.CREATED);
     }
 
     @PutMapping("/update/{pimId}")
-    ResponseEntity<ApiResponse<PackageInvestigationMappingDTO>> updatePackMap(
+    public ResponseEntity<ApiResponse<PackageInvestigationMappingDTO>> updatePackMap(
             @PathVariable Long pimId,
             @RequestBody PackageInvestigationMappingRequest mapRequest){
         return new ResponseEntity<>(mapService.updatePackMap(pimId, mapRequest), HttpStatus.CREATED);
     }
 
-    @PutMapping("/updateStatus/{pimId}/{status}")
-    ResponseEntity<ApiResponse<PackageInvestigationMappingDTO>> changeStatus(
+    @PutMapping("/updateStatus/{pimId}")
+    public ResponseEntity<ApiResponse<PackageInvestigationMappingDTO>> changeStatus(
             @PathVariable Long pimId,
-            @PathVariable String status){
+            @RequestParam String status){
         return new ResponseEntity<>(mapService.changeStatus(pimId, status), HttpStatus.ACCEPTED);
     }
 
     @GetMapping("/{pimId}")
-    ResponseEntity<ApiResponse<PackageInvestigationMappingDTO>> getByPimId (@PathVariable Long pimId){
+    public ResponseEntity<ApiResponse<PackageInvestigationMappingDTO>> getByPimId (@PathVariable Long pimId){
         return new ResponseEntity<>(mapService.getByPimId(pimId), HttpStatus.OK);
     }
 
     @GetMapping("/getAllPackageMap/{flag}")
-    ResponseEntity<ApiResponse<List<PackageInvestigationMappingDTO>>> getAllPackageMap (int flag){
+    public ResponseEntity<ApiResponse<List<PackageInvestigationMappingDTO>>> getAllPackageMap (@PathVariable int flag){
         return new ResponseEntity<>(mapService.getAllPackageMap(flag), HttpStatus.OK);
     }
 }

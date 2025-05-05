@@ -32,10 +32,10 @@ public class DgInvestigationPackageController {
         return new ResponseEntity<>(packService.updateInvestPack(packId, packReq), HttpStatus.ACCEPTED);
     }
 
-    @PutMapping("/status/{packId}/{status}")
+    @PutMapping("/status/{packId}")
     ResponseEntity<ApiResponse<DgInvestigationPackageDTO>> changeStatus(
             @PathVariable Long packId,
-            @PathVariable String status){
+            @RequestParam String status){
         return new ResponseEntity<>(packService.changeStatus(packId, status), HttpStatus.ACCEPTED);
     }
 
@@ -45,7 +45,7 @@ public class DgInvestigationPackageController {
     }
 
     @GetMapping("/getAllPackInvestigation/{flag}")
-    ResponseEntity<ApiResponse<List<DgInvestigationPackageDTO>>> getAllPackInvestigation(int flag){
+    ResponseEntity<ApiResponse<List<DgInvestigationPackageDTO>>> getAllPackInvestigation(@PathVariable int flag){
         return new ResponseEntity<>(packService.getAllPackInvestigation(flag), HttpStatus.OK);
     }
 }

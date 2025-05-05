@@ -3,6 +3,7 @@ package com.hims.response;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -15,7 +16,7 @@ public class MasHospitalResponse {
     private String contactNumber;
     private String contactNumber2;
     private String lastChgBy;
-    private Instant lastChgDate;
+    private LocalDate lastChgDate;
     private String lastChgTime;
     private Long countryId;
     private String countryName;

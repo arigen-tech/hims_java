@@ -31,7 +31,7 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
     private static final Logger log = LoggerFactory.getLogger(MasMainChargeCodeServicesImpl.class);
 
     @Autowired
-    MasMainChargeCodeRepository masMainChargeCodeRepository;
+    private MasMainChargeCodeRepository masMainChargeCodeRepository;
 
     @Autowired
     UserRepo userRepo;
