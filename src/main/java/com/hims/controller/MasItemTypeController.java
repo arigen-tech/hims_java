@@ -26,8 +26,8 @@ public class MasItemTypeController {
         return new ResponseEntity<>(masItemTypeService.updateMasItemTypeID(id,masItemTypeRequest), HttpStatus.OK);
 
     }
-    @PutMapping("/updateMasItemTypeStatus/{id}/{status}")
-    public ResponseEntity<ApiResponse<MasItemTypeResponse>> updateMasTypeItemStatus(@PathVariable int id, @PathVariable String status){
+    @PutMapping("/updateMasItemTypeStatus/{id}")
+    public ResponseEntity<ApiResponse<MasItemTypeResponse>> updateMasTypeItemStatus(@PathVariable int id,@RequestParam String status){
         return new ResponseEntity<>(masItemTypeService.updateMasItemTypeStatus(id,status), HttpStatus.OK);
 
     }
