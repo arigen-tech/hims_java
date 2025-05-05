@@ -84,6 +84,12 @@ public class AuthServiceImpl implements AuthService {
     private TokenBlacklistService tokenBlacklistService;
     @Autowired
     private RestTemplate restTemplate;
+
+    private boolean isValidStatus(String status) {
+        return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
+    }
+
+
 //    @Value("${third.party.otp.api.key}")
 //    private String apiKey;
 //    @Value("${third.party.otp.send.url}")
@@ -811,6 +817,65 @@ public class AuthServiceImpl implements AuthService {
     }
 
 
+    @Transactional
+    @Override
+    public ApiResponse<String> updateUserStatus(Long id, String status) {
+        if (!isValidStatus(status)) {
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {},
+                    "Invalid status. Status should be 'y' or 'n'", 400);
+        }
+
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return com.hims.utils.ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
+        }
+
+        Optional<User> userOpt = userRepo.findById(id);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setStatus(status);
+            user.setLastChangeDate(Instant.now());
+            user.setLastChangedBy(currentUser.getUsername());
+            userRepo.save(user);
+            return ResponseUtils.createSuccessResponse(
+                    "User status updated to '" + status + "'", new TypeReference<>() {});
+        } else {
+            return ResponseUtils.createNotFoundResponse("User not found", 404);
+        }
+    }
+
+    @Transactional
+    @Override
+    public ApiResponse<String> updateUserRoles(Long id, String roles) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
+        }
+
+        Optional<User> userOpt = userRepo.findById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("User not found", 404);
+        }
+
+        User user = userOpt.get();
+
+        if (!roles.matches("^\\d+(,\\d+)*$")) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Invalid roles format. Use comma-separated role IDs (e.g., 1,2,3)", HttpStatus.BAD_REQUEST.value());
+        }
+
+        user.setRoleId(roles);
+        user.setLastChangeDate(Instant.now());
+        user.setLastChangedBy(currentUser.getUsername());
+
+        userRepo.save(user);
+
+        return ResponseUtils.createSuccessResponse("User roles updated successfully", new TypeReference<>() {});
+    }
+
 
     @Override
     public ApiResponse<List<User>> getAllUser() {
@@ -1012,6 +1077,16 @@ public class AuthServiceImpl implements AuthService {
         }
         return ResponseUtils.createSuccessResponse(objMsg, new TypeReference<DefaultResponse>() {
         });
+    }
+
+    private User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByUserName(username);
+        if (user == null) {
+//            log.warn("User not found for username: {}", username);
+
+        }
+        return user;
     }
 
 //    @Transactional(rollbackFor = {Exception.class})

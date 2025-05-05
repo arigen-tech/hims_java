@@ -6,5 +6,4 @@ import lombok.Data;
 public class UserDepartmentRequest {
     private Long userId;
     private Long departmentId;
-    private String lastChgBy;
 }

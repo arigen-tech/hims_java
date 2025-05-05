@@ -144,6 +144,20 @@ public class AuthController {
         return new ResponseEntity<>(authService.activeInactiveUser(userName,status), HttpStatus.OK);
     }
 
+    @PutMapping("/updateStatus/{id}")
+    public ResponseEntity<ApiResponse<String>> updateUserStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(authService.updateUserStatus(id, status));
+    }
+
+    @PutMapping("/updateRoles/{id}")
+    public ResponseEntity<ApiResponse<String>> updateUserRoles(
+            @PathVariable Long id,
+            @RequestParam String roles) {
+        return ResponseEntity.ok(authService.updateUserRoles(id, roles));
+    }
+
     @Operation(summary = "This API is used to change users role status active or inactive")
     @PutMapping("/activeInactiveRole/{userName}/{roll_Id}/{status}")
     public ResponseEntity<ApiResponse<DefaultResponse>> activeInactiveRole(@PathVariable(value = "userName") String userName,@PathVariable(value = "roll_Id") String roll_Id,@PathVariable(value = "status") boolean status) {

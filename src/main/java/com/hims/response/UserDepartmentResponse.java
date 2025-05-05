@@ -11,5 +11,5 @@ public class UserDepartmentResponse {
     private Long departmentId;
     private String departmentName;
     private String lastChgBy;
-    private OffsetDateTime lasUpdatedBy;
+    private OffsetDateTime lasUpdatedDt;
 }

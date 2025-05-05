@@ -15,6 +15,7 @@ import com.hims.response.DefaultResponse;
 import com.hims.response.RoleInfoResp;
 import com.hims.response.UserProfileResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Principal;
 import java.util.List;
@@ -43,6 +44,12 @@ public interface AuthService {
     ApiResponse<DefaultResponse> activeInactiveRole(String userName, String roll_id, boolean status);
 
     ApiResponse<DefaultResponse> activeInactiveUser(String userName, boolean status);
+
+    @Transactional
+    ApiResponse<String> updateUserStatus(Long id, String status);
+
+    @Transactional
+    ApiResponse<String> updateUserRoles(Long id, String roles);
 
     ApiResponse<List<User>> getAllUser();
 

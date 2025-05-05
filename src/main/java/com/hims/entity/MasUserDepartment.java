@@ -10,7 +10,7 @@ import java.time.Instant;
 @Entity
 @Getter
 @Setter
-@Table(name = "mas_user_department")
+@Table(name = "user_department")
 public class MasUserDepartment {
 
     @Id
@@ -25,6 +25,9 @@ public class MasUserDepartment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     private MasDepartment department;
+
+    @Column(name = "status", length = 1)
+    private String status;
 
     @Column(name = "las_updated_by")
     private Instant lastUpdatedBy;
