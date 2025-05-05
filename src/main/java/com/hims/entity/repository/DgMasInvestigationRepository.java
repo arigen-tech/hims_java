@@ -35,4 +35,7 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
             @Param("investigationName") String investigationName
     );
 
+    List<DgMasInvestigation> findByStatusIgnoreCase(String status);
+    List<DgMasInvestigation> findByStatusInIgnoreCase(List<String> statuses);
+
 }

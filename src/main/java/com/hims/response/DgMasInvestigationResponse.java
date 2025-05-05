@@ -21,6 +21,7 @@ public class DgMasInvestigationResponse {
     private String investigationName;
     private String status;
     private String genderApplicable;
+    private String investigationType;
     private Double price;
 
 

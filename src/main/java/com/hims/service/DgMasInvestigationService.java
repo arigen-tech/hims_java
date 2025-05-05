@@ -8,5 +8,8 @@ import java.util.List;
 public interface DgMasInvestigationService {
     ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable, String investigationName);
 
+    ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag);
+
+
 
 }

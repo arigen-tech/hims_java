@@ -27,6 +27,9 @@ public class DgMasInvestigationController {
     ) {return dgMasInvestigationService.getPriceDetails(genderApplicable, investigationName);
     }
 
-
+    @GetMapping("/getAll/{flag}")
+    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(@PathVariable int flag) {
+        return dgMasInvestigationService.getAllInvestigations(flag);
+    }
 
 }
