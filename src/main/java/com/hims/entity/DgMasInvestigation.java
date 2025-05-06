@@ -50,16 +50,16 @@ public class DgMasInvestigation {
     private String hicCode;
 //    @Column(name = "charge_code_id")
 //    private MasChargeCode chargeCodeId;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "main_chargecode_id")
     private MasMainChargeCode mainChargeCodeID;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "uom_id")
     private DgUom uomId;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sub_chargecode_id")
     private MasSubChargeCode subChargeCodeId ;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sample_id")
     private DgMasSample sampleId;
     @Column(name = "equipment_id")

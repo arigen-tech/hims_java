@@ -65,11 +65,11 @@ public class DgOrderHd {
     @Column(name = "investigation_request_no")
     private int investigationRequestNo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "visit_id")
     private Visit visitId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "patient_id")
     private Patient patientId;
 

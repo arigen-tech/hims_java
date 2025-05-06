@@ -16,11 +16,11 @@ public class PackageInvestigationMapping {
     @Column(name = "id", nullable = false)
     private Long pimId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "package_id", referencedColumnName = "id")
     private DgInvestigationPackage packageId;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
+//    @ManyToOne(fetch = FetchType.EAGER)
 //    @Column(name = "investigation_id")
 //    private Long investId;
 

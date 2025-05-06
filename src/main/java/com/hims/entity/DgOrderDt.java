@@ -45,7 +45,7 @@ public class DgOrderDt {
     @Column(name = "appointment_date")
     private LocalDate appointmentDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "investigation_id")
     private DgMasInvestigation investigationId;
 
@@ -55,7 +55,7 @@ public class DgOrderDt {
     @Column(name = "main_chargecode_id")
     private int mainChargecodeId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "orderhd_id")
     private DgOrderHd orderhdId;
 
@@ -65,7 +65,7 @@ public class DgOrderDt {
     @Column(name = " msg_sent", length = 1)
     private String msgSent;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "package_id")
     private DgInvestigationPackage packageId;
 }

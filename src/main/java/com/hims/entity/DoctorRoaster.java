@@ -18,11 +18,11 @@ public class DoctorRoaster {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
     private MasDepartment department;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "doctor_id")
     private User doctorId;
 
@@ -43,7 +43,7 @@ public class DoctorRoaster {
     @Column(name = "chg_time", length = 5)
     private String chgTime;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "hospital_id")
     private MasHospital hospital;
 

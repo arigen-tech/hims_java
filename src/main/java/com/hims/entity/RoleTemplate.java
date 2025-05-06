@@ -21,7 +21,7 @@ public class RoleTemplate {
     @Column(name = "role_id")
     private Long roleId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "template_id")
     private MasTemplate template;
 
@@ -35,7 +35,7 @@ public class RoleTemplate {
     @Column(name = "last_chg_date")
     private Instant lastChgDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "hospital_id")
     private MasHospital hospital;
 

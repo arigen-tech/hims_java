@@ -32,22 +32,22 @@ public class MasEmployee {
     @Column(name = "dob")
     private LocalDate dob;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "gender_id")
     private MasGender genderId;
 
     @Column(name = "address_1", length = 255)
     private String address1;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "country_id")
     private MasCountry countryId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "state_id")
     private MasState stateId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "district_id")
     private MasDistrict districtId;
 

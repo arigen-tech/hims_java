@@ -30,7 +30,7 @@ public class MasItemType {
     @Column(name = "last_chg_time",length=10)
     private String lastChgTime;
 
-    @ManyToOne(fetch = FetchType.LAZY  )
+    @ManyToOne(fetch = FetchType.EAGER  )
     @JoinColumn(name = "group_id")
     private  MasStoreGroup masStoreGroupId;
 

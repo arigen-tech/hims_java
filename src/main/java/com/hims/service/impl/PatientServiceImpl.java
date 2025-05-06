@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
-import java.time.LocalDate;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +30,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class PatientServiceImpl implements PatientService {
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final String UPLOAD_DIR = "patientImage/";
     @Autowired
     MasGenderRepository masGenderRepository;
@@ -85,15 +86,18 @@ public class PatientServiceImpl implements PatientService {
         Patient patient = savePatient(request,false);
         resp.setPatient(patient);
 
-
+        OpdPatientDetail newOpd=new OpdPatientDetail();
+        Visit savedVisit=new Visit();
         if (visit != null) {
-            Visit savedVisit = createAppointment(visit,  patient);
-            resp.setVisit(savedVisit);
+
+            savedVisit = createAppointment(visit,  patient);
             if (savedVisit.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-                OpdPatientDetail newOpd = addOpdDetaials(savedVisit, opdPatientDetailRequest, patient);
-                resp.setOpdPatientDetail(newOpd);
+                newOpd = addOpdDetaials(savedVisit, opdPatientDetailRequest, patient);
+
             }
         }
+        resp.setVisit(savedVisit);
+        resp.setOpdPatientDetail(newOpd);
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {
         });
     }
@@ -177,6 +181,8 @@ public class PatientServiceImpl implements PatientService {
     }
 
     private Patient savePatient(PatientRequest request, boolean followUp) {
+
+        User loggedInUser=userRepository.findByUserName(request.getLastChgBy());
         Patient patient = new Patient();
 
         patient.setPatientFn(request.getPatientFn());
@@ -208,7 +214,7 @@ public class PatientServiceImpl implements PatientService {
         patient.setRegDate(request.getRegDate());
         patient.setCreatedOn(Instant.now());
         patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(request.getLastChgBy());
+        patient.setLastChgBy(loggedInUser.getFirstName()+" "+loggedInUser.getMiddleName()+" "+loggedInUser.getLastName());
 
         // Fetch and set related entities using IDs
 
@@ -345,11 +351,17 @@ public class PatientServiceImpl implements PatientService {
                 .findAllTokensForSessionToday(visit.getDoctorId(), visit.getHospitalId(), visit.getSessionId());
 
         Long nextToken = getNextAvailableToken(existingTokens, startToken, maxToken);
+        Instant[] tokenTimes = calculateTokenTimeAsInstant(
+                setup.getStartTime(), // e.g., "08:00"
+                setup.getTimeTaken(), // e.g., 10
 
+                nextToken,LocalDate.now(),ZoneId.systemDefault());
+        newVisit.setStartTime(tokenTimes[0]);
+        newVisit.setEndTime(tokenTimes[1]);
         newVisit.setTokenNo(nextToken);
         newVisit.setVisitDate(visit.getVisitDate());
         newVisit.setLastChgDate(Instant.now());
-        newVisit.setVisitStatus("y");
+        newVisit.setVisitStatus("p");
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartmentId(visit.getDepartmentId());
         newVisit.setDoctorName(visit.getDoctorName());
@@ -360,19 +372,53 @@ public class PatientServiceImpl implements PatientService {
         }
 
         if (visit.getHospitalId() != null) {
-            masHospitalRepository.findById(visit.getHospitalId()).ifPresent(newVisit::setHospital);
+            Optional<MasHospital> hospital=masHospitalRepository.findById(visit.getHospitalId());
+            if(hospital.isPresent()){
+                newVisit.setHospital(hospital.get());
+                if(hospital.get().getPreConsultationAvailable().equalsIgnoreCase("y")){
+                    newVisit.setPreConsultation("n");
+                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase("n")) {
+                    newVisit.setPreConsultation("y");
+                }
+            }
         }
 
         if (visit.getIniDoctorId() != null) {
-            userRepository.findById(visit.getIniDoctorId()).ifPresent(newVisit::setIniDoctor);
+            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setIniDoctor);
         }
 
         if (visit.getSessionId() != null) {
             masOpdSessionRepository.findById(visit.getSessionId()).ifPresent(newVisit::setSession);
         }
 
+
         // Save visit
         return visitRepository.save(newVisit);
+    }
+    public static Instant[] calculateTokenTimeAsInstant(
+            String startTimeStr,
+            int timeTakenMinutes,
+            Long tokenNo,
+            LocalDate visitDate,
+            ZoneId zoneId) {
+
+        if (startTimeStr == null || timeTakenMinutes <= 0 || tokenNo <= 0 || visitDate == null) {
+            throw new IllegalArgumentException("Invalid input parameters.");
+        }
+
+        // Parse the base start time
+        LocalTime baseTime = LocalTime.parse(startTimeStr); // expects "HH:mm"
+        long minutesToAdd = (tokenNo - 1) * timeTakenMinutes;
+
+        // Calculate start and end time
+        LocalDateTime startDateTime = LocalDateTime.of(visitDate, baseTime.plusMinutes(minutesToAdd));
+        LocalDateTime endDateTime = startDateTime.plusMinutes(timeTakenMinutes);
+
+        // Convert to Instant using zone
+        return new Instant[] {
+                startDateTime.atZone(zoneId).toInstant(),
+                endDateTime.atZone(zoneId).toInstant()
+        };
     }
 
     private String generateUhid(Patient patient) {
