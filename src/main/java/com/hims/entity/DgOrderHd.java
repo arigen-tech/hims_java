@@ -24,7 +24,7 @@ public class DgOrderHd {
     private String barCode;
 
     @Column(name = "order_status", length = 1)
-    private String status;
+    private String orderStatus;
 
     @Column(name = "collection_status", length =1)
     private String collectionStatus;
@@ -51,7 +51,7 @@ public class DgOrderHd {
     private LocalDate appointmentDate ;
 
     @Column(name = "other_investigation",length = 500)
-    private String orderInvestigation;
+    private String otherInvestigation;
 
     @Column(name = "hospital_id")
     private int hospitalId ;
@@ -78,9 +78,5 @@ public class DgOrderHd {
 
     @Column(name = "last_chg_by", length = 50)
     private String lastChgBy;
-
-
-
-
 
 }

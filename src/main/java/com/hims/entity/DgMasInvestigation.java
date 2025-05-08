@@ -1,5 +1,6 @@
 package com.hims.entity;
 
+import com.hims.request.LabInvestigationReq;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -80,5 +81,7 @@ public class DgMasInvestigation {
     private String discount;
     @Column(name = "price", length=255)
     private Double price;
+
+
 
 }
