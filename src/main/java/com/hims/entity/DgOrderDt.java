@@ -27,11 +27,11 @@ public class DgOrderDt {
     @Column(name = "order_status", length = 1)
     private String orderStatus;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "createdby", length = 100)
     private String createdBy;
 
-    @Column(name = "create_don")
-    private LocalDate createdOn;
+//    @Column(name = "create_don")
+//    private LocalDate createdOn;
 
     @Column(name = "last_chg_by", length = 100)
     private String lastChgBy;
