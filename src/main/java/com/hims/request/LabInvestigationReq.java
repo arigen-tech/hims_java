@@ -9,6 +9,6 @@ import java.util.Date;
 @Getter
 @Setter
 public class LabInvestigationReq {
-    private int investigationId;
+    private Long investigationId;
     private LocalDate appointmentDate;
 }
