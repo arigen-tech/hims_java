@@ -17,11 +17,11 @@ public class PackageInvestigationMapping {
     private Long pimId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "package_id", referencedColumnName = "id")
+    @JoinColumn(name = "package_id")
     private DgInvestigationPackage packageId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @Column(name = "investigation_id")
+    @JoinColumn(name = "investigation_id")
     private DgMasInvestigation investId;
 
     @Size(max = 1)

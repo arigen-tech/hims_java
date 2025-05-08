@@ -10,5 +10,5 @@ public interface PackageInvestigationMappingRepository extends JpaRepository <Pa
     List<PackageInvestigationMapping> findByStatus(String status);
 
 
-    List<PackageInvestigationMapping> findByPackage(DgInvestigationPackage packag);
+    List<PackageInvestigationMapping> findByPackageId(DgInvestigationPackage packag);
 }
