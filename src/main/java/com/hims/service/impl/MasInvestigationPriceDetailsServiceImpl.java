@@ -3,15 +3,20 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.DgMasInvestigation;
 import com.hims.entity.MasInvestigationPriceDetails;
+import com.hims.entity.User;
 import com.hims.entity.repository.DgMasInvestigationRepository;
 import com.hims.entity.repository.MasInvestigationPriceDetailsRepository;
+import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasInvestigationPriceDetailsRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasInvestigationPriceDetailsResponse;
 import com.hims.service.MasInvestigationPriceDetailsService;
 import com.hims.utils.ResponseUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +32,25 @@ import java.util.stream.Collectors;
 @Service
 public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigationPriceDetailsService {
 
+    private static final Logger log = LoggerFactory.getLogger(MasInvestigationPriceDetailsServiceImpl.class);
+
     @Autowired
     private MasInvestigationPriceDetailsRepository repository;
 
     @Autowired
     private DgMasInvestigationRepository investigationRepository;
+
+    @Autowired
+    private UserRepo userRepo;
+
+    private User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByUserName(username);
+        if (user == null) {
+            log.warn("User not found for username: {}", username);
+        }
+        return user;
+    }
 
     @Override
     public ApiResponse<List<MasInvestigationPriceDetailsResponse>> getAllPriceDetails(int flag) {
@@ -120,6 +139,14 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             );
         }
 
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
+                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
+        }
+
+
         // Create and save new entry
         MasInvestigationPriceDetails details = new MasInvestigationPriceDetails();
         details.setInvestigation(investigation);
@@ -127,7 +154,8 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
         details.setToDate(request.getToDt());
         details.setLastChgDt(LocalTime.now());
         details.setPrice(request.getPrice());
-        details.setStatus("y"); //
+        details.setLastChgBy(String.valueOf(currentUser.getUserId()));
+        details.setStatus("y");
 
         MasInvestigationPriceDetails saved = repository.save(details);
         return ResponseUtils.createSuccessResponse(mapToResponse(saved), new TypeReference<>() {});
@@ -138,22 +166,30 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
     @Transactional
     public ApiResponse<MasInvestigationPriceDetailsResponse> updatePriceDetails(Long id, MasInvestigationPriceDetailsRequest request) {
         try {
-            // 1. Fetch the record to update
+
             Optional<MasInvestigationPriceDetails> optionalExisting = repository.findById(id);
             if (optionalExisting.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("Record not found with ID: " + id, HttpStatus.NOT_FOUND.value());
             }
 
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+
+
             MasInvestigationPriceDetails currentRecord = optionalExisting.get();
 
-            // 2. Validate investigation ID
+
             Long requestedInvestigationId = request.getInvestigationId();
             Optional<DgMasInvestigation> investigationOpt = investigationRepository.findById(requestedInvestigationId);
             if (investigationOpt.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("Investigation not found with ID: " + requestedInvestigationId, HttpStatus.NOT_FOUND.value());
             }
 
-            // 3. Validate dates
+
             if (request.getFromDt().isAfter(request.getToDt())) {
                 return ResponseUtils.createFailureResponse(
                         null,
@@ -163,7 +199,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                 );
             }
 
-            // 4. For the same investigation ID, don't allow date range modifications
+
             if (currentRecord.getInvestigation().getInvestigationId().equals(requestedInvestigationId)) {
                 if (!currentRecord.getFromDate().equals(request.getFromDt()) ||
                         !currentRecord.getToDate().equals(request.getToDt())) {
@@ -195,15 +231,16 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                 }
             }
 
-            // 6. Update the record
+
             currentRecord.setInvestigation(investigationOpt.get());
             currentRecord.setFromDate(request.getFromDt());
             currentRecord.setToDate(request.getToDt());
             currentRecord.setPrice(request.getPrice());
-            currentRecord.setStatus(request.getStatus());
+            currentRecord.setLastChgBy(String.valueOf(currentUser.getUserId()));
+//            currentRecord.setStatus(request.getStatus());
             currentRecord.setLastChgDt(LocalDateTime.now().toLocalTime());
 
-            // 7. Save and return response
+
             MasInvestigationPriceDetails updated = repository.save(currentRecord);
             return ResponseUtils.createSuccessResponse(mapToResponse(updated), new TypeReference<>() {});
         } catch (Exception e) {
@@ -233,9 +270,18 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                 );
             }
 
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+
+
             MasInvestigationPriceDetails details = detailsOpt.get();
             details.setStatus(status);
             details.setLastChgDt(LocalTime.now());
+            details.setLastChgBy(String.valueOf(currentUser.getUserId()));
 
             MasInvestigationPriceDetails updated = repository.save(details);
             return ResponseUtils.createSuccessResponse(mapToResponse(updated), new TypeReference<>() {});
@@ -253,6 +299,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
         response.setLastChgDt(entity.getLastChgDt());
         response.setPrice(entity.getPrice());
         response.setStatus(entity.getStatus());
+        response.setLastChgBy(entity.getLastChgBy());
         return response;
     }
 }

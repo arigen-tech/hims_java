@@ -20,9 +20,9 @@ public class PackageInvestigationMapping {
     @JoinColumn(name = "package_id", referencedColumnName = "id")
     private DgInvestigationPackage packageId;
 
-//    @ManyToOne(fetch = FetchType.EAGER)
-//    @Column(name = "investigation_id")
-//    private Long investId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @Column(name = "investigation_id")
+    private DgMasInvestigation investId;
 
     @Size(max = 1)
     @Column(name = "status", nullable = false, length = 1)

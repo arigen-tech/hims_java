@@ -5,7 +5,6 @@ import com.hims.entity.User;
 import com.hims.entity.repository.UserRepo;
 import com.hims.jwt.JwtRequest;
 import com.hims.jwt.JwtResponce;
-import com.hims.jwt.OtpRequest;
 import com.hims.request.PasswordChangeReq;
 import com.hims.request.ResetPasswordReq;
 import com.hims.request.UserCreationReq;
@@ -189,6 +188,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error reading image");
         }
     }
+
 
 
 }
