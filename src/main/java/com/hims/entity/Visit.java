@@ -13,6 +13,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "visit")
 public class Visit {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "visit_id", nullable = false)
@@ -36,6 +37,9 @@ public class Visit {
     @Column(name = "priority")
     private Long priority;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id")
+    private MasDepartment department;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "doctor_id")
@@ -77,9 +81,5 @@ public class Visit {
     @Size(max = 1)
     @Column(name = "pre_consultation", length = 1)
     private String preConsultation;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "department_id")
-    private MasDepartment departmentId;
 
 }

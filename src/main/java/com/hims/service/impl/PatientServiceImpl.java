@@ -11,6 +11,7 @@ import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -180,6 +181,15 @@ public class PatientServiceImpl implements PatientService {
         });
     }
 
+    @Override
+    public ApiResponse<List<Visit>> getPendingPreConsultations() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User current_user=userRepository.findByUserName(username);
+        List<Visit> response=visitRepository.findByHospitalAndPreConsultation(current_user.getHospital(),"n");
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<List<Visit>>() {
+        });
+    }
+
     private Patient savePatient(PatientRequest request, boolean followUp) {
 
         User loggedInUser=userRepository.findByUserName(request.getLastChgBy());
@@ -314,8 +324,7 @@ public class PatientServiceImpl implements PatientService {
 
         opdPatientDetail.setVisit(savedVisit);
 
-        MasDepartment department = masDepartmentRepository.findById(savedVisit.getDepartmentId())
-                .orElseThrow(() -> new RuntimeException("Department not found"));
+        MasDepartment department = savedVisit.getDepartment();
         opdPatientDetail.setDepartment(department);
         opdPatientDetail.setHospital(savedVisit.getHospital());
         opdPatientDetail.setDoctor(savedVisit.getDoctor());
@@ -355,7 +364,7 @@ public class PatientServiceImpl implements PatientService {
                 setup.getStartTime(), // e.g., "08:00"
                 setup.getTimeTaken(), // e.g., 10
 
-                nextToken,LocalDate.now(),ZoneId.systemDefault());
+                nextToken,LocalDate.now());
         newVisit.setStartTime(tokenTimes[0]);
         newVisit.setEndTime(tokenTimes[1]);
         newVisit.setTokenNo(nextToken);
@@ -363,7 +372,7 @@ public class PatientServiceImpl implements PatientService {
         newVisit.setLastChgDate(Instant.now());
         newVisit.setVisitStatus("p");
         newVisit.setPriority(visit.getPriority());
-        newVisit.setDepartmentId(visit.getDepartmentId());
+        newVisit.setDepartment(masDepartmentRepository.findById(visit.getDepartmentId()).get());
         newVisit.setDoctorName(visit.getDoctorName());
         newVisit.setBillingStatus("n");
         newVisit.setPatient(patient);
@@ -399,25 +408,28 @@ public class PatientServiceImpl implements PatientService {
             String startTimeStr,
             int timeTakenMinutes,
             Long tokenNo,
-            LocalDate visitDate,
-            ZoneId zoneId) {
-
+            LocalDate visitDate
+    ) {
         if (startTimeStr == null || timeTakenMinutes <= 0 || tokenNo <= 0 || visitDate == null) {
             throw new IllegalArgumentException("Invalid input parameters.");
         }
 
-        // Parse the base start time
-        LocalTime baseTime = LocalTime.parse(startTimeStr); // expects "HH:mm"
+        // Parse start time and calculate token offset
+        LocalTime baseTime = LocalTime.parse(startTimeStr); // e.g., "10:00"
         long minutesToAdd = (tokenNo - 1) * timeTakenMinutes;
 
-        // Calculate start and end time
-        LocalDateTime startDateTime = LocalDateTime.of(visitDate, baseTime.plusMinutes(minutesToAdd));
-        LocalDateTime endDateTime = startDateTime.plusMinutes(timeTakenMinutes);
+        // Apply token offset
+        LocalTime tokenStartTime = baseTime.plusMinutes(minutesToAdd);
+        LocalTime tokenEndTime = tokenStartTime.plusMinutes(timeTakenMinutes);
 
-        // Convert to Instant using zone
+        // Combine with visit date
+        LocalDateTime startDateTime = LocalDateTime.of(visitDate, tokenStartTime);
+        LocalDateTime endDateTime = LocalDateTime.of(visitDate, tokenEndTime);
+
+        // Treat time as UTC without converting via system/default zone
         return new Instant[] {
-                startDateTime.atZone(zoneId).toInstant(),
-                endDateTime.atZone(zoneId).toInstant()
+                startDateTime.toInstant(ZoneOffset.UTC),
+                endDateTime.toInstant(ZoneOffset.UTC)
         };
     }
 
