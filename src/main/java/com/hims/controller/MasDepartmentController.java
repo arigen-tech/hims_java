@@ -57,5 +57,11 @@ public class MasDepartmentController {
         return ResponseEntity.ok(masDepartmentService.getMasUserDepartmentsByDepartmentId(departmentId));
     }
 
+    @GetMapping("/userDepartmentsByUser/{userId}")
+    public ResponseEntity<ApiResponse<List<MasUserDepartmentResponse>>> getUserDepartmentsByUserId(
+            @PathVariable Long userId) {
+        return ResponseEntity.ok(masDepartmentService.getMasUserDepartmentsByUserId(userId));
+    }
+
 
 }

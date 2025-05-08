@@ -31,8 +31,8 @@ public class DgUomController {
     public ResponseEntity<ApiResponse<List<DgUomResponse>>>  getAllDgUom(@PathVariable int flag){
         return new ResponseEntity<>(dgUomService.getAllDgUom(flag), HttpStatus.OK);
     }
-    @PutMapping("/updateByStatusDgUom/{id}/{status}")
-    public ResponseEntity<ApiResponse<DgUomResponse>> updateByStatusDgUom(@PathVariable Long id,@PathVariable String status){
+    @PutMapping("/updateByStatusDgUom/{id}")
+    public ResponseEntity<ApiResponse<DgUomResponse>> updateByStatusDgUom(@PathVariable Long id,@RequestParam String status){
         return new ResponseEntity<>(dgUomService.updateByStatusDgUom(id,status), HttpStatus.OK);
 
     }

@@ -13,7 +13,6 @@ public class DgInvestigationPackageRequest {
     private double disc;
     private double discPer;
     private double actualCost;
-    private String status;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private LocalDate fromDt;

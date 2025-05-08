@@ -32,8 +32,8 @@ public class DgMasSampleController {
     public ResponseEntity<ApiResponse<List<DgMasSampleResponse>>>  getAllDgMasSample(@PathVariable int flag){
         return new ResponseEntity<>(dgMasSampleService.getAllDgMas(flag), HttpStatus.OK);
     }
-    @PutMapping("/updateByStatusDgMas/{id}/{status}")
-    public ResponseEntity<ApiResponse<DgMasSampleResponse>> updateByStatusDgUom(@PathVariable Long id,@PathVariable String status){
+    @PutMapping("/updateByStatusDgMas/{id}")
+    public ResponseEntity<ApiResponse<DgMasSampleResponse>> updateByStatusDgUom(@PathVariable Long id,@RequestParam String status){
         return new ResponseEntity<>(dgMasSampleService.updateByStatusDgUom(id,status), HttpStatus.OK);
 
     }

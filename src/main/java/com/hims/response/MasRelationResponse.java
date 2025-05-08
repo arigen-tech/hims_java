@@ -4,14 +4,15 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 public class MasRelationResponse {
     private Long id;
     private String relationName;
-    private String code;
     private String status;
     private String lastChgBy;
-    private Instant lastChgDate;
+    private LocalDateTime lastChgDate;
+    private String code;
 }

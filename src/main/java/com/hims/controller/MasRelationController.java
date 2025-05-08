@@ -41,8 +41,8 @@ public class MasRelationController {
     @PutMapping("/update/{id}")
     public ResponseEntity<ApiResponse<MasRelationResponse>> updateRelation(
             @PathVariable Long id,
-            @RequestBody MasRelationResponse relationDetails) {
-        ApiResponse<MasRelationResponse> response = masRelationService.updateRelation(id, relationDetails);
+            @RequestBody MasRelationRequest relationRequest) {
+        ApiResponse<MasRelationResponse> response = masRelationService.updateRelation(id, relationRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

@@ -15,5 +15,5 @@ public interface MasRelationService {
     public ApiResponse<MasRelationResponse> changeStatus(Long id, String status);
     public ApiResponse<MasRelationResponse> findById(Long id);
     public ApiResponse<MasRelationResponse> addRelation(MasRelationRequest relationRequest);
-    public ApiResponse<MasRelationResponse> updateRelation(Long id, MasRelationResponse relationDetails);
+    public ApiResponse<MasRelationResponse> updateRelation(Long id, MasRelationRequest relationRequest);
 }

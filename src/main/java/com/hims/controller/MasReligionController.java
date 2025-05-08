@@ -40,8 +40,8 @@ public class MasReligionController {
     @PutMapping("/update/{id}")
     public ResponseEntity<ApiResponse<MasReligionResponse>> updateReligion(
             @PathVariable Long id,
-            @RequestBody MasReligionResponse religionDetails) {
-        ApiResponse<MasReligionResponse> response = masReligionService.updateReligion(id, religionDetails);
+            @RequestBody MasReligionRequest religionRequest) {
+        ApiResponse<MasReligionResponse> response = masReligionService.updateReligion(id, religionRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

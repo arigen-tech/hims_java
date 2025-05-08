@@ -35,7 +35,7 @@ public class MasSubChargeCodeController {
     @PutMapping("/status/{subId}")
     ResponseEntity<ApiResponse<MasSubChargeCodeDTO>> changeStatus(
             @PathVariable Long subId,
-            @RequestBody String status){
+            @RequestParam String status){
         return new ResponseEntity<>(subService.changeStatus(subId, status), HttpStatus.ACCEPTED);
     }
 
@@ -45,7 +45,7 @@ public class MasSubChargeCodeController {
     }
 
     @GetMapping("/getAllSubCharge/{flag}")
-    ResponseEntity<ApiResponse<List<MasSubChargeCodeDTO>>> getAllSubCharge(int flag){
+    ResponseEntity<ApiResponse<List<MasSubChargeCodeDTO>>> getAllSubCharge(@PathVariable int flag){
         return new ResponseEntity<>(subService.getAllSubCharge(flag), HttpStatus.OK);
     }
 }
