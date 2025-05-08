@@ -36,8 +36,6 @@ public class Visit {
     @Column(name = "priority")
     private Long priority;
 
-    @Column(name = "department_id")
-    private Long departmentId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "doctor_id")
@@ -79,5 +77,9 @@ public class Visit {
     @Size(max = 1)
     @Column(name = "pre_consultation", length = 1)
     private String preConsultation;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id")
+    private MasDepartment departmentId;
 
 }
