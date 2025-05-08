@@ -4,10 +4,7 @@ package com.hims.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
-import com.hims.request.PatientFollowUpReq;
-import com.hims.request.PatientRegistrationReq;
-import com.hims.request.PatientRequest;
-import com.hims.request.PatientSearchReq;
+import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.PatientRegFollowUpResp;
 import com.hims.service.PatientService;
@@ -60,5 +57,9 @@ public class PatientController {
         ApiResponse<List<Visit>> response = patientService.getPendingPreConsultations();
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
-
+    @PostMapping("/saveVitalDetails")
+    public ResponseEntity<ApiResponse<String>> saveVitalDetails(@RequestBody OpdPatientDetailRequest request){
+        ApiResponse<String> response=patientService.saveVitalDetails(request);
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
 }

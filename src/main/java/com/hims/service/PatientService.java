@@ -18,4 +18,7 @@ public interface PatientService {
     ApiResponse<List<Patient>> searchPatient(PatientSearchReq substring);
 
     ApiResponse<List<Visit>> getPendingPreConsultations();
+
+
+    ApiResponse<String> saveVitalDetails(OpdPatientDetailRequest request);
 }

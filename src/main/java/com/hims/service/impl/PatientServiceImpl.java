@@ -186,8 +186,23 @@ public class PatientServiceImpl implements PatientService {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User current_user=userRepository.findByUserName(username);
         List<Visit> response=visitRepository.findByHospitalAndPreConsultation(current_user.getHospital(),"n");
-        return ResponseUtils.createSuccessResponse(response, new TypeReference<List<Visit>>() {
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
         });
+    }
+
+    @Override
+    public ApiResponse<String> saveVitalDetails(OpdPatientDetailRequest request) {
+        OpdPatientDetail savedDetails=addOpdDetaials(null,request,null);
+        Visit visit=visitRepository.findById(request.getVisitId()).get();
+        visit.setPreConsultation("y");
+        visitRepository.save(visit);
+        if(savedDetails!=null){
+            return ResponseUtils.createSuccessResponse("success", new TypeReference<String>() {
+            });
+        }
+        else {
+            return ResponseUtils.createFailureResponse("error", new TypeReference<String>() {},"Error saving data",500);
+        }
     }
 
     private Patient savePatient(PatientRequest request, boolean followUp) {
@@ -320,14 +335,14 @@ public class PatientServiceImpl implements PatientService {
         opdPatientDetail.setPoliceName(opdPatientDetailRequest.getPoliceName());
 
         // Fetch related entities using IDs
-        opdPatientDetail.setPatient(patient);
+        opdPatientDetail.setPatient(patient!=null?patient:patientRepository.findById(opdPatientDetailRequest.getPatientId()).get());
 
-        opdPatientDetail.setVisit(savedVisit);
+        opdPatientDetail.setVisit(savedVisit!=null?savedVisit:visitRepository.findById(opdPatientDetailRequest.getVisitId()).get());
 
-        MasDepartment department = savedVisit.getDepartment();
+        MasDepartment department = savedVisit!=null?savedVisit.getDepartment():masDepartmentRepository.findById(opdPatientDetailRequest.getDepartmentId()).get();
         opdPatientDetail.setDepartment(department);
-        opdPatientDetail.setHospital(savedVisit.getHospital());
-        opdPatientDetail.setDoctor(savedVisit.getDoctor());
+        opdPatientDetail.setHospital(savedVisit!=null?savedVisit.getHospital():masHospitalRepository.findById(opdPatientDetailRequest.getHospitalId()).get());
+        opdPatientDetail.setDoctor(savedVisit!=null?savedVisit.getDoctor():userRepository.findById(opdPatientDetailRequest.getDoctorId()).get());
         opdPatientDetail.setLastChgDate(Instant.now());
         opdPatientDetail.setLastChgBy(opdPatientDetailRequest.getLastChgBy());
         return opdPatientDetailRepository.save(opdPatientDetail); // Save OPD details
