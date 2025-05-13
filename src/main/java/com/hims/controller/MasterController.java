@@ -923,7 +923,7 @@ public class MasterController {
         return masHospitalService.getAllHospitals(flag);
     }
 
-    @GetMapping("/hospital/getById{id}")
+    @GetMapping("/hospital/getById/{id}")
     public ResponseEntity<ApiResponse<MasHospitalResponse>> getHospitalById(@PathVariable Long id) {
         ApiResponse<MasHospitalResponse> response = masHospitalService.findById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
