@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +38,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     DgInvestigationPackageRepository dgInvestigationPackageRepository;
     @Autowired
     PatientRepository patientRepository;
-
     @Autowired
     VisitRepository visitRepository;
     @Override
@@ -47,13 +45,17 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     public ApiResponse<AppsetupResponse> labReg(LabRegRequest labReq) {
         {
             AppsetupResponse res = new AppsetupResponse();
+            // write logic here for save visit data
+
+
+
             DgOrderHd hd= new DgOrderHd();
             try {
                 /// for investigation  data save hd &dt
                 if(!labReq.getLabInvestigationReq().isEmpty()) {
                     hd.setAppointmentDate(labReq.getLabInvestigationReq().get(0).getAppointmentDate());
                     hd.setOrderDate(LocalDate.now());
-                    hd.setOrderNo("123");
+                    hd.setOrderNo("123");//run time grnerate
                     hd.setOrderStatus("p");
                     hd.setCollectionStatus("p");
                     hd.setPaymentStatus("p");
@@ -64,52 +66,53 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     hd.setVisitId(visitRepository.findById((long)34).get());
                     DgOrderHd hdId = labHdRepository.save(hd);
 
-                    DgOrderDt ht = new DgOrderDt();
                     for (LabInvestigationReq key : labReq.getLabInvestigationReq()) {
+                        DgOrderDt htInvesti = new DgOrderDt();
                         Optional<DgMasInvestigation> dgMasInvestigation=investigation.findById(key.getInvestigationId());
-                        ht.setInvestigationId(dgMasInvestigation.get());
-                        ht.setOrderhdId(hdId);
-                        ht.setCreatedBy("23");
-                        ht.setMainChargecodeId(1);
-                        ht.setPackageId(null);
-                        DgOrderDt dtId = labDtRepository.save(ht);
+                        htInvesti.setInvestigationId(dgMasInvestigation.get());
+                        htInvesti.setOrderhdId(hdId);
+                        htInvesti.setCreatedBy("23");
+                        htInvesti.setMainChargecodeId(1);
+                       // ht.setPackageId(null);
+                        htInvesti.setAppointmentDate(labReq.getLabInvestigationReq().get(0).getAppointmentDate());
+
+                        DgOrderDt dtId = labDtRepository.save(htInvesti);
                         //call save for dt  here
                     }
                 }
                 /// for Package data save hd &dt
+                if(!labReq.getLabPackegReqs().isEmpty()) {
+                    for (LabPackegReq key : labReq.getLabPackegReqs()) {
+                        DgOrderHd hd1= new DgOrderHd();
+                        hd1.setAppointmentDate(key.getAppointmentDate());
+                        hd1.setOrderDate(LocalDate.now());
+                        hd1.setOrderNo("123");//run time grnerate
+                        hd1.setOrderStatus("p");
+                        hd1.setCollectionStatus("p");
+                        hd1.setPaymentStatus("p");
+                        hd1.setCreatedBy("23");
+                        hd1.setHospitalId(12);
+                        hd1.setDiscountId(1);
+                        hd1.setPatientId(patientRepository.findById((long)27).get());
+                        hd1.setVisitId(visitRepository.findById((long)34).get());
+                        DgOrderHd hdId1=labHdRepository.save(hd1);
 
-//                if(!labReq.getLabPackegReqs().isEmpty()) {
-//                    for (LabPackegReq key : labReq.getLabPackegReqs()) {
-//                        DgOrderHd hd1= new DgOrderHd();
-//                        hd1.setAppointmentDate(key.getAppointmentDate());
-//                        hd1.setOrderDate(LocalDate.now());
-//                        hd1.setOrderNo("123");
-//                        hd1.setOrderStatus("p");
-//                        hd1.setCollectionStatus("p");
-//                        hd1.setPaymentStatus("p");
-//                        hd1.setCreatedBy("23");
-//                        hd1.setHospitalId(12);
-//                        hd1.setDiscountId(1);
-//                        hd1.setPatientId(patientRepository.findById((long)27).get());
-//                        hd1.setVisitId(visitRepository.findById((long)34).get());
-//                        DgOrderHd hdId1=labHdRepository.save(hd1);
-//
-//                        Long PackegId = key.getPackegId();
-//                        List<PackageInvestigationMapping> investi= packageInvestigationMappingRepository.findByPackageId(dgInvestigationPackageRepository.findById(PackegId).get());
-//
-//                         for( int i=0;i<investi.size();i++){
-//                             DgOrderDt ht1= new DgOrderDt();
-//                             DgMasInvestigation dg = investi.get(i).getInvestId();
-//                             ht1.setOrderhdId(hdId1);
-//                             ht1.setInvestigationId(dg);
-//                             ht1.setCreatedBy("23");
-//                             ht1.setMainChargecodeId(1);
-//                             ht1.setPackageId(null);
-//
-//                             DgOrderDt dtId = labDtRepository.save(ht1);
-//                         }
-//                    }
-//                }
+                        Long PackegId = key.getPackegId();
+                        List<PackageInvestigationMapping> investi= packageInvestigationMappingRepository.findByPackageId(dgInvestigationPackageRepository.findById(PackegId).get());
+
+                         for( int i=0;i<investi.size();i++){
+                             DgOrderDt htPkg= new DgOrderDt();
+                             DgMasInvestigation dg = investi.get(i).getInvestId();
+                             htPkg.setOrderhdId(hdId1);
+                             htPkg.setInvestigationId(dg);
+                             htPkg.setCreatedBy("23");
+                             htPkg.setMainChargecodeId(1);
+                             htPkg.setPackageId(dgInvestigationPackageRepository.findById(PackegId).get());
+                             htPkg.setAppointmentDate(key.getAppointmentDate());
+                             DgOrderDt dtId = labDtRepository.save(htPkg);
+                         }
+                    }
+                }
                 res.setMsg("Success");
                 return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
             } catch (SDDException e) {
