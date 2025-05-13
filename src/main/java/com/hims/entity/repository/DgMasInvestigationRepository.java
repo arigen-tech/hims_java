@@ -21,19 +21,19 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
             COALESCE(ipd.price, 0)
         FROM 
             dg_mas_investigation d
-        LEFT JOIN 
-            investigation_price_details ipd 
+        LEFT JOIN
+            investigation_price_details ipd
             ON d.investigation_id = ipd.investigation_id
             AND CURRENT_DATE BETWEEN ipd.from_dt AND ipd.to_dt
         WHERE 
             d.status = 'y'
-            AND d.gender_applicable = :genderApplicable
-            AND d.investigation_name ILIKE CONCAT('%', :investigationName, '%')
-        """, nativeQuery = true)
+            AND (d.gender_applicable = :genderApplicable 
+            OR d.gender_applicable = 'c' ) """, nativeQuery = true)
     List<Object[]> findByPriceDetails(
-            @Param("genderApplicable") String genderApplicable,
-            @Param("investigationName") String investigationName
-    );
+            @Param("genderApplicable") String genderApplicable
+            /// @Param("investigationName") String investigationName
+    );//AND d.investigation_name ILIKE CONCAT('%', :investigationName, '%')
+
 
     List<DgMasInvestigation> findByStatusIgnoreCase(String status);
     List<DgMasInvestigation> findByStatusInIgnoreCase(List<String> statuses);

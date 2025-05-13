@@ -21,8 +21,8 @@ public class DgMasInvestigationServiceImp implements DgMasInvestigationService {
 
 
     @Override
-    public ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable, String investigationName) {
-        List<Object[]> results = dgMasInvestigationRepository.findByPriceDetails(genderApplicable, investigationName);
+    public ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable) {
+        List<Object[]> results = dgMasInvestigationRepository.findByPriceDetails(genderApplicable );
 
         List<DgMasInvestigationResponse>  response = results.stream().map(obj -> {
             DgMasInvestigationResponse dto = new DgMasInvestigationResponse();

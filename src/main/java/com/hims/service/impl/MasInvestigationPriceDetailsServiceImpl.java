@@ -166,7 +166,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
     @Transactional
     public ApiResponse<MasInvestigationPriceDetailsResponse> updatePriceDetails(Long id, MasInvestigationPriceDetailsRequest request) {
         try {
-
+            // Find the record being updated
             Optional<MasInvestigationPriceDetails> optionalExisting = repository.findById(id);
             if (optionalExisting.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("Record not found with ID: " + id, HttpStatus.NOT_FOUND.value());
@@ -174,22 +174,20 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
 
             User currentUser = getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                        },
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
 
-
             MasInvestigationPriceDetails currentRecord = optionalExisting.get();
 
-
+            // Validate investigation ID
             Long requestedInvestigationId = request.getInvestigationId();
             Optional<DgMasInvestigation> investigationOpt = investigationRepository.findById(requestedInvestigationId);
             if (investigationOpt.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("Investigation not found with ID: " + requestedInvestigationId, HttpStatus.NOT_FOUND.value());
             }
 
-
+            // Check if from date is after to date
             if (request.getFromDt().isAfter(request.getToDt())) {
                 return ResponseUtils.createFailureResponse(
                         null,
@@ -199,47 +197,51 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                 );
             }
 
-
+            // Check if the date range is modified and within the same investigation
             if (currentRecord.getInvestigation().getInvestigationId().equals(requestedInvestigationId)) {
-                if (!currentRecord.getFromDate().equals(request.getFromDt()) ||
-                        !currentRecord.getToDate().equals(request.getToDt())) {
+                // If updating the same investigation, check if new dates are within the original range
+                if (request.getFromDt().isEqual(currentRecord.getFromDate()) &&
+                        request.getToDt().isEqual(currentRecord.getToDate())) {
+                    // Same exact dates, only price change, allow it
+                } else if (!request.getFromDt().isAfter(currentRecord.getToDate())) {
+                    // New from date must be after the current to date
                     return ResponseUtils.createFailureResponse(
                             null,
                             new TypeReference<>() {},
-                            "Duplicate date range found for this Price Investigation. Please create a new record for a different date range.",
+                            "Duplicate date range found for this Price Investigation. Please create a new record for a different date range after " +
+                                    currentRecord.getToDate().toString(),
                             HttpStatus.BAD_REQUEST.value()
-                    );
-                }
-            } else {
-                // 5. If changing investigation ID, check for overlapping date ranges
-                List<MasInvestigationPriceDetails> existingRecords = repository
-                        .findByInvestigation_investigationId(requestedInvestigationId);
-
-                boolean hasOverlap = existingRecords.stream()
-                        .anyMatch(existing ->
-                                !request.getToDt().isBefore(existing.getFromDate()) &&
-                                        !request.getFromDt().isAfter(existing.getToDate())
-                        );
-
-                if (hasOverlap) {
-                    return ResponseUtils.createFailureResponse(
-                            null,
-                            new TypeReference<>() {},
-                            "Duplicate date range found for investigation ID: " + requestedInvestigationId,
-                            HttpStatus.CONFLICT.value()
                     );
                 }
             }
 
+            // Check for overlapping date ranges with OTHER records for the same investigation
+            List<MasInvestigationPriceDetails> existingRecords = repository
+                    .findByInvestigation_investigationId(requestedInvestigationId);
 
+            boolean hasOverlap = existingRecords.stream()
+                    .filter(existing -> !existing.getId().equals(id)) // Exclude the current record being updated
+                    .anyMatch(existing ->
+                            !request.getToDt().isBefore(existing.getFromDate()) &&
+                                    !request.getFromDt().isAfter(existing.getToDate())
+                    );
+
+            if (hasOverlap) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Duplicate date range found for investigation ID: " + requestedInvestigationId,
+                        HttpStatus.CONFLICT.value()
+                );
+            }
+
+            // Update record
             currentRecord.setInvestigation(investigationOpt.get());
             currentRecord.setFromDate(request.getFromDt());
             currentRecord.setToDate(request.getToDt());
             currentRecord.setPrice(request.getPrice());
             currentRecord.setLastChgBy(String.valueOf(currentUser.getUserId()));
-//            currentRecord.setStatus(request.getStatus());
             currentRecord.setLastChgDt(LocalDateTime.now().toLocalTime());
-
 
             MasInvestigationPriceDetails updated = repository.save(currentRecord);
             return ResponseUtils.createSuccessResponse(mapToResponse(updated), new TypeReference<>() {});
@@ -253,7 +255,6 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             );
         }
     }
-
 
     @Override
     @Transactional

@@ -22,9 +22,9 @@ public class DgMasInvestigationController {
 
     @GetMapping("/price-details")
     public ApiResponse<List<DgMasInvestigationResponse>> getInvestigationPriceDetails(
-            @RequestParam String genderApplicable,
-            @RequestParam String investigationName
-    ) {return dgMasInvestigationService.getPriceDetails(genderApplicable, investigationName);
+            @RequestParam String genderApplicable
+           // @RequestParam String investigationName
+    ) {return dgMasInvestigationService.getPriceDetails(genderApplicable);
     }
 
     @GetMapping("/getAll/{flag}")
