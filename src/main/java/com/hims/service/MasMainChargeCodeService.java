@@ -19,5 +19,5 @@ public interface MasMainChargeCodeService {
     public ApiResponse<MasMainChargeCodeDTO> updateChargeCode(Long chargecodeId, MasMainChargeCodeRequest codeRequest);
 
     @Transactional(rollbackFor = {Exception.class})
-    ApiResponse<MasMainChargeCodeDTO> changeStatus(Long chargecodeId, String status);
+    ApiResponse<MasMainChargeCodeDTO> changeMainChargeCodeStatus(Long chargecodeId, String status);
 }

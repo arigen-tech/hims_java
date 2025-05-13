@@ -135,7 +135,7 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
         }
     }
 
-    public ApiResponse<MasSubChargeCodeDTO> changeStatus(Long subId, String status){
+    public ApiResponse<MasSubChargeCodeDTO> changeSubChargeStatus(Long subId, String status){
         try{
             Optional<MasSubChargeCode> newSubCode = subRepo.findById(subId);
             if (newSubCode.isPresent()) {

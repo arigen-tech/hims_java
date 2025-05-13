@@ -147,7 +147,7 @@ public class MasGenderServiceImpl implements MasGenderService {
 
     @Override
     @Transactional
-    public ApiResponse<MasGenderResponse> changeStatus(Long id, String status) {
+    public ApiResponse<MasGenderResponse> changeGenderStatus(Long id, String status) {
         try{
             Optional<MasGender> existingGenderOpt = masGenderRepository.findById(id);
             if (existingGenderOpt.isPresent()) {

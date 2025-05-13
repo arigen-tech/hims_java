@@ -124,7 +124,7 @@ public class MasReligionServiceImpl implements MasReligionService {
 
     @Override
     @Transactional
-    public ApiResponse<MasReligionResponse> changeStatus(Long id, String status) {
+    public ApiResponse<MasReligionResponse> changeReligionStatus(Long id, String status) {
         try{
             Optional<MasReligion> existingReligionOpt = masReligionRepository.findById(id);
             if (existingReligionOpt.isPresent()) {

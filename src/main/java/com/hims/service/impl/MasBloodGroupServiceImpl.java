@@ -138,7 +138,7 @@ public class MasBloodGroupServiceImpl implements MasBloodGroupService {
 
     @Override
     @Transactional
-    public ApiResponse<MasBloodGroupResponse> changeStatus(Long id, String status) {
+    public ApiResponse<MasBloodGroupResponse> changeBloodGroupStatus(Long id, String status) {
         try{
             Optional<MasBloodGroup> existingBloodGroupOpt = masBloodGroupRepository.findById(id);
             if (existingBloodGroupOpt.isPresent()) {

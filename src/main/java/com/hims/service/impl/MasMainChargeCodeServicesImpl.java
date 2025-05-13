@@ -153,7 +153,7 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
     }
 
     @Override
-    public ApiResponse<MasMainChargeCodeDTO> changeStatus(Long chargecodeId, String status) {
+    public ApiResponse<MasMainChargeCodeDTO> changeMainChargeCodeStatus(Long chargecodeId, String status) {
         try{
             Optional<MasMainChargeCode> existingCodeOpt = masMainChargeCodeRepository.findById(chargecodeId);
             if (existingCodeOpt.isPresent()) {

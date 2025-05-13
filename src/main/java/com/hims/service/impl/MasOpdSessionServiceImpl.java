@@ -162,7 +162,7 @@ public class MasOpdSessionServiceImpl implements MasOpdSessionService {
 
     // Change status of an OPD Session
     @Transactional
-    public ApiResponse<MasOpdSessionResponse> changeStatus(Long id, String status) {
+    public ApiResponse<MasOpdSessionResponse> changeOpdSessionStatus(Long id, String status) {
         try{
             Optional<MasOpdSession> existingSessionOpt = masOpdSessionRepository.findById(id);
             if (existingSessionOpt.isPresent()) {

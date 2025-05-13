@@ -235,7 +235,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
 
     @Override
     @Transactional
-    public ApiResponse<MasHospitalResponse> changeStatus(Long id, String status) {
+    public ApiResponse<MasHospitalResponse> changeHospitalStatus(Long id, String status) {
         try{
             Optional<MasHospital> existingHospitalOpt = masHospitalRepository.findById(id);
             if (existingHospitalOpt.isPresent()) {

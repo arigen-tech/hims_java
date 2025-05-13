@@ -16,7 +16,7 @@ public interface MasSubChargeCodeService {
     public ApiResponse<MasSubChargeCodeDTO> updateSubCharge(Long subId, MasSubChargeCodeReq codeReq);
 
     @Transactional(rollbackFor = {Exception.class})
-    ApiResponse<MasSubChargeCodeDTO> changeStatus(Long subId, String status);
+    ApiResponse<MasSubChargeCodeDTO> changeSubChargeStatus(Long subId, String status);
 
     ApiResponse<MasSubChargeCodeDTO> getBySubId(Long subId);
     ApiResponse<List<MasSubChargeCodeDTO>>getAllSubCharge(int flag);

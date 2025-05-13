@@ -147,7 +147,7 @@ public class MasRelationServiceImpl implements MasRelationService {
 
     @Override
     @Transactional
-    public ApiResponse<MasRelationResponse> changeStatus(Long id, String status) {
+    public ApiResponse<MasRelationResponse> changeRelationsStatus(Long id, String status) {
         try{
             Optional<MasRelation> existingRelationOpt = masRelationRepository.findById(id);
             if (existingRelationOpt.isPresent()) {

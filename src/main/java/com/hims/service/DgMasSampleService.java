@@ -13,7 +13,7 @@ public interface DgMasSampleService {
 
     ApiResponse<List<DgMasSampleResponse>> getAllDgMas(int flag);
 
-    ApiResponse<DgMasSampleResponse> updateByStatusDgUom(Long id, String status);
+    ApiResponse<DgMasSampleResponse> updateByStatusDgMas(Long id, String status);
 
-    ApiResponse<DgMasSampleResponse> updateByIdDgUom(Long id, DgMasSampleRequest dgMasSampleRequest);
+    ApiResponse<DgMasSampleResponse> updateByIdDgMas(Long id, DgMasSampleRequest dgMasSampleRequest);
 }
