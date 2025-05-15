@@ -18,9 +18,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 
@@ -47,13 +50,17 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             AppsetupResponse res = new AppsetupResponse();
             // write logic here for save visit data
 
-
-
-            DgOrderHd hd= new DgOrderHd();
             try {
-                /// for investigation  data save hd &dt
-                if(!labReq.getLabInvestigationReq().isEmpty()) {
-                    hd.setAppointmentDate(labReq.getLabInvestigationReq().get(0).getAppointmentDate());
+                // for investigation  data save hd &dt
+                //grouping same date  for header entry..
+                Map<LocalDate, List<LabInvestigationReq>> grouped = labReq.getLabInvestigationReq().stream()
+                        .collect(Collectors.groupingBy(LabInvestigationReq::getAppointmentDate));
+                           //System.out.println("Duplicate appointmentDate found: " + grouped);
+                grouped.forEach((date, objects) -> {
+                    DgOrderHd hd= new DgOrderHd();
+                    //System.out.println("Date: " + date);
+                   // header entry code  for date
+                    hd.setAppointmentDate(date);
                     hd.setOrderDate(LocalDate.now());
                     hd.setOrderNo("123");//run time grnerate
                     hd.setOrderStatus("p");
@@ -62,25 +69,25 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     hd.setCreatedBy("23");
                     hd.setHospitalId(12);
                     hd.setDiscountId(1);
-                    hd.setPatientId(patientRepository.findById((long)27).get());
-                    hd.setVisitId(visitRepository.findById((long)34).get());
+                    hd.setPatientId(patientRepository.findById((long) 27).get());
+                    hd.setVisitId(visitRepository.findById((long) 34).get());
                     DgOrderHd hdId = labHdRepository.save(hd);
 
-                    for (LabInvestigationReq key : labReq.getLabInvestigationReq()) {
-                        DgOrderDt htInvesti = new DgOrderDt();
-                        Optional<DgMasInvestigation> dgMasInvestigation=investigation.findById(key.getInvestigationId());
-                        htInvesti.setInvestigationId(dgMasInvestigation.get());
-                        htInvesti.setOrderhdId(hdId);
-                        htInvesti.setCreatedBy("23");
-                        htInvesti.setMainChargecodeId(1);
-                       // ht.setPackageId(null);
-                        htInvesti.setAppointmentDate(labReq.getLabInvestigationReq().get(0).getAppointmentDate());
-
-                        DgOrderDt dtId = labDtRepository.save(htInvesti);
-                        //call save for dt  here
+                    for (LabInvestigationReq obj : objects) {
+                        DgOrderDt dtInvesti = new DgOrderDt();
+                        Optional<DgMasInvestigation> dgMasInvestigation = investigation.findById(obj.getInvestigationId());
+                        dtInvesti.setInvestigationId(dgMasInvestigation.get());
+                        dtInvesti.setOrderhdId(hdId);
+                        dtInvesti.setCreatedBy("23");
+                        dtInvesti.setMainChargecodeId(1);
+                        // ht.setPackageId(null);
+                        dtInvesti.setAppointmentDate(obj.getAppointmentDate());
+                        DgOrderDt dtId = labDtRepository.save(dtInvesti);
                     }
-                }
-                /// for Package data save hd &dt
+                   // System.out.println();
+                });
+
+             //   / for Package data save hd &dt
                 if(!labReq.getLabPackegReqs().isEmpty()) {
                     for (LabPackegReq key : labReq.getLabPackegReqs()) {
                         DgOrderHd hd1= new DgOrderHd();
