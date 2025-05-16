@@ -92,7 +92,7 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
     }
 
     @Override
-    public ApiResponse<DgMasSampleResponse> updateByStatusDgUom(Long id, String status) {
+    public ApiResponse<DgMasSampleResponse> updateByStatusDgMas(Long id, String status) {
         Optional<DgMasSample> dgUom = dgMasSampleRepository.findById(id);
         if (dgUom.isPresent()) {
             DgMasSample newDgUom = dgUom.get();
@@ -118,7 +118,7 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
     }
 
     @Override
-    public ApiResponse<DgMasSampleResponse> updateByIdDgUom(Long id, DgMasSampleRequest dgMasSampleRequest) {
+    public ApiResponse<DgMasSampleResponse> updateByIdDgMas(Long id, DgMasSampleRequest dgMasSampleRequest) {
         Optional<DgMasSample> dgUom=dgMasSampleRepository.findById(id);
         if(dgUom.isPresent()){
             DgMasSample newDgMas=dgUom.get();

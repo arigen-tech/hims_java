@@ -12,7 +12,6 @@ public class MasFrequencyRequest {
 //    private  String frequencyCode;
     private String frequencyName;
     private String status;
-    private String lastChgBy;
     private Long orderNo;
 //    private String frequency;
 

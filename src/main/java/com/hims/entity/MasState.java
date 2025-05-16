@@ -42,7 +42,7 @@ public class MasState {
     @Column(name = "last_chg_time", length = 10)
     private String lastChgTime;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "country_id")
     private MasCountry country;
 

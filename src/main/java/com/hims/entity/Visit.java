@@ -13,6 +13,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "visit")
 public class Visit {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "visit_id", nullable = false)
@@ -36,10 +37,11 @@ public class Visit {
     @Column(name = "priority")
     private Long priority;
 
-    @Column(name = "department_id")
-    private Long departmentId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id")
+    private MasDepartment department;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "doctor_id")
     private User doctor;
 
@@ -48,20 +50,20 @@ public class Visit {
     private String doctorName;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "hospital_id", nullable = false)
     private MasHospital hospital;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ini_doctor_id")
     private User iniDoctor;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "session_id")
     private MasOpdSession session;
 
@@ -75,5 +77,9 @@ public class Visit {
 
     @Column(name = "end_time")
     private Instant endTime;
+
+    @Size(max = 1)
+    @Column(name = "pre_consultation", length = 1)
+    private String preConsultation;
 
 }

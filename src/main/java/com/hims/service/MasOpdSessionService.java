@@ -11,5 +11,5 @@ public interface MasOpdSessionService {
     ApiResponse<MasOpdSessionResponse> findById(Long id);
     public ApiResponse<MasOpdSessionResponse> addSession(MasOpdSessionRequest request);
     public ApiResponse<MasOpdSessionResponse> updateSession(Long id, MasOpdSessionRequest request);
-    ApiResponse<MasOpdSessionResponse> changeStatus(Long id, String status);
+    ApiResponse<MasOpdSessionResponse> changeOpdSessionStatus(Long id, String status);
 }
