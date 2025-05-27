@@ -10,4 +10,5 @@ import java.util.List;
 public class LabRegRequest {
     List<LabInvestigationReq> labInvestigationReq;
     List<LabPackegReq> labPackegReqs;
+    private Long PatientId;
 }

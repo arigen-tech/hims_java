@@ -1,9 +1,6 @@
 package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.DgMasInvestigation;
-import com.hims.entity.DgOrderDt;
-import com.hims.entity.DgOrderHd;
-import com.hims.entity.PackageInvestigationMapping;
+import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.request.LabInvestigationReq;
@@ -12,6 +9,7 @@ import com.hims.request.LabRegRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
 import com.hims.service.LabRegistrationServices;
+import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,7 +26,7 @@ import java.util.stream.Collectors;
 public class LabRegistrationServicesImpl implements LabRegistrationServices {
     private static final Logger log = LoggerFactory.getLogger(LabRegistrationServicesImpl.class);
     @Autowired
-    LabHdRepository labHdRepository;
+     LabHdRepository labHdRepository;
     @Autowired
     DgMasInvestigationRepository investigation;
     @Autowired
@@ -43,6 +39,19 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     PatientRepository patientRepository;
     @Autowired
     VisitRepository visitRepository;
+
+    @Autowired
+    MasHospitalRepository masHospitalRepository;
+    private final RandomNumGenerator randomNumGenerator;
+
+    public  LabRegistrationServicesImpl(RandomNumGenerator randomNumGenerator) {
+        this.randomNumGenerator = randomNumGenerator;
+    }
+
+    public String createInvoice() {
+        return randomNumGenerator.generateOrderNumber("HIMS",true,true);
+    }
+
     @Override
     @Transactional
     public ApiResponse<AppsetupResponse> labReg(LabRegRequest labReq) {
@@ -50,27 +59,48 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             AppsetupResponse res = new AppsetupResponse();
             // write logic here for save visit data
 
+            Optional<Patient> patient = patientRepository.findById(labReq.getPatientId());
+            Optional<MasHospital> masHospital= masHospitalRepository.findById(12l);
+            Visit v=new Visit();
+                v.setPatient(patient.get());
+                v.setVisitStatus("P");
+                v.setVisitStatus("n");
+                v.setBillingStatus("g");
+                v.setHospital(masHospital.get());
+                v.setTokenNo(6l);
+                v.setPreConsultation("y");
+                //v.setVisitDate();
+                //v.setSession();
+                //v.setPriority();
+                //v.setDepartment();
+               Visit  newv = visitRepository.save(v);
+
+
             try {
                 // for investigation  data save hd &dt
                 //grouping same date  for header entry..
                 Map<LocalDate, List<LabInvestigationReq>> grouped = labReq.getLabInvestigationReq().stream()
                         .collect(Collectors.groupingBy(LabInvestigationReq::getAppointmentDate));
                            //System.out.println("Duplicate appointmentDate found: " + grouped);
-                grouped.forEach((date, objects) -> {
+                    grouped.forEach((date, objects) -> {
                     DgOrderHd hd= new DgOrderHd();
                     //System.out.println("Date: " + date);
+
                    // header entry code  for date
                     hd.setAppointmentDate(date);
                     hd.setOrderDate(LocalDate.now());
-                    hd.setOrderNo("123");//run time grnerate
+
+                    String orderNum = createInvoice();
+                    hd.setOrderNo(orderNum);
+
                     hd.setOrderStatus("p");
                     hd.setCollectionStatus("p");
                     hd.setPaymentStatus("p");
                     hd.setCreatedBy("23");
                     hd.setHospitalId(12);
                     hd.setDiscountId(1);
-                    hd.setPatientId(patientRepository.findById((long) 27).get());
-                    hd.setVisitId(visitRepository.findById((long) 34).get());
+                    hd.setPatientId(patient.get());
+                    hd.setVisitId(newv);
                     DgOrderHd hdId = labHdRepository.save(hd);
 
                     for (LabInvestigationReq obj : objects) {
@@ -93,21 +123,23 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         DgOrderHd hd1= new DgOrderHd();
                         hd1.setAppointmentDate(key.getAppointmentDate());
                         hd1.setOrderDate(LocalDate.now());
-                        hd1.setOrderNo("123");//run time grnerate
+
+                        String formattedOrderNo =createInvoice();
+                        hd1.setOrderNo(formattedOrderNo);
+
                         hd1.setOrderStatus("p");
                         hd1.setCollectionStatus("p");
                         hd1.setPaymentStatus("p");
                         hd1.setCreatedBy("23");
                         hd1.setHospitalId(12);
                         hd1.setDiscountId(1);
-                        hd1.setPatientId(patientRepository.findById((long)27).get());
-                        hd1.setVisitId(visitRepository.findById((long)34).get());
+                        hd1.setPatientId(patient.get());
+                        hd1.setVisitId(newv);
                         DgOrderHd hdId1=labHdRepository.save(hd1);
 
                         Long PackegId = key.getPackegId();
                         List<PackageInvestigationMapping> investi= packageInvestigationMappingRepository.findByPackageId(dgInvestigationPackageRepository.findById(PackegId).get());
-
-                         for( int i=0;i<investi.size();i++){
+                        for( int i=0;i<investi.size();i++){
                              DgOrderDt htPkg= new DgOrderDt();
                              DgMasInvestigation dg = investi.get(i).getInvestId();
                              htPkg.setOrderhdId(hdId1);

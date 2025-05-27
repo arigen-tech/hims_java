@@ -1,10 +1,8 @@
 package com.hims.controller;
 
-import com.hims.request.AppointmentReq;
 import com.hims.request.LabRegRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
-import com.hims.service.AppSetupServices;
 import com.hims.service.LabRegistrationServices;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
