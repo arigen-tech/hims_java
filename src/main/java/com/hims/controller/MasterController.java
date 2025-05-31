@@ -74,7 +74,8 @@ public class MasterController {
     private UserDepartmentServiceImpl userDepartmentServiceImpl;
     @Autowired
     private MasHospitalService masHospitalService;
-
+@Autowired
+private MasStoreSectionService masStoreSectionService;
 
     //    ================================Mas Application Controller================================//
 
@@ -948,6 +949,19 @@ public class MasterController {
     }
 
 
-    //    ================================Mas UserDepartment Controller================================//
-
+    //    ================================Mas store Section Controller================================//
+    @PostMapping("/storeSection/create")
+    public ResponseEntity<ApiResponse<MasStoreSectionResponse>> addMasStoreSection(@RequestBody MasStoreSectionRequest masStoreSectionRequest) {
+        ApiResponse<MasStoreSectionResponse> response = masStoreSectionService.addMasStoreSection(masStoreSectionRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    @GetMapping("/storeSection/getAll/{flag}")
+    public ApiResponse<List<MasStoreSectionResponse>> getAllStoreSection(@PathVariable int flag) {
+        return masStoreSectionService.getAllStoreSection(flag);
+    }
+    @GetMapping("/storeSection/getById/{id}")
+    public ResponseEntity<ApiResponse<MasStoreSectionResponse>> getStoreSectionById(@PathVariable Integer id) {
+        ApiResponse<MasStoreSectionResponse> response =masStoreSectionService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }
