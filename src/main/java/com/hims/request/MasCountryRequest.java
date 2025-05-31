@@ -8,6 +8,4 @@ import lombok.Setter;
 public class MasCountryRequest {
     private String countryCode;
     private String countryName;
-    private String status;
-    private String lastChgBy;
 }

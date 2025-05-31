@@ -1,8 +1,11 @@
 package com.hims.controller;
 
 import com.hims.request.UserApplicationRequest;
+import com.hims.request.UserDepartmentRequest;
+import com.hims.request.UserDepartmentRequestOne;
 import com.hims.response.ApiResponse;
 import com.hims.response.UserApplicationResponse;
+import com.hims.response.UserDepartmentResponse;
 import com.hims.service.UserApplicationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,4 +52,9 @@ public class UserApplicationController {
     public ApiResponse<List<UserApplicationResponse>> getAllApplicationsWithHashUrl(@PathVariable int flag) {
         return userApplicationService.getAllApplicationsWithHashUrl(flag);
     }
+
+
+
+
+
 }

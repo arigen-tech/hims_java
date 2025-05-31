@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -33,7 +34,7 @@ public class MasRelation {
     private String lastChgBy;
 
     @Column(name = "last_chg_date")
-    private Instant lastChgDate;
+    private LocalDateTime lastChgDate;
 
     @Size(max = 5)
     @Column(name = "code", length = 5)

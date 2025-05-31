@@ -12,8 +12,8 @@ import java.util.List;
 
 public interface MasRelationService {
     ApiResponse<List<MasRelationResponse>> getAllRelations(int flag);
-    public ApiResponse<MasRelationResponse> changeStatus(Long id, String status);
+    public ApiResponse<MasRelationResponse> changeRelationsStatus(Long id, String status);
     public ApiResponse<MasRelationResponse> findById(Long id);
     public ApiResponse<MasRelationResponse> addRelation(MasRelationRequest relationRequest);
-    public ApiResponse<MasRelationResponse> updateRelation(Long id, MasRelationResponse relationDetails);
+    public ApiResponse<MasRelationResponse> updateRelation(Long id, MasRelationRequest relationRequest);
 }

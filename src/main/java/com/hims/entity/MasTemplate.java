@@ -36,13 +36,13 @@ public class MasTemplate {
     @Column(name = "status", length = 4)
     private String status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id")
-    private MasDepartment department;
+//    @ManyToOne(fetch = FetchType.EAGER)
+//    @JoinColumn(name = "department_id")
+//    private MasDepartment department;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_parent_id")
-    private MasTemplate templateParent;
+//    @ManyToOne(fetch = FetchType.EAGER)
+//    @JoinColumn(name = "template_parent_id")
+//    private MasTemplate templateParent;
 
     @Column(name = "last_chg_by")
     private Long lastChgBy;
@@ -53,8 +53,8 @@ public class MasTemplate {
     @Column(name = "hospital_id")
     private Long hospitalId;
 
-    @OneToMany(mappedBy = "templateParent")
-    private Set<MasTemplate> masTemplates = new LinkedHashSet<>();
+//    @OneToMany(mappedBy = "templateParent")
+//    private Set<MasTemplate> masTemplates = new LinkedHashSet<>();
 
     @OneToMany(mappedBy = "template")
     private Set<RoleTemplate> roleTemplates = new LinkedHashSet<>();

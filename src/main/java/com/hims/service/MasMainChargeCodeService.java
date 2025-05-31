@@ -11,7 +11,6 @@ import java.util.List;
 public interface MasMainChargeCodeService {
     ApiResponse<List<MasMainChargeCodeDTO>> getAllChargeCode(int flag);
     ApiResponse<MasMainChargeCodeDTO> getChargeCodeById(Long chargecodeId);
-    ApiResponse<MasMainChargeCodeDTO> getByStatus(String status);
 
     @Transactional(rollbackFor = {Exception.class})
     public ApiResponse<MasMainChargeCodeDTO> createChargeCode(MasMainChargeCodeRequest codeRequest);
@@ -20,5 +19,5 @@ public interface MasMainChargeCodeService {
     public ApiResponse<MasMainChargeCodeDTO> updateChargeCode(Long chargecodeId, MasMainChargeCodeRequest codeRequest);
 
     @Transactional(rollbackFor = {Exception.class})
-    ApiResponse<MasMainChargeCodeDTO> changeStatus(Long chargecodeId, String status);
+    ApiResponse<MasMainChargeCodeDTO> changeMainChargeCodeStatus(Long chargecodeId, String status);
 }
