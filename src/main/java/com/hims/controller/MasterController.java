@@ -74,8 +74,10 @@ public class MasterController {
     private UserDepartmentServiceImpl userDepartmentServiceImpl;
     @Autowired
     private MasHospitalService masHospitalService;
-@Autowired
-private MasStoreSectionService masStoreSectionService;
+    @Autowired
+    private MasStoreSectionService masStoreSectionService;
+    @Autowired
+    private MasItemClassService masItemClassService;
 
     //    ================================Mas Application Controller================================//
 
@@ -964,4 +966,43 @@ private MasStoreSectionService masStoreSectionService;
         ApiResponse<MasStoreSectionResponse> response =masStoreSectionService.findById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PutMapping("/storeSection/status/{id}")
+    public ResponseEntity<ApiResponse<MasStoreSectionResponse>> changeMasStoreSectionStatus(@PathVariable int id, @RequestParam String status) {
+        ApiResponse<MasStoreSectionResponse> response = masStoreSectionService.changeStoreSectionStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/storeSection/updateById/{id}")
+    public ResponseEntity<ApiResponse<MasStoreSectionResponse>> updateMasStoreSection(@PathVariable int id, @RequestBody MasStoreSectionRequest masStoreSectionRequest) {
+        ApiResponse<MasStoreSectionResponse> response = masStoreSectionService.updateStoreSection(id, masStoreSectionRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+    //    ================================Mas Item Class Controller================================//
+    @PostMapping("/masItemClass/create")
+    public ResponseEntity<ApiResponse<MasItemClassResponse>> addMasItemClass(@RequestBody MasItemClassRequest masStoreSectionRequest) {
+        ApiResponse<MasItemClassResponse> response = masItemClassService.addMasItemClass(masStoreSectionRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    @GetMapping("/masItemClass/getAll/{flag}")
+    public ApiResponse<List<MasItemClassResponse>> getAllMasItemClass(@PathVariable int flag) {
+        return masItemClassService.getAllMasItemClass(flag);
+    }
+    @GetMapping("/masItemClass/getById/{id}")
+    public ResponseEntity<ApiResponse<MasItemClassResponse>> getItemClassById(@PathVariable Integer id) {
+        ApiResponse<MasItemClassResponse> response = masItemClassService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/masItemClass/status/{id}")
+    public ResponseEntity<ApiResponse<MasItemClassResponse>> changeMasItemClassStatus(@PathVariable int id, @RequestParam String status) {
+        ApiResponse<MasItemClassResponse> response = masItemClassService.changeMasItemClassStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/masItemClass/updateById/{id}")
+    public ResponseEntity<ApiResponse<MasItemClassResponse>> updateMasItemClass(@PathVariable int id, @RequestBody MasItemClassRequest masItemClassdRequest) {
+        ApiResponse<MasItemClassResponse> response =  masItemClassService.updateMasItemClass(id, masItemClassdRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 }
