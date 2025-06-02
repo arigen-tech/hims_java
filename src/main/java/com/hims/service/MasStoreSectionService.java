@@ -12,8 +12,4 @@ public interface MasStoreSectionService {
     ApiResponse<List<MasStoreSectionResponse>> getAllStoreSection(int flag);
 
     ApiResponse<MasStoreSectionResponse> findById(Integer id);
-
-    ApiResponse<MasStoreSectionResponse> changeStoreSectionStatus(int id, String status);
-
-    ApiResponse<MasStoreSectionResponse> updateStoreSection(int id, MasStoreSectionRequest masStoreSectionRequest);
 }

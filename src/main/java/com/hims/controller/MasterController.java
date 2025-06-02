@@ -969,13 +969,13 @@ public class MasterController {
 
     @PutMapping("/storeSection/status/{id}")
     public ResponseEntity<ApiResponse<MasStoreSectionResponse>> changeMasStoreSectionStatus(@PathVariable int id, @RequestParam String status) {
-        ApiResponse<MasStoreSectionResponse> response = masStoreSectionService.changeStoreSectionStatus(id, status);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+      //  ApiResponse<MasStoreSectionResponse> response = masStoreSectionService.changeStoreSectionStatus(id, status);
+        return new ResponseEntity<>(null, HttpStatus.OK);
     }
     @PutMapping("/storeSection/updateById/{id}")
     public ResponseEntity<ApiResponse<MasStoreSectionResponse>> updateMasStoreSection(@PathVariable int id, @RequestBody MasStoreSectionRequest masStoreSectionRequest) {
-        ApiResponse<MasStoreSectionResponse> response = masStoreSectionService.updateStoreSection(id, masStoreSectionRequest);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+       // ApiResponse<MasStoreSectionResponse> response = masStoreSectionService.updateStoreSection(id, masStoreSectionRequest);
+        return new ResponseEntity<>(null, HttpStatus.OK);
     }
 
 
