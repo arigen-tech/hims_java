@@ -1,9 +1,6 @@
 package com.hims.controller;
 
-import com.hims.entity.MasEmploymentType;
-import com.hims.entity.MasItemCategory;
-import com.hims.entity.MasStoreGroup;
-import com.hims.entity.MasUserType;
+import com.hims.entity.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
@@ -21,6 +18,10 @@ import java.util.List;
 @RequestMapping("/master")
 public class MasterController {
     
+    @Autowired
+    private MasServiceCategoryService masServiceCategoryService;
+    @Autowired
+    private MasServiceOpdService masServiceOpdService;
     @Autowired
     private MasApplicationService masApplicationService;
     @Autowired
@@ -1035,5 +1036,16 @@ public class MasterController {
         ApiResponse<MasItemCategoryResponse> response =  masItemCategoryService.updateMasItemClass(id, masItemCategoryRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @GetMapping("/masServiceOpd/getByHospitalId/{id}")
+    public ResponseEntity<ApiResponse<List<MasServiceOpd>>> getMasServiceOpdByHospitalId(@PathVariable Long id) {
+        ApiResponse<List<MasServiceOpd>> response = masServiceOpdService.findByHospitalId(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/masServiceCategory/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasServiceCategory>>> getAllMasServiceCategory(@PathVariable int flag) {
+        ApiResponse<List<MasServiceCategory>> response = masServiceCategoryService.findAll(flag);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 
 }
