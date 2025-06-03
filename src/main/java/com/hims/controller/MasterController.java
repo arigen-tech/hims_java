@@ -1,6 +1,7 @@
 package com.hims.controller;
 
 import com.hims.entity.MasEmploymentType;
+import com.hims.entity.MasItemCategory;
 import com.hims.entity.MasStoreGroup;
 import com.hims.entity.MasUserType;
 import com.hims.request.*;
@@ -74,8 +75,12 @@ public class MasterController {
     private UserDepartmentServiceImpl userDepartmentServiceImpl;
     @Autowired
     private MasHospitalService masHospitalService;
-@Autowired
-private MasStoreSectionService masStoreSectionService;
+    @Autowired
+    private MasStoreSectionService masStoreSectionService;
+    @Autowired
+    private MasItemClassService masItemClassService;
+    @Autowired
+    private MasItemCategoryService masItemCategoryService;
 
     //    ================================Mas Application Controller================================//
 
@@ -973,6 +978,61 @@ private MasStoreSectionService masStoreSectionService;
     @PutMapping("/storeSection/updateById/{id}")
     public ResponseEntity<ApiResponse<MasStoreSectionResponse>> updateMasStoreSection(@PathVariable int id, @RequestBody MasStoreSectionRequest masStoreSectionRequest) {
         ApiResponse<MasStoreSectionResponse> response = masStoreSectionService.updateStoreSection(id, masStoreSectionRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+    //    ================================Mas Item Class Controller================================//
+    @PostMapping("/masItemClass/create")
+    public ResponseEntity<ApiResponse<MasItemClassResponse>> addMasItemClass(@RequestBody MasItemClassRequest masStoreSectionRequest) {
+        ApiResponse<MasItemClassResponse> response = masItemClassService.addMasItemClass(masStoreSectionRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    @GetMapping("/masItemClass/getAll/{flag}")
+    public ApiResponse<List<MasItemClassResponse>> getAllMasItemClass(@PathVariable int flag) {
+        return masItemClassService.getAllMasItemClass(flag);
+    }
+    @GetMapping("/masItemClass/getById/{id}")
+    public ResponseEntity<ApiResponse<MasItemClassResponse>> getItemClassById(@PathVariable Integer id) {
+        ApiResponse<MasItemClassResponse> response = masItemClassService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/masItemClass/status/{id}")
+    public ResponseEntity<ApiResponse<MasItemClassResponse>> changeMasItemClassStatus(@PathVariable int id, @RequestParam String status) {
+        ApiResponse<MasItemClassResponse> response = masItemClassService.changeMasItemClassStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/masItemClass/updateById/{id}")
+    public ResponseEntity<ApiResponse<MasItemClassResponse>> updateMasItemClass(@PathVariable int id, @RequestBody MasItemClassRequest masItemClassdRequest) {
+        ApiResponse<MasItemClassResponse> response =  masItemClassService.updateMasItemClass(id, masItemClassdRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    //    ================================Mas Item Category Controller================================//
+
+
+    @PostMapping("/masItemCategory/create")
+    public ResponseEntity<ApiResponse<MasItemCategoryResponse>> addMasItemCategory(@RequestBody MasItemCategoryRequest masItemCategoryRequest) {
+        ApiResponse<MasItemCategoryResponse> response = masItemCategoryService.addMasItemCategory( masItemCategoryRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    @GetMapping("/masItemCategory/getAll/{flag}")
+    public ApiResponse<List<MasItemCategoryResponse>> getAllMasItemCategory(@PathVariable int flag) {
+        return masItemCategoryService.getAllMasItemCategory(flag);
+    }
+    @GetMapping("/masItemCategory/getById/{id}")
+    public ResponseEntity<ApiResponse<MasItemCategoryResponse>> getItemCategoryById(@PathVariable Integer id) {
+        ApiResponse<MasItemCategoryResponse> response = masItemCategoryService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/masItemCategory/status/{id}")
+    public ResponseEntity<ApiResponse<MasItemCategoryResponse>> changeMasItemCategoryStatus(@PathVariable int id, @RequestParam String status) {
+        ApiResponse<MasItemCategoryResponse> response = masItemCategoryService.changeMasItemCategoryStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/masItemCategory/updateById/{id}")
+    public ResponseEntity<ApiResponse<MasItemCategoryResponse>> updateMasItemCategory(@PathVariable int id, @RequestBody MasItemCategoryRequest masItemCategoryRequest) {
+        ApiResponse<MasItemCategoryResponse> response =  masItemCategoryService.updateMasItemClass(id, masItemCategoryRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
