@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Getter
@@ -37,7 +38,7 @@ public class MasMainChargeCode {
     private String lastChgBy;
 
     @Column(name = "last_chg_date", nullable = false)
-    private Instant lastChgDate;
+    private LocalDate lastChgDate;
 
     @Column(name = "last_chg_time", nullable = false)
     private String lastChgTime;

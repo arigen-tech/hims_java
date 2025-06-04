@@ -91,11 +91,18 @@ public class UserApplicationServiceImpl implements UserApplicationService {
 
     public ApiResponse<UserApplicationResponse> updateApplication(Long id, UserApplicationRequest request) {
         Optional<UserApplication> existingApplication = userApplicationRepository.findById(id);
+
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
+        }
+
         if (existingApplication.isPresent()) {
             UserApplication application = existingApplication.get();
             application.setUserAppName(request.getUserAppName());
             application.setUrl(request.getUrl());
-            application.setLastChgBy(request.getLastChgBy());
+            application.setLastChgBy(currentUser.getUserId());
             application.setLastChgDate(Instant.now());
 
             UserApplication updatedApplication = userApplicationRepository.save(application);
@@ -109,12 +116,18 @@ public class UserApplicationServiceImpl implements UserApplicationService {
         if (!isValidStatus(status)) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status. Status should be 'Y' or 'N'", 400);
         }
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
+        }
 
         Optional<UserApplication> application = userApplicationRepository.findById(id);
         if (application.isPresent()) {
             UserApplication userApplication = application.get();
             userApplication.setStatus(status);
             userApplication.setLastChgDate(Instant.now());
+            userApplication.setLastChgBy(currentUser.getUserId());
             userApplicationRepository.save(userApplication);
             return ResponseUtils.createSuccessResponse("Application status updated to '" + status + "'", new TypeReference<>() {});
         } else {

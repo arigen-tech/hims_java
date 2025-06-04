@@ -607,6 +607,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .dateOfBirth(employeeObj.getDob())
                     .oldPassword(passwordEncoder.encode(otp))
                     .currentPassword(passwordEncoder.encode(otp))
+                    .profilePicture(employeeObj.getProfilePicName())
                     .isVerified(true)
                     .lastChangeDate(Instant.now())
                     .lastChangedBy(currentUser.getUsername())

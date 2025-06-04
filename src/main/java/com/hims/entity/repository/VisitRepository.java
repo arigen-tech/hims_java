@@ -1,5 +1,6 @@
 package com.hims.entity.repository;
 
+import com.hims.entity.MasHospital;
 import com.hims.entity.Visit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,7 +20,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                                      @Param("sessionId") Long sessionId);
 
     @Query("SELECT v.tokenNo FROM Visit v " +
-            "WHERE v.doctor.id = :doctorId " +
+            "WHERE v.doctor.userId = :doctorId " +
             "AND v.hospital.id = :hospitalId " +
             "AND v.session.id = :sessionId " +
             "AND FUNCTION('DATE', v.visitDate) = CURRENT_DATE " +
@@ -29,4 +30,5 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                                             @Param("sessionId") Long sessionId);
 
 
+    List<Visit> findByHospitalAndPreConsultation(MasHospital hospital,String preConsultation);
 }

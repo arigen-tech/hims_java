@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -30,7 +31,7 @@ public class MasGender {
     private String genderName;
 
     @Column(name = "last_chg_dt")
-    private Instant lastChgDt;
+    private LocalDateTime lastChgDt;
 
     @Size(max = 1)
     @NotNull
