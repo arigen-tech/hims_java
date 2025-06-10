@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface MasServiceOpdService {
     ApiResponse<List<MasServiceOpd>> findByHospitalId(Long id);
+    ApiResponse<MasServiceOpd> save(MasServiceOpd req);
+    ApiResponse<MasServiceOpd> edit(MasServiceOpd req);
 }

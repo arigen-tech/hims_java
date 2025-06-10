@@ -25,4 +25,24 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
         List<MasServiceOpd> response= masServiceOpdRepository.findByHospitalId(masHospitalRepository.findById(id).get());
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
     }
+
+    @Override
+    public ApiResponse<MasServiceOpd> save(MasServiceOpd req) {
+        try {
+            MasServiceOpd response = masServiceOpdRepository.save(req);
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>(){});
+        }catch (Exception e){
+            return ResponseUtils.createFailureResponse(req, new TypeReference<>(){},"Error Saving Data",500);
+        }
+    }
+
+    @Override
+    public ApiResponse<MasServiceOpd> edit(MasServiceOpd req) {
+        try {
+            MasServiceOpd response = masServiceOpdRepository.save(req);
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>(){});
+        }catch (Exception e){
+            return ResponseUtils.createFailureResponse(req, new TypeReference<>(){},"Error Saving Data",500);
+        }
+    }
 }
