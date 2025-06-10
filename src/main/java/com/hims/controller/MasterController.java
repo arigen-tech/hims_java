@@ -1046,6 +1046,16 @@ public class MasterController {
         ApiResponse<List<MasServiceCategory>> response = masServiceCategoryService.findAll(flag);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @PostMapping("/masServiceCategory/save")
+    public ResponseEntity<ApiResponse<MasServiceCategory>> saveMasService(@RequestBody MasServiceCategory request){
+        ApiResponse<MasServiceCategory> response = masServiceCategoryService.save(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/masServiceCategory/update")
+    public ResponseEntity<ApiResponse<MasServiceCategory>> updateMasService(@RequestBody MasServiceCategory request){
+        ApiResponse<MasServiceCategory> response = masServiceCategoryService.edit(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
 
 }
