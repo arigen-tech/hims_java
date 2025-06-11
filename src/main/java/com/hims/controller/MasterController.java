@@ -1036,18 +1036,11 @@ public class MasterController {
         ApiResponse<MasItemCategoryResponse> response =  masItemCategoryService.updateMasItemClass(id, masItemCategoryRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
-
     @GetMapping("/masServiceOpd/getByHospitalId/{id}")
     public ResponseEntity<ApiResponse<List<MasServiceOpd>>> getMasServiceOpdByHospitalId(@PathVariable Long id) {
         ApiResponse<List<MasServiceOpd>> response = masServiceOpdService.findByHospitalId(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
-
-    //    ================================Mas Service Category Controller================================//
-
-
     @GetMapping("/masServiceCategory/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasServiceCategory>>> getAllMasServiceCategory(@PathVariable int flag) {
         ApiResponse<List<MasServiceCategory>> response = masServiceCategoryService.findAll(flag);
@@ -1058,22 +1051,11 @@ public class MasterController {
         ApiResponse<MasServiceCategory> response = masServiceCategoryService.save(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    @PutMapping("/masServiceCategory/update/{id}")
-    public ResponseEntity<ApiResponse<MasServiceCategory>> updateMasService(
-            @PathVariable Long id,
-            @RequestBody MasServiceCategory request) {
-        ApiResponse<MasServiceCategory> response = masServiceCategoryService.edit(id, request);
+    @PutMapping("/masServiceCategory/update")
+    public ResponseEntity<ApiResponse<MasServiceCategory>> updateMasService(@RequestBody MasServiceCategory request){
+        ApiResponse<MasServiceCategory> response = masServiceCategoryService.edit(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
-    @PutMapping("/masServiceCategory/updateStatus/{id}")
-    public ResponseEntity<ApiResponse<MasServiceCategory>> updateStatusById(
-            @PathVariable Long id,
-            @RequestParam String status) {
-        ApiResponse<MasServiceCategory> response = masServiceCategoryService.updateStatus(id, status);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
 
 
 }
