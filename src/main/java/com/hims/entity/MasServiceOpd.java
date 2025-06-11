@@ -15,6 +15,7 @@ import java.time.Instant;
 @Table(name = "mas_service_opd")
 public class MasServiceOpd {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
@@ -35,19 +36,19 @@ public class MasServiceOpd {
     @NotNull
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "service_cat_id", nullable = false)
-    private MasServiceCategory serviceCat;
+    private MasServiceCategory serviceCategory;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "hospital_id")
-    private MasHospital hospital;
+    private MasHospital hospitalId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id")
-    private MasDepartment department;
+    private MasDepartment departmentId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "doctor_id")
-    private User doctor;
+    private User doctorId;
 
     @Size(max = 1)
     @Column(name = "status", length = 1)
@@ -58,5 +59,13 @@ public class MasServiceOpd {
 
     @Column(name = "to_dt")
     private Instant toDt;
+
+    @Size(max = 200)
+    @Column(name = "last_chg_by", length = 200)
+    private String lastChgBy;
+
+    @NotNull
+    @Column(name = "last_chg_dt", nullable = false)
+    private Instant lastChgDt;
 
 }

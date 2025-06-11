@@ -1050,6 +1050,29 @@ public class MasterController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @PostMapping("/masServiceOpd/save")
+    public ResponseEntity<ApiResponse<MasServiceOpd>> saveMasServiceOpd(@RequestBody MasServiceOpdRequest request) {
+        ApiResponse<MasServiceOpd> response = masServiceOpdService.save(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/masServiceOpd/update/{id}")
+    public ResponseEntity<ApiResponse<MasServiceOpd>> updateMasServiceOpd(
+            @PathVariable Long id,
+            @RequestBody MasServiceOpdRequest request) {
+        ApiResponse<MasServiceOpd> response = masServiceOpdService.edit(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+    @PutMapping("/masServiceOpd/updateStatus/{id}")
+    public ResponseEntity<ApiResponse<MasServiceOpd>> updateMasServiceOpdStatusById(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        ApiResponse<MasServiceOpd> response = masServiceOpdService.updateStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 
     //    ================================Mas Service Category Controller================================//
 
@@ -1073,12 +1096,13 @@ public class MasterController {
     }
 
     @PutMapping("/masServiceCategory/updateStatus/{id}")
-    public ResponseEntity<ApiResponse<MasServiceCategory>> updateStatusById(
+    public ResponseEntity<ApiResponse<MasServiceCategory>> updateMasServiceStatusById(
             @PathVariable Long id,
             @RequestParam String status) {
         ApiResponse<MasServiceCategory> response = masServiceCategoryService.updateStatus(id, status);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
 
     //    ================================Mas Store Item Controller================================//
     @PostMapping("/masStoreItem/create")

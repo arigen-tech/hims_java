@@ -7,6 +7,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MasServiceOpdRepository extends JpaRepository<MasServiceOpd, Long> {
-    List<MasServiceOpd> findByHospitalId(MasHospital hospital);
-    Optional<MasServiceOpd> findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(MasHospital hospital, User doctor, MasDepartment department, MasServiceCategory serviceCategory);
+    List<MasServiceOpd> findByHospitalIdId(Long hospitalId);
+//    Optional<MasServiceOpd> findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(MasHospital hospital, User doctor, MasDepartment department, MasServiceCategory serviceCategory);
 }
