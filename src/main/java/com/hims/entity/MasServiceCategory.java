@@ -1,9 +1,6 @@
 package com.hims.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -17,6 +14,7 @@ import java.time.Instant;
 @Table(name = "mas_service_category")
 public class MasServiceCategory {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
@@ -33,6 +31,9 @@ public class MasServiceCategory {
     @Size(max = 20)
     @Column(name = "sac_code", length = 20)
     private String sacCode;
+
+    @Column(name = "gst_applicable")
+    private Boolean gstApplicable;
 
     @Size(max = 1)
     @NotNull
