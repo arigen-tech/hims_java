@@ -138,7 +138,7 @@ public class MasStoreItem {
 
 
     @ManyToOne(fetch =  FetchType.LAZY)
-    @JoinColumn(name = "disp_unit")
+    @JoinColumn(name = "dispensing_unit")
     private MasStoreUnit dispUnit;
 
     @ManyToOne(fetch =  FetchType.LAZY)

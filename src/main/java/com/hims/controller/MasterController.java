@@ -1088,4 +1088,16 @@ public class MasterController {
     }
 
 
+    @GetMapping("/masStoreItem/getById/{id}")
+    public ResponseEntity<ApiResponse<MasStoreItemResponse>> getMasStoreItemById(@PathVariable Integer id) {
+        ApiResponse<MasStoreItemResponse> response = masStoreItemService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/masStoreItem/getAll/{flag}")
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(@PathVariable int flag) {
+        return masStoreItemService.getAllMasStoreItem(flag);
+    }
+
+
 }

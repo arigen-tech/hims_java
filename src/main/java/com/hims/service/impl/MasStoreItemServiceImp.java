@@ -7,6 +7,7 @@ import com.hims.request.MasStoreItemRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasStoreItemResponse;
 import com.hims.response.MasStoreUnitResponse;
+import com.hims.response.MasTemplateResponse;
 import com.hims.service.MasStoreItemService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -20,7 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Service
 public class MasStoreItemServiceImp implements MasStoreItemService {
     @Autowired
@@ -120,8 +124,54 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
     }
 
+    @Override
+    public ApiResponse<MasStoreItemResponse> findById(Integer id) {
+        try{
+        Optional<MasStoreItem> masStoreItem=masStoreItemRepository.findById(id);
+        if (masStoreItem .isPresent()) {
+            MasStoreItem masStoreItem1 = masStoreItem.get();
+
+            return ResponseUtils.createSuccessResponse( convertToResponse(masStoreItem1), new TypeReference<>() {
+            });
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, "MasStoreItem not found", 404);
+        }}catch(Exception ex){
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag) {
+        try {
+            List<MasStoreItem> masStoreItems;
+            if (flag == 1) {
+                masStoreItems = masStoreItemRepository.findByStatusIgnoreCase("y");
+            } else if (flag == 0) {
+                masStoreItems = masStoreItemRepository.findByStatusInIgnoreCase(List.of("y", "n"));
+            } else {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Invalid flag value. Use 0 or 1.", 400);
+            }
+
+            List<MasStoreItemResponse> responses = masStoreItems.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+
+            return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
+            });
 
 
+        } catch (Exception ex) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        
+
+        }
+
+
+    }
     private MasStoreItemResponse convertToResponse(MasStoreItem item) {
         MasStoreItemResponse  response = new MasStoreItemResponse();
         response.setItemId(item.getItemId());
