@@ -4,6 +4,7 @@ import com.hims.entity.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
+import com.hims.service.impl.MasStoreItemServiceImp;
 import com.hims.service.impl.UserDepartmentServiceImpl;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class MasterController {
     private MasServiceOpdService masServiceOpdService;
     @Autowired
     private MasApplicationService masApplicationService;
+
+    @Autowired
+    private MasStoreItemService masStoreItemService;
     @Autowired
     private MasBloodGroupService masBloodGroupService;
     @Autowired
@@ -1036,11 +1040,20 @@ public class MasterController {
         ApiResponse<MasItemCategoryResponse> response =  masItemCategoryService.updateMasItemClass(id, masItemCategoryRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+
+    //    ================================Mas Opd Service Controller================================//
+
     @GetMapping("/masServiceOpd/getByHospitalId/{id}")
     public ResponseEntity<ApiResponse<List<MasServiceOpd>>> getMasServiceOpdByHospitalId(@PathVariable Long id) {
         ApiResponse<List<MasServiceOpd>> response = masServiceOpdService.findByHospitalId(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+
+    //    ================================Mas Service Category Controller================================//
+
+
     @GetMapping("/masServiceCategory/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasServiceCategory>>> getAllMasServiceCategory(@PathVariable int flag) {
         ApiResponse<List<MasServiceCategory>> response = masServiceCategoryService.findAll(flag);
@@ -1051,10 +1064,27 @@ public class MasterController {
         ApiResponse<MasServiceCategory> response = masServiceCategoryService.save(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    @PutMapping("/masServiceCategory/update")
-    public ResponseEntity<ApiResponse<MasServiceCategory>> updateMasService(@RequestBody MasServiceCategory request){
-        ApiResponse<MasServiceCategory> response = masServiceCategoryService.edit(request);
+    @PutMapping("/masServiceCategory/update/{id}")
+    public ResponseEntity<ApiResponse<MasServiceCategory>> updateMasService(
+            @PathVariable Long id,
+            @RequestBody MasServiceCategory request) {
+        ApiResponse<MasServiceCategory> response = masServiceCategoryService.edit(id, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/masServiceCategory/updateStatus/{id}")
+    public ResponseEntity<ApiResponse<MasServiceCategory>> updateStatusById(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        ApiResponse<MasServiceCategory> response = masServiceCategoryService.updateStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    //    ================================Mas Store Item Controller================================//
+    @PostMapping("/masStoreItem/create")
+    public ResponseEntity<ApiResponse<MasStoreItemResponse>> addMasItemCategory(@RequestBody MasStoreItemRequest masStoreItemRequest) {
+        ApiResponse<MasStoreItemResponse> response =masStoreItemService.addMasStoreItem(masStoreItemRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
 
