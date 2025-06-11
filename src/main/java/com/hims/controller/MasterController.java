@@ -82,6 +82,8 @@ public class MasterController {
     private MasItemClassService masItemClassService;
     @Autowired
     private MasItemCategoryService masItemCategoryService;
+    @Autowired
+    private MasStoreItemService masStoreItemService;
 
     //    ================================Mas Application Controller================================//
 
@@ -1056,6 +1058,18 @@ public class MasterController {
         ApiResponse<MasServiceCategory> response = masServiceCategoryService.edit(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+
+    //    ================================Mas Store Item Controller================================//
+
+
+    @PostMapping("/masStoreItem/create")
+    public ResponseEntity<ApiResponse<MasStoreItemResponse>> addMasItemCategory(@RequestBody MasStoreItemRequest masStoreItemRequest) {
+        ApiResponse<MasStoreItemResponse> response =masStoreItemService.addMasStoreItem(masStoreItemRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+
 
 
 }
