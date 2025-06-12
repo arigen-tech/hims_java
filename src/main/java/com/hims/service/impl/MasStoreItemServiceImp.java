@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -172,6 +173,125 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
 
     }
+
+    @Override
+    public ApiResponse<MasStoreItemResponse> update(Integer id, MasStoreItemRequest request) {
+        try{
+        Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(id);
+            if (masStoreItem.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "MasStoreItem not found", 404);
+            }
+            User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                MasStoreItem masStoreItem1 = masStoreItem.get();
+                masStoreItem1.setPvmsNo(request.getPvmsNo());
+                masStoreItem1.setNomenclature(request.getNomenclature());
+                masStoreItem1.setStatus(request.getStatus());
+                masStoreItem1.setADispQty(request.getADispQty());
+                masStoreItem1.setHospitalId(1);
+                masStoreItem1.setLastChgBy(currentUser.getUserId());
+                masStoreItem1.setLastChgDate(LocalDate.now());
+                masStoreItem1.setLastChgTime(getCurrentTimeFormatted());
+                masStoreItem1.setReOrderLevelStore(request.getReOrderLevelStore());
+                masStoreItem1.setReOrderLevelDispensary(request.getReOrderLevelDispensary());
+                if (request.getDispUnit()!=null) {
+                    Optional<MasStoreUnit> masStoreUnit = masStoreUnitRepository.findById(request.getDispUnit());
+                    if(masStoreUnit.isPresent()){
+                        masStoreItem1.setUnitAU(masStoreUnit.get());
+                    }else{
+                        return ResponseUtils.createNotFoundResponse("MasStoreUnit not found", 404);
+                    }
+                }
+                if (request.getUnitAU()!=null) {
+                    Optional<MasStoreUnit> masStoreUnit1 = masStoreUnitRepository.findById(request.getUnitAU());
+                    if(masStoreUnit1.isPresent()){
+                        masStoreItem1.setUnitAU(masStoreUnit1.get());
+                    }else {
+                    return ResponseUtils.createNotFoundResponse("MasStoreUnit not found", 404);
+                }}
+                    if (request.getSectionId()!=null) {
+                    Optional<MasStoreSection> masStoreSection = masStoreSectionRepository.findById(request.getSectionId());
+                    if(masStoreSection.isPresent()){
+                      masStoreItem1.setSectionId(masStoreSection.get());
+                    }else{
+                    return ResponseUtils.createNotFoundResponse("MasStoreSection not found", 404);
+                }}
+
+                if (request.getItemTypeId()!=null) {
+                    Optional<MasItemType> masItemType = masItemTypeRepository.findById(request.getItemTypeId());
+                    if(masItemType.isPresent()){
+                        masStoreItem1.setItemTypeId(masItemType.get());
+                    }else{
+                        return ResponseUtils.createNotFoundResponse("MasItemType not found", 404);
+                }}
+
+                if (request.getGroupId()!=null) {
+                    Optional<MasStoreGroup> masStoreGroup = masStoreGroupRepository.findById(request.getGroupId());
+                    if(masStoreGroup.isPresent()) {
+                        masStoreItem1.setGroupId(masStoreGroup.get());
+
+                    }else{
+                        return ResponseUtils.createNotFoundResponse("MasStoreGroup not found", 404);
+                }
+                }
+
+                if (request.getItemClassId()!=null) {
+                    Optional<MasItemClass> masItemClass = masItemClassRepository.findById(request.getItemClassId());
+                    if(masItemClass.isPresent()) {
+                        masStoreItem1.setItemClassId(masItemClass.get());
+                    }else{
+                    return ResponseUtils.createNotFoundResponse("MasItemClass not found", 404);
+
+                }}
+
+                MasStoreItem masStoreItem2= masStoreItemRepository.save(masStoreItem1);
+                return ResponseUtils.createSuccessResponse(convertToResponse(masStoreItem2), new TypeReference<>() {
+                });
+        }catch(Exception ex){
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+
+        }
+        }
+
+    @Override
+    public ApiResponse<MasStoreItemResponse> changeMasStoreItemStatus(int id, String status) {
+        try {
+            Optional<MasStoreItem> masStoreItem= masStoreItemRepository.findById(id);
+            if (masStoreItem.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "MasStoreItem not found with ID: " + id, HttpStatus.NOT_FOUND.value());
+            }
+            MasStoreItem entity = masStoreItem.get();
+            if(status.equals("y")||status.equals("n")){
+                entity.setStatus(status);
+            }else{
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Invalid status. Status should be 'y' or 'n'", 400);
+            }
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            entity.setLastChgBy(currentUser.getUserId());
+            entity.setLastChgDate(LocalDate.now());
+            entity.setLastChgTime(getCurrentTimeFormatted());
+
+            return ResponseUtils.createSuccessResponse(convertToResponse( masStoreItemRepository.save(entity)), new TypeReference<>() {
+            });
+        } catch (Exception ex) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+
+        }
+    }
+
     private MasStoreItemResponse convertToResponse(MasStoreItem item) {
         MasStoreItemResponse  response = new MasStoreItemResponse();
         response.setItemId(item.getItemId());
@@ -193,6 +313,5 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setADispQty(item.getADispQty());
         return response;
     }
-
 }
 

@@ -14,4 +14,8 @@ public interface MasStoreItemService {
     ApiResponse<MasStoreItemResponse> findById(Integer id);
 
     ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag);
+
+    ApiResponse<MasStoreItemResponse> update(Integer id, MasStoreItemRequest request);
+
+    ApiResponse<MasStoreItemResponse> changeMasStoreItemStatus(int id, String status);
 }

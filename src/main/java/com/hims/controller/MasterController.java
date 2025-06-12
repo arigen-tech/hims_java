@@ -1123,5 +1123,18 @@ public class MasterController {
         return masStoreItemService.getAllMasStoreItem(flag);
     }
 
+    @PutMapping("/masStoreItem/update/{id}")
+    public ResponseEntity<ApiResponse<MasStoreItemResponse>> updateMasStoreItem(
+            @PathVariable Integer id,
+            @RequestBody MasStoreItemRequest request) {
+        ApiResponse<MasStoreItemResponse> response = masStoreItemService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/masStoreItem/status/{id}")
+    public ResponseEntity<ApiResponse<MasStoreItemResponse>> changeMasStoreItemStatus(@PathVariable int id, @RequestParam String status) {
+        ApiResponse<MasStoreItemResponse> response = masStoreItemService.changeMasStoreItemStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 
 }
