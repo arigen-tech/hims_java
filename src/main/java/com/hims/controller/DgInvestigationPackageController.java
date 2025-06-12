@@ -3,6 +3,8 @@ package com.hims.controller;
 import com.hims.request.DgInvestigationPackageRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DgInvestigationPackageDTO;
+import com.hims.response.DgInvestigationPackageResponse;
+import com.hims.response.DgMasInvestigationResponse;
 import com.hims.service.DgInvestigationPackageServices;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +37,7 @@ public class DgInvestigationPackageController {
     @PutMapping("/status/{packId}")
     ResponseEntity<ApiResponse<DgInvestigationPackageDTO>> changeStatus(
             @PathVariable Long packId,
-            @RequestBody String status){
+            @RequestParam String status){
         return new ResponseEntity<>(packService.changeStatus(packId, status), HttpStatus.ACCEPTED);
     }
 
@@ -45,7 +47,14 @@ public class DgInvestigationPackageController {
     }
 
     @GetMapping("/getAllPackInvestigation/{flag}")
-    ResponseEntity<ApiResponse<List<DgInvestigationPackageDTO>>> getAllPackInvestigation(int flag){
+    ResponseEntity<ApiResponse<List<DgInvestigationPackageDTO>>> getAllPackInvestigation(@PathVariable int flag){
         return new ResponseEntity<>(packService.getAllPackInvestigation(flag), HttpStatus.OK);
     }
+
+    @GetMapping("/pricePack")
+    public ResponseEntity<ApiResponse<DgInvestigationPackageResponse>>  getInvestigationPriceDetails( @RequestParam String packName  )
+   {
+        return new ResponseEntity<>(packService.getPrice(packName), HttpStatus.OK);
+    }
+
 }

@@ -10,7 +10,7 @@ import java.time.Instant;
 public class MasMainChargeCodeRequest {
     private String chargecode_code;
     private String chargecode_name;
-    private String status;
+//    private String status;
 //    private String lastChgBy;
 //    private Instant lastChgDate;
 //    private String lastChgTime;

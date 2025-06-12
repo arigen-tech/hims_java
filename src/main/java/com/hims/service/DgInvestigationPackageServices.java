@@ -3,6 +3,7 @@ package com.hims.service;
 import com.hims.request.DgInvestigationPackageRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DgInvestigationPackageDTO;
+import com.hims.response.DgInvestigationPackageResponse;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -21,4 +22,5 @@ public interface DgInvestigationPackageServices {
     ApiResponse<DgInvestigationPackageDTO> getByPackId(Long packId);
     ApiResponse<List<DgInvestigationPackageDTO>>getAllPackInvestigation(int flag);
 
+    ApiResponse<DgInvestigationPackageResponse> getPrice(String packName);
 }

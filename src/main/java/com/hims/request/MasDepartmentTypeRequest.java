@@ -8,6 +8,4 @@ import lombok.Setter;
 public class MasDepartmentTypeRequest {
     private String departmentTypeCode;
     private String departmentTypeName;
-    private String status;
-    private String lastChgBy;
 }
