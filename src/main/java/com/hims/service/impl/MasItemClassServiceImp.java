@@ -157,7 +157,7 @@ public class MasItemClassServiceImp implements MasItemClassService {
             masItemClass1.setLastChgBy(String.valueOf(currentUser.getUserId()));
             masItemClass1.setLastChgDate(LocalDate.now());
             masItemClass1.setLastChgTime(getCurrentTimeFormatted());
-            masItemClass1.setStatus(masItemClassdRequest.getStatus());
+            masItemClass1.setStatus(masItemClass.get().getStatus());
             if (masItemClassdRequest.getSectionId() != null) {
                 Optional<MasStoreSection> masStoreSection = masStoreSectionRepository.findById(masItemClassdRequest.getSectionId());
                 if (masStoreSection.isPresent()) {
