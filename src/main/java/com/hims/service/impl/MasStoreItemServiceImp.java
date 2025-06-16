@@ -41,6 +41,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     private MasStoreSectionRepository masStoreSectionRepository;
     @Autowired
     private MasStoreUnitRepository masStoreUnitRepository;
+    @Autowired
+    private MasHsnRepository masHsnRepository;
 
     @Autowired
     UserRepo userRepo;
@@ -109,12 +111,19 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                 return ResponseUtils.createNotFoundResponse("MasItemClass not found", 404);
 
             }
+            Optional<MasHSN> masHSN = masHsnRepository.findById(masStoreItemRequest.getHsnCode());
+            if (masHSN.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasSHN not found", 404);
+
+            }
             masStoreItem.setDispUnit(masStoreUnit.get());
             masStoreItem.setUnitAU(masStoreUnit1.get());
             masStoreItem.setItemClassId(masItemClass.get());
             masStoreItem.setGroupId(masStoreGroup.get());
             masStoreItem.setItemTypeId(masItemType.get());
             masStoreItem.setSectionId(masStoreSection.get());
+            masStoreItem.setHsnCode(masHSN.get());
+
             MasStoreItem masStoreItem1 = masStoreItemRepository.save(masStoreItem);
             return ResponseUtils.createSuccessResponse(convertToResponse(masStoreItem1), new TypeReference<>() {
             });
@@ -248,6 +257,14 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                     return ResponseUtils.createNotFoundResponse("MasItemClass not found", 404);
 
                 }}
+            if (request.getHsnCode()!=null) {
+                Optional<MasHSN> masHSN = masHsnRepository.findById(request.getHsnCode());
+                if(masHSN.isPresent()) {
+                    masStoreItem1.setHsnCode(masHSN.get());
+                }else{
+                    return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
+
+                }}
 
                 MasStoreItem masStoreItem2= masStoreItemRepository.save(masStoreItem1);
                 return ResponseUtils.createSuccessResponse(convertToResponse(masStoreItem2), new TypeReference<>() {
@@ -311,6 +328,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setDispUnit(item.getDispUnit().getUnitId());
         response.setUnitAU(item.getUnitAU().getUnitId());
         response.setADispQty(item.getADispQty());
+        response.setHsnCode(item.getHsnCode().getHsnCode());
         return response;
     }
 }

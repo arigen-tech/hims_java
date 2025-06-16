@@ -202,9 +202,8 @@ public class MasStoreItemResponse {
 //    private String prescribedFrom;
 
     private Integer reOrderLevelDispensary;
-
-
     private Integer reOrderLevelStore;
+    private String hsnCode;
 
 
 

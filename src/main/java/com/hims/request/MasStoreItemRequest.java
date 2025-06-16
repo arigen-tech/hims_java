@@ -22,6 +22,7 @@ public class MasStoreItemRequest {
     private Integer itemClassId;
     private Integer reOrderLevelDispensary;
     private Integer reOrderLevelStore;
+    private String hsnCode;
 
 
 }
