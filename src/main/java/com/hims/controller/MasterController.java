@@ -991,8 +991,8 @@ public class MasterController {
 
     //    ================================Mas Item Class Controller================================//
     @PostMapping("/masItemClass/create")
-    public ResponseEntity<ApiResponse<MasItemClassResponse>> addMasItemClass(@RequestBody MasItemClassRequest masStoreSectionRequest) {
-        ApiResponse<MasItemClassResponse> response = masItemClassService.addMasItemClass(masStoreSectionRequest);
+    public ResponseEntity<ApiResponse<MasItemClassResponse>> addMasItemClass(@RequestBody MasItemClassRequest masItemClassRequest) {
+        ApiResponse<MasItemClassResponse> response = masItemClassService.addMasItemClass(masItemClassRequest);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     @GetMapping("/masItemClass/getAll/{flag}")

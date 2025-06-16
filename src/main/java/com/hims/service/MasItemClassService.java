@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface MasItemClassService {
 
-    ApiResponse<MasItemClassResponse> addMasItemClass(MasItemClassRequest masStoreSectionRequest);
+    ApiResponse<MasItemClassResponse> addMasItemClass(MasItemClassRequest masItemClassRequest);
 
     ApiResponse<List<MasItemClassResponse>> getAllMasItemClass(int flag);
 
