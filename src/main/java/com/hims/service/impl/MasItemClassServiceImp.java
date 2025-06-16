@@ -2,7 +2,6 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasItemClass;
-import com.hims.entity.MasItemType;
 import com.hims.entity.MasStoreSection;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasItemClassRepository;
@@ -11,7 +10,6 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasItemClassRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasItemClassResponse;
-import com.hims.response.MasStoreSectionResponse;
 import com.hims.service.MasItemClassService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -99,6 +97,7 @@ public class MasItemClassServiceImp implements MasItemClassService {
         });
     }
 
+
     @Override
     public ApiResponse<MasItemClassResponse> findById(Integer id) {
         Optional<MasItemClass> masItemClass =masItemClassRepository.findById(id);
@@ -178,15 +177,20 @@ public class MasItemClassServiceImp implements MasItemClassService {
     }
 
     private MasItemClassResponse mapToResponse(MasItemClass masItemClass) {
-        MasItemClassResponse response = new  MasItemClassResponse();
+        MasItemClassResponse response = new MasItemClassResponse();
         response.setItemClassId(masItemClass.getItemClassId());
         response.setItemClassCode(masItemClass.getItemClassCode());
         response.setItemClassName(masItemClass.getItemClassName());
         response.setStatus(masItemClass.getStatus());
         response.setLastChgBy(masItemClass.getLastChgBy());
-        response.setLastChgTime(masItemClass.getLastChgTime());
         response.setLastChgDate(masItemClass.getLastChgDate());
-        response.setSectionId(masItemClass.getMasStoreSection().getSectionId());;
+        response.setLastChgTime(masItemClass.getLastChgTime());
+
+        if (masItemClass.getMasStoreSection() != null) {
+            response.setSectionId(masItemClass.getMasStoreSection().getSectionId());
+            response.setSectionName(masItemClass.getMasStoreSection().getSectionName());
+        }
+
         return response;
     }
 }

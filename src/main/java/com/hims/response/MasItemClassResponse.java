@@ -19,6 +19,6 @@ public class MasItemClassResponse {
     private LocalDate lastChgDate;
     private String lastChgTime;
     private Integer sectionId;
-
+    private String sectionName;
 
 }
