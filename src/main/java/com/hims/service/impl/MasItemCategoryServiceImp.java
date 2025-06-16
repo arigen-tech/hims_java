@@ -186,7 +186,8 @@ private MasItemCategoryRepository masItemCategoryRepository;
         response.setLastChgBy(masItemCategory.getLastChgBy());
         response.setLastChgTime(masItemCategory.getLastChgTime());
         response.setLastChgDate(masItemCategory.getLastChgDate());
-        if(masItemCategory.getMasStoreSection() !=null){
+       // response.setSectionId(masItemCategory.getMasStoreSection().getSectionId());
+        if(masItemCategory.getMasStoreSection()!=null){
             response.setSectionId(masItemCategory.getMasStoreSection().getSectionId());
             response.setSectionName(masItemCategory.getMasStoreSection().getSectionName());
 
