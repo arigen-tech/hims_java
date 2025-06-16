@@ -33,5 +33,6 @@ public class MasItemCategoryResponse {
 
 
     private Integer sectionId;
+    private String sectionName;
 
 }

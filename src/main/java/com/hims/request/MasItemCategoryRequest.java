@@ -10,7 +10,6 @@ import java.time.LocalDate;
 public class MasItemCategoryRequest {
     private String itemCategoryCode;
     private String itemCategoryName;
-    private String status;
     private Integer sectionId;
 
 

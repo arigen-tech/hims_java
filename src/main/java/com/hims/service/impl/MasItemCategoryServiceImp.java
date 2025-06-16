@@ -158,7 +158,7 @@ private MasItemCategoryRepository masItemCategoryRepository;
             masItemCategory1.setLastChgBy(String.valueOf(currentUser.getUserId()));
             masItemCategory1.setLastChgDate(LocalDate.now());
             masItemCategory1.setLastChgTime(getCurrentTimeFormatted());
-            masItemCategory1.setStatus(masItemCategoryRequest.getStatus());
+            masItemCategory1.setStatus("y");
             if (masItemCategoryRequest.getSectionId() != null) {
                 Optional<MasStoreSection> masStoreSection = masStoreSectionRepository.findById(masItemCategoryRequest.getSectionId());
                 if (masStoreSection.isPresent()) {
@@ -186,7 +186,12 @@ private MasItemCategoryRepository masItemCategoryRepository;
         response.setLastChgBy(masItemCategory.getLastChgBy());
         response.setLastChgTime(masItemCategory.getLastChgTime());
         response.setLastChgDate(masItemCategory.getLastChgDate());
-        response.setSectionId(masItemCategory.getMasStoreSection().getSectionId());;
+        if(masItemCategory.getMasStoreSection() !=null){
+            response.setSectionId(masItemCategory.getMasStoreSection().getSectionId());
+            response.setSectionName(masItemCategory.getMasStoreSection().getSectionName());
+
+        }
+
         return response;
     }
 }
