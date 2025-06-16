@@ -86,6 +86,8 @@ public class MasterController {
     private MasItemClassService masItemClassService;
     @Autowired
     private MasItemCategoryService masItemCategoryService;
+    @Autowired
+    private MasHsnService masHsnService;
 
     //    ================================Mas Application Controller================================//
 
@@ -989,8 +991,8 @@ public class MasterController {
 
     //    ================================Mas Item Class Controller================================//
     @PostMapping("/masItemClass/create")
-    public ResponseEntity<ApiResponse<MasItemClassResponse>> addMasItemClass(@RequestBody MasItemClassRequest masStoreSectionRequest) {
-        ApiResponse<MasItemClassResponse> response = masItemClassService.addMasItemClass(masStoreSectionRequest);
+    public ResponseEntity<ApiResponse<MasItemClassResponse>> addMasItemClass(@RequestBody MasItemClassRequest masItemClassRequest) {
+        ApiResponse<MasItemClassResponse> response = masItemClassService.addMasItemClass(masItemClassRequest);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     @GetMapping("/masItemClass/getAll/{flag}")
@@ -1135,6 +1137,16 @@ public class MasterController {
         ApiResponse<MasStoreItemResponse> response = masStoreItemService.changeMasStoreItemStatus(id, status);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+
+    //    ================================Mas HSN  Controller================================//
+
+    @GetMapping("/masHSN/getAll/{flag}")
+    public ApiResponse<List<MasHsnResponse>> getAllMasHsn(@PathVariable int flag) {
+        return masHsnService.getAllMasStoreItem(flag);
+    }
+
+
 
 
 }

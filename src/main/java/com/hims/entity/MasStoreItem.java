@@ -221,5 +221,9 @@ public class MasStoreItem {
     @Column(name = "re_order_level_store")
     private Integer reOrderLevelStore;
 
+    @ManyToOne(fetch =  FetchType.LAZY)
+    @JoinColumn(name = "hsn_code")
+    private MasHSN hsnCode;
+
 
 }
