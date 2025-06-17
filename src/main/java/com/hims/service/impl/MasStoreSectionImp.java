@@ -189,7 +189,11 @@ public class MasStoreSectionImp implements MasStoreSectionService {
         response.setLastChgBy(masStoreSection.getLastChgBy());
         response.setHospitalId(masStoreSection.getHospitalId());
         response.setLastChgDate(masStoreSection.getLastChgDate());
-        response.setMasItemType(masStoreSection.getMasItemType().getId());
+        if(masStoreSection.getMasItemType()!=null) {
+            response.setMasItemType(masStoreSection.getMasItemType().getId());
+            response.setMasItemTypeName(masStoreSection.getMasItemType().getName());
+
+        }
         return response;
     }
 }
