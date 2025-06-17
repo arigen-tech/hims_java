@@ -7,11 +7,17 @@ import com.hims.service.*;
 import com.hims.service.impl.MasStoreItemServiceImp;
 import com.hims.service.impl.UserDepartmentServiceImpl;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -88,6 +94,8 @@ public class MasterController {
     private MasItemCategoryService masItemCategoryService;
     @Autowired
     private MasHsnService masHsnService;
+    @Autowired
+    private MasBrandService masBrandService;
 
     //    ================================Mas Application Controller================================//
 
@@ -1168,6 +1176,35 @@ public class MasterController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+    //    ================================Mas Brand  Controller================================//
+
+    @GetMapping("/masBrand/getAll/{flag}")
+    public ApiResponse<List<MasBrandResponse>> getAllMasBrand(@PathVariable int flag) {
+        return masBrandService.getAllMasBrand(flag);
+    }
+    @GetMapping("/masBrand/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBrandResponse>> getMasBrandById(@PathVariable Integer id) {
+        ApiResponse<MasBrandResponse> response = masBrandService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PostMapping("/masBrand/create")
+    public ResponseEntity<ApiResponse<MasBrandResponse>> addMasBrand(@RequestBody MasBrandRequest masBrandRequest) {
+        ApiResponse<MasBrandResponse> response =masBrandService.addMasBrand(masBrandRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    @PutMapping("/masBrand/update/{id}")
+    public ResponseEntity<ApiResponse<MasBrandResponse>> updateMasBrand(
+            @PathVariable Integer id,
+            @RequestBody MasBrandRequest request) {
+        ApiResponse<MasBrandResponse> response = masBrandService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/masBrand/status/{id}")
+    public ResponseEntity<ApiResponse<MasBrandResponse>> changeMasBrandStatus(@PathVariable Integer id, @RequestParam String status) {
+        ApiResponse<MasBrandResponse> response = masBrandService.changeMasBrandStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
 
 
