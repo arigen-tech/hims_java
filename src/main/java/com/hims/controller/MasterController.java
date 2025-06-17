@@ -1145,6 +1145,28 @@ public class MasterController {
     public ApiResponse<List<MasHsnResponse>> getAllMasHsn(@PathVariable int flag) {
         return masHsnService.getAllMasStoreItem(flag);
     }
+    @GetMapping("/masHSN/getById/{id}")
+    public ResponseEntity<ApiResponse<MasHsnResponse>> getMasHSNById(@PathVariable String id) {
+        ApiResponse<MasHsnResponse> response = masHsnService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PostMapping("/masHSN/create")
+    public ResponseEntity<ApiResponse<MasHsnResponse>> addMasHSN(@RequestBody MasHsnRequest masHsnRequest) {
+        ApiResponse<MasHsnResponse> response =masHsnService.addMasHSN(masHsnRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    @PutMapping("/masHSN/update/{id}")
+    public ResponseEntity<ApiResponse<MasHsnResponse>> updateMasHSN(
+            @PathVariable String id,
+            @RequestBody MasHsnRequest request) {
+        ApiResponse<MasHsnResponse> response = masHsnService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("/masHsn/status/{id}")
+    public ResponseEntity<ApiResponse<MasHsnResponse>> changeMasHsnStatus(@PathVariable String id, @RequestParam String status) {
+        ApiResponse<MasHsnResponse> response = masHsnService.changeMasHsnStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
 
 
