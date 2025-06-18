@@ -80,7 +80,6 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             masStoreItem.setStatus("y");
             masStoreItem.setADispQty(masStoreItemRequest.getADispQty());
             masStoreItem.setHospitalId(1);
-
             masStoreItem.setLastChgBy(currentUser.getUserId());
             masStoreItem.setLastChgDate(LocalDate.now());
             masStoreItem.setLastChgTime(getCurrentTimeFormatted());
@@ -113,7 +112,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             }
             Optional<MasHSN> masHSN = masHsnRepository.findById(masStoreItemRequest.getHsnCode());
             if (masHSN.isEmpty()) {
-                return ResponseUtils.createNotFoundResponse("MasSHN not found", 404);
+                return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
 
             }
             masStoreItem.setDispUnit(masStoreUnit.get());
@@ -154,7 +153,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
     @Override
     public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag) {
-        try {
+
             List<MasStoreItem> masStoreItems;
             if (flag == 1) {
                 masStoreItems = masStoreItemRepository.findByStatusIgnoreCase("y");
@@ -173,12 +172,6 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             });
 
 
-        } catch (Exception ex) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
-        
-
-        }
 
 
     }
@@ -200,7 +193,6 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                 MasStoreItem masStoreItem1 = masStoreItem.get();
                 masStoreItem1.setPvmsNo(request.getPvmsNo());
                 masStoreItem1.setNomenclature(request.getNomenclature());
-                masStoreItem1.setStatus(request.getStatus());
                 masStoreItem1.setADispQty(request.getADispQty());
                 masStoreItem1.setHospitalId(1);
                 masStoreItem1.setLastChgBy(currentUser.getUserId());
@@ -321,14 +313,46 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setLastChgBy(item.getLastChgBy());
         response.setLastChgTime(item.getLastChgTime());
         response.setHospitalId(item.getHospitalId());
-        response.setGroupId(item.getGroupId().getId());
-        response.setItemClassId(item.getItemClassId().getItemClassId());
-        response.setItemTypeId(item.getItemTypeId().getId());
-        response.setSectionId(item.getSectionId().getSectionId());
-        response.setDispUnit(item.getDispUnit().getUnitId());
-        response.setUnitAU(item.getUnitAU().getUnitId());
         response.setADispQty(item.getADispQty());
-        response.setHsnCode(item.getHsnCode().getHsnCode());
+        if(item.getGroupId()!=null){
+            response.setGroupId(item.getGroupId().getId());
+            response.setGroupName(item.getGroupId().getGroupName());
+        }
+
+        if(item.getItemClassId()!=null){
+            response.setItemClassId(item.getItemClassId().getItemClassId());
+            response.setItemClassName(item.getItemClassId().getItemClassName());
+        }
+
+        if(item.getItemTypeId()!=null){
+            response.setItemTypeId(item.getItemTypeId().getId());
+            response.setItemTypeName(item.getItemTypeId().getName());
+        }
+
+        if(item.getSectionId()!=null){
+            response.setSectionId(item.getSectionId().getSectionId());
+            response.setSectionName(item.getSectionId().getSectionName());
+        }
+
+        if(item.getDispUnit()!=null){
+            response.setDispUnit(item.getDispUnit().getUnitId());
+            response.setDispUnitName(item.getDispUnit().getUnitName());
+        }
+
+        if(item.getUnitAU()!=null){
+            response.setUnitAU(item.getUnitAU().getUnitId());
+            response.setUnitAuName(item.getUnitAU().getUnitName());
+        }
+        if (item.getHsnCode() != null) {
+            response.setHsnCode(item.getHsnCode().getHsnCode());
+        } else {
+            response.setHsnCode(null);
+            log.warn("HSN is null for StoreItem ID: {}", item.getItemId());
+        }
+
+     //   response.setHsnCode(item.getHsnCode().getHsnCode());
+
+
         return response;
     }
 }

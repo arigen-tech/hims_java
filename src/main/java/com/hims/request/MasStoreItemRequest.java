@@ -13,7 +13,6 @@ public class MasStoreItemRequest {
     private String pvmsNo;
     private String nomenclature;
     private Long dispUnit;
-    private String status;
     private Long unitAU;
     private Integer sectionId;
     private BigDecimal aDispQty;
