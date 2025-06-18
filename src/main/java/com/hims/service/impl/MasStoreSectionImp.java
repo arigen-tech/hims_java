@@ -157,7 +157,6 @@ public class MasStoreSectionImp implements MasStoreSectionService {
             masStoreSection1.setLastChgBy(String.valueOf(currentUser.getUserId()));
             masStoreSection1.setLastChgDate(LocalDate.now());
             masStoreSection1.setLastChgTime(getCurrentTimeFormatted());
-            masStoreSection1.setStatus(masStoreSectionRequest.getStatus());
 
             if (masStoreSectionRequest.getMasItemType() != null) {
                 Optional<MasItemType> masItemType = masItemTypeRepository.findById(masStoreSectionRequest.getMasItemType());
