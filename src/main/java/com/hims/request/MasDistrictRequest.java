@@ -9,7 +9,5 @@ import java.time.Instant;
 @Setter
 public class MasDistrictRequest {
     private String districtName;
-    private String status;
-    private String lasChBy;
     private Long stateId;
 }
