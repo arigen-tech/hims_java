@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @Setter
 @Getter
 public class MasStoreItemResponse {
-    private Integer itemId;
+    private Long itemId;
     private String pvmsNo;
     private String nomenclature;
     private String status;

@@ -12,9 +12,9 @@ public interface MasBrandService {
 
     ApiResponse<MasBrandResponse> addMasBrand(MasBrandRequest masBrandRequest);
 
-    ApiResponse<MasBrandResponse> update(Integer id, MasBrandRequest request);
+    ApiResponse<MasBrandResponse> update(Long id, MasBrandRequest request);
 
-    ApiResponse<MasBrandResponse> findById(Integer id);
+    ApiResponse<MasBrandResponse> findById(Long id);
 
-    ApiResponse<MasBrandResponse> changeMasBrandStatus(Integer id, String status);
+    ApiResponse<MasBrandResponse> changeMasBrandStatus(Long id, String status);
 }

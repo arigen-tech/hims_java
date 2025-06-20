@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Integer> {
+public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long> {
     List<MasStoreItem> findByStatusIgnoreCase(String y);
 
     List<MasStoreItem> findByStatusInIgnoreCase(List<String> y);

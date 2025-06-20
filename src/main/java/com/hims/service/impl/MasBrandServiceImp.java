@@ -77,7 +77,7 @@ public class MasBrandServiceImp implements MasBrandService {
     }
 
     @Override
-    public ApiResponse<MasBrandResponse> update(Integer id, MasBrandRequest request) {
+    public ApiResponse<MasBrandResponse> update(Long id, MasBrandRequest request) {
         Optional<MasBrand> optionalBrand = masBrandRepository.findById(id);
         if (optionalBrand.isEmpty()) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Brand not found", 404);
@@ -97,14 +97,14 @@ public class MasBrandServiceImp implements MasBrandService {
     }
 
     @Override
-    public ApiResponse<MasBrandResponse> findById(Integer id) {
+    public ApiResponse<MasBrandResponse> findById(Long id) {
         return masBrandRepository.findById(id)
                 .map(brand -> ResponseUtils.createSuccessResponse(mapToResponse(brand), new TypeReference<>() {}))
                 .orElseGet(() -> ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Brand not found", 404));
     }
 
     @Override
-    public ApiResponse<MasBrandResponse> changeMasBrandStatus(Integer id, String status) {
+    public ApiResponse<MasBrandResponse> changeMasBrandStatus(Long id, String status) {
         try {
             User currentUser = getCurrentUser();
             if (currentUser == null) {

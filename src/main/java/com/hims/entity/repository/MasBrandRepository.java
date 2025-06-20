@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MasBrandRepository extends JpaRepository<MasBrand,Integer> {
+public interface MasBrandRepository extends JpaRepository<MasBrand,Long> {
     List<MasBrand> findByStatusIgnoreCase(String y);
 
     List<MasBrand> findByStatusInIgnoreCase(List<String> y);

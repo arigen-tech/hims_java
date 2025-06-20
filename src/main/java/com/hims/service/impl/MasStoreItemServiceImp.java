@@ -134,7 +134,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     }
 
     @Override
-    public ApiResponse<MasStoreItemResponse> findById(Integer id) {
+    public ApiResponse<MasStoreItemResponse> findById(Long id) {
         try{
         Optional<MasStoreItem> masStoreItem=masStoreItemRepository.findById(id);
         if (masStoreItem .isPresent()) {
@@ -177,7 +177,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     }
 
     @Override
-    public ApiResponse<MasStoreItemResponse> update(Integer id, MasStoreItemRequest request) {
+    public ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request) {
         try{
         Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(id);
             if (masStoreItem.isEmpty()) {
@@ -269,7 +269,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         }
 
     @Override
-    public ApiResponse<MasStoreItemResponse> changeMasStoreItemStatus(int id, String status) {
+    public ApiResponse<MasStoreItemResponse> changeMasStoreItemStatus(Long id, String status) {
         try {
             Optional<MasStoreItem> masStoreItem= masStoreItemRepository.findById(id);
             if (masStoreItem.isEmpty()) {

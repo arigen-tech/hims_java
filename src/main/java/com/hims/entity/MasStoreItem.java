@@ -15,7 +15,7 @@ public class MasStoreItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "item_id", nullable = false)
-    private Integer itemId;
+    private Long itemId;
 
     @Column(name = "pvms_no", length = 25)
     private String pvmsNo;
@@ -76,7 +76,6 @@ public class MasStoreItem {
 
     @ManyToOne(fetch =  FetchType.EAGER)
     @JoinColumn(name = "hsn_code")
-
     private MasHSN hsnCode;
 
     @Column(name = "re_order_level_dispensary")
