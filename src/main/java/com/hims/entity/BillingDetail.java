@@ -31,7 +31,7 @@ public class BillingDetail {
     private MasServiceCategory serviceCategory;
 
     @NotNull
-    @Column(name = "service_id", nullable = false)
+    @Column(name = "service_id")//, nullable = false)
     private Long serviceId;
 
     @Size(max = 500)
@@ -66,11 +66,11 @@ public class BillingDetail {
     private Instant createdAt;
 
     @NotNull
-    @Column(name = "detail_id", nullable = false)
+    @Column(name = "detail_id")//, nullable = false)
     private Integer detailId;
 
     @NotNull
-    @Column(name = "charge_cost", nullable = false, precision = 10, scale = 2)
+    @Column(name = "charge_cost", precision = 10, scale = 2)//, nullable = false
     private BigDecimal chargeCost;
 
     @Column(name = "created_dt")

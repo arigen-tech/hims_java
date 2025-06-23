@@ -32,8 +32,8 @@ public class DgOrderHd {
     @Column(name = "payment_status", length =1)
     private String paymentStatus;
 
-    @Column(name = "createdby", length = 12)
-    private String createdBy;
+    @Column(name = "createdby")
+    private int createdBy;
 
     @Column(name = "createdon")
     private LocalDate createdOn;

@@ -31,4 +31,19 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
 
     List<Visit> findByHospitalAndPreConsultation(MasHospital hospital,String preConsultation);
+
+    @Query("SELECT COUNT(v.tokenNo) FROM Visit v " +
+            "WHERE v.hospital.id = :hospitalId " +
+            "AND v.department.id = :departmentId " +
+            "AND FUNCTION('DATE', v.visitDate) = CURRENT_DATE")
+    Long countTokensForToday(@Param("hospitalId") Long hospitalId,
+                             @Param("departmentId") Long departmentId);
+
+
+
+
+
+
+
+
 }

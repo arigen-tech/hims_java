@@ -28,7 +28,7 @@ public class DgOrderDt {
     private String orderStatus;
 
     @Column(name = "createdby", length = 100)
-    private String createdBy;
+    private int createdBy;
 
 //    @Column(name = "create_don")
 //    private LocalDate createdOn;
@@ -53,7 +53,7 @@ public class DgOrderDt {
     private int subChargeid;
 
     @Column(name = "main_chargecode_id")
-    private int mainChargecodeId;
+    private long mainChargecodeId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "orderhd_id")

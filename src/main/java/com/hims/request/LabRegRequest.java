@@ -10,5 +10,9 @@ import java.util.List;
 public class LabRegRequest {
     List<LabInvestigationReq> labInvestigationReq;
     List<LabPackegReq> labPackegReqs;
-    private Long PatientId;
+    private Long patientId;
+
+    private Long totalAmount;
+    private Long discountAmount;
+
 }
