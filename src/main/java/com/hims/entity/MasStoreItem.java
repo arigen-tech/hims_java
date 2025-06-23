@@ -154,8 +154,8 @@ public class MasStoreItem {
     @Column(name = "hospital_id")
     private Integer hospitalId;
 
-//    @Column(name = "department_id")
-//    private Integer departmentId;
+    @Column(name = "department_id")
+    private long departmentId;
 //
 //    @Column(name = "manufacturer_id")
 //    private Integer manufacturerId;

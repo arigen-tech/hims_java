@@ -9,6 +9,7 @@ import com.hims.response.MasStoreItemResponse;
 import com.hims.response.MasStoreUnitResponse;
 import com.hims.response.MasTemplateResponse;
 import com.hims.service.MasStoreItemService;
+import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,9 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     private MasHsnRepository masHsnRepository;
 
     @Autowired
+    private AuthUtil authUtil;
+
+    @Autowired
     UserRepo userRepo;
 
     @Autowired
@@ -74,13 +78,23 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
+
+            User users = authUtil.getCurrentUser();
+            Long deptId = authUtil.getCurrentDepartmentId();
+
+            if (users == null || deptId == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "User or Department ID missing", HttpStatus.UNAUTHORIZED.value());
+            }
+
+
             MasStoreItem masStoreItem = new MasStoreItem();
             masStoreItem.setPvmsNo(masStoreItemRequest.getPvmsNo());
             masStoreItem.setNomenclature(masStoreItemRequest.getNomenclature());
             masStoreItem.setStatus("y");
             masStoreItem.setADispQty(masStoreItemRequest.getADispQty());
             masStoreItem.setHospitalId(1);
-
+            masStoreItem.setDepartmentId(deptId);
             masStoreItem.setLastChgBy(currentUser.getUserId());
             masStoreItem.setLastChgDate(LocalDate.now());
             masStoreItem.setLastChgTime(getCurrentTimeFormatted());

@@ -207,6 +207,7 @@ public class AuthServiceImpl implements AuthService {
         if (request.getPassword() == null || request.getPassword().isEmpty()) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "PASSWORD CANNOT BE BLANK", 400);
         }
+        Long departmentId = request.getDepartmentId();
         JwtResponce response;
         try {
             User user = userRepo.findByUserName(request.getUsername());
@@ -235,8 +236,8 @@ public class AuthServiceImpl implements AuthService {
                     .username(userDetails.getUsername())
                     .build();
 
-            TokenWithExpiry accessTokenWithExpiry = helper.generateAccessTokenWithExpiry(user);
-            TokenWithExpiry refreshTokenWithExpiry = helper.generateRefreshTokenWithExpiry(user);
+            TokenWithExpiry accessTokenWithExpiry = helper.generateAccessTokenWithExpiry(user, departmentId);
+            TokenWithExpiry refreshTokenWithExpiry = helper.generateRefreshTokenWithExpiry(user, departmentId);
 
             response = JwtResponce.builder()
                     .jwtToken(accessTokenWithExpiry.getToken())
@@ -246,7 +247,9 @@ public class AuthServiceImpl implements AuthService {
                     .username(userDetails.getUsername())
                     .roleId(user.getRoleId())
                     .hospitalId(user.getHospital().getId())
+                    .departmentId(departmentId)
                     .build();
+
 
 
 
