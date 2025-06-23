@@ -242,6 +242,17 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
+    @Override
+    public ApiResponse<List<UserDepartmentResponse>> getAllUserDepartmentsByUserUserName(String userName) {
+        List<UserDepartment> userDepartments = userDepartmentRepository.findByUser_UserNameAndUser_StatusAndStatus(userName, "y","y");
+
+        List<UserDepartmentResponse> responses = userDepartments.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+    }
+
 
 
 

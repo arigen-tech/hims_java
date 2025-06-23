@@ -907,6 +907,11 @@ public class MasterController {
         return userDepartmentServiceImpl.getAllUserDepartmentsByUserId(id);
     }
 
+    @GetMapping("/user-departments/getByUserName/{userName}")
+    public ApiResponse<List<UserDepartmentResponse>> getAllUserDepartmentsByUserUserName(@PathVariable String userName) {
+        return userDepartmentServiceImpl.getAllUserDepartmentsByUserUserName(userName);
+    }
+
     @PutMapping("/user-departments/addOrUpdateUserDept")
     public ResponseEntity<ApiResponse<String>> addOrUpdateUserDepartment(@RequestBody UserDepartmentRequestOne request) {
         ApiResponse<String> response = userDepartmentServiceImpl.addOrUpdateUserDept(request);
@@ -1165,7 +1170,7 @@ public class MasterController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PutMapping("/masHsn/status/{id}")
+    @PutMapping("/masHSN/status/{id}")
     public ResponseEntity<ApiResponse<MasHsnResponse>> changeMasHsnStatus(@PathVariable String id, @RequestParam String status) {
         ApiResponse<MasHsnResponse> response = masHsnService.changeMasHsnStatus(id, status);
         return new ResponseEntity<>(response, HttpStatus.OK);

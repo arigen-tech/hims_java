@@ -17,4 +17,6 @@ public interface UserDepartmentService {
     ApiResponse<String> addOrUpdateUserDept(UserDepartmentRequestOne request);
 
     ApiResponse<List<UserDepartmentResponse>> getAllUserDepartmentsByUserId(Long userId);
+
+    ApiResponse<List<UserDepartmentResponse>> getAllUserDepartmentsByUserUserName(String userName);
 }
