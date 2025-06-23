@@ -12,6 +12,10 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
 
     List<UserDepartment> findByUser_UserIdAndStatus(Long userId, String status);
 
+    List<UserDepartment> findByUser_UserNameAndUser_StatusAndStatus(String userName, String userStatus, String departmentStatus);
+
+
+
 
 
 }
