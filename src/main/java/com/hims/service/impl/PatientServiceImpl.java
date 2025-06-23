@@ -5,7 +5,9 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
+import com.hims.response.OpdBillingPaymentResponse;
 import com.hims.response.PatientRegFollowUpResp;
+import com.hims.service.BillingService;
 import com.hims.service.PatientService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,8 @@ import java.util.UUID;
 public class PatientServiceImpl implements PatientService {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final String UPLOAD_DIR = "patientImage/";
+    @Autowired
+    BillingService billingService;
     @Autowired
     MasGenderRepository masGenderRepository;
     @Autowired
@@ -414,6 +418,11 @@ public class PatientServiceImpl implements PatientService {
         if (visit.getSessionId() != null) {
             masOpdSessionRepository.findById(visit.getSessionId()).ifPresent(newVisit::setSession);
         }
+
+        //create billing header and detail
+        MasServiceCategory serviceCategory=new MasServiceCategory();
+        MasDiscount discount=new MasDiscount();
+        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(newVisit,serviceCategory,discount);
 
 
         // Save visit

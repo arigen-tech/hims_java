@@ -22,5 +22,5 @@ public class MasStoreSectionResponse {
     private String lastChgBy;
     private Integer hospitalId;
     private Integer masItemType;
-
+    private String masItemTypeName;
 }

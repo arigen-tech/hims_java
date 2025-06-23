@@ -11,11 +11,11 @@ public interface MasStoreItemService {
     ApiResponse<MasStoreItemResponse> addMasStoreItem(MasStoreItemRequest masStoreItemRequest);
 
 
-    ApiResponse<MasStoreItemResponse> findById(Integer id);
+    ApiResponse<MasStoreItemResponse> findById(Long id);
 
     ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag);
 
-    ApiResponse<MasStoreItemResponse> update(Integer id, MasStoreItemRequest request);
+    ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request);
 
-    ApiResponse<MasStoreItemResponse> changeMasStoreItemStatus(int id, String status);
+    ApiResponse<MasStoreItemResponse> changeMasStoreItemStatus(Long id, String status);
 }

@@ -157,7 +157,6 @@ public class MasStoreSectionImp implements MasStoreSectionService {
             masStoreSection1.setLastChgBy(String.valueOf(currentUser.getUserId()));
             masStoreSection1.setLastChgDate(LocalDate.now());
             masStoreSection1.setLastChgTime(getCurrentTimeFormatted());
-            masStoreSection1.setStatus(masStoreSectionRequest.getStatus());
 
             if (masStoreSectionRequest.getMasItemType() != null) {
                 Optional<MasItemType> masItemType = masItemTypeRepository.findById(masStoreSectionRequest.getMasItemType());
@@ -189,7 +188,11 @@ public class MasStoreSectionImp implements MasStoreSectionService {
         response.setLastChgBy(masStoreSection.getLastChgBy());
         response.setHospitalId(masStoreSection.getHospitalId());
         response.setLastChgDate(masStoreSection.getLastChgDate());
-        response.setMasItemType(masStoreSection.getMasItemType().getId());
+        if(masStoreSection.getMasItemType()!=null) {
+            response.setMasItemType(masStoreSection.getMasItemType().getId());
+            response.setMasItemTypeName(masStoreSection.getMasItemType().getName());
+
+        }
         return response;
     }
 }
