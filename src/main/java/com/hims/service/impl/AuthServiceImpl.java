@@ -56,7 +56,8 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private MasEmployeeRepository masEmployeeRepository;
 
-
+    @Autowired
+    private UserDepartmentRepository userDepartmentRepository;
 
     @Autowired
     private MasRoleRepository masRoleRepository;
@@ -207,7 +208,8 @@ public class AuthServiceImpl implements AuthService {
         if (request.getPassword() == null || request.getPassword().isEmpty()) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "PASSWORD CANNOT BE BLANK", 400);
         }
-        Long departmentId = request.getDepartmentId();
+        UserDepartment userDepartmentId = userDepartmentRepository.getById(request.getDepartmentId());
+        long departmentId = userDepartmentId.getDepartment().getId();
         JwtResponce response;
         try {
             User user = userRepo.findByUserName(request.getUsername());
