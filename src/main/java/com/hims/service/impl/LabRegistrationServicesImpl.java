@@ -58,6 +58,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     @Autowired
     UserDepartmentRepository userDepartmentRepository;
     private final BillingDetailRepository billingDetailRepository;
+    @Autowired
+    MasDepartmentRepository masDepartmentRepository;
 
     @Autowired
     MasServiceCategoryRepository masServiceCategoryRepository;
@@ -103,6 +105,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 v.setTokenNo(existingTokens+1);
                 v.setPreConsultation("y");
                 v.setVisitDate(Instant.now());
+               v.setLastChgDate(Instant.now());
+                v.setDepartment(masDepartmentRepository.findById(deapartmentId).get());
                Visit  vId = visitRepository.save(v);
             try {
                 // for investigation  data save hd &dt
@@ -126,6 +130,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     hd.setDiscountId(1);//null
                     hd.setPatientId(patient.get());
                     hd.setVisitId(vId);
+                    hd.setDepartmentId(deapartmentId.intValue());
+                    hd.setLastChgBy(String.valueOf(currentUser.getUserId()));
+
                         DgOrderHd hdId = labHdRepository.save(hd);
                         BillingHeader headerId=BillingHeaderDataSave(hdId,vId,labReq,  currentUser);
 
@@ -141,6 +148,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         dtInvesti.setMainChargecodeId(mainChargeCodeId.getMainChargeCodeID().getChargecodeId());
                         // ht.setPackageId(null);
                         dtInvesti.setAppointmentDate(obj.getAppointmentDate());
+                        dtInvesti.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                        dtInvesti.setLastChgDate(LocalDate.now());
+                        dtInvesti.setBillingStatus("p");
                         DgOrderDt dtId = labDtRepository.save(dtInvesti);
                         BillingDetaiDataSave(headerId,dtId);
                     }
@@ -162,6 +172,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         hd1.setDiscountId(1);//null
                         hd1.setPatientId(patient.get());
                         hd1.setVisitId(vId);
+                        hd1.setDepartmentId(deapartmentId.intValue());
+                        hd1.setLastChgBy(String.valueOf(currentUser.getUserId()));
                         DgOrderHd hdId1=labHdRepository.save(hd1);
                         BillingHeader headerId=BillingHeaderDataSave(hdId1,vId,labReq,  currentUser);
 
@@ -178,47 +190,38 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                              htPkg.setMainChargecodeId(mainChargeCodeId.getMainChargeCodeID().getChargecodeId());
                              htPkg.setPackageId(dgInvestigationPackageRepository.findById(PackegId).get());
                              htPkg.setAppointmentDate(key.getAppointmentDate());
+                             htPkg.setLastChgDate(LocalDate.now());
+                            htPkg.setLastChgBy(String.valueOf(currentUser.getUserId()));
                              DgOrderDt dtId = labDtRepository.save(htPkg);
                             BillingDetaiDataSave(headerId,dtId);
                          }
                     }
                 }
-
                 res.setMsg("Success");
                 return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
             } catch (SDDException e) {
                 return ResponseUtils.createFailureResponse(res, new TypeReference<AppsetupResponse>() {}, e.getMessage(), e.getStatus());
             } catch (Exception e) {
-                return ResponseUtils.createFailureResponse(res, new TypeReference<AppsetupResponse>() {}, "Internal Server Error", 500);
-            }
+                return ResponseUtils.createFailureResponse(res, new TypeReference<AppsetupResponse>() {}, "Internal Server Error", 500);}
         }
-
-
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser) {
-
-
       //  if(!labReq.getLabPackegReqs().isEmpty()) {
             BillingHeader billingHeader = new BillingHeader();
             String orderNum = createInvoices();
             billingHeader.setBillNo(orderNum);// Auto generated
             billingHeader.setPatient(vId.getPatient());
-
             //  Optional<Patient> patientDetails= patientRepository.findById(labReq.getPatientId());
             // billingHeader.setPatientId(Math.toIntExact(labReq.getPatientId()));
             billingHeader.setVisit(vId);
-
             billingHeader.setPatientDisplayName(vId.getPatient().getPatientFn());
             billingHeader.setPatientAge(Integer.parseInt(vId.getPatient().getPatientAge()));
-            ///
             billingHeader.setPatientGender(vId.getPatient().getPatientGender().getGenderName());
             billingHeader.setPatientAddress(vId.getPatient().getPatientAddress1());
             billingHeader.setHospital(currentUser.getHospital());
             billingHeader.setHospitalName(vId.getPatient().getPatientHospital().getHospitalName());
             //billingHeader.setHospital_mobile_no(patientDetails.get);  column is not exist in Patient table
             //billingHeader.setHospital_gstin(patientDetails.get);  column is not exist in Patient table
-
              billingHeader.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY));  ///for which table
-
             billingHeader.setReferredBy(vId.getDoctorName());//few doute
             //billingHeader.setGstn_bill_no("");
             billingHeader.setBillingDate(Instant.now());// what date will Pass  , I am Passing currentdate

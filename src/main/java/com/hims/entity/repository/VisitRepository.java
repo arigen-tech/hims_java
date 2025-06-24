@@ -32,12 +32,19 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     List<Visit> findByHospitalAndPreConsultation(MasHospital hospital,String preConsultation);
 
-    @Query("SELECT COUNT(v.tokenNo) FROM Visit v " +
-            "WHERE v.hospital.id = :hospitalId " +
-            "AND v.department.id = :departmentId " +
-            "AND FUNCTION('DATE', v.visitDate) = CURRENT_DATE")
+    @Query(value = "SELECT COUNT(v.token_no) FROM visit v " +
+            "WHERE v.hospital_id = :hospitalId " +
+            "AND v.department_id = :departmentId " +
+            "AND DATE(v.visit_date) = CURRENT_DATE",
+            nativeQuery = true)
     Long countTokensForToday(@Param("hospitalId") Long hospitalId,
                              @Param("departmentId") Long departmentId);
+//    @Query("SELECT COUNT(v.tokenNo) FROM Visit v " +
+//            "WHERE v.hospital.id = :hospitalId " +
+//            "AND v.department.id = :departmentId " +
+//            "AND FUNCTION('DATE', v.visitDate) = CURRENT_DATE")
+//    Long countTokensForToday(@Param("hospitalId") Long hospitalId,
+//                             @Param("departmentId") Long departmentId);
 
 
 
