@@ -34,12 +34,13 @@ public class BillingServiceImpl implements BillingService {
     private VisitRepository visitRepository;
 
     @Override
+    @Transactional
     public ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount) {
         BillingHeader header=new BillingHeader();
         OpdBillingPaymentResponse response=new OpdBillingPaymentResponse();
         try{
             BigDecimal totalDiscount= BigDecimal.valueOf(0);
-            header.setBillDate(OffsetDateTime.from(Instant.now()));
+            header.setBillDate(OffsetDateTime.now());
             header.setPatient(visit.getPatient());
             header.setPatientDisplayName(visit.getPatient().getPatientFn()+" "+visit.getPatient().getPatientMn()+" "+visit.getPatient().getPatientLn());
             header.setPatientAge(Integer.valueOf(visit.getPatient().getPatientAge()));
@@ -52,15 +53,16 @@ public class BillingServiceImpl implements BillingService {
             header.setHospitalGstin(visit.getHospital().getGstnNo());
             header.setReferredBy(visit.getIniDoctor().getFirstName()+" "+visit.getIniDoctor().getMiddleName()+" "+visit.getIniDoctor().getLastName());
             header.setGstnBillNo("");
-            header.setBillDate(OffsetDateTime.from(Instant.now()));
+            header.setBillDate(OffsetDateTime.now());
             Optional<MasServiceOpd> serviceOpd=masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory);
             if(serviceOpd.isPresent()) {
                 if (discount != null) {
-                    totalDiscount = serviceOpd.get().getBaseTariff().multiply(discount.getDisPercentage().divide(BigDecimal.valueOf(100)));
-                    if(totalDiscount.compareTo(discount.getMaxDiscount()) > 0){
-                        totalDiscount=discount.getMaxDiscount();
+                    if(discount.getDisPercentage()!=null&&discount.getMaxDiscount()!=null){
+                        totalDiscount = serviceOpd.get().getBaseTariff().multiply(discount.getDisPercentage().divide(BigDecimal.valueOf(100)));
+                        if(totalDiscount.compareTo(discount.getMaxDiscount()) > 0){
+                            totalDiscount=discount.getMaxDiscount();
+                        }
                     }
-                    header.setDiscountAmount(totalDiscount);
                 }
                 BigDecimal total=serviceOpd.get().getBaseTariff().subtract(totalDiscount);
                 header.setNetAmount(total);
@@ -68,14 +70,19 @@ public class BillingServiceImpl implements BillingService {
                 header.setTaxTotal(BigDecimal.valueOf(0));
                 header.setTotalPaid(BigDecimal.valueOf(0));
             }
+            header.setDiscountAmount(totalDiscount);
             header.setPaymentStatus("n");
             header.setCreatedBy("");
             header.setUpdatedDt(Instant.now());
             header.setCreatedDt(Instant.now());
             header.setInvoiceNo("");
+            header.setBillNo("");
+            header.setUpdatedAt(OffsetDateTime.now());
+            header.setBillingDate(Instant.now());
             header.setDiscount(discount);
             header.setVisit(visit);
             header.setServiceCategory(serviceCategory);
+            header.setBillingHdId(0);
             BillingHeader savedHeader=billingHeaderRepository.save(header);
             response.setHeader(savedHeader);
             if(savedHeader!=null){
@@ -94,25 +101,27 @@ public class BillingServiceImpl implements BillingService {
 
 
                     if (discount != null) {
-                        totalDiscount = serviceOpd.get().getBaseTariff().multiply(discount.getDisPercentage().divide(BigDecimal.valueOf(100)));
-                        if(totalDiscount.compareTo(discount.getMaxDiscount()) > 0){
-                            totalDiscount=discount.getMaxDiscount();
+                        if(discount.getDisPercentage()!=null&&discount.getMaxDiscount()!=null){
+                            totalDiscount = serviceOpd.get().getBaseTariff().multiply(discount.getDisPercentage().divide(BigDecimal.valueOf(100)));
+                            if(totalDiscount.compareTo(discount.getMaxDiscount()) > 0){
+                                totalDiscount=discount.getMaxDiscount();
+                            }
                         }
-                        detail.setDiscount(totalDiscount);
                     }
+                    detail.setDiscount(totalDiscount);
                     BigDecimal total=serviceOpd.get().getBaseTariff().subtract(totalDiscount);
                     detail.setAmountAfterDiscount(total);
                     detail.setTaxPercent(BigDecimal.valueOf(0));
                     detail.setTaxAmount(BigDecimal.valueOf(0));
                     detail.setNetAmount(total);
-
                     detail.setCreatedAt(Instant.now());
                     detail.setTotal(total);
                 }
                 detail.setInvestigation(null);
-                detail.setCreatedDt(OffsetDateTime.from(Instant.now()));
-                detail.setUpdatedDt(OffsetDateTime.from(Instant.now()));
-//                BillingDetail savedDetail=billingDetailRepository.save(detail);
+                detail.setCreatedDt(OffsetDateTime.now());
+                detail.setUpdatedDt(OffsetDateTime.now());
+                detail.setBillHd(savedHeader);
+                BillingDetail savedDetail=billingDetailRepository.save(detail);
 //                PaymentDetail payment=new PaymentDetail();
                 boolean paymentFlag=false;
 //                try{

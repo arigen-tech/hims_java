@@ -80,130 +80,172 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     @Override
     @Transactional
     public ApiResponse<AppsetupResponse> labReg(LabRegRequest labReq) {
-        //{
-        Long deapartmentId=authUtil.getCurrentDepartmentId();
+        Long departmentId = authUtil.getCurrentDepartmentId();
         User currentUser = authUtil.getCurrentUser();
+
+        AppsetupResponse res = new AppsetupResponse();
+
         if (currentUser == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
-            AppsetupResponse res = new AppsetupResponse();
-            // write logic here for save visit data & generate token
-      //List<UserDepartment> departmentId=  userDepartmentRepository.findByUserId(currentUser.getUserId());
 
-        Long existingTokens =visitRepository.countTokensForToday(currentUser.getHospital().getId(), deapartmentId);
-        System.out.println("existingTokens:" + existingTokens);
-       // currentUser.getHospital();
-            Optional<Patient> patient = patientRepository.findById(labReq.getPatientId());
-            Optional<MasHospital> masHospital= masHospitalRepository.findById(currentUser.getHospital().getId());
-            Visit v=new Visit();
-                v.setPatient(patient.get());
-                v.setVisitStatus("p");
-                v.setVisitStatus("n");
-                v.setBillingStatus("p");
-                v.setHospital(masHospital.get());
-                v.setTokenNo(existingTokens+1);
-                v.setPreConsultation("y");
-                v.setVisitDate(Instant.now());
-               v.setLastChgDate(Instant.now());
-                v.setDepartment(masDepartmentRepository.findById(deapartmentId).get());
-               Visit  vId = visitRepository.save(v);
-            try {
-                // for investigation  data save hd &dt
-                //grouping same date  for header entry..
-                Map<LocalDate, List<LabInvestigationReq>> grouped = labReq.getLabInvestigationReq().stream()
-                        .collect(Collectors.groupingBy(LabInvestigationReq::getAppointmentDate));
-                           //System.out.println("Duplicate appointmentDate found: " + grouped);
-                    grouped.forEach((date, objects) -> {
-                    DgOrderHd hd= new DgOrderHd();
-                    //System.out.println("Date: " + date);
-                   // header entry code  for date
-                    hd.setAppointmentDate(date);
-                    hd.setOrderDate(LocalDate.now());
-                    String orderNum = createInvoice();
-                    hd.setOrderNo(orderNum);
-                    hd.setOrderStatus("p");
-                    hd.setCollectionStatus("p");
-                    hd.setPaymentStatus("p");
-                    hd.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
-                    hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
-                    hd.setDiscountId(1);//null
-                    hd.setPatientId(patient.get());
-                    hd.setVisitId(vId);
-                    hd.setDepartmentId(deapartmentId.intValue());
-                    hd.setLastChgBy(String.valueOf(currentUser.getUserId()));
-
-                        DgOrderHd hdId = labHdRepository.save(hd);
-                        BillingHeader headerId=BillingHeaderDataSave(hdId,vId,labReq,  currentUser);
-
-                    for (LabInvestigationReq obj : objects) {
-                        DgOrderDt dtInvesti = new DgOrderDt();
-                        Optional<DgMasInvestigation> dgMasInvestigation = investigation.findById(obj.getInvestigationId());
-                        dtInvesti.setInvestigationId(dgMasInvestigation.get());
-                        dtInvesti.setOrderhdId(hdId);
-                        dtInvesti.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
-
-                        DgMasInvestigation mainChargeCodeId= investigation.findByinvestigationId(obj.getInvestigationId());
-
-                        dtInvesti.setMainChargecodeId(mainChargeCodeId.getMainChargeCodeID().getChargecodeId());
-                        // ht.setPackageId(null);
-                        dtInvesti.setAppointmentDate(obj.getAppointmentDate());
-                        dtInvesti.setLastChgBy(String.valueOf(currentUser.getUserId()));
-                        dtInvesti.setLastChgDate(LocalDate.now());
-                        dtInvesti.setBillingStatus("p");
-                        DgOrderDt dtId = labDtRepository.save(dtInvesti);
-                        BillingDetaiDataSave(headerId,dtId);
-                    }
-                   // System.out.println();
-                });
-             //   / for Package data save hd &dt
-                if(!labReq.getLabPackegReqs().isEmpty()) {
-                    for (LabPackegReq key : labReq.getLabPackegReqs()) {
-                        DgOrderHd hd1= new DgOrderHd();
-                        hd1.setAppointmentDate(key.getAppointmentDate());
-                        hd1.setOrderDate(LocalDate.now());
-                        String formattedOrderNo =createInvoice();
-                        hd1.setOrderNo(formattedOrderNo);
-                        hd1.setOrderStatus("p");
-                        hd1.setCollectionStatus("p");
-                        hd1.setPaymentStatus("p");
-                        hd1.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
-                        hd1.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
-                        hd1.setDiscountId(1);//null
-                        hd1.setPatientId(patient.get());
-                        hd1.setVisitId(vId);
-                        hd1.setDepartmentId(deapartmentId.intValue());
-                        hd1.setLastChgBy(String.valueOf(currentUser.getUserId()));
-                        DgOrderHd hdId1=labHdRepository.save(hd1);
-                        BillingHeader headerId=BillingHeaderDataSave(hdId1,vId,labReq,  currentUser);
-
-                        Long PackegId = key.getPackegId();
-                        List<PackageInvestigationMapping> investi= packageInvestigationMappingRepository.findByPackageId(dgInvestigationPackageRepository.findById(PackegId).get());
-                        for( int i=0;i<investi.size();i++){
-                             DgOrderDt htPkg= new DgOrderDt();
-                             DgMasInvestigation dg = investi.get(i).getInvestId();
-                             htPkg.setOrderhdId(hdId1);
-                             htPkg.setInvestigationId(dg);
-                             htPkg.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
-
-                            DgMasInvestigation mainChargeCodeId= investigation.findByinvestigationId(dg.getInvestigationId());
-                             htPkg.setMainChargecodeId(mainChargeCodeId.getMainChargeCodeID().getChargecodeId());
-                             htPkg.setPackageId(dgInvestigationPackageRepository.findById(PackegId).get());
-                             htPkg.setAppointmentDate(key.getAppointmentDate());
-                             htPkg.setLastChgDate(LocalDate.now());
-                            htPkg.setLastChgBy(String.valueOf(currentUser.getUserId()));
-                             DgOrderDt dtId = labDtRepository.save(htPkg);
-                            BillingDetaiDataSave(headerId,dtId);
-                         }
-                    }
-                }
-                res.setMsg("Success");
-                return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
-            } catch (SDDException e) {
-                return ResponseUtils.createFailureResponse(res, new TypeReference<AppsetupResponse>() {}, e.getMessage(), e.getStatus());
-            } catch (Exception e) {
-                return ResponseUtils.createFailureResponse(res, new TypeReference<AppsetupResponse>() {}, "Internal Server Error", 500);}
+        if (labReq.getPatientId() == null) {
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
+                    "Patient ID must not be null", HttpStatus.BAD_REQUEST.value());
         }
+
+        if (departmentId == null) {
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
+                    "Current department ID is null", HttpStatus.BAD_REQUEST.value());
+        }
+
+        MasDepartment department = masDepartmentRepository.findById(departmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid department ID: " + departmentId));
+
+        Patient patient = patientRepository.findById(labReq.getPatientId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid patient ID: " + labReq.getPatientId()));
+
+        MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
+
+        Long existingTokens = visitRepository.countTokensForToday(currentUser.getHospital().getId(), departmentId);
+
+        Visit visit = new Visit();
+        visit.setPatient(patient);
+        visit.setVisitStatus("n");
+        visit.setBillingStatus("p");
+        visit.setHospital(masHospital);
+        visit.setTokenNo(existingTokens + 1);
+        visit.setPreConsultation("y");
+        visit.setVisitDate(Instant.now());
+        visit.setLastChgDate(Instant.now());
+        visit.setDepartment(department);
+        Visit savedVisit = visitRepository.save(visit);
+
+        try {
+            // Validate all investigation appointment dates
+            for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {
+                if (inv.getAppointmentDate() == null) {
+                    throw new IllegalArgumentException("Investigation appointment date must not be null for investigationId: " + inv.getInvestigationId());
+                }
+            }
+
+            // Group investigations by appointment date (safely)
+            Map<LocalDate, List<LabInvestigationReq>> grouped = labReq.getLabInvestigationReq().stream()
+                    .filter(req -> req.getAppointmentDate() != null)
+                    .collect(Collectors.groupingBy(LabInvestigationReq::getAppointmentDate));
+
+            for (Map.Entry<LocalDate, List<LabInvestigationReq>> entry : grouped.entrySet()) {
+                LocalDate date = entry.getKey();
+                List<LabInvestigationReq> investigations = entry.getValue();
+
+                DgOrderHd hd = new DgOrderHd();
+                hd.setAppointmentDate(date);
+                hd.setOrderDate(LocalDate.now());
+                hd.setOrderNo(createInvoice());
+                hd.setOrderStatus("p");
+                hd.setCollectionStatus("p");
+                hd.setPaymentStatus("p");
+                hd.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
+                hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
+                hd.setDiscountId(1);
+                hd.setPatientId(patient);
+                hd.setVisitId(savedVisit);
+                hd.setDepartmentId(departmentId.intValue());
+                hd.setLastChgBy(String.valueOf(currentUser.getUserId()));
+
+                DgOrderHd savedHd = labHdRepository.save(hd);
+                BillingHeader headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser);
+
+                for (LabInvestigationReq inv : investigations) {
+                    if (inv.getInvestigationId() == null) {
+                        throw new IllegalArgumentException("Investigation ID must not be null");
+                    }
+
+                    DgMasInvestigation invEntity = investigation.findById(inv.getInvestigationId())
+                            .orElseThrow(() -> new IllegalArgumentException("Invalid Investigation ID: " + inv.getInvestigationId()));
+
+                    DgOrderDt dt = new DgOrderDt();
+                    dt.setInvestigationId(invEntity);
+                    dt.setOrderhdId(savedHd);
+                    dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
+                    dt.setMainChargecodeId(invEntity.getMainChargeCodeID().getChargecodeId());
+                    dt.setAppointmentDate(inv.getAppointmentDate());
+                    dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                    dt.setLastChgDate(LocalDate.now());
+                    dt.setBillingStatus("p");
+
+                    DgOrderDt savedDt = labDtRepository.save(dt);
+                    BillingDetaiDataSave(headerId, savedDt);
+                }
+            }
+
+            // Handle Lab Packages
+            for (LabPackegReq pkg : labReq.getLabPackegReqs()) {
+                if (pkg.getPackegId() == null) {
+                    throw new IllegalArgumentException("Package ID must not be null");
+                }
+
+                if (pkg.getAppointmentDate() == null) {
+                    throw new IllegalArgumentException("Package appointment date must not be null");
+                }
+
+                DgInvestigationPackage pack = dgInvestigationPackageRepository.findById(pkg.getPackegId())
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid package ID: " + pkg.getPackegId()));
+
+                List<PackageInvestigationMapping> mappings = packageInvestigationMappingRepository.findByPackageId(pack);
+
+                DgOrderHd hd = new DgOrderHd();
+                hd.setAppointmentDate(pkg.getAppointmentDate());
+                hd.setOrderDate(LocalDate.now());
+                hd.setOrderNo(createInvoice());
+                hd.setOrderStatus("p");
+                hd.setCollectionStatus("p");
+                hd.setPaymentStatus("p");
+                hd.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
+                hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
+                hd.setDiscountId(1);
+                hd.setPatientId(patient);
+                hd.setVisitId(savedVisit);
+                hd.setDepartmentId(departmentId.intValue());
+                hd.setLastChgBy(String.valueOf(currentUser.getUserId()));
+
+                DgOrderHd savedHd = labHdRepository.save(hd);
+                BillingHeader headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser);
+
+                for (PackageInvestigationMapping map : mappings) {
+                    DgMasInvestigation inv = map.getInvestId();
+
+                    DgOrderDt dt = new DgOrderDt();
+                    dt.setOrderhdId(savedHd);
+                    dt.setInvestigationId(inv);
+                    dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
+                    dt.setMainChargecodeId(inv.getMainChargeCodeID().getChargecodeId());
+                    dt.setPackageId(pack);
+                    dt.setAppointmentDate(pkg.getAppointmentDate());
+                    dt.setLastChgDate(LocalDate.now());
+                    dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
+
+                    DgOrderDt savedDt = labDtRepository.save(dt);
+                    BillingDetaiDataSave(headerId, savedDt);
+                }
+            }
+
+            res.setMsg("Success");
+            return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
+
+        } catch (SDDException e) {
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
+        } catch (Exception e) {
+            e.printStackTrace(); // log exception for debugging
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
+        }
+    }
+
+
+
+
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser) {
       //  if(!labReq.getLabPackegReqs().isEmpty()) {
             BillingHeader billingHeader = new BillingHeader();
