@@ -9,8 +9,11 @@ import com.hims.response.OpdBillingPaymentResponse;
 import com.hims.response.PatientRegFollowUpResp;
 import com.hims.service.BillingService;
 import com.hims.service.PatientService;
+import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,6 +38,7 @@ import java.util.UUID;
 public class PatientServiceImpl implements PatientService {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final String UPLOAD_DIR = "patientImage/";
+    private static final Logger log = LoggerFactory.getLogger(PatientServiceImpl.class);
     @Autowired
     BillingService billingService;
     @Autowired
@@ -71,6 +75,9 @@ public class PatientServiceImpl implements PatientService {
     private OpdPatientDetailRepository opdPatientDetailRepository;
     @Autowired
     private MasServiceCategoryRepository masServiceCategoryRepository;
+
+    @Autowired
+    private AuthUtil authUtil;
 
     @Override
     public ApiResponse<PatientRegFollowUpResp> registerPatientWithOpd(PatientRequest request, OpdPatientDetailRequest opdPatientDetailRequest, VisitRequest visit) {
@@ -213,7 +220,12 @@ public class PatientServiceImpl implements PatientService {
 
     private Patient savePatient(PatientRequest request, boolean followUp) {
 
-        User loggedInUser=userRepository.findByUserName(request.getLastChgBy());
+//        User loggedInUser=userRepository.findByUserName(request.getLastChgBy());
+        User currentUser = authUtil.getCurrentUser();
+        if (currentUser == null){
+            log.info("current users not found");
+        }
+
         Patient patient = new Patient();
 
         patient.setPatientFn(request.getPatientFn());
@@ -245,7 +257,7 @@ public class PatientServiceImpl implements PatientService {
         patient.setRegDate(request.getRegDate());
         patient.setCreatedOn(Instant.now());
         patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(loggedInUser.getFirstName()+" "+loggedInUser.getMiddleName()+" "+loggedInUser.getLastName());
+        patient.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
 
         // Fetch and set related entities using IDs
 
