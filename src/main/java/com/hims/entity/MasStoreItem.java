@@ -1,5 +1,6 @@
 package com.hims.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.NotFound;
@@ -10,11 +11,13 @@ import java.time.LocalDate;
 
 @Entity
 @Data
-@Table(name="mas_store_item")
+@Table(name = "mas_store_item")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MasStoreItem {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "item_id", nullable = false)
+    @Column(name = "item_id")
     private Long itemId;
 
     @Column(name = "pvms_no", length = 25)
@@ -41,41 +44,53 @@ public class MasStoreItem {
     @Column(name = "hospital_id")
     private Integer hospitalId;
 
-//    @Column(name = "department_id")
-//    private Integer departmentId;
-
-    @ManyToOne(fetch =  FetchType.LAZY)
+    // Mapping 1: Dispensing Unit
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dispensing_unit")
-
+    @NotFound(action = NotFoundAction.IGNORE)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private MasStoreUnit dispUnit;
 
-    @ManyToOne(fetch =  FetchType.LAZY)
+    // Mapping 2: Unit AU
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unit_au")
-
+    @NotFound(action = NotFoundAction.IGNORE)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private MasStoreUnit unitAU;
 
-    @ManyToOne(fetch =  FetchType.LAZY)
+    // Mapping 3: Section
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id")
-
+    @NotFound(action = NotFoundAction.IGNORE)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private MasStoreSection sectionId;
 
-    @ManyToOne(fetch =  FetchType.LAZY)
+    // Mapping 4: Item Type
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_type_id")
-
+    @NotFound(action = NotFoundAction.IGNORE)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private MasItemType itemTypeId;
 
-    @ManyToOne(fetch =  FetchType.LAZY)
+    // Mapping 5: Group
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
-
+    @NotFound(action = NotFoundAction.IGNORE)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private MasStoreGroup groupId;
 
-    @ManyToOne(fetch =  FetchType.LAZY,optional = false)
+    // Mapping 6: Item Class
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_class_id")
-    @org.hibernate.annotations.NotFound(action = NotFoundAction.IGNORE)
+    @NotFound(action = NotFoundAction.IGNORE)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private MasItemClass itemClassId;
 
-    @ManyToOne(fetch =  FetchType.EAGER)
+    // Mapping 7: HSN Code
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hsn_code")
+    @NotFound(action = NotFoundAction.IGNORE)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private MasHSN hsnCode;
 
     @Column(name = "re_order_level_dispensary")
@@ -83,8 +98,4 @@ public class MasStoreItem {
 
     @Column(name = "re_order_level_store")
     private Integer reOrderLevelStore;
-
-
-
-
 }

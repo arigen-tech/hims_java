@@ -1141,6 +1141,16 @@ public class MasterController {
         ApiResponse<MasStoreItemResponse> response = masStoreItemService.changeMasStoreItemStatus(id, status);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @GetMapping("/masStoreItem/getByCode/{code}")
+    public ResponseEntity<ApiResponse<MasStoreItemResponse>> getMasStoreItemById(@PathVariable String code) {
+        ApiResponse<MasStoreItemResponse> response = masStoreItemService.findByCode(code);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/masStoreItem2/getAll/{flag}")
+    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(@PathVariable int flag) {
+        return masStoreItemService.getAllMasStore(flag);
+    }
+
 
 
     //    ================================Mas HSN  Controller================================//

@@ -9,6 +9,7 @@ import java.time.LocalDate;
 
 @Setter
 @Getter
+
 public class MasStoreItemResponse {
     private Long itemId;
     private String pvmsNo;
@@ -35,6 +36,7 @@ public class MasStoreItemResponse {
     private String itemTypeName;
     private String groupName;
     private String itemClassName;
+    private BigDecimal hsnGstPercent;
 
 
 
