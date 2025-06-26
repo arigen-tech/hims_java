@@ -19,5 +19,5 @@ public interface OpeningBalanceEntryService {
 
     OpeningBalanceEntryResponse getDetailsById(Long id);
 
-    ApiResponse<OpeningBalanceEntryResponse> createAndUpdateStatus(OpeningBalanceEntryRequest request, String status);
+    ApiResponse<OpeningBalanceEntryResponse> createAndUpdateStatus(OpeningBalanceEntryRequest request);
 }

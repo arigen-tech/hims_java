@@ -244,7 +244,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     }
 
     @Override
-    public ApiResponse<OpeningBalanceEntryResponse> createAndUpdateStatus(OpeningBalanceEntryRequest request, String status) {
+    public ApiResponse<OpeningBalanceEntryResponse> createAndUpdateStatus(OpeningBalanceEntryRequest request) {
         ApiResponse<OpeningBalanceEntryResponse> createResponse = this.add(request);
         updateByStatus(createResponse .getResponse().getBalanceMId(), "p");
         return ResponseUtils.createSuccessResponse(createResponse.getResponse(), new TypeReference<>() {});

@@ -31,7 +31,7 @@ public class OpeningBalanceEntryController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/updateById/{id}")
     public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> updateOpeningBalance(@PathVariable Long id,
             @RequestBody OpeningBalanceEntryRequest openingBalanceEntryRequest) {
         return ResponseEntity.ok(openingBalanceEntryService.update(id,openingBalanceEntryRequest));
@@ -44,17 +44,18 @@ public class OpeningBalanceEntryController {
     @GetMapping("/list/{status}")
     public ResponseEntity<List<OpeningBalanceEntryResponse>> getListByStatus(@PathVariable String status) {
         return ResponseEntity.ok(openingBalanceEntryService.getListByStatus(status));
-    } @GetMapping("/{id}")
+
+    }
+    @GetMapping("getDetailsById/{id}")
     public ResponseEntity<OpeningBalanceEntryResponse> getDetailsById(@PathVariable Long id) {
         return ResponseEntity.ok(openingBalanceEntryService.getDetailsById(id));
     }
-    @PostMapping("/create-and-update-status/{status}")
+    @PostMapping("/submit")
     public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> createAndUpdateStatus(
-            @RequestBody OpeningBalanceEntryRequest request,
-            @PathVariable String status) {
-        ApiResponse<OpeningBalanceEntryResponse> response =openingBalanceEntryService.createAndUpdateStatus(request, status);
+            @RequestBody OpeningBalanceEntryRequest request
+            ) {
+        ApiResponse<OpeningBalanceEntryResponse> response =openingBalanceEntryService.createAndUpdateStatus(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
-
     }
 
 
