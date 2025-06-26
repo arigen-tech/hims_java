@@ -258,6 +258,7 @@ public class PatientServiceImpl implements PatientService {
         patient.setCreatedOn(Instant.now());
         patient.setUpdatedOn(Instant.now());
         patient.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+        patient.setPatientHospital(currentUser.getHospital());
 
         // Fetch and set related entities using IDs
 
