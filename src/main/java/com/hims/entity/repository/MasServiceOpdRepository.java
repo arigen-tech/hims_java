@@ -13,7 +13,7 @@ public interface MasServiceOpdRepository extends JpaRepository<MasServiceOpd, Lo
 
 //    Optional<MasServiceOpd> findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(MasHospital hospital, User doctor, MasDepartment department, MasServiceCategory serviceCategory);
 
-    @Query("SELECT a FROM MasServiceOpd a WHERE a.hospitalId = :hospital AND a.doctorId = :doctorId AND a.departmentId = :department AND a.serviceCategory = :serviceCat")
+    @Query("SELECT a FROM MasServiceOpd a WHERE a.hospitalId = :hospital AND a.doctorId = :doctor AND a.departmentId = :department AND a.serviceCategory = :serviceCat")
     Optional<MasServiceOpd> findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(@Param("hospital") MasHospital hospital,
                                       @Param("doctor") User doctor,
                                       @Param("department") MasDepartment department,

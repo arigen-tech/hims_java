@@ -112,7 +112,7 @@ public class BillingHeader {
     @Column(name = "updated_dt")
     private Instant updatedDt;
 
-    @NotNull
+
     @Column(name = "billing_hd_id", nullable = false)
     private Integer billingHdId;
 
@@ -130,9 +130,9 @@ public class BillingHeader {
     @JoinColumn(name = "discount_id")
     private MasDiscount discount;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "hdorder_id", nullable = false)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hdorder_id")
     private DgOrderHd hdorder;
 
     @NotNull

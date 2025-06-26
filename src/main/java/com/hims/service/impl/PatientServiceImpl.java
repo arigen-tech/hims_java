@@ -69,6 +69,8 @@ public class PatientServiceImpl implements PatientService {
     private PatientRepository patientRepository;
     @Autowired
     private OpdPatientDetailRepository opdPatientDetailRepository;
+    @Autowired
+    private MasServiceCategoryRepository masServiceCategoryRepository;
 
     @Override
     public ApiResponse<PatientRegFollowUpResp> registerPatientWithOpd(PatientRequest request, OpdPatientDetailRequest opdPatientDetailRequest, VisitRequest visit) {
@@ -418,15 +420,14 @@ public class PatientServiceImpl implements PatientService {
         if (visit.getSessionId() != null) {
             masOpdSessionRepository.findById(visit.getSessionId()).ifPresent(newVisit::setSession);
         }
-
-        //create billing header and detail
-        MasServiceCategory serviceCategory=new MasServiceCategory();
-        MasDiscount discount=new MasDiscount();
-        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(newVisit,serviceCategory,discount);
-
-
         // Save visit
-        return visitRepository.save(newVisit);
+        Visit savedVisit=visitRepository.save(newVisit);
+        //create billing header and detail
+        Optional<MasServiceCategory> serviceCategory=masServiceCategoryRepository.findBySacCode("998515");
+        MasDiscount discount=new MasDiscount();
+        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory.get(),null);
+
+        return savedVisit;
     }
     public static Instant[] calculateTokenTimeAsInstant(
             String startTimeStr,

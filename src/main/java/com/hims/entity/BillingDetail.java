@@ -83,13 +83,13 @@ public class BillingDetail {
     private OffsetDateTime updatedDt;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "billing_hd_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billing_hd_id")
     private BillingHeader billingHd;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "investigation_id", nullable = false)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "investigation_id")
     private DgMasInvestigation investigation;
 
     @ManyToOne(fetch = FetchType.LAZY)
