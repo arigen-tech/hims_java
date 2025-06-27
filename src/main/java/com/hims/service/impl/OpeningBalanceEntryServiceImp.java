@@ -73,7 +73,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                    "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
         }
         StoreBalanceHd hd = new StoreBalanceHd();
         MasDepartment depObj = masDepartmentRepository.getById(openingBalanceEntryRequest.getDepartmentId());
@@ -102,12 +102,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
             }
             dt.setItemId(masStoreItem.get());
-            Optional<MasHSN> masHSN = masHsnRepository.findByHsnCode(masStoreItem.get().getHsnCode());
-            if (masHSN.isEmpty()) {
-                return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
-
-            }
-            dt.setHsnCode( masHSN.get());
+            MasHSN hsnObj = masStoreItem.get().getHsnCode();
+            dt.setHsnCode( hsnObj);
             dt.setGstPercent(dtRequest.getGstPercent());
             dt.setBatchNo(dtRequest.getBatchNo());
             dt.setManufactureDate(dtRequest.getManufactureDate());

@@ -52,16 +52,16 @@ public class StoreBalanceDt {
     @JoinColumn(name = "hsn_code")
     private MasHSN hsnCode;
 
-    @Column(name = "base_rate_per_unit",  precision = 10, scale = 2)
+    @Column(name = "base_rate_per_unit",  precision = 10, scale = 2,insertable = false, updatable = false)
     private BigDecimal baseRatePerUnit;
 
-    @Column(name = "gst_amount_per_unit", precision = 10, scale = 2)
+    @Column(name = "gst_amount_per_unit", precision = 10, scale = 2,insertable = false, updatable = false)
     private BigDecimal gstAmountPerUnit;
 
-    @Column(name = "total_purchase_cost", precision = 12, scale = 2)
+    @Column(name = "total_purchase_cost", precision = 12, scale = 2,insertable = false, updatable = false)
     private BigDecimal totalPurchaseCost;
 
-    @Column(name = "total_mrp_value", precision = 12, scale = 2)
+    @Column(name = "total_mrp_value", precision = 12, scale = 2,insertable = false, updatable = false)
     private BigDecimal totalMrpValue;
 
     @ManyToOne(fetch = FetchType.EAGER)
