@@ -1124,7 +1124,7 @@ public class MasterController {
     }
 
     @GetMapping("/masStoreItem/getAll/{flag}")
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(@PathVariable int flag) {
+    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStoreItem(@PathVariable int flag) {
         return masStoreItemService.getAllMasStoreItem(flag);
     }
 

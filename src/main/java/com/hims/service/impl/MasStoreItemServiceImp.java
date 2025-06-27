@@ -153,7 +153,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     }
 
     @Override
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag) {
+    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStoreItem(int flag) {
 
         List<MasStoreItem> masStoreItems;
         if (flag == 1) {
@@ -165,14 +165,12 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             }, "Invalid flag value. Use 0 or 1.", 400);
         }
 
-        List<MasStoreItemResponse> responses = masStoreItems.stream()
-                .map(this::convertToResponse)
+        List<MasStoreItemResponse2> responses = masStoreItems.stream()
+                .map(this::convertToResponse2)
                 .collect(Collectors.toList());
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
         });
-
-
     }
 
     @Override
@@ -364,39 +362,39 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setLastChgTime(item.getLastChgTime());
         response.setHospitalId(item.getHospitalId());
         response.setADispQty(item.getADispQty());
-        if (item.getGroupId() != null) {
-            response.setGroupId(item.getGroupId().getId());
-            response.setGroupName(item.getGroupId().getGroupName());
-        }
+      //  if (item.getGroupId() != null) {
+            response.setGroupId(item.getGroupId()!=null?item.getGroupId().getId():null);
+            response.setGroupName(item.getGroupId()!=null?item.getGroupId().getGroupName():null);
+       // }
 
-        if (item.getItemClassId() != null) {
-            response.setItemClassId(item.getItemClassId().getItemClassId());
-            response.setItemClassName(item.getItemClassId().getItemClassName());
-        }
+      //  if (item.getItemClassId() != null) {
+            response.setItemClassId(item.getItemClassId()!=null?item.getItemClassId().getItemClassId():null);
+            response.setItemClassName(item.getItemClassId()!=null?item.getItemClassId().getItemClassName():null);
+       // }
 
-        if (item.getItemTypeId() != null) {
-            response.setItemTypeId(item.getItemTypeId().getId());
-            response.setItemTypeName(item.getItemTypeId().getName());
-        }
+       // if (item.getItemTypeId() != null) {
+            response.setItemTypeId(item.getItemTypeId()!=null?item.getItemTypeId().getId():null);
+            response.setItemTypeName(item.getItemTypeId()!=null?item.getItemTypeId().getName():null);
+       // }
 
-        if (item.getSectionId() != null) {
-            response.setSectionId(item.getSectionId().getSectionId());
-            response.setSectionName(item.getSectionId().getSectionName());
-        }
+       // if (item.getSectionId() != null) {
+            response.setSectionId(item.getSectionId()!=null?item.getSectionId().getSectionId():null);
+            response.setSectionName(item.getSectionId()!=null?item.getSectionId().getSectionName():null);
+      //  }
 
-        if (item.getDispUnit() != null) {
-            response.setDispUnit(item.getDispUnit().getUnitId());
-            response.setDispUnitName(item.getDispUnit().getUnitName());
-        }
+        //if (item.getDispUnit() != null) {
+            response.setDispUnit(item.getDispUnit() !=null?item.getDispUnit().getUnitId():null);
+            response.setDispUnitName(item.getDispUnit()!=null?item.getDispUnit().getUnitName():null);
+       // }
 
-        if (item.getUnitAU() != null) {
-            response.setUnitAU(item.getUnitAU().getUnitId());
-            response.setUnitAuName(item.getUnitAU().getUnitName());
-        }
-        if (item.getHsnCode() != null) {
-            response.setHsnCode(item.getHsnCode().getHsnCode());
-            response.setHsnGstPercent(item.getHsnCode().getGstRate());
-        }
+      //  if (item.getUnitAU() != null) {
+            response.setUnitAU(item.getUnitAU()!=null?item.getUnitAU().getUnitId():null);
+            response.setUnitAuName(item.getUnitAU()!=null?item.getUnitAU().getUnitName():null);
+       // }
+       // if (item.getHsnCode() != null) {
+            response.setHsnCode(item.getHsnCode()!=null?item.getHsnCode().getHsnCode():null);
+            response.setHsnGstPercent(item.getHsnCode()!=null?item.getHsnCode().getGstRate():null);
+       // }
         return response;
     }
 
@@ -405,10 +403,10 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setId(item.getItemId());
         response.setCode(item.getPvmsNo());
         response.setName(item.getNomenclature());
-        response.setUnit(item.getUnitAU().getUnitName());
-        response.setDispUnit(item.getDispUnit().getUnitName());
-        response.setHsnGstPercentage(item.getHsnCode().getGstRate());
-        response.setHsnCode(item.getHsnCode().getHsnCode());
+        response.setUnit(item.getUnitAU()!=null?item.getUnitAU().getUnitName():null);
+        response.setDispUnit(item.getDispUnit()!=null?item.getUnitAU().getUnitName():null);
+        response.setHsnGstPercentage(item.getHsnCode()!=null?item.getHsnCode().getGstRate():null);
+        response.setHsnCode(item.getHsnCode()!=null?item.getHsnCode().getHsnCode():null);
         return response;
     }
 
