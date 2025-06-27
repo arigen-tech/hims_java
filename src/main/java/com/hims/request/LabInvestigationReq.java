@@ -11,4 +11,5 @@ import java.util.Date;
 public class LabInvestigationReq {
     private Long investigationId;
     private LocalDate appointmentDate;
+    private boolean checkStatus;
 }

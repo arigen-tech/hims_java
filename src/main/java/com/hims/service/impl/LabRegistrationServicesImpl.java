@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -110,27 +109,26 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
 
         Long existingTokens = visitRepository.countTokensForToday(currentUser.getHospital().getId(), departmentId);
-
+        try {
         Visit visit = new Visit();
         visit.setPatient(patient);
         visit.setVisitStatus("n");
         visit.setBillingStatus("p");
         visit.setHospital(masHospital);
         visit.setTokenNo(existingTokens + 1);
-        visit.setPreConsultation("y");
+       // visit.setPreConsultation("y");
         visit.setVisitDate(Instant.now());
         visit.setLastChgDate(Instant.now());
         visit.setDepartment(department);
         Visit savedVisit = visitRepository.save(visit);
 
-        try {
+
             // Validate all investigation appointment dates
             for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {
                 if (inv.getAppointmentDate() == null) {
                     throw new IllegalArgumentException("Investigation appointment date must not be null for investigationId: " + inv.getInvestigationId());
                 }
             }
-
             // Group investigations by appointment date (safely)
             Map<LocalDate, List<LabInvestigationReq>> grouped = labReq.getLabInvestigationReq().stream()
                     .filter(req -> req.getAppointmentDate() != null)
@@ -156,8 +154,18 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setLastChgBy(String.valueOf(currentUser.getUserId()));
 
                 DgOrderHd savedHd = labHdRepository.save(hd);
-                BillingHeader headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser);
 
+                boolean flag=false;
+                for (LabInvestigationReq req:investigations){
+                    if(req.isCheckStatus()){
+                        flag=true;
+                        break;
+                    }
+                }
+                BillingHeader headerId=new BillingHeader();
+                if(flag){
+                     headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser);
+                }
                 for (LabInvestigationReq inv : investigations) {
                     if (inv.getInvestigationId() == null) {
                         throw new IllegalArgumentException("Investigation ID must not be null");
@@ -177,7 +185,10 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     dt.setBillingStatus("p");
 
                     DgOrderDt savedDt = labDtRepository.save(dt);
-                    BillingDetaiDataSave(headerId, savedDt);
+                    if(inv.isCheckStatus()){
+                        BillingDetaiDataSave(headerId, savedDt);
+                    }
+
                 }
             }
 
@@ -186,11 +197,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 if (pkg.getPackegId() == null) {
                     throw new IllegalArgumentException("Package ID must not be null");
                 }
-
                 if (pkg.getAppointmentDate() == null) {
                     throw new IllegalArgumentException("Package appointment date must not be null");
                 }
-
                 DgInvestigationPackage pack = dgInvestigationPackageRepository.findById(pkg.getPackegId())
                         .orElseThrow(() -> new IllegalArgumentException("Invalid package ID: " + pkg.getPackegId()));
 
@@ -212,7 +221,10 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setLastChgBy(String.valueOf(currentUser.getUserId()));
 
                 DgOrderHd savedHd = labHdRepository.save(hd);
-                BillingHeader headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser);
+                BillingHeader headerId =new BillingHeader() ;
+                if(pkg.isCheckStatus()){
+                     headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser);
+                }
 
                 for (PackageInvestigationMapping map : mappings) {
                     DgMasInvestigation inv = map.getInvestId();
@@ -225,13 +237,16 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     dt.setPackageId(pack);
                     dt.setAppointmentDate(pkg.getAppointmentDate());
                     dt.setLastChgDate(LocalDate.now());
+                    dt.setBillingStatus("p");
                     dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
 
                     DgOrderDt savedDt = labDtRepository.save(dt);
-                    BillingDetaiDataSave(headerId, savedDt);
+                   // BillingDetaiDataSave(headerId, savedDt);
+                }
+                if(pkg.isCheckStatus()) {
+                    BillingDetaiDataSavePackage(headerId, pack);
                 }
             }
-
             res.setMsg("Success");
             return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
 
@@ -242,10 +257,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
         }
     }
-
-
-
-
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser) {
       //  if(!labReq.getLabPackegReqs().isEmpty()) {
             BillingHeader billingHeader = new BillingHeader();
@@ -300,6 +311,27 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         //not null column
        // billingDetail.setDetailId();
        // billingDetail.setChargeCost();
+        // billingDetail.setOpdService(getOpdService().getId());
+        return  billingDetailRepository.save(billingDetail);
+    }
+
+
+    private BillingDetail  BillingDetaiDataSavePackage(BillingHeader bhdId, DgInvestigationPackage pack){
+        ///  Billing details
+        BillingDetail billingDetail = new BillingDetail();
+        billingDetail.setBillingHd(bhdId);
+        billingDetail.setBillHd(bhdId);
+        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY));//pass from property file..
+
+        billingDetail.setItemName(pack.getPackName()) ;  // investigation or packeg  name to be store
+        ///  billingDetail.set
+        //billingDetail.setInvestigation(dtId.getInvestigationId());
+        billingDetail.setPackageField(pack);
+        billingDetail.setCreatedDt(OffsetDateTime.now());
+        billingDetail.setUpdatedDt(OffsetDateTime.now());
+        //not null column
+        // billingDetail.setDetailId();
+        // billingDetail.setChargeCost();
         // billingDetail.setOpdService(getOpdService().getId());
         return  billingDetailRepository.save(billingDetail);
     }

@@ -11,4 +11,5 @@ import java.util.Date;
 public class LabPackegReq {
     private Long packegId;
     private LocalDate appointmentDate;
+    private boolean checkStatus;
 }
