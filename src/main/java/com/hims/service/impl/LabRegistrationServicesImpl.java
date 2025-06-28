@@ -286,7 +286,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             // investigation and ,one for Packeg so  ,both can be save
 
             //  billingHeader.setDiscount();//id is Pass
-            billingHeader.setDiscountAmount(BigDecimal.valueOf(labReq.getDiscountAmount()));
+          //  billingHeader.setDiscountAmount(BigDecimal.valueOf(labReq.getDiscountAmount()));
             billingHeader.setCreatedBy(Long.toString(currentUser.getUserId()));
             billingHeader.setCreatedDt(Instant.now());
             billingHeader.setUpdatedDt(Instant.now());

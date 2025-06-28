@@ -12,4 +12,6 @@ public class LabPackegReq {
     private Long packegId;
     private LocalDate appointmentDate;
     private boolean checkStatus;
+    private int actualAmount;
+    private int discountedAmount;
 }
