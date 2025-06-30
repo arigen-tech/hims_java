@@ -36,18 +36,19 @@ public class OpeningBalanceEntryController {
             @RequestBody OpeningBalanceEntryRequest openingBalanceEntryRequest) {
         return ResponseEntity.ok(openingBalanceEntryService.update(id,openingBalanceEntryRequest));
     }
-    @PutMapping("/updateByStatus/{id}")
-    public ResponseEntity<ApiResponse<String>> updateByStatus(@PathVariable Long id, @RequestBody String status) {
+    @PutMapping("/updateStatusById/{id}")
+    public ResponseEntity<ApiResponse<String>> updateStatusById(@PathVariable Long id, @RequestBody String status) {
         return ResponseEntity.ok(openingBalanceEntryService.updateByStatus(id,status));
 
     }
+
     @GetMapping("/list/{status}")
-    public ResponseEntity<List<OpeningBalanceEntryResponse>> getListByStatus(@PathVariable String status) {
+    public ResponseEntity<ApiResponse<List<OpeningBalanceEntryResponse>>> getListByStatus(@PathVariable String status) {
         return ResponseEntity.ok(openingBalanceEntryService.getListByStatus(status));
 
     }
     @GetMapping("getDetailsById/{id}")
-    public ResponseEntity<OpeningBalanceEntryResponse> getDetailsById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> getDetailsById(@PathVariable Long id) {
         return ResponseEntity.ok(openingBalanceEntryService.getDetailsById(id));
     }
     @PostMapping("/submit")

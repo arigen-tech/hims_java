@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -140,44 +139,43 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     @Override
     @Transactional
     public ApiResponse<OpeningBalanceEntryResponse> update(Long id, OpeningBalanceEntryRequest openingBalanceEntryRequest) {
+
         Optional<StoreBalanceHd> optionalHd = hdRepo.findById(id);
         if (optionalHd.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("Opening balance entry not found", 404);
         }
 
         StoreBalanceHd hd = optionalHd.get();
-        User currentUser =authUtil.getCurrentUser();
+        User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
         }
 
-        hd.setHospitalId(currentUser.getHospital());
-        MasDepartment depObj = masDepartmentRepository.getById(openingBalanceEntryRequest.getDepartmentId());
-        hd.setDepartmentId(depObj);
+        MasDepartment department = masDepartmentRepository.getById(openingBalanceEntryRequest.getDepartmentId());
+        hd.setDepartmentId(department);
         hd.setEnteredBy(openingBalanceEntryRequest.getEnteredBy());
         hd.setLastUpdatedDt(LocalDateTime.now());
         hd.setStatus("s");
-        hd.setEnteredDt(openingBalanceEntryRequest.getEnteredDt());
+        hd.setHospitalId(currentUser.getHospital());
+
         StoreBalanceHd updatedHd = hdRepo.save(hd);
 
+        // Delete existing dt records and replace
+       // dtRepo.deleteByBalanceMId(hd); // Custom method needed: void deleteByBalanceMId(StoreBalanceHd hd)
 
-        // Add new detail entries
-        List<StoreBalanceDt> dtList = new ArrayList<>();
+        List<StoreBalanceDt> updatedDtList = new ArrayList<>();
         for (OpeningBalanceDtRequest dtRequest : openingBalanceEntryRequest.getStoreBalanceDtList()) {
             StoreBalanceDt dt = new StoreBalanceDt();
             dt.setBalanceMId(updatedHd);
 
-            Optional<MasStoreItem> masStoreItemOpt = itemRepo.findById(dtRequest.getItemId());
-            if (masStoreItemOpt.isEmpty()) {
+            Optional<MasStoreItem> masStoreItem = itemRepo.findById(dtRequest.getItemId());
+            if (masStoreItem.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("MasStoreItem not found", 404);
             }
-            Optional<MasHSN> masHSN = masHsnRepository.findByHsnCode(masStoreItemOpt.get().getHsnCode());
-            if (masHSN.isEmpty()) {
-                return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
 
-            }
-            dt.setHsnCode( masHSN.get());
+            dt.setItemId(masStoreItem.get());
+            dt.setHsnCode(masStoreItem.get().getHsnCode());
             dt.setGstPercent(dtRequest.getGstPercent());
             dt.setBatchNo(dtRequest.getBatchNo());
             dt.setManufactureDate(dtRequest.getManufactureDate());
@@ -188,23 +186,30 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             dt.setTotalPurchaseCost(dtRequest.getTotalPurchaseCost());
             dt.setMrpPerUnit(dtRequest.getMrpPerUnit());
 
+            // Tax calculation
             BigDecimal gst = dtRequest.getGstPercent();
             BigDecimal purchaseRatePerUnit = dtRequest.getPurchaseRatePerUnit();
-            BigDecimal divisor = BigDecimal.ONE.add(gst.divide(BigDecimal.valueOf(100)));
+            BigDecimal divisor = BigDecimal.ONE.add(gst.divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
             BigDecimal basePrice = purchaseRatePerUnit.divide(divisor, 2, RoundingMode.HALF_UP);
             BigDecimal gstAmount = purchaseRatePerUnit.subtract(basePrice);
-            dt.setBaseRatePerUnit(basePrice);
+
             dt.setGstAmountPerUnit(gstAmount);
-            BigDecimal totalMrp = dtRequest.getMrpPerUnit().multiply(BigDecimal.valueOf(dtRequest.getQty()));
+            dt.setBaseRatePerUnit(basePrice);
+
+            BigDecimal totalMrp = dt.getMrpPerUnit().multiply(BigDecimal.valueOf(dt.getQty()));
             dt.setTotalMrpValue(totalMrp);
+
             dt.setBrandId(brandRepo.findById(dtRequest.getBrandId()).orElse(null));
             dt.setManufacturerId(manufacturerRepo.findById(dtRequest.getManufacturerId()).orElse(null));
-            dtList.add(dt);
+
+            updatedDtList.add(dt);
         }
 
-        dtRepo.saveAll(dtList);
+        dtRepo.saveAll(updatedDtList);
 
-        return ResponseUtils.createSuccessResponse(buildOpeningBalanceEntryResponse(updatedHd, dtList), new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(
+                buildOpeningBalanceEntryResponse(updatedHd, updatedDtList), new TypeReference<>() {});
+
 
     }
 
@@ -220,10 +225,11 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
          return ResponseUtils.createSuccessResponse("StoreBalanceHd status updated to '" + status + "'", new TypeReference<>() {});
     }
 
+
     @Override
-    public List<OpeningBalanceEntryResponse> getListByStatus(String status) {
+    public ApiResponse<List<OpeningBalanceEntryResponse>> getListByStatus(String status) {
         List<StoreBalanceHd> hdList = hdRepo.findByStatus(status);
-        return hdList.stream()
+        return (ApiResponse<List<OpeningBalanceEntryResponse>>) hdList.stream()
                 .map(hd -> {
                     List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);
                     return buildOpeningBalanceEntryResponse(hd, dtList);
@@ -233,10 +239,11 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     }
 
     @Override
-    public OpeningBalanceEntryResponse getDetailsById(Long id) {
+    public ApiResponse<OpeningBalanceEntryResponse> getDetailsById(Long id) {
         StoreBalanceHd hd = hdRepo.findById(id).orElseThrow(() -> new RuntimeException("Entry not found"));
         List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);
-        return buildOpeningBalanceEntryResponse(hd, dtList);
+       // return buildOpeningBalanceEntryResponse(hd, dtList);
+        return ResponseUtils.createSuccessResponse(buildOpeningBalanceEntryResponse(hd, dtList), new TypeReference<>() {});
     }
 
     @Override
