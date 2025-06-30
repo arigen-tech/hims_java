@@ -1,8 +1,10 @@
 package com.hims.service;
 
 import com.hims.request.OpeningBalanceEntryRequest;
+import com.hims.request.OpeningBalanceEntryRequest2;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpeningBalanceEntryResponse;
+import com.hims.response.OpeningBalanceEntryResponse2;
 
 import java.util.List;
 
@@ -21,4 +23,6 @@ public interface OpeningBalanceEntryService {
     ApiResponse<OpeningBalanceEntryResponse> createAndUpdateStatus(OpeningBalanceEntryRequest request);
 
     List<OpeningBalanceEntryResponse> getListByStatus(String[] statuses);
+
+    ApiResponse<String> approved(Long id,OpeningBalanceEntryRequest2 request);
 }
