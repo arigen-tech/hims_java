@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface StoreBalanceHdRepository extends JpaRepository<StoreBalanceHd,Long> {
     List<StoreBalanceHd> findByStatus(String status);
+
+    List<StoreBalanceHd> findByStatusIn(List<String> statusList);
 }

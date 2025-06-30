@@ -41,11 +41,10 @@ public class OpeningBalanceEntryController {
         return ResponseEntity.ok(openingBalanceEntryService.updateByStatus(id,status));
 
     }
-
     @GetMapping("/list/{status}")
-    public ResponseEntity<ApiResponse<List<OpeningBalanceEntryResponse>>> getListByStatus(@PathVariable String status) {
-        return ResponseEntity.ok(openingBalanceEntryService.getListByStatus(status));
-
+    public ResponseEntity<List<OpeningBalanceEntryResponse>> getListByStatus(@PathVariable String status) {
+        String[] statuses = status.split(",");
+        return ResponseEntity.ok(openingBalanceEntryService.getListByStatus(statuses));
     }
     @GetMapping("getDetailsById/{id}")
     public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> getDetailsById(@PathVariable Long id) {

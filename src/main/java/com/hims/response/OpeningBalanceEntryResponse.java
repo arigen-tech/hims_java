@@ -10,6 +10,7 @@ public class OpeningBalanceEntryResponse {
     private String balanceNo;
     private Long hospitalId;
     private Long departmentId;
+    private String departmentName;
     private String enteredBy;
     private String remarks;
     private String status;

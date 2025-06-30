@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -226,17 +227,6 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     }
 
 
-    @Override
-    public ApiResponse<List<OpeningBalanceEntryResponse>> getListByStatus(String status) {
-        List<StoreBalanceHd> hdList = hdRepo.findByStatus(status);
-        return (ApiResponse<List<OpeningBalanceEntryResponse>>) hdList.stream()
-                .map(hd -> {
-                    List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);
-                    return buildOpeningBalanceEntryResponse(hd, dtList);
-                })
-                .collect(Collectors.toList());
-
-    }
 
     @Override
     public ApiResponse<OpeningBalanceEntryResponse> getDetailsById(Long id) {
@@ -253,12 +243,25 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         return ResponseUtils.createSuccessResponse(createResponse.getResponse(), new TypeReference<>() {});
     }
 
+    @Override
+    public List<OpeningBalanceEntryResponse> getListByStatus(String... statuses) {
+        List<StoreBalanceHd> hdList = hdRepo.findByStatusIn(Arrays.asList(statuses));
+        return hdList.stream()
+                .map(hd -> {
+                    List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);
+                    return buildOpeningBalanceEntryResponse(hd, dtList);
+                })
+                .collect(Collectors.toList());
+
+    }
+
     private OpeningBalanceEntryResponse buildOpeningBalanceEntryResponse(StoreBalanceHd hd, List<StoreBalanceDt> dtList) {
         OpeningBalanceEntryResponse response = new OpeningBalanceEntryResponse();
         response.setBalanceMId(hd.getBalanceMId());
         response.setBalanceNo(hd.getBalanceNo());
         response.setHospitalId(hd.getHospitalId().getId());
         response.setDepartmentId(hd.getDepartmentId().getId());
+        response.setDepartmentName(hd.getDepartmentId().getDepartmentName());
         response.setEnteredBy(hd.getEnteredBy());
         response.setRemarks(hd.getRemarks());
         response.setStatus(hd.getStatus());
@@ -272,6 +275,10 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             res.setBalanceTId(dt.getBalanceTId());
             res.setBalanceMId(hd.getBalanceMId());
             res.setItemId(dt.getItemId().getItemId());
+            res.setItemName(dt.getItemId().getNomenclature());
+            res.setItemCode(dt.getItemId().getPvmsNo());
+            res.setItemUnit(dt.getItemId().getUnitAU().getUnitName());
+            res.setItemGst(dt.getItemId().getHsnCode().getGstRate());
             res.setBatchNo(dt.getBatchNo());
             res.setManufactureDate(dt.getManufactureDate());
             res.setExpiryDate(dt.getExpiryDate());
