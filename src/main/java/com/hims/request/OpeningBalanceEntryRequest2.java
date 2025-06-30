@@ -6,6 +6,5 @@ import lombok.Data;
 public class OpeningBalanceEntryRequest2 {
     private String remark;
     private String status;
-    private  String approvedBy;
 
 }

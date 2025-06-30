@@ -55,7 +55,7 @@ public class OpeningBalanceEntryController {
         ApiResponse<OpeningBalanceEntryResponse> response =openingBalanceEntryService.createAndUpdateStatus(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
-    @PostMapping("/Approved/{id}")
+    @PutMapping("/Approved/{id}")
     public ResponseEntity<ApiResponse<String>> Approved(@PathVariable Long id,
             @RequestBody OpeningBalanceEntryRequest2 request
     ) {

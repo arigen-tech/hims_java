@@ -4,7 +4,6 @@ import com.hims.request.OpeningBalanceEntryRequest;
 import com.hims.request.OpeningBalanceEntryRequest2;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpeningBalanceEntryResponse;
-import com.hims.response.OpeningBalanceEntryResponse2;
 
 import java.util.List;
 

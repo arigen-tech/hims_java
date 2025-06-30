@@ -9,7 +9,6 @@ import com.hims.request.OpeningBalanceEntryRequest2;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpeningBalanceDtResponse;
 import com.hims.response.OpeningBalanceEntryResponse;
-import com.hims.response.OpeningBalanceEntryResponse2;
 import com.hims.service.OpeningBalanceEntryService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
