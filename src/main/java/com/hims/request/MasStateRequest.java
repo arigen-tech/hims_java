@@ -8,7 +8,5 @@ import lombok.Setter;
 public class MasStateRequest {
     private String stateCode;
     private String stateName;
-    private String status;
-    private String lastChgBy;
     private Long countryId;
 }

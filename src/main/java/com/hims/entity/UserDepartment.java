@@ -24,19 +24,22 @@ public class UserDepartment {
     private Long id;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, referencedColumnName = "user_id")
     private User user;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "department_id", nullable = false)
     private MasDepartment department;
 
-    @Column(name = "las_updated_by")
-    private OffsetDateTime lasUpdatedBy;
+    @Column(name = "las_updated_dt")
+    private OffsetDateTime lasUpdatedDt;
+
+    @Column(name = "status", length = 1)
+    private String status;
 
     @Size(max = 255)
     @Column(name = "last_chg_by")

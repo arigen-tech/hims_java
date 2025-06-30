@@ -27,4 +27,14 @@ public interface MasUserDepartmentRepository extends JpaRepository<MasUserDepart
             "WHERE d.id = :departmentId")
     List<MasUserDepartmentResponse> fetchByDepartmentId(@Param("departmentId") Long departmentId);
 
+    @Query("SELECT new com.hims.response.MasUserDepartmentResponse( " +
+            "mud.userDepartmentId, u.userId, u.userName, d.id, d.departmentName) " +
+            "FROM MasUserDepartment mud " +
+            "JOIN mud.user u " +
+            "JOIN mud.department d " +
+            "WHERE u.userId = :userId AND mud.status = 'y'")
+    List<MasUserDepartmentResponse> fetchByUserId(@Param("userId") Long userId);
+
+
+
 }

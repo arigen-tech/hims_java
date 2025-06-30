@@ -2,10 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasDepartment;
-import com.hims.entity.repository.MasDepartmentRepository;
-import com.hims.entity.repository.MasDepartmentTypeRepository;
-import com.hims.entity.repository.MasHospitalRepository;
-import com.hims.entity.repository.MasUserDepartmentRepository;
+import com.hims.entity.repository.*;
 import com.hims.request.MasDepartmentRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDepartmentResponse;
@@ -30,6 +27,10 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
 
     @Autowired
     MasUserDepartmentRepository masUserDepartmentRepository;
+
+    @Autowired
+    private UserDepartmentRepository userDepartmentRepository;
+
     @Autowired
     private MasDepartmentTypeRepository masDepartmentTypeRepository;
 
@@ -181,7 +182,11 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         return ResponseUtils.createSuccessResponse(departmentResponses, new TypeReference<>() {});
     }
 
-
+    @Override
+    public ApiResponse<List<MasUserDepartmentResponse>> getMasUserDepartmentsByUserId(Long userId) {
+        List<MasUserDepartmentResponse> departmentResponses = masUserDepartmentRepository.fetchByUserId(userId);
+        return ResponseUtils.createSuccessResponse(departmentResponses, new TypeReference<>() {});
+    }
 
 
 }

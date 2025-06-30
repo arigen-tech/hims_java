@@ -17,8 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -32,7 +31,7 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
     private static final Logger log = LoggerFactory.getLogger(MasMainChargeCodeServicesImpl.class);
 
     @Autowired
-    MasMainChargeCodeRepository masMainChargeCodeRepository;
+    private MasMainChargeCodeRepository masMainChargeCodeRepository;
 
     @Autowired
     UserRepo userRepo;
@@ -63,7 +62,6 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
         return user;
     }
 
-
     @Override
     public ApiResponse<List<MasMainChargeCodeDTO>> getAllChargeCode(int flag) {
         List<MasMainChargeCode> charge;
@@ -90,98 +88,112 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
         return code.map(value ->
                 ResponseUtils.createSuccessResponse(
                         toResponse(value),
-                        new TypeReference<MasMainChargeCodeDTO>() {}
+                        new TypeReference<>() {}
                 )
         ).orElseGet(() -> ResponseUtils.createNotFoundResponse("Main Code not found", 404));
-    }
-
-    @Override
-    public ApiResponse<MasMainChargeCodeDTO> getByStatus(String status) {
-        return null;
     }
 
 
     @Override
     public ApiResponse<MasMainChargeCodeDTO> createChargeCode(MasMainChargeCodeRequest codeRequest) {
-        MasMainChargeCode chargeCode = new MasMainChargeCode();
+        try{
+            MasMainChargeCode chargeCode = new MasMainChargeCode();
 
-        if (!("y".equalsIgnoreCase(codeRequest.getStatus()) || "n".equalsIgnoreCase(codeRequest.getStatus()))) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "Invalid status. Status should be 'Y' or 'N'", 400);
+                chargeCode.setChargecodeCode(codeRequest.getChargecode_code());
+                chargeCode.setChargecodeName(codeRequest.getChargecode_name());
+                chargeCode.setStatus("y");
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                chargeCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                chargeCode.setLastChgDate(LocalDate.now());
+                chargeCode.setLastChgTime(getCurrentTimeFormatted());
+                return ResponseUtils.createSuccessResponse(toResponse(masMainChargeCodeRepository.save(chargeCode)), new TypeReference<>() {});
         }
-        else{
-            chargeCode.setChargecodeCode(codeRequest.getChargecode_code());
-            chargeCode.setChargecodeName(codeRequest.getChargecode_name());
-            chargeCode.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
-            }
-            chargeCode.setLastChgBy(currentUser.getUsername());
-            chargeCode.setLastChgDate(Instant.now());
-            chargeCode.setLastChgTime(getCurrentTimeFormatted());
-            return ResponseUtils.createSuccessResponse(toResponse(masMainChargeCodeRepository.save(chargeCode)), new TypeReference<>() {});
+        catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
 
     @Override
     public ApiResponse<MasMainChargeCodeDTO> updateChargeCode(Long chargecodeId, MasMainChargeCodeRequest codeRequest) {
-        Optional<MasMainChargeCode> optionalCode = masMainChargeCodeRepository.findById(chargecodeId);
+        try{
+            Optional<MasMainChargeCode> optionalCode = masMainChargeCodeRepository.findById(chargecodeId);
 
-        if(optionalCode.isPresent()){
-            MasMainChargeCode chargeCode = optionalCode.get();
-            if("y".equals(codeRequest.getStatus())||"n".equals(codeRequest.getStatus())) {
-                chargeCode.setStatus(codeRequest.getStatus());
-            } else{
+            if (optionalCode.isPresent()) {
+                MasMainChargeCode chargeCode = optionalCode.get();
+                chargeCode.setChargecodeCode(codeRequest.getChargecode_code());
+                chargeCode.setChargecodeName(codeRequest.getChargecode_name());
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                chargeCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                chargeCode.setLastChgDate(LocalDate.now());
+                chargeCode.setLastChgTime(getCurrentTimeFormatted());
+
+                return ResponseUtils.createSuccessResponse(toResponse(masMainChargeCodeRepository.save(chargeCode)), new TypeReference<>() {
+                });
+            } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                }, "Invalid status. Status should be 'y' or 'n'", 400);
+                }, "MainCharge data not found", 404);
             }
-            chargeCode.setChargecodeCode(codeRequest.getChargecode_code());
-            chargeCode.setChargecodeName(codeRequest.getChargecode_name());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
-            }
-            chargeCode.setLastChgBy(currentUser.getUsername());
-            chargeCode.setLastChgDate(Instant.now());
-            chargeCode.setLastChgTime(getCurrentTimeFormatted());
-
-            return ResponseUtils.createSuccessResponse(toResponse(masMainChargeCodeRepository.save(chargeCode)), new TypeReference<>() {});
         }
-        else{
-            return ResponseUtils.createFailureResponse(null, new TypeReference<MasMainChargeCodeDTO>() {}, "MainCharge data not found", 404);
+        catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
     @Override
-    public ApiResponse<MasMainChargeCodeDTO> changeStatus(Long chargecodeId, String status) {
-        Optional<MasMainChargeCode> existingCodeOpt = masMainChargeCodeRepository.findById(chargecodeId);
-        if (existingCodeOpt.isPresent()) {
-            MasMainChargeCode codes = existingCodeOpt.get();
+    public ApiResponse<MasMainChargeCodeDTO> changeMainChargeCodeStatus(Long chargecodeId, String status) {
+        try{
+            Optional<MasMainChargeCode> existingCodeOpt = masMainChargeCodeRepository.findById(chargecodeId);
+            if (existingCodeOpt.isPresent()) {
+                MasMainChargeCode codes = existingCodeOpt.get();
 
-            if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n")) {
-                return ResponseUtils.createFailureResponse(
-                        null,
-                        new TypeReference<MasMainChargeCodeDTO>() {
-                        },
-                        "Invalid status value. Use 'Y' for Active and 'N' for Inactive.",
-                        400
+                if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n")) {
+                    return ResponseUtils.createFailureResponse(
+                            null,
+                            new TypeReference<>() {
+                            },
+                            "Invalid status value. Use 'Y' for Active and 'N' for Inactive.",
+                            400
+                    );
+                }
+                codes.setStatus(status);
+
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                codes.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                codes.setLastChgDate(LocalDate.now());
+                codes.setLastChgTime(getCurrentTimeFormatted());
+
+                MasMainChargeCode existingCode = masMainChargeCodeRepository.save(codes);
+
+                return ResponseUtils.createSuccessResponse(
+                        toResponse(existingCode),
+                        new TypeReference<>() {
+                        }
                 );
+            } else {
+                return ResponseUtils.createNotFoundResponse("Main Code not found", 404);
             }
-
-            codes.setStatus(status);
-            MasMainChargeCode existingCode = masMainChargeCodeRepository.save(codes);
-
-            return ResponseUtils.createSuccessResponse(
-                    toResponse(existingCode),
-                    new TypeReference<>() {
-                    }
-            );
-        } else {
-            return ResponseUtils.createNotFoundResponse("Main Code not found", 404);
+        }
+        catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 }

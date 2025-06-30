@@ -6,7 +6,6 @@ import lombok.Data;
 public class MasHospitalRequest {
     private String hospitalCode;
     private String hospitalName;
-    private String status;
     private String address;
     private String contactNumber;
     private String contactNumber2;
@@ -20,5 +19,4 @@ public class MasHospitalRequest {
     private String regCostApplicable;
     private String appCostApplicable;
     private String preConsultationAvailable;
-    private String lastChgBy;
 }

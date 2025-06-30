@@ -19,4 +19,6 @@ public interface MasDepartmentService {
     ApiResponse<List<MasUserDepartmentResponse>> getAllMasUserDepartments();
 
     ApiResponse<List<MasUserDepartmentResponse>> getMasUserDepartmentsByDepartmentId(Long departmentId);
+
+    ApiResponse<List<MasUserDepartmentResponse>> getMasUserDepartmentsByUserId(Long userId);
 }

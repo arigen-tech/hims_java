@@ -29,8 +29,4 @@ public class MasOpdSessionRequest {
     private String endTime;
 
 
-    private String status;
-
-
-    private String lasChgBy;
 }

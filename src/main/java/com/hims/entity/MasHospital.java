@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -44,21 +45,21 @@ public class MasHospital {
     private String lastChgBy;
 
     @Column(name = "last_chg_date")
-    private Instant lastChgDate;
+    private LocalDate lastChgDate;
 
     @Size(max = 10)
     @Column(name = "last_chg_time", length = 10)
     private String lastChgTime;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "country_id")
     private MasCountry country;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "state_id")
     private MasState state;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "district_id")
     private MasDistrict district;
 

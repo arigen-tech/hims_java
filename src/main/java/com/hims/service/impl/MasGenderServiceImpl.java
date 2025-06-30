@@ -2,7 +2,9 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasGender;
+import com.hims.entity.User;
 import com.hims.entity.repository.MasGenderRepository;
+import com.hims.entity.repository.UserRepo;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.request.MasGenderRequest;
 import com.hims.response.ApiResponse;
@@ -11,11 +13,16 @@ import com.hims.service.MasGenderService;
 import com.hims.utils.ResponseUtils;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Helper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,8 +30,13 @@ import java.util.stream.Collectors;
 @Service
 @NoArgsConstructor
 public class MasGenderServiceImpl implements MasGenderService {
+    private static final Logger log = LoggerFactory.getLogger(MasGenderServiceImpl.class);
+
     @Autowired
     private MasGenderRepository masGenderRepository;
+
+    @Autowired
+    UserRepo userRepo;
 
     public ApiResponse<List<MasGenderResponse>> getAllGenders(int flag) {
         List<MasGender> genders;
@@ -50,64 +62,124 @@ public class MasGenderServiceImpl implements MasGenderService {
         response.setId(gender.getId());
         response.setGenderCode(gender.getGenderCode());
         response.setGenderName(gender.getGenderName());
-        response.setCode(gender.getCode());
+        response.setLastChgDt(gender.getLastChgDt());
         response.setStatus(gender.getStatus());
+        response.setCode(gender.getCode());
+        response.setCode(gender.getLastChgBy());
+
         return response;
+    }
+
+    private User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByUserName(username);
+        if (user == null) {
+            log.warn("User not found for username: {}", username);
+        }
+        return user;
     }
 
 
     @Override
     @Transactional
     public ApiResponse<MasGenderResponse> addGender(MasGenderRequest genderRequest) {
-        MasGender gender = new MasGender();
-        gender.setGenderCode(genderRequest.getGenderCode());
-        gender.setGenderName(genderRequest.getGenderName());
-        gender.setCode(genderRequest.getCode());
-//        gender.setLastChgDt(Instant.ofEpochSecond(System.currentTimeMillis()));
-        gender.setLastChgDt(Instant.now());
-        gender.setStatus(genderRequest.getStatus());
+        try{
+            MasGender gender = new MasGender();
+            gender.setGenderCode(genderRequest.getGenderCode());
+            gender.setGenderName(genderRequest.getGenderName());
+            gender.setLastChgDt(LocalDateTime.now());
+            gender.setStatus(genderRequest.getStatus());
+            gender.setCode(null);
 
-        MasGender savedGender = masGenderRepository.save(gender);
-        return ResponseUtils.createSuccessResponse(convertToResponse(savedGender), new TypeReference<>() {});
-    }
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            gender.setLastChgBy(String.valueOf(currentUser.getUserId()));
 
-    @Override
-    @Transactional
-    public ApiResponse<MasGenderResponse> updateGender(Long id, MasGenderResponse genderDetails) {
-        Optional<MasGender> existingGenderOpt = masGenderRepository.findById(id);
-        if (existingGenderOpt.isPresent()) {
-            MasGender existingGender = existingGenderOpt.get();
-            existingGender.setGenderCode(genderDetails.getGenderCode());
-            existingGender.setGenderName(genderDetails.getGenderName());
-            existingGender.setCode(genderDetails.getCode());
-            existingGender.setStatus(genderDetails.getStatus());
-            existingGender.setLastChgDt(Instant.now());
 
-            MasGender updatedGender = masGenderRepository.save(existingGender);
-            return ResponseUtils.createSuccessResponse(convertToResponse(updatedGender), new TypeReference<>() {});
-        } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<MasGenderResponse>() {}, "Gender not found", 404);
+            MasGender savedGender = masGenderRepository.save(gender);
+            return ResponseUtils.createSuccessResponse(convertToResponse(savedGender), new TypeReference<>() {
+            });
+        }
+        catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
     @Override
     @Transactional
-    public ApiResponse<MasGenderResponse> changeStatus(Long id, String status) {
-        Optional<MasGender> existingGenderOpt = masGenderRepository.findById(id);
-        if (existingGenderOpt.isPresent()) {
-            MasGender existingGender = existingGenderOpt.get();
+    public ApiResponse<MasGenderResponse> updateGender(Long id, MasGenderResponse genderDetails) {
+        try{
+            Optional<MasGender> existingGenderOpt = masGenderRepository.findById(id);
+            if (existingGenderOpt.isPresent()) {
+                MasGender existingGender = existingGenderOpt.get();
+                existingGender.setGenderCode(genderDetails.getGenderCode());
+                existingGender.setGenderName(genderDetails.getGenderName());
+                existingGender.setLastChgDt(LocalDateTime.now());
+                existingGender.setStatus(genderDetails.getStatus());
+                existingGender.setCode(null);
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                existingGender.setLastChgBy(String.valueOf(currentUser.getUserId()));
 
-            // Ensure the status is either "Y" (Active) or "N" (Inactive)
-            if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n")) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<MasGenderResponse>() {}, "Invalid status value. Use 'Y' for Active and 'N' for Inactive.", 400);
+
+                MasGender updatedGender = masGenderRepository.save(existingGender);
+                return ResponseUtils.createSuccessResponse(convertToResponse(updatedGender), new TypeReference<>() {
+                });
+            } else {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<MasGenderResponse>() {
+                }, "Gender not found", 404);
             }
+        }
+        catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
 
-            existingGender.setStatus(status); // Set status as "Y" or "N"
-            MasGender updatedGender = masGenderRepository.save(existingGender);
+    @Override
+    @Transactional
+    public ApiResponse<MasGenderResponse> changeGenderStatus(Long id, String status) {
+        try{
+            Optional<MasGender> existingGenderOpt = masGenderRepository.findById(id);
+            if (existingGenderOpt.isPresent()) {
+                MasGender existingGender = existingGenderOpt.get();
 
-            return ResponseUtils.createSuccessResponse(convertToResponse(updatedGender), new TypeReference<>() {});
-        } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<MasGenderResponse>() {}, "Gender not found", 404);
+                // Ensure the status is either "Y" (Active) or "N" (Inactive)
+                if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n")) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<MasGenderResponse>() {
+                    }, "Invalid status value. Use 'Y' for Active and 'N' for Inactive.", 400);
+                }
+                existingGender.setLastChgDt(LocalDateTime.now());
+                existingGender.setStatus(status); // Set status as "Y" or "N"
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                existingGender.setLastChgBy(String.valueOf(currentUser.getUserId()));
+
+                MasGender updatedGender = masGenderRepository.save(existingGender);
+
+                return ResponseUtils.createSuccessResponse(convertToResponse(updatedGender), new TypeReference<>() {
+                });
+            } else {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<MasGenderResponse>() {
+                }, "Gender not found", 404);
+            }
+        }
+        catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 

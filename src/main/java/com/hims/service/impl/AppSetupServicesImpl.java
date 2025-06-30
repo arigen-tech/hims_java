@@ -117,6 +117,7 @@ public class AppSetupServicesImpl implements AppSetupServices {
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
         User user = userRepo.findByUserName(username);
         if (user == null) {
             log.warn("User not found for username: {}", username);

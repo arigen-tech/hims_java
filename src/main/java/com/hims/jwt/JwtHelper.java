@@ -174,11 +174,12 @@ public class JwtHelper {
         return tokenWithoutBearer;
     }
 
-    public TokenWithExpiry generateAccessTokenWithExpiry(User user) {
+    public TokenWithExpiry generateAccessTokenWithExpiry(User user, Long departmentId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
         claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
         claims.put("userId", user.getUserId());
+        claims.put("departmentId", departmentId);
 
         long currentTimeMillis = System.currentTimeMillis();
         String token = Jwts.builder()
@@ -192,11 +193,13 @@ public class JwtHelper {
         return new TokenWithExpiry(token, currentTimeMillis + JWT_TOKEN_VALIDITY * 1000);
     }
 
-    public TokenWithExpiry generateRefreshTokenWithExpiry(User user) {
+
+    public TokenWithExpiry generateRefreshTokenWithExpiry(User user, Long departmentId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
         claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
         claims.put("userId", user.getUserId());
+        claims.put("departmentId", departmentId);
 
         long currentTimeMillis = System.currentTimeMillis();
         String token = Jwts.builder()
@@ -209,6 +212,7 @@ public class JwtHelper {
 
         return new TokenWithExpiry(token, currentTimeMillis + REFRESH_TOKEN_VALIDITY * 1000);
     }
+
 
 
 }

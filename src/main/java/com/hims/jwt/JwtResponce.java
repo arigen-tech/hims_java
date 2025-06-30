@@ -17,5 +17,6 @@ public class JwtResponce {
     private long jwtTokenExpiry;
     private long refreshTokenExpiry;
     private long hospitalId;
+    private long departmentId;
 
 }

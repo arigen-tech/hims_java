@@ -3,14 +3,20 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasFrequency;
 import com.hims.entity.MasGender;
+import com.hims.entity.User;
 import com.hims.entity.repository.MasFrequencyRepository;
+import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasFrequencyRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasFrequencyResponse;
 import com.hims.response.MasGenderResponse;
 import com.hims.service.MasFrequencyService;
 import com.hims.utils.ResponseUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -22,12 +28,27 @@ import java.util.stream.Collectors;
 
 @Service
 public class MasFrequencyServiceImp implements MasFrequencyService {
+
+    private static final Logger log = LoggerFactory.getLogger(MasFrequencyServiceImp.class);
+
     @Autowired
     private MasFrequencyRepository masFrequencyRepository;
+
+    @Autowired
+    private UserRepo userRepo;
 
     private String getCurrentTimeFormatted() {
 
         return LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+    }
+
+    private User getCurrentUser() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByUserName(username);
+        if (user == null) {
+            log.warn("User not found for username: {}", username);
+        }
+        return user;
     }
 
     @Override
@@ -41,7 +62,13 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
             masFrequency.setFrequencyName(masFrequencyRequest.getFrequencyName());
             masFrequency.setStatus(masFrequencyRequest.getStatus());
             masFrequency.setFeq(masFrequencyRequest.getFeq());
-            masFrequency.setLastChgBy(masFrequencyRequest.getLastChgBy());
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
             masFrequency.setLastChgTime(getCurrentTimeFormatted());
             masFrequency.setLastChgDate(Instant.now());
             masFrequency.setOrderNo(masFrequencyRequest.getOrderNo());
@@ -62,7 +89,13 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
             masFrequency.setFrequencyName(masFrequencyRequest.getFrequencyName());
             masFrequency.setStatus(masFrequencyRequest.getStatus());
             masFrequency.setFeq(masFrequencyRequest.getFeq());
-            masFrequency.setLastChgBy(masFrequencyRequest.getLastChgBy());
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
             masFrequency.setLastChgTime(getCurrentTimeFormatted());
             masFrequency.setLastChgDate(Instant.now());
             masFrequency.setOrderNo(masFrequencyRequest.getOrderNo());
@@ -82,6 +115,15 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
             MasFrequency masFrequency=oldMasFrequency.get();
             if("y".equalsIgnoreCase(status)||"n".equalsIgnoreCase(status)){
                 masFrequency.setStatus(status);
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                masFrequency.setLastChgTime(getCurrentTimeFormatted());
+                masFrequency.setLastChgDate(Instant.now());
                 return ResponseUtils.createSuccessResponse(convertedToResponse(masFrequencyRepository.save(masFrequency)), new TypeReference<>() {
                 });
             }else{

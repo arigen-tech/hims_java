@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasRole;
+import com.hims.entity.MasStoreItem;
 import com.hims.entity.User;
 import com.hims.entity.UserDepartment;
 import com.hims.entity.repository.MasDepartmentRepository;
@@ -13,6 +14,7 @@ import com.hims.response.UserResponse;
 import com.hims.service.UserService;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -115,6 +117,25 @@ public class UserServiceImpl implements UserService {
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
+    @Override
+    public ApiResponse<UserResponse> findByUser(String user) {
+        try{
+            Optional<User> user1= Optional.ofNullable(userRepository.findByUserName(user));
+            if (user1.isPresent()) {
+                User user2= user1.get();
+
+                return ResponseUtils.createSuccessResponse(convertToUserResponse (user2), new TypeReference<>() {
+                });
+            } else {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "User not found", 404);
+            }}catch(Exception ex){
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
 
     private UserResponse convertToUserResponse(User user) {
         UserResponse response = new UserResponse();

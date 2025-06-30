@@ -2,9 +2,9 @@ package com.hims.controller;
 
 
 import com.hims.entity.User;
+import com.hims.entity.repository.UserRepo;
 import com.hims.jwt.JwtRequest;
 import com.hims.jwt.JwtResponce;
-import com.hims.jwt.OtpRequest;
 import com.hims.request.PasswordChangeReq;
 import com.hims.request.ResetPasswordReq;
 import com.hims.request.UserCreationReq;
@@ -12,6 +12,7 @@ import com.hims.request.UserDetailsReq;
 import com.hims.response.ApiResponse;
 import com.hims.response.DefaultResponse;
 import com.hims.response.RoleInfoResp;
+import com.hims.response.UserProfileResponse;
 import com.hims.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,9 +22,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.List;
 
@@ -33,6 +40,8 @@ import java.util.List;
 @RequestMapping("/authController")
 @Slf4j
 public class AuthController {
+    @Autowired
+    private UserRepo userRepo;
 
     @Autowired
     private AuthService authService;
@@ -61,6 +70,11 @@ public class AuthController {
     @GetMapping("/getUsers/{userName}")
     public ResponseEntity<ApiResponse<User>> getUsers(@PathVariable(value = "userName") String userName) {
         return new ResponseEntity<>(authService.getUser(userName), HttpStatus.OK);
+    }
+
+    @GetMapping("/getUsersForProfile/{username}")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> getUserForProfile(@PathVariable(value = "username") String userName) {
+        return new ResponseEntity<>(authService.getUserForProfile(userName), HttpStatus.OK);
     }
 
     @Operation(summary = "This API is used to create users")
@@ -129,6 +143,20 @@ public class AuthController {
         return new ResponseEntity<>(authService.activeInactiveUser(userName,status), HttpStatus.OK);
     }
 
+    @PutMapping("/updateStatus/{id}")
+    public ResponseEntity<ApiResponse<String>> updateUserStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(authService.updateUserStatus(id, status));
+    }
+
+    @PutMapping("/updateRoles/{id}")
+    public ResponseEntity<ApiResponse<String>> updateUserRoles(
+            @PathVariable Long id,
+            @RequestParam String roles) {
+        return ResponseEntity.ok(authService.updateUserRoles(id, roles));
+    }
+
     @Operation(summary = "This API is used to change users role status active or inactive")
     @PutMapping("/activeInactiveRole/{userName}/{roll_Id}/{status}")
     public ResponseEntity<ApiResponse<DefaultResponse>> activeInactiveRole(@PathVariable(value = "userName") String userName,@PathVariable(value = "roll_Id") String roll_Id,@PathVariable(value = "status") boolean status) {
@@ -139,6 +167,26 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<DefaultResponse>> logout(HttpServletRequest request) {
         return new ResponseEntity<>(authService.logout(request), HttpStatus.OK);
+    }
+
+
+    @GetMapping("/getProfileImageSrc/{username}")
+    public ResponseEntity<?> getProfileImageSrc(@PathVariable String username) {
+        User user = userRepo.findByUserName(username);
+        String imagePath = user.getProfilePicture();
+        File imageFile = new File(imagePath);
+        if (!imageFile.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Image not found");
+        }
+        try {
+            Path path = Paths.get(imagePath);
+            byte[] imageBytes = Files.readAllBytes(path);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(imageBytes);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error reading image");
+        }
     }
 
 

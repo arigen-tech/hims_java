@@ -1,6 +1,7 @@
 package com.hims.controller;
 
 import com.hims.response.ApiResponse;
+import com.hims.response.MasStoreItemResponse;
 import com.hims.response.UserApplicationResponse;
 import com.hims.response.UserResponse;
 import com.hims.service.UserService;
@@ -34,6 +35,11 @@ public class UserController {
     @Operation(summary = "Get all users", description = "Get all users with filter by status (0: all users, 1: active users only)")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(@PathVariable int flag) {
         return new ResponseEntity<>(userService.getAllUsers(flag), HttpStatus.OK);
+    }
+    @GetMapping("/getByUserName/{user}")
+    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable String user) {
+        ApiResponse<UserResponse> response =userService.findByUser(user);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 }
