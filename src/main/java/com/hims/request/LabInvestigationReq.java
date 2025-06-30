@@ -12,4 +12,7 @@ public class LabInvestigationReq {
     private Long investigationId;
     private LocalDate appointmentDate;
     private boolean checkStatus;
+    private int actualAmount;
+    private int discountedAmount;
+
 }

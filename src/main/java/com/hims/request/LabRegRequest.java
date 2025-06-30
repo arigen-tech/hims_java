@@ -11,8 +11,7 @@ public class LabRegRequest {
     List<LabInvestigationReq> labInvestigationReq;
     List<LabPackegReq> labPackegReqs;
     private Long patientId;
-
     private Long totalAmount;
-    private Long discountAmount;
+   // private Long discountAmount;
 
 }
