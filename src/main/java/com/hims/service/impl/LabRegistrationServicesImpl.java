@@ -121,8 +121,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         visit.setLastChgDate(Instant.now());
         visit.setDepartment(department);
         Visit savedVisit = visitRepository.save(visit);
-
-
             // Validate all investigation appointment dates
             for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {
                 if (inv.getAppointmentDate() == null) {
@@ -133,7 +131,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             Map<LocalDate, List<LabInvestigationReq>> grouped = labReq.getLabInvestigationReq().stream()
                     .filter(req -> req.getAppointmentDate() != null)
                     .collect(Collectors.groupingBy(LabInvestigationReq::getAppointmentDate));
-
             for (Map.Entry<LocalDate, List<LabInvestigationReq>> entry : grouped.entrySet()) {
                 LocalDate date = entry.getKey();
                 List<LabInvestigationReq> investigations = entry.getValue();
@@ -193,20 +190,35 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             }
 
             // Handle Lab Packages
-            for (LabPackegReq pkg : labReq.getLabPackegReqs()) {
-                if (pkg.getPackegId() == null) {
+            Map<LocalDate, List<LabPackegReq>> groupPkg = labReq.getLabPackegReqs().stream()
+                    .filter(req -> req.getAppointmentDate() != null)
+                    .collect(Collectors.groupingBy(LabPackegReq::getAppointmentDate));
+             for (Map.Entry<LocalDate, List<LabPackegReq>> entry : groupPkg.entrySet()) {
+                 LocalDate getDate = entry.getKey();
+                 List<LabPackegReq> getPkg = entry.getValue();
+                 Long pkgId=0L;
+                 LocalDate date = null;
+                boolean check = false;
+                 for (LabPackegReq req:getPkg) {
+                       pkgId= req.getPackegId();
+                       date= req.getAppointmentDate();
+                       check=req.isCheckStatus();
+               if(req.isCheckStatus()){
+                  break;
+                   }
+                 }
+                if (pkgId==null) {
                     throw new IllegalArgumentException("Package ID must not be null");
                 }
-                if (pkg.getAppointmentDate() == null) {
+                if (date == null) {
                     throw new IllegalArgumentException("Package appointment date must not be null");
                 }
-                DgInvestigationPackage pack = dgInvestigationPackageRepository.findById(pkg.getPackegId())
-                        .orElseThrow(() -> new IllegalArgumentException("Invalid package ID: " + pkg.getPackegId()));
-
-                List<PackageInvestigationMapping> mappings = packageInvestigationMappingRepository.findByPackageId(pack);
+                 Long finalPkgId = pkgId;
+                 DgInvestigationPackage pack = dgInvestigationPackageRepository.findById(pkgId)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid package ID: " + finalPkgId));
 
                 DgOrderHd hd = new DgOrderHd();
-                hd.setAppointmentDate(pkg.getAppointmentDate());
+                hd.setAppointmentDate(getDate);
                 hd.setOrderDate(LocalDate.now());
                 hd.setOrderNo(createInvoice());
                 hd.setOrderStatus("p");
@@ -222,40 +234,40 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
                 DgOrderHd savedHd = labHdRepository.save(hd);
                 BillingHeader headerId =new BillingHeader() ;
-                if(pkg.isCheckStatus()){
+                if(check){
                      headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser);
                 }
+                 for (LabPackegReq req:getPkg) {
+                  DgInvestigationPackage pkgObj =  dgInvestigationPackageRepository.findById(req.getPackegId()).get();
 
-                for (PackageInvestigationMapping map : mappings) {
-                    DgMasInvestigation inv = map.getInvestId();
-
-                    DgOrderDt dt = new DgOrderDt();
-                    dt.setOrderhdId(savedHd);
-                    dt.setInvestigationId(inv);
-                    dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
-                    dt.setMainChargecodeId(inv.getMainChargeCodeID().getChargecodeId());
-                    dt.setPackageId(pack);
-                    dt.setAppointmentDate(pkg.getAppointmentDate());
-                    dt.setLastChgDate(LocalDate.now());
-                    dt.setBillingStatus("p");
-                    dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
-
-                    DgOrderDt savedDt = labDtRepository.save(dt);
-                   // BillingDetaiDataSave(headerId, savedDt);
-                }
-                if(pkg.isCheckStatus()) {
-                    BillingDetaiDataSavePackage(headerId, pack);
-                }
+                     List<PackageInvestigationMapping> mappings = packageInvestigationMappingRepository.findByPackageId(pkgObj);
+                     for (PackageInvestigationMapping map : mappings) {
+                         DgMasInvestigation inv = map.getInvestId();
+                         DgOrderDt dt = new DgOrderDt();
+                         dt.setOrderhdId(savedHd);
+                         dt.setInvestigationId(inv);
+                         dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
+                         dt.setMainChargecodeId(inv.getMainChargeCodeID().getChargecodeId());
+                         dt.setPackageId(pkgObj);
+                         dt.setAppointmentDate(req.getAppointmentDate());
+                         dt.setLastChgDate(LocalDate.now());
+                         dt.setBillingStatus("p");
+                         dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                         DgOrderDt savedDt = labDtRepository.save(dt);
+                       }
+                     if(req.isCheckStatus()){
+                         BillingDetaiDataSavePackage(headerId,pkgObj);
+                      }
+                 }
             }
-            res.setMsg("Success");
-            return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
-
         } catch (SDDException e) {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
         } catch (Exception e) {
             e.printStackTrace(); // log exception for debugging
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
         }
+        res.setMsg("Success");
+        return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
     }
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser) {
       //  if(!labReq.getLabPackegReqs().isEmpty()) {
@@ -291,9 +303,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setCreatedDt(Instant.now());
             billingHeader.setUpdatedDt(Instant.now());
            return  billingHeaderRepository.save(billingHeader);
-//        }else{
-//            return null;
-//        }
     }
     private BillingDetail  BillingDetaiDataSave(BillingHeader bhdId, DgOrderDt dtId ){
         ///  Billing details
@@ -303,7 +312,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
          billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY));//pass from property file..
 
          billingDetail.setItemName(dtId.getInvestigationId().getInvestigationName()) ;  // investigation or packeg  name to be store
-        ///  billingDetail.set
+          billingDetail.setQuantity(1);//default
         billingDetail.setInvestigation(dtId.getInvestigationId());
         billingDetail.setPackageField(dtId.getPackageId());
         billingDetail.setCreatedDt(OffsetDateTime.now());
@@ -312,6 +321,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
        // billingDetail.setDetailId();
        // billingDetail.setChargeCost();
         // billingDetail.setOpdService(getOpdService().getId());
+        ///calculation
         return  billingDetailRepository.save(billingDetail);
     }
 
