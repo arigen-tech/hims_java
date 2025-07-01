@@ -134,6 +134,19 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             for (Map.Entry<LocalDate, List<LabInvestigationReq>> entry : grouped.entrySet()) {
                 LocalDate date = entry.getKey();
                 List<LabInvestigationReq> investigations = entry.getValue();
+                BigDecimal sum=BigDecimal.ZERO;
+                BigDecimal tax=BigDecimal.ZERO;
+                BigDecimal disc=BigDecimal.ZERO;
+                MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
+                for(LabInvestigationReq inves:investigations){
+                    if(inves.isCheckStatus()){
+                        sum=sum.add(BigDecimal.valueOf(inves.getActualAmount()));
+                        disc=disc.add(BigDecimal.valueOf(inves.getDiscountedAmount()));
+                        if(servCat.getGstApplicable()){
+                            tax=tax.add(BigDecimal.valueOf(servCat.getGstPercent()).multiply(BigDecimal.valueOf(inves.getActualAmount()).subtract(BigDecimal.valueOf(inves.getDiscountedAmount()))).divide(BigDecimal.valueOf(100)));
+                        }
+                    }
+                }
 
                 DgOrderHd hd = new DgOrderHd();
                 hd.setAppointmentDate(date);
@@ -161,7 +174,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 }
                 BillingHeader headerId=new BillingHeader();
                 if(flag){
-                     headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser);
+                     headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser,sum,tax,disc);
                 }
                 for (LabInvestigationReq inv : investigations) {
                     if (inv.getInvestigationId() == null) {
@@ -183,7 +196,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
                     DgOrderDt savedDt = labDtRepository.save(dt);
                     if(inv.isCheckStatus()){
-                        BillingDetaiDataSave(headerId, savedDt);
+                        BillingDetaiDataSave(headerId, savedDt,inv);
                     }
 
                 }
@@ -234,8 +247,21 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
                 DgOrderHd savedHd = labHdRepository.save(hd);
                 BillingHeader headerId =new BillingHeader() ;
+                 BigDecimal sum=BigDecimal.ZERO;
+                 BigDecimal tax=BigDecimal.ZERO;
+                 BigDecimal disc=BigDecimal.ZERO;
+                 MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
+                 for(LabPackegReq packag:getPkg){
+                     if(packag.isCheckStatus()){
+                         sum=sum.add(BigDecimal.valueOf(packag.getActualAmount()));
+                         disc=disc.add(BigDecimal.valueOf(packag.getDiscountedAmount()));
+                         if(servCat.getGstApplicable()){
+                             tax=tax.add(BigDecimal.valueOf(servCat.getGstPercent()).multiply(BigDecimal.valueOf(packag.getActualAmount()).subtract(BigDecimal.valueOf(packag.getDiscountedAmount()))).divide(BigDecimal.valueOf(100)));
+                         }
+                     }
+                 }
                 if(check){
-                     headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser);
+                     headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser, sum, tax, disc);
                 }
                  for (LabPackegReq req:getPkg) {
                   DgInvestigationPackage pkgObj =  dgInvestigationPackageRepository.findById(req.getPackegId()).get();
@@ -256,7 +282,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                          DgOrderDt savedDt = labDtRepository.save(dt);
                        }
                      if(req.isCheckStatus()){
-                         BillingDetaiDataSavePackage(headerId,pkgObj);
+                         BillingDetaiDataSavePackage(headerId,pkgObj,req);
                       }
                  }
             }
@@ -269,7 +295,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         res.setMsg("Success");
         return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
     }
-    private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser) {
+    private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
       //  if(!labReq.getLabPackegReqs().isEmpty()) {
             BillingHeader billingHeader = new BillingHeader();
             String orderNum = createInvoices();
@@ -295,6 +321,11 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setVisit(vId);
             billingHeader.setHdorder(hdId);///two Hd id is there  one for
             billingHeader.setBillingHdId(hdId.getId());
+            billingHeader.setTotalAmount(sum.subtract(disc).add(tax));
+            billingHeader.setDiscountAmount(disc);
+            billingHeader.setNetAmount(sum.subtract(disc).add(tax));
+            billingHeader.setTaxTotal(tax);
+
             // investigation and ,one for Packeg so  ,both can be save
 
             //  billingHeader.setDiscount();//id is Pass
@@ -304,7 +335,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setUpdatedDt(Instant.now());
            return  billingHeaderRepository.save(billingHeader);
     }
-    private BillingDetail  BillingDetaiDataSave(BillingHeader bhdId, DgOrderDt dtId ){
+    private BillingDetail  BillingDetaiDataSave(BillingHeader bhdId, DgOrderDt dtId, LabInvestigationReq investigation){
         ///  Billing details
         BillingDetail billingDetail = new BillingDetail();
         billingDetail.setBillingHd(bhdId);
@@ -317,6 +348,21 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setPackageField(dtId.getPackageId());
         billingDetail.setCreatedDt(OffsetDateTime.now());
         billingDetail.setUpdatedDt(OffsetDateTime.now());
+        billingDetail.setQuantity(1);
+        billingDetail.setBasePrice(BigDecimal.valueOf(investigation.getActualAmount()));
+        billingDetail.setDiscount(BigDecimal.valueOf(investigation.getDiscountedAmount()));
+        billingDetail.setTariff(BigDecimal.valueOf(investigation.getActualAmount()));
+        billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()));
+        MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
+        BigDecimal tax=BigDecimal.ZERO;
+        if(sevcat.getGstApplicable()){
+            tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount())).divide(BigDecimal.valueOf(100));
+        }
+        billingDetail.setTaxAmount(tax);
+        billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
+        billingDetail.setNetAmount(billingDetail.getAmountAfterDiscount().add(billingDetail.getTaxAmount()));
+        billingDetail.setTotal(billingDetail.getNetAmount());
+
         //not null column
        // billingDetail.setDetailId();
        // billingDetail.setChargeCost();
@@ -326,7 +372,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     }
 
 
-    private BillingDetail  BillingDetaiDataSavePackage(BillingHeader bhdId, DgInvestigationPackage pack){
+    private BillingDetail  BillingDetaiDataSavePackage(BillingHeader bhdId, DgInvestigationPackage pack, LabPackegReq req){
         ///  Billing details
         BillingDetail billingDetail = new BillingDetail();
         billingDetail.setBillingHd(bhdId);
@@ -339,6 +385,23 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setPackageField(pack);
         billingDetail.setCreatedDt(OffsetDateTime.now());
         billingDetail.setUpdatedDt(OffsetDateTime.now());
+
+
+        billingDetail.setQuantity(1);
+        billingDetail.setBasePrice(BigDecimal.valueOf(req.getActualAmount()));
+        billingDetail.setDiscount(BigDecimal.valueOf(req.getDiscountedAmount()));
+        billingDetail.setTariff(BigDecimal.valueOf(req.getActualAmount()));
+        billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(req.getActualAmount()));
+        MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
+        BigDecimal tax=BigDecimal.ZERO;
+        if(sevcat.getGstApplicable()){
+            tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(req.getActualAmount())).divide(BigDecimal.valueOf(100));
+        }
+        billingDetail.setTaxAmount(tax);
+        billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
+        billingDetail.setNetAmount(billingDetail.getAmountAfterDiscount().add(billingDetail.getTaxAmount()));
+        billingDetail.setTotal(billingDetail.getNetAmount());
+
         //not null column
         // billingDetail.setDetailId();
         // billingDetail.setChargeCost();

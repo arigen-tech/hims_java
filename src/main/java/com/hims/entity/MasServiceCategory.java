@@ -48,4 +48,7 @@ public class MasServiceCategory {
     @Column(name = "last_chg_dt", nullable = false)
     private Instant lastChgDt;
 
+    @Column(name = "gst_percent")
+    private Double gstPercent;
+
 }
