@@ -1,6 +1,7 @@
 package com.hims.service;
 
 import com.hims.request.OpeningBalanceEntryRequest;
+import com.hims.request.OpeningBalanceEntryRequest2;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpeningBalanceEntryResponse;
 
@@ -21,4 +22,6 @@ public interface OpeningBalanceEntryService {
     ApiResponse<OpeningBalanceEntryResponse> createAndUpdateStatus(OpeningBalanceEntryRequest request);
 
     List<OpeningBalanceEntryResponse> getListByStatus(String[] statuses);
+
+    ApiResponse<String> approved(Long id,OpeningBalanceEntryRequest2 request);
 }

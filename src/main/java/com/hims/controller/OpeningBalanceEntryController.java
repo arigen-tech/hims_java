@@ -4,10 +4,8 @@ import com.hims.entity.MasManufacturer;
 import com.hims.entity.MasStoreItem;
 import com.hims.request.MasManufacturerRequest;
 import com.hims.request.OpeningBalanceEntryRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.AppsetupResponse;
-import com.hims.response.MasInvestigationPriceDetailsResponse;
-import com.hims.response.OpeningBalanceEntryResponse;
+import com.hims.request.OpeningBalanceEntryRequest2;
+import com.hims.response.*;
 import com.hims.service.OpeningBalanceEntryService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +54,13 @@ public class OpeningBalanceEntryController {
             ) {
         ApiResponse<OpeningBalanceEntryResponse> response =openingBalanceEntryService.createAndUpdateStatus(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    @PutMapping("/Approved/{id}")
+    public ResponseEntity<ApiResponse<String>> Approved(@PathVariable Long id,
+            @RequestBody OpeningBalanceEntryRequest2 request
+    ) {
+        openingBalanceEntryService.approved(id,request);
+        return new ResponseEntity<>(openingBalanceEntryService.approved(id,request), HttpStatus.CREATED);
     }
 
 
