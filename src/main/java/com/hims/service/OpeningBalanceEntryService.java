@@ -12,7 +12,7 @@ public interface OpeningBalanceEntryService {
     ApiResponse<OpeningBalanceEntryResponse> add(OpeningBalanceEntryRequest openingBalanceEntryRequest);
 
 
-    ApiResponse<OpeningBalanceEntryResponse> update(Long id, OpeningBalanceEntryRequest openingBalanceEntryRequest);
+    ApiResponse<String> update(Long id, OpeningBalanceEntryRequest openingBalanceEntryRequest);
 
     ApiResponse<String> updateByStatus(Long id, String status);
     

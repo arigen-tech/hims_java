@@ -171,7 +171,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
     @Override
     @Transactional
-    public ApiResponse<OpeningBalanceEntryResponse> update(Long id, OpeningBalanceEntryRequest openingBalanceEntryRequest) {
+    public ApiResponse<String> update(Long id, OpeningBalanceEntryRequest openingBalanceEntryRequest) {
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
@@ -193,81 +193,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         hd.setEnteredBy(openingBalanceEntryRequest.getEnteredBy());
         hd.setLastUpdatedDt(LocalDateTime.now());
         hd.setStatus("s");
-
         StoreBalanceHd updatedHd = hdRepo.save(hd);
-
-        List<OpeningBalanceDtRequest> dtRequests = openingBalanceEntryRequest.getStoreBalanceDtList();
-        Set<String> uniqueCombinationSet = new HashSet<>();
-        List<StoreBalanceDt> dtList = new ArrayList<>();
-
-        for (OpeningBalanceDtRequest dtRequest : dtRequests) {
-
-            // DOM vs DOE validation
-            if (dtRequest.getManufactureDate() != null && dtRequest.getExpiryDate() != null &&
-                    dtRequest.getManufactureDate().isAfter(dtRequest.getExpiryDate())) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Manufacture Date cannot be after Expiry Date for itemId: " + dtRequest.getItemId(),
-                        HttpStatus.BAD_REQUEST.value());
-            }
-
-
-            String key = dtRequest.getItemId() + "|" + dtRequest.getBatchNo() + "|" +
-                    dtRequest.getManufactureDate() + "|" + dtRequest.getExpiryDate();
-            if (!uniqueCombinationSet.add(key)) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Duplicate item in request with same itemId, batchNo, DOM and DOE. ItemId: "
-                                + dtRequest.getItemId(),
-                        HttpStatus.BAD_REQUEST.value());
-            }
-
-            StoreBalanceDt dt = new StoreBalanceDt();
-            dt.setBalanceMId(updatedHd);
-
-            Optional<MasStoreItem> masStoreItem = itemRepo.findById(dtRequest.getItemId());
-            if (masStoreItem.isEmpty()) {
-                return ResponseUtils.createNotFoundResponse("MasStoreItem not found", 404);
-            }
-
-            dt.setItemId(masStoreItem.get());
-            dt.setHsnCode(masStoreItem.get().getHsnCode());
-            dt.setGstPercent(dtRequest.getGstPercent());
-            dt.setBatchNo(dtRequest.getBatchNo());
-            dt.setManufactureDate(dtRequest.getManufactureDate());
-            dt.setExpiryDate(dtRequest.getExpiryDate());
-            dt.setQty(dtRequest.getQty());
-            dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
-            dt.setPurchaseRatePerUnit(dtRequest.getPurchaseRatePerUnit());
-            dt.setTotalPurchaseCost(dtRequest.getTotalPurchaseCost());
-            dt.setMrpPerUnit(dtRequest.getMrpPerUnit());
-
-
-            BigDecimal gst = dtRequest.getGstPercent();
-            BigDecimal purchaseRatePerUnit = dtRequest.getPurchaseRatePerUnit();
-            BigDecimal divisor = BigDecimal.ONE.add(gst.divide(BigDecimal.valueOf(100)));
-            BigDecimal basePrice = purchaseRatePerUnit.divide(divisor, 2, RoundingMode.HALF_UP);
-            BigDecimal gstAmount = purchaseRatePerUnit.subtract(basePrice);
-
-            dt.setGstAmountPerUnit(gstAmount);
-            dt.setBaseRatePerUnit(basePrice);
-
-            BigDecimal totalMrp = dtRequest.getMrpPerUnit().multiply(BigDecimal.valueOf(dtRequest.getQty()));
-            dt.setTotalMrpValue(totalMrp);
-
-            dt.setBrandId(brandRepo.findById(dtRequest.getBrandId()).orElse(null));
-            Optional<MasManufacturer> masManufacturer = manufacturerRepo.findById(dtRequest.getManufacturerId());
-            if (masManufacturer.isEmpty()) {
-                return ResponseUtils.createNotFoundResponse("Manufacturer not found", 404);
-            }
-            dt.setManufacturerId(masManufacturer.get());
-
-            dtList.add(dt);
-        }
-
-        dtRepo.saveAll(dtList);
-
-        return ResponseUtils.createSuccessResponse(
-                buildOpeningBalanceEntryResponse(updatedHd, dtList),
-                new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(" successfully", new TypeReference<>() {});
 
     }
 

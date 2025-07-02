@@ -31,7 +31,7 @@ public class OpeningBalanceEntryController {
     }
 
     @PutMapping("/updateById/{id}")
-    public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> updateOpeningBalance(@PathVariable Long id,
+    public ResponseEntity<ApiResponse<String>> updateOpeningBalance(@PathVariable Long id,
             @RequestBody OpeningBalanceEntryRequest openingBalanceEntryRequest) {
         return ResponseEntity.ok(openingBalanceEntryService.update(id,openingBalanceEntryRequest));
     }
