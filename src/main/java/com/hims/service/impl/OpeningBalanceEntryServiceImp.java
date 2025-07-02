@@ -183,6 +183,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             return ResponseUtils.createNotFoundResponse("Opening balance entry not found with id " + id, 404);
         }
 
+         addDetails(openingBalanceEntryRequest.getStoreBalanceDtList(), id);
+
         StoreBalanceHd hd = optionalHd.get();
 
         // Update HD fields
@@ -330,6 +332,107 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         StoreBalanceHd hd2=hdRepo.save(hd1);
         
         return ResponseUtils.createSuccessResponse("Approved successfully", new TypeReference<>() {});
+    }
+
+    public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
+        for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {
+            if (dtRequest.getBalanceId() == null) {
+
+                StoreBalanceDt dt = new StoreBalanceDt();
+                Optional<StoreBalanceHd> optionalHd = hdRepo.findById(hdId);
+                if (optionalHd.isEmpty()) {
+                    return "Opening balance entry not found with id ";
+                }
+                dt.setBalanceMId(optionalHd.get());
+                Optional<MasStoreItem> masStoreItem = itemRepo.findById(dtRequest.getItemId());
+                if (masStoreItem.isEmpty()) {
+                    return "Item not found";
+                }
+
+                dt.setItemId(masStoreItem.get());
+                MasHSN hsnObj = masStoreItem.get().getHsnCode();
+                dt.setHsnCode(hsnObj);
+                dt.setGstPercent(dtRequest.getGstPercent());
+                dt.setBatchNo(dtRequest.getBatchNo());
+                dt.setManufactureDate(dtRequest.getManufactureDate());
+                dt.setExpiryDate(dtRequest.getExpiryDate());
+                dt.setQty(dtRequest.getQty());
+                dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
+                dt.setPurchaseRatePerUnit(dtRequest.getPurchaseRatePerUnit());
+                dt.setTotalPurchaseCost(dtRequest.getTotalPurchaseCost());
+                dt.setMrpPerUnit(dtRequest.getMrpPerUnit());
+
+                // GST and base rate calculations
+                BigDecimal gst = dtRequest.getGstPercent();
+                BigDecimal purchaseRatePerUnit = dtRequest.getPurchaseRatePerUnit();
+                BigDecimal divisor = BigDecimal.ONE.add(gst.divide(BigDecimal.valueOf(100)));
+                BigDecimal basePrice = purchaseRatePerUnit.divide(divisor, 2, RoundingMode.HALF_UP);
+                BigDecimal gstAmount = purchaseRatePerUnit.subtract(basePrice);
+
+                dt.setGstAmountPerUnit(gstAmount);
+                dt.setBaseRatePerUnit(basePrice);
+
+                Long qty = dtRequest.getQty();
+                BigDecimal mrpPerUnit = dtRequest.getMrpPerUnit();
+                BigDecimal totalMrp = mrpPerUnit.multiply(BigDecimal.valueOf(qty));
+                dt.setTotalMrpValue(totalMrp);
+
+                dt.setBrandId(brandRepo.findById(dtRequest.getBrandId()).orElse(null));
+                Optional<MasManufacturer> masManufacturer = manufacturerRepo.findById(dtRequest.getManufacturerId());
+                if (masManufacturer.isEmpty()) {
+                    return "MasStoreItem not found";
+                }
+                dt.setManufacturerId(masManufacturer.get());
+                dtRepo.save(dt);
+            } else {
+                StoreBalanceDt dt = new StoreBalanceDt();
+                Optional<StoreBalanceHd> optionalHd = hdRepo.findById(hdId);
+                if (optionalHd.isEmpty()) {
+                    return "Opening balance entry not found with id ";
+                }
+                dt.setBalanceMId(optionalHd.get());
+
+                Optional<MasStoreItem> masStoreItem = itemRepo.findById(dtRequest.getItemId());
+                if (masStoreItem.isEmpty()) {
+                    return "MasStoreItem not found";
+                }
+
+                dt.setItemId(masStoreItem.get());
+                dt.setHsnCode(masStoreItem.get().getHsnCode());
+                dt.setGstPercent(dtRequest.getGstPercent());
+                dt.setBatchNo(dtRequest.getBatchNo());
+                dt.setManufactureDate(dtRequest.getManufactureDate());
+                dt.setExpiryDate(dtRequest.getExpiryDate());
+                dt.setQty(dtRequest.getQty());
+                dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
+                dt.setPurchaseRatePerUnit(dtRequest.getPurchaseRatePerUnit());
+                dt.setTotalPurchaseCost(dtRequest.getTotalPurchaseCost());
+                dt.setMrpPerUnit(dtRequest.getMrpPerUnit());
+
+
+                BigDecimal gst = dtRequest.getGstPercent();
+                BigDecimal purchaseRatePerUnit = dtRequest.getPurchaseRatePerUnit();
+                BigDecimal divisor = BigDecimal.ONE.add(gst.divide(BigDecimal.valueOf(100)));
+                BigDecimal basePrice = purchaseRatePerUnit.divide(divisor, 2, RoundingMode.HALF_UP);
+                BigDecimal gstAmount = purchaseRatePerUnit.subtract(basePrice);
+
+                dt.setGstAmountPerUnit(gstAmount);
+                dt.setBaseRatePerUnit(basePrice);
+
+                BigDecimal totalMrp = dtRequest.getMrpPerUnit().multiply(BigDecimal.valueOf(dtRequest.getQty()));
+                dt.setTotalMrpValue(totalMrp);
+
+                dt.setBrandId(brandRepo.findById(dtRequest.getBrandId()).orElse(null));
+                Optional<MasManufacturer> masManufacturer = manufacturerRepo.findById(dtRequest.getManufacturerId());
+                if (masManufacturer.isEmpty()) {
+                    return"Manufacturer not found ";
+                }
+                dt.setManufacturerId(masManufacturer.get());
+
+                dtRepo.save(dt);
+            }
+        }
+        return "successfully";
     }
 
     private OpeningBalanceEntryResponse buildOpeningBalanceEntryResponse(StoreBalanceHd hd, List<StoreBalanceDt> dtList) {

@@ -3,6 +3,7 @@ package com.hims.controller;
 import com.hims.entity.MasManufacturer;
 import com.hims.entity.MasStoreItem;
 import com.hims.request.MasManufacturerRequest;
+import com.hims.request.OpeningBalanceDtRequest;
 import com.hims.request.OpeningBalanceEntryRequest;
 import com.hims.request.OpeningBalanceEntryRequest2;
 import com.hims.response.*;
@@ -62,6 +63,7 @@ public class OpeningBalanceEntryController {
         openingBalanceEntryService.approved(id,request);
         return new ResponseEntity<>(openingBalanceEntryService.approved(id,request), HttpStatus.CREATED);
     }
+
 
 
 

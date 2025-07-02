@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 @Data
 public class OpeningBalanceDtRequest {
+    private Long balanceId;
     private Long itemId;
     private String batchNo;
     private LocalDate manufactureDate;
