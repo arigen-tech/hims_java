@@ -316,7 +316,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setReferredBy(vId.getDoctorName());//few doute
             //billingHeader.setGstn_bill_no("");
             billingHeader.setBillingDate(Instant.now());// what date will Pass  , I am Passing currentdate
-            billingHeader.setTotalAmount(BigDecimal.valueOf(labReq.getTotalAmount()));//
+            //billingHeader.setTotalAmount(BigDecimal.valueOf(labReq.getTotalAmount()));//
             billingHeader.setPaymentStatus("p");
             billingHeader.setVisit(vId);
             billingHeader.setHdorder(hdId);///two Hd id is there  one for
@@ -352,7 +352,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setBasePrice(BigDecimal.valueOf(investigation.getActualAmount()));
         billingDetail.setDiscount(BigDecimal.valueOf(investigation.getDiscountedAmount()));
         billingDetail.setTariff(BigDecimal.valueOf(investigation.getActualAmount()));
-        billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()));
+       // billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()));
+        billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount())));
+
         MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
         BigDecimal tax=BigDecimal.ZERO;
         if(sevcat.getGstApplicable()){
@@ -391,7 +393,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setBasePrice(BigDecimal.valueOf(req.getActualAmount()));
         billingDetail.setDiscount(BigDecimal.valueOf(req.getDiscountedAmount()));
         billingDetail.setTariff(BigDecimal.valueOf(req.getActualAmount()));
-        billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(req.getActualAmount()));
+        billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(req.getActualAmount()).subtract(BigDecimal.valueOf(req.getDiscountedAmount())));
         MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
         BigDecimal tax=BigDecimal.ZERO;
         if(sevcat.getGstApplicable()){
