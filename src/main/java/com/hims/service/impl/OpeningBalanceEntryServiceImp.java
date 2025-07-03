@@ -312,13 +312,11 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 dt.setManufacturerId(masManufacturer.get());
                 dtRepo.save(dt);
             } else {
-                StoreBalanceDt dt = new StoreBalanceDt();
-                Optional<StoreBalanceHd> optionalHd = hdRepo.findById(hdId);
-                if (optionalHd.isEmpty()) {
-                    return "Opening balance entry not found with id ";
+                Optional<StoreBalanceDt> storeBalanceDt=dtRepo.findById(dtRequest.getBalanceId());
+                if(storeBalanceDt.isEmpty()){
+                    return "StoreBalanceDt not found";
                 }
-                dt.setBalanceMId(optionalHd.get());
-
+                StoreBalanceDt dt =storeBalanceDt.get();
                 Optional<MasStoreItem> masStoreItem = itemRepo.findById(dtRequest.getItemId());
                 if (masStoreItem.isEmpty()) {
                     return "MasStoreItem not found";
