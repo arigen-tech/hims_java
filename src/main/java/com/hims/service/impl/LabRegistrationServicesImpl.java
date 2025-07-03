@@ -316,7 +316,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setReferredBy(vId.getDoctorName());//few doute
             //billingHeader.setGstn_bill_no("");
             billingHeader.setBillingDate(Instant.now());// what date will Pass  , I am Passing currentdate
-//            billingHeader.setTotalAmount(BigDecimal.valueOf(labReq.getTotalAmount()));//
+            billingHeader.setTotalAmount(BigDecimal.valueOf(labReq.getTotalAmount()));//
             billingHeader.setPaymentStatus("p");
             billingHeader.setVisit(vId);
             billingHeader.setHdorder(hdId);///two Hd id is there  one for
