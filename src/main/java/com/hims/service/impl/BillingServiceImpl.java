@@ -6,6 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpdBillingPaymentResponse;
 import com.hims.service.BillingService;
+import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,12 +33,15 @@ public class BillingServiceImpl implements BillingService {
     PaymentDetailRepository paymentDetailRepository;
     @Autowired
     private VisitRepository visitRepository;
+    @Autowired
+    AuthUtil authUtil;
 
     @Override
     @Transactional
     public ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount) {
         BillingHeader header=new BillingHeader();
         OpdBillingPaymentResponse response=new OpdBillingPaymentResponse();
+        User currentUser = authUtil.getCurrentUser();
         try{
             BigDecimal totalDiscount= BigDecimal.valueOf(0);
             header.setBillDate(OffsetDateTime.now());
@@ -72,7 +76,7 @@ public class BillingServiceImpl implements BillingService {
             }
             header.setDiscountAmount(totalDiscount);
             header.setPaymentStatus("n");
-            header.setCreatedBy("");
+            header.setCreatedBy(currentUser.getFirstName());
             header.setUpdatedDt(Instant.now());
             header.setCreatedDt(Instant.now());
             header.setInvoiceNo("");
@@ -164,7 +168,7 @@ public class BillingServiceImpl implements BillingService {
             payment.setPaymentMode("Cash");
             payment.setPaymentReferenceNo("NA");
             payment.setCreatedAt(Instant.now());
-            payment.setCreatedBy("");
+            payment.setCreatedBy(authUtil.getCurrentUser().getFirstName());
             payment.setPaymentStatus("y");
             payment.setUpdatedAt(Instant.now());
             PaymentDetail savedPayment=paymentDetailRepository.save(payment);
