@@ -192,9 +192,9 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         hd.setDepartmentId(depObj);
         hd.setEnteredBy(openingBalanceEntryRequest.getEnteredBy());
         hd.setLastUpdatedDt(LocalDateTime.now());
-        if(openingBalanceEntryRequest.getStatus() == "s") {
+        if(openingBalanceEntryRequest.getStatus() == "s"  || openingBalanceEntryRequest.getStatus() == null ) {
             hd.setStatus("s");
-        }else {
+        }else if (openingBalanceEntryRequest.getStatus() == "p") {
             hd.setStatus("p");
         }
         StoreBalanceHd updatedHd = hdRepo.save(hd);
