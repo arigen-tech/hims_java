@@ -1109,6 +1109,16 @@ public class MasterController {
     }
 
 
+    @GetMapping("/masServiceCategory/getGstConfig/{flag}")
+    public ResponseEntity<ApiResponse<GstConfigResponse>> getGstConfig(@PathVariable int flag) {
+        ApiResponse<GstConfigResponse> response = masServiceCategoryService.getGstConfig(flag);
+
+        HttpStatus status = (response.getStatus() == HttpStatus.OK.value()) ? HttpStatus.OK : HttpStatus.NOT_FOUND;
+
+        return new ResponseEntity<>(response, status);
+    }
+
+
     //    ================================Mas Store Item Controller================================//
     @PostMapping("/masStoreItem/create")
     public ResponseEntity<ApiResponse<MasStoreItemResponse>> addMasItemCategory(@RequestBody MasStoreItemRequest masStoreItemRequest) {
@@ -1124,7 +1134,7 @@ public class MasterController {
     }
 
     @GetMapping("/masStoreItem/getAll/{flag}")
-    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStoreItem(@PathVariable int flag) {
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(@PathVariable int flag) {
         return masStoreItemService.getAllMasStoreItem(flag);
     }
 

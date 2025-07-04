@@ -40,6 +40,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     private MasStoreUnitRepository masStoreUnitRepository;
     @Autowired
     private MasHsnRepository masHsnRepository;
+    @Autowired
+    private MasItemCategoryRepository masItemCategoryRepository;
 
     @Autowired
     UserRepo userRepo;
@@ -114,6 +116,11 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
 
         }
+        Optional<MasItemCategory> masItemCategory = masItemCategoryRepository.findById(masStoreItemRequest.getMasItemCategoryId());
+        if (masItemCategory.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("MasItemCategory not found", 404);
+
+        }
         masStoreItem.setDispUnit(masStoreUnit.get());
         masStoreItem.setUnitAU(masStoreUnit1.get());
         masStoreItem.setItemClassId(masItemClass.get());
@@ -121,6 +128,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setItemTypeId(masItemType.get());
         masStoreItem.setSectionId(masStoreSection.get());
         masStoreItem.setHsnCode(masHSN.get());
+        masStoreItem.setMasItemCategory(masItemCategory.get());
 
         MasStoreItem masStoreItem1 = masStoreItemRepository.save(masStoreItem);
         return ResponseUtils.createSuccessResponse(convertToResponse(masStoreItem1), new TypeReference<>() {
@@ -153,7 +161,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     }
 
     @Override
-    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStoreItem(int flag) {
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag) {
 
         List<MasStoreItem> masStoreItems;
         if (flag == 1) {
@@ -165,8 +173,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             }, "Invalid flag value. Use 0 or 1.", 400);
         }
 
-        List<MasStoreItemResponse2> responses = masStoreItems.stream()
-                .map(this::convertToResponse2)
+        List<MasStoreItemResponse> responses = masStoreItems.stream()
+                .map(this::convertToResponse)
                 .collect(Collectors.toList());
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
@@ -259,6 +267,16 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
                 }
             }
+            if (request.getMasItemCategoryId() != null) {
+                Optional<MasItemCategory> masItemCategory = masItemCategoryRepository.findById(request.getMasItemCategoryId());
+                if (masItemCategory.isPresent()) {
+                    masStoreItem1.setMasItemCategory(masItemCategory.get());
+                } else {
+                    return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
+
+                }
+            }
+
 
             MasStoreItem masStoreItem2 = masStoreItemRepository.save(masStoreItem1);
             return ResponseUtils.createSuccessResponse(convertToResponse(masStoreItem2), new TypeReference<>() {
@@ -395,6 +413,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             response.setHsnCode(item.getHsnCode()!=null?item.getHsnCode().getHsnCode():null);
             response.setHsnGstPercent(item.getHsnCode()!=null?item.getHsnCode().getGstRate():null);
        // }
+        response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
+        response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
         return response;
     }
 

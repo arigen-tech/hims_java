@@ -88,42 +88,19 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
         StoreBalanceHd savedHd = hdRepo.save(hd);
 
-        // Validation: DOM<= DOE and no duplicate itemId + batchNo + DOM + DOE
+
         List<OpeningBalanceDtRequest> dtRequests = openingBalanceEntryRequest.getStoreBalanceDtList();
-        Set<String> uniqueCombinationSet = new HashSet<>();
 
-        for (OpeningBalanceDtRequest dt : dtRequests) {
-
-
-            if (dt.getManufactureDate() != null && dt.getExpiryDate() != null &&
-                    dt.getManufactureDate().isAfter(dt.getExpiryDate())) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Manufacture Date cannot be after Expiry Date for itemId: " + dt.getItemId(),
-                        HttpStatus.BAD_REQUEST.value());
-            }
-
-
-            String key = dt.getItemId() + "|" + dt.getBatchNo() + "|" + dt.getManufactureDate() + "|" + dt.getExpiryDate();
-            if (!uniqueCombinationSet.add(key)) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Duplicate entry not allowed for same itemId, batchNo, DOM and DOE. Found duplicate for itemId: "
-                                + dt.getItemId(),
-                        HttpStatus.BAD_REQUEST.value());
-            }
-        }
 
         //  save DT records
         List<StoreBalanceDt> dtList = new ArrayList<>();
         for (OpeningBalanceDtRequest dtRequest : dtRequests) {
-
             StoreBalanceDt dt = new StoreBalanceDt();
             dt.setBalanceMId(savedHd);
-
             Optional<MasStoreItem> masStoreItem = itemRepo.findById(dtRequest.getItemId());
             if (masStoreItem.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("MasStoreItem not found", 404);
             }
-
             dt.setItemId(masStoreItem.get());
             MasHSN hsnObj = masStoreItem.get().getHsnCode();
             dt.setHsnCode(hsnObj);
@@ -134,7 +111,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             dt.setQty(dtRequest.getQty());
             dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
             dt.setPurchaseRatePerUnit(dtRequest.getPurchaseRatePerUnit());
-            dt.setTotalPurchaseCost(dtRequest.getTotalPurchaseCost());
+            dt.setTotalMrpValue(dtRequest.getTotalPurchaseCost());
             dt.setMrpPerUnit(dtRequest.getMrpPerUnit());
 
             // GST and base rate calculations
@@ -143,27 +120,21 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             BigDecimal divisor = BigDecimal.ONE.add(gst.divide(BigDecimal.valueOf(100)));
             BigDecimal basePrice = purchaseRatePerUnit.divide(divisor, 2, RoundingMode.HALF_UP);
             BigDecimal gstAmount = purchaseRatePerUnit.subtract(basePrice);
-
             dt.setGstAmountPerUnit(gstAmount);
             dt.setBaseRatePerUnit(basePrice);
-
             Long qty = dtRequest.getQty();
-            BigDecimal mrpPerUnit = dtRequest.getMrpPerUnit();
-            BigDecimal totalMrp = mrpPerUnit.multiply(BigDecimal.valueOf(qty));
-            dt.setTotalMrpValue(totalMrp);
-
+            BigDecimal purRateUnit = dtRequest.getPurchaseRatePerUnit();
+            BigDecimal total = purRateUnit .multiply(BigDecimal.valueOf(qty));
+            dt.setTotalPurchaseCost(total);
             dt.setBrandId(brandRepo.findById(dtRequest.getBrandId()).orElse(null));
             Optional<MasManufacturer> masManufacturer=manufacturerRepo.findById(dtRequest.getManufacturerId());
             if(masManufacturer.isEmpty()){
                 return ResponseUtils.createNotFoundResponse("MasStoreItem not found", 404);
             }
             dt.setManufacturerId(masManufacturer.get());
-
             dtList.add(dt);
         }
-
         dtRepo.saveAll(dtList);
-
         return ResponseUtils.createSuccessResponse(
                 buildOpeningBalanceEntryResponse(savedHd, dtList),
                 new TypeReference<>() {});
@@ -192,7 +163,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         hd.setDepartmentId(depObj);
         hd.setEnteredBy(openingBalanceEntryRequest.getEnteredBy());
         hd.setLastUpdatedDt(LocalDateTime.now());
-        if(openingBalanceEntryRequest.getStatus().equals("s")  || openingBalanceEntryRequest.getStatus() == null ) {
+        if(openingBalanceEntryRequest.getStatus().equals("s")  || openingBalanceEntryRequest.getStatus()==null ) {
             hd.setStatus("s");
         }else if (openingBalanceEntryRequest.getStatus().equals("p")) {
             hd.setStatus("p");
@@ -261,8 +232,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         hd1.setRemarks(request.getRemark());
         hd1.setApprovedBy(String.valueOf(currentUser.getUserId()));
         StoreBalanceHd hd2=hdRepo.save(hd1);
-        
         return ResponseUtils.createSuccessResponse("Approved successfully", new TypeReference<>() {});
+
     }
 
     public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
@@ -290,7 +261,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 dt.setQty(dtRequest.getQty());
                 dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
                 dt.setPurchaseRatePerUnit(dtRequest.getPurchaseRatePerUnit());
-                dt.setTotalPurchaseCost(dtRequest.getTotalPurchaseCost());
+                dt.setTotalMrpValue(dtRequest.getTotalPurchaseCost());
                 dt.setMrpPerUnit(dtRequest.getMrpPerUnit());
 
                 // GST and base rate calculations
@@ -304,9 +275,9 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 dt.setBaseRatePerUnit(basePrice);
 
                 Long qty = dtRequest.getQty();
-                BigDecimal mrpPerUnit = dtRequest.getMrpPerUnit();
-                BigDecimal totalMrp = mrpPerUnit.multiply(BigDecimal.valueOf(qty));
-                dt.setTotalMrpValue(totalMrp);
+                BigDecimal purRateUnit = dtRequest.getPurchaseRatePerUnit();
+                BigDecimal total= purRateUnit.multiply(BigDecimal.valueOf(qty));
+                dt.setTotalPurchaseCost(total);
 
                 dt.setBrandId(brandRepo.findById(dtRequest.getBrandId()).orElse(null));
                 Optional<MasManufacturer> masManufacturer = manufacturerRepo.findById(dtRequest.getManufacturerId());

@@ -15,6 +15,7 @@ public class MasStoreItemRequest {
     private Long dispUnit;
     private Long unitAU;
     private Integer sectionId;
+    private Integer masItemCategoryId;
     private BigDecimal aDispQty;
     private Integer itemTypeId;
     private Integer groupId;
