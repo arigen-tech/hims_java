@@ -113,7 +113,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         Visit visit = new Visit();
         visit.setPatient(patient);
         visit.setVisitStatus("n");
-        visit.setBillingStatus("p");
+        visit.setBillingStatus("n");
         visit.setHospital(masHospital);
         visit.setTokenNo(existingTokens + 1);
        // visit.setPreConsultation("y");
@@ -154,7 +154,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setOrderNo(createInvoice());
                 hd.setOrderStatus("p");
                 hd.setCollectionStatus("p");
-                hd.setPaymentStatus("p");
+                hd.setPaymentStatus("n");
                 hd.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
                 hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
                 hd.setDiscountId(1);
@@ -192,7 +192,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     dt.setAppointmentDate(inv.getAppointmentDate());
                     dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
                     dt.setLastChgDate(LocalDate.now());
-                    dt.setBillingStatus("p");
+                    dt.setBillingStatus("n");
 
                     DgOrderDt savedDt = labDtRepository.save(dt);
                     if(inv.isCheckStatus()){
@@ -236,7 +236,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setOrderNo(createInvoice());
                 hd.setOrderStatus("p");
                 hd.setCollectionStatus("p");
-                hd.setPaymentStatus("p");
+                hd.setPaymentStatus("n");
                 hd.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
                 hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
                 hd.setDiscountId(1);
@@ -277,7 +277,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                          dt.setPackageId(pkgObj);
                          dt.setAppointmentDate(req.getAppointmentDate());
                          dt.setLastChgDate(LocalDate.now());
-                         dt.setBillingStatus("p");
+                         dt.setBillingStatus("n");
                          dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
                          DgOrderDt savedDt = labDtRepository.save(dt);
                        }
@@ -317,7 +317,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             //billingHeader.setGstn_bill_no("");
             billingHeader.setBillingDate(Instant.now());// what date will Pass  , I am Passing currentdate
             //billingHeader.setTotalAmount(BigDecimal.valueOf(labReq.getTotalAmount()));//
-            billingHeader.setPaymentStatus("p");
+            billingHeader.setPaymentStatus("n");
             billingHeader.setVisit(vId);
             billingHeader.setHdorder(hdId);///two Hd id is there  one for
             billingHeader.setBillingHdId(hdId.getId());
@@ -343,7 +343,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
          billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY));//pass from property file..
 
          billingDetail.setItemName(dtId.getInvestigationId().getInvestigationName()) ;  // investigation or packeg  name to be store
-          billingDetail.setQuantity(1);//default
+         // billingDetail.setQuantity(1);//default
         billingDetail.setInvestigation(dtId.getInvestigationId());
         billingDetail.setPackageField(dtId.getPackageId());
         billingDetail.setCreatedDt(OffsetDateTime.now());
