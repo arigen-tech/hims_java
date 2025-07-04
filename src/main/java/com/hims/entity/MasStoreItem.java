@@ -75,6 +75,10 @@ public class MasStoreItem {
     private MasItemClass itemClassId;
 
     @ManyToOne(fetch =  FetchType.EAGER)
+    @JoinColumn(name = "item_category_id")
+    private MasItemCategory masItemCategory;
+
+    @ManyToOne(fetch =  FetchType.EAGER)
     @JoinColumn(name = "hsn_code")
     private MasHSN hsnCode;
 

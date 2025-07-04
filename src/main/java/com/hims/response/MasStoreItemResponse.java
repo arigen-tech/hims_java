@@ -28,8 +28,9 @@ public class MasStoreItemResponse {
     private Integer itemTypeId;
     private Integer groupId;
     private Integer itemClassId;
+    private Integer masItemCategoryid;
     private String hsnCode;
-
+     private String masItemCategoryName;
     private String unitAuName;
     private String dispUnitName;
     private String sectionName;
