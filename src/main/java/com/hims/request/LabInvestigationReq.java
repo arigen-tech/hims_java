@@ -9,10 +9,12 @@ import java.util.Date;
 @Getter
 @Setter
 public class LabInvestigationReq {
-    private Long investigationId;
+    private Long id;
     private LocalDate appointmentDate;
     private boolean checkStatus;
     private int actualAmount;
     private int discountedAmount;
+    private String type;
+
 
 }

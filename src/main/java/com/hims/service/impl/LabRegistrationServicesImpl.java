@@ -124,7 +124,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             // Validate all investigation appointment dates
             for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {
                 if (inv.getAppointmentDate() == null) {
-                    throw new IllegalArgumentException("Investigation appointment date must not be null for investigationId: " + inv.getInvestigationId());
+                    throw new IllegalArgumentException("Investigation appointment date must not be null for investigationId: " + inv.getId());
                 }
             }
             // Group investigations by appointment date (safely)
@@ -147,7 +147,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         }
                     }
                 }
-
                 DgOrderHd hd = new DgOrderHd();
                 hd.setAppointmentDate(date);
                 hd.setOrderDate(LocalDate.now());
@@ -162,9 +161,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setVisitId(savedVisit);
                 hd.setDepartmentId(departmentId.intValue());
                 hd.setLastChgBy(String.valueOf(currentUser.getUserId()));
-
                 DgOrderHd savedHd = labHdRepository.save(hd);
-
                 boolean flag=false;
                 for (LabInvestigationReq req:investigations){
                     if(req.isCheckStatus()){
@@ -175,117 +172,146 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 BillingHeader headerId=new BillingHeader();
                 if(flag){
                      headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser,sum,tax,disc);
+                    res.setBillinghdId(headerId.getId().toString());
+                    savedVisit.setBillingHd(headerId);
+                    visitRepository.save(savedVisit);
                 }
                 for (LabInvestigationReq inv : investigations) {
-                    if (inv.getInvestigationId() == null) {
-                        throw new IllegalArgumentException("Investigation ID must not be null");
-                    }
-
-                    DgMasInvestigation invEntity = investigation.findById(inv.getInvestigationId())
-                            .orElseThrow(() -> new IllegalArgumentException("Invalid Investigation ID: " + inv.getInvestigationId()));
-
-                    DgOrderDt dt = new DgOrderDt();
-                    dt.setInvestigationId(invEntity);
-                    dt.setOrderhdId(savedHd);
-                    dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
-                    dt.setMainChargecodeId(invEntity.getMainChargeCodeID().getChargecodeId());
-                    dt.setAppointmentDate(inv.getAppointmentDate());
-                    dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
-                    dt.setLastChgDate(LocalDate.now());
-                    dt.setBillingStatus("n");
-
-                    DgOrderDt savedDt = labDtRepository.save(dt);
-                    if(inv.isCheckStatus()){
-                        BillingDetaiDataSave(headerId, savedDt,inv);
-                    }
-
-                }
-            }
-
-            // Handle Lab Packages
-            Map<LocalDate, List<LabPackegReq>> groupPkg = labReq.getLabPackegReqs().stream()
-                    .filter(req -> req.getAppointmentDate() != null)
-                    .collect(Collectors.groupingBy(LabPackegReq::getAppointmentDate));
-             for (Map.Entry<LocalDate, List<LabPackegReq>> entry : groupPkg.entrySet()) {
-                 LocalDate getDate = entry.getKey();
-                 List<LabPackegReq> getPkg = entry.getValue();
-                 Long pkgId=0L;
-                 LocalDate date = null;
-                boolean check = false;
-                 for (LabPackegReq req:getPkg) {
-                       pkgId= req.getPackegId();
-                       date= req.getAppointmentDate();
-                       check=req.isCheckStatus();
-               if(req.isCheckStatus()){
-                  break;
+                    //check, type= "i"  for  investigation   and  "p"  for packeg to differenciate
+                    if (inv.getType().equalsIgnoreCase("i")) {
+                        if (inv.getId() == null) {
+                            throw new IllegalArgumentException("Investigation ID must not be null");
+                        }
+                        DgMasInvestigation invEntity = investigation.findById(inv.getId())
+                                .orElseThrow(() -> new IllegalArgumentException("Invalid Investigation ID: " + inv.getId()));
+                        DgOrderDt dt = new DgOrderDt();
+                        dt.setInvestigationId(invEntity);
+                        dt.setOrderhdId(savedHd);
+                        dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
+                        dt.setMainChargecodeId(invEntity.getMainChargeCodeID().getChargecodeId());
+                        dt.setAppointmentDate(inv.getAppointmentDate());
+                        dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                        dt.setLastChgDate(LocalDate.now());
+                        dt.setBillingStatus("n");
+                        DgOrderDt savedDt = labDtRepository.save(dt);
+                        if(flag){
+                            savedDt.setBillingHd(headerId);
+                            labDtRepository.save(savedDt);
+                        }
+                        if (inv.isCheckStatus()) {
+                            BillingDetaiDataSave(headerId, savedDt, inv);
+                        }
+                    } else {
+                        DgInvestigationPackage pkgObj = dgInvestigationPackageRepository.findById(inv.getId()).get();
+                        List<PackageInvestigationMapping> mappings = packageInvestigationMappingRepository.findByPackageId(pkgObj);
+                        for (PackageInvestigationMapping map : mappings) {
+                            DgMasInvestigation investId = map.getInvestId();
+                            DgOrderDt dt = new DgOrderDt();
+                            dt.setOrderhdId(savedHd);
+                            dt.setInvestigationId(investId);
+                            dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
+                            dt.setMainChargecodeId(investId.getMainChargeCodeID().getChargecodeId());
+                            dt.setPackageId(pkgObj);
+                            dt.setAppointmentDate(inv.getAppointmentDate());
+                            dt.setLastChgDate(LocalDate.now());
+                            dt.setBillingStatus("n");
+                            dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                            DgOrderDt savedDt = labDtRepository.save(dt);
+                            if(flag) {
+                                savedDt.setBillingHd(headerId);
+                                labDtRepository.save(savedDt);
+                            }
+                        }
+                        if (inv.isCheckStatus()) {
+                            BillingDetaiDataSavePackage(headerId, pkgObj, inv);
+                        }
                    }
-                 }
-                if (pkgId==null) {
-                    throw new IllegalArgumentException("Package ID must not be null");
                 }
-                if (date == null) {
-                    throw new IllegalArgumentException("Package appointment date must not be null");
-                }
-                 Long finalPkgId = pkgId;
-                 DgInvestigationPackage pack = dgInvestigationPackageRepository.findById(pkgId)
-                        .orElseThrow(() -> new IllegalArgumentException("Invalid package ID: " + finalPkgId));
-
-                DgOrderHd hd = new DgOrderHd();
-                hd.setAppointmentDate(getDate);
-                hd.setOrderDate(LocalDate.now());
-                hd.setOrderNo(createInvoice());
-                hd.setOrderStatus("p");
-                hd.setCollectionStatus("p");
-                hd.setPaymentStatus("n");
-                hd.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
-                hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
-                hd.setDiscountId(1);
-                hd.setPatientId(patient);
-                hd.setVisitId(savedVisit);
-                hd.setDepartmentId(departmentId.intValue());
-                hd.setLastChgBy(String.valueOf(currentUser.getUserId()));
-
-                DgOrderHd savedHd = labHdRepository.save(hd);
-                BillingHeader headerId =new BillingHeader() ;
-                 BigDecimal sum=BigDecimal.ZERO;
-                 BigDecimal tax=BigDecimal.ZERO;
-                 BigDecimal disc=BigDecimal.ZERO;
-                 MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
-                 for(LabPackegReq packag:getPkg){
-                     if(packag.isCheckStatus()){
-                         sum=sum.add(BigDecimal.valueOf(packag.getActualAmount()));
-                         disc=disc.add(BigDecimal.valueOf(packag.getDiscountedAmount()));
-                         if(servCat.getGstApplicable()){
-                             tax=tax.add(BigDecimal.valueOf(servCat.getGstPercent()).multiply(BigDecimal.valueOf(packag.getActualAmount()).subtract(BigDecimal.valueOf(packag.getDiscountedAmount()))).divide(BigDecimal.valueOf(100)));
-                         }
-                     }
-                 }
-                if(check){
-                     headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser, sum, tax, disc);
-                }
-                 for (LabPackegReq req:getPkg) {
-                  DgInvestigationPackage pkgObj =  dgInvestigationPackageRepository.findById(req.getPackegId()).get();
-
-                     List<PackageInvestigationMapping> mappings = packageInvestigationMappingRepository.findByPackageId(pkgObj);
-                     for (PackageInvestigationMapping map : mappings) {
-                         DgMasInvestigation inv = map.getInvestId();
-                         DgOrderDt dt = new DgOrderDt();
-                         dt.setOrderhdId(savedHd);
-                         dt.setInvestigationId(inv);
-                         dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
-                         dt.setMainChargecodeId(inv.getMainChargeCodeID().getChargecodeId());
-                         dt.setPackageId(pkgObj);
-                         dt.setAppointmentDate(req.getAppointmentDate());
-                         dt.setLastChgDate(LocalDate.now());
-                         dt.setBillingStatus("n");
-                         dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
-                         DgOrderDt savedDt = labDtRepository.save(dt);
-                       }
-                     if(req.isCheckStatus()){
-                         BillingDetaiDataSavePackage(headerId,pkgObj,req);
-                      }
-                 }
             }
+            // Handle Lab Packages
+//            Map<LocalDate, List<LabPackegReq>> groupPkg = labReq.getLabPackegReqs().stream()
+//                    .filter(req -> req.getAppointmentDate() != null)
+//                    .collect(Collectors.groupingBy(LabPackegReq::getAppointmentDate));
+//             for (Map.Entry<LocalDate, List<LabPackegReq>> entry : groupPkg.entrySet()) {
+//                 LocalDate getDate = entry.getKey();
+//                 List<LabPackegReq> getPkg = entry.getValue();
+//                 Long pkgId=0L;
+//                 LocalDate date = null;
+//                boolean check = false;
+//                 for (LabPackegReq req:getPkg) {
+//                       pkgId= req.getPackegId();
+//                       date= req.getAppointmentDate();
+//                       check=req.isCheckStatus();
+//               if(req.isCheckStatus()){
+//                  break;
+//                   }
+//                 }
+//                if (pkgId==null) {
+//                    throw new IllegalArgumentException("Package ID must not be null");
+//                }
+//                if (date == null) {
+//                    throw new IllegalArgumentException("Package appointment date must not be null");
+//                }
+//                 Long finalPkgId = pkgId;
+//                 DgInvestigationPackage pack = dgInvestigationPackageRepository.findById(pkgId)
+//                        .orElseThrow(() -> new IllegalArgumentException("Invalid package ID: " + finalPkgId));
+//
+//                DgOrderHd hd = new DgOrderHd();
+//                hd.setAppointmentDate(getDate);
+//                hd.setOrderDate(LocalDate.now());
+//                hd.setOrderNo(createInvoice());
+//                hd.setOrderStatus("p");
+//                hd.setCollectionStatus("p");
+//                hd.setPaymentStatus("n");
+//                hd.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
+//                hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
+//                hd.setDiscountId(1);
+//                hd.setPatientId(patient);
+//                hd.setVisitId(savedVisit);
+//                hd.setDepartmentId(departmentId.intValue());
+//                hd.setLastChgBy(String.valueOf(currentUser.getUserId()));
+//
+//                DgOrderHd savedHd = labHdRepository.save(hd);
+//                BillingHeader headerId =new BillingHeader() ;
+//                 BigDecimal sum=BigDecimal.ZERO;
+//                 BigDecimal tax=BigDecimal.ZERO;
+//                 BigDecimal disc=BigDecimal.ZERO;
+//                 MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
+//                 for(LabPackegReq packag:getPkg){
+//                     if(packag.isCheckStatus()){
+//                         sum=sum.add(BigDecimal.valueOf(packag.getActualAmount()));
+//                         disc=disc.add(BigDecimal.valueOf(packag.getDiscountedAmount()));
+//                         if(servCat.getGstApplicable()){
+//                             tax=tax.add(BigDecimal.valueOf(servCat.getGstPercent()).multiply(BigDecimal.valueOf(packag.getActualAmount()).subtract(BigDecimal.valueOf(packag.getDiscountedAmount()))).divide(BigDecimal.valueOf(100)));
+//                         }
+//                     }
+//                 }
+//                if(check){
+//                     headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser, sum, tax, disc);
+//                }
+//                 for (LabPackegReq req:getPkg) {
+//                  DgInvestigationPackage pkgObj =  dgInvestigationPackageRepository.findById(req.getPackegId()).get();
+//
+//                     List<PackageInvestigationMapping> mappings = packageInvestigationMappingRepository.findByPackageId(pkgObj);
+//                     for (PackageInvestigationMapping map : mappings) {
+//                         DgMasInvestigation inv = map.getInvestId();
+//                         DgOrderDt dt = new DgOrderDt();
+//                         dt.setOrderhdId(savedHd);
+//                         dt.setInvestigationId(inv);
+//                         dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
+//                         dt.setMainChargecodeId(inv.getMainChargeCodeID().getChargecodeId());
+//                         dt.setPackageId(pkgObj);
+//                         dt.setAppointmentDate(req.getAppointmentDate());
+//                         dt.setLastChgDate(LocalDate.now());
+//                         dt.setBillingStatus("n");
+//                         dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
+//                         DgOrderDt savedDt = labDtRepository.save(dt);
+//                       }
+//                     if(req.isCheckStatus()){
+//                         BillingDetaiDataSavePackage(headerId,pkgObj,req);
+//                      }
+//                 }
+//            }
         } catch (SDDException e) {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
         } catch (Exception e) {
@@ -293,6 +319,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
         }
         res.setMsg("Success");
+
+
         return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
     }
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
@@ -319,17 +347,14 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             //billingHeader.setTotalAmount(BigDecimal.valueOf(labReq.getTotalAmount()));//
             billingHeader.setPaymentStatus("n");
             billingHeader.setVisit(vId);
-            billingHeader.setHdorder(hdId);///two Hd id is there  one for
-            billingHeader.setBillingHdId(hdId.getId());
+            billingHeader.setHdorder(hdId);
+           // billingHeader.setBillingHdId(hdId.getId());
             billingHeader.setTotalAmount(sum.subtract(disc).add(tax));
             billingHeader.setDiscountAmount(disc);
             billingHeader.setNetAmount(sum.subtract(disc).add(tax));
             billingHeader.setTaxTotal(tax);
-
-            // investigation and ,one for Packeg so  ,both can be save
-
-            //  billingHeader.setDiscount();//id is Pass
-          //  billingHeader.setDiscountAmount(BigDecimal.valueOf(labReq.getDiscountAmount()));
+            //billingHeader.setDiscount();//id is Pass
+           //billingHeader.setDiscountAmount(BigDecimal.valueOf(labReq.getDiscountAmount()));
             billingHeader.setCreatedBy(Long.toString(currentUser.getUserId()));
             billingHeader.setCreatedDt(Instant.now());
             billingHeader.setUpdatedDt(Instant.now());
@@ -358,7 +383,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
         BigDecimal tax=BigDecimal.ZERO;
         if(sevcat.getGstApplicable()){
-            tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount())).divide(BigDecimal.valueOf(100));
+           /// tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount())).divide(BigDecimal.valueOf(100));
+            tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount()))).divide(BigDecimal.valueOf(100));
+
         }
         billingDetail.setTaxAmount(tax);
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
@@ -372,9 +399,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         ///calculation
         return  billingDetailRepository.save(billingDetail);
     }
-
-
-    private BillingDetail  BillingDetaiDataSavePackage(BillingHeader bhdId, DgInvestigationPackage pack, LabPackegReq req){
+    private BillingDetail  BillingDetaiDataSavePackage(BillingHeader bhdId, DgInvestigationPackage pack, LabInvestigationReq req){
         ///  Billing details
         BillingDetail billingDetail = new BillingDetail();
         billingDetail.setBillingHd(bhdId);
@@ -397,7 +422,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
         BigDecimal tax=BigDecimal.ZERO;
         if(sevcat.getGstApplicable()){
-            tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(req.getActualAmount())).divide(BigDecimal.valueOf(100));
+            tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(req.getActualAmount()).subtract(BigDecimal.valueOf(req.getDiscountedAmount()))).divide(BigDecimal.valueOf(100));
         }
         billingDetail.setTaxAmount(tax);
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
@@ -410,7 +435,5 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         // billingDetail.setOpdService(getOpdService().getId());
         return  billingDetailRepository.save(billingDetail);
     }
-
-
 
 }

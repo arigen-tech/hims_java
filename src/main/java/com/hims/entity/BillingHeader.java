@@ -113,7 +113,7 @@ public class BillingHeader {
     private Instant updatedDt;
 
 
-    @Column(name = "billing_hd_id", nullable = false)
+    @Column(name = "billing_hd_id")//, nullable = false
     private Integer billingHdId;
 
     @Column(name = "bill_date")
