@@ -6,11 +6,13 @@ import com.hims.entity.User;
 import com.hims.entity.repository.MasServiceCategoryRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.response.ApiResponse;
+import com.hims.response.GstConfigResponse;
 import com.hims.service.MasServiceCategoryService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,9 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
     private final MasServiceCategoryRepository masServiceCategoryRepository;
     @Autowired
     UserRepo userRepo;
+
+    @Value("${serviceCategoryLab}")
+    private String serviceCategoryLabCode;
 
     public MasServiceCategoryServiceImpl(MasServiceCategoryRepository masServiceCategoryRepository) {
         this.masServiceCategoryRepository = masServiceCategoryRepository;
@@ -139,6 +144,32 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
         } catch (Exception e) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Error updating status", 500);
         }
+    }
+
+
+    @Override
+    public ApiResponse<GstConfigResponse> getGstConfig(int flag) {
+        MasServiceCategory category = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLabCode);
+
+        ApiResponse<GstConfigResponse> apiResponse = new ApiResponse<>();
+
+        if (category != null) {
+            GstConfigResponse gstConfig = new GstConfigResponse(
+                    category.getGstApplicable(),
+                    category.getGstPercent()
+            );
+
+            apiResponse.setStatus(HttpStatus.OK.value());
+            apiResponse.setMessage("GST config fetched successfully");
+            apiResponse.setResponse(gstConfig);
+
+        } else {
+            apiResponse.setStatus(HttpStatus.NOT_FOUND.value());
+            apiResponse.setMessage("Service category not found for code: " + serviceCategoryLabCode);
+            apiResponse.setResponse(null);
+        }
+
+        return apiResponse;
     }
 
 
