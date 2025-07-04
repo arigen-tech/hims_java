@@ -79,6 +79,9 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     private AuthUtil authUtil;
 
+    @Value("${serviceCategoryOPD}")
+    private String serviceCategoryOPD;
+
     @Override
     public ApiResponse<PatientRegFollowUpResp> registerPatientWithOpd(PatientRequest request, OpdPatientDetailRequest opdPatientDetailRequest, VisitRequest visit) {
         PatientRegFollowUpResp resp=new PatientRegFollowUpResp();
@@ -436,9 +439,9 @@ public class PatientServiceImpl implements PatientService {
         // Save visit
         Visit savedVisit=visitRepository.save(newVisit);
         //create billing header and detail
-        Optional<MasServiceCategory> serviceCategory=masServiceCategoryRepository.findBySacCode("998515");
+        MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
         MasDiscount discount=new MasDiscount();
-        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory.get(),null);
+        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
 
         return savedVisit;
     }
