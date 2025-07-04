@@ -64,9 +64,6 @@ public class DgOrderDt {
     @Column(name = "billing_status", length = 1)
     private String billingStatus;
 
-    @Column(name = " msg_sent", length = 1)
-    private String msgSent;
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "package_id")
     private DgInvestigationPackage packageId;
@@ -76,7 +73,7 @@ public class DgOrderDt {
 
     @Size(max = 1)
     @Column(name = "msg_sent", length = 1)
-    private String msgSent1;
+    private String msgSent;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "billing_hd_id")
