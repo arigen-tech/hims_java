@@ -1,9 +1,11 @@
 package com.hims.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -68,4 +70,16 @@ public class DgOrderDt {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "package_id")
     private DgInvestigationPackage packageId;
+
+    @Column(name = "createdon")
+    private Instant createdon;
+
+    @Size(max = 1)
+    @Column(name = "msg_sent", length = 1)
+    private String msgSent1;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billing_hd_id")
+    private BillingHeader billingHd;
+
 }
