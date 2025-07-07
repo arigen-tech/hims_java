@@ -146,6 +146,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     @Transactional
     public ApiResponse<String> update(Long id, OpeningBalanceEntryRequest openingBalanceEntryRequest) {
         User currentUser = authUtil.getCurrentUser();
+
         if (currentUser == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
@@ -223,6 +224,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
     }
 
+    @Transactional
     @Override
     public ApiResponse<String> approved(Long id, OpeningBalanceEntryRequest2 request) {
         User currentUser = authUtil.getCurrentUser();
@@ -251,7 +253,9 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                             dt.getItemId(),
                             dt.getBatchNo(),
                             dt.getManufactureDate(),
-                            dt.getExpiryDate()
+                            dt.getExpiryDate(),
+                            dt.getBrandId().getBrandId(),
+                            dt.getManufacturerId().getManufacturerId()
                     );
 
             if (existingStockOpt.isPresent()) {
@@ -259,18 +263,19 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
                 Long updatedQty = existingStock.getQty() + dt.getQty();
                 Long updatedOpeningStock = existingStock.getOpeningBalanceQty() + dt.getQty();
-
+                Long updateClosingStock=existingStock.getClosingStock()+dt.getQty();
                 existingStock.setQty(updatedQty);
                 existingStock.setOpeningBalanceQty(updatedOpeningStock);
-                //existingStock.setTotalMrpValue(existingStock.getTotalMrpValue() + dt.getTotalMrp());
-               // existingStock.setTotalPurchaseCost(existingStock.getTotalPurchaseCost() + dt.getTotalPurchaseCost());
+                existingStock.setClosingStock(updateClosingStock);
                 existingStock.setLastChgDate(LocalDateTime.now());
                 existingStock.setLastChgBy(currentUser.getUsername());
                 stockList.add(existingStock);
             } else {
+                Long deptId = authUtil.getCurrentDepartmentId();
                 StoreItemBatchStock stock = new StoreItemBatchStock();
                 stock.setHospitalId(currentUser.getHospital());
-               // stock.setDepartmentId(depObj);
+                MasDepartment depObj = masDepartmentRepository.getById(deptId);
+                stock.setDepartmentId(depObj);
                 stock.setItemId(dt.getItemId());
                 stock.setManufacturerId(dt.getManufacturerId());
                 stock.setBatchNo(dt.getBatchNo());
@@ -278,12 +283,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 stock.setExpiryDate(dt.getExpiryDate());
                 stock.setOpeningBalanceQty(dt.getQty());
                 stock.setQty(dt.getQty());
-               // stock.setBalanceQty(dt.getQty());
-                //  stock.setReceivedQty();
-//            stock.setIssuedQty();
-//            stock.setStockInwardQty();
-//            stock.setStockOutwardQty();
-//            stock.setStockDeficitQty();
+                stock.setClosingStock((dt.getQty()));
                 stock.setUnitsPerPack(dt.getUnitsPerPack());
                 stock.setPurchaseRatePerUnit(dt.getPurchaseRatePerUnit());
                 stock.setGstPercent(dt.getGstPercent());
