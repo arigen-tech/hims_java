@@ -159,7 +159,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
          addDetails(openingBalanceEntryRequest.getStoreBalanceDtList(), id);
 
-        if (!openingBalanceEntryRequest.getDeletedDt().isEmpty() && openingBalanceEntryRequest.getDeletedDt() != null){
+        if ( openingBalanceEntryRequest.getDeletedDt() != null && !openingBalanceEntryRequest.getDeletedDt().isEmpty() ){
             for(Long ids : openingBalanceEntryRequest.getDeletedDt()) {
                 deletedById(ids);
             }
