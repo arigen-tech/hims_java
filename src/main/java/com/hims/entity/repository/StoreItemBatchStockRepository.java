@@ -12,5 +12,7 @@ import java.util.Optional;
 @Repository
 public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBatchStock,Long> {
 
-    Optional<StoreItemBatchStock> findByItemIdAndBatchNoAndManufacturerIdAndExpiryDate(MasStoreItem itemId, String batchNo, LocalDate manufacturerDate, LocalDate expiryDate);
+
+
+    Optional<StoreItemBatchStock> findByItemIdAndBatchNoAndManufactureDateAndExpiryDate(MasStoreItem itemId, String batchNo, LocalDate manufactureDate, LocalDate expiryDate);
 }

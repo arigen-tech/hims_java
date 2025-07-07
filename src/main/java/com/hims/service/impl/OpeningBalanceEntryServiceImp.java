@@ -241,7 +241,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
         for (StoreBalanceDt dt : dtList) {
             Optional<StoreItemBatchStock> existingStockOpt = storeItemBatchStockRepository
-                    .findByItemIdAndBatchNoAndManufacturerIdAndExpiryDate(
+                    .findByItemIdAndBatchNoAndManufactureDateAndExpiryDate(
                             dt.getItemId(),
                             dt.getBatchNo(),
                             dt.getManufactureDate(),

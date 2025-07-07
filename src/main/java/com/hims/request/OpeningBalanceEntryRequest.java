@@ -11,4 +11,5 @@ public class OpeningBalanceEntryRequest {
     private LocalDateTime enteredDt;
     private String status;
     private List<OpeningBalanceDtRequest> storeBalanceDtList;
+    private List<Long> deletedDt;
 }
