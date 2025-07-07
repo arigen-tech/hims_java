@@ -16,7 +16,7 @@ public class OpeningBalanceDtRequest {
     private BigDecimal gstPercent;
     private BigDecimal mrpPerUnit;
     private Long qty;
-    private BigDecimal totalPurchaseCost;
+    private BigDecimal totalMrp;
     private Long brandId;
     private Long manufacturerId;
 }

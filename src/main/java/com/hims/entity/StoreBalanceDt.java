@@ -62,7 +62,7 @@ public class StoreBalanceDt {
     private BigDecimal totalPurchaseCost;
 
     @Column(name = "total_mrp_value", precision = 12, scale = 2,insertable = false, updatable = false)
-    private BigDecimal totalMrpValue;
+    private BigDecimal totalMrp;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "brand_id")

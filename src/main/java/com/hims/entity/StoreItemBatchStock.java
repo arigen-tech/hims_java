@@ -33,8 +33,7 @@ public class StoreItemBatchStock {
     @JoinColumn(name = "item_id")
     private MasStoreItem itemId;
 
-    @Column(name = "manufacturer_id")
-    private Long manufacturerId;
+
 
     @Column(name = "batch_no")
     private String batchNo;
@@ -99,8 +98,8 @@ public class StoreItemBatchStock {
     private MasBrand brandId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "manufacturer")
-    private MasManufacturer manufacturer;
+    @JoinColumn(name = "manufacturer_id")
+    private MasManufacturer manufacturerId;
 
     @Column(name = "last_updated_dt")
     private LocalDateTime lastUpdatedDt;
