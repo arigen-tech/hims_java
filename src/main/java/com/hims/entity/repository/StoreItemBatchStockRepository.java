@@ -14,5 +14,9 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
 
 
 
-    Optional<StoreItemBatchStock> findByItemIdAndBatchNoAndManufactureDateAndExpiryDate(MasStoreItem itemId, String batchNo, LocalDate manufactureDate, LocalDate expiryDate,Long BrandId,Long manufactureId);
+
+
+
+
+    Optional<StoreItemBatchStock> findByItemIdAndBatchNoAndManufactureDateAndExpiryDateAndBrandIdBrandIdAndManufacturerIdManufacturerId(MasStoreItem itemId, String batchNo, LocalDate manufactureDate, LocalDate expiryDate, Long brandId, Long manufacturerId);
 }
