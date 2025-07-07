@@ -152,11 +152,18 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         }
 
         Optional<StoreBalanceHd> optionalHd = hdRepo.findById(id);
+
         if (optionalHd.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("Opening balance entry not found with id " + id, 404);
         }
 
          addDetails(openingBalanceEntryRequest.getStoreBalanceDtList(), id);
+
+        if (!openingBalanceEntryRequest.getDeletedDt().isEmpty()){
+            for(Long ids : openingBalanceEntryRequest.getDeletedDt()) {
+                deletedById(ids);
+            }
+        }
 
         StoreBalanceHd hd = optionalHd.get();
 
@@ -391,6 +398,10 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             }
         }
         return "successfully";
+    }
+
+    private void  deletedById(Long id){
+        dtRepo.deleteById(id);
     }
 
     private OpeningBalanceEntryResponse buildOpeningBalanceEntryResponse(StoreBalanceHd hd, List<StoreBalanceDt> dtList) {
