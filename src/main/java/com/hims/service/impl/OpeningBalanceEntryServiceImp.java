@@ -159,7 +159,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
          addDetails(openingBalanceEntryRequest.getStoreBalanceDtList(), id);
 
-        if (!openingBalanceEntryRequest.getDeletedDt().isEmpty()){
+        if (!openingBalanceEntryRequest.getDeletedDt().isEmpty() && openingBalanceEntryRequest.getDeletedDt() != null){
             for(Long ids : openingBalanceEntryRequest.getDeletedDt()) {
                 deletedById(ids);
             }
@@ -245,7 +245,6 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
         List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd2);
         List<StoreItemBatchStock> stockList = new ArrayList<>();
-
         for (StoreBalanceDt dt : dtList) {
             Optional<StoreItemBatchStock> existingStockOpt = storeItemBatchStockRepository
                     .findByItemIdAndBatchNoAndManufactureDateAndExpiryDate(
@@ -279,7 +278,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 stock.setExpiryDate(dt.getExpiryDate());
                 stock.setOpeningStock(dt.getQty());
                 stock.setQty(dt.getQty());
-                //  stock.setBalanceQty(dt.getQty());
+                stock.setBalanceQty(dt.getQty());
                 //  stock.setReceivedQty();
 //            stock.setIssuedQty();
 //            stock.setStockInwardQty();
