@@ -62,8 +62,8 @@ public class StoreItemBatchStock {
     @Column(name = "stock_surplus")
     private Long stockSurplus;
 
-    @Column(name = "stock_deficit")
-    private Long stockDeficit;
+    @Column(name = "stock_deficient")
+    private Long stockDeficient;
 
     @Column(name = "closing_stock")
     private Long closingStock;
