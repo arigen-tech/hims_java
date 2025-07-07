@@ -44,26 +44,29 @@ public class StoreItemBatchStock {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
-    @Column(name = "opening_stock")
-    private Long openingStock;
+    @Column(name = "opening_balance_qty")
+    private Long openingBalanceQty;
 
-    @Column(name = "received_qty")
-    private Long receivedQty;
+    @Column(name = "po_received_qty")
+    private Long poReceivedQty;
 
-    @Column(name = "issued_qty")
-    private Long issuedQty;
+    @Column(name = "indent_received_qty")
+    private Long indentReceivedQty;
 
-    @Column(name = "balance_qty")
-    private Long balanceQty;
+    @Column(name = "indent_issue_qty")
+    private Long indentIssueQty;
 
-    @Column(name = "stock_inward_qty")
-    private Long stockInwardQty;
+    @Column(name = "opd_issue_qty")
+    private Long opdIssueQty;
 
-    @Column(name = "stock_outward_qty")
-    private Long stockOutwardQty;
+    @Column(name = "stock_surplus")
+    private Long stockSurplus;
 
-    @Column(name = "stock_deficit_qty")
-    private Long stockDeficitQty;
+    @Column(name = "stock_deficit")
+    private Long stockDeficit;
+
+    @Column(name = "closing_stock")
+    private Long closingStock;
 
     @Column(name = "qty")
     private Long qty;
@@ -101,9 +104,9 @@ public class StoreItemBatchStock {
     @JoinColumn(name = "manufacturer_id")
     private MasManufacturer manufacturerId;
 
-    @Column(name = "last_updated_dt")
-    private LocalDateTime lastUpdatedDt;
+    @Column(name = "last_chg_date")
+    private LocalDateTime lastChgDate;
 
-    @Column(name = "last_updated_by")
-    private String lastUpdatedBy;
+    @Column(name = "last_chg_by")
+    private String lastChgBy;
 }

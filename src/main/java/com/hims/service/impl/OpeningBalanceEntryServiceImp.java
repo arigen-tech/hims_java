@@ -258,14 +258,14 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 StoreItemBatchStock existingStock = existingStockOpt.get();
 
                 Long updatedQty = existingStock.getQty() + dt.getQty();
-                Long updatedOpeningStock = existingStock.getOpeningStock() + dt.getQty();
+                Long updatedOpeningStock = existingStock.getOpeningBalanceQty() + dt.getQty();
 
                 existingStock.setQty(updatedQty);
-                existingStock.setOpeningStock(updatedOpeningStock);
+                existingStock.setOpeningBalanceQty(updatedOpeningStock);
                 //existingStock.setTotalMrpValue(existingStock.getTotalMrpValue() + dt.getTotalMrp());
                // existingStock.setTotalPurchaseCost(existingStock.getTotalPurchaseCost() + dt.getTotalPurchaseCost());
-                existingStock.setLastUpdatedDt(LocalDateTime.now());
-                existingStock.setLastUpdatedBy(currentUser.getUsername());
+                existingStock.setLastChgDate(LocalDateTime.now());
+                existingStock.setLastChgBy(currentUser.getUsername());
                 stockList.add(existingStock);
             } else {
                 StoreItemBatchStock stock = new StoreItemBatchStock();
@@ -276,9 +276,9 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 stock.setBatchNo(dt.getBatchNo());
                 stock.setManufactureDate(dt.getManufactureDate());
                 stock.setExpiryDate(dt.getExpiryDate());
-                stock.setOpeningStock(dt.getQty());
+                stock.setOpeningBalanceQty(dt.getQty());
                 stock.setQty(dt.getQty());
-                stock.setBalanceQty(dt.getQty());
+               // stock.setBalanceQty(dt.getQty());
                 //  stock.setReceivedQty();
 //            stock.setIssuedQty();
 //            stock.setStockInwardQty();
@@ -293,13 +293,13 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 stock.setTotalPurchaseCost(dt.getTotalPurchaseCost());
                 stock.setTotalMrpValue(dt.getTotalMrp());
                 stock.setBrandId(dt.getBrandId());
-                stock.setLastUpdatedDt(LocalDateTime.now());
-                stock.setLastUpdatedBy(currentUser.getUsername());
+                stock.setLastChgDate(LocalDateTime.now());
+                stock.setLastChgBy(currentUser.getUsername());
                 stockList.add(stock);
             }
         }
 
-        storeItemBatchStockRepository.saveAll(stockList);
+        storeItemBatchStockRepository.saveAll( stockList);
         return ResponseUtils.createSuccessResponse("Approved and stock moved to batch successfully", new TypeReference<>() {});
     }
 
