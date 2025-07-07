@@ -1,6 +1,7 @@
 package com.hims.controller;
 
 import com.hims.request.LabRegRequest;
+import com.hims.request.PaymentUpdateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
 import com.hims.service.LabRegistrationServices;
@@ -26,5 +27,10 @@ public class LabRegistrationController {
     public ResponseEntity<ApiResponse<AppsetupResponse>> appSetupResponse(@RequestBody LabRegRequest request) {
         return new ResponseEntity<>(labRegistrationServices.labReg(request), HttpStatus.OK);
 
+    }
+
+    @PostMapping("/updatepaymentstatus")
+    public ResponseEntity<ApiResponse<AppsetupResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
+        return new ResponseEntity<>(labRegistrationServices.paymentStatusReq(request), HttpStatus.OK);
     }
 }

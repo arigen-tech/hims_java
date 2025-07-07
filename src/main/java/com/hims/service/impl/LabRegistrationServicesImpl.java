@@ -6,6 +6,7 @@ import com.hims.exception.SDDException;
 import com.hims.request.LabInvestigationReq;
 import com.hims.request.LabPackegReq;
 import com.hims.request.LabRegRequest;
+import com.hims.request.PaymentUpdateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
 import com.hims.service.LabRegistrationServices;
@@ -62,6 +63,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     @Autowired
     MasServiceCategoryRepository masServiceCategoryRepository;
+   @Autowired
+    PaymentDetailRepository paymentDetailRepository;
 
     public  LabRegistrationServicesImpl(RandomNumGenerator randomNumGenerator,
                                         BillingDetailRepository billingDetailRepository) {
@@ -321,6 +324,61 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         res.setMsg("Success");
 
 
+        return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<AppsetupResponse> paymentStatusReq(PaymentUpdateRequest request) {
+        AppsetupResponse res = new AppsetupResponse();
+        try{
+            //Payment table data inserted
+           // User currentUser = authUtil.getCurrentUser();
+            PaymentDetail paymentDetail = new PaymentDetail();
+            paymentDetail.setPaymentMode(request.getMode());
+            paymentDetail.setPaymentStatus("y");
+            paymentDetail.setPaymentReferenceNo("NA");
+            paymentDetail.setPaymentDate(Instant.now());
+            paymentDetail.setAmount(BigDecimal.valueOf(request.getAmount()));
+            paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+            paymentDetail.setCreatedAt(Instant.now());
+            paymentDetail.setUpdatedAt(Instant.now());
+            paymentDetail.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
+            PaymentDetail details=paymentDetailRepository.save(paymentDetail);
+
+            /// dg Orderdt Payment status
+            DgOrderDt updatedtStatus= new DgOrderDt();
+            updatedtStatus.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
+            updatedtStatus.setBillingStatus("y");
+            labDtRepository.save(updatedtStatus);
+
+            /// dg OrderHd Payment status
+//           DgOrderHd updateHdStatus= new DgOrderHd();
+//            updateHdStatus.set
+
+//            /// Billing details Payment status
+//          BillingDetail updateBillDetails=new BillingDetail();
+//            updateBillDetails.setBillHd(billingHeaderRepository.findBy(request.getBillHeaderId()));
+//            updateBillDetails.set
+
+            /// Billing header Payment status
+            BillingHeader billingHeader=new BillingHeader();
+            billingHeader.setId((long) request.getBillHeaderId());
+            billingHeader.setPaymentStatus("y");
+            billingHeaderRepository.save(billingHeader);
+           /// Visit Payment status
+            Visit visit=new Visit();
+            visit.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
+            visit.setBillingStatus("");
+            visitRepository.save(visit);
+
+           } catch (SDDException e) {
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
+          } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
+        }
+        res.setMsg("Success");
         return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
     }
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
