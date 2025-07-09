@@ -225,13 +225,10 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     }
 
 
-    private String generateKey(StoreBalanceDt dt) {
-        return dt.getItemId() + "_" +
-                dt.getBatchNo().trim().toUpperCase() + "_" +
-                dt.getManufactureDate() + "_" +
-                dt.getExpiryDate() + "_" +
-                dt.getBrandId().getBrandId() + "_" +
-                dt.getManufacturerId().getManufacturerId();
+
+    @Override
+    public ApiResponse<List<StoreItemBatchStock>> getAllStock() {
+        return (ApiResponse<List<StoreItemBatchStock>>) storeItemBatchStockRepository.findAll();
     }
 
 
@@ -300,6 +297,14 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                         stock.setQty(stock.getQty() + qty);
                         stock.setClosingStock(stock.getClosingStock() + qty);
                         stock.setOpeningBalanceQty(stock.getOpeningBalanceQty() + qty);
+
+                        BigDecimal oldMrp = stock.getTotalMrpValue() != null ? stock.getTotalMrpValue() : BigDecimal.ZERO;
+                        BigDecimal newMrp = dt.getTotalMrp() != null ? dt.getTotalMrp() : BigDecimal.ZERO;
+                        stock.setTotalMrpValue(oldMrp.add(newMrp));
+
+                        BigDecimal oldCost = stock.getTotalPurchaseCost() != null ? stock.getTotalPurchaseCost() : BigDecimal.ZERO;
+                        BigDecimal newCost = dt.getTotalPurchaseCost() != null ? dt.getTotalPurchaseCost() : BigDecimal.ZERO;
+                        stock.setTotalPurchaseCost(oldCost.add(newCost));
                     } else {
                         Long deptId = authUtil.getCurrentDepartmentId();
                         MasDepartment department = masDepartmentRepository.getById(deptId);

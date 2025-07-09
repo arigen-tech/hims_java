@@ -1,5 +1,6 @@
 package com.hims.service;
 
+import com.hims.entity.StoreItemBatchStock;
 import com.hims.request.OpeningBalanceDtRequest;
 import com.hims.request.OpeningBalanceEntryRequest;
 import com.hims.request.OpeningBalanceEntryRequest2;
@@ -24,7 +25,9 @@ public interface OpeningBalanceEntryService {
 
     List<OpeningBalanceEntryResponse> getListByStatus(String[] statuses);
 
-    ApiResponse<String> approved(Long id,OpeningBalanceEntryRequest2 request);
+    ApiResponse<List<StoreItemBatchStock>> getAllStock();
+
+    ApiResponse<String> approved(Long id, OpeningBalanceEntryRequest2 request);
 
 
 }
