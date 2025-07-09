@@ -309,6 +309,10 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 //                        BigDecimal oldCost = stock.getTotalPurchaseCost() != null ? stock.getTotalPurchaseCost() : BigDecimal.ZERO;
 //                        BigDecimal newCost = dt.getTotalPurchaseCost() != null ? dt.getTotalPurchaseCost() : BigDecimal.ZERO;
 //                        stock.setTotalPurchaseCost(oldCost.add(newCost));
+
+
+                        transferInLedger(qty, dt.getBatchNo(), stock.getStockId());
+
                     } else {
                         Long deptId = authUtil.getCurrentDepartmentId();
                         MasDepartment department = masDepartmentRepository.getById(deptId);
@@ -322,7 +326,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                         stock.setManufactureDate(dt.getManufactureDate());
                         stock.setExpiryDate(dt.getExpiryDate());
                         stock.setOpeningBalanceQty(dt.getQty());
-                        stock.setQty(dt.getQty());
+//                        stock.setQty(dt.getQty());
                         stock.setClosingStock(dt.getQty());
                         stock.setUnitsPerPack(dt.getUnitsPerPack());
                         stock.setPurchaseRatePerUnit(dt.getPurchaseRatePerUnit());
@@ -333,6 +337,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                         stock.setTotalPurchaseCost(dt.getTotalPurchaseCost());
                         stock.setTotalMrpValue(dt.getTotalMrp());
                         stock.setBrandId(dt.getBrandId());
+
+                        transferInLedger(dt.getQty(), dt.getBatchNo(), stock.getStockId());
                     }
 
                     stock.setLastChgDate(LocalDateTime.now());
@@ -451,19 +457,21 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     private void  deletedById(Long id){
         dtRepo.deleteById(id);
     }
-    private String transferInLedger(List<OpeningBalanceDtRequest> openingBalanceDtRequest){
-        for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {
+
+    private String transferInLedger(long currQty, String txnTypeBh, long stokeId){
+
+        StoreItemBatchStock stObj = storeItemBatchStockRepository.getById(stokeId);
+//        for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {
             StoreStockLedger storeStockLedger=new StoreStockLedger();
             storeStockLedger.setCreatedDt(LocalDateTime.now());
             User currentUser = authUtil.getCurrentUser();
             storeStockLedger.setCreatedBy(currentUser.getCreatedBy());
-           // storeStockLedger.setCreatedBy();
             storeStockLedger.setTxnDate(LocalDate.now());
-            storeStockLedger.setQtyIn(dtRequest.getQty());
-            //storeStockLedger.setStockId();
-            storeStockLedger.setTxnType(dtRequest.getBatchNo());
+            storeStockLedger.setQtyIn(currQty);
+            storeStockLedger.setStockId(stObj);
+            storeStockLedger.setTxnType(txnTypeBh);
             storeStockLedgerRepository.save(storeStockLedger);
-        }
+//        }
         return "successfully";
 
         }
