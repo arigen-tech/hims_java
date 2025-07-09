@@ -22,7 +22,6 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
       AND UPPER(TRIM(s.batchNo)) = UPPER(TRIM(:batchNo))
       AND s.manufactureDate = :manufactureDate
       AND s.expiryDate = :expiryDate
-      AND s.brandId.brandId = :brandId
       AND s.manufacturerId.manufacturerId = :manufacturerId
 """)
     Optional<StoreItemBatchStock> findMatchingStock(
@@ -30,11 +29,10 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
             @Param("batchNo") String batchNo,
             @Param("manufactureDate") LocalDate manufactureDate,
             @Param("expiryDate") LocalDate expiryDate,
-            @Param("brandId") Long brandId,
             @Param("manufacturerId") Long manufacturerId
     );
 
 
-    @Query("SELECT s FROM StoreItemBatchStock s WHERE CONCAT(s.itemId, '_', s.batchNo, '_', s.manufactureDate, '_', s.expiryDate, '_', s.brandId.brandId, '_', s.manufacturerId.manufacturerId) IN :keys")
+    @Query("SELECT s FROM StoreItemBatchStock s WHERE CONCAT(s.itemId, '_', s.batchNo, '_', s.manufactureDate, '_', s.expiryDate, '_' , s.manufacturerId.manufacturerId) IN :keys")
     List<StoreItemBatchStock> findAllByKeys(@Param("keys") Set<String> keys);
 }

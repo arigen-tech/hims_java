@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,11 +44,15 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
+
     @Autowired
     private StoreItemBatchStockRepository storeItemBatchStockRepository;
 
     @Autowired
     private MasHsnRepository masHsnRepository;
+
+    @Autowired
+    private StoreStockLedgerRepository storeStockLedgerRepository;
 
     @Autowired
     AuthUtil authUtil;
@@ -131,7 +136,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             dt.setBrandId(brandRepo.findById(dtRequest.getBrandId()).orElse(null));
             Optional<MasManufacturer> masManufacturer=manufacturerRepo.findById(dtRequest.getManufacturerId());
             if(masManufacturer.isEmpty()){
-                return ResponseUtils.createNotFoundResponse("MasStoreItem not found", 404);
+                return ResponseUtils.createNotFoundResponse("MasManufacturer not found", 404);
             }
             dt.setManufacturerId(masManufacturer.get());
             dtList.add(dt);
@@ -253,6 +258,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         hd.setApprovedBy(String.valueOf(currentUser.getUserId()));
         hdRepo.save(hd);
 
+
         if ("a".equalsIgnoreCase(request.getStatus())) {
 
             List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);
@@ -270,7 +276,6 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                         batchNo + "_" +
                         dt.getManufactureDate() + "_" +
                         dt.getExpiryDate() + "_" +
-                        dt.getBrandId().getBrandId() + "_" +
                         dt.getManufacturerId().getManufacturerId();
 
                 StoreItemBatchStock stock;
@@ -287,24 +292,23 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                             batchNo,
                             dt.getManufactureDate(),
                             dt.getExpiryDate(),
-                            dt.getBrandId().getBrandId(),
                             dt.getManufacturerId().getManufacturerId()
                     );
 
                     if (existingStockOpt.isPresent()) {
                         stock = existingStockOpt.get();
                         Long qty = dt.getQty();
-                        stock.setQty(stock.getQty() + qty);
+//                        stock.setQty(stock.getQty() + qty);
                         stock.setClosingStock(stock.getClosingStock() + qty);
                         stock.setOpeningBalanceQty(stock.getOpeningBalanceQty() + qty);
 
-                        BigDecimal oldMrp = stock.getTotalMrpValue() != null ? stock.getTotalMrpValue() : BigDecimal.ZERO;
-                        BigDecimal newMrp = dt.getTotalMrp() != null ? dt.getTotalMrp() : BigDecimal.ZERO;
-                        stock.setTotalMrpValue(oldMrp.add(newMrp));
-
-                        BigDecimal oldCost = stock.getTotalPurchaseCost() != null ? stock.getTotalPurchaseCost() : BigDecimal.ZERO;
-                        BigDecimal newCost = dt.getTotalPurchaseCost() != null ? dt.getTotalPurchaseCost() : BigDecimal.ZERO;
-                        stock.setTotalPurchaseCost(oldCost.add(newCost));
+//                        BigDecimal oldMrp = stock.getTotalMrpValue() != null ? stock.getTotalMrpValue() : BigDecimal.ZERO;
+//                        BigDecimal newMrp = dt.getTotalMrp() != null ? dt.getTotalMrp() : BigDecimal.ZERO;
+//                        stock.setTotalMrpValue(oldMrp.add(newMrp));
+//
+//                        BigDecimal oldCost = stock.getTotalPurchaseCost() != null ? stock.getTotalPurchaseCost() : BigDecimal.ZERO;
+//                        BigDecimal newCost = dt.getTotalPurchaseCost() != null ? dt.getTotalPurchaseCost() : BigDecimal.ZERO;
+//                        stock.setTotalPurchaseCost(oldCost.add(newCost));
                     } else {
                         Long deptId = authUtil.getCurrentDepartmentId();
                         MasDepartment department = masDepartmentRepository.getById(deptId);
@@ -443,11 +447,28 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         return "successfully";
     }
 
+
     private void  deletedById(Long id){
         dtRepo.deleteById(id);
     }
+    private String transferInLedger(List<OpeningBalanceDtRequest> openingBalanceDtRequest){
+        for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {
+            StoreStockLedger storeStockLedger=new StoreStockLedger();
+            storeStockLedger.setCreatedDt(LocalDateTime.now());
+            User currentUser = authUtil.getCurrentUser();
+            storeStockLedger.setCreatedBy(currentUser.getCreatedBy());
+           // storeStockLedger.setCreatedBy();
+            storeStockLedger.setTxnDate(LocalDate.now());
+            storeStockLedger.setQtyIn(dtRequest.getQty());
+            //storeStockLedger.setStockId();
+            storeStockLedger.setTxnType(dtRequest.getBatchNo());
+            storeStockLedgerRepository.save(storeStockLedger);
+        }
+        return "successfully";
 
-    private OpeningBalanceEntryResponse buildOpeningBalanceEntryResponse(StoreBalanceHd hd, List<StoreBalanceDt> dtList) {
+        }
+
+        private OpeningBalanceEntryResponse buildOpeningBalanceEntryResponse(StoreBalanceHd hd, List<StoreBalanceDt> dtList) {
         OpeningBalanceEntryResponse response = new OpeningBalanceEntryResponse();
         response.setBalanceMId(hd.getBalanceMId());
         response.setBalanceNo(hd.getBalanceNo());
