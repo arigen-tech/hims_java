@@ -224,6 +224,17 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
     }
 
+
+    private String generateKey(StoreBalanceDt dt) {
+        return dt.getItemId() + "_" +
+                dt.getBatchNo().trim().toUpperCase() + "_" +
+                dt.getManufactureDate() + "_" +
+                dt.getExpiryDate() + "_" +
+                dt.getBrandId().getBrandId() + "_" +
+                dt.getManufacturerId().getManufacturerId();
+    }
+
+
     @Transactional
     @Override
     public ApiResponse<String> approved(Long id, OpeningBalanceEntryRequest2 request) {
@@ -233,75 +244,103 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
 
-        Optional<StoreBalanceHd> hd = hdRepo.findById(id);
-        if (hd.isEmpty()) {
+        Optional<StoreBalanceHd> hdOpt = hdRepo.findById(id);
+        if (hdOpt.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("Store Balance Hd not found", 404);
         }
 
-        StoreBalanceHd hd1 = hd.get();
-        hd1.setStatus(request.getStatus());
-        hd1.setApprovalDt(LocalDateTime.now());
-        hd1.setRemarks(request.getRemark());
-        hd1.setApprovedBy(String.valueOf(currentUser.getUserId()));
-        StoreBalanceHd hd2 = hdRepo.save(hd1);
+        StoreBalanceHd hd = hdOpt.get();
+        hd.setStatus(request.getStatus());
+        hd.setApprovalDt(LocalDateTime.now());
+        hd.setRemarks(request.getRemark());
+        hd.setApprovedBy(String.valueOf(currentUser.getUserId()));
+        hdRepo.save(hd);
 
-        List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd2);
-        List<StoreItemBatchStock> stockList = new ArrayList<>();
-        for (StoreBalanceDt dt : dtList) {
-            Optional<StoreItemBatchStock> existingStockOpt = storeItemBatchStockRepository
-                    .findByItemIdAndBatchNoAndManufactureDateAndExpiryDateAndBrandIdBrandIdAndManufacturerIdManufacturerId(
+        if ("a".equalsIgnoreCase(request.getStatus())) {
+
+            List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);
+
+            Map<String, StoreItemBatchStock> stockMap = new HashMap<>();
+
+            for (StoreBalanceDt dt : dtList) {
+                if (Boolean.TRUE.equals(dt.getIsApproved())) {
+                    continue;
+                }
+
+                String batchNo = dt.getBatchNo().trim().toUpperCase();
+
+                String key = dt.getItemId().getItemId() + "_" +
+                        batchNo + "_" +
+                        dt.getManufactureDate() + "_" +
+                        dt.getExpiryDate() + "_" +
+                        dt.getBrandId().getBrandId() + "_" +
+                        dt.getManufacturerId().getManufacturerId();
+
+                StoreItemBatchStock stock;
+
+                if (stockMap.containsKey(key)) {
+                    stock = stockMap.get(key);
+                    Long qty = dt.getQty();
+                    stock.setQty(stock.getQty() + qty);
+                    stock.setClosingStock(stock.getClosingStock() + qty);
+                    stock.setOpeningBalanceQty(stock.getOpeningBalanceQty() + qty);
+                } else {
+                    Optional<StoreItemBatchStock> existingStockOpt = storeItemBatchStockRepository.findMatchingStock(
                             dt.getItemId(),
-                            dt.getBatchNo(),
+                            batchNo,
                             dt.getManufactureDate(),
                             dt.getExpiryDate(),
                             dt.getBrandId().getBrandId(),
                             dt.getManufacturerId().getManufacturerId()
                     );
 
-            if (existingStockOpt.isPresent()) {
-                StoreItemBatchStock existingStock = existingStockOpt.get();
+                    if (existingStockOpt.isPresent()) {
+                        stock = existingStockOpt.get();
+                        Long qty = dt.getQty();
+                        stock.setQty(stock.getQty() + qty);
+                        stock.setClosingStock(stock.getClosingStock() + qty);
+                        stock.setOpeningBalanceQty(stock.getOpeningBalanceQty() + qty);
+                    } else {
+                        Long deptId = authUtil.getCurrentDepartmentId();
+                        MasDepartment department = masDepartmentRepository.getById(deptId);
 
-                Long updatedQty = existingStock.getQty() + dt.getQty();
-                Long updatedOpeningStock = existingStock.getOpeningBalanceQty() + dt.getQty();
-                Long updateClosingStock=existingStock.getClosingStock()+dt.getQty();
-                existingStock.setQty(updatedQty);
-                existingStock.setOpeningBalanceQty(updatedOpeningStock);
-                existingStock.setClosingStock(updateClosingStock);
-                existingStock.setLastChgDate(LocalDateTime.now());
-                existingStock.setLastChgBy(currentUser.getUsername());
-                stockList.add(existingStock);
-            } else {
-                Long deptId = authUtil.getCurrentDepartmentId();
-                StoreItemBatchStock stock = new StoreItemBatchStock();
-                stock.setHospitalId(currentUser.getHospital());
-                MasDepartment depObj = masDepartmentRepository.getById(deptId);
-                stock.setDepartmentId(depObj);
-                stock.setItemId(dt.getItemId());
-                stock.setManufacturerId(dt.getManufacturerId());
-                stock.setBatchNo(dt.getBatchNo());
-                stock.setManufactureDate(dt.getManufactureDate());
-                stock.setExpiryDate(dt.getExpiryDate());
-                stock.setOpeningBalanceQty(dt.getQty());
-                stock.setQty(dt.getQty());
-                stock.setClosingStock((dt.getQty()));
-                stock.setUnitsPerPack(dt.getUnitsPerPack());
-                stock.setPurchaseRatePerUnit(dt.getPurchaseRatePerUnit());
-                stock.setGstPercent(dt.getGstPercent());
-                stock.setMrpPerUnit(dt.getMrpPerUnit());
-                stock.setHsnCode(dt.getHsnCode());
-                stock.setGstAmountPerUnit(dt.getGstAmountPerUnit());
-                stock.setTotalPurchaseCost(dt.getTotalPurchaseCost());
-                stock.setTotalMrpValue(dt.getTotalMrp());
-                stock.setBrandId(dt.getBrandId());
-                stock.setLastChgDate(LocalDateTime.now());
-                stock.setLastChgBy(currentUser.getUsername());
-                stockList.add(stock);
+                        stock = new StoreItemBatchStock();
+                        stock.setHospitalId(currentUser.getHospital());
+                        stock.setDepartmentId(department);
+                        stock.setItemId(dt.getItemId());
+                        stock.setManufacturerId(dt.getManufacturerId());
+                        stock.setBatchNo(batchNo);
+                        stock.setManufactureDate(dt.getManufactureDate());
+                        stock.setExpiryDate(dt.getExpiryDate());
+                        stock.setOpeningBalanceQty(dt.getQty());
+                        stock.setQty(dt.getQty());
+                        stock.setClosingStock(dt.getQty());
+                        stock.setUnitsPerPack(dt.getUnitsPerPack());
+                        stock.setPurchaseRatePerUnit(dt.getPurchaseRatePerUnit());
+                        stock.setGstPercent(dt.getGstPercent());
+                        stock.setMrpPerUnit(dt.getMrpPerUnit());
+                        stock.setHsnCode(dt.getHsnCode());
+                        stock.setGstAmountPerUnit(dt.getGstAmountPerUnit());
+                        stock.setTotalPurchaseCost(dt.getTotalPurchaseCost());
+                        stock.setTotalMrpValue(dt.getTotalMrp());
+                        stock.setBrandId(dt.getBrandId());
+                    }
+
+                    stock.setLastChgDate(LocalDateTime.now());
+                    stock.setLastChgBy(currentUser.getUsername());
+
+                    stockMap.put(key, stock);
+                }
+
+                dt.setIsApproved(true);
             }
-        }
 
-        storeItemBatchStockRepository.saveAll( stockList);
+            storeItemBatchStockRepository.saveAll(stockMap.values());
+            dtRepo.saveAll(dtList);
+        }
         return ResponseUtils.createSuccessResponse("Approved and stock moved to batch successfully", new TypeReference<>() {});
     }
+
 
     public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
         for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {

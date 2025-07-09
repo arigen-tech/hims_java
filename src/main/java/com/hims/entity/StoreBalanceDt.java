@@ -52,6 +52,10 @@ public class StoreBalanceDt {
     @JoinColumn(name = "hsn_code")
     private MasHSN hsnCode;
 
+    @Column(name = "is_approved")
+    private Boolean isApproved = false;
+
+
     @Column(name = "base_rate_per_unit",  precision = 10, scale = 2,insertable = false, updatable = false)
     private BigDecimal baseRatePerUnit;
 
