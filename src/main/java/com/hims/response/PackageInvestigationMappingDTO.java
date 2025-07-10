@@ -9,8 +9,11 @@ import java.time.LocalDateTime;
 public class PackageInvestigationMappingDTO {
     private Long pimId;
     private Long packageId;
-//    private Long investId;
+    private Long investId;
+    private String packName;
+    private String investigationName;
     private String status;
+    private double actualCost;
     private String createdBy;
     private LocalDateTime createdOn;
     private String updatedBy;
