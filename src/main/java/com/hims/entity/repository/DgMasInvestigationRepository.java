@@ -13,26 +13,30 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
 
 
     @Query(value = """
-        SELECT 
-            d.investigation_id,
-            d.investigation_name,
-            d.status,
-            d.gender_applicable,
-            COALESCE(ipd.price, 0)
-        FROM 
-            dg_mas_investigation d
-        LEFT JOIN
-            investigation_price_details ipd
-            ON d.investigation_id = ipd.investigation_id
-            AND CURRENT_DATE BETWEEN ipd.from_dt AND ipd.to_dt
-        WHERE 
-            d.status = 'y'
-            AND (d.gender_applicable = :genderApplicable 
-            OR d.gender_applicable = 'c' ) """, nativeQuery = true)
+    SELECT 
+        d.investigation_id,
+        d.investigation_name,
+        d.status,
+        d.gender_applicable,
+        COALESCE(ipd.price, 0),
+        d.main_chargecode_id
+    FROM 
+        dg_mas_investigation d
+    LEFT JOIN
+        investigation_price_details ipd
+        ON d.investigation_id = ipd.investigation_id
+        AND CURRENT_DATE BETWEEN ipd.from_dt AND ipd.to_dt
+    WHERE 
+        d.status = 'y'
+        AND (d.gender_applicable = :genderApplicable 
+        OR d.gender_applicable = 'c')
+        AND d.main_chargecode_id = :mainChargecodeId
+""", nativeQuery = true)
     List<Object[]> findByPriceDetails(
-            @Param("genderApplicable") String genderApplicable
-            /// @Param("investigationName") String investigationName
-    );//AND d.investigation_name ILIKE CONCAT('%', :investigationName, '%')
+            @Param("genderApplicable") String genderApplicable,
+            @Param("mainChargecodeId") Long mainChargecodeId
+    );
+
 
 
     List<DgMasInvestigation> findByStatusIgnoreCase(String status);

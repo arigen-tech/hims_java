@@ -4,6 +4,7 @@ package com.hims.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
+import com.hims.entity.repository.PatientRepository;
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.PatientRegFollowUpResp;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -26,6 +28,9 @@ import java.util.List;
 public class PatientController {
     @Autowired
     PatientService patientService;
+    @Autowired
+    private PatientRepository patientRepository;
+
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> registerPatient(@RequestBody PatientRegistrationReq request) {
@@ -62,4 +67,22 @@ public class PatientController {
         ApiResponse<String> response=patientService.saveVitalDetails(request);
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
+
+
+    @GetMapping("/check-duplicate")
+    public ResponseEntity<Boolean> checkDuplicatePatient(
+            @RequestParam String firstName,
+            @RequestParam String dob,
+            @RequestParam Long gender,
+            @RequestParam String mobile,
+            @RequestParam Long relation) {
+        boolean exists = patientRepository.existsByPatientFnAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(
+                firstName.trim(),
+                LocalDate.parse(dob),
+                gender,
+                mobile.trim(),
+                relation);
+        return ResponseEntity.ok(exists);
+    }
+
 }

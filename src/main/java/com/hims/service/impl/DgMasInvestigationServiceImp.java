@@ -8,6 +8,7 @@ import com.hims.response.DgMasInvestigationResponse;
 import com.hims.service.DgMasInvestigationService;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,20 +20,25 @@ public class DgMasInvestigationServiceImp implements DgMasInvestigationService {
     @Autowired
     private DgMasInvestigationRepository dgMasInvestigationRepository;
 
+    @Value("${investigation.mainChargecodeId}")
+    private Long mainChargecodeId;
+
 
     @Override
     public ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable) {
-        List<Object[]> results = dgMasInvestigationRepository.findByPriceDetails(genderApplicable );
+        List<Object[]> results = dgMasInvestigationRepository.findByPriceDetails(genderApplicable, mainChargecodeId);
 
-        List<DgMasInvestigationResponse>  response = results.stream().map(obj -> {
+        List<DgMasInvestigationResponse> response = results.stream().map(obj -> {
             DgMasInvestigationResponse dto = new DgMasInvestigationResponse();
             dto.setInvestigationId(obj[0] != null ? ((Number) obj[0]).longValue() : null);
             dto.setInvestigationName((String) obj[1]);
             dto.setStatus(obj[2] != null ? obj[2].toString() : null);
             dto.setGenderApplicable(obj[3] != null ? obj[3].toString() : null);
             dto.setPrice(obj[4] != null ? ((Number) obj[4]).doubleValue() : 0.0);
+            dto.setMainChargeCodeID(obj[5] != null ? ((Number) obj[5]).longValue() : null);
             return dto;
         }).collect(Collectors.toList());
+
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
     }
 
@@ -81,7 +87,10 @@ public class DgMasInvestigationServiceImp implements DgMasInvestigationService {
         dto.setInvestigationType(entity.getInvestigationType());
         dto.setPrice(entity.getPrice());
         dto.setGenderApplicable(entity.getGenderApplicable());
-
+        dto.setMainChargeCodeID(
+                entity.getMainChargeCodeID() != null ? entity.getMainChargeCodeID().getChargecodeId() : null
+        );
         return dto;
     }
+
 }
