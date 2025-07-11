@@ -17,6 +17,7 @@ import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +66,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     MasServiceCategoryRepository masServiceCategoryRepository;
    @Autowired
     PaymentDetailRepository paymentDetailRepository;
+
+    @Value("${serviceCategoryLab}")
+    private String serviceCategoryLab;
 
     public  LabRegistrationServicesImpl(RandomNumGenerator randomNumGenerator,
                                         BillingDetailRepository billingDetailRepository) {
@@ -140,7 +144,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 BigDecimal sum=BigDecimal.ZERO;
                 BigDecimal tax=BigDecimal.ZERO;
                 BigDecimal disc=BigDecimal.ZERO;
-                MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
+                MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
                 for(LabInvestigationReq inves:investigations){
                     if(inves.isCheckStatus()){
                         sum=sum.add(BigDecimal.valueOf(inves.getActualAmount()));
@@ -416,7 +420,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setHospitalName(vId.getPatient().getPatientHospital().getHospitalName());
             //billingHeader.setHospital_mobile_no(patientDetails.get);  column is not exist in Patient table
             //billingHeader.setHospital_gstin(patientDetails.get);  column is not exist in Patient table
-             billingHeader.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY));  ///for which table
+             billingHeader.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));  ///for which table
             billingHeader.setReferredBy(vId.getDoctorName());//few doute
             //billingHeader.setGstn_bill_no("");
             billingHeader.setBillingDate(Instant.now());// what date will Pass  , I am Passing currentdate
@@ -441,7 +445,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         BillingDetail billingDetail = new BillingDetail();
         billingDetail.setBillingHd(bhdId);
         billingDetail.setBillHd(bhdId);
-         billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY));//pass from property file..
+         billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));//pass from property file..
 
          billingDetail.setItemName(dtId.getInvestigationId().getInvestigationName()) ;  // investigation or packeg  name to be store
          // billingDetail.setQuantity(1);//default
@@ -456,7 +460,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
        // billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()));
         billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount())));
 
-        MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
+        MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
         BigDecimal tax=BigDecimal.ZERO;
         if(sevcat.getGstApplicable()){
            /// tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount())).divide(BigDecimal.valueOf(100));
@@ -480,7 +484,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         BillingDetail billingDetail = new BillingDetail();
         billingDetail.setBillingHd(bhdId);
         billingDetail.setBillHd(bhdId);
-        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY));//pass from property file..
+        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));//pass from property file..
 
         billingDetail.setItemName(pack.getPackName()) ;  // investigation or packeg  name to be store
         ///  billingDetail.set
@@ -495,7 +499,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setDiscount(BigDecimal.valueOf(req.getDiscountedAmount()));
         billingDetail.setTariff(BigDecimal.valueOf(req.getActualAmount()));
         billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(req.getActualAmount()).subtract(BigDecimal.valueOf(req.getDiscountedAmount())));
-        MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(HelperUtils.SERVICECATEGORY);
+        MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
         BigDecimal tax=BigDecimal.ZERO;
         if(sevcat.getGstApplicable()){
             tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(req.getActualAmount()).subtract(BigDecimal.valueOf(req.getDiscountedAmount()))).divide(BigDecimal.valueOf(100));
