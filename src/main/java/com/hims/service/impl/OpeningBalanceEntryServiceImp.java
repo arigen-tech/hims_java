@@ -408,7 +408,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
         }
         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                "Type invalid o or 1", HttpStatus.UNAUTHORIZED.value());
+                " invalid access Plz send summary or details ", HttpStatus.UNAUTHORIZED.value());
 
 
     }
