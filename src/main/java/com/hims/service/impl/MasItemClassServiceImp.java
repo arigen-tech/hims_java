@@ -176,6 +176,20 @@ public class MasItemClassServiceImp implements MasItemClassService {
 
     }
 
+
+    @Override
+    public ApiResponse<List<MasItemClassResponse>> getAllBySectionId(int id) {
+        List<MasItemClass> masItemClass = masItemClassRepository.findByMasStoreSectionSectionId(id);
+
+        List<MasItemClassResponse> responses = masItemClass.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
+        });
+
+    }
+
     private MasItemClassResponse mapToResponse(MasItemClass masItemClass) {
         MasItemClassResponse response = new MasItemClassResponse();
         response.setItemClassId(masItemClass.getItemClassId());
