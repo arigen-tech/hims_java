@@ -2,6 +2,7 @@ package com.hims.controller;
 
 import com.hims.entity.MasManufacturer;
 import com.hims.entity.MasStoreItem;
+import com.hims.entity.StoreItemBatchStock;
 import com.hims.request.MasManufacturerRequest;
 import com.hims.request.OpeningBalanceDtRequest;
 import com.hims.request.OpeningBalanceEntryRequest;
@@ -49,6 +50,8 @@ public class OpeningBalanceEntryController {
     public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> getDetailsById(@PathVariable Long id) {
         return ResponseEntity.ok(openingBalanceEntryService.getDetailsById(id));
     }
+
+
     @PostMapping("/submit")
     public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> createAndUpdateStatus(
             @RequestBody OpeningBalanceEntryRequest request
@@ -64,7 +67,11 @@ public class OpeningBalanceEntryController {
         return new ResponseEntity<>(openingBalanceEntryService.approved(id,request), HttpStatus.CREATED);
     }
 
+    @GetMapping("getAllStock/{type}")
+    public ResponseEntity<ApiResponse<List<?>>>  getAllData(@PathVariable String type) {
+        return ResponseEntity.ok(openingBalanceEntryService.getAllStock(type));
 
+    }
 
 
 

@@ -24,10 +24,10 @@ public interface OpeningBalanceEntryService {
     ApiResponse<OpeningBalanceEntryResponse> createAndUpdateStatus(OpeningBalanceEntryRequest request);
 
     List<OpeningBalanceEntryResponse> getListByStatus(String[] statuses);
-
-    ApiResponse<List<StoreItemBatchStock>> getAllStock();
+    
 
     ApiResponse<String> approved(Long id, OpeningBalanceEntryRequest2 request);
 
 
+    ApiResponse<List<?>> getAllStock(String type);
 }
