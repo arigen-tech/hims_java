@@ -24,6 +24,10 @@ public class DgMasInvestigationResponse {
     private String investigationType;
     private Double price;
 
+    private Long mainChargeCodeID;
+
+
+
 
 
     }

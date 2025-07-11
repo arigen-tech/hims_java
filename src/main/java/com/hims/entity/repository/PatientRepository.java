@@ -46,4 +46,7 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
             @Param("patientName") String patientName,
             @Param("uhidNo") String uhidNo
     );
+
+    boolean existsByPatientFnAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(String trim, LocalDate parse, Long gender, String trim1, Long relation);
+
 }
