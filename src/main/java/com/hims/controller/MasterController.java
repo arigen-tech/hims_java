@@ -993,6 +993,10 @@ public class MasterController {
     public ApiResponse<List<MasItemClassResponse>> getAllMasItemClass(@PathVariable int flag) {
         return masItemClassService.getAllMasItemClass(flag);
     }
+    @GetMapping("/masItemClass/getAllBySectionId/{id}")
+    public ApiResponse<List<MasItemClassResponse>> getBySectionId(@PathVariable int id) {
+        return masItemClassService.getAllBySectionId(id);
+    }
 
     @GetMapping("/masItemClass/getById/{id}")
     public ResponseEntity<ApiResponse<MasItemClassResponse>> getItemClassById(@PathVariable Integer id) {

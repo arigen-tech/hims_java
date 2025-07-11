@@ -374,8 +374,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 dto.setItemCode(first.getItemId().getPvmsNo());
                 dto.setOpeningQty(totalQty);
                 dto.setUnitAu(first.getItemId().getUnitAU().getUnitName());
-                dto.setSectionName(first.getItemId().getSectionId().getSectionName());
-                dto.setSectionId(first.getItemId().getSectionId().getSectionId());
+                dto.setSectionName(first.getItemId().getItemClassId().getMasStoreSection().getSectionName());
+                dto.setSectionId(first.getItemId().getItemClassId().getMasStoreSection().getSectionId());
                 dto.setClassId(first.getItemId().getItemClassId().getItemClassId());
                 dto.setClassName(first.getItemId().getItemClassId().getItemClassName());
 
@@ -398,8 +398,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 dto.setDom(stock.getManufactureDate());
                 dto.setDoe(stock.getExpiryDate());
                 dto.setManufacturerName(stock.getManufacturerId().getManufacturerName());
-                dto.setSectionName(stock.getItemId().getSectionId().getSectionName());
-                dto.setSectionId(stock.getItemId().getSectionId().getSectionId());
+                dto.setSectionName(stock.getItemId().getItemClassId().getMasStoreSection().getSectionName());
+                dto.setSectionId(stock.getItemId().getItemClassId().getMasStoreSection().getSectionId());
                 dto.setClassId(stock.getItemId().getItemClassId().getItemClassId());
                 dto.setClassName(stock.getItemId().getItemClassId().getItemClassName());
                 dto.setMedicineSource(stock.getBrandId().getBrandName());
@@ -408,7 +408,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
         }
         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                "Type invalid o or 1", HttpStatus.UNAUTHORIZED.value());
+                " invalid access Plz send summary or details ", HttpStatus.UNAUTHORIZED.value());
 
 
     }

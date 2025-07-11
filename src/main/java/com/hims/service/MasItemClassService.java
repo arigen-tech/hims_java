@@ -17,4 +17,7 @@ public interface MasItemClassService {
     ApiResponse<MasItemClassResponse> changeMasItemClassStatus(int id, String status);
 
     ApiResponse<MasItemClassResponse> updateMasItemClass(int id, MasItemClassRequest masItemClassdRequest);
+
+
+    ApiResponse<List<MasItemClassResponse>> getAllBySectionId(int id);
 }
