@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -123,7 +124,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         visit.setBillingStatus("n");
         visit.setHospital(masHospital);
         visit.setTokenNo(existingTokens + 1);
-       // visit.setPreConsultation("y");
         visit.setVisitDate(Instant.now());
         visit.setLastChgDate(Instant.now());
         visit.setDepartment(department);
@@ -161,13 +161,15 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setOrderStatus("p");
                 hd.setCollectionStatus("p");
                 hd.setPaymentStatus("n");
-                hd.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
                 hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
-                hd.setDiscountId(1);
+                hd.setDiscountId(0);
                 hd.setPatientId(patient);
                 hd.setVisitId(savedVisit);
                 hd.setDepartmentId(departmentId.intValue());
-                hd.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                hd.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+                hd.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+                hd.setCreatedOn(LocalDate.now());
+                hd.setLastChgTime(LocalTime.now().toString());
                 DgOrderHd savedHd = labHdRepository.save(hd);
                 boolean flag=false;
                 for (LabInvestigationReq req:investigations){
@@ -194,12 +196,17 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         DgOrderDt dt = new DgOrderDt();
                         dt.setInvestigationId(invEntity);
                         dt.setOrderhdId(savedHd);
-                        dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
                         dt.setMainChargecodeId(invEntity.getMainChargeCodeID().getChargecodeId());
+                        dt.setSubChargeid(invEntity.getSubChargeCodeId().getSubId());
                         dt.setAppointmentDate(inv.getAppointmentDate());
-                        dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
+
+                        dt.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+                        dt.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                         dt.setLastChgDate(LocalDate.now());
                         dt.setBillingStatus("n");
+                        dt.setOrderStatus("p");
+                        dt.setLastChgTime(LocalTime.now().toString());
+
                         DgOrderDt savedDt = labDtRepository.save(dt);
                         if(flag){
                             savedDt.setBillingHd(headerId);
@@ -216,13 +223,17 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                             DgOrderDt dt = new DgOrderDt();
                             dt.setOrderhdId(savedHd);
                             dt.setInvestigationId(investId);
-                            dt.setCreatedBy(Math.toIntExact(currentUser.getUserId()));
                             dt.setMainChargecodeId(investId.getMainChargeCodeID().getChargecodeId());
+                            dt.setSubChargeid(investId.getSubChargeCodeId().getSubId());
                             dt.setPackageId(pkgObj);
                             dt.setAppointmentDate(inv.getAppointmentDate());
+
+                            dt.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+                            dt.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                             dt.setLastChgDate(LocalDate.now());
                             dt.setBillingStatus("n");
-                            dt.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                            dt.setOrderStatus("p");
+                            dt.setLastChgTime(LocalTime.now().toString());
                             DgOrderDt savedDt = labDtRepository.save(dt);
                             if(flag) {
                                 savedDt.setBillingHd(headerId);
@@ -404,13 +415,10 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
     }
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
-      //  if(!labReq.getLabPackegReqs().isEmpty()) {
             BillingHeader billingHeader = new BillingHeader();
             String orderNum = createInvoices();
             billingHeader.setBillNo(orderNum);// Auto generated
             billingHeader.setPatient(vId.getPatient());
-            //  Optional<Patient> patientDetails= patientRepository.findById(labReq.getPatientId());
-            // billingHeader.setPatientId(Math.toIntExact(labReq.getPatientId()));
             billingHeader.setVisit(vId);
             billingHeader.setPatientDisplayName(vId.getPatient().getPatientFn());
             billingHeader.setPatientAge(Integer.parseInt(vId.getPatient().getPatientAge()));
@@ -418,13 +426,12 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setPatientAddress(vId.getPatient().getPatientAddress1());
             billingHeader.setHospital(currentUser.getHospital());
             billingHeader.setHospitalName(vId.getPatient().getPatientHospital().getHospitalName());
-            //billingHeader.setHospital_mobile_no(patientDetails.get);  column is not exist in Patient table
-            //billingHeader.setHospital_gstin(patientDetails.get);  column is not exist in Patient table
+
+            billingHeader.setHospitalMobileNo(vId.getHospital().getContactNumber());  //column is not exist in Patient table
+            billingHeader.setHospitalGstin(vId.getHospital().getGstnNo());  //column is not exist in Patient table
              billingHeader.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));  ///for which table
             billingHeader.setReferredBy(vId.getDoctorName());//few doute
-            //billingHeader.setGstn_bill_no("");
-            billingHeader.setBillingDate(Instant.now());// what date will Pass  , I am Passing currentdate
-            //billingHeader.setTotalAmount(BigDecimal.valueOf(labReq.getTotalAmount()));//
+            billingHeader.setBillingDate(Instant.now());
             billingHeader.setPaymentStatus("n");
             billingHeader.setVisit(vId);
             billingHeader.setHdorder(hdId);
@@ -435,9 +442,11 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setTaxTotal(tax);
             //billingHeader.setDiscount();//id is Pass
            //billingHeader.setDiscountAmount(BigDecimal.valueOf(labReq.getDiscountAmount()));
-            billingHeader.setCreatedBy(Long.toString(currentUser.getUserId()));
+            billingHeader.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
             billingHeader.setCreatedDt(Instant.now());
             billingHeader.setUpdatedDt(Instant.now());
+            billingHeader.setBillDate(LocalDate.now());
+            billingHeader.setUpdatedAt(LocalDate.now());
            return  billingHeaderRepository.save(billingHeader);
     }
     private BillingDetail  BillingDetaiDataSave(BillingHeader bhdId, DgOrderDt dtId, LabInvestigationReq investigation){
@@ -453,6 +462,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setPackageField(dtId.getPackageId());
         billingDetail.setCreatedDt(OffsetDateTime.now());
         billingDetail.setUpdatedDt(OffsetDateTime.now());
+        billingDetail.setCreatedAt(Instant.now());
         billingDetail.setQuantity(1);
         billingDetail.setBasePrice(BigDecimal.valueOf(investigation.getActualAmount()));
         billingDetail.setDiscount(BigDecimal.valueOf(investigation.getDiscountedAmount()));
@@ -465,7 +475,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         if(sevcat.getGstApplicable()){
            /// tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount())).divide(BigDecimal.valueOf(100));
             tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount()))).divide(BigDecimal.valueOf(100));
-
         }
         billingDetail.setTaxAmount(tax);
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
@@ -492,7 +501,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setPackageField(pack);
         billingDetail.setCreatedDt(OffsetDateTime.now());
         billingDetail.setUpdatedDt(OffsetDateTime.now());
-
+        billingDetail.setCreatedAt(Instant.now());
 
         billingDetail.setQuantity(1);
         billingDetail.setBasePrice(BigDecimal.valueOf(req.getActualAmount()));

@@ -33,7 +33,7 @@ public class DgOrderHd {
     private String paymentStatus;
 
     @Column(name = "createdby")
-    private int createdBy;
+    private String createdBy;
 
     @Column(name = "createdon")
     private LocalDate createdOn;

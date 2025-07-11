@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Getter
@@ -117,14 +118,14 @@ public class BillingHeader {
     private Integer billingHdId;
 
     @Column(name = "bill_date")
-    private OffsetDateTime billDate;
+    private LocalDate billDate;
 
     @Size(max = 100)
     @Column(name = "invoice_no", length = 100)
     private String invoiceNo;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private LocalDate updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "discount_id")

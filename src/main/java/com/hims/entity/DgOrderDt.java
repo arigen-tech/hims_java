@@ -30,7 +30,7 @@ public class DgOrderDt {
     private String orderStatus;
 
     @Column(name = "createdby", length = 100)
-    private int createdBy;
+    private String createdBy;
 
 //    @Column(name = "create_don")
 //    private LocalDate createdOn;
@@ -52,7 +52,7 @@ public class DgOrderDt {
     private DgMasInvestigation investigationId;
 
     @Column(name = "sub_chargeid")
-    private int subChargeid;
+    private long subChargeid;
 
     @Column(name = "main_chargecode_id")
     private long mainChargecodeId;
