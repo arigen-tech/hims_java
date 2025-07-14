@@ -13,4 +13,6 @@ public interface MasItemCategoryRepository extends JpaRepository<MasItemCategory
     List<MasItemCategory> findByStatusIgnoreCase(String y);
 
     List<MasItemCategory> findByStatusInIgnoreCase(List<String> y);
+
+    List<MasItemCategory> findByMasStoreSectionSectionId(int id);
 }

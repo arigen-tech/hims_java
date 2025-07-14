@@ -16,4 +16,6 @@ public interface MasStoreSectionService {
     ApiResponse<MasStoreSectionResponse> changeStoreSectionStatus(int id, String status);
 
     ApiResponse<MasStoreSectionResponse> updateStoreSection(int id, MasStoreSectionRequest masStoreSectionRequest);
+
+    ApiResponse<List<MasStoreSectionResponse>> findStoreSectionByItemType(int id);
 }
