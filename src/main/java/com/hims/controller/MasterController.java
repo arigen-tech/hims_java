@@ -678,6 +678,12 @@ public class MasterController {
         return new ResponseEntity<>(masItemTypeService.getAllMasItemTypeStatus(flag), HttpStatus.OK);
 
     }
+    @GetMapping("/masItemType/findByGroupId/{id}")
+    public ResponseEntity<ApiResponse<List<MasItemTypeResponse>>> findItemType(@PathVariable Long id) {
+        return new ResponseEntity<>(masItemTypeService.findItemType(id), HttpStatus.OK);
+
+    }
+
 
 
     //    ================================Mas MainChargeCode Controller================================//
@@ -980,6 +986,12 @@ public class MasterController {
         ApiResponse<MasStoreSectionResponse> response = masStoreSectionService.updateStoreSection(id, masStoreSectionRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @GetMapping("/storeSection/findByItemType/{id}")
+    public ApiResponse<List<MasStoreSectionResponse>> findStoreSectionByItemType(@PathVariable int id) {
+        return masStoreSectionService.findStoreSectionByItemType(id);
+    }
+
+
 
 
     //    ================================Mas Item Class Controller================================//
@@ -1046,6 +1058,10 @@ public class MasterController {
     public ResponseEntity<ApiResponse<MasItemCategoryResponse>> updateMasItemCategory(@PathVariable int id, @RequestBody MasItemCategoryRequest masItemCategoryRequest) {
         ApiResponse<MasItemCategoryResponse> response = masItemCategoryService.updateMasItemClass(id, masItemCategoryRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/masItemCategory/findBySectionId/{id}")
+    public ApiResponse<List<MasItemCategoryResponse>> findByMasItemCategoryBbySectionId(@PathVariable int id) {
+        return masItemCategoryService.findByMasItemCategoryBbySectionId(id);
     }
 
 

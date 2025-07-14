@@ -144,6 +144,17 @@ public class MasItemTypeServiceImp implements MasItemTypeService
 
     }
 
+    @Override
+    public ApiResponse<List<MasItemTypeResponse>> findItemType(Long id) {
+        List<MasItemType> masItemTypes=masItemTypeRepository.findByMasStoreGroupIdId(id);
+
+        List<MasItemTypeResponse> responses = masItemTypes.stream()
+                .map(this::convertedTOResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+    }
+
 
     private MasItemTypeResponse convertedTOResponse(MasItemType masItemType){
             MasItemTypeResponse masItemTypeResponse=new MasItemTypeResponse();
