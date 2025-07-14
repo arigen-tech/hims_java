@@ -169,6 +169,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                 hd.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                 hd.setCreatedOn(LocalDate.now());
+                hd.setLastChgDate(LocalDate.now());
                 hd.setLastChgTime(LocalTime.now().toString());
                 DgOrderHd savedHd = labHdRepository.save(hd);
                 boolean flag=false;
@@ -205,6 +206,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         dt.setLastChgDate(LocalDate.now());
                         dt.setBillingStatus("n");
                         dt.setOrderStatus("p");
+                        dt.setCreatedon(Instant.now());
                         dt.setLastChgTime(LocalTime.now().toString());
 
                         DgOrderDt savedDt = labDtRepository.save(dt);
@@ -233,6 +235,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                             dt.setLastChgDate(LocalDate.now());
                             dt.setBillingStatus("n");
                             dt.setOrderStatus("p");
+                            dt.setCreatedon(Instant.now());
                             dt.setLastChgTime(LocalTime.now().toString());
                             DgOrderDt savedDt = labDtRepository.save(dt);
                             if(flag) {
@@ -426,7 +429,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setPatientAddress(vId.getPatient().getPatientAddress1());
             billingHeader.setHospital(currentUser.getHospital());
             billingHeader.setHospitalName(vId.getPatient().getPatientHospital().getHospitalName());
-
+            billingHeader.setHospitalAddress(vId.getHospital().getAddress());
             billingHeader.setHospitalMobileNo(vId.getHospital().getContactNumber());  //column is not exist in Patient table
             billingHeader.setHospitalGstin(vId.getHospital().getGstnNo());  //column is not exist in Patient table
              billingHeader.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));  ///for which table
