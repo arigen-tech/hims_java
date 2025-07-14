@@ -162,7 +162,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setCollectionStatus("p");
                 hd.setPaymentStatus("n");
                 hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
-                hd.setDiscountId(0);
+                hd.setDiscountId(1);
                 hd.setPatientId(patient);
                 hd.setVisitId(savedVisit);
                 hd.setDepartmentId(departmentId.intValue());
@@ -445,8 +445,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
             billingHeader.setCreatedDt(Instant.now());
             billingHeader.setUpdatedDt(Instant.now());
-            billingHeader.setBillDate(LocalDate.now());
-            billingHeader.setUpdatedAt(LocalDate.now());
+            billingHeader.setBillDate(OffsetDateTime.now());
+            billingHeader.setUpdatedAt(OffsetDateTime.now());
            return  billingHeaderRepository.save(billingHeader);
     }
     private BillingDetail  BillingDetaiDataSave(BillingHeader bhdId, DgOrderDt dtId, LabInvestigationReq investigation){

@@ -118,14 +118,14 @@ public class BillingHeader {
     private Integer billingHdId;
 
     @Column(name = "bill_date")
-    private LocalDate billDate;
+    private OffsetDateTime billDate;
 
     @Size(max = 100)
     @Column(name = "invoice_no", length = 100)
     private String invoiceNo;
 
     @Column(name = "updated_at")
-    private LocalDate updatedAt;
+    private OffsetDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "discount_id")
