@@ -6,6 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.MasStoreItemRequest;
 import com.hims.response.*;
 import com.hims.service.MasStoreItemService;
+import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
     @Autowired
     UserRepo userRepo;
+    @Autowired
+    AuthUtil authUtil;
 
     @Autowired
     private UserDepartmentRepository userDepartmentRepository;
@@ -68,24 +71,33 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     @Override
     @Transactional
     public ApiResponse<MasStoreItemResponse> addMasStoreItem(MasStoreItemRequest masStoreItemRequest) {
-        //try {
-        User currentUser = getCurrentUser();
+        User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
-                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                    "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
         }
+        Optional<MasStoreItem> existingItem = masStoreItemRepository
+                .findFirstByPvmsNoOrNomenclature(masStoreItemRequest.getPvmsNo(), masStoreItemRequest.getNomenclature());
+
+        if (existingItem.isPresent()) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Pvms No or Nomenclature already exists", HttpStatus.CONFLICT.value());
+        }
+
+
         MasStoreItem masStoreItem = new MasStoreItem();
         masStoreItem.setPvmsNo(masStoreItemRequest.getPvmsNo());
         masStoreItem.setNomenclature(masStoreItemRequest.getNomenclature());
         masStoreItem.setStatus("y");
         masStoreItem.setADispQty(masStoreItemRequest.getADispQty());
-        masStoreItem.setHospitalId(1);
+        masStoreItem.setHospitalId(currentUser.getHospital().getId());
         masStoreItem.setLastChgBy(currentUser.getUserId());
         masStoreItem.setLastChgDate(LocalDate.now());
         masStoreItem.setLastChgTime(getCurrentTimeFormatted());
         masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore());
         masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary());
+
         Optional<MasStoreUnit> masStoreUnit = masStoreUnitRepository.findById(masStoreItemRequest.getDispUnit());
         if (masStoreUnit.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("MasStoreUnit not found", 404);
@@ -109,18 +121,16 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         Optional<MasItemClass> masItemClass = masItemClassRepository.findById(masStoreItemRequest.getItemClassId());
         if (masItemClass.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("MasItemClass not found", 404);
-
         }
         Optional<MasHSN> masHSN = masHsnRepository.findById(masStoreItemRequest.getHsnCode());
         if (masHSN.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
-
         }
         Optional<MasItemCategory> masItemCategory = masItemCategoryRepository.findById(masStoreItemRequest.getMasItemCategoryId());
         if (masItemCategory.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("MasItemCategory not found", 404);
-
         }
+
         masStoreItem.setDispUnit(masStoreUnit.get());
         masStoreItem.setUnitAU(masStoreUnit1.get());
         masStoreItem.setItemClassId(masItemClass.get());
@@ -130,14 +140,9 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setHsnCode(masHSN.get());
         masStoreItem.setMasItemCategory(masItemCategory.get());
 
-        MasStoreItem masStoreItem1 = masStoreItemRepository.save(masStoreItem);
-        return ResponseUtils.createSuccessResponse(convertToResponse(masStoreItem1), new TypeReference<>() {
-        });
-//        }catch(Exception ex){
-//            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-//                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
-//        }
+        MasStoreItem savedItem = masStoreItemRepository.save(masStoreItem);
 
+        return ResponseUtils.createSuccessResponse(convertToResponse(savedItem), new TypeReference<>() {});
     }
 
     @Override
@@ -189,7 +194,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                 }, "MasStoreItem not found", 404);
             }
-            User currentUser = getCurrentUser();
+            User currentUser = authUtil.getCurrentUser();
+
             if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
@@ -199,7 +205,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             masStoreItem1.setPvmsNo(request.getPvmsNo());
             masStoreItem1.setNomenclature(request.getNomenclature());
             masStoreItem1.setADispQty(request.getADispQty());
-            masStoreItem1.setHospitalId(1);
+            masStoreItem1.setHospitalId(currentUser.getHospital().getId());
             masStoreItem1.setLastChgBy(currentUser.getUserId());
             masStoreItem1.setLastChgDate(LocalDate.now());
             masStoreItem1.setLastChgTime(getCurrentTimeFormatted());

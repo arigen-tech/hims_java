@@ -39,7 +39,7 @@ public class MasStoreItem {
     private BigDecimal aDispQty;
 
     @Column(name = "hospital_id")
-    private Integer hospitalId;
+    private Long hospitalId;
 
 //    @Column(name = "department_id")
 //    private Integer departmentId;
