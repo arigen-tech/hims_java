@@ -399,15 +399,15 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             if(fullyPaid){
                 hdorderObj.setPaymentStatus("y");
                 visit.setBillingStatus("y");
+                billingHeader.setPaymentStatus("y");
             }else if(partialPaid){
                 hdorderObj.setPaymentStatus("p");
                 visit.setBillingStatus("p");
+                billingHeader.setPaymentStatus("p");
             }
             labHdRepository.save(hdorderObj);
             visitRepository.save(visit);
-
-            billingHeader.setPaymentStatus("y");
-         billingHeaderRepository.save(billingHeader);
+            billingHeaderRepository.save(billingHeader);
            } catch (SDDException e) {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
           } catch (Exception e) {
