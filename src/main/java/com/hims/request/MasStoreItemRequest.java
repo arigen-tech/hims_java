@@ -12,17 +12,21 @@ import java.time.LocalDate;
 public class MasStoreItemRequest {
     private String pvmsNo;
     private String nomenclature;
-    private Long dispUnit;
-    private Long unitAU;
-    private Integer sectionId;
-    private Integer masItemCategoryId;
-    private BigDecimal aDispQty;
-    private Integer itemTypeId;
     private Integer groupId;
+    private Integer itemTypeId;
+    private Integer sectionId;
     private Integer itemClassId;
+    private Integer masItemCategoryId;
+    private Long unitAU;
+    private Long dispUnit;
+    private BigDecimal aDispQty;
     private Integer reOrderLevelDispensary;
     private Integer reOrderLevelStore;
     private String hsnCode;
+
+
+  //  private String dosage;
+
 
 
 }
