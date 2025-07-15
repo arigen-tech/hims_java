@@ -18,4 +18,9 @@ public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long>
 
 
     Optional<MasStoreItem> findFirstByPvmsNoOrNomenclature(String pvmsNo, String nomenclature);
+
+   
+    Optional<MasStoreItem> findByPvmsNoAndItemIdNot(String pvmsNo, Long id);
+
+    Optional<MasStoreItem> findByNomenclatureAndItemIdNot(String nomenclature, Long id);
 }

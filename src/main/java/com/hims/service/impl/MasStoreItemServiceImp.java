@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -90,7 +91,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setPvmsNo(masStoreItemRequest.getPvmsNo());
         masStoreItem.setNomenclature(masStoreItemRequest.getNomenclature());
         masStoreItem.setStatus("y");
-        masStoreItem.setADispQty(masStoreItemRequest.getADispQty());
+        masStoreItem.setAdispQty(masStoreItemRequest.getAdispQty());
         masStoreItem.setHospitalId(currentUser.getHospital().getId());
         masStoreItem.setLastChgBy(currentUser.getUserId());
         masStoreItem.setLastChgDate(LocalDate.now());
@@ -189,110 +190,100 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     @Override
     public ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request) {
         try {
-            Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(id);
-            if (masStoreItem.isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                }, "MasStoreItem not found", 404);
-            }
             User currentUser = authUtil.getCurrentUser();
-
             if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                        },
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            MasStoreItem masStoreItem1 = masStoreItem.get();
-            masStoreItem1.setPvmsNo(request.getPvmsNo());
-            masStoreItem1.setNomenclature(request.getNomenclature());
-            masStoreItem1.setADispQty(request.getADispQty());
-            masStoreItem1.setHospitalId(currentUser.getHospital().getId());
-            masStoreItem1.setLastChgBy(currentUser.getUserId());
-            masStoreItem1.setLastChgDate(LocalDate.now());
-            masStoreItem1.setLastChgTime(getCurrentTimeFormatted());
-            masStoreItem1.setReOrderLevelStore(request.getReOrderLevelStore());
-            masStoreItem1.setReOrderLevelDispensary(request.getReOrderLevelDispensary());
+            Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(id);
+            if (masStoreItem.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "MasStoreItem not found", HttpStatus.NOT_FOUND.value());
+            }
+
+            MasStoreItem item = masStoreItem.get();
+            if (!item.getPvmsNo().equals(request.getPvmsNo())) {
+                Optional<MasStoreItem> duplicatePvms = masStoreItemRepository
+                        .findByPvmsNoAndItemIdNot(request.getPvmsNo(), id);
+
+                if (duplicatePvms.isPresent()) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Pvms No already exists in another item", HttpStatus.CONFLICT.value());
+                }
+
+                item.setPvmsNo(request.getPvmsNo());
+            }
+
+
+            if (!item.getNomenclature().equals(request.getNomenclature())) {
+                Optional<MasStoreItem> duplicateNomenclature = masStoreItemRepository
+                        .findByNomenclatureAndItemIdNot(request.getNomenclature(), id);
+
+                if (duplicateNomenclature.isPresent()) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Nomenclature already exists in another item", HttpStatus.CONFLICT.value());
+                }
+
+                item.setNomenclature(request.getNomenclature());
+            }
+
+
+            item.setAdispQty(request.getAdispQty());
+            item.setReOrderLevelStore(request.getReOrderLevelStore());
+            item.setReOrderLevelDispensary(request.getReOrderLevelDispensary());
+            item.setHospitalId(currentUser.getHospital().getId());
+            item.setLastChgBy(currentUser.getUserId());
+            item.setLastChgDate(LocalDate.now());
+            item.setLastChgTime(getCurrentTimeFormatted());
+
             if (request.getDispUnit() != null) {
-                Optional<MasStoreUnit> masStoreUnit = masStoreUnitRepository.findById(request.getDispUnit());
-                if (masStoreUnit.isPresent()) {
-                    masStoreItem1.setUnitAU(masStoreUnit.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("MasStoreUnit not found", 404);
-                }
+                item.setDispUnit(masStoreUnitRepository.findById(request.getDispUnit())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "DispUnit not found")));
             }
+
             if (request.getUnitAU() != null) {
-                Optional<MasStoreUnit> masStoreUnit1 = masStoreUnitRepository.findById(request.getUnitAU());
-                if (masStoreUnit1.isPresent()) {
-                    masStoreItem1.setUnitAU(masStoreUnit1.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("MasStoreUnit not found", 404);
-                }
+                item.setUnitAU(masStoreUnitRepository.findById(request.getUnitAU())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "UnitAU not found")));
             }
+
             if (request.getSectionId() != null) {
-                Optional<MasStoreSection> masStoreSection = masStoreSectionRepository.findById(request.getSectionId());
-                if (masStoreSection.isPresent()) {
-                    masStoreItem1.setSectionId(masStoreSection.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("MasStoreSection not found", 404);
-                }
+                item.setSectionId(masStoreSectionRepository.findById(request.getSectionId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Section not found")));
             }
 
             if (request.getItemTypeId() != null) {
-                Optional<MasItemType> masItemType = masItemTypeRepository.findById(request.getItemTypeId());
-                if (masItemType.isPresent()) {
-                    masStoreItem1.setItemTypeId(masItemType.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("MasItemType not found", 404);
-                }
+                item.setItemTypeId(masItemTypeRepository.findById(request.getItemTypeId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ItemType not found")));
             }
 
             if (request.getGroupId() != null) {
-                Optional<MasStoreGroup> masStoreGroup = masStoreGroupRepository.findById(request.getGroupId());
-                if (masStoreGroup.isPresent()) {
-                    masStoreItem1.setGroupId(masStoreGroup.get());
-
-                } else {
-                    return ResponseUtils.createNotFoundResponse("MasStoreGroup not found", 404);
-                }
+                item.setGroupId(masStoreGroupRepository.findById(request.getGroupId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found")));
             }
 
             if (request.getItemClassId() != null) {
-                Optional<MasItemClass> masItemClass = masItemClassRepository.findById(request.getItemClassId());
-                if (masItemClass.isPresent()) {
-                    masStoreItem1.setItemClassId(masItemClass.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("MasItemClass not found", 404);
-
-                }
+                item.setItemClassId(masItemClassRepository.findById(request.getItemClassId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ItemClass not found")));
             }
+
             if (request.getHsnCode() != null) {
-                Optional<MasHSN> masHSN = masHsnRepository.findById(request.getHsnCode());
-                if (masHSN.isPresent()) {
-                    masStoreItem1.setHsnCode(masHSN.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
-
-                }
+                item.setHsnCode(masHsnRepository.findById(request.getHsnCode())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "HSN not found")));
             }
+
             if (request.getMasItemCategoryId() != null) {
-                Optional<MasItemCategory> masItemCategory = masItemCategoryRepository.findById(request.getMasItemCategoryId());
-                if (masItemCategory.isPresent()) {
-                    masStoreItem1.setMasItemCategory(masItemCategory.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
-
-                }
+                item.setMasItemCategory(masItemCategoryRepository.findById(request.getMasItemCategoryId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ItemCategory not found")));
             }
 
+            MasStoreItem updatedItem = masStoreItemRepository.save(item);
 
-            MasStoreItem masStoreItem2 = masStoreItemRepository.save(masStoreItem1);
-            return ResponseUtils.createSuccessResponse(convertToResponse(masStoreItem2), new TypeReference<>() {
-            });
+            return ResponseUtils.createSuccessResponse(convertToResponse(updatedItem), new TypeReference<>() {});
         } catch (Exception ex) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    },
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
-
         }
+
     }
 
     @Override
@@ -385,7 +376,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setLastChgBy(item.getLastChgBy());
         response.setLastChgTime(item.getLastChgTime());
         response.setHospitalId(item.getHospitalId());
-        response.setADispQty(item.getADispQty());
+        response.setAdispQty(item.getAdispQty());
       //  if (item.getGroupId() != null) {
             response.setGroupId(item.getGroupId()!=null?item.getGroupId().getId():null);
             response.setGroupName(item.getGroupId()!=null?item.getGroupId().getGroupName():null);
