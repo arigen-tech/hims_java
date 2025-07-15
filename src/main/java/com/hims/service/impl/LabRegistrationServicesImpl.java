@@ -173,20 +173,20 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setLastChgDate(LocalDate.now());
                 hd.setLastChgTime(LocalTime.now().toString());
                 DgOrderHd savedHd = labHdRepository.save(hd);
-                boolean flag=false;
-                for (LabInvestigationReq req:investigations){
-                    if(req.isCheckStatus()){
-                        flag=true;
-                        break;
-                    }
-                }
+//                boolean flag=false;  //flag
+//                for (LabInvestigationReq req:investigations){
+//                    if(req.isCheckStatus()){
+//                        flag=true;
+//                        break;
+//                    }
+//                }//flag
                 BillingHeader headerId=new BillingHeader();
-                if(flag){
+               // if(flag){//flag
                      headerId = BillingHeaderDataSave(savedHd, savedVisit, labReq, currentUser,sum,tax,disc);
                     res.setBillinghdId(headerId.getId().toString());
                     savedVisit.setBillingHd(headerId);
                     visitRepository.save(savedVisit);
-                }
+               // }
                 for (LabInvestigationReq inv : investigations) {
                     //check, type= "i"  for  investigation   and  "p"  for packeg to differenciate
                     if (inv.getType().equalsIgnoreCase("i")) {
@@ -211,13 +211,13 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         dt.setLastChgTime(LocalTime.now().toString());
 
                         DgOrderDt savedDt = labDtRepository.save(dt);
-                        if(flag){
+                      //  if(flag){//flag
                             savedDt.setBillingHd(headerId);
                             labDtRepository.save(savedDt);
-                        }
-                        if (inv.isCheckStatus()) {
+                       // }
+                       // if (inv.isCheckStatus()) {//flag
                             BillingDetaiDataSave(headerId, savedDt, inv);
-                        }
+                       // }
                     } else {
                         DgInvestigationPackage pkgObj = dgInvestigationPackageRepository.findById(inv.getId()).get();
                         List<PackageInvestigationMapping> mappings = packageInvestigationMappingRepository.findByPackageId(pkgObj);
@@ -239,14 +239,14 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                             dt.setCreatedon(Instant.now());
                             dt.setLastChgTime(LocalTime.now().toString());
                             DgOrderDt savedDt = labDtRepository.save(dt);
-                            if(flag) {
+                            //if(flag) {
                                 savedDt.setBillingHd(headerId);
                                 labDtRepository.save(savedDt);
-                            }
+                           // }
                         }
-                        if (inv.isCheckStatus()) {
+                      //  if (inv.isCheckStatus()) {//flag
                             BillingDetaiDataSavePackage(headerId, pkgObj, inv);
-                        }
+//}
                    }
                 }
             }
@@ -378,11 +378,13 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 if (orderDt.getPackageId() != null && billDt.getPackageField()!=null) {
                     if (billDt.getPackageField().getPackId() == orderDt.getPackageId().getPackId()) {
                         orderDt.setBillingStatus("y");
+
                     }
                 } else if (billDt.getInvestigation()!=null&& orderDt.getPackageId() == null ) {
                 if (billDt.getInvestigation().getInvestigationId()
                         == orderDt.getInvestigationId().getInvestigationId()) {
                     orderDt.setBillingStatus("y");
+
                 }
             }
               }
@@ -406,6 +408,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 visit.setBillingStatus("p");
                 billingHeader.setPaymentStatus("p");
             }
+
             labHdRepository.save(hdorderObj);
             visitRepository.save(visit);
             billingHeaderRepository.save(billingHeader);
@@ -485,6 +488,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
         billingDetail.setNetAmount(billingDetail.getAmountAfterDiscount().add(billingDetail.getTaxAmount()));
         billingDetail.setTotal(billingDetail.getNetAmount());
+        billingDetail.setPaymentStatus("n");
 
         //not null column
        // billingDetail.setDetailId();
@@ -522,6 +526,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
         billingDetail.setNetAmount(billingDetail.getAmountAfterDiscount().add(billingDetail.getTaxAmount()));
         billingDetail.setTotal(billingDetail.getNetAmount());
+        billingDetail.setPaymentStatus("n");
+
 
         //not null column
         // billingDetail.setDetailId();
