@@ -6,6 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.OpeningBalanceDtRequest;
 import com.hims.request.OpeningBalanceEntryRequest;
 import com.hims.request.OpeningBalanceEntryRequest2;
+import com.hims.request.StoreItemBatchStockRequest;
 import com.hims.response.*;
 import com.hims.service.OpeningBalanceEntryService;
 import com.hims.utils.AuthUtil;
@@ -65,12 +66,13 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
 
     private final RandomNumGenerator randomNumGenerator;
+
     public OpeningBalanceEntryServiceImp(RandomNumGenerator randomNumGenerator) {
         this.randomNumGenerator = randomNumGenerator;
     }
 
     public String createInvoice() {
-        return randomNumGenerator.generateOrderNumber("BAL",true,true);
+        return randomNumGenerator.generateOrderNumber("BAL", true, true);
     }
 
     @Override
@@ -79,7 +81,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
         }
 
@@ -133,11 +136,11 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             dt.setBaseRatePerUnit(basePrice);
             Long qty = dtRequest.getQty();
             BigDecimal purRateUnit = dtRequest.getPurchaseRatePerUnit();
-            BigDecimal total = purRateUnit .multiply(BigDecimal.valueOf(qty));
+            BigDecimal total = purRateUnit.multiply(BigDecimal.valueOf(qty));
             dt.setTotalPurchaseCost(total);
             dt.setBrandId(brandRepo.findById(dtRequest.getBrandId()).orElse(null));
-            Optional<MasManufacturer> masManufacturer=manufacturerRepo.findById(dtRequest.getManufacturerId());
-            if(masManufacturer.isEmpty()){
+            Optional<MasManufacturer> masManufacturer = manufacturerRepo.findById(dtRequest.getManufacturerId());
+            if (masManufacturer.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("MasManufacturer not found", 404);
             }
             dt.setManufacturerId(masManufacturer.get());
@@ -146,7 +149,10 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         dtRepo.saveAll(dtList);
         return ResponseUtils.createSuccessResponse(
                 buildOpeningBalanceEntryResponse(savedHd, dtList),
-                new TypeReference<>() {});
+                new TypeReference<>() {
+                });
+
+
     }
 
     @Override
@@ -155,7 +161,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         User currentUser = authUtil.getCurrentUser();
 
         if (currentUser == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
         }
 
@@ -165,10 +172,10 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             return ResponseUtils.createNotFoundResponse("Opening balance entry not found with id " + id, 404);
         }
 
-         addDetails(openingBalanceEntryRequest.getStoreBalanceDtList(), id);
+        addDetails(openingBalanceEntryRequest.getStoreBalanceDtList(), id);
 
-        if ( openingBalanceEntryRequest.getDeletedDt() != null && !openingBalanceEntryRequest.getDeletedDt().isEmpty() ){
-            for(Long ids : openingBalanceEntryRequest.getDeletedDt()) {
+        if (openingBalanceEntryRequest.getDeletedDt() != null && !openingBalanceEntryRequest.getDeletedDt().isEmpty()) {
+            for (Long ids : openingBalanceEntryRequest.getDeletedDt()) {
                 deletedById(ids);
             }
         }
@@ -180,13 +187,14 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         hd.setDepartmentId(depObj);
         hd.setEnteredBy(openingBalanceEntryRequest.getEnteredBy());
         hd.setLastUpdatedDt(LocalDateTime.now());
-        if(openingBalanceEntryRequest.getStatus().equals("s")  || openingBalanceEntryRequest.getStatus()==null ) {
+        if (openingBalanceEntryRequest.getStatus().equals("s") || openingBalanceEntryRequest.getStatus() == null) {
             hd.setStatus("s");
-        }else if (openingBalanceEntryRequest.getStatus().equals("p")) {
+        } else if (openingBalanceEntryRequest.getStatus().equals("p")) {
             hd.setStatus("p");
         }
         StoreBalanceHd updatedHd = hdRepo.save(hd);
-        return ResponseUtils.createSuccessResponse(" successfully", new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(" successfully", new TypeReference<>() {
+        });
 
     }
 
@@ -198,25 +206,27 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         }
         StoreBalanceHd hd = optionalHd.get();
         hd.setStatus(status);
-         hdRepo.save(hd);
-         return ResponseUtils.createSuccessResponse("StoreBalanceHd status updated to '" + status + "'", new TypeReference<>() {});
+        hdRepo.save(hd);
+        return ResponseUtils.createSuccessResponse("StoreBalanceHd status updated to '" + status + "'", new TypeReference<>() {
+        });
     }
-
 
 
     @Override
     public ApiResponse<OpeningBalanceEntryResponse> getDetailsById(Long id) {
         StoreBalanceHd hd = hdRepo.findById(id).orElseThrow(() -> new RuntimeException("Entry not found"));
         List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);
-       // return buildOpeningBalanceEntryResponse(hd, dtList);
-        return ResponseUtils.createSuccessResponse(buildOpeningBalanceEntryResponse(hd, dtList), new TypeReference<>() {});
+        // return buildOpeningBalanceEntryResponse(hd, dtList);
+        return ResponseUtils.createSuccessResponse(buildOpeningBalanceEntryResponse(hd, dtList), new TypeReference<>() {
+        });
     }
 
     @Override
     public ApiResponse<OpeningBalanceEntryResponse> createAndUpdateStatus(OpeningBalanceEntryRequest request) {
         ApiResponse<OpeningBalanceEntryResponse> createResponse = this.add(request);
-        updateByStatus(createResponse .getResponse().getBalanceMId(), "p");
-        return ResponseUtils.createSuccessResponse(createResponse.getResponse(), new TypeReference<>() {});
+        updateByStatus(createResponse.getResponse().getBalanceMId(), "p");
+        return ResponseUtils.createSuccessResponse(createResponse.getResponse(), new TypeReference<>() {
+        });
     }
 
     @Override
@@ -232,15 +242,13 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     }
 
 
-
-
-
     @Transactional
     @Override
     public ApiResponse<String> approved(Long id, OpeningBalanceEntryRequest2 request) {
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
 
@@ -249,7 +257,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             return ResponseUtils.createNotFoundResponse("Store Balance Hd not found", 404);
         }
 
-        String fName= currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+        String fName = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
 
         StoreBalanceHd hd = hdOpt.get();
         hd.setStatus(request.getStatus());
@@ -345,12 +353,13 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             dtRepo.saveAll(dtList);
         }
 
-        return ResponseUtils.createSuccessResponse("Approved and stock moved to batch successfully", new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse("Approved and stock moved to batch successfully", new TypeReference<>() {
+        });
     }
 
     @Override
     public ApiResponse<List<?>> getAllStock(String type) {
-        List<StoreItemBatchStock> allStocks =storeItemBatchStockRepository.findAll();
+        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findAll();
         if (type.equals("summary")) {
             Map<Long, List<StoreItemBatchStock>> groupedByItem = allStocks.stream()
                     .collect(Collectors.groupingBy(stock -> stock.getItemId().getItemId()));
@@ -359,7 +368,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 Long itemId = entry.getKey();
                 List<StoreItemBatchStock> stocks = entry.getValue();
 
-                
+
                 StoreItemBatchStock first = stocks.get(0);
 
 
@@ -382,7 +391,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 return dto;
             }).collect(Collectors.toList());
 
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
 
 
         } else if (type.equals("details")) {
@@ -405,12 +415,42 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 dto.setMedicineSource(stock.getBrandId().getBrandName());
                 return dto;
             }).collect(Collectors.toList());
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
         }
-        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                },
                 " invalid access Plz send summary or details ", HttpStatus.UNAUTHORIZED.value());
 
 
+    }
+
+    @Override
+    public ApiResponse<String> updateByMrp(Long id, StoreItemBatchStockRequest storeItemBatchStockRequest) {
+        Optional<StoreItemBatchStock> storeItemBatchStock = storeItemBatchStockRepository.findById(id);
+        if (storeItemBatchStock.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("StoreItemBatchStock not found", 404);
+        }
+        StoreItemBatchStock storeItemBatchStock1 = storeItemBatchStock.get();
+        storeItemBatchStock1.setMrpPerUnit(storeItemBatchStockRequest.getMrpValue());
+        return ResponseUtils.createSuccessResponse("update mrp successfully", new TypeReference<>() {
+        });
+    }
+
+    @Override
+    public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByDateRange(LocalDate fromDate, LocalDate toDate) {
+        List<StoreItemBatchStock> stocks = storeItemBatchStockRepository.findByManufactureDateAndExpiryDateRange(fromDate, toDate);
+
+
+        if (stocks.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("Data not found between DOM and DOE", 404);
+        }
+
+        List<OpeningBalanceStockResponse2> responseList = stocks.stream()
+                .map(this::convertedToResponse)
+                .toList();
+
+        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
     }
 
 
@@ -586,6 +626,27 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
         response.setOpeningBalanceDtResponseList(dtResponses);
         return response;
+    }
+    private OpeningBalanceStockResponse2 convertedToResponse(StoreItemBatchStock stock){
+        OpeningBalanceStockResponse2 dto=new OpeningBalanceStockResponse2();
+        dto.setStockId(stock.getStockId());
+        dto.setItemId(stock.getItemId() != null?stock.getItemId().getItemId():null);
+        dto.setItemName(stock.getItemId()!=null?stock.getItemId().getNomenclature():null);
+        dto.setItemCode(stock.getItemId()!=null?stock.getItemId().getPvmsNo():null);
+        dto.setUnitAu(stock.getItemId().getUnitAU() != null?stock.getItemId().getUnitAU().getUnitName():null);
+        dto.setClassId(stock.getItemId().getItemClassId() != null?stock.getItemId().getItemClassId().getItemClassId():null);
+        dto.setClassName(stock.getItemId().getItemClassId() != null?stock.getItemId().getItemClassId().getItemClassName():null);
+        dto.setSectionId(stock.getItemId().getItemClassId().getMasStoreSection() != null?stock.getItemId().getItemClassId().getMasStoreSection().getSectionId():null);
+        dto.setSectionName(stock.getItemId().getItemClassId().getMasStoreSection() != null?stock.getItemId().getItemClassId().getMasStoreSection().getSectionName():null);
+            dto.setOpeningQty(stock.getOpeningBalanceQty());
+             dto.setBatchNo(stock.getBatchNo());
+        dto.setDom(stock.getManufactureDate());
+        dto.setDoe(stock.getExpiryDate());
+        dto.setManufacturerName(stock.getManufacturerId() != null?stock.getManufacturerId().getManufacturerName():null);
+        dto.setMedicineSource(stock.getBrandId() != null?stock.getBrandId().getBrandName():null);
+
+
+        return dto;
     }
 
 

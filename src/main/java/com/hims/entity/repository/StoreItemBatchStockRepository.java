@@ -35,4 +35,9 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
 
     @Query("SELECT s FROM StoreItemBatchStock s WHERE CONCAT(s.itemId, '_', s.batchNo, '_', s.manufactureDate, '_', s.expiryDate, '_' , s.manufacturerId.manufacturerId) IN :keys")
     List<StoreItemBatchStock> findAllByKeys(@Param("keys") Set<String> keys);
+
+
+    @Query("SELECT s FROM StoreItemBatchStock s WHERE s.manufactureDate >= :fromDate AND s.expiryDate <= :toDate")
+    List<StoreItemBatchStock> findByManufactureDateAndExpiryDateRange(LocalDate fromDate, LocalDate toDate);
+
 }
