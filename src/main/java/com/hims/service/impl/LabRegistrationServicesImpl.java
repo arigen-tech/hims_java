@@ -3,6 +3,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.helperUtil.ConverterUtils;
 import com.hims.request.LabInvestigationReq;
 import com.hims.request.LabPackegReq;
 import com.hims.request.LabRegRequest;
@@ -424,7 +425,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setPatient(vId.getPatient());
             billingHeader.setVisit(vId);
             billingHeader.setPatientDisplayName(vId.getPatient().getPatientFn());
-            billingHeader.setPatientAge(Integer.parseInt(vId.getPatient().getPatientAge()));
+            LocalDate dob=  vId.getPatient().getPatientDob();//get DOB from Patient table and calculate age
+            billingHeader.setPatientAge(ConverterUtils.ageCalculator(dob));
             billingHeader.setPatientGender(vId.getPatient().getPatientGender().getGenderName());
             billingHeader.setPatientAddress(vId.getPatient().getPatientAddress1());
             billingHeader.setHospital(currentUser.getHospital());

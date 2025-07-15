@@ -13,7 +13,9 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
@@ -393,6 +395,26 @@ public class ConverterUtils {
     public boolean isNumeric(String s) {
         return s != null && s.matches("[-+]?\\d*\\.?\\d+");
     }
-
+    public static String ageCalculator(LocalDate dt) {
+        // DOB in String format
+        String dobString =dt.toString();
+        // Define formatter for input date
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        // Parse string to LocalDate
+        LocalDate dob = LocalDate.parse(dobString, formatter);
+        // Current date
+        LocalDate today = LocalDate.now();
+        // Calculate age
+        Period age = Period.between(dob, today);
+      //  System.out.println("Age is: " + age.getYears() + " years");
+        return(age.getYears() + "Y"+" "+ age.getMonths()+ "M"+" "+age.getDays()+"D");
+//        LocalDate dob = LocalDate.of(1990, 01, 01);  // YYYY, MM, DD   1990, 01, 01
+//        // Current date
+//        LocalDate today = LocalDate.now();
+//        // Calculate age
+//        Period age = Period.between(dob, today);
+//      //  System.out.println("Age is: " + age.getYears() + " years"+" Month "+age.getMonths()+" Day"+age.getDays());
+//        return "Age is: " + age.getYears() + " years"+" Month "+age.getMonths()+" Day"+age.getDays();
+    }
 
 }
