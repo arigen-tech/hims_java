@@ -47,7 +47,7 @@ public class BillingServiceImpl implements BillingService {
             header.setBillDate(OffsetDateTime.now());
             header.setPatient(visit.getPatient());
             header.setPatientDisplayName(visit.getPatient().getPatientFn()+" "+visit.getPatient().getPatientMn()+" "+visit.getPatient().getPatientLn());
-            header.setPatientAge(Integer.valueOf(visit.getPatient().getPatientAge()));
+            header.setPatientAge(visit.getPatient().getPatientAge());
             header.setPatientGender(visit.getPatient().getPatientGender().getGenderName());
             header.setPatientAddress(visit.getPatient().getPatientAddress1()+" "+visit.getPatient().getPatientAddress2());
             header.setHospital(visit.getHospital());

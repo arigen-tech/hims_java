@@ -36,7 +36,7 @@ public class BillingHeader {
     private String patientDisplayName;
 
     @Column(name = "patient_age")
-    private Integer patientAge;
+    private String patientAge;
 
     @Size(max = 10)
     @Column(name = "patient_gender", length = 10)
