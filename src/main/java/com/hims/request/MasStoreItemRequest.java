@@ -19,7 +19,7 @@ public class MasStoreItemRequest {
     private Integer masItemCategoryId;
     private Long unitAU;
     private Long dispUnit;
-    private BigDecimal aDispQty;
+    private BigDecimal adispQty;
     private Integer reOrderLevelDispensary;
     private Integer reOrderLevelStore;
     private String hsnCode;

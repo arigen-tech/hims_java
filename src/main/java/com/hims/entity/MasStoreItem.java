@@ -36,7 +36,7 @@ public class MasStoreItem {
     private String lastChgTime;
 
     @Column(name = "a_disp_qty", precision = 19, scale = 2)
-    private BigDecimal aDispQty;
+    private BigDecimal adispQty;
 
     @Column(name = "hospital_id")
     private Long hospitalId;

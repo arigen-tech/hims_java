@@ -19,7 +19,7 @@ public class MasStoreItemResponse {
     private LocalDate lastChgDate;
     private String lastChgTime;
 
-    private BigDecimal aDispQty;
+    private BigDecimal adispQty;
     private Long hospitalId;
 
     private Long unitAU;
