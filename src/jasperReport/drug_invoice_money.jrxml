@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.21.2-8434a0bd7c3bbc37cbf916f2968d35e4b165821a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="drug_invoice_money" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b032230b-6f91-4d1d-a37a-874afe55cc8e">
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<summary>
+		<band height="160" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="8" width="802" height="22" uuid="f5aa7ccc-9abc-4ffe-a6c0-2d17c0614d21"/>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Invoice]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="40" width="802" height="1" forecolor="#000000" uuid="84b34412-68ec-4ddf-b403-ad9158ced86b"/>
+			</line>
+			<line>
+				<reportElement x="0" y="70" width="802" height="1" forecolor="#000000" uuid="4597c743-834a-40f0-b5a0-21e8ec657398"/>
+			</line>
+			<staticText>
+				<reportElement x="170" y="47" width="170" height="15" uuid="282676c4-c360-4c61-834f-0babab46a0f1"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Package and Handling charge :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="390" y="47" width="30" height="15" uuid="427f3068-f03b-4c19-a0a8-84e4c5638e07"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[SAC :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="490" y="47" width="30" height="15" uuid="90e681ca-86df-4f3a-b6f1-c8cc22715d53"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[GST :]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="99" width="802" height="1" forecolor="rgba(0, 0, 0, 0.54901963)" uuid="b661592d-56f1-4201-8217-e97ec112453f"/>
+			</line>
+			<line>
+				<reportElement x="0" y="129" width="802" height="1" forecolor="rgba(0, 0, 0, 0.54901963)" uuid="c41071ce-f001-4bbb-9218-87587ee03d8d"/>
+			</line>
+			<line>
+				<reportElement x="4" y="159" width="802" height="1" forecolor="rgba(0, 0, 0, 0.54901963)" uuid="139eea37-0930-4d5e-b583-f4f2fab9eacd"/>
+			</line>
+			<staticText>
+				<reportElement x="40" y="80" width="99" height="15" uuid="cd70e113-4cf8-49c4-be36-3106574133eb"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Taxable Value :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="80" width="99" height="15" uuid="628e15ef-7997-4ec4-bbab-113dce5583f4"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[CGST Amount :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="440" y="80" width="99" height="15" uuid="71f6cffb-c75c-4c30-9581-40692e31bccb"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[SGST Amount :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="640" y="80" width="79" height="15" uuid="c60df2f7-160b-438f-9607-5be011a36aca"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Gross Value :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="180" y="110" width="99" height="15" uuid="dd53684e-7ad3-47d0-afff-9d7110bdb6a7"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Discount :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="480" y="110" width="99" height="15" uuid="39929c27-1eff-44b4-865b-8385c9f6c6d3"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Saving on MRP :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="40" y="140" width="70" height="15" uuid="f2c937a1-6e46-47aa-9e5b-249169a5aa1e"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Saving of Rs. ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="640" y="140" width="79" height="15" uuid="48a6032d-3c59-4f90-b4c0-4c39d0882065"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Paid Amount :]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>
