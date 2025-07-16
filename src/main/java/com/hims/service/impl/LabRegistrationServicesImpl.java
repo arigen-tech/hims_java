@@ -367,45 +367,30 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     int investigationId=invpkg.getId();
                     int billHdId=request.getBillHeaderId();
                     billingDetailRepository.updatePaymentStatusInvestigation("y", investigationId, billHdId);
+                    labDtRepository.updatePaymentStatusInvestigationDt("y",investigationId, billHdId);
                 }else{
                     int pkgId=invpkg.getId();
                     int billHdId=request.getBillHeaderId();
                     billingDetailRepository.updatePaymentStatuPackeg("y", pkgId, billHdId);
-
+                    labDtRepository.updatePaymentStatusPackegDt("y",pkgId, billHdId);
                 }
             }
-
-            //////
+            boolean fullyPaid=true;
+            boolean partialPaid=false;
+            List<DgOrderDt> dtList= labDtRepository.findByStatus(request.getBillHeaderId());
+            for(DgOrderDt orderDt:dtList) {
+              if(orderDt.getBillingStatus().equalsIgnoreCase("n")){
+                  fullyPaid=false;
+                  partialPaid=true;
+                  break;
+              }
+//              else{
+//                  partialPaid=false;
+//                  fullyPaid=true;
+//              }
+            }
             BillingHeader billingHeader=billingHeaderRepository.findById(request.getBillHeaderId()).get();
             DgOrderHd hdorderObj = billingHeader.getHdorder();
-            List<DgOrderDt> dtList= labDtRepository.findByOrderhdId(hdorderObj);
-            List<BillingDetail> billDtList= billingDetailRepository.findByBillingHd(billingHeader);
-           boolean fullyPaid=true;
-            boolean partialPaid=false;
-            for(DgOrderDt orderDt:dtList){
-            for(BillingDetail billDt:billDtList) {
-
-                if (orderDt.getPackageId() != null && billDt.getPackageField()!=null) {
-                    if (billDt.getPackageField().getPackId() == orderDt.getPackageId().getPackId()) {
-                        orderDt.setBillingStatus("y");
-
-                    }
-                } else if (billDt.getInvestigation()!=null&& orderDt.getPackageId() == null ) {
-                if (billDt.getInvestigation().getInvestigationId()
-                        == orderDt.getInvestigationId().getInvestigationId()) {
-                    orderDt.setBillingStatus("y");
-                }
-               }
-              }
-            if(orderDt.getBillingStatus().equalsIgnoreCase("n")){
-                fullyPaid=false;
-            }
-            if(partialPaid!=true && orderDt.getBillingStatus().equalsIgnoreCase("y") ){
-                partialPaid=true;
-            }
-            labDtRepository.save(orderDt);
-            }
-            /// Visit Payment status
             Visit visit=visitRepository.findByBillingHd(billingHeader);
             if(fullyPaid){
                 hdorderObj.setPaymentStatus("y");
@@ -419,6 +404,51 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             labHdRepository.save(hdorderObj);
             visitRepository.save(visit);
             billingHeaderRepository.save(billingHeader);
+
+//            BillingHeader billingHeader=billingHeaderRepository.findById(request.getBillHeaderId()).get();
+//            DgOrderHd hdorderObj = billingHeader.getHdorder();
+//            List<DgOrderDt> dtList= labDtRepository.findByOrderhdId(hdorderObj);
+//            List<BillingDetail> billDtList= billingDetailRepository.findByBillingHd(billingHeader);
+//           boolean fullyPaid=true;
+//            boolean partialPaid=false;
+//            for(DgOrderDt orderDt:dtList){
+//
+//            for(BillingDetail billDt:billDtList) {
+//
+//                if (orderDt.getPackageId() != null && billDt.getPackageField()!=null) {
+//                    if (billDt.getPackageField().getPackId() == orderDt.getPackageId().getPackId()) {
+//                        orderDt.setBillingStatus("y");
+//
+//                    }
+//                } else if (billDt.getInvestigation()!=null&& orderDt.getPackageId() == null ) {
+//                if (billDt.getInvestigation().getInvestigationId()
+//                        == orderDt.getInvestigationId().getInvestigationId()) {
+//                    orderDt.setBillingStatus("y");
+//                }
+//               }
+//              }
+//            if(orderDt.getBillingStatus().equalsIgnoreCase("n")){
+//                fullyPaid=false;
+//            }
+//            if(partialPaid!=true && orderDt.getBillingStatus().equalsIgnoreCase("y") ){
+//                partialPaid=true;
+//            }
+//            //labDtRepository.save(orderDt);  //comments
+//            }
+//            /// Visit Payment status
+//            Visit visit=visitRepository.findByBillingHd(billingHeader);
+//            if(fullyPaid){
+//                hdorderObj.setPaymentStatus("y");
+//                visit.setBillingStatus("y");
+//                billingHeader.setPaymentStatus("y");
+//            }else if(partialPaid){
+//                hdorderObj.setPaymentStatus("p");
+//                visit.setBillingStatus("p");
+//                billingHeader.setPaymentStatus("p");
+//            }
+//            labHdRepository.save(hdorderObj);
+//            visitRepository.save(visit);
+//            billingHeaderRepository.save(billingHeader);
 
            } catch (SDDException e) {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
