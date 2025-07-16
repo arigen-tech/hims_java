@@ -4,10 +4,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.ConverterUtils;
-import com.hims.request.LabInvestigationReq;
-import com.hims.request.LabPackegReq;
-import com.hims.request.LabRegRequest;
-import com.hims.request.PaymentUpdateRequest;
+import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
 import com.hims.service.LabRegistrationServices;
@@ -365,6 +362,19 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             paymentDetail.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
             PaymentDetail details=paymentDetailRepository.save(paymentDetail);
 
+            for (InvestigationandPackegBillStatus invpkg : request.getInvestigationandPackegBillStatus()) {
+                if (invpkg.getType().equalsIgnoreCase("i")) {
+                    int investigationId=invpkg.getId();
+                    int billHdId=request.getBillHeaderId();
+                    billingDetailRepository.updatePaymentStatusInvestigation("y", investigationId, billHdId);
+                }else{
+                    int pkgId=invpkg.getId();
+                    int billHdId=request.getBillHeaderId();
+                    billingDetailRepository.updatePaymentStatuPackeg("y", pkgId, billHdId);
+
+                }
+            }
+
             //////
             BillingHeader billingHeader=billingHeaderRepository.findById(request.getBillHeaderId()).get();
             DgOrderHd hdorderObj = billingHeader.getHdorder();
@@ -384,9 +394,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 if (billDt.getInvestigation().getInvestigationId()
                         == orderDt.getInvestigationId().getInvestigationId()) {
                     orderDt.setBillingStatus("y");
-
                 }
-            }
+               }
               }
             if(orderDt.getBillingStatus().equalsIgnoreCase("n")){
                 fullyPaid=false;
@@ -398,7 +407,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             }
             /// Visit Payment status
             Visit visit=visitRepository.findByBillingHd(billingHeader);
-           // visit.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
             if(fullyPaid){
                 hdorderObj.setPaymentStatus("y");
                 visit.setBillingStatus("y");
@@ -408,10 +416,10 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 visit.setBillingStatus("p");
                 billingHeader.setPaymentStatus("p");
             }
-
             labHdRepository.save(hdorderObj);
             visitRepository.save(visit);
             billingHeaderRepository.save(billingHeader);
+
            } catch (SDDException e) {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
           } catch (Exception e) {
