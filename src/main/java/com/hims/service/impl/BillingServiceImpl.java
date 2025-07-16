@@ -5,6 +5,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpdBillingPaymentResponse;
+import com.hims.response.PendingBillingResponse;
 import com.hims.service.BillingService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
@@ -15,7 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static com.hims.helperUtil.ConverterUtils.ageCalculator;
 
 @Service
 @Transactional
@@ -182,4 +187,76 @@ public class BillingServiceImpl implements BillingService {
         }
         return paymentFlag;
     }
+
+    @Override
+    public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
+        List<BillingHeader> headers = billingHeaderRepository.findByPaymentStatusIn(List.of("n", "p"));
+
+        List<PendingBillingResponse> responseList = headers.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(
+                responseList,
+                new TypeReference<List<PendingBillingResponse>>() {});
+    }
+
+
+    private PendingBillingResponse mapToResponse(BillingHeader header) {
+        PendingBillingResponse response = new PendingBillingResponse();
+        response.setId(header.getId());
+
+        // ✅ Name from BillingHeader
+        response.setPatientName(safe(header.getPatientDisplayName()));
+
+        // ✅ Mobile from linked Patient
+        if (header.getPatient() != null) {
+            response.setMobileNo(safe(header.getPatient().getPatientMobileNumber()));
+        } else {
+            response.setMobileNo("");
+        }
+
+        // ✅ Age from BillingHeader
+        if (header.getPatient() != null && header.getPatient().getPatientDob() != null) {
+            String ageStr = ageCalculator(header.getPatient().getPatientDob());
+            response.setAge(ageStr);
+        } else {
+            response.setAge("");
+        }
+
+
+
+        response.setSex(safe(header.getPatientGender()));
+
+
+       response.setRelation(header.getVisit().getPatient().getPatientRelation().getRelationName());
+
+
+        response.setConsultedDoctor(safe(header.getReferredBy()));
+
+
+        response.setDepartment(header.getVisit().getDepartment().getDepartmentName());
+
+
+        if (header.getServiceCategory() != null) {
+            response.setBillingType(safe(header.getServiceCategory().getServiceCatName()));
+        } else {
+            response.setBillingType("");
+        }
+
+
+        response.setAmount(header.getNetAmount() != null ? header.getNetAmount() : BigDecimal.ZERO);
+
+
+        response.setBillingStatus(safe(header.getPaymentStatus()));
+
+        return response;
+    }
+
+
+
+    private String safe(String value) {
+        return value != null ? value : "";
+    }
+
 }
