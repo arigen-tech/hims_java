@@ -1,12 +1,12 @@
 package com.hims.service;
 
 import com.hims.entity.StoreItemBatchStock;
-import com.hims.request.OpeningBalanceDtRequest;
-import com.hims.request.OpeningBalanceEntryRequest;
-import com.hims.request.OpeningBalanceEntryRequest2;
+import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpeningBalanceEntryResponse;
+import com.hims.response.OpeningBalanceStockResponse2;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface OpeningBalanceEntryService {
@@ -30,4 +30,9 @@ public interface OpeningBalanceEntryService {
 
 
     ApiResponse<List<?>> getAllStock(String type);
+
+
+    ApiResponse<List<OpeningBalanceStockResponse2 >> getStockByDateRange(LocalDate fromDate, LocalDate toDate,Long itemId);
+
+    ApiResponse<String> updateByMrp(List<UpdateMrpValue> marValue);
 }

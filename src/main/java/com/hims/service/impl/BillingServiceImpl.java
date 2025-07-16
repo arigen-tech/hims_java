@@ -100,6 +100,7 @@ public class BillingServiceImpl implements BillingService {
                 detail.setServiceCategory(serviceCategory);
                 detail.setServiceId(0L);
                 detail.setItemName("");
+                detail.setPaymentStatus("n");
 
 //                Optional<MasServiceOpd> serviceOpd=masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory);
                 if(serviceOpd.isPresent()) {

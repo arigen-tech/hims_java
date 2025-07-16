@@ -3,19 +3,18 @@ package com.hims.controller;
 import com.hims.entity.MasManufacturer;
 import com.hims.entity.MasStoreItem;
 import com.hims.entity.StoreItemBatchStock;
-import com.hims.request.MasManufacturerRequest;
-import com.hims.request.OpeningBalanceDtRequest;
-import com.hims.request.OpeningBalanceEntryRequest;
-import com.hims.request.OpeningBalanceEntryRequest2;
+import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.OpeningBalanceEntryService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -72,9 +71,17 @@ public class OpeningBalanceEntryController {
         return ResponseEntity.ok(openingBalanceEntryService.getAllStock(type));
 
     }
+    @PutMapping("/updateByMrp")
+    public ResponseEntity<ApiResponse<String>> updateByMrp(@RequestBody List<UpdateMrpValue> marValue) {
+        return ResponseEntity.ok(openingBalanceEntryService.updateByMrp(marValue));
+    }
 
-
-
+    @GetMapping("/stocks/{fromDate}/{toDate}/{itemId}")
+    public ResponseEntity<ApiResponse<List<OpeningBalanceStockResponse2 >>> getStockByDateRange(
+            @PathVariable LocalDate fromDate, @PathVariable LocalDate toDate,@RequestParam Long itemId){
+        ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByDateRange(fromDate, toDate,itemId);
+        return ResponseEntity.ok(response);
+    }
 
 
 
