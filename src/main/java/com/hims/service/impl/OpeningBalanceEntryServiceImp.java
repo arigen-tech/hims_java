@@ -3,10 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.request.OpeningBalanceDtRequest;
-import com.hims.request.OpeningBalanceEntryRequest;
-import com.hims.request.OpeningBalanceEntryRequest2;
-import com.hims.request.StoreItemBatchStockRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.OpeningBalanceEntryService;
 import com.hims.utils.AuthUtil;
@@ -425,27 +422,25 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
     }
 
+
+
     @Override
-    public ApiResponse<String> updateByMrp(Long id, StoreItemBatchStockRequest storeItemBatchStockRequest) {
-        Optional<StoreItemBatchStock> storeItemBatchStock = storeItemBatchStockRepository.findById(id);
-        if (storeItemBatchStock.isEmpty()) {
-            return ResponseUtils.createNotFoundResponse("StoreItemBatchStock not found", 404);
+    public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByDateRange(LocalDate fromDate, LocalDate toDate, Long itemId) {
+        List<StoreItemBatchStock> stocks;
+        if (itemId != null) {
+            stocks = storeItemBatchStockRepository.findByItemIdAndManufactureDateAndExpiryDateRange(itemId, fromDate, toDate);
+        } else {
+            stocks = storeItemBatchStockRepository.findByManufactureDateAndExpiryDateRange(fromDate, toDate);
         }
-        StoreItemBatchStock storeItemBatchStock1 = storeItemBatchStock.get();
-        storeItemBatchStock1.setMrpPerUnit(storeItemBatchStockRequest.getMrpValue());
-        return ResponseUtils.createSuccessResponse("update mrp successfully", new TypeReference<>() {
-        });
-    }
-
-    @Override
-    public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByDateRange(LocalDate fromDate, LocalDate toDate) {
-        List<StoreItemBatchStock> stocks = storeItemBatchStockRepository.findByManufactureDateAndExpiryDateRange(fromDate, toDate);
-
 
         if (stocks.isEmpty()) {
-            return ResponseUtils.createNotFoundResponse("Data not found between DOM and DOE", 404);
-        }
+            String message = (itemId != null)
+                    ? "No data found for itemId " + itemId + " between DOM and DOE"
+                    : "No data found between DOM and DOE";
 
+            return ResponseUtils.createNotFoundResponse(
+                    message, 404);
+        }
         List<OpeningBalanceStockResponse2> responseList = stocks.stream()
                 .map(this::convertedToResponse)
                 .toList();
@@ -453,6 +448,27 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
     }
 
+    @Override
+    public ApiResponse<String> updateByMrp(List<UpdateMrpValue> marValue) {
+        List<Long> notFoundIds = new ArrayList<>();
+        for (UpdateMrpValue value : marValue) {
+            Optional<StoreItemBatchStock> optionalStock = storeItemBatchStockRepository.findById(value.getStockId());
+            if (optionalStock.isPresent()) {
+                StoreItemBatchStock stock = optionalStock.get();
+                stock.setMrpPerUnit(value.getMrpValue());
+                storeItemBatchStockRepository.save(stock);
+            } else {
+                notFoundIds.add(value.getStockId());
+            }
+        }
+
+        if (!notFoundIds.isEmpty()) {
+            return ResponseUtils.createSuccessResponse("MRP updated for available stock IDs. Not found IDs: " + notFoundIds, new TypeReference<>() {
+            });
+        }
+        return ResponseUtils.createSuccessResponse("MRP updated successfully for all provided stock IDs", new TypeReference<>() {
+        });
+    }
 
     public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
         for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {

@@ -71,16 +71,15 @@ public class OpeningBalanceEntryController {
         return ResponseEntity.ok(openingBalanceEntryService.getAllStock(type));
 
     }
-    @PutMapping("/updateByMrp/{id}")
-    public ResponseEntity<ApiResponse<String>> updateByMrp(@PathVariable Long id,@RequestBody StoreItemBatchStockRequest storeItemBatchStockRequest) {
-        return ResponseEntity.ok(openingBalanceEntryService.updateByMrp(id,storeItemBatchStockRequest));
-
+    @PutMapping("/updateByMrp")
+    public ResponseEntity<ApiResponse<String>> updateByMrp(@RequestBody List<UpdateMrpValue> marValue) {
+        return ResponseEntity.ok(openingBalanceEntryService.updateByMrp(marValue));
     }
 
-    @GetMapping("/stocks/{fromDate}/{toDate}")
+    @GetMapping("/stocks/{fromDate}/{toDate}/{itemId}")
     public ResponseEntity<ApiResponse<List<OpeningBalanceStockResponse2 >>> getStockByDateRange(
-            @PathVariable LocalDate fromDate, @PathVariable LocalDate toDate){
-        ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByDateRange(fromDate, toDate);
+            @PathVariable LocalDate fromDate, @PathVariable LocalDate toDate,@RequestParam Long itemId){
+        ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByDateRange(fromDate, toDate,itemId);
         return ResponseEntity.ok(response);
     }
 
