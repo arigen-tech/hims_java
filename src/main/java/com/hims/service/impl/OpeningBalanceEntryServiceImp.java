@@ -410,6 +410,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 dto.setClassId(stock.getItemId().getItemClassId().getItemClassId());
                 dto.setClassName(stock.getItemId().getItemClassId().getItemClassName());
                 dto.setMedicineSource(stock.getBrandId().getBrandName());
+                dto.setMrpPerUnit(stock.getMrpPerUnit());
+                dto.setClosingQty(stock.getClosingStock());
                 return dto;
             }).collect(Collectors.toList());
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
@@ -427,26 +429,31 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     @Override
     public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByDateRange(LocalDate fromDate, LocalDate toDate, Long itemId) {
         List<StoreItemBatchStock> stocks;
+
         if (itemId != null) {
-            stocks = storeItemBatchStockRepository.findByItemIdAndManufactureDateAndExpiryDateRange(itemId, fromDate, toDate);
+            stocks = storeItemBatchStockRepository.findByItemIdAndExpiryDateRange(itemId, fromDate, toDate);
         } else {
-            stocks = storeItemBatchStockRepository.findByManufactureDateAndExpiryDateRange(fromDate, toDate);
+            stocks = storeItemBatchStockRepository.findByExpiryDateRange(fromDate, toDate);
         }
 
         if (stocks.isEmpty()) {
             String message = (itemId != null)
-                    ? "No data found for itemId " + itemId + " between DOM and DOE"
-                    : "No data found between DOM and DOE";
+                    ? "No data found for itemId " + itemId + " between expiry dates " + fromDate + " and " + toDate
+                    : "No data found between expiry dates " + fromDate + " and " + toDate;
 
-            return ResponseUtils.createNotFoundResponse(
-                    message, 404);
+            return ResponseUtils.createNotFoundResponse(message, 404);
         }
+
         List<OpeningBalanceStockResponse2> responseList = stocks.stream()
                 .map(this::convertedToResponse)
                 .toList();
 
-        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+        });
     }
+
+
+
 
     @Override
     public ApiResponse<String> updateByMrp(List<UpdateMrpValue> marValue) {
@@ -655,7 +662,9 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         dto.setSectionId(stock.getItemId().getItemClassId().getMasStoreSection() != null?stock.getItemId().getItemClassId().getMasStoreSection().getSectionId():null);
         dto.setSectionName(stock.getItemId().getItemClassId().getMasStoreSection() != null?stock.getItemId().getItemClassId().getMasStoreSection().getSectionName():null);
             dto.setOpeningQty(stock.getOpeningBalanceQty());
+            dto.setClosingQty(stock.getClosingStock());
              dto.setBatchNo(stock.getBatchNo());
+             dto.setMrpPerUnit(stock.getMrpPerUnit());
         dto.setDom(stock.getManufactureDate());
         dto.setDoe(stock.getExpiryDate());
         dto.setManufacturerName(stock.getManufacturerId() != null?stock.getManufacturerId().getManufacturerName():null);
