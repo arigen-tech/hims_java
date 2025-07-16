@@ -463,6 +463,9 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             if (optionalStock.isPresent()) {
                 StoreItemBatchStock stock = optionalStock.get();
                 stock.setMrpPerUnit(value.getMrpValue());
+                Long openingQty=stock.getOpeningBalanceQty();
+                BigDecimal newMrp=value.getMrpValue();
+                stock.setTotalMrpValue(newMrp.multiply(BigDecimal.valueOf(openingQty)));
                 storeItemBatchStockRepository.save(stock);
             } else {
                 notFoundIds.add(value.getStockId());
@@ -661,16 +664,14 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         dto.setClassName(stock.getItemId().getItemClassId() != null?stock.getItemId().getItemClassId().getItemClassName():null);
         dto.setSectionId(stock.getItemId().getItemClassId().getMasStoreSection() != null?stock.getItemId().getItemClassId().getMasStoreSection().getSectionId():null);
         dto.setSectionName(stock.getItemId().getItemClassId().getMasStoreSection() != null?stock.getItemId().getItemClassId().getMasStoreSection().getSectionName():null);
-            dto.setOpeningQty(stock.getOpeningBalanceQty());
-            dto.setClosingQty(stock.getClosingStock());
-             dto.setBatchNo(stock.getBatchNo());
-             dto.setMrpPerUnit(stock.getMrpPerUnit());
+        dto.setOpeningQty(stock.getOpeningBalanceQty());
+        dto.setClosingQty(stock.getClosingStock());
+        dto.setBatchNo(stock.getBatchNo());
+        dto.setMrpPerUnit(stock.getMrpPerUnit());
         dto.setDom(stock.getManufactureDate());
         dto.setDoe(stock.getExpiryDate());
         dto.setManufacturerName(stock.getManufacturerId() != null?stock.getManufacturerId().getManufacturerName():null);
         dto.setMedicineSource(stock.getBrandId() != null?stock.getBrandId().getBrandName():null);
-
-
         return dto;
     }
 
