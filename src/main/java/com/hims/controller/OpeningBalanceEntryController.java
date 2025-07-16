@@ -78,7 +78,7 @@ public class OpeningBalanceEntryController {
 
     @GetMapping("/stocks/{fromDate}/{toDate}/{itemId}")
     public ResponseEntity<ApiResponse<List<OpeningBalanceStockResponse2 >>> getStockByDateRange(
-            @PathVariable LocalDate fromDate, @PathVariable LocalDate toDate,@RequestParam Long itemId){
+            @PathVariable LocalDate fromDate, @PathVariable LocalDate toDate,@RequestParam(required = false) Long itemId){
         ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByDateRange(fromDate, toDate,itemId);
         return ResponseEntity.ok(response);
     }
