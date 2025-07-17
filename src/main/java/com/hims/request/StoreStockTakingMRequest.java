@@ -5,8 +5,8 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class StoreStockTakingM {
+public class StoreStockTakingMRequest {
     private Long id;
     private String reasonForTraking;
-    List<StoreStockTakingT> stockEntries;
+    List<StoreStockTakingTRequest> stockEntries;
 }

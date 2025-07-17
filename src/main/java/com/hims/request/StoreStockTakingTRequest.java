@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
-public class StoreStockTakingT {
+public class StoreStockTakingTRequest {
     private Long id;
     private String batchNo;
     private LocalDate doe;
@@ -16,7 +16,7 @@ public class StoreStockTakingT {
     private BigDecimal stockSurplus;
     private BigDecimal stockDeficient;
     private Long stockId;
-    private Long ItemId;
+    private Long itemId;
     private Long trakingMId;
 
 
