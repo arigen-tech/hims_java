@@ -396,10 +396,16 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hdorderObj.setPaymentStatus("y");
                 visit.setBillingStatus("y");
                 billingHeader.setPaymentStatus("y");
+                BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
+                BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
+                billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
             }else if(partialPaid){
                 hdorderObj.setPaymentStatus("p");
                 visit.setBillingStatus("p");
                 billingHeader.setPaymentStatus("p");
+                BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
+                BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
+                billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
             }
             labHdRepository.save(hdorderObj);
             visitRepository.save(visit);
