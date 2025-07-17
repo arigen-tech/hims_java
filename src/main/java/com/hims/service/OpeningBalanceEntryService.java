@@ -5,6 +5,7 @@ import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpeningBalanceEntryResponse;
 import com.hims.response.OpeningBalanceStockResponse2;
+import com.hims.response.StoreStockTakingTResponse;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -37,4 +38,6 @@ public interface OpeningBalanceEntryService {
     ApiResponse<String> updateByMrp(List<UpdateMrpValue> marValue);
 
     ApiResponse<List<OpeningBalanceStockResponse2>> getStockByItemId(Long itemId);
+
+
 }

@@ -8,9 +8,7 @@ import java.time.LocalDate;
 
 @Entity
 @Data
-@
-
-        Table(name = "store_stock_taking_t", schema = "public")
+@Table(name = "store_stock_taking_t", schema = "public")
 public class StoreStockTakingT {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

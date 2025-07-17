@@ -496,6 +496,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
     }
 
+
+
     public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
         for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {
             if (dtRequest.getBalanceId() == null) {
