@@ -6,6 +6,8 @@ import com.hims.entity.repository.*;
 import com.hims.request.StoreStockTakingMRequest;
 import com.hims.request.StoreStockTakingTRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.StoreStockTakingMResponse;
+import com.hims.response.StoreStockTakingTResponse;
 import com.hims.service.PhysicalBatchStockService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
@@ -15,8 +17,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService {
@@ -91,5 +95,74 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
 
 
 
+    }
+
+    @Override
+    public List<StoreStockTakingMResponse> getListByStatusPhysical(String[] statuses) {
+        List<StoreStockTakingM> masterList = storeStockTakingMRepository.findByStatusIn(Arrays.asList(statuses));
+
+        return masterList.stream()
+                .map(master -> {
+                    List<StoreStockTakingT> transactionList = storeStockTakingTRepository.findByTakingMId(master);
+                    return convertedResponse(master, transactionList);
+                })
+                .collect(Collectors.toList());
+//        List<StoreStockTakingMResponse> responseList = new ArrayList<>();
+//
+//        List<StoreStockTakingM> masterList = storeStockTakingMRepository.findByStatusIn(Arrays.asList(statuses));
+//
+//        for (StoreStockTakingM master : masterList) {
+//            List<StoreStockTakingT> transactionList = storeStockTakingTRepository.findByTakingMId(master);
+//            StoreStockTakingMResponse response = convertedResponse(master, transactionList);
+//            responseList.add(response);
+//        }
+//
+//        return responseList;
+    }
+
+    @Override
+    public ApiResponse<String> updateByStatus(Long id, String status) {
+        Optional<StoreStockTakingM> optionalT = storeStockTakingMRepository.findById(id);
+        if (optionalT.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("StoreStockTakingM id not found", 404);
+        }
+        StoreStockTakingM m = optionalT.get();
+        m.setStatus(status);
+        storeStockTakingMRepository.save(m);
+        return ResponseUtils.createSuccessResponse("StoreStockTakingM  status updated to '" + status + "'", new TypeReference<>() {
+        });
+    }
+
+    private StoreStockTakingMResponse convertedResponse(StoreStockTakingM mEntity, List<StoreStockTakingT> tList) {
+        StoreStockTakingMResponse response = new StoreStockTakingMResponse();
+        response.setTakingMId(mEntity.getTakingMId());
+        response.setPhysicalDate(mEntity.getPhysicalDate());
+        response.setReason(mEntity.getReason());
+        response.setStockTakingNo(mEntity.getStockTakingNo());
+        response.setApprovedBy(mEntity.getApprovedBy());
+        response.setApprovedDt(mEntity.getApprovedDt());
+        response.setHospitalId(mEntity.getHospitalId()!=null?mEntity.getHospitalId().getId():null);
+        response.setDepartmentId(mEntity.getDepartmentId()!=null?mEntity.getDepartmentId().getId():null);
+        response.setLastChgDate(mEntity.getLastChgDate());
+        response.setStatus(mEntity.getStatus());
+        response.setCreatedBy(mEntity.getCreatedBy());
+
+        List<StoreStockTakingTResponse> tResponses = tList.stream().map(t -> {
+            StoreStockTakingTResponse tr = new StoreStockTakingTResponse();
+            tr.setTakingTId(t.getTakingTId());
+            tr.setBatchNo(t.getBatchNo());
+            tr.setExpiryDate(t.getExpiryDate());
+            tr.setComputedStock(t.getComputedStock());
+            tr.setStoreStockService(t.getStoreStockService());
+            tr.setRemarks(t.getRemarks());
+            tr.setStockSurplus(t.getStockSurplus());
+            tr.setStockDeficient(t.getStockDeficient());
+            tr.setStockId(t.getStockId()!=null?t.getStockId().getStockId():null);
+            tr.setItemId(t.getItemId()!=null?t.getItemId().getItemId():null);
+            tr.setTakingMId(mEntity.getTakingMId());
+            return tr;
+        }).collect(Collectors.toList());
+        response.setStoreStockTakingTResponseList(tResponses);
+        return response;
     }
 }
