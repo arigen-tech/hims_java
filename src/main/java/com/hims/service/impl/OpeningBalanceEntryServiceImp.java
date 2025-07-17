@@ -480,6 +480,23 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         });
     }
 
+    @Override
+    public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByItemId(Long itemId) {
+        List<StoreItemBatchStock> stocks = storeItemBatchStockRepository.findByItemIdItemId(itemId);
+
+        if (stocks.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("No stock found for itemId: " + itemId, 404);
+        }
+
+        List<OpeningBalanceStockResponse2> responseList = stocks.stream()
+                .map(this::convertedToResponse)
+                .toList();
+
+        return ResponseUtils.createSuccessResponse(responseList,new TypeReference<>() {
+        });
+
+    }
+
     public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
         for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {
             if (dtRequest.getBalanceId() == null) {

@@ -35,4 +35,6 @@ public interface OpeningBalanceEntryService {
     ApiResponse<List<OpeningBalanceStockResponse2 >> getStockByDateRange(LocalDate fromDate, LocalDate toDate,Long itemId);
 
     ApiResponse<String> updateByMrp(List<UpdateMrpValue> marValue);
+
+    ApiResponse<List<OpeningBalanceStockResponse2>> getStockByItemId(Long itemId);
 }
