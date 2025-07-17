@@ -144,13 +144,13 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 BigDecimal disc=BigDecimal.ZERO;
                 MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
                 for(LabInvestigationReq inves:investigations){
-                    if(inves.isCheckStatus()){
+                   // if(inves.isCheckStatus()){
                         sum=sum.add(BigDecimal.valueOf(inves.getActualAmount()));
                         disc=disc.add(BigDecimal.valueOf(inves.getDiscountedAmount()));
                         if(servCat.getGstApplicable()){
                             tax=tax.add(BigDecimal.valueOf(servCat.getGstPercent()).multiply(BigDecimal.valueOf(inves.getActualAmount()).subtract(BigDecimal.valueOf(inves.getDiscountedAmount()))).divide(BigDecimal.valueOf(100)));
                         }
-                    }
+                   // }
                 }
                 DgOrderHd hd = new DgOrderHd();
                 hd.setAppointmentDate(date);
@@ -488,7 +488,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setVisit(vId);
             billingHeader.setHdorder(hdId);
            // billingHeader.setBillingHdId(hdId.getId());
-            billingHeader.setTotalAmount(sum.subtract(disc).add(tax));
+            billingHeader.setTotalAmount(sum);//.subtract(disc).add(tax)
             billingHeader.setDiscountAmount(disc);
             billingHeader.setNetAmount(sum.subtract(disc).add(tax));
             billingHeader.setTaxTotal(tax);

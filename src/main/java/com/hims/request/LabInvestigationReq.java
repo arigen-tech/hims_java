@@ -11,7 +11,7 @@ import java.util.Date;
 public class LabInvestigationReq {
     private Long id;
     private LocalDate appointmentDate;
-    private boolean checkStatus;
+   // private boolean checkStatus;
     private int actualAmount;
     private int discountedAmount;
     private String type;
