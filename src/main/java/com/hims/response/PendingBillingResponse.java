@@ -3,11 +3,13 @@ package com.hims.response;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class PendingBillingResponse {
 
-    private Long id;
+    private Long billinghdid;
+    private Long patientid;
     private String patientName;
     private String mobileNo;
     private String age;
@@ -18,5 +20,7 @@ public class PendingBillingResponse {
     private String department;
     private BigDecimal amount;
     private String billingStatus;
+
+    private List<BillingDetailResponse> details;
 
 }
