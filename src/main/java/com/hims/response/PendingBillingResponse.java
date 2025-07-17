@@ -9,7 +9,7 @@ import java.util.List;
 public class PendingBillingResponse {
 
     private Long billinghdid;
-    private Long patientid;
+    private String patientid;
     private String patientName;
     private String mobileNo;
     private String age;
@@ -20,6 +20,8 @@ public class PendingBillingResponse {
     private String department;
     private BigDecimal amount;
     private String billingStatus;
+    private String address;
+
 
     private List<BillingDetailResponse> details;
 

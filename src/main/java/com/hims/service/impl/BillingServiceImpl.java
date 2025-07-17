@@ -210,10 +210,11 @@ public class BillingServiceImpl implements BillingService {
 
         // ✅ Name from BillingHeader
         response.setPatientName(safe(header.getPatientDisplayName()));
+        response.setAddress(header.getPatientAddress());
 
-        // ✅ Patient ID from Visit → Patient
+
         if (header.getVisit() != null && header.getVisit().getPatient() != null) {
-            response.setPatientid(header.getVisit().getPatient().getId());
+            response.setPatientid(header.getVisit().getPatient().getUhidNo());
         } else {
             response.setPatientid(null);
         }
@@ -263,12 +264,18 @@ public class BillingServiceImpl implements BillingService {
         }
 
         // ✅ Amount
-        response.setAmount(header.getNetAmount() != null ? header.getNetAmount() : BigDecimal.ZERO);
+        response.setAmount(
+                header.getNetAmount() != null
+                        ? header.getNetAmount().subtract(
+                        header.getTotalPaid() != null ? header.getTotalPaid() : BigDecimal.ZERO
+                )
+                        : BigDecimal.ZERO
+        );
 
         // ✅ Billing status
         response.setBillingStatus(safe(header.getPaymentStatus()));
 
-        // ✅ ✅ ✅ Correct: Fetch billing details by repo, not by header.getBillingDetails()
+
         List<BillingDetail> detailsList = billingDetailRepository.findByBillHdIdAndPaymentStatusIn(
                 header.getId(), List.of("n", "p")
         );
