@@ -34,7 +34,7 @@ public class StoreStockTakingM {
     private MasHospital hospitalId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "department")
+    @JoinColumn(name = "department_id")
     private MasDepartment departmentId;
 
     @Column(name = "last_chg_date")

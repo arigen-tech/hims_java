@@ -94,7 +94,6 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         hd.setEnteredDt(LocalDateTime.now());
         hd.setStatus("s"); // status = saved
         hd.setLastUpdatedDt(LocalDateTime.now());
-
         StoreBalanceHd savedHd = hdRepo.save(hd);
 
 

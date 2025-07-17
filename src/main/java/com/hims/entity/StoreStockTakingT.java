@@ -3,6 +3,7 @@ package com.hims.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -23,19 +24,19 @@ public class StoreStockTakingT {
     private LocalDate expiryDate;
 
     @Column(name = "computed_stock")
-    private Double computedStock;
+    private BigDecimal computedStock;
 
     @Column(name = "store_stock_service")
-    private Double storeStockService;
+    private BigDecimal storeStockService;
 
     @Column(name = "remarks", length = 200)
     private String remarks;
 
     @Column(name = "stock_surplus")
-    private Double stockSurplus;
+    private BigDecimal stockSurplus;
 
     @Column(name = "stock_deficient")
-    private Double stockDeficient;
+    private BigDecimal stockDeficient;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "stock_id")
