@@ -88,7 +88,7 @@ public class OpeningBalanceEntryController {
     }
 
 
- //   ===============================================================================================================================================
+ //   ========================================================Physical Stocks=====================================================
 
 
     @PostMapping("/createPhysicalStock")
@@ -96,18 +96,21 @@ public class OpeningBalanceEntryController {
 
         return new ResponseEntity<>(physicalBatchStockService.createPhysicalStock(storeStockTakingM), HttpStatus.CREATED);
     }
+
     @GetMapping("/listPhysical/{status}")
     public ResponseEntity<List<StoreStockTakingMResponse>> getListByStatusPhysical(@PathVariable String status) {
         String[] statuses = status.split(",");
         return ResponseEntity.ok(physicalBatchStockService.getListByStatusPhysical(statuses));
     }
-    @PutMapping("/updateStatusPhysicalById/{id}")
-    public ResponseEntity<ApiResponse<String>> updateStatusPhysicalById(@PathVariable Long id, @RequestBody String status) {
+
+    @PutMapping("/updateStatusPhysicalById/{id}/{status}")
+    public ResponseEntity<ApiResponse<String>> updateStatusPhysicalById(@PathVariable Long id, @PathVariable String status) {
         return ResponseEntity.ok(physicalBatchStockService.updateByStatus(id,status));
 
     }
 
-
-
-
+    @PutMapping("/updatePhysicalById/{id}")
+    public ResponseEntity<ApiResponse<String>> updatePhysicalById(@PathVariable Long id, @RequestBody StoreStockTakingMRequest storeStockTakingMRequest) {
+        return ResponseEntity.ok(physicalBatchStockService.updatePhysicalById(id,storeStockTakingMRequest));
+    }
 }

@@ -126,12 +126,58 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
         if (optionalT.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("StoreStockTakingM id not found", 404);
         }
+//        if (status != null && status.length() > 1) {
+//            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+//                    "Status '" + status + "' is too long. Must be a single character.", 400);
+//        }
         StoreStockTakingM m = optionalT.get();
         m.setStatus(status);
         storeStockTakingMRepository.save(m);
         return ResponseUtils.createSuccessResponse("StoreStockTakingM  status updated to '" + status + "'", new TypeReference<>() {
         });
     }
+
+    @Override
+    public ApiResponse<String> updatePhysicalById(Long id, StoreStockTakingMRequest storeStockTakingMRequest) {
+        User currentUser = authUtil.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
+                    "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
+        }
+
+        Optional<StoreStockTakingM> optionalM = storeStockTakingMRepository.findById(id);
+
+        if (optionalM.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("StoreStockTakingM entry not found with id " + id, 404);
+        }
+
+       // addDetails(openingBalanceEntryRequest.getStoreBalanceDtList(), id);
+
+//        if (openingBalanceEntryRequest.getDeletedDt() != null && !openingBalanceEntryRequest.getDeletedDt().isEmpty()) {
+//            for (Long ids : openingBalanceEntryRequest.getDeletedDt()) {
+//                deletedById(ids);
+//            }
+//        }
+
+        StoreStockTakingM m = optionalM.get();
+        long deptId = authUtil.getCurrentDepartmentId();
+        MasDepartment depObj = masDepartmentRepository.getById(deptId);
+        m.setDepartmentId(depObj);
+        m.setLastChgDate(LocalDateTime.now());
+        m.setCreatedBy(currentUser.getCreatedBy());
+        if (storeStockTakingMRequest.getStatus().equals("s") || storeStockTakingMRequest.getStatus() == null) {
+            m.setStatus("s");
+        } else if (storeStockTakingMRequest.getStatus().equals("p")) {
+            m.setStatus("p");
+        }
+        StoreStockTakingM updatedM = storeStockTakingMRepository.save(m);
+        return ResponseUtils.createSuccessResponse(" successfully", new TypeReference<>() {
+        });
+
+    }
+
+
 
     private StoreStockTakingMResponse convertedResponse(StoreStockTakingM mEntity, List<StoreStockTakingT> tList) {
         StoreStockTakingMResponse response = new StoreStockTakingMResponse();

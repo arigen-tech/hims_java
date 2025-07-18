@@ -13,4 +13,6 @@ public interface PhysicalBatchStockService {
     List<StoreStockTakingMResponse> getListByStatusPhysical(String[] statuses);
 
     ApiResponse<String> updateByStatus(Long id, String status);
+
+    ApiResponse<String> updatePhysicalById(Long id, StoreStockTakingMRequest storeStockTakingMRequest);
 }

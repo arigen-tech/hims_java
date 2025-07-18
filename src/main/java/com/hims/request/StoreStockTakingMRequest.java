@@ -8,5 +8,6 @@ import java.util.List;
 public class StoreStockTakingMRequest {
     private Long id;
     private String reasonForTraking;
+    private  String status;
     List<StoreStockTakingTRequest> stockEntries;
 }
