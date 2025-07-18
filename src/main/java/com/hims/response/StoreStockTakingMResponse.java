@@ -18,6 +18,8 @@ public class StoreStockTakingMResponse {
     private String approvedBy;
     private LocalDateTime approvedDt;
     private Long hospitalId;
+    private String hospitalName;
+    private String departmentName;
     private Long departmentId;
     private LocalDateTime lastChgDate;
     private String status;
