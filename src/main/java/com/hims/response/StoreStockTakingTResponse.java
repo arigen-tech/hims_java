@@ -22,6 +22,8 @@ public class StoreStockTakingTResponse {
     private BigDecimal stockDeficient;
     private Long stockId;
     private Long itemId;
+    private  String itemName;
+    private  String itemCode;
     private Long takingMId;
 
 }

@@ -64,9 +64,9 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
        stock.setStockTakingNo("Physical");
         stock.setLastChgDate(LocalDateTime.now());
         stock.setStatus("s");
-        stock.setCreatedBy(currentUser.getCreatedBy());
-        StoreStockTakingM stock1=storeStockTakingMRepository.save(stock);
+        stock.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName());
 
+        StoreStockTakingM stock1=storeStockTakingMRepository.save(stock);
 
 
         List<StoreStockTakingTRequest> list=storeStockTakingM.getStockEntries();
@@ -157,13 +157,12 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
             return ResponseUtils.createNotFoundResponse("StoreStockTakingM entry not found with id " + id, 404);
         }
 
-//        addDetails(storeStockTakingMRequest.get, id);
-
-//        if (openingBalanceEntryRequest.getDeletedDt() != null && !openingBalanceEntryRequest.getDeletedDt().isEmpty()) {
-//            for (Long ids : openingBalanceEntryRequest.getDeletedDt()) {
-//                deletedById(ids);
-//            }
-//        }
+       addDetails(storeStockTakingMRequest.getStockEntries(), id);
+        if (storeStockTakingMRequest.getDeletedT() != null && !storeStockTakingMRequest.getDeletedT().isEmpty()) {
+            for (Long ids : storeStockTakingMRequest.getDeletedT()) {
+                deletedById(ids);
+            }
+        }
 
         StoreStockTakingM m = optionalM.get();
         long deptId = authUtil.getCurrentDepartmentId();
@@ -238,6 +237,9 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
         }
         return "successfully";
     }
+    private void  deletedById(Long id){
+        storeStockTakingTRepository.deleteById(id);
+    }
 
 
 
@@ -272,6 +274,8 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
             tr.setStockDeficient(t.getStockDeficient());
             tr.setStockId(t.getStockId()!=null?t.getStockId().getStockId():null);
             tr.setItemId(t.getItemId()!=null?t.getItemId().getItemId():null);
+            tr.setItemCode(t.getItemId().getPvmsNo());
+            tr.setItemName(t.getItemId().getNomenclature());
             tr.setTakingMId(mEntity.getTakingMId());
             return tr;
         }).collect(Collectors.toList());

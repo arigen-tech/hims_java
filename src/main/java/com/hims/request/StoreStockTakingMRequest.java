@@ -10,4 +10,5 @@ public class StoreStockTakingMRequest {
     private String reasonForTraking;
     private  String status;
     List<StoreStockTakingTRequest> stockEntries;
+    private List<Long> deletedT;
 }
