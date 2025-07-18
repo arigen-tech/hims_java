@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.response.ApiResponse;
+import com.hims.response.BillingDetailResponse;
 import com.hims.response.OpdBillingPaymentResponse;
 import com.hims.response.PendingBillingResponse;
 import com.hims.service.BillingService;
@@ -44,36 +45,36 @@ public class BillingServiceImpl implements BillingService {
     @Override
     @Transactional
     public ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount) {
-        BillingHeader header=new BillingHeader();
-        OpdBillingPaymentResponse response=new OpdBillingPaymentResponse();
+        BillingHeader header = new BillingHeader();
+        OpdBillingPaymentResponse response = new OpdBillingPaymentResponse();
         User currentUser = authUtil.getCurrentUser();
-        try{
-            BigDecimal totalDiscount= BigDecimal.valueOf(0);
+        try {
+            BigDecimal totalDiscount = BigDecimal.valueOf(0);
             header.setBillDate(OffsetDateTime.now());
             header.setPatient(visit.getPatient());
-            header.setPatientDisplayName(visit.getPatient().getPatientFn()+" "+visit.getPatient().getPatientMn()+" "+visit.getPatient().getPatientLn());
+            header.setPatientDisplayName(visit.getPatient().getPatientFn() + " " + visit.getPatient().getPatientMn() + " " + visit.getPatient().getPatientLn());
             header.setPatientAge(visit.getPatient().getPatientAge());
             header.setPatientGender(visit.getPatient().getPatientGender().getGenderName());
-            header.setPatientAddress(visit.getPatient().getPatientAddress1()+" "+visit.getPatient().getPatientAddress2());
+            header.setPatientAddress(visit.getPatient().getPatientAddress1() + " " + visit.getPatient().getPatientAddress2());
             header.setHospital(visit.getHospital());
             header.setHospitalName(visit.getHospital().getHospitalName());
             header.setHospitalAddress(visit.getHospital().getAddress());
             header.setHospitalMobileNo(visit.getHospital().getContactNumber());
             header.setHospitalGstin(visit.getHospital().getGstnNo());
-            header.setReferredBy(visit.getIniDoctor().getFirstName()+" "+visit.getIniDoctor().getMiddleName()+" "+visit.getIniDoctor().getLastName());
+            header.setReferredBy(visit.getIniDoctor().getFirstName() + " " + visit.getIniDoctor().getMiddleName() + " " + visit.getIniDoctor().getLastName());
             header.setGstnBillNo("");
             header.setBillDate(OffsetDateTime.now());
-            Optional<MasServiceOpd> serviceOpd=masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory);
-            if(serviceOpd.isPresent()) {
+            Optional<MasServiceOpd> serviceOpd = masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory);
+            if (serviceOpd.isPresent()) {
                 if (discount != null) {
-                    if(discount.getDisPercentage()!=null&&discount.getMaxDiscount()!=null){
+                    if (discount.getDisPercentage() != null && discount.getMaxDiscount() != null) {
                         totalDiscount = serviceOpd.get().getBaseTariff().multiply(discount.getDisPercentage().divide(BigDecimal.valueOf(100)));
-                        if(totalDiscount.compareTo(discount.getMaxDiscount()) > 0){
-                            totalDiscount=discount.getMaxDiscount();
+                        if (totalDiscount.compareTo(discount.getMaxDiscount()) > 0) {
+                            totalDiscount = discount.getMaxDiscount();
                         }
                     }
                 }
-                BigDecimal total=serviceOpd.get().getBaseTariff().subtract(totalDiscount);
+                BigDecimal total = serviceOpd.get().getBaseTariff().subtract(totalDiscount);
                 header.setNetAmount(total);
                 header.setTotalAmount(total);
                 header.setTaxTotal(BigDecimal.valueOf(0));
@@ -92,10 +93,10 @@ public class BillingServiceImpl implements BillingService {
             header.setVisit(visit);
             header.setServiceCategory(serviceCategory);
             header.setBillingHdId(0);
-            BillingHeader savedHeader=billingHeaderRepository.save(header);
+            BillingHeader savedHeader = billingHeaderRepository.save(header);
             response.setHeader(savedHeader);
-            if(savedHeader!=null){
-                BillingDetail detail=new BillingDetail();
+            if (savedHeader != null) {
+                BillingDetail detail = new BillingDetail();
                 detail.setBillingHd(savedHeader);
                 detail.setServiceCategory(serviceCategory);
                 detail.setServiceId(0L);
@@ -103,7 +104,7 @@ public class BillingServiceImpl implements BillingService {
                 detail.setPaymentStatus("n");
 
 //                Optional<MasServiceOpd> serviceOpd=masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory);
-                if(serviceOpd.isPresent()) {
+                if (serviceOpd.isPresent()) {
                     detail.setOpdService(serviceOpd.get());
                     detail.setChargeCost(serviceOpd.get().getBaseTariff());
                     detail.setBasePrice(serviceOpd.get().getBaseTariff());
@@ -111,15 +112,15 @@ public class BillingServiceImpl implements BillingService {
 
 
                     if (discount != null) {
-                        if(discount.getDisPercentage()!=null&&discount.getMaxDiscount()!=null){
+                        if (discount.getDisPercentage() != null && discount.getMaxDiscount() != null) {
                             totalDiscount = serviceOpd.get().getBaseTariff().multiply(discount.getDisPercentage().divide(BigDecimal.valueOf(100)));
-                            if(totalDiscount.compareTo(discount.getMaxDiscount()) > 0){
-                                totalDiscount=discount.getMaxDiscount();
+                            if (totalDiscount.compareTo(discount.getMaxDiscount()) > 0) {
+                                totalDiscount = discount.getMaxDiscount();
                             }
                         }
                     }
                     detail.setDiscount(totalDiscount);
-                    BigDecimal total=serviceOpd.get().getBaseTariff().subtract(totalDiscount);
+                    BigDecimal total = serviceOpd.get().getBaseTariff().subtract(totalDiscount);
                     detail.setAmountAfterDiscount(total);
                     detail.setTaxPercent(BigDecimal.valueOf(0));
                     detail.setTaxAmount(BigDecimal.valueOf(0));
@@ -131,9 +132,9 @@ public class BillingServiceImpl implements BillingService {
                 detail.setCreatedDt(OffsetDateTime.now());
                 detail.setUpdatedDt(OffsetDateTime.now());
                 detail.setBillHd(savedHeader);
-                BillingDetail savedDetail=billingDetailRepository.save(detail);
+                BillingDetail savedDetail = billingDetailRepository.save(detail);
 //                PaymentDetail payment=new PaymentDetail();
-                boolean paymentFlag=false;
+                boolean paymentFlag = false;
 //                try{
 //                    payment.setBillingHd(savedHeader);
 //                    payment.setPaymentDate(Instant.now());
@@ -153,21 +154,23 @@ public class BillingServiceImpl implements BillingService {
 //                    paymentFlag=false;
 //                }
 
-            response.setPaymentFlag(paymentFlag);
+                response.setPaymentFlag(paymentFlag);
+            } else {
+                return ResponseUtils.createFailureResponse(response, new TypeReference<>() {
+                }, "Error processing billing data", 500);
             }
-            else{
-                return  ResponseUtils.createFailureResponse(response,new TypeReference<>() {},"Error processing billing data",500);
-            }
-        }catch (Exception ex){
-            return ResponseUtils.createFailureResponse(response, new TypeReference<>() {},"Error processing billing data",500);
+        } catch (Exception ex) {
+            return ResponseUtils.createFailureResponse(response, new TypeReference<>() {
+            }, "Error processing billing data", 500);
         }
-        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
+        });
     }
 
-    public boolean setPaymentDetail(BillingHeader savedHeader){
-        PaymentDetail payment=new PaymentDetail();
-        boolean paymentFlag=false;
-        try{
+    public boolean setPaymentDetail(BillingHeader savedHeader) {
+        PaymentDetail payment = new PaymentDetail();
+        boolean paymentFlag = false;
+        try {
             payment.setBillingHd(savedHeader);
             payment.setPaymentDate(Instant.now());
             payment.setAmount(savedHeader.getNetAmount());
@@ -177,13 +180,13 @@ public class BillingServiceImpl implements BillingService {
             payment.setCreatedBy(authUtil.getCurrentUser().getFirstName());
             payment.setPaymentStatus("y");
             payment.setUpdatedAt(Instant.now());
-            PaymentDetail savedPayment=paymentDetailRepository.save(payment);
-            if(savedPayment!=null){
-                paymentFlag=true;
+            PaymentDetail savedPayment = paymentDetailRepository.save(payment);
+            if (savedPayment != null) {
+                paymentFlag = true;
             }
 
-        }catch (Exception e){
-            paymentFlag=false;
+        } catch (Exception e) {
+            paymentFlag = false;
         }
         return paymentFlag;
     }
@@ -201,62 +204,124 @@ public class BillingServiceImpl implements BillingService {
                 new TypeReference<List<PendingBillingResponse>>() {});
     }
 
-
     private PendingBillingResponse mapToResponse(BillingHeader header) {
         PendingBillingResponse response = new PendingBillingResponse();
-        response.setId(header.getId());
+        response.setBillinghdid(header.getId());
 
         // ✅ Name from BillingHeader
         response.setPatientName(safe(header.getPatientDisplayName()));
+        response.setAddress(header.getPatientAddress());
 
-        // ✅ Mobile from linked Patient
-        if (header.getPatient() != null) {
-            response.setMobileNo(safe(header.getPatient().getPatientMobileNumber()));
+
+        if (header.getVisit() != null && header.getVisit().getPatient() != null) {
+            response.setPatientid(header.getVisit().getPatient().getUhidNo());
+        } else {
+            response.setPatientid(null);
+        }
+
+        // ✅ Mobile from Visit → Patient
+        if (header.getVisit() != null && header.getVisit().getPatient() != null) {
+            response.setMobileNo(safe(header.getVisit().getPatient().getPatientMobileNumber()));
         } else {
             response.setMobileNo("");
         }
 
-        // ✅ Age from BillingHeader
-        if (header.getPatient() != null && header.getPatient().getPatientDob() != null) {
-            String ageStr = ageCalculator(header.getPatient().getPatientDob());
+        // ✅ Age from Patient DOB in Visit
+        if (header.getVisit() != null && header.getVisit().getPatient() != null &&
+                header.getVisit().getPatient().getPatientDob() != null) {
+            String ageStr = ageCalculator(header.getVisit().getPatient().getPatientDob());
             response.setAge(ageStr);
         } else {
             response.setAge("");
         }
 
-
-
+        // ✅ Gender from BillingHeader
         response.setSex(safe(header.getPatientGender()));
 
+        // ✅ Relation from Visit → Patient → patientRelation
+        if (header.getVisit() != null && header.getVisit().getPatient() != null &&
+                header.getVisit().getPatient().getPatientRelation() != null) {
+            response.setRelation(safe(header.getVisit().getPatient().getPatientRelation().getRelationName()));
+        } else {
+            response.setRelation("");
+        }
 
-       response.setRelation(header.getVisit().getPatient().getPatientRelation().getRelationName());
-
-
+        // ✅ Consulted doctor
         response.setConsultedDoctor(safe(header.getReferredBy()));
 
+        // ✅ Department from Visit → Department
+        if (header.getVisit() != null && header.getVisit().getDepartment() != null) {
+            response.setDepartment(safe(header.getVisit().getDepartment().getDepartmentName()));
+        } else {
+            response.setDepartment("");
+        }
 
-        response.setDepartment(header.getVisit().getDepartment().getDepartmentName());
-
-
+        // ✅ Billing type from ServiceCategory
         if (header.getServiceCategory() != null) {
             response.setBillingType(safe(header.getServiceCategory().getServiceCatName()));
         } else {
             response.setBillingType("");
         }
 
+        // ✅ Amount
+        response.setAmount(
+                header.getNetAmount() != null
+                        ? header.getNetAmount().subtract(
+                        header.getTotalPaid() != null ? header.getTotalPaid() : BigDecimal.ZERO
+                )
+                        : BigDecimal.ZERO
+        );
 
-        response.setAmount(header.getNetAmount() != null ? header.getNetAmount() : BigDecimal.ZERO);
-
-
+        // ✅ Billing status
         response.setBillingStatus(safe(header.getPaymentStatus()));
+
+
+        List<BillingDetail> detailsList = billingDetailRepository.findByBillHdIdAndPaymentStatusIn(
+                header.getId(), List.of("n", "p")
+        );
+
+        List<BillingDetailResponse> details = detailsList.stream()
+                .map(this::mapToDetailResponse)
+                .collect(Collectors.toList());
+        response.setDetails(details);
 
         return response;
     }
 
+    private BillingDetailResponse mapToDetailResponse(BillingDetail detail) {
+        BillingDetailResponse d = new BillingDetailResponse();
+        d.setId(detail.getId());
+        d.setItemName(safe(detail.getItemName()));
+        d.setQuantity(detail.getQuantity());
+        d.setBasePrice(detail.getBasePrice());
+        d.setTariff(detail.getTariff());
+        d.setDiscount(detail.getDiscount());
+        d.setAmountAfterDiscount(detail.getAmountAfterDiscount());
+        d.setTaxPercent(detail.getTaxPercent());
+        d.setTaxAmount(detail.getTaxAmount());
+        d.setNetAmount(detail.getNetAmount());
+        d.setPaymentStatus(safe(detail.getPaymentStatus()));
 
+        // ✅ Include Investigation
+        if (detail.getInvestigation() != null) {
+            d.setInvestigationId(detail.getInvestigation().getInvestigationId());
+            d.setInvestigationName(detail.getInvestigation().getInvestigationName());
+        }
+
+        // ✅ Include Package
+        if (detail.getPackageField() != null) {
+            d.setPackageId(detail.getPackageField().getPackId());
+            d.setPackageName(detail.getPackageField().getPackName());
+        }
+
+        return d;
+    }
 
     private String safe(String value) {
         return value != null ? value : "";
     }
 
+
+
 }
+

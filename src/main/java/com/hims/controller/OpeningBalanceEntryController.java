@@ -1,15 +1,11 @@
 package com.hims.controller;
 
-import com.hims.entity.MasManufacturer;
-import com.hims.entity.MasStoreItem;
-import com.hims.entity.StoreItemBatchStock;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.OpeningBalanceEntryService;
+import com.hims.service.PhysicalBatchStockService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +19,8 @@ import java.util.List;
 public class OpeningBalanceEntryController {
     @Autowired
     private OpeningBalanceEntryService openingBalanceEntryService;
+    @Autowired
+    private PhysicalBatchStockService physicalBatchStockService;
 
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> addOpeningBalanceEntry(@RequestBody OpeningBalanceEntryRequest openingBalanceEntryRequest) {
@@ -82,10 +80,37 @@ public class OpeningBalanceEntryController {
         ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByDateRange(fromDate, toDate,itemId);
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/getStockByItemId/{itemId}")
+    public ResponseEntity<ApiResponse<List<OpeningBalanceStockResponse2 >>> getStockByItemId(
+            @PathVariable  Long itemId){
+        ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByItemId(itemId);
+        return ResponseEntity.ok(response);
+    }
 
 
+ //   ========================================================Physical Stocks=====================================================
 
 
+    @PostMapping("/createPhysicalStock")
+    public ResponseEntity<ApiResponse<String>> createPhysicalStock(@RequestBody StoreStockTakingMRequest storeStockTakingM) {
 
+        return new ResponseEntity<>(physicalBatchStockService.createPhysicalStock(storeStockTakingM), HttpStatus.CREATED);
+    }
 
+    @GetMapping("/listPhysical/{status}")
+    public ResponseEntity<List<StoreStockTakingMResponse>> getListByStatusPhysical(@PathVariable String status) {
+        String[] statuses = status.split(",");
+        return ResponseEntity.ok(physicalBatchStockService.getListByStatusPhysical(statuses));
+    }
+
+    @PutMapping("/updateStatusPhysicalById/{id}/{status}")
+    public ResponseEntity<ApiResponse<String>> updateStatusPhysicalById(@PathVariable Long id, @PathVariable String status) {
+        return ResponseEntity.ok(physicalBatchStockService.updateByStatus(id,status));
+
+    }
+
+    @PutMapping("/updatePhysicalById/{id}")
+    public ResponseEntity<ApiResponse<String>> updatePhysicalById(@PathVariable Long id, @RequestBody StoreStockTakingMRequest storeStockTakingMRequest) {
+        return ResponseEntity.ok(physicalBatchStockService.updatePhysicalById(id,storeStockTakingMRequest));
+    }
 }

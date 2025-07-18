@@ -88,13 +88,13 @@ public class StoreItemBatchStock {
     @JoinColumn(name = "hsn_code")
     private MasHSN hsnCode;
 
-    @Column(name = "gst_amount_per_unit", precision = 12, scale = 2,insertable = false, updatable = false)
+    @Column(name = "gst_amount_per_unit", precision = 12, scale = 2)
     private BigDecimal gstAmountPerUnit;
 
-    @Column(name = "total_purchase_cost", precision = 12, scale = 2,insertable = false, updatable = false)
+    @Column(name = "total_purchase_cost", precision = 12, scale = 2)
     private BigDecimal totalPurchaseCost;
 
-    @Column(name = "total_mrp_value", precision = 12, scale = 2,insertable = false, updatable = false)
+    @Column(name = "total_mrp_value", precision = 12, scale = 2)
     private BigDecimal totalMrpValue;
 
     @ManyToOne(fetch = FetchType.EAGER)

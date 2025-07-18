@@ -50,4 +50,9 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate);
 
+
+
+
+
+    List<StoreItemBatchStock> findByItemIdItemId(Long itemId);
 }
