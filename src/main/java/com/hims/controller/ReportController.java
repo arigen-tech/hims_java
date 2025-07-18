@@ -1,7 +1,6 @@
 package com.hims.controller;
 
 import com.hims.service.LabReportService;
-import com.hims.service.OpdReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
