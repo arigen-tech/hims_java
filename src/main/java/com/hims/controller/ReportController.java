@@ -1,7 +1,7 @@
 package com.hims.controller;
 
 import com.hims.service.LabReportService;
-//import com.hims.service.OpdReportService;
+import com.hims.service.OpdReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +18,9 @@ public class ReportController {
     private LabReportService labService;
 
     @GetMapping(value = "/labReport", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<byte[]> generateLabReport(
-            @RequestParam String billNo) {
-        return labService.generateLabReport(billNo);
+    public ResponseEntity<byte[]> generateLabReportPdf(
+            @RequestParam String billNo,
+            @RequestParam String paymentStatus) {
+        return labService.generateLabReport(billNo, paymentStatus);
     }
-
 }

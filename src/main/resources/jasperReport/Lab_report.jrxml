@@ -4,6 +4,7 @@
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
 	<parameter name="Bill_no" class="java.lang.String"/>
+	<parameter name="Pay_status" class="java.lang.String"/>
 	<queryString language="SQL">
 		<![CDATA[select
 row_number() over(order by invoice_no) as row_number, *
@@ -34,9 +35,10 @@ from
 	end as test_code,
 	bd.item_name as test_name,
 	case
-		when bd.investigation_id is null then '0'
-	 	else dmi.price
-	end as price
+		when bd.investigation_id is null then 0
+	 	else ipd.price
+	end as price,
+	bh.payment_status
 	from billing_header as bh
 	left join billing_details as bd on bd.bill_hd_id = bh.bill_hd_id
 	left join mas_hospital as mh on bh.hospital_id = mh.hospital_id
@@ -44,8 +46,9 @@ from
 	left join billing_payments as bp on bh.payment_status = bp.payment_status
 	left join mas_service_category as msc on bh.service_category_id = msc.id
 	left join dg_investigation_package as dip on bd.package_id = dip.id
-	left join dg_mas_investigation as dmi on bd.investigation_id = dmi.investigation_id)
-where invoice_no = $P{Bill_no}]]>
+	left join investigation_price_details as ipd on bd.investigation_id = ipd.investigation_id)
+where invoice_no = $P{Bill_no}
+and payment_status = $P{Pay_status}]]>
 	</queryString>
 	<field name="row_number" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="row_number"/>
@@ -150,9 +153,14 @@ where invoice_no = $P{Bill_no}]]>
 		<property name="com.jaspersoft.studio.field.label" value="test_name"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="billing_details"/>
 	</field>
-	<field name="price" class="java.lang.String">
+	<field name="price" class="java.lang.Double">
 		<property name="com.jaspersoft.studio.field.name" value="price"/>
 		<property name="com.jaspersoft.studio.field.label" value="price"/>
+	</field>
+	<field name="payment_status" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="payment_status"/>
+		<property name="com.jaspersoft.studio.field.label" value="payment_status"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
 	</field>
 	<background>
 		<band splitType="Stretch"/>
@@ -324,23 +332,23 @@ where invoice_no = $P{Bill_no}]]>
 				<text><![CDATA[Corporate Code]]></text>
 			</staticText>
 			<textField>
-				<reportElement x="110" y="134" width="100" height="15" uuid="0b8947bf-8d86-41f3-addf-23c07dc3ba87"/>
+				<reportElement x="110" y="134" width="130" height="15" uuid="0b8947bf-8d86-41f3-addf-23c07dc3ba87"/>
 				<textFieldExpression><![CDATA[$F{invoice_no}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="110" y="150" width="100" height="15" uuid="ac2ef83b-fee1-410b-8324-e2af1d670c37"/>
+				<reportElement x="110" y="150" width="130" height="15" uuid="ac2ef83b-fee1-410b-8324-e2af1d670c37"/>
 				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="110" y="164" width="100" height="15" uuid="6c87d484-b8a2-46b8-ac90-57ec573a254a"/>
+				<reportElement x="110" y="164" width="130" height="15" uuid="6c87d484-b8a2-46b8-ac90-57ec573a254a"/>
 				<textFieldExpression><![CDATA[$F{patient_id}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="110" y="180" width="100" height="15" uuid="56cc5655-2479-46e2-b8a5-8d7ba4207519"/>
+				<reportElement x="110" y="180" width="130" height="15" uuid="56cc5655-2479-46e2-b8a5-8d7ba4207519"/>
 				<textFieldExpression><![CDATA[$F{age_sex}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="110" y="194" width="100" height="15" uuid="a3e296b6-d58e-4e8a-aba0-1b9b34c1199b"/>
+				<reportElement x="110" y="194" width="130" height="15" uuid="a3e296b6-d58e-4e8a-aba0-1b9b34c1199b"/>
 				<textFieldExpression><![CDATA[$F{patient_contact}]]></textFieldExpression>
 			</textField>
 			<textField>

@@ -42,23 +42,25 @@ public class LabReportServiceImpl implements LabReportService {
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }
 
+
     @Override
-    public ResponseEntity<byte[]> generateLabReport(String billNo) {
+    public ResponseEntity<byte[]> generateLabReport(String billNo, String paymentStatus) {
         try {
-            if (billNo == null || billNo.isBlank()) {
+            if (billNo == null || billNo.isBlank() || paymentStatus == null || paymentStatus.isBlank()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body("Missing required parameter: Bill_no".getBytes());
+                        .body("Missing required parameter: Bill_no / pay_status".getBytes());
             }
 
-            BillingHeader billingHeader = billingRepo.findByBillNo(billNo);
+            BillingHeader billingHeader = billingRepo.findByBillNoAndPaymentStatus(billNo, paymentStatus);
 
-            if (billingHeader == null) {
+            if (billingHeader == null || !paymentStatus.equalsIgnoreCase(billingHeader.getPaymentStatus())) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(("No billing record found for Bill_no: " + billNo).getBytes());
+                        .body(("No matching billing record found for Bill_no: " + billNo + " with PaymentStatus: " + paymentStatus).getBytes());
             }
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("Bill_no", billingHeader.getBillNo());
+            parameters.put("Pay_status", billingHeader.getPaymentStatus());
 
             Connection conn = dataSource.getConnection();
             byte[] data = reportDeclare("Lab_report", parameters, conn);

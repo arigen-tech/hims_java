@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface BillingHeaderRepository extends JpaRepository<BillingHeader, Integer> {
     List<BillingHeader> findByPaymentStatusIn(List<String> paymentStatuses);
-    BillingHeader findByBillNo(String billNo);
+    BillingHeader findByBillNoAndPaymentStatus(String billNo, String paymentStatus);
 
 }
