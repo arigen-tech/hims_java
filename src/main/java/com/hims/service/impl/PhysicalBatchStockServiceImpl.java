@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.request.OpeningBalanceDtRequest;
 import com.hims.request.StoreStockTakingMRequest;
 import com.hims.request.StoreStockTakingTRequest;
 import com.hims.response.ApiResponse;
@@ -15,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +39,8 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
     private StoreItemBatchStockRepository storeItemBatchStockRepository;
     @Autowired
     private MasStoreItemRepository masStoreItemRepository;
+    @Autowired
+    private MasHospitalRepository masHospitalRepository;
 
 
 
@@ -152,7 +157,7 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
             return ResponseUtils.createNotFoundResponse("StoreStockTakingM entry not found with id " + id, 404);
         }
 
-       // addDetails(openingBalanceEntryRequest.getStoreBalanceDtList(), id);
+//        addDetails(storeStockTakingMRequest.get, id);
 
 //        if (openingBalanceEntryRequest.getDeletedDt() != null && !openingBalanceEntryRequest.getDeletedDt().isEmpty()) {
 //            for (Long ids : openingBalanceEntryRequest.getDeletedDt()) {
@@ -177,6 +182,63 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
 
     }
 
+    public String addDetails(List<StoreStockTakingTRequest> storeStockTakingTRequests, long mId) {
+        for (StoreStockTakingTRequest tRequest :storeStockTakingTRequests) {
+            if (tRequest.getTrakingMId() == null) {
+                StoreStockTakingT t = new StoreStockTakingT();
+                Optional<StoreStockTakingM> optionalM =storeStockTakingMRepository.findById(mId);
+                if (optionalM.isEmpty()) {
+                    return "StoreStockTakingM entry not found with id ";
+                }
+                t .setBatchNo(tRequest.getBatchNo());
+                t .setExpiryDate(tRequest.getDoe());
+                t .setComputedStock(tRequest.getComputedStock());
+                t .setStockDeficient(tRequest.getStockDeficient());
+                Optional<StoreItemBatchStock> stockItemBatchStock=storeItemBatchStockRepository.findById(tRequest.getStockId());
+                if(stockItemBatchStock.isEmpty()) {
+                    return "stock not present";
+                }
+                t .setStockId(stockItemBatchStock.get());
+                t .setStockSurplus(tRequest.getStockSurplus());
+                Optional<MasStoreItem> masStoreItem=masStoreItemRepository.findById(tRequest.getItemId());
+                if(masStoreItem.isEmpty()) {
+                    return "item not present";
+                }
+                t .setItemId(masStoreItem.get());
+                t .setTakingMId(optionalM.get());
+                t .setRemarks(tRequest.getRemarks());
+                t.setStoreStockService(tRequest.getStoreStockService());
+                storeStockTakingTRepository.save(t);
+
+            } else {
+                Optional<StoreStockTakingT> storeStockTakingT=storeStockTakingTRepository.findById(tRequest.getId());
+                if(storeStockTakingT.isEmpty()){
+                    return " StoreStockTakingT not found";
+                }
+                StoreStockTakingT t = new StoreStockTakingT();
+                t .setBatchNo(tRequest.getBatchNo());
+                t .setExpiryDate(tRequest.getDoe());
+                t .setComputedStock(tRequest.getComputedStock());
+                t .setStockDeficient(tRequest.getStockDeficient());
+                Optional<StoreItemBatchStock> stockItemBatchStock=storeItemBatchStockRepository.findById(tRequest.getStockId());
+                if(stockItemBatchStock.isEmpty()) {
+                    return "stock not present";
+                }
+                t .setStockId(stockItemBatchStock.get());
+                t .setStockSurplus(tRequest.getStockSurplus());
+                Optional<MasStoreItem> masStoreItem=masStoreItemRepository.findById(tRequest.getItemId());
+                if(masStoreItem.isEmpty()) {
+                    return "item not present";
+                }
+                t .setItemId(masStoreItem.get());
+                t .setRemarks(tRequest.getRemarks());
+                t.setStoreStockService(tRequest.getStoreStockService());
+                storeStockTakingTRepository.save(t);
+            }
+        }
+        return "successfully";
+    }
+
 
 
     private StoreStockTakingMResponse convertedResponse(StoreStockTakingM mEntity, List<StoreStockTakingT> tList) {
@@ -188,7 +250,12 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
         response.setApprovedBy(mEntity.getApprovedBy());
         response.setApprovedDt(mEntity.getApprovedDt());
         response.setHospitalId(mEntity.getHospitalId()!=null?mEntity.getHospitalId().getId():null);
+//       Optional<MasHospital> hospital=masHospitalRepository.findById(mEntity.getHospitalId());
+       response.setHospitalName(mEntity.getHospitalId().getHospitalName());
         response.setDepartmentId(mEntity.getDepartmentId()!=null?mEntity.getDepartmentId().getId():null);
+//        Optional<MasDepartment> masDepartment= masDepartmentRepository.findById(mEntity.getHospitalId().getId());
+        response.setDepartmentName( mEntity.getDepartmentId().getDepartmentName());
+
         response.setLastChgDate(mEntity.getLastChgDate());
         response.setStatus(mEntity.getStatus());
         response.setCreatedBy(mEntity.getCreatedBy());
