@@ -1,9 +1,6 @@
 package com.hims.entity.repository;
 
-import com.hims.entity.MasBrand;
-import com.hims.entity.MasManufacturer;
-import com.hims.entity.MasStoreItem;
-import com.hims.entity.StoreItemBatchStock;
+import com.hims.entity.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -55,4 +52,6 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
 
 
     List<StoreItemBatchStock> findByItemIdItemId(Long itemId);
+
+    List<StoreItemBatchStock> findByhospitalIdAndDepartmentId(MasHospital hospitalId, MasDepartment departmentId);
 }
