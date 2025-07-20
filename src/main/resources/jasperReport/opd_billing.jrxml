@@ -291,23 +291,23 @@ where visit_no = $P{visit_id}]]>
 				<textFieldExpression><![CDATA[$F{referred_by}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="390" y="40" width="100" height="15" uuid="6b1784ce-e0ad-41a2-be72-caf50496364d"/>
+				<reportElement x="390" y="40" width="134" height="15" uuid="6b1784ce-e0ad-41a2-be72-caf50496364d"/>
 				<textFieldExpression><![CDATA[$F{bill_date}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="390" y="55" width="100" height="15" uuid="d4d2fcec-4417-40be-ad1c-dbcbf21859e5"/>
+				<reportElement x="390" y="55" width="134" height="15" uuid="d4d2fcec-4417-40be-ad1c-dbcbf21859e5"/>
 				<textFieldExpression><![CDATA[$F{patient_id}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="390" y="70" width="100" height="15" uuid="bb399567-09d7-459a-af49-a36c762518fa"/>
+				<reportElement x="390" y="70" width="134" height="15" uuid="bb399567-09d7-459a-af49-a36c762518fa"/>
 				<textFieldExpression><![CDATA[$F{bill_no}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="390" y="85" width="100" height="15" uuid="f4a02682-53cc-41ce-8cbb-aaedfcf7c6d9"/>
+				<reportElement x="390" y="85" width="134" height="15" uuid="f4a02682-53cc-41ce-8cbb-aaedfcf7c6d9"/>
 				<textFieldExpression><![CDATA[$F{gstn_bill}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="390" y="110" width="100" height="15" uuid="706bc03d-9a3a-44a7-8956-c8682952867f"/>
+				<reportElement x="390" y="110" width="134" height="15" uuid="706bc03d-9a3a-44a7-8956-c8682952867f"/>
 				<textFieldExpression><![CDATA[$F{gstn_no}]]></textFieldExpression>
 			</textField>
 			<staticText>
