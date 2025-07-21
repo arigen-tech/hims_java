@@ -614,7 +614,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             ledger.setCreatedBy(fName);
         }
         ledger.setTxnDate(LocalDate.now());
-        ledger.setQtyIn(qty);
+        ledger.setQtyIn(BigDecimal.valueOf(qty));
         ledger.setStockId(stock);
         ledger.setTxnType(opTxnType);
         ledger.setRemarks(remarks);

@@ -17,5 +17,5 @@ public interface PhysicalBatchStockService {
 
     ApiResponse<String> updatePhysicalById(Long id, StoreStockTakingMRequest storeStockTakingMRequest);
 
-    ApiResponse<String> approvedPhysical(Long id, StoreStockTakingMRequest2 request);
+    ApiResponse<String> approvedPhysical( StoreStockTakingMRequest2 request);
 }

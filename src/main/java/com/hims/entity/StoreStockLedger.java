@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -34,10 +35,10 @@ public class StoreStockLedger {
     private Long txnReferenceId;
 
     @Column(name = "qty_in")
-    private Long qtyIn;
+    private BigDecimal qtyIn;
 
     @Column(name = "qty_out")
-    private Long qtyOut;
+    private BigDecimal qtyOut;
 
     @Column(name = "remarks", columnDefinition = "text")
     private String remarks;

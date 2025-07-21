@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class StoreStockTakingMRequest2 {
-    private String approvedBy;
-    private LocalDateTime approvedDt;
+    private String status;
+    private Long TakingMId;
+    private String reason;
 }

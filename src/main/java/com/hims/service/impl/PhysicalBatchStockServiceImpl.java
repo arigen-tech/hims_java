@@ -12,6 +12,7 @@ import com.hims.response.StoreStockTakingMResponse;
 import com.hims.response.StoreStockTakingTResponse;
 import com.hims.service.PhysicalBatchStockService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,11 +20,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,6 +41,18 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
     private MasStoreItemRepository masStoreItemRepository;
     @Autowired
     private MasHospitalRepository masHospitalRepository;
+    @Autowired
+    private StoreStockLedgerRepository storeStockLedgerRepository;
+
+    private final RandomNumGenerator randomNumGenerator;
+    public PhysicalBatchStockServiceImpl(RandomNumGenerator randomNumGenerator) {
+        this.randomNumGenerator = randomNumGenerator;
+    }
+    public String createInvoice() {
+        return randomNumGenerator.generateOrderNumber("PHY", true, true);
+    }
+
+
 
 
 
@@ -62,9 +73,9 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
        stock.setHospitalId(currentUser.getHospital());
        stock.setDepartmentId(depObj);
         stock.setPhysicalDate(LocalDateTime.now());
-       stock.setStockTakingNo("Physical");
+       stock.setStockTakingNo(createInvoice() );
         stock.setLastChgDate(LocalDateTime.now());
-        stock.setStatus("s");
+        stock.setStatus(storeStockTakingM.getStatus());
         stock.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName());
 
         StoreStockTakingM stock1=storeStockTakingMRepository.save(stock);
@@ -183,25 +194,77 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
     }
 
     @Override
-    public ApiResponse<String> approvedPhysical(Long id, StoreStockTakingMRequest2 request) {
+    public ApiResponse<String> approvedPhysical( StoreStockTakingMRequest2 request) {
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    },
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
-        Optional<StoreStockTakingM> stockM = storeStockTakingMRepository.findById(id);
-        if (stockM.isEmpty()) {
+
+        Optional<StoreStockTakingM> stockMOptional = storeStockTakingMRepository.findById(request.getTakingMId());
+        if (stockMOptional.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("StoreStockTakingM not found", 404);
         }
-        String fName = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
-        StoreStockTakingM  stockM2 = stockM.get();
-        stockM2.setApprovedDt(LocalDateTime.now());
-        stockM2.setApprovedBy(fName);
-        StoreStockTakingM stockM3 = storeStockTakingMRepository.save(stockM2);
+        StoreStockTakingM stockM = stockMOptional.get();
+        String fName = currentUser.getFirstName()
+                + (currentUser.getMiddleName() != null ? " " + currentUser.getMiddleName() : "")
+                + " " + currentUser.getLastName();
 
-return null;
-    }
+        stockM.setApprovedDt(LocalDateTime.now());
+        stockM.setApprovedBy(fName);
+        stockM.setReason(request.getReason());
+
+        if ("a".equals(request.getStatus())) {
+            stockM.setStatus(request.getStatus());
+            storeStockTakingMRepository.save(stockM);
+
+            List<StoreStockTakingT> takingTList = storeStockTakingTRepository.findByTakingMId(stockM);
+            for (StoreStockTakingT dt : takingTList) {
+                if (Boolean.TRUE.equals(dt.getIsApproved())) {
+                    continue;
+                }
+
+
+                StoreStockLedger storeStockLedger = new StoreStockLedger();
+                storeStockLedger.setStockId(dt.getStockId());
+                storeStockLedger.setTxnType("Physical");
+                storeStockLedger.setRemarks(dt.getRemarks());
+                storeStockLedger.setTxnReferenceId(dt.getTakingTId());
+                storeStockLedger.setTxnDate(LocalDate.now());
+                storeStockLedger.setCreatedDt(LocalDateTime.now());
+                storeStockLedger.setCreatedBy(fName);
+                storeStockLedger.setQtyOut(dt.getStockDeficient());
+                storeStockLedger.setQtyIn(dt.getStockSurplus());
+                storeStockLedgerRepository.save(storeStockLedger);
+
+
+                Optional<StoreItemBatchStock> stockOptional = storeItemBatchStockRepository.findById(dt.getStockId().getStockId());
+                if (stockOptional.isPresent()) {
+                    StoreItemBatchStock batchStock = stockOptional.get();
+
+                    Long a=dt.getStockSurplus().longValue();
+                    batchStock.setClosingStock(batchStock.getClosingStock()+a);
+                    batchStock.setStockSurplus(dt.getStockSurplus().longValue());
+
+                    Long b=dt.getStockDeficient().longValue();
+                    batchStock.setClosingStock(batchStock.getClosingStock()-b);
+                    batchStock.setStockDeficient(dt.getStockDeficient().longValue());
+                    storeItemBatchStockRepository.save( batchStock);
+
+                }
+
+                dt.setIsApproved(true);
+                storeStockTakingTRepository.save(dt);
+            }
+
+        } else if ("r".equals(request.getStatus())) {
+            stockM.setStatus(request.getStatus());
+            storeStockTakingMRepository.save(stockM);
+        }
+
+        return ResponseUtils.createSuccessResponse("Status updated successfully", new TypeReference<>() {});
+
+        }
 
 
     public String addDetails(List<StoreStockTakingTRequest> storeStockTakingTRequests, long mId) {

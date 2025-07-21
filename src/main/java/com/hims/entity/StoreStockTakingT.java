@@ -47,4 +47,7 @@ public class StoreStockTakingT {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "taking_m_id")
     private StoreStockTakingM takingMId;
+
+    @Column(name = "is_approved")
+    private Boolean isApproved = false;
 }
