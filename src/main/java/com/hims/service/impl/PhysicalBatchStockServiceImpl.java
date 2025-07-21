@@ -3,7 +3,6 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.request.OpeningBalanceDtRequest;
 import com.hims.request.StoreStockTakingMRequest;
 import com.hims.request.StoreStockTakingMRequest2;
 import com.hims.request.StoreStockTakingTRequest;
@@ -18,12 +17,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
 
 @Service
 public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService {
@@ -223,6 +221,13 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
                 if (Boolean.TRUE.equals(dt.getIsApproved())) {
                     continue;
                 }
+//                Optional<StoreItemBatchStock> stockOptional = storeItemBatchStockRepository.findById(dt.getStockId().getStockId());
+//                if (stockOptional.isEmpty()) {
+//                    log.warn("No StoreItemBatchStock found for ID: {}", dt.getStockId().getStockId());
+//                    continue;
+//                }
+//
+//                StoreItemBatchStock batchStock = stockOptional.get();
 
 
                 StoreStockLedger storeStockLedger = new StoreStockLedger();
@@ -236,7 +241,6 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
                 storeStockLedger.setQtyOut(dt.getStockDeficient());
                 storeStockLedger.setQtyIn(dt.getStockSurplus());
                 storeStockLedgerRepository.save(storeStockLedger);
-
 
                 Optional<StoreItemBatchStock> stockOptional = storeItemBatchStockRepository.findById(dt.getStockId().getStockId());
                 if (stockOptional.isPresent()) {
