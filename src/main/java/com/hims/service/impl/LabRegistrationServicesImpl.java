@@ -156,8 +156,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setAppointmentDate(date);
                 hd.setOrderDate(LocalDate.now());
                 hd.setOrderNo(createInvoice());
-                hd.setOrderStatus("p");
-                hd.setCollectionStatus("p");
+                hd.setOrderStatus("n");
+                hd.setCollectionStatus("n");
                 hd.setPaymentStatus("n");
                 hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
                 hd.setDiscountId(1);
@@ -203,7 +203,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         dt.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                         dt.setLastChgDate(LocalDate.now());
                         dt.setBillingStatus("n");
-                        dt.setOrderStatus("p");
+                        dt.setOrderStatus("n");
+                        dt.setOrderQty(1);
                         dt.setCreatedon(Instant.now());
                         dt.setLastChgTime(LocalTime.now().toString());
 
@@ -232,7 +233,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                             dt.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                             dt.setLastChgDate(LocalDate.now());
                             dt.setBillingStatus("n");
-                            dt.setOrderStatus("p");
+                            dt.setOrderStatus("n");
+                            dt.setOrderQty(1);
                             dt.setCreatedon(Instant.now());
                             dt.setLastChgTime(LocalTime.now().toString());
                             DgOrderDt savedDt = labDtRepository.save(dt);
@@ -338,8 +340,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
         }
         res.setMsg("Success");
-
-
         return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
     }
 
@@ -394,6 +394,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             Visit visit=visitRepository.findByBillingHd(billingHeader);
             res.setBillNo(billingHeader.getBillNo());
             res.setPaymentStatus(billingHeader.getPaymentStatus());
+
             if(fullyPaid){
                 hdorderObj.setPaymentStatus("y");
                 visit.setBillingStatus("y");
