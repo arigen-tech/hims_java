@@ -7,9 +7,9 @@ import com.hims.helperUtil.ConverterUtils;
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
+import com.hims.response.PaymentResponse;
 import com.hims.service.LabRegistrationServices;
 import com.hims.utils.AuthUtil;
-import com.hims.utils.HelperUtils;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -345,8 +345,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     @Override
     @Transactional
-    public ApiResponse<AppsetupResponse> paymentStatusReq(PaymentUpdateRequest request) {
-        AppsetupResponse res = new AppsetupResponse();
+    public ApiResponse paymentStatusReq(PaymentUpdateRequest request) {
+        PaymentResponse res = new PaymentResponse();
         try{
             //Payment table data inserted
            // User currentUser = authUtil.getCurrentUser();
@@ -392,6 +392,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             BillingHeader billingHeader=billingHeaderRepository.findById(request.getBillHeaderId()).get();
             DgOrderHd hdorderObj = billingHeader.getHdorder();
             Visit visit=visitRepository.findByBillingHd(billingHeader);
+            res.setBillNo(billingHeader.getBillNo());
+            res.setPaymentStatus(billingHeader.getPaymentStatus());
             if(fullyPaid){
                 hdorderObj.setPaymentStatus("y");
                 visit.setBillingStatus("y");
@@ -463,7 +465,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
         }
         res.setMsg("Success");
-        return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
+        return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
     }
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
             BillingHeader billingHeader = new BillingHeader();

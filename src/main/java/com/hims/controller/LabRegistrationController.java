@@ -4,6 +4,7 @@ import com.hims.request.LabRegRequest;
 import com.hims.request.PaymentUpdateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
+import com.hims.response.PaymentResponse;
 import com.hims.response.PendingBillingResponse;
 import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
@@ -34,7 +35,7 @@ public class LabRegistrationController {
     }
 
     @PostMapping("/updatepaymentstatus")
-    public ResponseEntity<ApiResponse<AppsetupResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
+    public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
         return new ResponseEntity<>(labRegistrationServices.paymentStatusReq(request), HttpStatus.OK);
     }
 
