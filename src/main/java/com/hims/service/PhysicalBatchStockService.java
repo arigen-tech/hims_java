@@ -1,6 +1,7 @@
 package com.hims.service;
 
 import com.hims.request.StoreStockTakingMRequest;
+import com.hims.request.StoreStockTakingMRequest2;
 import com.hims.response.ApiResponse;
 import com.hims.response.StoreStockTakingMResponse;
 import com.hims.response.StoreStockTakingTResponse;
@@ -15,4 +16,6 @@ public interface PhysicalBatchStockService {
     ApiResponse<String> updateByStatus(Long id, String status);
 
     ApiResponse<String> updatePhysicalById(Long id, StoreStockTakingMRequest storeStockTakingMRequest);
+
+    ApiResponse<String> approvedPhysical(Long id, StoreStockTakingMRequest2 request);
 }

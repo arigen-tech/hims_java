@@ -5,6 +5,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.OpeningBalanceDtRequest;
 import com.hims.request.StoreStockTakingMRequest;
+import com.hims.request.StoreStockTakingMRequest2;
 import com.hims.request.StoreStockTakingTRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.StoreStockTakingMResponse;
@@ -181,9 +182,31 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
 
     }
 
+    @Override
+    public ApiResponse<String> approvedPhysical(Long id, StoreStockTakingMRequest2 request) {
+        User currentUser = authUtil.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
+                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
+        }
+        Optional<StoreStockTakingM> stockM = storeStockTakingMRepository.findById(id);
+        if (stockM.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("StoreStockTakingM not found", 404);
+        }
+        String fName = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+        StoreStockTakingM  stockM2 = stockM.get();
+        stockM2.setApprovedDt(LocalDateTime.now());
+        stockM2.setApprovedBy(fName);
+        StoreStockTakingM stockM3 = storeStockTakingMRepository.save(stockM2);
+
+return null;
+    }
+
+
     public String addDetails(List<StoreStockTakingTRequest> storeStockTakingTRequests, long mId) {
         for (StoreStockTakingTRequest tRequest :storeStockTakingTRequests) {
-            if (tRequest.getTrakingMId() == null) {
+            if (tRequest.getId()== null) {
                 StoreStockTakingT t = new StoreStockTakingT();
                 Optional<StoreStockTakingM> optionalM =storeStockTakingMRepository.findById(mId);
                 if (optionalM.isEmpty()) {
@@ -214,25 +237,25 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
                 if(storeStockTakingT.isEmpty()){
                     return " StoreStockTakingT not found";
                 }
-                StoreStockTakingT t = new StoreStockTakingT();
-                t .setBatchNo(tRequest.getBatchNo());
-                t .setExpiryDate(tRequest.getDoe());
-                t .setComputedStock(tRequest.getComputedStock());
-                t .setStockDeficient(tRequest.getStockDeficient());
+                StoreStockTakingT storeStockTakingT1=storeStockTakingT.get();
+                storeStockTakingT1.setBatchNo(tRequest.getBatchNo());
+                storeStockTakingT1.setExpiryDate(tRequest.getDoe());
+                storeStockTakingT1.setComputedStock(tRequest.getComputedStock());
+                storeStockTakingT1.setStockDeficient(tRequest.getStockDeficient());
                 Optional<StoreItemBatchStock> stockItemBatchStock=storeItemBatchStockRepository.findById(tRequest.getStockId());
                 if(stockItemBatchStock.isEmpty()) {
                     return "stock not present";
                 }
-                t .setStockId(stockItemBatchStock.get());
-                t .setStockSurplus(tRequest.getStockSurplus());
+                storeStockTakingT1.setStockId(stockItemBatchStock.get());
+                storeStockTakingT1 .setStockSurplus(tRequest.getStockSurplus());
                 Optional<MasStoreItem> masStoreItem=masStoreItemRepository.findById(tRequest.getItemId());
                 if(masStoreItem.isEmpty()) {
                     return "item not present";
                 }
-                t .setItemId(masStoreItem.get());
-                t .setRemarks(tRequest.getRemarks());
-                t.setStoreStockService(tRequest.getStoreStockService());
-                storeStockTakingTRepository.save(t);
+                storeStockTakingT1 .setItemId(masStoreItem.get());
+                storeStockTakingT1 .setRemarks(tRequest.getRemarks());
+                storeStockTakingT1.setStoreStockService(tRequest.getStoreStockService());
+                storeStockTakingTRepository.save(storeStockTakingT1);
             }
         }
         return "successfully";
