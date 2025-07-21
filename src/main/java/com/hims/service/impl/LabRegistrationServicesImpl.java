@@ -398,6 +398,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hdorderObj.setPaymentStatus("y");
                 visit.setBillingStatus("y");
                 billingHeader.setPaymentStatus("y");
+                res.setPaymentStatus("y");
                 BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
                 BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
                 billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
@@ -405,6 +406,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hdorderObj.setPaymentStatus("p");
                 visit.setBillingStatus("p");
                 billingHeader.setPaymentStatus("p");
+                res.setPaymentStatus("p");
                 BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
                 BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
                 billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
@@ -467,6 +469,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         res.setMsg("Success");
         return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
     }
+
+
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
             BillingHeader billingHeader = new BillingHeader();
             String orderNum = createInvoices();
