@@ -113,4 +113,10 @@ public class OpeningBalanceEntryController {
     public ResponseEntity<ApiResponse<String>> updatePhysicalById(@PathVariable Long id, @RequestBody StoreStockTakingMRequest storeStockTakingMRequest) {
         return ResponseEntity.ok(physicalBatchStockService.updatePhysicalById(id,storeStockTakingMRequest));
     }
+    @PutMapping("/ApprovedPhysical/{id}")
+    public ResponseEntity<ApiResponse<String>> approvedPhysical(@PathVariable Long id,
+                                                        @RequestBody StoreStockTakingMRequest2 request
+                                                                ) {
+        return new ResponseEntity<>(physicalBatchStockService.approvedPhysical(id,request),HttpStatus.CREATED);
+    }
 }

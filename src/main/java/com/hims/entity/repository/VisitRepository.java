@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface VisitRepository extends JpaRepository<Visit, Long> {
 
@@ -49,9 +50,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
 
 
-Visit findByBillingHd(BillingHeader obj);
+    Visit findByBillingHd(BillingHeader obj);
 
-
-
+    Optional<Visit> findById(Long id);
 
 }
