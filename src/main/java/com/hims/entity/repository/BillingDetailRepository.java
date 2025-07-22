@@ -29,5 +29,6 @@ public interface BillingDetailRepository extends JpaRepository<BillingDetail, In
     List<BillingDetail> findByBillHdIdAndPaymentStatusIn(Long id, List<String> n);
 
 
+    List<BillingDetail> findByBillHd_Id(Long billHdId);
 
 }

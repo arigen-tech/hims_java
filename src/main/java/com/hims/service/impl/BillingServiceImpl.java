@@ -3,10 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.BillingDetailResponse;
-import com.hims.response.OpdBillingPaymentResponse;
-import com.hims.response.PendingBillingResponse;
+import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
@@ -16,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -320,6 +318,65 @@ public class BillingServiceImpl implements BillingService {
     private String safe(String value) {
         return value != null ? value : "";
     }
+
+
+
+    @Override
+    public List<PendingBillingSearchResponse> searchPendingBilling(String patientName, String uhidNo) {
+        List<BillingHeader> headers = billingHeaderRepository.searchPendingBilling(
+                patientName,
+                uhidNo,
+                List.of("y","n","p")
+        );
+        return headers.stream().map(this::mapToSearchResponse).collect(Collectors.toList());
+    }
+
+
+    private PendingBillingSearchResponse mapToSearchResponse(BillingHeader header) {
+        PendingBillingSearchResponse response = new PendingBillingSearchResponse();
+        response.setBillinghdid(header.getId());
+        response.setPatientName(safe(header.getPatientDisplayName()));
+        response.setUhidNo(header.getVisit().getPatient().getUhidNo());
+        response.setAddress(header.getPatientAddress());
+
+        if (header.getVisit() != null && header.getVisit().getPatient() != null) {
+            response.setPatientid(header.getVisit().getPatient().getId()); // Usually UHID, not DB ID
+            response.setMobileNo(safe(header.getVisit().getPatient().getPatientMobileNumber()));
+            if (header.getVisit().getPatient().getPatientDob() != null) {
+                response.setAge(ageCalculator(header.getVisit().getPatient().getPatientDob()));
+            }
+            if (header.getVisit().getPatient().getPatientRelation() != null) {
+                response.setRelation(safe(header.getVisit().getPatient().getPatientRelation().getRelationName()));
+            }
+        }
+
+        response.setSex(safe(header.getPatientGender()));
+        response.setConsultedDoctor(safe(header.getReferredBy()));
+        if (header.getVisit() != null && header.getVisit().getDepartment() != null) {
+            response.setDepartment(safe(header.getVisit().getDepartment().getDepartmentName()));
+        }
+        if (header.getServiceCategory() != null) {
+            response.setBillingType(safe(header.getServiceCategory().getServiceCatName()));
+        }
+
+        response.setAmount(
+                header.getNetAmount() != null ?
+                        header.getNetAmount().subtract(header.getTotalPaid() != null ? header.getTotalPaid() : BigDecimal.ZERO) :
+                        BigDecimal.ZERO
+        );
+        response.setBillingStatus(safe(header.getPaymentStatus()));
+
+        List<BillingDetail> detailsList = billingDetailRepository.findByBillHd_Id(header.getId());
+
+        List<BillingDetailResponse> details = detailsList.stream().map(this::mapToDetailResponse).collect(Collectors.toList());
+        response.setDetails(details);
+
+        return response;
+    }
+
+
+
+
 
 
 
