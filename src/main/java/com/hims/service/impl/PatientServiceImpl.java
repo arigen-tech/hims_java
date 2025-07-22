@@ -175,26 +175,41 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public ApiResponse<List<Patient>> searchPatient(PatientSearchReq req) {
-        String mobileNo = req.getMobileNo().trim();
-//        if (mobileNo != null && mobileNo.trim().isEmpty()) {
-//            mobileNo = null;
-//        }
-
-        String uhidNo = req.getUhidNo().trim();
-//        if (uhidNo != null && uhidNo.trim().isEmpty()) {
-//            uhidNo = null;
-//        }
-
-        LocalDate appointmentDate = req.getAppointmentDate();
-        List<Patient> patientList;
-        if (appointmentDate != null) {
-            patientList = patientRepository.searchPatients(mobileNo, req.getPatientName(), uhidNo, req.getAppointmentDate());
-        } else {
-            patientList = patientRepository.searchPatients(mobileNo, req.getPatientName(), uhidNo);
+        String mobileNo = req.getMobileNo();
+        if (mobileNo != null) {
+            mobileNo = mobileNo.trim();
+            if (mobileNo.isEmpty()) {
+                mobileNo = null;
+            }
         }
 
-        return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {
-        });
+        String uhidNo = req.getUhidNo();
+        if (uhidNo != null) {
+            uhidNo = uhidNo.trim();
+            if (uhidNo.isEmpty()) {
+                uhidNo = null;
+            }
+        }
+
+        String patientName = req.getPatientName();
+        if (patientName != null) {
+            patientName = patientName.trim();
+            if (patientName.isEmpty()) {
+                patientName = null;
+            }
+        }
+
+        LocalDate appointmentDate = req.getAppointmentDate();
+
+        List<Patient> patientList;
+
+        if (appointmentDate != null) {
+            patientList = patientRepository.searchPatients(mobileNo, patientName, uhidNo, appointmentDate);
+        } else {
+            patientList = patientRepository.searchPatients(mobileNo, patientName, uhidNo);
+        }
+
+        return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {});
     }
 
     @Override
