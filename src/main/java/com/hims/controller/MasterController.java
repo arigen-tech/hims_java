@@ -1153,9 +1153,9 @@ public class MasterController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/masStoreItem/getAll/{flag}")
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(@PathVariable int flag) {
-        return masStoreItemService.getAllMasStoreItem(flag);
+    @GetMapping("/masStoreItem/getAll/{flag}/{hospitalId}/{departmentId}")
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(@PathVariable int flag,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
+        return masStoreItemService.getAllMasStoreItem(flag,hospitalId,departmentId);
     }
 
     @PutMapping("/masStoreItem/update/{id}")
@@ -1176,9 +1176,9 @@ public class MasterController {
         ApiResponse<MasStoreItemResponse> response = masStoreItemService.findByCode(code);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    @GetMapping("/masStoreItem/getAll2/{flag}")
-    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(@PathVariable int flag) {
-        return masStoreItemService.getAllMasStore(flag);
+    @GetMapping("/masStoreItem/getAll2/{flag}/{hospitalId}/{departmentId}")
+    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(@PathVariable int flag,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
+        return masStoreItemService.getAllMasStore(flag,hospitalId,departmentId);
     }
 
 

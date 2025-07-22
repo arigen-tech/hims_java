@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -52,7 +53,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
     @Autowired
     private UserDepartmentRepository userDepartmentRepository;
-
+@Autowired
+private MasDepartmentRepository masDepartmentRepository;
 
     private static final Logger log = LoggerFactory.getLogger(DoctorRosterServicesImpl.class);
 
@@ -86,13 +88,15 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                     "Pvms No or Nomenclature already exists", HttpStatus.CONFLICT.value());
         }
 
-
+        long deptId = authUtil.getCurrentDepartmentId();
+        MasDepartment depObj = masDepartmentRepository.getById(deptId);
         MasStoreItem masStoreItem = new MasStoreItem();
         masStoreItem.setPvmsNo(masStoreItemRequest.getPvmsNo());
         masStoreItem.setNomenclature(masStoreItemRequest.getNomenclature());
         masStoreItem.setStatus("y");
         masStoreItem.setAdispQty(masStoreItemRequest.getAdispQty());
         masStoreItem.setHospitalId(currentUser.getHospital().getId());
+        masStoreItem.setDepartmentId(depObj.getId());
         masStoreItem.setLastChgBy(currentUser.getUserId());
         masStoreItem.setLastChgDate(LocalDate.now());
         masStoreItem.setLastChgTime(getCurrentTimeFormatted());
@@ -167,13 +171,13 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     }
 
     @Override
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag) {
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag, Long hospitalId, Long departmentId) {
 
         List<MasStoreItem> masStoreItems;
         if (flag == 1) {
-            masStoreItems = masStoreItemRepository.findByStatusIgnoreCase("y");
+            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseAndHospitalIdAndDepartmentId("y",hospitalId,departmentId);
         } else if (flag == 0) {
-            masStoreItems = masStoreItemRepository.findByStatusInIgnoreCase(List.of("y", "n"));
+            masStoreItems = masStoreItemRepository.findByStatusInIgnoreCaseAndHospitalIdAndDepartmentId(List.of("y", "n"),hospitalId,departmentId);
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);
@@ -227,11 +231,13 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                 item.setNomenclature(request.getNomenclature());
             }
 
-
+            long deptId = authUtil.getCurrentDepartmentId();
+            MasDepartment depObj = masDepartmentRepository.getById(deptId);
             item.setAdispQty(request.getAdispQty());
             item.setReOrderLevelStore(request.getReOrderLevelStore());
             item.setReOrderLevelDispensary(request.getReOrderLevelDispensary());
             item.setHospitalId(currentUser.getHospital().getId());
+            item.setDepartmentId(depObj.getId());
             item.setLastChgBy(currentUser.getUserId());
             item.setLastChgDate(LocalDate.now());
             item.setLastChgTime(getCurrentTimeFormatted());
@@ -343,11 +349,11 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     }
 
      @Override
-    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(int flag) {
+    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(int flag, Long hospitalId, Long departmentId) {
 
          List<MasStoreItem> masStoreItems;
          if (flag == 1) {
-             masStoreItems = masStoreItemRepository.findByStatusIgnoreCase("y");
+             masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseAndHospitalIdAndDepartmentId("y",hospitalId,departmentId);
          }
           else {
              return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
@@ -376,40 +382,34 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setLastChgBy(item.getLastChgBy());
         response.setLastChgTime(item.getLastChgTime());
         response.setHospitalId(item.getHospitalId());
+        response.setDepartmentId(item.getDepartmentId());
         response.setAdispQty(item.getAdispQty());
-      //  if (item.getGroupId() != null) {
+
             response.setGroupId(item.getGroupId()!=null?item.getGroupId().getId():null);
             response.setGroupName(item.getGroupId()!=null?item.getGroupId().getGroupName():null);
-       // }
 
-      //  if (item.getItemClassId() != null) {
+
+
             response.setItemClassId(item.getItemClassId()!=null?item.getItemClassId().getItemClassId():null);
             response.setItemClassName(item.getItemClassId()!=null?item.getItemClassId().getItemClassName():null);
-       // }
 
-       // if (item.getItemTypeId() != null) {
+
+
             response.setItemTypeId(item.getItemTypeId()!=null?item.getItemTypeId().getId():null);
             response.setItemTypeName(item.getItemTypeId()!=null?item.getItemTypeId().getName():null);
-       // }
 
-       // if (item.getSectionId() != null) {
             response.setSectionId(item.getSectionId()!=null?item.getSectionId().getSectionId():null);
             response.setSectionName(item.getSectionId()!=null?item.getSectionId().getSectionName():null);
-      //  }
 
-        //if (item.getDispUnit() != null) {
             response.setDispUnit(item.getDispUnit() !=null?item.getDispUnit().getUnitId():null);
             response.setDispUnitName(item.getDispUnit()!=null?item.getDispUnit().getUnitName():null);
-       // }
 
-      //  if (item.getUnitAU() != null) {
             response.setUnitAU(item.getUnitAU()!=null?item.getUnitAU().getUnitId():null);
             response.setUnitAuName(item.getUnitAU()!=null?item.getUnitAU().getUnitName():null);
-       // }
-       // if (item.getHsnCode() != null) {
+
             response.setHsnCode(item.getHsnCode()!=null?item.getHsnCode().getHsnCode():null);
             response.setHsnGstPercent(item.getHsnCode()!=null?item.getHsnCode().getGstRate():null);
-       // }
+
         response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
         response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
         return response;
