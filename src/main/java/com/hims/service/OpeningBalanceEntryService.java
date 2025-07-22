@@ -6,6 +6,7 @@ import com.hims.response.ApiResponse;
 import com.hims.response.OpeningBalanceEntryResponse;
 import com.hims.response.OpeningBalanceStockResponse2;
 import com.hims.response.StoreStockTakingTResponse;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,13 +25,13 @@ public interface OpeningBalanceEntryService {
 
     ApiResponse<OpeningBalanceEntryResponse> createAndUpdateStatus(OpeningBalanceEntryRequest request);
 
-    List<OpeningBalanceEntryResponse> getListByStatus(String[] statuses);
+   List<OpeningBalanceEntryResponse> getListByStatus(String[] statuses);
     
 
     ApiResponse<String> approved(Long id, OpeningBalanceEntryRequest2 request);
 
 
-    ApiResponse<List<?>> getAllStock(String type);
+    ApiResponse<List<?>> getAllStock(String type,Long hospitalId, Long departmentId);
 
 
     ApiResponse<List<OpeningBalanceStockResponse2 >> getStockByDateRange(LocalDate fromDate, LocalDate toDate,Long itemId);

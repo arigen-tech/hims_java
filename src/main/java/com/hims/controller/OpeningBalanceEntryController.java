@@ -64,9 +64,9 @@ public class OpeningBalanceEntryController {
         return new ResponseEntity<>(openingBalanceEntryService.approved(id,request), HttpStatus.CREATED);
     }
 
-    @GetMapping("getAllStock/{type}")
-    public ResponseEntity<ApiResponse<List<?>>>  getAllData(@PathVariable String type) {
-        return ResponseEntity.ok(openingBalanceEntryService.getAllStock(type));
+    @GetMapping("getAllStock/{type}/{hospitalId}/{departmentId}")
+    public ResponseEntity<ApiResponse<List<?>>>  getAllData(@PathVariable String type,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
+        return ResponseEntity.ok(openingBalanceEntryService.getAllStock(type,hospitalId,departmentId));
 
     }
     @PutMapping("/updateByMrp")

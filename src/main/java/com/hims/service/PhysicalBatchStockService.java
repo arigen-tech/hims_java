@@ -5,6 +5,7 @@ import com.hims.request.StoreStockTakingMRequest2;
 import com.hims.response.ApiResponse;
 import com.hims.response.StoreStockTakingMResponse;
 import com.hims.response.StoreStockTakingTResponse;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 

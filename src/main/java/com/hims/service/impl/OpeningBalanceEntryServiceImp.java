@@ -215,6 +215,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         // return buildOpeningBalanceEntryResponse(hd, dtList);
         return ResponseUtils.createSuccessResponse(buildOpeningBalanceEntryResponse(hd, dtList), new TypeReference<>() {
         });
+
     }
 
     @Override
@@ -354,74 +355,65 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     }
 
     @Override
-    public ApiResponse<List<?>> getAllStock(String type) {
-        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findAll();
+    public ApiResponse<List<?>> getAllStock(String type,Long hospitalId, Long departmentId) {
+        List<StoreItemBatchStock> stocks = storeItemBatchStockRepository.findByHospitalIdIdAndDepartmentIdId( hospitalId, departmentId);
+
         if (type.equals("summary")) {
-            Map<Long, List<StoreItemBatchStock>> groupedByItem = allStocks.stream()
-                    .collect(Collectors.groupingBy(stock -> stock.getItemId().getItemId()));
+            Map<Long, List<StoreItemBatchStock>> grouped = stocks.stream()
+                    .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
 
-            List<OpeningBalanceStockResponse> responseList = groupedByItem.entrySet().stream().map(entry -> {
-                Long itemId = entry.getKey();
-                List<StoreItemBatchStock> stocks = entry.getValue();
-
-
-                StoreItemBatchStock first = stocks.get(0);
-
-
-                Long totalQty = stocks.stream()
-                        .mapToLong(s -> s.getOpeningBalanceQty() != null ? s.getOpeningBalanceQty() : 0)
-                        .sum();
+            List<OpeningBalanceStockResponse> dtos = grouped.entrySet().stream().map(entry -> {
+                StoreItemBatchStock s0 = entry.getValue().get(0);
+                Long totalQty = entry.getValue().stream()
+                        .mapToLong(s -> Optional.ofNullable(s.getOpeningBalanceQty()).orElse(0L)).sum();
 
                 OpeningBalanceStockResponse dto = new OpeningBalanceStockResponse();
-                dto.setStockId(first.getStockId());
-                dto.setItemId(itemId);
-                dto.setItemName(first.getItemId().getNomenclature());
-                dto.setItemCode(first.getItemId().getPvmsNo());
+                dto.setStockId(s0.getStockId());
+                dto.setItemId(s0.getItemId().getItemId());
+                dto.setItemName(s0.getItemId().getNomenclature());
+                dto.setItemCode(s0.getItemId().getPvmsNo());
                 dto.setOpeningQty(totalQty);
-                dto.setUnitAu(first.getItemId().getUnitAU().getUnitName());
-                dto.setSectionName(first.getItemId().getItemClassId().getMasStoreSection().getSectionName());
-                dto.setSectionId(first.getItemId().getItemClassId().getMasStoreSection().getSectionId());
-                dto.setClassId(first.getItemId().getItemClassId().getItemClassId());
-                dto.setClassName(first.getItemId().getItemClassId().getItemClassName());
-
+                dto.setUnitAu(s0.getItemId().getUnitAU().getUnitName());
+                dto.setSectionName(s0.getItemId().getItemClassId().getMasStoreSection().getSectionName());
+                dto.setSectionId(s0.getItemId().getItemClassId().getMasStoreSection().getSectionId());
+                dto.setClassId(s0.getItemId().getItemClassId().getItemClassId());
+                dto.setClassName(s0.getItemId().getItemClassId().getItemClassName());
                 return dto;
             }).collect(Collectors.toList());
 
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
-            });
-
-
-        } else if (type.equals("details")) {
-            List<OpeningBalanceStockResponse2> responseList = allStocks.stream().map(stock -> {
-                OpeningBalanceStockResponse2 dto = new OpeningBalanceStockResponse2();
-                dto.setStockId(stock.getStockId());
-                dto.setItemId(stock.getItemId().getItemId());
-                dto.setItemName(stock.getItemId().getNomenclature());
-                dto.setItemCode(stock.getItemId().getPvmsNo());
-                dto.setOpeningQty(stock.getOpeningBalanceQty());
-                dto.setUnitAu(stock.getItemId().getUnitAU().getUnitName());
-                dto.setBatchNo(stock.getBatchNo());
-                dto.setDom(stock.getManufactureDate());
-                dto.setDoe(stock.getExpiryDate());
-                dto.setManufacturerName(stock.getManufacturerId().getManufacturerName());
-                dto.setSectionName(stock.getItemId().getItemClassId().getMasStoreSection().getSectionName());
-                dto.setSectionId(stock.getItemId().getItemClassId().getMasStoreSection().getSectionId());
-                dto.setClassId(stock.getItemId().getItemClassId().getItemClassId());
-                dto.setClassName(stock.getItemId().getItemClassId().getItemClassName());
-                dto.setMedicineSource(stock.getBrandId().getBrandName());
-                dto.setMrpPerUnit(stock.getMrpPerUnit());
-                dto.setClosingQty(stock.getClosingStock());
-                return dto;
-            }).collect(Collectors.toList());
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
-            });
+            return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
         }
-        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                },
-                " invalid access Plz send summary or details ", HttpStatus.UNAUTHORIZED.value());
+        else if (type.equals("details")) {
+            List<OpeningBalanceStockResponse2> dtos = stocks.stream().map(s -> {
+                OpeningBalanceStockResponse2 dto = new OpeningBalanceStockResponse2();
+                dto.setStockId(s.getStockId());
+                dto.setItemId(s.getItemId().getItemId());
+                dto.setItemName(s.getItemId().getNomenclature());
+                dto.setItemCode(s.getItemId().getPvmsNo());
+                dto.setOpeningQty(s.getOpeningBalanceQty());
+                dto.setUnitAu(s.getItemId().getUnitAU().getUnitName());
+                dto.setBatchNo(s.getBatchNo());
+                dto.setDom(s.getManufactureDate());
+                dto.setDoe(s.getExpiryDate());
+                dto.setManufacturerName(s.getManufacturerId().getManufacturerName());
+                dto.setSectionName(s.getItemId().getItemClassId().getMasStoreSection().getSectionName());
+                dto.setSectionId(s.getItemId().getItemClassId().getMasStoreSection().getSectionId());
+                dto.setClassId(s.getItemId().getItemClassId().getItemClassId());
+                dto.setClassName(s.getItemId().getItemClassId().getItemClassName());
+                dto.setMedicineSource(s.getBrandId().getBrandName());
+                dto.setMrpPerUnit(s.getMrpPerUnit());
+                dto.setClosingQty(s.getClosingStock());
+                return dto;
+            }).collect(Collectors.toList());
 
+            return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+        }
 
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                "Invalid type: send 'summary' or 'details'", HttpStatus.BAD_REQUEST.value());
     }
+
+
 
 
 
