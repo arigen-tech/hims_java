@@ -39,6 +39,8 @@ public class BillingServiceImpl implements BillingService {
     private VisitRepository visitRepository;
     @Autowired
     AuthUtil authUtil;
+    @Autowired
+    PatientRepository patientRepository;
 
     @Override
     @Transactional
@@ -318,67 +320,5 @@ public class BillingServiceImpl implements BillingService {
     private String safe(String value) {
         return value != null ? value : "";
     }
-
-
-
-    @Override
-    public List<PendingBillingSearchResponse> searchPendingBilling(String patientName, String uhidNo) {
-        List<BillingHeader> headers = billingHeaderRepository.searchPendingBilling(
-                patientName,
-                uhidNo,
-                List.of("y","n","p")
-        );
-        return headers.stream().map(this::mapToSearchResponse).collect(Collectors.toList());
-    }
-
-
-    private PendingBillingSearchResponse mapToSearchResponse(BillingHeader header) {
-        PendingBillingSearchResponse response = new PendingBillingSearchResponse();
-        response.setBillinghdid(header.getId());
-        response.setPatientName(safe(header.getPatientDisplayName()));
-        response.setUhidNo(header.getVisit().getPatient().getUhidNo());
-        response.setAddress(header.getPatientAddress());
-
-        if (header.getVisit() != null && header.getVisit().getPatient() != null) {
-            response.setPatientid(header.getVisit().getPatient().getId()); // Usually UHID, not DB ID
-            response.setMobileNo(safe(header.getVisit().getPatient().getPatientMobileNumber()));
-            if (header.getVisit().getPatient().getPatientDob() != null) {
-                response.setAge(ageCalculator(header.getVisit().getPatient().getPatientDob()));
-            }
-            if (header.getVisit().getPatient().getPatientRelation() != null) {
-                response.setRelation(safe(header.getVisit().getPatient().getPatientRelation().getRelationName()));
-            }
-        }
-
-        response.setSex(safe(header.getPatientGender()));
-        response.setConsultedDoctor(safe(header.getReferredBy()));
-        if (header.getVisit() != null && header.getVisit().getDepartment() != null) {
-            response.setDepartment(safe(header.getVisit().getDepartment().getDepartmentName()));
-        }
-        if (header.getServiceCategory() != null) {
-            response.setBillingType(safe(header.getServiceCategory().getServiceCatName()));
-        }
-
-        response.setAmount(
-                header.getNetAmount() != null ?
-                        header.getNetAmount().subtract(header.getTotalPaid() != null ? header.getTotalPaid() : BigDecimal.ZERO) :
-                        BigDecimal.ZERO
-        );
-        response.setBillingStatus(safe(header.getPaymentStatus()));
-
-        List<BillingDetail> detailsList = billingDetailRepository.findByBillHd_Id(header.getId());
-
-        List<BillingDetailResponse> details = detailsList.stream().map(this::mapToDetailResponse).collect(Collectors.toList());
-        response.setDetails(details);
-
-        return response;
-    }
-
-
-
-
-
-
-
 }
 

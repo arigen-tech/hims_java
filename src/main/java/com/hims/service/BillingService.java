@@ -6,7 +6,6 @@ import com.hims.response.OpdBillingPaymentResponse;
 import com.hims.response.PendingBillingResponse;
 import com.hims.response.PendingBillingSearchResponse;
 
-import java.time.LocalDate;
 import java.util.List;
 
 public interface BillingService {
@@ -14,5 +13,4 @@ public interface BillingService {
 
     ApiResponse<List<PendingBillingResponse>> getPendingBilling();
 
-    public List<PendingBillingSearchResponse> searchPendingBilling(String patientName, String uhidNo);
 }

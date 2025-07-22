@@ -39,22 +39,12 @@ public class LabRegistrationController {
     public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
         return new ResponseEntity<>(labRegistrationServices.paymentStatusReq(request), HttpStatus.OK);
     }
-
     @GetMapping("/pending")
     public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
         return billingService.getPendingBilling();
     }
 
-    @GetMapping("/pending-billing")
-    public ApiResponse<List<PendingBillingSearchResponse>> searchPendingBilling(
-            @RequestParam(required = false) String patientName,
-            @RequestParam(required = false) String uhidNo
-    ) {
-        List<PendingBillingSearchResponse> results = billingService.searchPendingBilling(
-                patientName,
-                uhidNo
-        );
-        return ResponseUtils.createSuccessResponse(results, new TypeReference<List<PendingBillingSearchResponse>>() {});
-    }
+
+
 
 }
