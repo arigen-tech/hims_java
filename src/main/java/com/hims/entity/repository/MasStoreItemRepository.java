@@ -9,9 +9,9 @@ import java.util.Optional;
 
 @Repository
 public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long> {
-    List<MasStoreItem> findByStatusIgnoreCase(String y);
+    List<MasStoreItem> findByStatusIgnoreCaseAndHospitalIdAndDepartmentId(String y, Long hospitalId, Long departmentId);
 
-    List<MasStoreItem> findByStatusInIgnoreCase(List<String> y);
+    List<MasStoreItem> findByStatusInIgnoreCaseAndHospitalIdAndDepartmentId(List<String> y,  Long hospitalId, Long departmentId);
 
     Optional<MasStoreItem> findByPvmsNo(String code);
 

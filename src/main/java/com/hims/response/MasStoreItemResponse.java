@@ -21,6 +21,7 @@ public class MasStoreItemResponse {
 
     private BigDecimal adispQty;
     private Long hospitalId;
+    private Long departmentId;
 
     private Long unitAU;
     private Long dispUnit;

@@ -41,8 +41,8 @@ public class MasStoreItem {
     @Column(name = "hospital_id")
     private Long hospitalId;
 
-//    @Column(name = "department_id")
-//    private Integer departmentId;
+    @Column(name = "department_id")
+    private Long departmentId;
 
     @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "dispensing_unit")
