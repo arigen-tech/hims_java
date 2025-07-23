@@ -63,7 +63,7 @@ public class StockStatusReportServiceImpl implements StockStatusReportService {
            MasDepartment department = deptRepo.findById(departmentId)
                    .orElseThrow(() -> new IllegalArgumentException("Invalid DEPARTMENT_ID: " + departmentId));
 
-           List<StoreItemBatchStock> stockList = sibsRepo.findByHospitalIdIdAndDepartmentIdId(hospitalId, departmentId);
+           List<StoreItemBatchStock> stockList = sibsRepo.findByhospitalIdAndDepartmentId(hospital, department);
 
            if (stockList.isEmpty()) {
                return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -114,7 +114,7 @@ public class StockStatusReportServiceImpl implements StockStatusReportService {
             MasDepartment department = deptRepo.findById(departmentId)
                     .orElseThrow(() -> new IllegalArgumentException("Invalid DEPARTMENT_ID: " + departmentId));
 
-            List<StoreItemBatchStock> stockList = sibsRepo.findByHospitalIdIdAndDepartmentIdId(hospitalId, departmentId);
+            List<StoreItemBatchStock> stockList = sibsRepo.findByhospitalIdAndDepartmentId(hospital, department);
 
             if (stockList.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
