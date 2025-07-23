@@ -176,7 +176,7 @@ public class PatientServiceImpl implements PatientService {
     @Override
     public ApiResponse<List<Patient>> searchPatient(PatientSearchReq req) {
         String mobileNo = req.getMobileNo();
-        if (mobileNo != null) {
+        if (mobileNo != null && mobileNo !="") {
             mobileNo = mobileNo.trim();
             if (mobileNo.isEmpty()) {
                 mobileNo = null;
@@ -184,7 +184,7 @@ public class PatientServiceImpl implements PatientService {
         }
 
         String uhidNo = req.getUhidNo();
-        if (uhidNo != null) {
+        if (uhidNo != null && uhidNo !="") {
             uhidNo = uhidNo.trim();
             if (uhidNo.isEmpty()) {
                 uhidNo = null;
@@ -192,7 +192,7 @@ public class PatientServiceImpl implements PatientService {
         }
 
         String patientName = req.getPatientName();
-        if (patientName != null) {
+        if (patientName != null && patientName != "") {
             patientName = patientName.trim();
             if (patientName.isEmpty()) {
                 patientName = null;
