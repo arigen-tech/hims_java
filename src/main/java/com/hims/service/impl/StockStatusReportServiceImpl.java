@@ -19,10 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class StockStatusReportServiceImpl implements StockStatusReportService {
@@ -55,30 +52,16 @@ public class StockStatusReportServiceImpl implements StockStatusReportService {
     @Override
     public ResponseEntity<byte[]> generateStockSummaryReport(Long hospitalId, Long departmentId, String path) {
        try{
-           if(hospitalId == null ||departmentId == null){ return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Missing required parameter: visit_id".getBytes());}
+           MasHospital hospital = (hospitalId != null) ? hospitalRepo.findById(hospitalId).orElse(null) : null;
+           MasDepartment department = (departmentId != null) ? deptRepo.findById(departmentId).orElse(null) : null;
 
-           MasHospital hospital = hospitalRepo.findById(hospitalId)
-                   .orElseThrow(() -> new IllegalArgumentException("Invalid HOSPITAL_ID: " + hospitalId));
-
-           MasDepartment department = deptRepo.findById(departmentId)
-                   .orElseThrow(() -> new IllegalArgumentException("Invalid DEPARTMENT_ID: " + departmentId));
-
-           List<StoreItemBatchStock> stockList = sibsRepo.findByhospitalIdAndDepartmentId(hospital, department);
-
-           if (stockList.isEmpty()) {
-               return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                       .body(("No matching billing record found for HOSPITAL_ID: " + hospitalId + "and DEPARTMENT_ID: " + departmentId).getBytes());
-           }
-
-           StoreItemBatchStock itemBatchStock = stockList.get(0);
-
-           SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-           String formattedDate = sdf.format(new Date());
+           Long safeHospitalId = (hospital != null) ? hospital.getId() : (hospitalId != null ? hospitalId : 0L);
+           Long safeDepartmentId = (department != null) ? department.getId() : (departmentId != null ? departmentId : 0L);
 
            Map<String, Object> parameters = new HashMap<>();
-           parameters.put("HOSPITAL_ID", itemBatchStock.getHospitalId().getId());
-           parameters.put("DEPARTMENT_ID", itemBatchStock.getDepartmentId().getId());
-           parameters.put("CurrentDate", formattedDate);
+           parameters.put("HOSPITAL_ID", safeHospitalId);
+           parameters.put("DEPARTMENT_ID", safeDepartmentId);
+           parameters.put("CurrentDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
            parameters.put("path", path);
 
            Connection conn = dataSource.getConnection();
@@ -100,45 +83,30 @@ public class StockStatusReportServiceImpl implements StockStatusReportService {
            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                    .body(("Report generation error: " + e.getMessage()).getBytes());
        }
-
     }
 
     @Override
     public ResponseEntity<byte[]> generateStockDetailedReport(Long hospitalId, Long departmentId, String path) {
         try{
-            if(hospitalId == null ||departmentId == null){ return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Missing required parameter: visit_id".getBytes());}
+            MasHospital hospital = (hospitalId != null) ? hospitalRepo.findById(hospitalId).orElse(null) : null;
+            MasDepartment department = (departmentId != null) ? deptRepo.findById(departmentId).orElse(null) : null;
 
-            MasHospital hospital = hospitalRepo.findById(hospitalId)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid HOSPITAL_ID: " + hospitalId));
-
-            MasDepartment department = deptRepo.findById(departmentId)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid DEPARTMENT_ID: " + departmentId));
-
-            List<StoreItemBatchStock> stockList = sibsRepo.findByhospitalIdAndDepartmentId(hospital, department);
-
-            if (stockList.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(("No matching billing record found for HOSPITAL_ID: " + hospitalId + "and DEPARTMENT_ID: " + departmentId).getBytes());
-            }
-
-            StoreItemBatchStock itemBatchStock = stockList.get(0);
-
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-            String formattedDate = sdf.format(new Date());
+            Long safeHospitalId = (hospital != null) ? hospital.getId() : (hospitalId != null ? hospitalId : 0L);
+            Long safeDepartmentId = (department != null) ? department.getId() : (departmentId != null ? departmentId : 0L);
 
             Map<String, Object> parameters = new HashMap<>();
-            parameters.put("HOSPITAL_ID", itemBatchStock.getHospitalId().getId());
-            parameters.put("DEPARTMENT_ID", itemBatchStock.getDepartmentId().getId());
-            parameters.put("CurrentDate", formattedDate);
+            parameters.put("HOSPITAL_ID", safeHospitalId);
+            parameters.put("DEPARTMENT_ID", safeDepartmentId);
+            parameters.put("CurrentDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
             parameters.put("path", path);
 
             Connection conn = dataSource.getConnection();
-            byte[] data = reportDeclare("Stock_Status_Detail", parameters, conn);
+            byte[] data = reportDeclare("Stock_Status_Summary", parameters, conn);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
             headers.setContentDisposition(ContentDisposition.builder("inline")
-                    .filename("Stock_Status_Detail.pdf")
+                    .filename("Stock_Status_Summary.pdf")
                     .build());
 
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
