@@ -175,30 +175,10 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public ApiResponse<List<Patient>> searchPatient(PatientSearchReq req) {
-        String mobileNo = req.getMobileNo();
-        if (mobileNo != null && mobileNo !="") {
-            mobileNo = mobileNo.trim();
-            if (mobileNo.isEmpty()) {
-                mobileNo = null;
-            }
-        }
-
-        String uhidNo = req.getUhidNo();
-        if (uhidNo != null && uhidNo !="") {
-            uhidNo = uhidNo.trim();
-            if (uhidNo.isEmpty()) {
-                uhidNo = null;
-            }
-        }
-
-        String patientName = req.getPatientName();
-        if (patientName != null && patientName != "") {
-            patientName = patientName.trim();
-            if (patientName.isEmpty()) {
-                patientName = null;
-            }
-        }
-
+        // Helper method to clean string parameters
+        String mobileNo = cleanStringParameter(req.getMobileNo());
+        String uhidNo = cleanStringParameter(req.getUhidNo());
+        String patientName = cleanStringParameter(req.getPatientName());
         LocalDate appointmentDate = req.getAppointmentDate();
 
         List<Patient> patientList;
@@ -212,6 +192,12 @@ public class PatientServiceImpl implements PatientService {
         return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {});
     }
 
+    private String cleanStringParameter(String param) {
+        if (param == null || param.trim().isEmpty()) {
+            return null;
+        }
+        return param.trim();
+    }
     @Override
     public ApiResponse<List<Visit>> getPendingPreConsultations() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
