@@ -35,7 +35,7 @@ from
 	end as test_code,
 	bd.item_name as test_name,
 	case
-		when bd.investigation_id is null then 0
+		when bd.investigation_id is null then dip.actual_cost
 	 	else ipd.price
 	end as price,
 	bh.payment_status
@@ -47,8 +47,8 @@ from
 	left join mas_service_category as msc on bh.service_category_id = msc.id
 	left join dg_investigation_package as dip on bd.package_id = dip.id
 	left join investigation_price_details as ipd on bd.investigation_id = ipd.investigation_id)
-where invoice_no = $P{Bill_no}
-and payment_status = $P{Pay_status}]]>
+where (invoice_no = $P{Bill_no})
+and (payment_status = $P{Pay_status})]]>
 	</queryString>
 	<field name="row_number" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="row_number"/>
