@@ -51,11 +51,13 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
 
 
 
-    List<StoreItemBatchStock> findByItemIdItemId(Long itemId);
+  //  List<StoreItemBatchStock> findByItemIdItemId(Long itemId);
 
     List<StoreItemBatchStock> findByHospitalIdIdAndDepartmentIdId(long hospitalId,long departmentId);
 
+    List<StoreItemBatchStock> findByItemIdItemIdAndHospitalIdIdAndDepartmentIdId(Long itemId, Long hospitalId, Long departmentId);
 
+    List<StoreItemBatchStock> findByItemIdItemIdAndExpiryDateBetweenAndHospitalIdIdAndDepartmentIdId(Long itemId, LocalDate fromDate, LocalDate toDate, Long hospitalId, Long departmentId);
 
-
+    List<StoreItemBatchStock> findByExpiryDateBetweenAndHospitalIdIdAndDepartmentIdId(LocalDate fromDate, LocalDate toDate, Long hospitalId, Long departmentId);
 }

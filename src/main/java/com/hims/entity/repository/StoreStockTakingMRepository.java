@@ -12,4 +12,6 @@ public interface StoreStockTakingMRepository extends JpaRepository<StoreStockTak
     List<StoreStockTakingM> findByStatusIn(List<String> list);
 
     List<StoreStockTakingT> findByTakingMId(StoreStockTakingM m);
+
+    List<StoreStockTakingM> findByStatusInAndHospitalIdIdAndDepartmentIdId(List<String> statusList, Long hospitalId, Long departmentId);
 }

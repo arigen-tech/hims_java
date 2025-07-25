@@ -115,8 +115,8 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
     }
 
     @Override
-    public List<StoreStockTakingMResponse> getListByStatusPhysical(String[] statuses) {
-        List<StoreStockTakingM> masterList = storeStockTakingMRepository.findByStatusIn(Arrays.asList(statuses));
+    public List<StoreStockTakingMResponse> getListByStatusPhysical(List<String> statusList,Long hospitalId,Long departmentId) {
+        List<StoreStockTakingM> masterList = storeStockTakingMRepository.findByStatusInAndHospitalIdIdAndDepartmentIdId(statusList, hospitalId, departmentId);
 
         return masterList.stream()
                 .map(master -> {

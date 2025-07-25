@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.OpeningBalanceEntryService;
@@ -51,6 +52,9 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
     @Autowired
     private StoreStockLedgerRepository storeStockLedgerRepository;
+    @Autowired
+    private MasHospitalRepository masHospitalRepository;
+
 
     @Autowired
     AuthUtil authUtil;
@@ -209,12 +213,16 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
 
     @Override
-    public ApiResponse<OpeningBalanceEntryResponse> getDetailsById(Long id) {
-        StoreBalanceHd hd = hdRepo.findById(id).orElseThrow(() -> new RuntimeException("Entry not found"));
-        List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);
-        // return buildOpeningBalanceEntryResponse(hd, dtList);
-        return ResponseUtils.createSuccessResponse(buildOpeningBalanceEntryResponse(hd, dtList), new TypeReference<>() {
-        });
+    public ApiResponse<OpeningBalanceEntryResponse> getDetailsById(Long id,Long hospitalId,Long departmentId) {
+        try {
+            StoreBalanceHd hd = hdRepo.findByBalanceMIdAndHospitalIdIdAndDepartmentIdId(id, hospitalId, departmentId).orElseThrow(() -> new RuntimeException("Entry not found"));
+            List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);
+            return ResponseUtils.createSuccessResponse(buildOpeningBalanceEntryResponse(hd, dtList), new TypeReference<>() {
+            });
+        }catch(Exception ex){
+            ex.printStackTrace();
+            return ResponseUtils.createFailureResponse(null  , new TypeReference<>() {}, "Internal Server Error", 500);
+        }
 
     }
 
@@ -227,8 +235,11 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     }
 
     @Override
-    public List<OpeningBalanceEntryResponse> getListByStatus(String... statuses) {
-        List<StoreBalanceHd> hdList = hdRepo.findByStatusIn(Arrays.asList(statuses));
+    public List<OpeningBalanceEntryResponse> getListByStatus(List<String>  statusList, Long hospitalId, Long departmentId) {
+
+
+        List<StoreBalanceHd> hdList = hdRepo.findByStatusInAndHospitalIdIdAndDepartmentIdId(statusList, hospitalId, departmentId);
+
         return hdList.stream()
                 .map(hd -> {
                     List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);
@@ -237,7 +248,6 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 .collect(Collectors.toList());
 
     }
-
 
     @Transactional
     @Override
@@ -418,30 +428,45 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
 
     @Override
-    public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByDateRange(LocalDate fromDate, LocalDate toDate, Long itemId) {
-        List<StoreItemBatchStock> stocks;
+    public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByDateRange(LocalDate fromDate, LocalDate toDate, Long itemId, Long hospitalId, Long departmentId) {
 
+        if (!masHospitalRepository.existsById(hospitalId)) {
+            return ResponseUtils.createNotFoundResponse("Invalid hospital ID: " + hospitalId, 404);
+        }
+
+        if (!masDepartmentRepository.existsById(departmentId)) {
+            return ResponseUtils.createNotFoundResponse("Invalid department ID: " + departmentId, 404);
+        }
+
+
+
+
+        List<StoreItemBatchStock> stocks;
         if (itemId != null) {
-            stocks = storeItemBatchStockRepository.findByItemIdAndExpiryDateRange(itemId, fromDate, toDate);
+            stocks = storeItemBatchStockRepository
+                    .findByItemIdItemIdAndExpiryDateBetweenAndHospitalIdIdAndDepartmentIdId(
+                            itemId, fromDate, toDate, hospitalId, departmentId);
         } else {
-            stocks = storeItemBatchStockRepository.findByExpiryDateRange(fromDate, toDate);
+            stocks = storeItemBatchStockRepository
+                    .findByExpiryDateBetweenAndHospitalIdIdAndDepartmentIdId(
+                            fromDate, toDate, hospitalId, departmentId);
         }
 
         if (stocks.isEmpty()) {
             String message = (itemId != null)
-                    ? "No data found for itemId " + itemId + " between expiry dates " + fromDate + " and " + toDate
-                    : "No data found between expiry dates " + fromDate + " and " + toDate;
-
+                    ? "No stock found for item ID " + itemId + " between " + fromDate + " and " + toDate
+                    : "No stock found between " + fromDate + " and " + toDate;
             return ResponseUtils.createNotFoundResponse(message, 404);
         }
+
 
         List<OpeningBalanceStockResponse2> responseList = stocks.stream()
                 .map(this::convertedToResponse)
                 .toList();
 
-        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
-        });
+        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
     }
+
 
 
 
@@ -472,8 +497,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     }
 
     @Override
-    public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByItemId(Long itemId) {
-        List<StoreItemBatchStock> stocks = storeItemBatchStockRepository.findByItemIdItemId(itemId);
+    public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByItemId(Long itemId,Long hospitalId, Long departmentId) {
+        List<StoreItemBatchStock> stocks = storeItemBatchStockRepository.findByItemIdItemIdAndHospitalIdIdAndDepartmentIdId(itemId, hospitalId, departmentId);
 
         if (stocks.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("No stock found for itemId: " + itemId, 404);

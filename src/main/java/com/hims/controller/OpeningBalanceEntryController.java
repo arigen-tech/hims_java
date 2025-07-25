@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -38,14 +39,15 @@ public class OpeningBalanceEntryController {
         return ResponseEntity.ok(openingBalanceEntryService.updateByStatus(id,status));
 
     }
-    @GetMapping("/list/{status}")
-    public ResponseEntity<List<OpeningBalanceEntryResponse>> getListByStatus(@PathVariable String status) {
-        String[] statuses = status.split(",");
-        return ResponseEntity.ok(openingBalanceEntryService.getListByStatus(statuses));
+    @GetMapping("/list/{status}/{hospitalId}/{departmentId}")
+    public ResponseEntity<List<OpeningBalanceEntryResponse>> getListByStatus(@PathVariable String status,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
+        List<String> statusList = Arrays.asList(status.split(","));
+        List<OpeningBalanceEntryResponse> responseList = openingBalanceEntryService.getListByStatus(statusList, hospitalId, departmentId);
+        return ResponseEntity.ok(responseList);
     }
-    @GetMapping("getDetailsById/{id}")
-    public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> getDetailsById(@PathVariable Long id) {
-        return ResponseEntity.ok(openingBalanceEntryService.getDetailsById(id));
+    @GetMapping("getDetailsById/{id}/{hospitalId}/{departmentId}")
+    public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> getDetailsById(@PathVariable Long id,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
+        return ResponseEntity.ok(openingBalanceEntryService.getDetailsById(id,hospitalId,departmentId));
     }
 
 
@@ -66,7 +68,7 @@ public class OpeningBalanceEntryController {
 
     @GetMapping("getAllStock/{type}/{hospitalId}/{departmentId}")
     public ResponseEntity<ApiResponse<List<?>>>  getAllData(@PathVariable String type,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
-        return ResponseEntity.ok(openingBalanceEntryService.getAllStock(type,hospitalId,departmentId));
+        return ResponseEntity.ok(openingBalanceEntryService.getAllStock(type, hospitalId, departmentId));
 
     }
     @PutMapping("/updateByMrp")
@@ -74,33 +76,35 @@ public class OpeningBalanceEntryController {
         return ResponseEntity.ok(openingBalanceEntryService.updateByMrp(marValue));
     }
 
-    @GetMapping("/stocks/{fromDate}/{toDate}/{itemId}")
+    @GetMapping("/stocks/{fromDate}/{toDate}/{itemId}/{hospitalId}/{departmentId}")
     public ResponseEntity<ApiResponse<List<OpeningBalanceStockResponse2 >>> getStockByDateRange(
-            @PathVariable LocalDate fromDate, @PathVariable LocalDate toDate,@RequestParam(required = false) Long itemId){
-        ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByDateRange(fromDate, toDate,itemId);
+            @PathVariable LocalDate fromDate, @PathVariable LocalDate toDate,@RequestParam(required = false) Long itemId,@PathVariable Long hospitalId,@PathVariable Long departmentId){
+        ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByDateRange(fromDate, toDate,itemId,hospitalId,departmentId);
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/getStockByItemId/{itemId}")
+    @GetMapping("/getStockByItemId/{itemId}/{hospitalId}/{departmentId}")
     public ResponseEntity<ApiResponse<List<OpeningBalanceStockResponse2 >>> getStockByItemId(
-            @PathVariable  Long itemId){
-        ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByItemId(itemId);
+            @PathVariable  Long itemId,@PathVariable Long hospitalId,@PathVariable Long departmentId){
+        ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByItemId(itemId, hospitalId, departmentId);
         return ResponseEntity.ok(response);
     }
 
 
- //   ========================================================Physical Stocks=====================================================
+    //   ========================================================Physical Stocks=====================================================
 
 
     @PostMapping("/createPhysicalStock")
     public ResponseEntity<ApiResponse<String>> createPhysicalStock(@RequestBody StoreStockTakingMRequest storeStockTakingM) {
-
         return new ResponseEntity<>(physicalBatchStockService.createPhysicalStock(storeStockTakingM), HttpStatus.CREATED);
     }
 
-    @GetMapping("/listPhysical/{status}")
-    public ResponseEntity<List<StoreStockTakingMResponse>> getListByStatusPhysical(@PathVariable String status) {
-        String[] statuses = status.split(",");
-        return ResponseEntity.ok(physicalBatchStockService.getListByStatusPhysical(statuses));
+    @GetMapping("/listPhysical/{status}/{hospitalId}/{departmentId}")
+    public ResponseEntity<List<StoreStockTakingMResponse>> getListByStatusPhysical(@PathVariable String status,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
+
+        List<String> statusList = Arrays.asList(status.split(","));
+        List<StoreStockTakingMResponse> responseList = physicalBatchStockService.getListByStatusPhysical(statusList, hospitalId, departmentId);
+        return ResponseEntity.ok(responseList);
+
     }
 
     @PutMapping("/updateStatusPhysicalById/{id}/{status}")

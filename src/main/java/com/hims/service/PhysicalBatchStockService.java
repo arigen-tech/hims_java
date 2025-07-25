@@ -12,7 +12,7 @@ import java.util.List;
 public interface PhysicalBatchStockService {
     ApiResponse<String> createPhysicalStock(StoreStockTakingMRequest storeStockTakingM);
 
-    List<StoreStockTakingMResponse> getListByStatusPhysical(String[] statuses);
+    List<StoreStockTakingMResponse> getListByStatusPhysical(List<String> statusList,Long hospitalId,Long departmentId);
 
     ApiResponse<String> updateByStatus(Long id, String status);
 

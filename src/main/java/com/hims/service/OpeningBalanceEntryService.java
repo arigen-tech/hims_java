@@ -21,11 +21,11 @@ public interface OpeningBalanceEntryService {
     
 
 
-    ApiResponse<OpeningBalanceEntryResponse> getDetailsById(Long id);
+    ApiResponse<OpeningBalanceEntryResponse> getDetailsById(Long id, Long hospitalId, Long departmentId);
 
     ApiResponse<OpeningBalanceEntryResponse> createAndUpdateStatus(OpeningBalanceEntryRequest request);
 
-   List<OpeningBalanceEntryResponse> getListByStatus(String[] statuses);
+   List<OpeningBalanceEntryResponse> getListByStatus(List<String> statusList, Long hospitalId, Long departmentId);
     
 
     ApiResponse<String> approved(Long id, OpeningBalanceEntryRequest2 request);
@@ -34,11 +34,11 @@ public interface OpeningBalanceEntryService {
     ApiResponse<List<?>> getAllStock(String type,Long hospitalId, Long departmentId);
 
 
-    ApiResponse<List<OpeningBalanceStockResponse2 >> getStockByDateRange(LocalDate fromDate, LocalDate toDate,Long itemId);
+    ApiResponse<List<OpeningBalanceStockResponse2 >> getStockByDateRange(LocalDate fromDate, LocalDate toDate,Long itemId, Long hospitalId, Long departmentId);
 
     ApiResponse<String> updateByMrp(List<UpdateMrpValue> marValue);
 
-    ApiResponse<List<OpeningBalanceStockResponse2>> getStockByItemId(Long itemId);
+    ApiResponse<List<OpeningBalanceStockResponse2>> getStockByItemId(Long itemId,Long hospitalId, Long departmentId);
 
 
 }
