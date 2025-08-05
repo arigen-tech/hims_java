@@ -98,6 +98,8 @@ public class MasterController {
     private MasBrandService masBrandService;
     @Autowired
     private MasManufacturerService masManufacturerService;
+    @Autowired
+    private DgMasCollectionService dgMasCollectionService;
 
     //    ================================Mas Application Controller================================//
 
@@ -1281,5 +1283,38 @@ public class MasterController {
         return new ResponseEntity<>(response, HttpStatus.OK);
 
 
+    }
+    //    ================================ DgMasCollection Controller================================//
+
+
+    @GetMapping("/DgMasCollection/getAll/{flag}")
+    public ApiResponse<List<DgMasCollectionResponse>> getAllDgMasCollection(@PathVariable int flag) {
+        return dgMasCollectionService.getDgMasCollection(flag);
+  }
+
+   @GetMapping("/DgMasCollection/getById/{id}")
+    public ResponseEntity<ApiResponse<DgMasCollectionResponse>> getDgMasCollectionById(@PathVariable Long id) {
+       ApiResponse<DgMasCollectionResponse> response = dgMasCollectionService.findById(id);
+       return new ResponseEntity<>(response, HttpStatus.OK);
+   }
+
+    @PostMapping("/DgMasCollection/create")
+    public ResponseEntity<ApiResponse<DgMasCollectionResponse>> addDgMasCollection(@RequestBody DgMasCollectionRequest dgMasCollectionRequest) {
+        ApiResponse<DgMasCollectionResponse> response =  dgMasCollectionService.addDgMasCollection(dgMasCollectionRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/DgMasCollection/update/{id}")
+    public ResponseEntity<ApiResponse<DgMasCollectionResponse>> updateDgMasCollection(
+            @PathVariable Long id,
+            @RequestBody DgMasCollectionRequest request) {
+        ApiResponse<DgMasCollectionResponse> response = dgMasCollectionService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/DgMasCollection/status/{id}")
+    public ResponseEntity<ApiResponse<DgMasCollectionResponse>> changeDgMasCollectionStatus(@PathVariable Long id, @RequestParam String status) {
+        ApiResponse<DgMasCollectionResponse> response = dgMasCollectionService.changeDgMasCollectionStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
