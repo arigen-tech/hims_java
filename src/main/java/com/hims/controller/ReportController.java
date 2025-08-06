@@ -1,13 +1,14 @@
 package com.hims.controller;
 
-import com.hims.service.LabReportService;
-import com.hims.service.OpdReportService;
-import com.hims.service.StockStatusReportService;
+import com.hims.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.Date;
 
 
 @RestController
@@ -23,6 +24,21 @@ public class ReportController {
 
     @Autowired
     private StockStatusReportService stockService;
+
+    @Autowired
+    private OpeningBalanceRegistryReportService openBalanceRegistryService;
+
+    @Autowired
+    private OpeningBalanceReportService openBalanceReportService;
+
+    @Autowired
+    private StockTakingRegisterReportService stockTakingRegisterReportService;
+
+    @Autowired
+    private StockTakingReportService stockTakingReportService;
+
+    @Autowired
+    private DrugExpiryReportService expiryService;
 
     @GetMapping(value = "/labReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateLabReportPdf(
@@ -41,15 +57,57 @@ public class ReportController {
     public ResponseEntity<byte[]> generateStockReportSummaryPdf(
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
-            @RequestParam String path ) {
-        return stockService.generateStockSummaryReport(hospitalId, departmentId, path);
+            @RequestParam Integer itemClassId,
+            @RequestParam Integer sectionId) {
+        return stockService.generateStockSummaryReport(hospitalId, departmentId, itemClassId, sectionId);
     }
 
     @GetMapping(value = "/stockReportDetail", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateStockReportDetailPdf(
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
-            @RequestParam String path ) {
-        return stockService.generateStockDetailedReport(hospitalId, departmentId, path);
+            @RequestParam Integer itemClassId,
+            @RequestParam Integer sectionId) {
+        return stockService.generateStockDetailedReport(hospitalId, departmentId, itemClassId, sectionId);
+    }
+
+    @GetMapping(value = "/openingBalanceRegistryReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public  ResponseEntity<byte[]> generateOpeningBalanceRegistryPdf(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate) {
+        return openBalanceRegistryService.generateOpeningBalanceRegistry(hospitalId, departmentId, fromDate, toDate);
+    }
+
+    @GetMapping(value = "/openingBalanceReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> generateOpeningBalanceReportPdf(
+            @RequestParam Long balanceMId) {
+        return openBalanceReportService.generateOpeningBalanceReport(balanceMId);
+    }
+
+    @GetMapping(value = "/stockTakingRegister", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> generateStockTakingRegisterPdf(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate) {
+        return stockTakingRegisterReportService.generateStockTakingRegistry(hospitalId, departmentId, fromDate, toDate);
+    }
+
+    @GetMapping(value = "/stockTakingReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> generateStockTakingReportPdf(
+            @RequestParam Long hospitalId,
+            @RequestParam Long takingMId) {
+        return stockTakingReportService.generateStockTaking(hospitalId, takingMId);
+    }
+
+    @GetMapping(value = "/drugExpiryReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> generateDrugExpiryReportPdf(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate) {
+        return expiryService.generateDrugExpiryReport(hospitalId, departmentId, fromDate, toDate);
     }
 }

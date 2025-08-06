@@ -18,6 +18,8 @@
 		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
 	</parameter>
 	<parameter name="path" class="java.lang.String"/>
+	<parameter name="ITEM_CLASS_ID" class="java.lang.Integer"/>
+	<parameter name="SECTION_ID" class="java.lang.Integer"/>
 	<queryString>
 		<![CDATA[select 
 concat(mas_hospital.hospital_name || '-' || mas_hospital.address) as hospital_name_address,
@@ -26,16 +28,24 @@ mas_department.department_name,
 mas_store_item.pvms_no as mas_store_item_pvms_no,
 mas_store_item.nomenclature as mas_store_item_nomenclature,
 mas_store_unit.unit_name,
-sum(store_item_batch_stock.closing_stock) as balance_qty
+sum(store_item_batch_stock.closing_stock) as balance_qty,
+mas_item_class.item_class_name,
+mas_store_section.section_name
 from store_item_batch_stock
 inner join mas_store_item on mas_store_item.item_id = store_item_batch_stock.item_id
 left join mas_store_unit on mas_store_item.unit_au = mas_store_unit.unit_id
 left join mas_department on store_item_batch_stock.department_id = mas_department.department_id
 left join mas_hospital on store_item_batch_stock.hospital_id = mas_hospital.hospital_id
-where store_item_batch_stock.department_id = $P{DEPARTMENT_ID}
-and store_item_batch_stock.hospital_id = $P{HOSPITAL_ID}
+left join mas_item_class on mas_store_item.item_class_id = mas_item_class.item_class_id
+left join mas_store_section on mas_store_item.section_id = mas_store_section.section_id
+where (store_item_batch_stock.department_id = $P{DEPARTMENT_ID} OR $P{DEPARTMENT_ID} = 0)
+and (store_item_batch_stock.hospital_id = $P{HOSPITAL_ID} or $P{HOSPITAL_ID} = 0)
+and (mas_store_item.item_class_id = $P{ITEM_CLASS_ID} or $P{ITEM_CLASS_ID} = 0)
+and (mas_store_item.section_id = $P{SECTION_ID} or $P{SECTION_ID} = 0)
 and store_item_batch_stock.expiry_date > current_date
-group by mas_hospital.hospital_name, mas_department.department_id, mas_store_item.pvms_no, mas_store_item.nomenclature, mas_store_unit.unit_name, mas_department.department_name, mas_hospital.address
+group by mas_hospital.hospital_name, mas_department.department_id, mas_store_item.pvms_no, mas_store_item.nomenclature,
+			mas_store_unit.unit_name, mas_department.department_name, mas_hospital.address, mas_store_section.section_name,
+			mas_item_class.item_class_name
 order by mas_store_item.nomenclature]]>
 	</queryString>
 	<field name="hospital_name_address" class="java.lang.String">
