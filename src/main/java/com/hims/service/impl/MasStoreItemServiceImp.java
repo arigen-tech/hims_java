@@ -349,11 +349,11 @@ private MasDepartmentRepository masDepartmentRepository;
     }
 
      @Override
-    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(int flag, Long hospitalId, Long departmentId) {
+    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(int flag) {
 
          List<MasStoreItem> masStoreItems;
          if (flag == 1) {
-             masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseAndHospitalIdAndDepartmentId("y",hospitalId,departmentId);
+             masStoreItems = masStoreItemRepository.findByStatus("y");
          }
           else {
              return ResponseUtils.createFailureResponse(null, new TypeReference<>() {

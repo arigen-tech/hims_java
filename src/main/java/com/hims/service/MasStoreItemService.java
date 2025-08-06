@@ -23,5 +23,5 @@ public interface MasStoreItemService {
 
     ApiResponse<MasStoreItemResponse> findByCode(String code);
 
-    ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(int flag, Long hospitalId,Long departmentId);
+    ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(int flag);
 }

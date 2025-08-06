@@ -1178,9 +1178,9 @@ public class MasterController {
         ApiResponse<MasStoreItemResponse> response = masStoreItemService.findByCode(code);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    @GetMapping("/masStoreItem/getAll2/{flag}/{hospitalId}/{departmentId}")
-    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(@PathVariable int flag,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
-        return masStoreItemService.getAllMasStore(flag,hospitalId,departmentId);
+    @GetMapping("/masStoreItem/getAll2/{flag}")
+    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(@PathVariable int flag) {
+        return masStoreItemService.getAllMasStore(flag);
     }
 
 
