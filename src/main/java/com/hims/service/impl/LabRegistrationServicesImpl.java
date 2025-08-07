@@ -8,6 +8,7 @@ import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.AppsetupResponse;
 import com.hims.response.PaymentResponse;
+import com.hims.response.PendingSampleResponse;
 import com.hims.service.LabRegistrationServices;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
@@ -27,6 +28,8 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.hims.helperUtil.ConverterUtils.ageCalculator;
 
 @Service
 
@@ -480,7 +483,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             billingHeader.setVisit(vId);
             billingHeader.setPatientDisplayName(vId.getPatient().getPatientFn());
             LocalDate dob=  vId.getPatient().getPatientDob();//get DOB from Patient table and calculate age
-            billingHeader.setPatientAge(ConverterUtils.ageCalculator(dob));
+            billingHeader.setPatientAge(ageCalculator(dob));
             billingHeader.setPatientGender(vId.getPatient().getPatientGender().getGenderName());
             billingHeader.setPatientAddress(vId.getPatient().getPatientAddress1());
             billingHeader.setHospital(currentUser.getHospital());
@@ -586,5 +589,99 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         // billingDetail.setOpdService(getOpdService().getId());
         return  billingDetailRepository.save(billingDetail);
     }
+
+
+    @Override
+    public List<PendingSampleResponse> getPendingSamples() {
+        Long departmentId = authUtil.getCurrentDepartmentId();
+        if (departmentId == null) {
+            throw new IllegalArgumentException("Current department ID is null");
+        }
+
+        List<String> paymentStatuses = Arrays.asList("p", "y");
+        List<DgOrderHd> orderHdList = labHdRepository.findByPaymentStatusIn(paymentStatuses);
+        List<PendingSampleResponse> responseList = new ArrayList<>();
+
+        MasDepartment department = masDepartmentRepository.findById(departmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid department ID: " + departmentId));
+
+        for (DgOrderHd orderHd : orderHdList) {
+            List<DgOrderDt> orderDtList = labDtRepository.findByOrderhdIdAndBillingStatusAndOrderStatus(
+                    orderHd, "y", orderHd.getOrderStatus().toLowerCase());
+
+            for (DgOrderDt orderDt : orderDtList) {
+                Patient patient = orderHd.getPatientId();
+                Visit visit = orderHd.getVisitId();
+                DgMasInvestigation investigation = orderDt.getInvestigationId();
+
+                PendingSampleResponse response = new PendingSampleResponse();
+                response.setReqDate(orderHd.getOrderDate());
+
+                response.setPatientName(
+                        patient != null
+                                ? (patient.getPatientFn() != null ? patient.getPatientFn() : "") +
+                                " " +
+                                (patient.getPatientLn() != null ? patient.getPatientLn() : "")
+                                : ""
+                );
+
+                response.setRelation(
+                        patient != null && patient.getPatientRelation() != null
+                                ? patient.getPatientRelation().getRelationName()
+                                : ""
+                );
+
+                response.setAge(
+                        patient != null && patient.getPatientDob() != null
+                                ? ageCalculator(patient.getPatientDob())
+                                : ""
+                );
+
+                response.setGender(
+                        patient != null && patient.getPatientGender() != null
+                                ? patient.getPatientGender().getGenderName()
+                                : ""
+                );
+
+                response.setMobile(
+                        patient != null ? patient.getPatientMobileNumber() : ""
+                );
+
+                response.setDepartment(department.getDepartmentName());
+
+                response.setDoctorName(
+                        visit != null ? visit.getDoctorName() : ""
+                );
+
+                response.setInvestigation(
+                        investigation != null ? investigation.getInvestigationName() : ""
+                );
+
+                response.setSample(
+                        investigation != null &&
+                                investigation.getSampleId() != null &&
+                                investigation.getSampleId().getSampleDescription() != null
+                                ? investigation.getSampleId().getSampleDescription()
+                                : ""
+                );
+
+                response.setCollection(
+                        investigation != null &&
+                                investigation.getCollectionId() != null &&
+                                investigation.getCollectionId().getCollectionName() != null
+                                ? investigation.getCollectionId().getCollectionName()
+                                : ""
+                );
+
+                responseList.add(response);
+            }
+        }
+
+        return responseList;
+    }
+
+
+
+
 
 }

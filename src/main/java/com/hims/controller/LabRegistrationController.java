@@ -44,6 +44,20 @@ public class LabRegistrationController {
         return billingService.getPendingBilling();
     }
 
+    @GetMapping("/pending-samples")
+    public ResponseEntity<ApiResponse<List<PendingSampleResponse>>> getPendingSamples() {
+        try {
+            List<PendingSampleResponse> data = labRegistrationServices.getPendingSamples();
+            ApiResponse<List<PendingSampleResponse>> response = ResponseUtils.createSuccessResponse(data, new TypeReference<>() {});
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
+            ApiResponse<List<PendingSampleResponse>> errorResponse = ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, ex.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+
 
 
 

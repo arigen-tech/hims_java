@@ -65,8 +65,11 @@ public class DgMasInvestigation {
     private DgMasSample sampleId;
     @Column(name = "equipment_id")
     private String equipmentId;
-//    @Column(name = "collection_id")
-//    private DgMasCollection collectionId;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "collection_id")
+    private DgMasCollection collectionId;
+
     @Column(name = "blood_reaction_test", length =1)
     private String bloodReactionTest;
     @Column(name = "blood_bank_screen_test",length =1)
