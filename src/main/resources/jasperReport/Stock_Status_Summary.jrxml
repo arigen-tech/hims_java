@@ -20,8 +20,10 @@
 	<parameter name="path" class="java.lang.String"/>
 	<parameter name="ITEM_CLASS_ID" class="java.lang.Integer"/>
 	<parameter name="SECTION_ID" class="java.lang.Integer"/>
+	<parameter name="ITEM_ID" class="java.lang.Long"/>
 	<queryString>
 		<![CDATA[select 
+store_item_batch_stock.item_id,
 concat(mas_hospital.hospital_name || '-' || mas_hospital.address) as hospital_name_address,
 mas_department.department_id,
 mas_department.department_name,
@@ -42,10 +44,11 @@ where (store_item_batch_stock.department_id = $P{DEPARTMENT_ID} OR $P{DEPARTMENT
 and (store_item_batch_stock.hospital_id = $P{HOSPITAL_ID} or $P{HOSPITAL_ID} = 0)
 and (mas_store_item.item_class_id = $P{ITEM_CLASS_ID} or $P{ITEM_CLASS_ID} = 0)
 and (mas_store_item.section_id = $P{SECTION_ID} or $P{SECTION_ID} = 0)
+and (mas_store_item.item_id = $P{ITEM_ID} or $P{ITEM_ID} = 0)
 and store_item_batch_stock.expiry_date > current_date
 group by mas_hospital.hospital_name, mas_department.department_id, mas_store_item.pvms_no, mas_store_item.nomenclature,
 			mas_store_unit.unit_name, mas_department.department_name, mas_hospital.address, mas_store_section.section_name,
-			mas_item_class.item_class_name
+			mas_item_class.item_class_name,store_item_batch_stock.item_id
 order by mas_store_item.nomenclature]]>
 	</queryString>
 	<field name="hospital_name_address" class="java.lang.String">

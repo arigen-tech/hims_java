@@ -37,6 +37,9 @@ public class StockStatusReportServiceImpl implements StockStatusReportService {
     @Autowired
     private MasStoreSectionRepository sectionRepo;
 
+    @Autowired
+    private MasStoreItemRepository storeItemRepo;
+
     private String path = "src/main/resources/Assets/arigen_health.png";
 
     @Override
@@ -51,23 +54,26 @@ public class StockStatusReportServiceImpl implements StockStatusReportService {
     }
 
     @Override
-    public ResponseEntity<byte[]> generateStockSummaryReport(Long hospitalId, Long departmentId, Integer itemClassId, Integer sectionId) {
+    public ResponseEntity<byte[]> generateStockSummaryReport(Long hospitalId, Long departmentId, Integer itemClassId, Integer sectionId, Long itemId) {
        try{
            MasHospital hospital = (hospitalId != null) ? hospitalRepo.findById(hospitalId).orElse(null) : null;
            MasDepartment department = (departmentId != null) ? deptRepo.findById(departmentId).orElse(null) : null;
            MasItemClass itemClass = (itemClassId != null) ? itemClassRepo.findById(itemClassId).orElse(null) : null;
            MasStoreSection storeSection = (sectionId != null) ? sectionRepo.findById(sectionId).orElse(null) : null;
+           MasStoreItem storeItem = (itemId != null) ? storeItemRepo.findById(itemId).orElse(null) : null;
 
            Long safeHospitalId = (hospital != null) ? hospital.getId() : (hospitalId != null ? hospitalId : 0L);
            Long safeDepartmentId = (department != null) ? department.getId() : (departmentId != null ? departmentId : 0L);
            Integer safeItemClassId = Math.toIntExact((itemClass != null) ? itemClass.getItemClassId() : (itemClassId != null ? itemClassId : 0L));
            Integer safeSectionId = Math.toIntExact((storeSection != null) ? storeSection.getSectionId() : (sectionId != null ? sectionId : 0L));
+           Long safeItemId = (storeItem != null) ? storeItem.getItemId() : (itemId != null ? itemId : 0L);
 
            Map<String, Object> parameters = new HashMap<>();
            parameters.put("HOSPITAL_ID", safeHospitalId);
            parameters.put("DEPARTMENT_ID", safeDepartmentId);
            parameters.put("ITEM_CLASS_ID", safeItemClassId);
            parameters.put("SECTION_ID", safeSectionId);
+           parameters.put("ITEM_ID", safeItemId);
            parameters.put("CurrentDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
            parameters.put("path", path);
 
@@ -93,23 +99,26 @@ public class StockStatusReportServiceImpl implements StockStatusReportService {
     }
 
     @Override
-    public ResponseEntity<byte[]> generateStockDetailedReport(Long hospitalId, Long departmentId, Integer itemClassId, Integer sectionId) {
+    public ResponseEntity<byte[]> generateStockDetailedReport(Long hospitalId, Long departmentId, Integer itemClassId, Integer sectionId, Long itemId) {
         try{
             MasHospital hospital = (hospitalId != null) ? hospitalRepo.findById(hospitalId).orElse(null) : null;
             MasDepartment department = (departmentId != null) ? deptRepo.findById(departmentId).orElse(null) : null;
             MasItemClass itemClass = (itemClassId != null) ? itemClassRepo.findById(itemClassId).orElse(null) : null;
             MasStoreSection storeSection = (sectionId != null) ? sectionRepo.findById(sectionId).orElse(null) : null;
+            MasStoreItem storeItem = (itemId != null) ? storeItemRepo.findById(itemId).orElse(null) : null;
 
             Long safeHospitalId = (hospital != null) ? hospital.getId() : (hospitalId != null ? hospitalId : 0L);
             Long safeDepartmentId = (department != null) ? department.getId() : (departmentId != null ? departmentId : 0L);
             Integer safeItemClassId = Math.toIntExact((itemClass != null) ? itemClass.getItemClassId() : (itemClassId != null ? itemClassId : 0L));
             Integer safeSectionId = Math.toIntExact((storeSection != null) ? storeSection.getSectionId() : (sectionId != null ? sectionId : 0L));
+            Long safeItemId = (storeItem != null) ? storeItem.getItemId() : (itemId != null ? itemId : 0L);
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("HOSPITAL_ID", safeHospitalId);
             parameters.put("DEPARTMENT_ID", safeDepartmentId);
             parameters.put("ITEM_CLASS_ID", safeItemClassId);
             parameters.put("SECTION_ID", safeSectionId);
+            parameters.put("ITEM_ID", safeItemId);
             parameters.put("CurrentDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
             parameters.put("path", path);
 

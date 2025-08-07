@@ -7,6 +7,6 @@ import java.util.Map;
 
 public interface StockStatusReportService {
     byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception;
-    ResponseEntity<byte[]> generateStockSummaryReport(Long hospitalId, Long departmentId, Integer itemClassId, Integer sectionId);
-    ResponseEntity<byte[]> generateStockDetailedReport(Long hospitalId, Long departmentId, Integer itemClassId, Integer sectionId);
+    ResponseEntity<byte[]> generateStockSummaryReport(Long hospitalId, Long departmentId, Integer itemClassId, Integer sectionId, Long itemId);
+    ResponseEntity<byte[]> generateStockDetailedReport(Long hospitalId, Long departmentId, Integer itemClassId, Integer sectionId, Long itemId);
 }

@@ -20,8 +20,12 @@
 		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
 	</parameter>
 	<parameter name="path" class="java.lang.String"/>
+	<parameter name="SECTION_ID" class="java.lang.Integer"/>
+	<parameter name="ITEM_CLASS_ID" class="java.lang.Integer"/>
+	<parameter name="ITEM_ID" class="java.lang.Long"/>
 	<queryString>
-		<![CDATA[select 
+		<![CDATA[select
+sibs.item_id,
 concat(mh.hospital_name || '-' || mh.address) as hospital_name_address,
 md.department_name,
 msi.pvms_no as mas_store_item_pvms_no,
@@ -42,10 +46,15 @@ left join mas_department as md on sibs.department_id = md.department_id
 left join mas_hospital as mh on sibs.hospital_id = mh.hospital_id
 left join mas_manufacturer as mm on sibs.manufacturer_id = mm.manufacturer_id
 left join mas_brand as mb on sibs.brand_id = mb.brand_id
-where sibs.department_id = $P{DEPARTMENT_ID}
-and sibs.hospital_id = $P{HOSPITAL_ID}
+where (sibs.department_id = $P{DEPARTMENT_ID} or $P{DEPARTMENT_ID} = 0)
+and (sibs.hospital_id = $P{HOSPITAL_ID} or $P{HOSPITAL_ID} = 0)
+and (msi.item_class_id = $P{ITEM_CLASS_ID} or $P{ITEM_CLASS_ID} = 0)
+and (msi.section_id = $P{SECTION_ID} or $P{SECTION_ID} = 0)
+and (msi.item_id = $P{ITEM_ID} or $P{ITEM_ID} = 0)
 group by mh.hospital_name, md.department_name, msi.pvms_no, msi.nomenclature, 
-		msu.unit_name, sibs.batch_no, sibs.expiry_date, sibs.manufacture_date, sibs.mrp_per_unit, mm.manufacturer_name, mb.brand_name, mh.address, sibs.total_mrp_value]]>
+		msu.unit_name, sibs.batch_no, sibs.expiry_date, sibs.manufacture_date, sibs.mrp_per_unit, 
+		mm.manufacturer_name, mb.brand_name, mh.address, sibs.total_mrp_value, sibs.item_id
+order by msi.nomenclature]]>
 	</queryString>
 	<field name="hospital_name_address" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="hospital_name_address"/>

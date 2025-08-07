@@ -58,8 +58,9 @@ public class ReportController {
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
             @RequestParam Integer itemClassId,
-            @RequestParam Integer sectionId) {
-        return stockService.generateStockSummaryReport(hospitalId, departmentId, itemClassId, sectionId);
+            @RequestParam Integer sectionId,
+            @RequestParam Long itemId) {
+        return stockService.generateStockSummaryReport(hospitalId, departmentId, itemClassId, sectionId, itemId);
     }
 
     @GetMapping(value = "/stockReportDetail", produces = MediaType.APPLICATION_PDF_VALUE)
@@ -67,8 +68,9 @@ public class ReportController {
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
             @RequestParam Integer itemClassId,
-            @RequestParam Integer sectionId) {
-        return stockService.generateStockDetailedReport(hospitalId, departmentId, itemClassId, sectionId);
+            @RequestParam Integer sectionId,
+            @RequestParam Long itemId) {
+        return stockService.generateStockDetailedReport(hospitalId, departmentId, itemClassId, sectionId, itemId);
     }
 
     @GetMapping(value = "/openingBalanceRegistryReport", produces = MediaType.APPLICATION_PDF_VALUE)
