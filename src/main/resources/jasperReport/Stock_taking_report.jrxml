@@ -26,8 +26,8 @@
     store_stock_taking_t.batch_no,
     store_stock_taking_t.expiry_date,
     store_stock_taking_t.store_stock_service,
-    store_stock_taking_t.stock_surplus as physical_stock,
-    store_stock_taking_t.stock_deficient,
+	coalesce(store_stock_taking_t.stock_surplus, cast(0 as bigint)) as physical_stock,
+	coalesce(store_stock_taking_t.stock_deficient, cast(0 as bigint)) as stock_deficient,
     store_stock_taking_t.computed_stock,
     store_stock_taking_t.remarks,
     case upper(store_stock_taking_m.status)
