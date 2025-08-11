@@ -234,27 +234,36 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
 
                 StoreStockLedger storeStockLedger = new StoreStockLedger();
                 storeStockLedger.setStockId(dt.getStockId());
-                storeStockLedger.setTxnType("Physical");
+                String txtTypeDymic = dt.getStockSurplus() != null ? "Physical In" : "Physical Out";
+                storeStockLedger.setTxnType(txtTypeDymic);
                 storeStockLedger.setRemarks(dt.getRemarks());
                 storeStockLedger.setTxnReferenceId(dt.getTakingTId());
                 storeStockLedger.setTxnDate(LocalDate.now());
                 storeStockLedger.setCreatedDt(LocalDateTime.now());
                 storeStockLedger.setCreatedBy(fName);
-                storeStockLedger.setQtyOut(dt.getStockDeficient());
-                storeStockLedger.setQtyIn(dt.getStockSurplus());
+                if (dt.getStockDeficient() != null) {
+                    storeStockLedger.setQtyOut(dt.getStockDeficient());
+                }
+                if (dt.getStockSurplus() != null) {
+                    storeStockLedger.setQtyIn(dt.getStockSurplus());
+                }
                 storeStockLedgerRepository.save(storeStockLedger);
 
                 Optional<StoreItemBatchStock> stockOptional = storeItemBatchStockRepository.findById(dt.getStockId().getStockId());
                 if (stockOptional.isPresent()) {
                     StoreItemBatchStock batchStock = stockOptional.get();
 
-                    Long a=dt.getStockSurplus().longValue();
-                    batchStock.setClosingStock(batchStock.getClosingStock()+a);
-                    batchStock.setStockSurplus(dt.getStockSurplus().longValue());
+                    if (dt.getStockSurplus() != null) {
+                        Long a = dt.getStockSurplus().longValue();
 
-                    Long b=dt.getStockDeficient().longValue();
-                    batchStock.setClosingStock(batchStock.getClosingStock()-b);
-                    batchStock.setStockDeficient(dt.getStockDeficient().longValue());
+                        batchStock.setClosingStock(batchStock.getClosingStock() + a);
+                        batchStock.setStockSurplus(dt.getStockSurplus().longValue());
+                    }
+                    if (dt.getStockDeficient() != null) {
+                        Long b = dt.getStockDeficient().longValue();
+                        batchStock.setClosingStock(batchStock.getClosingStock() - b);
+                        batchStock.setStockDeficient(dt.getStockDeficient().longValue());
+                    }
                     storeItemBatchStockRepository.save( batchStock);
 
                 }

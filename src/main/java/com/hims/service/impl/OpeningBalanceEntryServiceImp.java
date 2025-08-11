@@ -377,12 +377,16 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                 Long totalQty = entry.getValue().stream()
                         .mapToLong(s -> Optional.ofNullable(s.getOpeningBalanceQty()).orElse(0L)).sum();
 
+                Long totalCloseQty = entry.getValue().stream()
+                        .mapToLong(s -> Optional.ofNullable(s.getClosingStock()).orElse(0L)).sum();
+
                 OpeningBalanceStockResponse dto = new OpeningBalanceStockResponse();
                 dto.setStockId(s0.getStockId());
                 dto.setItemId(s0.getItemId().getItemId());
                 dto.setItemName(s0.getItemId().getNomenclature());
                 dto.setItemCode(s0.getItemId().getPvmsNo());
                 dto.setOpeningQty(totalQty);
+                dto.setClosingQty(totalCloseQty);
                 dto.setUnitAu(s0.getItemId().getUnitAU().getUnitName());
                 dto.setSectionName(s0.getItemId().getItemClassId().getMasStoreSection().getSectionName());
                 dto.setSectionId(s0.getItemId().getItemClassId().getMasStoreSection().getSectionId());

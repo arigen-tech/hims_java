@@ -9,6 +9,7 @@ public class OpeningBalanceStockResponse {
     private String itemName;
     private String itemCode;
     private Long OpeningQty;
+    private Long closingQty;
     private String unitAu;
     private Integer sectionId;
     private String sectionName;
