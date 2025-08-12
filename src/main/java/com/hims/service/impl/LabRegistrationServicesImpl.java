@@ -617,6 +617,10 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 PendingSampleResponse response = new PendingSampleResponse();
                 response.setReqDate(orderHd.getOrderDate());
 
+                response.setVistId(
+                        visit != null ? visit.getId() : Long.valueOf("")
+                );
+
                 response.setPatientName(
                         patient != null
                                 ? (patient.getPatientFn() != null ? patient.getPatientFn() : "") +
@@ -656,6 +660,13 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 response.setInvestigation(
                         investigation != null ? investigation.getInvestigationName() : ""
                 );
+                response.setInvestigationId(
+                        investigation != null ? investigation.getInvestigationId() : Long.valueOf("")
+                );
+
+                response.setOrderhdId(
+                        orderHd != null ? orderHd.getId() : Long.valueOf("")
+                );
 
                 response.setSample(
                         investigation != null &&
@@ -670,6 +681,20 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                                 investigation.getCollectionId() != null &&
                                 investigation.getCollectionId().getCollectionName() != null
                                 ? investigation.getCollectionId().getCollectionName()
+                                : ""
+                );
+                response.setSubChargeCodeId(
+                        investigation != null &&
+                                investigation.getSubChargeCodeId() != null &&
+                                investigation.getSubChargeCodeId().getSubId() != null
+                                ? investigation.getSubChargeCodeId().getSubId()
+                                : Long.valueOf("")
+                );
+                response.setSubChargeCode(
+                        investigation != null &&
+                                investigation.getSubChargeCodeId() != null &&
+                                investigation.getSubChargeCodeId().getSubName() != null
+                                ? investigation.getSubChargeCodeId().getSubName()
                                 : ""
                 );
 
