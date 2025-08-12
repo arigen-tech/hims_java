@@ -1,11 +1,9 @@
 package com.hims.entity;
 
-import com.hims.request.LabInvestigationReq;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.Instant;
-import java.util.List;
 
 @Entity
 @Data
@@ -28,7 +26,7 @@ public class DgMasInvestigation {
     @Column(name = "multiple_results", length =1)
     private String multipleResults;
     @Column(name = "quantity", length =10)
-    private String Quantity;
+    private String quantity;
     @Column(name = "normal_value", length =20)
     private String normalValue;
     @Column(name = "last_chg_by", length =12)
@@ -53,7 +51,7 @@ public class DgMasInvestigation {
 //    private MasChargeCode chargeCodeId;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "main_chargecode_id")
-    private MasMainChargeCode mainChargeCodeID;
+    private MasMainChargeCode mainChargeCodeId;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "uom_id")
     private DgUom uomId;
