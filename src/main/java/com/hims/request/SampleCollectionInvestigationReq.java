@@ -8,6 +8,7 @@ import lombok.Setter;
 public class SampleCollectionInvestigationReq {
     int subChargeCodeId;
     int investigationId;
+    int mainChargeCodeId;
     String empanelledStatus;
     int sampleId;
     int collectionId;

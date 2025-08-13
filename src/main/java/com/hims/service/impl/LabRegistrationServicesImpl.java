@@ -85,6 +85,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     private DgMasSampleRepository dgMasSampleRepository;
     @Autowired
     private DgMasCollectionRepository dgMasCollectionRepository;
+    @Autowired
+    private MasMainChargeCodeRepository masMainChargeCodeRepository;
 
 
 
@@ -778,7 +780,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 detail.setSubChargecodeId(masSubChargeCode.get());
                 Optional<DgMasInvestigation> masInvestigation=dgMasInvestigationRepository.findById((long) detailReq.getInvestigationId());
                 if (masSubChargeCode.isEmpty()) {
-                    return ResponseUtils.createNotFoundResponse("MasSubChargeCode not found", 404);
+                    return ResponseUtils.createNotFoundResponse("InvestigationId not found", 404);
                 }
                 detail.setInvestigationId( masInvestigation.get());
                 detail.setEmpanelledStatus(detailReq.getEmpanelledStatus());
@@ -793,6 +795,12 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     return ResponseUtils.createNotFoundResponse("DgMasCollection not found", 404);
                 }
                 detail.setCollectionId( dgMasCollection.get().getCollectionId());
+                Optional<MasMainChargeCode> masMainChargeCode=masMainChargeCodeRepository.findById((long) detailReq.getMainChargeCodeId());
+                if ( dgMasCollection.isEmpty()) {
+                    return ResponseUtils.createNotFoundResponse("MasMainCollection not found", 404);
+                }
+                detail.setMainChargecodeId(masMainChargeCode.get());
+                detail.setSampleCollectionHeaderId(header);
                 detail.setRemarks(detailReq.getRemarks());
                 detail.setLastChgBy(currentUser.getLastChangedBy());
                 detail.setLastChgDate(LocalDate.now());
