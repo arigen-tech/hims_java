@@ -200,7 +200,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         DgOrderDt dt = new DgOrderDt();
                         dt.setInvestigationId(invEntity);
                         dt.setOrderhdId(savedHd);
-                        dt.setMainChargecodeId(invEntity.getMainChargeCodeID().getChargecodeId());
+                        dt.setMainChargecodeId(invEntity.getMainChargeCodeId().getChargecodeId());
                         dt.setSubChargeid(invEntity.getSubChargeCodeId().getSubId());
                         dt.setAppointmentDate(inv.getAppointmentDate());
 
@@ -229,7 +229,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                             DgOrderDt dt = new DgOrderDt();
                             dt.setOrderhdId(savedHd);
                             dt.setInvestigationId(investId);
-                            dt.setMainChargecodeId(investId.getMainChargeCodeID().getChargecodeId());
+                            dt.setMainChargecodeId(investId.getMainChargeCodeId().getChargecodeId());
                             dt.setSubChargeid(investId.getSubChargeCodeId().getSubId());
                             dt.setPackageId(pkgObj);
                             dt.setAppointmentDate(inv.getAppointmentDate());
