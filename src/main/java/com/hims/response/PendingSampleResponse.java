@@ -20,9 +20,14 @@ public class PendingSampleResponse {
     private String department;
     private String doctorName;
     private String priority;
+    private Long orderhdId;
+    private Long vistId;
+    private Long investigationId;
     private String investigation;
     private String sample;
     private String collection;  // ✅ Changed from equipment
+    private String subChargeCode;
+    private Long subChargeCodeId;
 
 
 
