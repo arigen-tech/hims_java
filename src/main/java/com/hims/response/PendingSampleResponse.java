@@ -28,6 +28,7 @@ public class PendingSampleResponse {
     private String collection;  // ✅ Changed from equipment
     private String subChargeCode;
     private Long subChargeCodeId;
+    private String orderNo;
 
 
 
