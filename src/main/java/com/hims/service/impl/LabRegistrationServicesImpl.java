@@ -1,5 +1,6 @@
 package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -13,6 +14,8 @@ import com.hims.service.LabRegistrationServices;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
+import com.lowagie.text.Header;
+import jakarta.persistence.criteria.Root;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +71,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     MasServiceCategoryRepository masServiceCategoryRepository;
    @Autowired
     PaymentDetailRepository paymentDetailRepository;
-
     @Value("${serviceCategoryLab}")
     private String serviceCategoryLab;
 
@@ -672,15 +674,52 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                                 ? investigation.getCollectionId().getCollectionName()
                                 : ""
                 );
-
                 responseList.add(response);
             }
         }
-
         return responseList;
     }
 
+    @Override
+    public ApiResponse<AppsetupResponse>  savesample(SampleCollectionRequest sampleReq) {
+        AppsetupResponse res = new AppsetupResponse();
+        Long departmentId = authUtil.getCurrentDepartmentId();
+        if (departmentId == null) {
+            throw new IllegalArgumentException("Current department ID is null");
 
+        }
+        // Group subchargecodeId (safely)
+        Map<Integer, List<SampleCollectionInvestigationReq>> grouped = sampleReq.getSampleCollectionReq().stream()
+                .filter(req -> req.getSubChargeCodeId() != 0)
+                .collect(Collectors.groupingBy(SampleCollectionInvestigationReq::getSubChargeCodeId));
+
+        for (Map.Entry<Integer, List<SampleCollectionInvestigationReq>> entry : grouped.entrySet()) {
+            Integer val = entry.getKey();
+            List<SampleCollectionInvestigationReq> investigations = entry.getValue();
+//            for (SampleCollectionInvestigationReq inves : investigations) {
+//                 String aa=inves.getCollected();
+//
+//            }
+//            DgSampleCollectionHeader dgsc = new DgSampleCollectionHeader();
+//            dgsc.setAppointmentDate(date);
+//            dgsc.setOrderDate(LocalDate.now());
+//            dgsc.setOrderNo(createInvoice());
+//            dgsc.setOrderStatus("n");
+//            dgsc.setCollectionStatus("n");
+//            dgsc.setPaymentStatus("n");
+//            dgsc.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
+//            dgsc.setDiscountId(1);
+//            dgsc.setCreatedOn(LocalDate.now());
+//            dgsc.setLastChgDate(LocalDate.now());
+//            dgsc.setLastChgTime(LocalTime.now().toString());
+//            DgSampleCollectionHeader savedHd = labHdRepository.save(dgsc);
+        }
+
+
+
+        res.setMsg("Success");
+        return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
+    }
 
 
 

@@ -3,6 +3,7 @@ package com.hims.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.request.LabRegRequest;
 import com.hims.request.PaymentUpdateRequest;
+import com.hims.request.SampleCollectionRequest;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
@@ -57,7 +58,10 @@ public class LabRegistrationController {
         }
     }
 
-
+    @PostMapping("/savesamplecollection")
+    public ResponseEntity<ApiResponse<AppsetupResponse>>samplecollectionResponse(@RequestBody SampleCollectionRequest request) {
+        return new ResponseEntity<>(labRegistrationServices.savesample(request), HttpStatus.OK);
+    }
 
 
 
