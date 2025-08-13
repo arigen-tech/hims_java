@@ -48,23 +48,26 @@ public class DgSampleCollectionHeader {
     @Column(name = "collection_center_modified_id")
     private Long collectionCenterModifiedId;
 
-    @Column(name = "hospital_id")
-    private Long hospitalId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "hospital_id")
+    private MasHospital hospitalId;
 
-    @Column(name = "department_id")
-    private Long departmentId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id")
+    private MasDepartment departmentId;
 
     @Column(name = "order_by_department")
-    private String orderByDepartment;
+    private Integer orderByDepartment;
 
     @Column(name = "validated_by")
-    private String validatedBy;
+    private Integer validatedBy;
 
     @Column(name = "inpatient_id")
     private Long inpatientId;
 
-    @Column(name = "visit_id")
-    private Long visitId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "visit_id")
+    private Visit visitId;
 
     @Column(name = "order_id")
     private Long orderId;
@@ -72,8 +75,9 @@ public class DgSampleCollectionHeader {
     @Column(name = "hin_id")
     private Long hinId;
 
-    @Column(name = "orderhd_id")
-    private Long orderHdId;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "orderhd_id")
+    private DgOrderHd orderHdId;
 
     @Column(name = "collection_time")
     private LocalTime collectionTime;

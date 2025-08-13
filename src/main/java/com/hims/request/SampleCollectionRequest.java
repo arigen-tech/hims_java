@@ -13,7 +13,6 @@ public class SampleCollectionRequest {
    // int OrderByDept;
     //int inpatientId;
     int visitId;
-    int oderId;
     ///int hinId;
     int orderHdId;
     List<SampleCollectionInvestigationReq> sampleCollectionReq;

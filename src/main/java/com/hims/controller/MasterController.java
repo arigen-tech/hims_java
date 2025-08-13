@@ -4,20 +4,13 @@ import com.hims.entity.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
-import com.hims.service.impl.MasStoreItemServiceImp;
 import com.hims.service.impl.UserDepartmentServiceImpl;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -31,6 +24,8 @@ public class MasterController {
     private MasServiceOpdService masServiceOpdService;
     @Autowired
     private MasApplicationService masApplicationService;
+    @Autowired
+    private DgFixedValueService dgFixedValueService;
 
     @Autowired
     private MasStoreItemService masStoreItemService;
@@ -1317,4 +1312,14 @@ public class MasterController {
         ApiResponse<DgMasCollectionResponse> response = dgMasCollectionService.changeDgMasCollectionStatus(id, status);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+
+    //    ================================ DgFixedValue Controller================================//
+
+
+    @GetMapping("/DgFixedValue/getAll")
+    public ApiResponse<List<DgFixedValue>> getAllDgFixedValue() {
+        return dgFixedValueService.getDgFixedValue();
+    }
+
 }
