@@ -73,7 +73,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     @Autowired
     MasServiceCategoryRepository masServiceCategoryRepository;
-   @Autowired
+    @Autowired
     PaymentDetailRepository paymentDetailRepository;
     @Value("${serviceCategoryLab}")
     private String serviceCategoryLab;
@@ -750,7 +750,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
             // Save Header data
             DgSampleCollectionHeader header = new DgSampleCollectionHeader();
-            header.setPatientType(sampleReq.getPatientType());
+          //  header.setPatientType(sampleReq.getPatientType());
             Optional<Visit> visit= visitRepository.findById((long) sampleReq.getVisitId());
             if (visit.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("visit not found", 404);
@@ -764,7 +764,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             header.setHospitalId(currentUser.getHospital());
             Optional<MasDepartment> depObj = masDepartmentRepository.findById(departmentId);
             header.setDepartmentId(depObj.get());
-            header.setLastChgBy(currentUser.getLastChangedBy());
+            String fName = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+
+            header.setLastChgBy(fName);
             header.setLastChgDate(LocalDate.now());
             header.setLastChgTime(LocalTime.now());
             dgSampleCollectionHeaderRepository.save(header);
@@ -802,7 +804,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 detail.setMainChargecodeId(masMainChargeCode.get());
                 detail.setSampleCollectionHeaderId(header);
                 detail.setRemarks(detailReq.getRemarks());
-                detail.setLastChgBy(currentUser.getLastChangedBy());
+                String fName1 = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+                detail.setLastChgBy(fName1 );
                 detail.setLastChgDate(LocalDate.now());
                 detail.setLastChgTime(String.valueOf(LocalTime.now()));
                 dgSampleCollectionDetailsRepository.save(detail);
