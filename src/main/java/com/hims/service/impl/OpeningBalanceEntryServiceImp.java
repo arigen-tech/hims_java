@@ -366,8 +366,12 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
     @Override
     public ApiResponse<List<?>> getAllStock(String type,Long hospitalId, Long departmentId) {
-        List<StoreItemBatchStock> stocks = storeItemBatchStockRepository.findByHospitalIdIdAndDepartmentIdId( hospitalId, departmentId);
-
+//List<StoreItemBatchStock> stocks = storeItemBatchStockRepository.findByHospitalIdIdAndDepartmentIdId( hospitalId, departmentId);
+        List<StoreItemBatchStock> stocks =
+                storeItemBatchStockRepository
+                        .findByHospitalIdIdAndDepartmentIdIdAndExpiryDateGreaterThanEqual(
+                                hospitalId, departmentId, LocalDate.now()
+                        );
         if (type.equals("summary")) {
             Map<Long, List<StoreItemBatchStock>> grouped = stocks.stream()
                     .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
