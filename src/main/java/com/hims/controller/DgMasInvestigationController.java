@@ -33,8 +33,22 @@ public class DgMasInvestigationController {
     }
 
     @PostMapping("/create-investigation")
-    public ApiResponse<DgMasInvestigationResponse> addInvestigation(@RequestBody DgMasInvestigationRequest investigationRequest){
-        return dgMasInvestigationService.createInvestigation(investigationRequest);
+    public ResponseEntity<ApiResponse<DgMasInvestigationResponse>> addInvestigation(@RequestBody DgMasInvestigationRequest investigationRequest){
+        return new ResponseEntity<>(dgMasInvestigationService.createInvestigation(investigationRequest), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/update-single-investigation/{investigationId}")
+    public ResponseEntity<ApiResponse<DgMasInvestigationResponse>> updateOneInvestigation(
+            @PathVariable Long investigationId,
+            @RequestBody DgMasInvestigationRequest investigationRequest ) {
+        return new ResponseEntity<>(dgMasInvestigationService.updateSingleInvestigation(investigationId, investigationRequest), HttpStatus.OK);
+    }
+
+    @PutMapping("/update-multiple-investigation/{investigationId}")
+    public ResponseEntity<ApiResponse<DgMasInvestigationResponse>> updateMultiInvestigation(
+            @PathVariable Long investigationId,
+            @RequestBody DgMasInvestigationRequest investigationRequest ) {
+        return new ResponseEntity<>(dgMasInvestigationService.updateMultipleInvestigation(investigationId, investigationRequest), HttpStatus.OK);
     }
 
 }
