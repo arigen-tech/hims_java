@@ -841,13 +841,13 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     break;
                 }
             }
-            DgOrderHd hdorderObj =new DgOrderHd();
-            if(oderStatusFully){
-                hdorderObj.setOrderStatus("y");
-            }else if(oderStatusFullypartial){
-                hdorderObj.setOrderStatus("n");
-            }
-            labHdRepository.save(hdorderObj);
+//            DgOrderHd hdorderObj =new DgOrderHd();
+//            if(oderStatusFully){
+//                hdorderObj.setOrderStatus("y");
+//            }else if(oderStatusFullypartial){
+//                hdorderObj.setOrderStatus("n");
+//            }
+//            labHdRepository.save(hdorderObj);
 
         }
         catch (SDDException e) {
