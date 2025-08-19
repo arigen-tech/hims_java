@@ -178,87 +178,82 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     public ApiResponse<DgMasInvestigationResponse> updateSingleInvestigation(Long investigationId, DgMasInvestigationRequest investigationRequest) {
         try{
             Optional<DgMasInvestigation> masInvestigation = dgMasInvestigationRepo.findById(investigationId);
-            if ("s".equalsIgnoreCase(investigationRequest.getInvestigationType())) {
-                if (masInvestigation.isPresent()) {
-                    DgMasInvestigation dmi = masInvestigation.get();
-                    dmi.setInvestigationName(investigationRequest.getInvestigationName());
-                    dmi.setConfidential(investigationRequest.getConfidential());
-                    dmi.setAppearInDischargeSummary(investigationRequest.getAppearInDischargeSummary());
-                    dmi.setInvestigationType(investigationRequest.getInvestigationType());
-                    dmi.setMultipleResults(investigationRequest.getMultipleResults());
-                    dmi.setQuantity(investigationRequest.getQuantity());
-                    dmi.setNormalValue(investigationRequest.getNormalValue());
-                    User currentUser = getCurrentUser();
-                    if (currentUser == null) {
-                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                                },
-                                "Current user not found", HttpStatus.UNAUTHORIZED.value());
-                    }
-                    dmi.setLastChgBy(currentUser.getUsername());
-                    dmi.setLastChgDate(Instant.now());
-                    dmi.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
-                    dmi.setAppointmentRequired(investigationRequest.getAppointmentRequired());
-                    dmi.setMaxNormalValue(investigationRequest.getMaxNormalValue());
-                    dmi.setMinNormalValue(investigationRequest.getMinNormalValue());
-                    dmi.setTestOrderNo(investigationRequest.getTestOrderNo());
-                    dmi.setNumericOrString(investigationRequest.getNumericOrString());
-                    dmi.setHicCode(investigationRequest.getHicCode());
-                    if (investigationRequest.getMainChargeCodeId() != null) {
-                        Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(investigationRequest.getMainChargeCodeId());
-                        if (mmcc.isPresent()) {
-                            dmi.setMainChargeCodeId(mmcc.get());
-                        } else {
-                            return ResponseUtils.createNotFoundResponse("masMainChargeCodeId not found", 404);
-                        }
-                    }
-                    if (investigationRequest.getUomId() != null) {
-                        Optional<DgUom> du = uomRepo.findById(investigationRequest.getUomId());
-                        if (du.isPresent()) {
-                            dmi.setUomId(du.get());
-                        } else {
-                            return ResponseUtils.createNotFoundResponse("uomId not found", 404);
-                        }
-                    }
-                    if (investigationRequest.getSubChargeCodeId() != null) {
-                        Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(investigationRequest.getSubChargeCodeId());
-                        if (mscc.isPresent()) {
-                            dmi.setSubChargeCodeId(mscc.get());
-                        } else {
-                            return ResponseUtils.createNotFoundResponse("subChargeCodeId not found", 404);
-                        }
-                    }
-                    if (investigationRequest.getSampleId() != null) {
-                        Optional<DgMasSample> dms = sampleRepo.findById(investigationRequest.getSampleId());
-                        if (dms.isPresent()) {
-                            dmi.setSampleId(dms.get());
-                        } else {
-                            return ResponseUtils.createNotFoundResponse("sampleId not found", 404);
-                        }
-                    }
-                    dmi.setEquipmentId(investigationRequest.getEquipmentId());
-                    if (investigationRequest.getCollectionId() != null) {
-                        Optional<DgMasCollection> dmc = collectionRepo.findById(investigationRequest.getCollectionId());
-                        if (dmc.isPresent()) {
-                            dmi.setCollectionId(dmc.get());
-                        } else {
-                            return ResponseUtils.createNotFoundResponse("collectionId not found", 404);
-                        }
-                    }
-                    dmi.setBloodReactionTest(investigationRequest.getBloodReactionTest());
-                    dmi.setBloodBankScreenTest(investigationRequest.getBloodBankScreenTest());
-                    dmi.setInstructions(investigationRequest.getInstructions());
-                    dmi.setDiscountApplicable(investigationRequest.getDiscountApplicable());
-                    dmi.setGenderApplicable(investigationRequest.getGenderApplicable());
-                    dmi.setDiscount(investigationRequest.getDiscount());
-                    dmi.setPrice(investigationRequest.getPrice());
-                    return ResponseUtils.createSuccessResponse(mapToResponse(dgMasInvestigationRepo.save(dmi)), new TypeReference<>() {
-                    });
-                } else {
-                    return ResponseUtils.createNotFoundResponse("investigationId not found", 404);
+            if (masInvestigation.isPresent()) {
+                DgMasInvestigation dmi = masInvestigation.get();
+                dmi.setInvestigationName(investigationRequest.getInvestigationName());
+                dmi.setConfidential(investigationRequest.getConfidential());
+                dmi.setAppearInDischargeSummary(investigationRequest.getAppearInDischargeSummary());
+                dmi.setInvestigationType(investigationRequest.getInvestigationType());
+                dmi.setMultipleResults(investigationRequest.getMultipleResults());
+                dmi.setQuantity(investigationRequest.getQuantity());
+                dmi.setNormalValue(investigationRequest.getNormalValue());
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                            },
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-            }else {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Only investigationType 's' is allowed for update", HttpStatus.BAD_REQUEST.value());
+                dmi.setLastChgBy(currentUser.getUsername());
+                dmi.setLastChgDate(Instant.now());
+                dmi.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+                dmi.setAppointmentRequired(investigationRequest.getAppointmentRequired());
+                dmi.setMaxNormalValue(investigationRequest.getMaxNormalValue());
+                dmi.setMinNormalValue(investigationRequest.getMinNormalValue());
+                dmi.setTestOrderNo(investigationRequest.getTestOrderNo());
+                dmi.setNumericOrString(investigationRequest.getNumericOrString());
+                dmi.setHicCode(investigationRequest.getHicCode());
+                if (investigationRequest.getMainChargeCodeId() != null) {
+                    Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(investigationRequest.getMainChargeCodeId());
+                    if (mmcc.isPresent()) {
+                        dmi.setMainChargeCodeId(mmcc.get());
+                    } else {
+                        return ResponseUtils.createNotFoundResponse("masMainChargeCodeId not found", 404);
+                    }
+                }
+                if (investigationRequest.getUomId() != null) {
+                    Optional<DgUom> du = uomRepo.findById(investigationRequest.getUomId());
+                    if (du.isPresent()) {
+                        dmi.setUomId(du.get());
+                    } else {
+                        return ResponseUtils.createNotFoundResponse("uomId not found", 404);
+                    }
+                }
+                if (investigationRequest.getSubChargeCodeId() != null) {
+                    Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(investigationRequest.getSubChargeCodeId());
+                    if (mscc.isPresent()) {
+                        dmi.setSubChargeCodeId(mscc.get());
+                    } else {
+                        return ResponseUtils.createNotFoundResponse("subChargeCodeId not found", 404);
+                    }
+                }
+                if (investigationRequest.getSampleId() != null) {
+                    Optional<DgMasSample> dms = sampleRepo.findById(investigationRequest.getSampleId());
+                    if (dms.isPresent()) {
+                        dmi.setSampleId(dms.get());
+                    } else {
+                        return ResponseUtils.createNotFoundResponse("sampleId not found", 404);
+                    }
+                }
+                dmi.setEquipmentId(investigationRequest.getEquipmentId());
+                if (investigationRequest.getCollectionId() != null) {
+                    Optional<DgMasCollection> dmc = collectionRepo.findById(investigationRequest.getCollectionId());
+                    if (dmc.isPresent()) {
+                        dmi.setCollectionId(dmc.get());
+                    } else {
+                        return ResponseUtils.createNotFoundResponse("collectionId not found", 404);
+                    }
+                }
+                dmi.setBloodReactionTest(investigationRequest.getBloodReactionTest());
+                dmi.setBloodBankScreenTest(investigationRequest.getBloodBankScreenTest());
+                dmi.setInstructions(investigationRequest.getInstructions());
+                dmi.setDiscountApplicable(investigationRequest.getDiscountApplicable());
+                dmi.setGenderApplicable(investigationRequest.getGenderApplicable());
+                dmi.setDiscount(investigationRequest.getDiscount());
+                dmi.setPrice(investigationRequest.getPrice());
+                return ResponseUtils.createSuccessResponse(mapToResponse(dgMasInvestigationRepo.save(dmi)), new TypeReference<>() {
+                });
+            } else {
+                return ResponseUtils.createNotFoundResponse("investigationId not found", 404);
             }
         } catch (Exception e) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
@@ -364,41 +359,14 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 subInvestigation.setOrderNo(subRequest.getOrderNo());
                 subInvestigation.setResultType(subRequest.getResultType());
                 subInvestigation.setComparisonType(subRequest.getComparisonType());
-                if (subRequest.getMainChargeCodeId() != null) {
-                    Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subRequest.getMainChargeCodeId());
-                    if (mmcc.isPresent()) {
-                        subInvestigation.setMainChargeCodeId(mmcc.get());
-                    } else {
-                        return ResponseUtils.createNotFoundResponse("masMainChargeCodeId not found", 404);
-                    }
-                }
-
-                if (subRequest.getSubChargeCodeId() != null) {
-                    Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(subRequest.getSubChargeCodeId());
-                    if (mscc.isPresent()) {
-                        subInvestigation.setSubChargeCodeId(mscc.get());
-                    } else {
-                        return ResponseUtils.createNotFoundResponse("subChargeCodeId not found", 404);
-                    }
-                }
-
-                if (subRequest.getSampleId() != null){
-                    Optional<DgMasSample> dms = sampleRepo.findById(subRequest.getSampleId());
-                    if(dms.isPresent()){
-                        subInvestigation.setSampleId(dms.get());
-                    } else {
-                        return ResponseUtils.createNotFoundResponse("sampleId not found", 404);
-                    }
-                }
-
-                if (subRequest.getUomId() != null){
-                    Optional<DgUom> du = uomRepo.findById(subRequest.getUomId());
-                    if(du.isPresent()){
-                        subInvestigation.setUomId(du.get());
-                    } else {
-                        return ResponseUtils.createNotFoundResponse("uomId not found", 404);
-                    }
-                }
+                Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subRequest.getMainChargeCodeId());
+                subInvestigation.setMainChargeCodeId(mmcc.get());
+                Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(subRequest.getSubChargeCodeId());
+                subInvestigation.setSubChargeCodeId(mscc.get());
+                Optional<DgMasSample> dms = sampleRepo.findById(subRequest.getSampleId());
+                subInvestigation.setSampleId(dms.get());
+                Optional<DgUom> du = uomRepo.findById(subRequest.getUomId());
+                subInvestigation.setUomId(du.get());
                 subInvestigation.setInvestigationId(updatedInvestigation);
                 subList.add(subInvestigation);
             }
@@ -412,14 +380,8 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             for(DgFixedValueRequest fixedRequest : fixedRequests){
                 DgFixedValue fixedValue = new DgFixedValue();
                 fixedValue.setFixedValue(fixedRequest.getFixedValue());
-                if(fixedRequest.getSubChargeCodeId() != null) {
-                    Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(fixedRequest.getSubChargeCodeId());
-                    if (mscc.isPresent()){
-                        fixedValue.setSubChargeCodeId(mscc.get());
-                    } else {
-                        return ResponseUtils.createNotFoundResponse("subChargeCodeId not found", 404);
-                    }
-                }
+                Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(fixedRequest.getSubChargeCodeId());
+                fixedValue.setSubChargeCodeId(mscc.get());
                 fixedList.add(fixedValue);
             }
 
@@ -437,22 +399,10 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 normalValue.setMinNormalValue(normalRequest.getMinNormalValue());
                 normalValue.setMaxNormalValue(normalRequest.getMaxNormalValue());
                 normalValue.setNormalValue(normalRequest.getNormalValue());
-                if(normalRequest.getSubInvestigationId() != null) {
-                    Optional<DgSubMasInvestigation> dsmi = subInvestigationRepo.findById(normalRequest.getSubInvestigationId());
-                    if (dsmi.isPresent()) {
-                        normalValue.setSubInvestigationId(dsmi.get());
-                    } else {
-                        return ResponseUtils.createNotFoundResponse("subInvestigationId not found", 404);
-                    }
-                }
-                if(normalRequest.getMainChargeCodeId() != null) {
-                    Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(normalRequest.getMainChargeCodeId());
-                    if (mmcc.isPresent()) {
-                        normalValue.setMainChargeCodeId(mmcc.get());
-                    } else {
-                        return ResponseUtils.createNotFoundResponse("mainChargeCodeId not found", 404);
-                    }
-                }
+                Optional<DgSubMasInvestigation> dsmi = subInvestigationRepo.findById(normalRequest.getSubInvestigationId());
+                normalValue.setSubInvestigationId(dsmi.get());
+                Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(normalRequest.getMainChargeCodeId());
+                normalValue.setMainChargeCodeId(mmcc.get());
                 normalList.add(normalValue);
             }
 
