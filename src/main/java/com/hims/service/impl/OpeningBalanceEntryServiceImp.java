@@ -236,10 +236,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
     @Override
     public List<OpeningBalanceEntryResponse> getListByStatus(List<String>  statusList, Long hospitalId, Long departmentId) {
-
-
         List<StoreBalanceHd> hdList = hdRepo.findByStatusInAndHospitalIdIdAndDepartmentIdId(statusList, hospitalId, departmentId);
-
         return hdList.stream()
                 .map(hd -> {
                     List<StoreBalanceDt> dtList = dtRepo.findByBalanceMId(hd);

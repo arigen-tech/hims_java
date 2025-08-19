@@ -15,9 +15,9 @@ import java.util.Arrays;
 import java.util.List;
 
 @RestController
-@Tag(name = "OpeningBalanceEntryController")
+@Tag(name = "DispensaryController")
 @RequestMapping("/openingBalanceEntry")
-public class OpeningBalanceEntryController {
+public class DispensaryController {
     @Autowired
     private OpeningBalanceEntryService openingBalanceEntryService;
     @Autowired
@@ -97,28 +97,33 @@ public class OpeningBalanceEntryController {
     public ResponseEntity<ApiResponse<String>> createPhysicalStock(@RequestBody StoreStockTakingMRequest storeStockTakingM) {
         return new ResponseEntity<>(physicalBatchStockService.createPhysicalStock(storeStockTakingM), HttpStatus.CREATED);
     }
-
     @GetMapping("/listPhysical/{status}/{hospitalId}/{departmentId}")
     public ResponseEntity<List<StoreStockTakingMResponse>> getListByStatusPhysical(@PathVariable String status,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
-
         List<String> statusList = Arrays.asList(status.split(","));
         List<StoreStockTakingMResponse> responseList = physicalBatchStockService.getListByStatusPhysical(statusList, hospitalId, departmentId);
         return ResponseEntity.ok(responseList);
 
     }
-
     @PutMapping("/updateStatusPhysicalById/{id}/{status}")
     public ResponseEntity<ApiResponse<String>> updateStatusPhysicalById(@PathVariable Long id, @PathVariable String status) {
         return ResponseEntity.ok(physicalBatchStockService.updateByStatus(id,status));
 
     }
-
     @PutMapping("/updatePhysicalById/{id}")
     public ResponseEntity<ApiResponse<String>> updatePhysicalById(@PathVariable Long id, @RequestBody StoreStockTakingMRequest storeStockTakingMRequest) {
         return ResponseEntity.ok(physicalBatchStockService.updatePhysicalById(id,storeStockTakingMRequest));
     }
+
     @PutMapping("/approvedPhysical")
     public ResponseEntity<ApiResponse<String>> approvedPhysical(@RequestBody StoreStockTakingMRequest2 request) {
         return new ResponseEntity<>(physicalBatchStockService.approvedPhysical(request),HttpStatus.CREATED);
     }
+
+    // ===========================   Indent  ================================
+
+
+
+
+
+
 }
