@@ -1,9 +1,6 @@
 package com.hims.response;
 
-import com.hims.entity.DgMasSample;
-import com.hims.entity.DgUom;
-import com.hims.entity.MasMainChargeCode;
-import com.hims.entity.MasSubChargeCode;
+import com.hims.entity.*;
 import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,6 +10,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -54,7 +52,9 @@ public class DgMasInvestigationResponse {
     private String genderApplicable;
     private String discount;
     private Double price;
-
+    private List<DgSubMasInvestigationResponse> subInvestigationResponseList;
+    private List<DgFixedValueResponse> fixedValueResponseList;
+    private List<DgNormalValueResponse> normalValueResponseList;
 }
 
 

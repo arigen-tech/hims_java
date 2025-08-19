@@ -14,4 +14,11 @@ public interface DgMasInvestigationService {
 
     @Transactional(rollbackFor = {Exception.class})
     public ApiResponse<DgMasInvestigationResponse> createInvestigation(DgMasInvestigationRequest investigationRequest);
+
+    @Transactional(rollbackFor = {Exception.class})
+    public ApiResponse<DgMasInvestigationResponse> updateSingleInvestigation(Long investigationId, DgMasInvestigationRequest investigationRequest);
+
+    @Transactional(rollbackFor = {Exception.class})
+    public ApiResponse <DgMasInvestigationResponse> updateMultipleInvestigation(Long investigationId, DgMasInvestigationRequest investigationRequest);
+
 }

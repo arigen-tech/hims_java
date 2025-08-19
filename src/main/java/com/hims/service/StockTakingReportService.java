@@ -7,5 +7,5 @@ import java.util.Map;
 
 public interface StockTakingReportService {
     byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception;
-    ResponseEntity<byte[]> generateStockTaking(Long hospitalId, Long takingMId);
+    ResponseEntity<byte[]> generateStockTaking(Long takingMId);
 }

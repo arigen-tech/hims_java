@@ -99,17 +99,17 @@ public class ReportController {
 
     @GetMapping(value = "/stockTakingReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateStockTakingReportPdf(
-            @RequestParam Long hospitalId,
             @RequestParam Long takingMId) {
-        return stockTakingReportService.generateStockTaking(hospitalId, takingMId);
+        return stockTakingReportService.generateStockTaking(takingMId);
     }
 
     @GetMapping(value = "/drugExpiryReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateDrugExpiryReportPdf(
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
+            @RequestParam Long itemId,
             @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
             @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate) {
-        return expiryService.generateDrugExpiryReport(hospitalId, departmentId, fromDate, toDate);
+        return expiryService.generateDrugExpiryReport(hospitalId, departmentId, itemId, fromDate, toDate);
     }
 }

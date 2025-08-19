@@ -2,8 +2,10 @@ package com.hims.service.impl;
 
 import com.hims.entity.MasDepartment;
 import com.hims.entity.MasHospital;
+import com.hims.entity.MasStoreItem;
 import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasHospitalRepository;
+import com.hims.entity.repository.MasStoreItemRepository;
 import com.hims.service.DrugExpiryReportService;
 import net.sf.jasperreports.engine.*;
 import org.slf4j.Logger;
@@ -34,6 +36,9 @@ public class DrugExpiryReportServiceImpl implements DrugExpiryReportService {
     @Autowired
     private MasDepartmentRepository deptRepo;
 
+    @Autowired
+    private MasStoreItemRepository itemRepo;
+
     private String path = "src/main/resources/Assets/arigen_health.png";
 
     @Override
@@ -48,17 +53,20 @@ public class DrugExpiryReportServiceImpl implements DrugExpiryReportService {
     }
 
     @Override
-    public ResponseEntity<byte[]> generateDrugExpiryReport(Long hospitalId, Long departmentId, Date fromDate, Date toDate) {
+    public ResponseEntity<byte[]> generateDrugExpiryReport(Long hospitalId, Long departmentId, Long itemId, Date fromDate, Date toDate) {
         try {
             MasHospital hospital = (hospitalId != null) ? hospitalRepo.findById(hospitalId).orElse(null) : null;
             MasDepartment department = (departmentId != null) ? deptRepo.findById(departmentId).orElse(null) : null;
+            MasStoreItem item = (itemId != null) ? itemRepo.findById(itemId).orElse(null) : null;
 
             Long safeHospitalId = (hospital != null) ? hospital.getId() : (hospitalId != null ? hospitalId : 0L);
             Long safeDepartmentId = (department != null) ? department.getId() : (departmentId != null ? departmentId : 0L);
+            Long safeItemId = (item != null) ? item.getItemId() : (itemId != null ? itemId : 0L);
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("HOSPITAL_ID", safeHospitalId);
             parameters.put("DEPARTMENT_ID", safeDepartmentId);
+            parameters.put("ITEM_ID", safeItemId);
             parameters.put("FromDate", fromDate);
             parameters.put("ToDate", toDate);
             parameters.put("path", path);

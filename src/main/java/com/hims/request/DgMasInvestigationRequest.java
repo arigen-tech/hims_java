@@ -3,6 +3,8 @@ package com.hims.request;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Setter
 @Getter
 public class DgMasInvestigationRequest {
@@ -32,4 +34,7 @@ public class DgMasInvestigationRequest {
     private String genderApplicable;
     private String discount;
     private Double price;
+    private List<DgSubMasInvestigationRequest> subMasInvestigationRequestlist;
+    private List<DgFixedValueRequest> fixedValueRequestList;
+    private List<DgNormalValueRequest> normalValueRequestList;
 }

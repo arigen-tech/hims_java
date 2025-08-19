@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Data
@@ -15,85 +16,40 @@ public class DgSampleCollectionDetails {
     @Column(name = "sample_collection_details_id")
     private Long sampleCollectionDetailsId;
 
-    @Column(name = "collected", length = 1)
-    private String collected;
-
-    @Column(name = "order_status", length = 1)
-    private String orderStatus;
-
-    @Column(name = "remarks", length = 100)
-    private String remarks;
-
-    @Column(name = "last_chg_by", length = 12)
-    private String lastChgBy;
-
-    @Column(name = "last_chg_time", length = 10)
-    private String lastChgTime;
-
-    @Column(name = "last_chg_date")
-    private LocalDate lastChgDate;
-
-    @Column(name = "sample_no", length = 30)
-    private String sampleNo;
-
-    @Column(name = "validated", length = 1)
-    private String validated;
-
-    @Column(name = "reason", length = 45)
-    private String reason;
-
-    @Column(name = "diag_no", length = 30)
-    private String diagNo;
-
-    @Column(name = "sample_coll_datetime")
-    private LocalDate sampleCollDatetime;
-
-    @Column(name = "quantity", length = 10)
-    private String quantity;
-
-    @Column(name = "rejected", length = 1)
-    private String rejected;
-
-    @Column(name = "subcharge")
-    private Integer subcharge;
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sample_collection_header_id")
     private DgSampleCollectionHeader sampleCollectionHeaderId;
-
-    @Column(name = "maincharge")
-    private Integer maincharge;
-
-    @Column(name = "charge_code_id")
-    private  Long chargeCodeId;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "sample_id")
-    private DgMasSample sampleId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "investigation_id")
     private DgMasInvestigation investigationId;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "sample_id")
+    private DgMasSample sampleId;
+
+    @Column(name = "sample_order_status", length = 1)
+    private String orderStatus;
+
+    @Column(name = "collection_time")
+    private LocalTime sampleCollDatetime;
+
     @Column(name = "collected_by")
     private Integer collectedBy;
+    @Column(name = "quantity", length = 10)
+    private String quantity;
 
-    @Column(name = "orderdt_id")
-    private Integer orderdtId;
+    @Column(name = "rejected_reason", length = 200)
+    private String rejected_reason;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "main_chargecode_id")
-    private MasMainChargeCode mainChargecodeId;
+    @Column(name = "validated", length = 1)
+    private String validated;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "sub_chargecode_id")
-    private MasSubChargeCode subChargecodeId;
+    @Column(name = "result_status", length = 1)
+    private String result_status;
 
-    @Column(name = "collection_id")
-    private Long collectionId;
-
-    @Column(name = "collection_center_id")
-    private Long collectionCenterId;
+    @Column(name = "remarks", length = 500)
+    private String remarks;
 
     @Column(name = "empanelled_status", length = 1)
     private String empanelledStatus;

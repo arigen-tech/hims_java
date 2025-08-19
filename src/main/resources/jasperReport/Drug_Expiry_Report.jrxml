@@ -5,6 +5,8 @@
 	<property name="ireport.encoding" value="UTF-8"/>
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="0"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="1000"/>
 	<import value="net.sf.jasperreports.engine.*"/>
 	<import value="java.util.*"/>
 	<import value="net.sf.jasperreports.engine.data.*"/>
@@ -23,10 +25,12 @@
 	<parameter name="ToDate" class="java.util.Date">
 		<defaultValueExpression><![CDATA[new java.util.Date()]]></defaultValueExpression>
 	</parameter>
+	<parameter name="ITEM_ID" class="java.lang.Long"/>
 	<queryString>
 		<![CDATA[select 
 concat(mas_hospital.hospital_name || '-' || mas_hospital.address) as hospital_name_address,
 mas_department.department_name,
+store_item_batch_stock.item_id,
 mas_store_item.pvms_no,
 mas_store_item.nomenclature,
 mas_store_unit.unit_name,
@@ -40,11 +44,13 @@ left join mas_department on store_item_batch_stock.department_id = mas_departmen
 left join mas_hospital on store_item_batch_stock.hospital_id = mas_hospital.hospital_id
 where (store_item_batch_stock.department_id = $P{DEPARTMENT_ID} or $P{DEPARTMENT_ID} = 0)
 and (store_item_batch_stock.hospital_id = $P{HOSPITAL_ID} or $P{HOSPITAL_ID} = 0)
+and (store_item_batch_stock.item_id = $P{ITEM_ID} or $P{ITEM_ID} = 0)
 and store_item_batch_stock.expiry_date between $P{FromDate} and $P{ToDate}
 group by
 mas_hospital.hospital_name,
 mas_hospital.address,
 mas_department.department_name,
+store_item_batch_stock.item_id,
 mas_store_item.pvms_no,
 mas_store_item.nomenclature,
 mas_store_unit.unit_name,
@@ -54,7 +60,8 @@ store_item_batch_stock.closing_stock
 order by
 mas_hospital.hospital_name,
 mas_store_item.nomenclature,
-store_item_batch_stock.expiry_date]]>
+store_item_batch_stock.expiry_date,
+store_item_batch_stock.item_id]]>
 	</queryString>
 	<field name="hospital_name_address" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="hospital_name_address"/>
@@ -64,6 +71,11 @@ store_item_batch_stock.expiry_date]]>
 		<property name="com.jaspersoft.studio.field.name" value="department_name"/>
 		<property name="com.jaspersoft.studio.field.label" value="department_name"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="mas_department"/>
+	</field>
+	<field name="item_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="item_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="item_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_item_batch_stock"/>
 	</field>
 	<field name="pvms_no" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="pvms_no"/>
