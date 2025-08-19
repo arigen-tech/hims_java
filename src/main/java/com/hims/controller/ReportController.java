@@ -108,8 +108,9 @@ public class ReportController {
     public ResponseEntity<byte[]> generateDrugExpiryReportPdf(
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
+            @RequestParam Long itemId,
             @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
             @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate) {
-        return expiryService.generateDrugExpiryReport(hospitalId, departmentId, fromDate, toDate);
+        return expiryService.generateDrugExpiryReport(hospitalId, departmentId, itemId, fromDate, toDate);
     }
 }

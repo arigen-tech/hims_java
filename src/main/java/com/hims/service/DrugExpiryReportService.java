@@ -8,5 +8,5 @@ import java.util.Map;
 
 public interface DrugExpiryReportService {
     byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception;
-    ResponseEntity<byte[]> generateDrugExpiryReport(Long hospitalId, Long departmentId, Date fromDate, Date toDate);
+    ResponseEntity<byte[]> generateDrugExpiryReport(Long hospitalId, Long departmentId, Long itemId, Date fromDate, Date toDate);
 }
