@@ -33,6 +33,8 @@ public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> {
    List<DgOrderDt> findByStatus(@Param("billHdId") long billHdId);
 
     List<DgOrderDt> findByOrderhdIdAndBillingStatusAndOrderStatus(DgOrderHd orderhdId, String billingStatus, String orderStatus);
+
+    List<DgOrderDt> findByOrderhdIdId(int orderHdId);
 //SELECT b FROM DgOrderDt b WHERE b.billingHd.id = :billHdId AND b.billingStatus = 'y'
 
 }
