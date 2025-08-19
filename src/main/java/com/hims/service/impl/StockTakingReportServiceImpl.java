@@ -54,17 +54,14 @@ public class StockTakingReportServiceImpl implements StockTakingReportService {
     }
 
     @Override
-    public ResponseEntity<byte[]> generateStockTaking(Long hospitalId, Long takingMId) {
+    public ResponseEntity<byte[]> generateStockTaking(Long takingMId) {
         try{
-            MasHospital hospital = (hospitalId != null) ? hospitalRepo.findById(hospitalId).orElse(null) : null;
             StoreStockTakingM takingM = (takingMId != null) ? storeStockTakingMRepo.findById(takingMId).orElse(null) : null;
             List<StoreStockTakingT> takingTList = (takingM != null) ? storeStockTakingTRepo.findByTakingMId(takingM) : Collections.emptyList();
 
-            Long safeHospitalId = (hospital != null) ? hospital.getId() : (hospitalId != null ? hospitalId : 0L);
             Long safeTakingMId = (takingM != null) ? takingM.getTakingMId() : (takingMId != null ? takingMId : 0l);
 
             Map<String, Object> parameters = new HashMap<>();
-            parameters.put("HOSPITAL_ID", safeHospitalId);
             parameters.put("TAKING_M_ID", safeTakingMId);
             parameters.put("path", path);
 

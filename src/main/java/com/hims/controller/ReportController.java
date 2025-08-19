@@ -99,9 +99,8 @@ public class ReportController {
 
     @GetMapping(value = "/stockTakingReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateStockTakingReportPdf(
-            @RequestParam Long hospitalId,
             @RequestParam Long takingMId) {
-        return stockTakingReportService.generateStockTaking(hospitalId, takingMId);
+        return stockTakingReportService.generateStockTaking(takingMId);
     }
 
     @GetMapping(value = "/drugExpiryReport", produces = MediaType.APPLICATION_PDF_VALUE)
