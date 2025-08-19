@@ -16,6 +16,8 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
     Optional<DgOrderHd> findTopByOrderByIdDesc();
 
     List<DgOrderHd> findByPaymentStatusIn(List<String> paymentStatuses);
+
+    List<DgOrderHd> findByPaymentStatusInAndOrderStatus(List<String> paymentStatuses, String orderStatusFilter);
 }
 
 

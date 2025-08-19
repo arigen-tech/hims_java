@@ -616,16 +616,23 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             throw new IllegalArgumentException("Current department ID is null");
         }
 
+        // Include both 'p' and 'y' payment statuses
         List<String> paymentStatuses = Arrays.asList("p", "y");
-        List<DgOrderHd> orderHdList = labHdRepository.findByPaymentStatusIn(paymentStatuses);
+        String orderStatusFilter = "n";
+
+        // Fetch only records matching both filters in DB
+        List<DgOrderHd> orderHdList = labHdRepository
+                .findByPaymentStatusInAndOrderStatus(paymentStatuses, orderStatusFilter);
+
         List<PendingSampleResponse> responseList = new ArrayList<>();
 
         MasDepartment department = masDepartmentRepository.findById(departmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid department ID: " + departmentId));
 
         for (DgOrderHd orderHd : orderHdList) {
-            List<DgOrderDt> orderDtList = labDtRepository.findByOrderhdIdAndBillingStatusAndOrderStatus(
-                    orderHd, "y", orderHd.getOrderStatus().toLowerCase());
+            // Filter details by billingStatus (y) and orderStatus (n)
+            List<DgOrderDt> orderDtList = labDtRepository
+                    .findByOrderhdIdAndBillingStatusAndOrderStatus(orderHd, "y", "n");
 
             for (DgOrderDt orderDt : orderDtList) {
                 Patient patient = orderHd.getPatientId();
@@ -634,10 +641,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
                 PendingSampleResponse response = new PendingSampleResponse();
                 response.setReqDate(orderHd.getOrderDate());
-
-                response.setVistId(
-                        visit != null ? visit.getId() : Long.valueOf("")
-                );
+                response.setVistId(visit != null ? visit.getId() : null);
 
                 response.setPatientName(
                         patient != null
@@ -665,57 +669,55 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                                 : ""
                 );
 
-                response.setMobile(
-                        patient != null ? patient.getPatientMobileNumber() : ""
-                );
-
+                response.setMobile(patient != null ? patient.getPatientMobileNumber() : "");
                 response.setDepartment(department.getDepartmentName());
+                response.setDoctorName(visit != null ? visit.getDoctorName() : "");
+                response.setOrderhdId(Long.valueOf(orderHd.getId()));
+                response.setOrderNo(orderHd.getOrderNo());
 
-                response.setDoctorName(
-                        visit != null ? visit.getDoctorName() : ""
-                );
-                response.setOrderhdId(
-                        orderHd != null ? orderHd.getId() : Long.valueOf("")
-                );
-                response.setOrderNo(
-                      orderHd != null ? orderHd.getOrderNo() : " "
-                );
-
-                response.setInvestigation(
-                        investigation != null ? investigation.getInvestigationName() : ""
-                );
-                response.setInvestigationId(
-                        investigation != null ? investigation.getInvestigationId(): Long.valueOf("")
-                );
+                response.setInvestigation(investigation != null ? investigation.getInvestigationName() : "");
+                response.setInvestigationId(investigation != null ? investigation.getInvestigationId() : null);
 
                 response.setSample(
-                        investigation != null &&
-                                investigation.getSampleId() != null &&
-                                investigation.getSampleId().getSampleDescription() != null
+                        investigation != null && investigation.getSampleId() != null
                                 ? investigation.getSampleId().getSampleDescription()
                                 : ""
                 );
 
+                response.setSampleId(
+                        investigation != null && investigation.getSampleId() != null
+                                ? investigation.getSampleId().getId()
+                                : null
+                );
+
+                response.setMainChargcodeId(
+                        investigation != null && investigation.getMainChargeCodeId() != null
+                                ? investigation.getMainChargeCodeId().getChargecodeId()
+                                : null
+                );
+
                 response.setCollection(
-                        investigation != null &&
-                                investigation.getCollectionId() != null &&
-                                investigation.getCollectionId().getCollectionName() != null
+                        investigation != null && investigation.getCollectionId() != null
                                 ? investigation.getCollectionId().getCollectionName()
                                 : ""
                 );
+
+                response.setCollectionId(
+                        investigation != null && investigation.getCollectionId() != null
+                                ? investigation.getCollectionId().getCollectionId()
+                                : null
+                );
+
                 response.setSubChargeCode(
-                        investigation != null &&
-                                investigation.getSubChargeCodeId() != null &&
-                                investigation.getSubChargeCodeId().getSubName() != null
+                        investigation != null && investigation.getSubChargeCodeId() != null
                                 ? investigation.getSubChargeCodeId().getSubName()
                                 : ""
                 );
+
                 response.setSubChargeCodeId(
-                        investigation != null &&
-                                investigation.getSubChargeCodeId() != null &&
-                                investigation.getSubChargeCodeId().getSubId() != null
+                        investigation != null && investigation.getSubChargeCodeId() != null
                                 ? investigation.getSubChargeCodeId().getSubId()
-                                : Long.valueOf("")
+                                : null
                 );
 
                 responseList.add(response);
@@ -723,6 +725,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         }
         return responseList;
     }
+
+
+
 
     @Override
     @Transactional

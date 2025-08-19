@@ -25,10 +25,13 @@ public class PendingSampleResponse {
     private Long investigationId;
     private String investigation;
     private String sample;
-    private String collection;  // ✅ Changed from equipment
+    private String collection;
     private String subChargeCode;
     private Long subChargeCodeId;
     private String orderNo;
+    private Long sampleId;
+    private Long mainChargcodeId;
+    private Long collectionId;
 
 
 
