@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -54,7 +55,7 @@ public class DgSampleCollectionHeader {
     private String collection_by;
 
     @Column(name = "collection_time")
-    private LocalTime collection_time;
+    private LocalDateTime collection_time;
 
 
     @Column(name = "validation_date")
@@ -76,8 +77,8 @@ public class DgSampleCollectionHeader {
     private String lastChgBy;
 
     @Column(name = "last_chg_time")
-    private LocalTime lastChgTime;
+    private LocalDateTime lastChgTime;
 
     @Column(name = "last_chg_date")
-    private LocalDate lastChgDate;
+    private LocalDateTime lastChgDate;
 }

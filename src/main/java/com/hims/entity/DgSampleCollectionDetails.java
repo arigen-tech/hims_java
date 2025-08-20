@@ -3,7 +3,9 @@ package com.hims.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -32,12 +34,14 @@ public class DgSampleCollectionDetails {
     private String orderStatus;
 
     @Column(name = "collection_time")
-    private LocalTime sampleCollDatetime;
+    private LocalDateTime sampleCollDatetime;
 
     @Column(name = "collected_by")
     private Integer collectedBy;
+
     @Column(name = "quantity", length = 10)
-    private String quantity;
+    private BigDecimal quantity;
+
 
     @Column(name = "rejected_reason", length = 200)
     private String rejected_reason;

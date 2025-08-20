@@ -24,10 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import static com.hims.helperUtil.ConverterUtils.ageCalculator;
@@ -772,16 +769,20 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 header.setDepartmentId(depObj.get());
                 String fName = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
                 header.setLastChgBy(fName);
-                header.setSample_order_status("Pending");
-                header.setLastChgDate(LocalDate.now());
-                header.setLastChgTime(LocalTime.now());
+//                header.setSample_order_status("Pending");
+                header.setLastChgDate(LocalDateTime.now());
+                header.setLastChgTime(LocalDateTime.now());
                 header.setHospitalId(currentUser.getHospital());
                 Optional<MasSubChargeCode> masSubChargeCode = masSubChargeCodeRepository.findById((long) subChargeCodeId);
                 header.setSubChargeCode(masSubChargeCode.isPresent()?masSubChargeCode.get():null);
-                header.setPriority("Routine");
+//                header.setPriority("Routine");
                 header.setCollection_by(fName);
-                header.setCollection_time(LocalTime.now());
+                header.setCollection_time(LocalDateTime.now());
                 header.setResult_entry_status("p");
+                header.setSample_order_status("p");   // p = Pending
+                header.setPriority("r");              // r = Routine
+//                header.setResult_entry_status("p");   // p = Pending
+
                 dgSampleCollectionHeaderRepository.save(header);
 
 
@@ -812,7 +813,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     detail.setSampleCollectionHeaderId(header);
                     detail.setRemarks(detailReq.getRemarks());
                     detail.setOrderStatus("n");/// what??
-                    detail.setSampleCollDatetime(LocalTime.now());
+                    detail.setSampleCollDatetime(LocalDateTime.now());
                    // collected_by
                     //quantity
                     //rejected_reason
@@ -840,13 +841,13 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     break;
                 }
             }
-            DgOrderHd hdorderObj =new DgOrderHd();
-            if(oderStatusFully){
-                hdorderObj.setOrderStatus("y");
-            }else if(oderStatusFullypartial){
-                hdorderObj.setOrderStatus("n");
-            }
-            labHdRepository.save(hdorderObj);
+//            DgOrderHd hdorderObj =new DgOrderHd();
+//            if(oderStatusFully){
+//                hdorderObj.setOrderStatus("y");
+//            }else if(oderStatusFullypartial){
+//                hdorderObj.setOrderStatus("n");
+//            }
+//            labHdRepository.save(hdorderObj);
 
         }
         catch (SDDException e) {
@@ -860,4 +861,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
 
     }
+
+
 }
