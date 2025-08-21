@@ -2,6 +2,7 @@ package com.hims.controller;
 
 import com.hims.request.*;
 import com.hims.response.*;
+import com.hims.service.IndentService;
 import com.hims.service.OpeningBalanceEntryService;
 import com.hims.service.PhysicalBatchStockService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,6 +23,8 @@ public class DispensaryController {
     private OpeningBalanceEntryService openingBalanceEntryService;
     @Autowired
     private PhysicalBatchStockService physicalBatchStockService;
+    @Autowired
+    private IndentService indentService;
 
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> addOpeningBalanceEntry(@RequestBody OpeningBalanceEntryRequest openingBalanceEntryRequest) {
@@ -122,7 +125,10 @@ public class DispensaryController {
     // ===========================   Indent  ================================
 
 
-
+    @PostMapping("/createIndent")
+    public ResponseEntity<ApiResponse<String>> createIndent(@RequestBody IndentRequest indentRequest) {
+        return new ResponseEntity<>(indentService.createIndent(indentRequest), HttpStatus.CREATED);
+    }
 
 
 
