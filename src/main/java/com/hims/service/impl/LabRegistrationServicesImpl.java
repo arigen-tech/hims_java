@@ -850,16 +850,11 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
                 if (oderStatusFully) {
                     hdorderObj.setOrderStatus("y");  // fully completed
-                } else if (oderStatusFullypartial) {
-                    hdorderObj.setOrderStatus("p");  // partially completed
                 } else {
-                    hdorderObj.setOrderStatus("n");  // still pending
+                    hdorderObj.setOrderStatus("n");  // partially completed
                 }
-
                 labHdRepository.save(hdorderObj);
             }
-
-
         }
         catch (SDDException e) {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
