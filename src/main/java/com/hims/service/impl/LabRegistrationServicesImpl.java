@@ -841,13 +841,24 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     break;
                 }
             }
-//            DgOrderHd hdorderObj =new DgOrderHd();
-//            if(oderStatusFully){
-//                hdorderObj.setOrderStatus("y");
-//            }else if(oderStatusFullypartial){
-//                hdorderObj.setOrderStatus("n");
-//            }
-//            labHdRepository.save(hdorderObj);
+
+// 🔍 Fetch order header again by ID
+            Optional<DgOrderHd> dgOrderHdOpt = labHdRepository.findById(sampleReq.getOrderHdId());
+
+            if (dgOrderHdOpt.isPresent()) {
+                DgOrderHd hdorderObj = dgOrderHdOpt.get();
+
+                if (oderStatusFully) {
+                    hdorderObj.setOrderStatus("y");  // fully completed
+                } else if (oderStatusFullypartial) {
+                    hdorderObj.setOrderStatus("p");  // partially completed
+                } else {
+                    hdorderObj.setOrderStatus("n");  // still pending
+                }
+
+                labHdRepository.save(hdorderObj);
+            }
+
 
         }
         catch (SDDException e) {
