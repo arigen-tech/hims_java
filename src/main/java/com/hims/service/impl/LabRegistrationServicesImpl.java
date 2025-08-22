@@ -829,10 +829,11 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             for (DgOrderDt d : orderDetails) {
                 for (SampleCollectionInvestigationReq req : sampleReq.getSampleCollectionReq()) {
                     if (d.getInvestigationId() != null &&
-                            d.getInvestigationId().getInvestigationId() == req.getInvestigationId() &&
+                            d.getInvestigationId().getInvestigationId()==(req.getInvestigationId()) &&
                             "y".equals(d.getBillingStatus())) {
-                             d.setOrderStatus("y");
-                            labDtRepository.save(d);
+                        d.setOrderStatus("y");
+                        labDtRepository.save(d);
+
                     }
                 }
                 if (d.getOrderStatus().equalsIgnoreCase("n")) {

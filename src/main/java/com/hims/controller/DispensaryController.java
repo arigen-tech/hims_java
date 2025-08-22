@@ -128,6 +128,11 @@ public class DispensaryController {
     @PostMapping("/createIndent")
     public ResponseEntity<ApiResponse<String>> createIndent(@RequestBody IndentRequest indentRequest) {
         return new ResponseEntity<>(indentService.createIndent(indentRequest), HttpStatus.CREATED);
+
+    }
+    @GetMapping("/getIndent/{id}")
+    public ResponseEntity<ApiResponse<String>> getIndent(@PathVariable Long id){
+        return ResponseEntity.ok(indentService.getIndent(id));
     }
 
 
