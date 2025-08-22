@@ -724,150 +724,292 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
 
 
-    @Override
-    @Transactional
-    public ApiResponse<AppsetupResponse>  savesample(SampleCollectionRequest sampleReq) {
-        AppsetupResponse res = new AppsetupResponse();
-        try {
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                        },
-                        "HospitalId not found", HttpStatus.UNAUTHORIZED.value());
-            }
-            Long departmentId = authUtil.getCurrentDepartmentId();
-            if (departmentId == null) {
-                return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
-                        },
-                        "Current department ID not found", HttpStatus.BAD_REQUEST.value());
-            }
-
-            Map<Integer, List<SampleCollectionInvestigationReq>> groupedData =
-                    sampleReq.getSampleCollectionReq().stream()
-                            .collect(Collectors.groupingBy(SampleCollectionInvestigationReq::getSubChargeCodeId));
-
-            for (Map.Entry<Integer, List<SampleCollectionInvestigationReq>> entry : groupedData.entrySet()) {
-                Integer subChargeCodeId = entry.getKey();
-                List<SampleCollectionInvestigationReq> detailsList = entry.getValue();
-
-                // Save Header data
-                DgSampleCollectionHeader header = new DgSampleCollectionHeader();
-                //  header.setPatientType(sampleReq.getPatientType());
-                Optional<Visit> visit = visitRepository.findById((long) sampleReq.getVisitId());
-                if (visit.isEmpty()) {
-                    return ResponseUtils.createNotFoundResponse("visit not found", 404);
-                }
-                header.setVisitId(visit.get());
-                header.setPatient_id(visit.get().getPatient());
-                Optional<DgOrderHd> dgOrderHd = labHdRepository.findById(sampleReq.getOrderHdId());
-                if (dgOrderHd.isEmpty()) {
-                    return ResponseUtils.createNotFoundResponse("DgOrderHd not found", 404);
-                }
-                //header.setOrderHdId(dgOrderHd.get());
-                header.setHospitalId(currentUser.getHospital());
-                Optional<MasDepartment> depObj = masDepartmentRepository.findById(departmentId);
-                header.setDepartmentId(depObj.get());
-                String fName = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
-                header.setLastChgBy(fName);
-//                header.setSample_order_status("Pending");
-                header.setLastChgDate(LocalDateTime.now());
-                header.setLastChgTime(LocalDateTime.now());
-                header.setHospitalId(currentUser.getHospital());
-                Optional<MasSubChargeCode> masSubChargeCode = masSubChargeCodeRepository.findById((long) subChargeCodeId);
-                header.setSubChargeCode(masSubChargeCode.isPresent()?masSubChargeCode.get():null);
-//                header.setPriority("Routine");
-                header.setCollection_by(fName);
-                header.setCollection_time(LocalDateTime.now());
-                header.setResult_entry_status("p");
-                header.setSample_order_status("p");   // p = Pending
-                header.setPriority("r");              // r = Routine
-//                header.setResult_entry_status("p");   // p = Pending
-
-                dgSampleCollectionHeaderRepository.save(header);
-
-
-                //order_by_department
-               // collection_center_id
-                //collection_center_modified_id
-                //inpatient_id,
-                // validation_date
-
-                //  Save Details data
-                for (SampleCollectionInvestigationReq detailReq : detailsList) {
-                    DgSampleCollectionDetails detail = new DgSampleCollectionDetails();
-                    detail.setRemarks(detailReq.getRemarks());
-
-                    Optional<DgMasInvestigation> masInvestigation = dgMasInvestigationRepository.findById((long) detailReq.getInvestigationId());
+//    @Override
+//    @Transactional
+//    public ApiResponse<AppsetupResponse>  savesample(SampleCollectionRequest sampleReq) {
+//        AppsetupResponse res = new AppsetupResponse();
+//        try {
+//            User currentUser = authUtil.getCurrentUser();
+//            if (currentUser == null) {
+//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+//                        },
+//                        "HospitalId not found", HttpStatus.UNAUTHORIZED.value());
+//            }
+//            Long departmentId = authUtil.getCurrentDepartmentId();
+//            if (departmentId == null) {
+//                return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
+//                        },
+//                        "Current department ID not found", HttpStatus.BAD_REQUEST.value());
+//            }
 //
-                    detail.setInvestigationId(masInvestigation.isPresent()?masInvestigation.get():null);
-                    detail.setEmpanelledStatus(detailReq.getEmpanelledStatus());
-                    Optional<DgMasSample> dgMasSample = dgMasSampleRepository.findById((long) detailReq.getSampleId());
+//            Map<Integer, List<SampleCollectionInvestigationReq>> groupedData =
+//                    sampleReq.getSampleCollectionReq().stream()
+//                            .collect(Collectors.groupingBy(SampleCollectionInvestigationReq::getSubChargeCodeId));
 //
-                    detail.setSampleId(dgMasSample.isPresent()?dgMasSample.get():null);
-                    //Optional<DgMasCollection> dgMasCollection = dgMasCollectionRepository.findById((long) detailReq.getCollectionId());
+//            for (Map.Entry<Integer, List<SampleCollectionInvestigationReq>> entry : groupedData.entrySet()) {
+//                Integer subChargeCodeId = entry.getKey();
+//                List<SampleCollectionInvestigationReq> detailsList = entry.getValue();
 //
-                    //detail.setCollectionId(dgMasCollection.isPresent() ? dgMasCollection.get().getCollectionId():null);
-                    Optional<MasMainChargeCode> masMainChargeCode = masMainChargeCodeRepository.findById((long) detailReq.getMainChargeCodeId());
+//                // Save Header data
+//                DgSampleCollectionHeader header = new DgSampleCollectionHeader();
+//                //  header.setPatientType(sampleReq.getPatientType());
+//                Optional<Visit> visit = visitRepository.findById((long) sampleReq.getVisitId());
+//                if (visit.isEmpty()) {
+//                    return ResponseUtils.createNotFoundResponse("visit not found", 404);
+//                }
+//                header.setVisitId(visit.get());
+//                header.setPatient_id(visit.get().getPatient());
+//                Optional<DgOrderHd> dgOrderHd = labHdRepository.findById(sampleReq.getOrderHdId());
+//                if (dgOrderHd.isEmpty()) {
+//                    return ResponseUtils.createNotFoundResponse("DgOrderHd not found", 404);
+//                }
+//                //header.setOrderHdId(dgOrderHd.get());
+//                header.setHospitalId(currentUser.getHospital());
+//                Optional<MasDepartment> depObj = masDepartmentRepository.findById(departmentId);
+//                header.setDepartmentId(depObj.get());
+//                String fName = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+//                header.setLastChgBy(fName);
+////                header.setSample_order_status("Pending");
+//                header.setLastChgDate(LocalDateTime.now());
+//                header.setLastChgTime(LocalDateTime.now());
+//                header.setHospitalId(currentUser.getHospital());
+//                Optional<MasSubChargeCode> masSubChargeCode = masSubChargeCodeRepository.findById((long) subChargeCodeId);
+//                header.setSubChargeCode(masSubChargeCode.isPresent()?masSubChargeCode.get():null);
+////                header.setPriority("Routine");
+//                header.setCollection_by(fName);
+//                header.setCollection_time(LocalDateTime.now());
+//                header.setResult_entry_status("p");
+//                header.setSample_order_status("p");   // p = Pending
+//                header.setPriority("r");              // r = Routine
+////                header.setResult_entry_status("p");   // p = Pending
 //
-                   // detail.setMainChargecodeId(masMainChargeCode.isPresent() ? masMainChargeCode.get() : null);
-                    detail.setSampleCollectionHeaderId(header);
-                    detail.setRemarks(detailReq.getRemarks());
-                    detail.setOrderStatus("n");/// what??
-                    detail.setSampleCollDatetime(LocalDateTime.now());
-                   // collected_by
-                    //quantity
-                    //rejected_reason
-                    detail.setValidated("n");
-                    detail.setResult_status("p");
-                    detail.setEmpanelledStatus(detailReq.getEmpanelledStatus());
-                    dgSampleCollectionDetailsRepository.save(detail);
-                }
+//                dgSampleCollectionHeaderRepository.save(header);
+//
+//
+//                //order_by_department
+//               // collection_center_id
+//                //collection_center_modified_id
+//                //inpatient_id,
+//                // validation_date
+//
+//                //  Save Details data
+//                for (SampleCollectionInvestigationReq detailReq : detailsList) {
+//                    DgSampleCollectionDetails detail = new DgSampleCollectionDetails();
+//                    detail.setRemarks(detailReq.getRemarks());
+//
+//                    Optional<DgMasInvestigation> masInvestigation = dgMasInvestigationRepository.findById((long) detailReq.getInvestigationId());
+////
+//                    detail.setInvestigationId(masInvestigation.isPresent()?masInvestigation.get():null);
+//                    detail.setEmpanelledStatus(detailReq.getEmpanelledStatus());
+//                    Optional<DgMasSample> dgMasSample = dgMasSampleRepository.findById((long) detailReq.getSampleId());
+////
+//                    detail.setSampleId(dgMasSample.isPresent()?dgMasSample.get():null);
+//                    //Optional<DgMasCollection> dgMasCollection = dgMasCollectionRepository.findById((long) detailReq.getCollectionId());
+////
+//                    //detail.setCollectionId(dgMasCollection.isPresent() ? dgMasCollection.get().getCollectionId():null);
+//                    Optional<MasMainChargeCode> masMainChargeCode = masMainChargeCodeRepository.findById((long) detailReq.getMainChargeCodeId());
+////
+//                   // detail.setMainChargecodeId(masMainChargeCode.isPresent() ? masMainChargeCode.get() : null);
+//                    detail.setSampleCollectionHeaderId(header);
+//                    detail.setRemarks(detailReq.getRemarks());
+//                    detail.setOrderStatus("n");/// what??
+//                    detail.setSampleCollDatetime(LocalDateTime.now());
+//                   // collected_by
+//                    //quantity
+//                    //rejected_reason
+//                    detail.setValidated("n");
+//                    detail.setResult_status("p");
+//                    detail.setEmpanelledStatus(detailReq.getEmpanelledStatus());
+//                    dgSampleCollectionDetailsRepository.save(detail);
+//                }
+//            }
+//            boolean oderStatusFully=true;
+//            boolean oderStatusFullypartial=false;
+//            List<DgOrderDt> orderDetails = labDtRepository.findByOrderhdIdId(sampleReq.getOrderHdId());
+//
+//            for (DgOrderDt d : orderDetails) {
+//                for (SampleCollectionInvestigationReq req : sampleReq.getSampleCollectionReq()) {
+//                    if (d.getInvestigationId() != null &&d.getInvestigationId().getInvestigationId()==(req.getInvestigationId())) {
+//
+//                        if ("y".equalsIgnoreCase(d.getBillingStatus())) {
+//                            d.setOrderStatus("y");
+//                            labDtRepository.save(d);
+//                        }
+//                    }
+//                }
+//                if (d.getOrderStatus().equalsIgnoreCase("n")) {
+//                    oderStatusFully = false;
+//                    oderStatusFullypartial = true;
+//                    break;
+//                }
+//            }
+//
+//// 🔍 Fetch order header again by ID
+//            Optional<DgOrderHd> dgOrderHdOpt = labHdRepository.findById(sampleReq.getOrderHdId());
+//
+//            if (dgOrderHdOpt.isPresent()) {
+//                DgOrderHd hdorderObj = dgOrderHdOpt.get();
+//
+//                if (oderStatusFully) {
+//                    hdorderObj.setOrderStatus("y");  // fully completed
+//                } else {
+//                    hdorderObj.setOrderStatus("n");  // partially completed
+//                }
+//                labHdRepository.save(hdorderObj);
+//            }
+//        }
+//        catch (SDDException e) {
+//            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
+//        }
+//        catch (Exception e) {
+//            e.printStackTrace(); // log exception for debugging
+//            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
+//        }
+//        res.setMsg("Success");
+//        return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
+//
+//    }
+
+
+@Override
+@Transactional
+public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleReq) {
+    AppsetupResponse res = new AppsetupResponse();
+    try {
+        User currentUser = authUtil.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "HospitalId not found", HttpStatus.UNAUTHORIZED.value());
+        }
+        Long departmentId = authUtil.getCurrentDepartmentId();
+        if (departmentId == null) {
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
+                    "Current department ID not found", HttpStatus.BAD_REQUEST.value());
+        }
+
+        Map<Integer, List<SampleCollectionInvestigationReq>> groupedData =
+                sampleReq.getSampleCollectionReq().stream()
+                        .collect(Collectors.groupingBy(SampleCollectionInvestigationReq::getSubChargeCodeId));
+
+        for (Map.Entry<Integer, List<SampleCollectionInvestigationReq>> entry : groupedData.entrySet()) {
+            Integer subChargeCodeId = entry.getKey();
+            List<SampleCollectionInvestigationReq> detailsList = entry.getValue();
+
+            // Save Header data
+            DgSampleCollectionHeader header = new DgSampleCollectionHeader();
+            Optional<Visit> visit = visitRepository.findById((long) sampleReq.getVisitId());
+            if (visit.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("visit not found", 404);
             }
-            boolean oderStatusFully=true;
-            boolean oderStatusFullypartial=false;
-            List<DgOrderDt> orderDetails = labDtRepository.findByOrderhdIdId(sampleReq.getOrderHdId());
-            for (DgOrderDt d : orderDetails) {
-                for (SampleCollectionInvestigationReq req : sampleReq.getSampleCollectionReq()) {
-                    if (d.getInvestigationId() != null &&
-                            d.getInvestigationId().getInvestigationId()==(req.getInvestigationId()) &&
-                            "y".equals(d.getBillingStatus())) {
-                        d.setOrderStatus("y");
-                        labDtRepository.save(d);
-
-                    }
-                }
-                if (d.getOrderStatus().equalsIgnoreCase("n")) {
-                    oderStatusFully = false;
-                    oderStatusFullypartial = true;
-                    break;
-                }
+            header.setVisitId(visit.get());
+            header.setPatient_id(visit.get().getPatient());
+            Optional<DgOrderHd> dgOrderHd = labHdRepository.findById(sampleReq.getOrderHdId());
+            if (dgOrderHd.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("DgOrderHd not found", 404);
             }
 
-// 🔍 Fetch order header again by ID
-            Optional<DgOrderHd> dgOrderHdOpt = labHdRepository.findById(sampleReq.getOrderHdId());
+            header.setHospitalId(currentUser.getHospital());
+            Optional<MasDepartment> depObj = masDepartmentRepository.findById(departmentId);
+            header.setDepartmentId(depObj.get());
+            String fName = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+            header.setLastChgBy(fName);
+            header.setLastChgDate(LocalDateTime.now());
+            header.setLastChgTime(LocalDateTime.now());
+            header.setHospitalId(currentUser.getHospital());
+            Optional<MasSubChargeCode> masSubChargeCode = masSubChargeCodeRepository.findById((long) subChargeCodeId);
+            header.setSubChargeCode(masSubChargeCode.isPresent() ? masSubChargeCode.get() : null);
+            header.setCollection_by(fName);
+            header.setCollection_time(LocalDateTime.now());
+            header.setResult_entry_status("p");
+            header.setSample_order_status("p");   // p = Pending
+            header.setPriority("r");              // r = Routine
 
-            if (dgOrderHdOpt.isPresent()) {
-                DgOrderHd hdorderObj = dgOrderHdOpt.get();
+            dgSampleCollectionHeaderRepository.save(header);
 
-                if (oderStatusFully) {
-                    hdorderObj.setOrderStatus("y");  // fully completed
-                } else {
-                    hdorderObj.setOrderStatus("n");  // partially completed
-                }
-                labHdRepository.save(hdorderObj);
+            // Save Details data
+            for (SampleCollectionInvestigationReq detailReq : detailsList) {
+                DgSampleCollectionDetails detail = new DgSampleCollectionDetails();
+                detail.setRemarks(detailReq.getRemarks());
+
+                Optional<DgMasInvestigation> masInvestigation = dgMasInvestigationRepository.findById((long) detailReq.getInvestigationId());
+                detail.setInvestigationId(masInvestigation.isPresent() ? masInvestigation.get() : null);
+                detail.setEmpanelledStatus(detailReq.getEmpanelledStatus());
+                Optional<DgMasSample> dgMasSample = dgMasSampleRepository.findById((long) detailReq.getSampleId());
+                detail.setSampleId(dgMasSample.isPresent() ? dgMasSample.get() : null);
+
+                Optional<MasMainChargeCode> masMainChargeCode = masMainChargeCodeRepository.findById((long) detailReq.getMainChargeCodeId());
+                detail.setSampleCollectionHeaderId(header);
+                detail.setRemarks(detailReq.getRemarks());
+                detail.setOrderStatus("n");
+                detail.setSampleCollDatetime(LocalDateTime.now());
+                detail.setValidated("n");
+                detail.setResult_status("p");
+                detail.setEmpanelledStatus(detailReq.getEmpanelledStatus());
+                dgSampleCollectionDetailsRepository.save(detail);
             }
         }
-        catch (SDDException e) {
-            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
-        }
-        catch (Exception e) {
-            e.printStackTrace(); // log exception for debugging
-            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
-        }
-        res.setMsg("Success");
-        return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
 
+        // CORRECTED LOGIC: Check order status and update accordingly
+        List<DgOrderDt> orderDetails = labDtRepository.findByOrderhdIdId(sampleReq.getOrderHdId());
+
+        // Create a set of investigation IDs from the request for faster lookup
+        Set<Long> requestedInvestigationIds = sampleReq.getSampleCollectionReq().stream()
+                .map(req -> (long) req.getInvestigationId())
+                .collect(Collectors.toSet());
+
+        // Update order status for matching investigations
+        for (DgOrderDt orderDetail : orderDetails) {
+            if (orderDetail.getInvestigationId() != null &&
+                    requestedInvestigationIds.contains(orderDetail.getInvestigationId().getInvestigationId())) {
+
+                // If billing status is 'y', set order status to 'y'
+                if ("y".equalsIgnoreCase(orderDetail.getBillingStatus())) {
+                    orderDetail.setOrderStatus("y");
+                    labDtRepository.save(orderDetail);
+                }
+            }
+        }
+
+        // Refresh the order details after updates
+        orderDetails = labDtRepository.findByOrderhdIdId(sampleReq.getOrderHdId());
+
+        // Check if all order details are completed
+        boolean allCompleted = true;
+        boolean anyCompleted = false;
+
+        for (DgOrderDt orderDetail : orderDetails) {
+            if ("y".equalsIgnoreCase(orderDetail.getOrderStatus())) {
+                anyCompleted = true;
+            } else {
+                allCompleted = false;
+            }
+        }
+
+        // Update order header status
+        Optional<DgOrderHd> dgOrderHdOpt = labHdRepository.findById(sampleReq.getOrderHdId());
+        if (dgOrderHdOpt.isPresent()) {
+            DgOrderHd hdorderObj = dgOrderHdOpt.get();
+
+            if (allCompleted) {
+                hdorderObj.setOrderStatus("y");  // fully completed
+            } else if (anyCompleted) {
+                hdorderObj.setOrderStatus("p");  // partially completed
+            } else {
+                hdorderObj.setOrderStatus("n");  // not started/pending
+            }
+            labHdRepository.save(hdorderObj);
+        }
+
+    } catch (SDDException e) {
+        return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
+    } catch (Exception e) {
+        e.printStackTrace(); // log exception for debugging
+        return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
     }
+
+    res.setMsg("Success");
+    return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
+}
 
 
 }
