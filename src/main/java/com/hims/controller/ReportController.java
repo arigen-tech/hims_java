@@ -112,4 +112,10 @@ public class ReportController {
             @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate) {
         return expiryService.generateDrugExpiryReport(hospitalId, departmentId, itemId, fromDate, toDate);
     }
+
+    @GetMapping(value = "/indentReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> generateIndentReportPdf(
+            @RequestParam Long indentMId ) {
+        return null;
+    }
 }
