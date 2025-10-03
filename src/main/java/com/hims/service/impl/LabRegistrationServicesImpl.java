@@ -613,11 +613,12 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
         // Include both 'p' and 'y' payment statuses
         List<String> paymentStatuses = Arrays.asList("p", "y");
-        String orderStatusFilter = "n";
+        List<String> orderStatusFilter = Arrays.asList("p", "n");
+//        String orderStatusFilter = "n";
 
         // Fetch only records matching both filters in DB
         List<DgOrderHd> orderHdList = labHdRepository
-                .findByPaymentStatusInAndOrderStatus(paymentStatuses, orderStatusFilter);
+                .findByPaymentStatusInAndOrderStatusIn(paymentStatuses, orderStatusFilter);
 
         List<PendingSampleResponse> responseList = new ArrayList<>();
 
