@@ -944,7 +944,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                 detail.setOrderStatus("n");
                 detail.setSampleCollDatetime(LocalDateTime.now());
                 detail.setValidated("n");
-                detail.setResult_status("p");
+                detail.setResult_status("n");
                 detail.setEmpanelledStatus(detailReq.getEmpanelledStatus());
                 dgSampleCollectionDetailsRepository.save(detail);
             }

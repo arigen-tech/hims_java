@@ -7,16 +7,15 @@ import com.hims.request.SampleCollectionRequest;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
+import com.hims.service.SampleValidationService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -27,6 +26,9 @@ public class LabRegistrationController {
 
     @Autowired
     LabRegistrationServices labRegistrationServices;
+    @Autowired
+    SampleValidationService validationService;
+
 
     @Autowired
     BillingService billingService;
@@ -61,6 +63,11 @@ public class LabRegistrationController {
     @PostMapping("/savesamplecollection")
     public ResponseEntity<ApiResponse<AppsetupResponse>>samplecollectionResponse(@RequestBody SampleCollectionRequest request) {
         return new ResponseEntity<>(labRegistrationServices.savesample(request), HttpStatus.OK);
+    }
+
+    @GetMapping("/patient/{patientId}")
+    public ApiResponse<SampleValidationResponse> getByPatient(@PathVariable Long patientId) {
+        return validationService.getPatientInvestigations(patientId);
     }
 
 
