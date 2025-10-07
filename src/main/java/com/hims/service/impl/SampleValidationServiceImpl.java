@@ -68,9 +68,7 @@ public class SampleValidationServiceImpl implements SampleValidationService {
 
     @Override
     public ApiResponse<List<SampleValidationResponse>> getInvestigationsWithOrderStatusNAndP() {
-
         List<DgSampleCollectionDetails> detailsList = detailsRepo.findAllByHeaderOrderStatusNOrP();
-
         if (detailsList.isEmpty()) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "No investigations found with order status n or p", 404);
@@ -101,7 +99,6 @@ public class SampleValidationServiceImpl implements SampleValidationService {
                             d.getRemarks()
                     )
             ).toList();
-
             responseList.add(new SampleValidationResponse(
                     patient.getId(),
                     patient.getPatientFn(),
@@ -116,7 +113,6 @@ public class SampleValidationServiceImpl implements SampleValidationService {
                     tests
             ));
         }
-
         return ResponseUtils.createSuccessResponse( responseList, new TypeReference<>() {});
     }
 }
