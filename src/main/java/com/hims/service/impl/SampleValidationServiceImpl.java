@@ -11,7 +11,9 @@ import com.hims.response.SampleValidationResponse;
 import com.hims.response.TestDetailsDTO;
 import com.hims.service.SampleValidationService;
 import com.hims.utils.ResponseUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class SampleValidationServiceImpl implements SampleValidationService {
     @Autowired
      DgSampleCollectionDetailsRepository detailsRepo;
@@ -29,41 +32,52 @@ public class SampleValidationServiceImpl implements SampleValidationService {
 
     @Override
     @Transactional
-    public void validateInvestigations(List<InvestigationValidationRequest> requests) {
+    public ApiResponse<String> validateInvestigations(List<InvestigationValidationRequest> requests) {
 //        for (InvestigationValidationRequest req : requests) {
 //            String validated = req.getAccepted() != null && req.getAccepted() ? "y" : "n";
 //           // String reason = req.getRejected() != null && req.getRejected() ? req.getReason() : null;
 //            detailsRepo.updateValidationStatus(req.getDetailId(), validated);
 //        }
         // 1. Update each investigation’s validated flag
-        for (InvestigationValidationRequest req : requests) {
-            String validated = (req.getAccepted() != null && req.getAccepted()) ? "y" : "n";
-            detailsRepo.updateValidationStatus(req.getDetailId(), validated);
-        }
 
-        // 2. Collect all involved headerIds
-        List<Long> detailIds = requests.stream()
-                .map(InvestigationValidationRequest::getDetailId)
-                .collect(Collectors.toList());
-
-        Set<Long> headerIds = detailsRepo.findHeaderIdsByDetailIds(detailIds);
-
-        // 3. For each header, determine order status
-        for (Long headerId : headerIds) {
-            long total = detailsRepo.countTotalByHeaderId(headerId);
-            long accepted = detailsRepo.countAcceptedByHeaderId(headerId);
-
-            String orderStatus;
-            if (accepted == total) {
-                orderStatus = "y"; // all accepted
-            } else if (accepted > 0) {
-                orderStatus = "p"; // partial
-            } else {
-                orderStatus = "n"; // all rejected (optional)
+        try {
+            log.info("Investigation validation Process Started..");
+            for (InvestigationValidationRequest req : requests) {
+                String validated = (req.getAccepted() != null && req.getAccepted()) ? "y" : "n";
+                detailsRepo.updateValidationStatus(req.getDetailId(), validated);
             }
 
-            headerRepo.updateOrderStatus(headerId, orderStatus);
+            // 2. Collect all involved headerIds
+            List<Long> detailIds = requests.stream()
+                    .map(InvestigationValidationRequest::getDetailId)
+                    .collect(Collectors.toList());
+
+            Set<Long> headerIds = detailsRepo.findHeaderIdsByDetailIds(detailIds);
+
+            // 3. For each header, determine order status
+            for (Long headerId : headerIds) {
+                long total = detailsRepo.countTotalByHeaderId(headerId);
+                long accepted = detailsRepo.countAcceptedByHeaderId(headerId);
+
+                String orderStatus;
+                if (accepted == total) {
+                    orderStatus = "y"; // all accepted
+                } else if (accepted > 0) {
+                    orderStatus = "p"; // partial
+                } else {
+                    orderStatus = "n"; // all rejected (optional)
+                }
+
+                headerRepo.updateOrderStatus(headerId, orderStatus);
+            }
+            log.info("Investigation validation Process Ended..");
+            return ResponseUtils.createSuccessResponse("investigation validated success", new TypeReference<String>() {});
+        } catch (Exception e) {
+           log.error("Sample Validate Error :: ",e);
+           return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.BAD_REQUEST.value());
         }
+
+
     }
 
     @Override

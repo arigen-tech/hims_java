@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface SampleValidationService {
 
-    void validateInvestigations(List<InvestigationValidationRequest> requests);
+    ApiResponse<String> validateInvestigations(List<InvestigationValidationRequest> requests);
 
     ApiResponse<List<SampleValidationResponse>>getInvestigationsWithOrderStatusNAndP();
 }

@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -74,9 +75,9 @@ public class LabRegistrationController {
         return validationService.getInvestigationsWithOrderStatusNAndP();
     }
     @PostMapping("/validate")
-    public ResponseEntity<String> validateInvestigations(@RequestBody List<InvestigationValidationRequest> requests) {
-        validationService.validateInvestigations(requests);
-        return ResponseEntity.ok("Investigations validated successfully");
+    public ResponseEntity<ApiResponse<String>> validateInvestigations(@RequestBody List<InvestigationValidationRequest> requests) {
+        ApiResponse<String> stringApiResponse = validationService.validateInvestigations(requests);
+        return   ResponseEntity.ok(stringApiResponse);
     }
 
 
