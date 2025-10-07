@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TestDetailsDTO {
+    private long detailsId;
     private String testCode;
     private String testName;
-    private String sampleName;
     private BigDecimal quantity;
     private String empanelledLab;
     private LocalDateTime dateTime;

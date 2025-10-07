@@ -11,7 +11,6 @@ import java.time.LocalTime;
 @Entity
 @Data
 @Table(name = "dg_sample_collection_details")
-
 public class DgSampleCollectionDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,7 +19,7 @@ public class DgSampleCollectionDetails {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sample_collection_header_id")
-    private DgSampleCollectionHeader sampleCollectionHeaderId;
+    private DgSampleCollectionHeader sampleCollectionHeader;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "investigation_id")

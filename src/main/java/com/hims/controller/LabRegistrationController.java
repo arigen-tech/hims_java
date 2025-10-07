@@ -1,6 +1,7 @@
 package com.hims.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.request.InvestigationValidationRequest;
 import com.hims.request.LabRegRequest;
 import com.hims.request.PaymentUpdateRequest;
 import com.hims.request.SampleCollectionRequest;
@@ -10,6 +11,7 @@ import com.hims.service.LabRegistrationServices;
 import com.hims.service.SampleValidationService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import java.util.List;
 @Tag(name = "LabRegistration", description = "This controller is used for any LabRegistration & Investigation & Package booking Related task.")
 @RequestMapping("/lab")
 @Slf4j
+@RequiredArgsConstructor
 public class LabRegistrationController {
 
     @Autowired
@@ -65,11 +68,16 @@ public class LabRegistrationController {
         return new ResponseEntity<>(labRegistrationServices.savesample(request), HttpStatus.OK);
     }
 
-    @GetMapping("/patient/{patientId}")
-    public ApiResponse<SampleValidationResponse> getByPatient(@PathVariable Long patientId) {
-        return validationService.getPatientInvestigations(patientId);
-    }
 
+    @GetMapping("/order-status")
+    public ApiResponse<List<SampleValidationResponse>> getAllWithStatusNAndP() {
+        return validationService.getInvestigationsWithOrderStatusNAndP();
+    }
+    @PostMapping("/validate")
+    public ResponseEntity<String> validateInvestigations(@RequestBody List<InvestigationValidationRequest> requests) {
+        validationService.validateInvestigations(requests);
+        return ResponseEntity.ok("Investigations validated successfully");
+    }
 
 
 }

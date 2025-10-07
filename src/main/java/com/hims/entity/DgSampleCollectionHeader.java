@@ -18,7 +18,7 @@ public class DgSampleCollectionHeader {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "patient_id")
-    private  Patient patient_id;
+    private  Patient patientId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "hospital_id")
@@ -65,7 +65,7 @@ public class DgSampleCollectionHeader {
     private String validatedBy;
 
     @Column(name = "sample_order_status")
-    private String sample_order_status;
+    private String sampleOrderStatus;
 
     @Column(name = "result_entry_status")
     private String result_entry_status;

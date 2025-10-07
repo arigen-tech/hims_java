@@ -903,7 +903,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                 return ResponseUtils.createNotFoundResponse("visit not found", 404);
             }
             header.setVisitId(visit.get());
-            header.setPatient_id(visit.get().getPatient());
+            header.setPatientId(visit.get().getPatient());
             Optional<DgOrderHd> dgOrderHd = labHdRepository.findById(sampleReq.getOrderHdId());
             if (dgOrderHd.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("DgOrderHd not found", 404);
@@ -921,8 +921,8 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
             header.setSubChargeCode(masSubChargeCode.isPresent() ? masSubChargeCode.get() : null);
             header.setCollection_by(fName);
             header.setCollection_time(LocalDateTime.now());
-            header.setResult_entry_status("p");
-            header.setSample_order_status("p");   // p = Pending
+            header.setResult_entry_status("n");
+            header.setSampleOrderStatus("n");   // p = Pending
             header.setPriority("r");              // r = Routine
 
             dgSampleCollectionHeaderRepository.save(header);
@@ -939,7 +939,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                 detail.setSampleId(dgMasSample.isPresent() ? dgMasSample.get() : null);
 
                 Optional<MasMainChargeCode> masMainChargeCode = masMainChargeCodeRepository.findById((long) detailReq.getMainChargeCodeId());
-                detail.setSampleCollectionHeaderId(header);
+                detail.setSampleCollectionHeader(header);
                 detail.setRemarks(detailReq.getRemarks());
                 detail.setOrderStatus("n");
                 detail.setSampleCollDatetime(LocalDateTime.now());
