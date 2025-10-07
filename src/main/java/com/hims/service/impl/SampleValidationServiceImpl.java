@@ -90,8 +90,10 @@ public class SampleValidationServiceImpl implements SampleValidationService {
             List<TestDetailsDTO> tests = entry.getValue().stream().map(d ->
                     new TestDetailsDTO(
                             d.getSampleCollectionDetailsId(),
-                            d.getInvestigationId() != null ? d.getInvestigationId().getInvestigationId().toString() : null,
+                            d.getInvestigationId()!=null? d.getInvestigationId().getSampleId().getSampleCode():null,
                             d.getInvestigationId() != null ? d.getInvestigationId().getInvestigationName() : null,
+                            d.getInvestigationId()!=null? d.getInvestigationId().getSampleId().getId():null,
+                            d.getSampleId()!=null?d.getSampleId().getSampleDescription():null,
                             d.getQuantity(),
                             d.getEmpanelledStatus(),
                             d.getSampleCollDatetime(),
