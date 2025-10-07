@@ -104,7 +104,7 @@ public class SampleValidationServiceImpl implements SampleValidationService {
                     patient.getPatientFn(),
                     patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null,
                     patient.getPatientMobileNumber(),
-                    header.getSubChargeCode().getMainChargeId().getChargecodeName(),
+                    header.getSubChargeCode().getMainChargeId().getChargecodeCode(),
                     patient.getUhidNo(),
                     header.getLastChgDate() != null ? header.getLastChgDate().toLocalDate() : null,
                     header.getCollection_time(),
