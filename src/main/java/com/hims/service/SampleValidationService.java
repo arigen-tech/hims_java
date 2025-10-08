@@ -10,5 +10,5 @@ public interface SampleValidationService {
 
     ApiResponse<String> validateInvestigations(List<InvestigationValidationRequest> requests);
 
-    ApiResponse<List<SampleValidationResponse>>getInvestigationsWithOrderStatusNAndP();
+    ApiResponse<List<SampleValidationResponse>> getInvestigationsWithOrderStatusNAndP();
 }

@@ -923,7 +923,8 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
             header.setCollection_time(LocalDateTime.now());
             header.setResult_entry_status("n");
             header.setSampleOrderStatus("n");   // p = Pending
-            header.setPriority("r");              // r = Routine
+            header.setPriority("r");
+            header.setValidated("n");// r = Routine
 
             dgSampleCollectionHeaderRepository.save(header);
 

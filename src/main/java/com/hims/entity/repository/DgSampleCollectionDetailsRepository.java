@@ -18,10 +18,6 @@ public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSam
 
 
 
-    // Get investigations where header order status = N or P
-    @Query("SELECT d FROM DgSampleCollectionDetails d " +
-            "WHERE d.sampleCollectionHeader.sampleOrderStatus IN ('n', 'p')")
-    List<DgSampleCollectionDetails> findAllByHeaderOrderStatusNOrP();
 
     @Modifying
     @Transactional
@@ -36,4 +32,15 @@ public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSam
 
     @Query("SELECT COUNT(d) FROM DgSampleCollectionDetails d WHERE d.sampleCollectionHeader.sampleCollectionHeaderId = :headerId")
     long countTotalByHeaderId(@Param("headerId") Long headerId);
+
+    @Query("""
+        SELECT d 
+        FROM DgSampleCollectionDetails d 
+        WHERE 
+            (d.sampleCollectionHeader.validated = 'n')
+            OR 
+            (d.sampleCollectionHeader.validated = 'p' AND d.validated = 'n')
+        """)
+    List<DgSampleCollectionDetails> findAllByHeaderValidatedStatusLogic();
+
 }

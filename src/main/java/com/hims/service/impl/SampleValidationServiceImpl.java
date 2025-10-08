@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -33,13 +34,6 @@ public class SampleValidationServiceImpl implements SampleValidationService {
     @Override
     @Transactional
     public ApiResponse<String> validateInvestigations(List<InvestigationValidationRequest> requests) {
-//        for (InvestigationValidationRequest req : requests) {
-//            String validated = req.getAccepted() != null && req.getAccepted() ? "y" : "n";
-//           // String reason = req.getRejected() != null && req.getRejected() ? req.getReason() : null;
-//            detailsRepo.updateValidationStatus(req.getDetailId(), validated);
-//        }
-        // 1. Update each investigation’s validated flag
-
         try {
             log.info("Investigation validation Process Started..");
             for (InvestigationValidationRequest req : requests) {
@@ -79,55 +73,71 @@ public class SampleValidationServiceImpl implements SampleValidationService {
 
 
     }
-
     @Override
+    @Transactional
     public ApiResponse<List<SampleValidationResponse>> getInvestigationsWithOrderStatusNAndP() {
-        List<DgSampleCollectionDetails> detailsList = detailsRepo.findAllByHeaderOrderStatusNOrP();
-        if (detailsList.isEmpty()) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "No investigations found with order status n or p", 404);
+        try {
+            log.info("Investigation status Process Started..");
+            // Step 1: Fetch filtered details based on header/detail validated status
+            List<DgSampleCollectionDetails> detailsList = detailsRepo.findAllByHeaderValidatedStatusLogic();
+
+
+            // Step 2: Group by patient
+            Map<Long, List<DgSampleCollectionDetails>> groupedByPatient = detailsList.stream()
+                    .collect(Collectors.groupingBy(d -> d.getSampleCollectionHeader().getPatientId().getId()));
+
+            // Step 3: Map grouped data to response DTOs
+            List<SampleValidationResponse> responseList = groupedByPatient.entrySet().stream()
+                    .map(entry -> {
+                        List<DgSampleCollectionDetails> patientDetails = entry.getValue();
+                        DgSampleCollectionHeader header = patientDetails.get(0).getSampleCollectionHeader();
+                        var patient = header.getPatientId();
+                        String fullName = Stream.of(patient.getPatientFn(), patient.getPatientMn(), patient.getPatientLn())
+                                .filter(Objects::nonNull)
+                                .filter(s -> !s.isBlank())
+                                .collect(Collectors.joining(" "));
+
+                        // Map TestDetailsDTO using only DgSampleCollectionDetails fields
+                        List<TestDetailsDTO> investigations = patientDetails.stream()
+                                .map(d -> new TestDetailsDTO(
+                                        d.getSampleCollectionDetailsId(),
+                                        d.getInvestigationId() != null ? d.getInvestigationId().getSampleId().getSampleCode() : null,
+                                        d.getInvestigationId() != null ? d.getInvestigationId().getInvestigationName() : null,
+                                        d.getInvestigationId() != null ? d.getInvestigationId().getSampleId().getId() : null,
+                                        d.getSampleId() != null ? d.getSampleId().getSampleDescription() : null,
+                                        d.getQuantity(),
+                                        d.getEmpanelledStatus(),
+                                        d.getSampleCollDatetime(),
+                                        d.getRejected_reason(),
+                                        d.getRemarks()
+                                ))
+                                .toList();
+
+                        // Build patient-level response
+                        return new SampleValidationResponse(
+                                patient.getId(),
+                                fullName,
+                                patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null,
+                                patient.getPatientMobileNumber(),
+                                header.getSubChargeCode().getMainChargeId().getChargecodeCode(),
+                                patient.getUhidNo(),
+                                header.getLastChgDate() != null ? header.getLastChgDate().toLocalDate() : null,
+                                header.getCollection_time(),
+                                header.getCollection_by(),
+                                patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null,
+                                investigations
+                        );
+                    })
+                    .toList();
+            log.info("Investigation status Process Ended..");
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
+        }catch (Exception e) {
+            log.error("Investigation status  Error :: ",e);
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.BAD_REQUEST.value());
         }
-
-        // Group by patient
-        Map<Long, List<DgSampleCollectionDetails>> groupedByPatient = detailsList.stream()
-                .collect(Collectors.groupingBy(d -> d.getSampleCollectionHeader().getPatientId().getId()));
-
-        List<SampleValidationResponse> responseList = new ArrayList<>();
-
-        for (Map.Entry<Long, List<DgSampleCollectionDetails>> entry : groupedByPatient.entrySet()) {
-            DgSampleCollectionDetails first = entry.getValue().get(0);
-            DgSampleCollectionHeader header = first.getSampleCollectionHeader();
-            var patient = header.getPatientId();
-
-            List<TestDetailsDTO> tests = entry.getValue().stream().map(d ->
-                    new TestDetailsDTO(
-                            d.getSampleCollectionDetailsId(),
-                            d.getInvestigationId()!=null? d.getInvestigationId().getSampleId().getSampleCode():null,
-                            d.getInvestigationId() != null ? d.getInvestigationId().getInvestigationName() : null,
-                            d.getInvestigationId()!=null? d.getInvestigationId().getSampleId().getId():null,
-                            d.getSampleId()!=null?d.getSampleId().getSampleDescription():null,
-                            d.getQuantity(),
-                            d.getEmpanelledStatus(),
-                            d.getSampleCollDatetime(),
-                            d.getRejected_reason(),
-                            d.getRemarks()
-                    )
-            ).toList();
-            responseList.add(new SampleValidationResponse(
-                    patient.getId(),
-                    patient.getPatientFn(),
-                    patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null,
-                    patient.getPatientMobileNumber(),
-                    header.getSubChargeCode().getMainChargeId().getChargecodeCode(),
-                    patient.getUhidNo(),
-                    header.getLastChgDate() != null ? header.getLastChgDate().toLocalDate() : null,
-                    header.getCollection_time(),
-                    header.getCollection_by(),
-                    patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null,
-                    tests
-            ));
-        }
-        return ResponseUtils.createSuccessResponse( responseList, new TypeReference<>() {});
     }
 }
+
+
 

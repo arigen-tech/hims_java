@@ -81,4 +81,7 @@ public class DgSampleCollectionHeader {
 
     @Column(name = "last_chg_date")
     private LocalDateTime lastChgDate;
+
+    @Column(name="validated")
+    private String validated;
 }

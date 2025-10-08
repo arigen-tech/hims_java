@@ -69,9 +69,8 @@ public class LabRegistrationController {
         return new ResponseEntity<>(labRegistrationServices.savesample(request), HttpStatus.OK);
     }
 
-
     @GetMapping("/order-status")
-    public ApiResponse<List<SampleValidationResponse>> getAllWithStatusNAndP() {
+    public ApiResponse<List<SampleValidationResponse>> getAllWithStatusNAndP2() {
         return validationService.getInvestigationsWithOrderStatusNAndP();
     }
     @PostMapping("/validate")
