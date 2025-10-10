@@ -10,7 +10,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TestDetailsDTO {
+
     private long detailsId;
+    private Long investigationId;
     private String testCode;
     private String testName;
     private Long sampleId;

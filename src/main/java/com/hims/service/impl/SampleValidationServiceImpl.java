@@ -3,12 +3,12 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.DgSampleCollectionDetails;
 import com.hims.entity.DgSampleCollectionHeader;
+import com.hims.entity.DgSubMasInvestigation;
 import com.hims.entity.repository.DgSampleCollectionDetailsRepository;
 import com.hims.entity.repository.DgSampleCollectionHeaderRepository;
+import com.hims.entity.repository.DgSubMasInvestigationRepository;
 import com.hims.request.InvestigationValidationRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.SampleValidationResponse;
-import com.hims.response.TestDetailsDTO;
+import com.hims.response.*;
 import com.hims.service.SampleValidationService;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +28,8 @@ public class SampleValidationServiceImpl implements SampleValidationService {
      DgSampleCollectionDetailsRepository detailsRepo;
     @Autowired
     DgSampleCollectionHeaderRepository headerRepo;
+    @Autowired
+    DgSubMasInvestigationRepository dgSubMasInvestigationRepository;
 
 
 
@@ -77,33 +79,48 @@ public class SampleValidationServiceImpl implements SampleValidationService {
     @Transactional
     public ApiResponse<List<SampleValidationResponse>> getInvestigationsWithOrderStatusNAndP() {
         try {
-            log.info("Investigation status Process Started..");
-            // Step 1: Fetch filtered details based on header/detail validated status
+            log.info("Investigation status process started..");
+
+            // Step 1: Fetch all valid details with joins
             List<DgSampleCollectionDetails> detailsList = detailsRepo.findAllByHeaderValidatedStatusLogic();
+            log.info("Fetched details count: {}", detailsList.size());
 
+            // Step 2: Group by (patientId + headerId)
+            Map<String, List<DgSampleCollectionDetails>> grouped = detailsList.stream()
+                    .filter(d -> d.getSampleCollectionHeader() != null && d.getSampleCollectionHeader().getPatientId() != null)
+                    .collect(Collectors.groupingBy(d -> {
+                        DgSampleCollectionHeader h = d.getSampleCollectionHeader();
+                        return h.getPatientId().getId() + "_" + h.getSampleCollectionHeaderId();
+                    }));
 
-            // Step 2: Group by patient
-            Map<Long, List<DgSampleCollectionDetails>> groupedByPatient = detailsList.stream()
-                    .collect(Collectors.groupingBy(d -> d.getSampleCollectionHeader().getPatientId().getId()));
-
-            // Step 3: Map grouped data to response DTOs
-            List<SampleValidationResponse> responseList = groupedByPatient.entrySet().stream()
+            // Step 3: Convert each group into SampleValidationResponse
+            List<SampleValidationResponse> responseList = grouped.entrySet().stream()
                     .map(entry -> {
-                        List<DgSampleCollectionDetails> patientDetails = entry.getValue();
-                        DgSampleCollectionHeader header = patientDetails.get(0).getSampleCollectionHeader();
+                        List<DgSampleCollectionDetails> groupDetails = entry.getValue();
+                        DgSampleCollectionHeader header = groupDetails.get(0).getSampleCollectionHeader();
+
                         var patient = header.getPatientId();
-                        String fullName = Stream.of(patient.getPatientFn(), patient.getPatientMn(), patient.getPatientLn())
+                        var subCharge = header.getSubChargeCode();
+
+                        String fullName = Stream.of(
+                                        patient.getPatientFn(),
+                                        patient.getPatientMn(),
+                                        patient.getPatientLn()
+                                )
                                 .filter(Objects::nonNull)
                                 .filter(s -> !s.isBlank())
                                 .collect(Collectors.joining(" "));
 
-                        // Map TestDetailsDTO using only DgSampleCollectionDetails fields
-                        List<TestDetailsDTO> investigations = patientDetails.stream()
+                        // Map details to TestDetailsDTO
+                        List<TestDetailsDTO> investigations = groupDetails.stream()
                                 .map(d -> new TestDetailsDTO(
                                         d.getSampleCollectionDetailsId(),
-                                        d.getInvestigationId() != null ? d.getInvestigationId().getSampleId().getSampleCode() : null,
+                                        d.getInvestigationId() != null ? d.getInvestigationId().getInvestigationId() : null,
+                                        d.getInvestigationId() != null && d.getInvestigationId().getSampleId() != null
+                                                ? d.getInvestigationId().getSampleId().getSampleCode()
+                                                : null,
                                         d.getInvestigationId() != null ? d.getInvestigationId().getInvestigationName() : null,
-                                        d.getInvestigationId() != null ? d.getInvestigationId().getSampleId().getId() : null,
+                                        d.getSampleId() != null ? d.getSampleId().getId() : null,
                                         d.getSampleId() != null ? d.getSampleId().getSampleDescription() : null,
                                         d.getQuantity(),
                                         d.getEmpanelledStatus(),
@@ -113,13 +130,16 @@ public class SampleValidationServiceImpl implements SampleValidationService {
                                 ))
                                 .toList();
 
-                        // Build patient-level response
+                        // Build final response (each header = separate entry)
                         return new SampleValidationResponse(
+                                header.getSampleCollectionHeaderId(),
                                 patient.getId(),
                                 fullName,
                                 patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null,
+                                patient.getPatientAge(),
                                 patient.getPatientMobileNumber(),
-                                header.getSubChargeCode().getMainChargeId().getChargecodeCode(),
+                                subCharge != null ? subCharge.getSubId() : null,
+                                subCharge != null ? subCharge.getSubName() : null,
                                 patient.getUhidNo(),
                                 header.getLastChgDate() != null ? header.getLastChgDate().toLocalDate() : null,
                                 header.getCollection_time(),
@@ -129,15 +149,88 @@ public class SampleValidationServiceImpl implements SampleValidationService {
                         );
                     })
                     .toList();
-            log.info("Investigation status Process Ended..");
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+
+            log.info("Investigation status process ended..");
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Investigation status Error :: ", e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal Server Error", HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+    }
+
+    @Override
+    public ApiResponse<List<ValidatedResponse>> getValidatedResultEntries() {
+        try {
+// 1️⃣ Fetch all validated details
+            List<DgSampleCollectionDetails> detailsList = detailsRepo.findValidatedDetailsForResultEntry();
+
+            Map<Long, ValidatedResponse> responseMap = new LinkedHashMap<>();
+
+            for (DgSampleCollectionDetails detail : detailsList) {
+
+                DgSampleCollectionHeader header = detail.getSampleCollectionHeader();
+
+                // --- Group by Patient / Header ---
+                ValidatedResponse response = responseMap.computeIfAbsent(
+                        header.getPatientId().getId(),
+                        k -> {
+                            ValidatedResponse r = new ValidatedResponse();
+                            r.setPatientId(header.getPatientId().getId());
+                            r.setPatientName(header.getPatientId().getPatientFn());
+                            r.setRelation(header.getPatientId() != null ? header.getPatientId().getPatientRelation().getRelationName() : null);
+                            r.setPatientGender(header.getPatientId().getPatientGender() != null ? header.getPatientId().getPatientGender().getGenderName() : null);
+                            r.setPatientAge(header.getPatientId().getPatientAge() != null ? header.getPatientId().getPatientAge() + " Years" : null);
+                            r.setCollectedDate(header.getCollection_time());
+                            r.setCollectedTime(header.getCollection_time() != null ? header.getCollection_time().toLocalTime() : null);
+                            r.setOrderNo(header.getPatientId() != null ? header.getPatientId().getUhidNo() : null);
+                            r.setDepartment(header.getDepartmentId() != null ? header.getDepartmentId().getDepartmentName() : null);
+                            r.setDoctorName(header.getHospitalId() != null ? header.getHospitalId().getHospitalName() : null);
+                            r.setResultInvestigationResponseList(new ArrayList<>());
+                            return r;
+                        }
+                );
+
+                // --- Group by Investigation ---
+                ResultInvestigationResponse investigation = response.getResultInvestigationResponseList().stream()
+                        .filter(i -> i.getInvestigationId().equals(detail.getInvestigationId().getInvestigationId()))
+                        .findFirst()
+                        .orElseGet(() -> {
+                            ResultInvestigationResponse inv = new ResultInvestigationResponse();
+                            inv.setInvestigationId(detail.getInvestigationId().getInvestigationId());
+                            inv.setInvestigationName(detail.getInvestigationId().getInvestigationName());
+                            inv.setResultSubInvestigationResponseList(new ArrayList<>());
+                            response.getResultInvestigationResponseList().add(inv);
+                            return inv;
+                        });
+
+                // --- Fetch all Sub-Investigations for this Investigation from DB ---
+                List<DgSubMasInvestigation> subList = dgSubMasInvestigationRepository
+                        .findByInvestigationId(detail.getInvestigationId().getInvestigationId());
+
+                // --- Add Sub-Investigations ---
+                for (DgSubMasInvestigation subInvest : subList) {
+                    ResultSubInvestigationResponse sub = new ResultSubInvestigationResponse();
+                    sub.setSubInvestigationId(subInvest.getSubInvestigationId());
+                    sub.setSubInvestigationName(subInvest.getSubInvestigationName());
+                    sub.setSampleId(subInvest.getSampleId() != null ? subInvest.getSampleId().getId() : null);
+                    sub.setSampleName(subInvest.getSampleId() != null ? subInvest.getSampleId().getSampleDescription() : null);
+                    sub.setUnit(subInvest.getUomId() != null ? subInvest.getUomId().getName() : null);
+                    investigation.getResultSubInvestigationResponseList().add(sub);
+                }
+            }
+            ;
+
+            return ResponseUtils.createSuccessResponse(new ArrayList<>(responseMap.values()), new TypeReference<>() {
             });
         }catch (Exception e) {
             log.error("Investigation status  Error :: ",e);
             return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.BAD_REQUEST.value());
-        }
     }
-}
+}}
 
 
 

@@ -34,13 +34,22 @@ public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSam
     long countTotalByHeaderId(@Param("headerId") Long headerId);
 
     @Query("""
-        SELECT d 
-        FROM DgSampleCollectionDetails d 
-        WHERE 
-            (d.sampleCollectionHeader.validated = 'n')
-            OR 
-            (d.sampleCollectionHeader.validated = 'p' AND d.validated = 'n')
-        """)
+    SELECT d FROM DgSampleCollectionDetails d
+    JOIN FETCH d.sampleCollectionHeader h
+    JOIN FETCH h.patientId p
+    LEFT JOIN FETCH h.subChargeCode sc
+    LEFT JOIN FETCH d.investigationId inv
+    LEFT JOIN FETCH inv.sampleId s
+    WHERE 
+        (h.validated = 'n' AND d.validated = 'n')
+        OR
+        (h.validated = 'p' AND d.validated = 'n')
+""")
     List<DgSampleCollectionDetails> findAllByHeaderValidatedStatusLogic();
+
+    @Query("SELECT d FROM DgSampleCollectionDetails d " +
+            "WHERE d.sampleCollectionHeader.validated IN ('y', 'p') " +
+            "AND d.validated = 'y'")
+    List<DgSampleCollectionDetails> findValidatedDetailsForResultEntry();
 
 }

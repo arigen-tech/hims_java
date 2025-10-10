@@ -13,11 +13,14 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SampleValidationResponse {
+    private Long headerId;
     private Long patientId;
     private String patientName;
     private String sex;
+    private String age;
     private String mobileNo;
-    private String department;
+    private Long subChargeCodeId;
+    private String subChargeCodeName;
     private String orderNo;
     private LocalDate orderDate;
     private LocalDateTime collectionTime;
@@ -26,4 +29,6 @@ public class SampleValidationResponse {
     private List<TestDetailsDTO> investigations;
 
 
+    public SampleValidationResponse(Long sampleCollectionHeaderId, Long id, String fullName, @NotNull String s, @Size(max = 50) String patientAge, @Size(max = 20) String patientMobileNumber, Long aLong, @Size(max = 100) String s1, Long sampleCollectionHeaderId1, @Size(max = 50) String uhidNo, LocalDate localDate, LocalDateTime collectionTime, String collectionBy, @Size(max = 30) @NotNull String s2, List<TestDetailsDTO> investigations) {
+    }
 }
