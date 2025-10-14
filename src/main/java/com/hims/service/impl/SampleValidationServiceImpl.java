@@ -6,6 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.InvestigationValidationRequest;
 import com.hims.response.*;
 import com.hims.service.SampleValidationService;
+import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,8 @@ DgNormalValueRepository dgNormalValueRepository;
     VisitRepository visitRepository;
 @Autowired
     LabHdRepository labHdRepository;
+    @Autowired
+    AuthUtil authUtil;
 
 
 
@@ -166,6 +169,12 @@ DgNormalValueRepository dgNormalValueRepository;
     @Override
     public ApiResponse<List<ResultResponse>> getValidatedResultEntries() {
         try {
+            User currentUser = authUtil.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
+                        "current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
             //  Fetch details using query
             List<DgSampleCollectionDetails> detailsList = detailsRepo.findAllByHeaderResultEntryAndValidationStatusLogic();
 
@@ -203,8 +212,11 @@ DgNormalValueRepository dgNormalValueRepository;
                             r.setRelation(header.getPatientId() != null ? header.getPatientId().getPatientRelation().getRelationName() : null);
                             r.setPatientGender(header.getPatientId().getPatientGender() != null ? header.getPatientId().getPatientGender().getGenderName() : null);
                             r.setPatientAge(header.getPatientId().getPatientAge() != null ? header.getPatientId().getPatientAge() : null);
+                            r.setPatientPhoneNo(header.getPatientId().getPatientMobileNumber() != null ? header.getPatientId().getPatientMobileNumber() : null);
                             DgOrderHd dgOrderHd=labHdRepository.findByVisitId(header.getVisitId());
                             r.setOrderDate(String.valueOf(dgOrderHd.getOrderDate()));
+                            r.setEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+
                             r.setCollectedDate(header.getCollection_time());
                             r.setCollectedTime(header.getCollection_time() != null ? header.getCollection_time().toLocalTime() : null);
                             r.setOrderNo(header.getPatientId() != null ? header.getPatientId().getUhidNo() : null);

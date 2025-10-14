@@ -12,6 +12,7 @@ public class ResultResponse {
     private String relation;
     private String patientGender;
     private String patientAge; // keep as String (e.g., "51 Years")
+    private String patientPhoneNo;
     private String orderDate;
     private LocalDateTime collectedDate;
     private String orderNo;
@@ -20,5 +21,6 @@ public class ResultResponse {
     private  String doctorName;
     private Long subChargeCodeId;
     private String subChargeCodeName;
+    private String enteredBy;
     List<ResultInvestigationResponse> resultInvestigationResponseList;
 }
