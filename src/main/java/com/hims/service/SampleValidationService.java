@@ -2,7 +2,7 @@ package com.hims.service;
 
 import com.hims.request.InvestigationValidationRequest;
 import com.hims.response.ApiResponse;
-import com.hims.response.ValidatedResponse;
+import com.hims.response.ResultResponse;
 import com.hims.response.SampleValidationResponse;
 
 import java.util.List;
@@ -13,5 +13,5 @@ public interface SampleValidationService {
 
     ApiResponse<List<SampleValidationResponse>> getInvestigationsWithOrderStatusNAndP();
 
-    ApiResponse<List<ValidatedResponse>> getValidatedResultEntries();
+    ApiResponse<List<ResultResponse>> getValidatedResultEntries();
 }

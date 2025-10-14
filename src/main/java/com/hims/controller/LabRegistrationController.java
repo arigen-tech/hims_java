@@ -77,9 +77,9 @@ public class LabRegistrationController {
         ApiResponse<String> stringApiResponse = validationService.validateInvestigations(requests);
         return   ResponseEntity.ok(stringApiResponse);
     }
-    @GetMapping("/validatedStatus")
-    public ResponseEntity<ApiResponse<List<ValidatedResponse>>> getValidated() {
-        ApiResponse<List<ValidatedResponse>> responseList = validationService.getValidatedResultEntries();
+    @GetMapping("/resultStatus")
+    public ResponseEntity<ApiResponse<List<ResultResponse>>> getValidated() {
+        ApiResponse<List<ResultResponse>> responseList = validationService.getValidatedResultEntries();
         return ResponseEntity.ok(responseList);
     }
 

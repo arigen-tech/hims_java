@@ -42,14 +42,36 @@ public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSam
     LEFT JOIN FETCH inv.sampleId s
     WHERE 
         (h.validated = 'n' AND d.validated = 'n')
-        OR
-        (h.validated = 'p' AND d.validated = 'n')
+       
 """)
     List<DgSampleCollectionDetails> findAllByHeaderValidatedStatusLogic();
 
-    @Query("SELECT d FROM DgSampleCollectionDetails d " +
-            "WHERE d.sampleCollectionHeader.validated IN ('y', 'p') " +
-            "AND d.validated = 'y'")
-    List<DgSampleCollectionDetails> findValidatedDetailsForResultEntry();
+//    @Query("""
+//        SELECT d FROM DgSampleCollectionDetails d
+//        JOIN FETCH d.sampleCollectionHeader h
+//        JOIN FETCH h.patientId p
+//        LEFT JOIN FETCH h.subChargeCode sc
+//        LEFT JOIN FETCH d.investigationId inv
+//        LEFT JOIN FETCH inv.sampleId s
+//        WHERE
+//            (h.result_entry_status= 'n' AND d.result_status= 'n')
+//            OR
+//            (h.result_entry_status = 'p' AND d.result_status = 'y')
+//    """)
+//    List<DgSampleCollectionDetails> findAllByHeaderValidatedStatusLogic2();
+@Query("""
+    SELECT d FROM DgSampleCollectionDetails d
+    JOIN FETCH d.sampleCollectionHeader h
+    JOIN FETCH h.patientId p
+    LEFT JOIN FETCH h.subChargeCode sc
+    LEFT JOIN FETCH d.investigationId inv
+    LEFT JOIN FETCH inv.sampleId s
+    WHERE 
+        h.result_entry_status = 'n'
+        AND h.validated = 'y'
+        AND d.validated = 'y'
+        AND d.result_status = 'n'
+""")
+List<DgSampleCollectionDetails> findAllByHeaderResultEntryAndValidationStatusLogic();
 
 }

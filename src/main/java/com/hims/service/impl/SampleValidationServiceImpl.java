@@ -1,12 +1,8 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.DgSampleCollectionDetails;
-import com.hims.entity.DgSampleCollectionHeader;
-import com.hims.entity.DgSubMasInvestigation;
-import com.hims.entity.repository.DgSampleCollectionDetailsRepository;
-import com.hims.entity.repository.DgSampleCollectionHeaderRepository;
-import com.hims.entity.repository.DgSubMasInvestigationRepository;
+import com.hims.entity.*;
+import com.hims.entity.repository.*;
 import com.hims.request.InvestigationValidationRequest;
 import com.hims.response.*;
 import com.hims.service.SampleValidationService;
@@ -30,6 +26,12 @@ public class SampleValidationServiceImpl implements SampleValidationService {
     DgSampleCollectionHeaderRepository headerRepo;
     @Autowired
     DgSubMasInvestigationRepository dgSubMasInvestigationRepository;
+@Autowired
+DgNormalValueRepository dgNormalValueRepository;
+@Autowired
+    VisitRepository visitRepository;
+@Autowired
+    LabHdRepository labHdRepository;
 
 
 
@@ -58,9 +60,8 @@ public class SampleValidationServiceImpl implements SampleValidationService {
                 String orderStatus;
                 if (accepted == total) {
                     orderStatus = "y"; // all accepted
-                } else if (accepted > 0) {
-                    orderStatus = "p"; // partial
-                } else {
+                }
+                else {
                     orderStatus = "n"; // all rejected (optional)
                 }
 
@@ -163,32 +164,55 @@ public class SampleValidationServiceImpl implements SampleValidationService {
     }
 
     @Override
-    public ApiResponse<List<ValidatedResponse>> getValidatedResultEntries() {
+    public ApiResponse<List<ResultResponse>> getValidatedResultEntries() {
         try {
-// 1️⃣ Fetch all validated details
-            List<DgSampleCollectionDetails> detailsList = detailsRepo.findValidatedDetailsForResultEntry();
+            //  Fetch details using query
+            List<DgSampleCollectionDetails> detailsList = detailsRepo.findAllByHeaderResultEntryAndValidationStatusLogic();
 
-            Map<Long, ValidatedResponse> responseMap = new LinkedHashMap<>();
+            //  Map grouped by (Patient + SubChargeCode)
+            Map<String, ResultResponse> responseMap = new LinkedHashMap<>();
 
             for (DgSampleCollectionDetails detail : detailsList) {
 
                 DgSampleCollectionHeader header = detail.getSampleCollectionHeader();
 
-                // --- Group by Patient / Header ---
-                ValidatedResponse response = responseMap.computeIfAbsent(
-                        header.getPatientId().getId(),
+                Long patientId = header.getPatientId().getId();
+                String subChargeCode = header.getSubChargeCode() != null ? header.getSubChargeCode().getSubCode() : null;
+
+                // Unique grouping key per (Patient + SubChargeCode)
+                String key = patientId + "_" + subChargeCode;
+
+                // --- Group by Patient + SubChargeCode ---
+                ResultResponse response = responseMap.computeIfAbsent(
+                        key,
                         k -> {
-                            ValidatedResponse r = new ValidatedResponse();
+                            ResultResponse r = new ResultResponse();
+                            var patient = header.getPatientId();
+
+                            // Construct full name safely
+                            String fullName = Stream.of(
+                                            patient.getPatientFn(),
+                                            patient.getPatientMn(),
+                                            patient.getPatientLn()
+                                    )
+                                    .filter(Objects::nonNull)
+                                    .filter(s -> !s.isBlank())
+                                    .collect(Collectors.joining(" "));
                             r.setPatientId(header.getPatientId().getId());
-                            r.setPatientName(header.getPatientId().getPatientFn());
+                            r.setPatientName(fullName);
                             r.setRelation(header.getPatientId() != null ? header.getPatientId().getPatientRelation().getRelationName() : null);
                             r.setPatientGender(header.getPatientId().getPatientGender() != null ? header.getPatientId().getPatientGender().getGenderName() : null);
-                            r.setPatientAge(header.getPatientId().getPatientAge() != null ? header.getPatientId().getPatientAge() + " Years" : null);
+                            r.setPatientAge(header.getPatientId().getPatientAge() != null ? header.getPatientId().getPatientAge() : null);
+                            DgOrderHd dgOrderHd=labHdRepository.findByVisitId(header.getVisitId());
+                            r.setOrderDate(String.valueOf(dgOrderHd.getOrderDate()));
                             r.setCollectedDate(header.getCollection_time());
                             r.setCollectedTime(header.getCollection_time() != null ? header.getCollection_time().toLocalTime() : null);
                             r.setOrderNo(header.getPatientId() != null ? header.getPatientId().getUhidNo() : null);
                             r.setDepartment(header.getDepartmentId() != null ? header.getDepartmentId().getDepartmentName() : null);
                             r.setDoctorName(header.getHospitalId() != null ? header.getHospitalId().getHospitalName() : null);
+                            r.setSubChargeCodeId(header.getSubChargeCode().getSubId());
+                            r.setSubChargeCodeName(header.getSubChargeCode().getSubName());
+
                             r.setResultInvestigationResponseList(new ArrayList<>());
                             return r;
                         }
@@ -207,7 +231,7 @@ public class SampleValidationServiceImpl implements SampleValidationService {
                             return inv;
                         });
 
-                // --- Fetch all Sub-Investigations for this Investigation from DB ---
+                // --- Fetch all Sub-Investigations for this Investigation ---
                 List<DgSubMasInvestigation> subList = dgSubMasInvestigationRepository
                         .findByInvestigationId(detail.getInvestigationId().getInvestigationId());
 
@@ -219,18 +243,25 @@ public class SampleValidationServiceImpl implements SampleValidationService {
                     sub.setSampleId(subInvest.getSampleId() != null ? subInvest.getSampleId().getId() : null);
                     sub.setSampleName(subInvest.getSampleId() != null ? subInvest.getSampleId().getSampleDescription() : null);
                     sub.setUnit(subInvest.getUomId() != null ? subInvest.getUomId().getName() : null);
+                    DgNormalValue dgNormalValue = dgNormalValueRepository.findBySubInvestigationId(subInvest);
+                    String normalRange = (dgNormalValue != null && dgNormalValue.getNormalValue() != null)
+                            ? dgNormalValue.getNormalValue()
+                            : null;
+
+                    sub.setNormalRange(normalRange);
                     investigation.getResultSubInvestigationResponseList().add(sub);
                 }
             }
-            ;
 
-            return ResponseUtils.createSuccessResponse(new ArrayList<>(responseMap.values()), new TypeReference<>() {
-            });
-        }catch (Exception e) {
-            log.error("Investigation status  Error :: ",e);
-            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.BAD_REQUEST.value());
+            // Return final response
+            return ResponseUtils.createSuccessResponse(new ArrayList<>(responseMap.values()), new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Investigation status Error :: ", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Internal Server Error", HttpStatus.BAD_REQUEST.value());
+        }
     }
-}}
+}
 
 
 

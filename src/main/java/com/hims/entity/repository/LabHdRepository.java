@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.DgOrderHd;
+import com.hims.entity.Visit;
 import com.hims.response.PendingSampleResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,9 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
     List<DgOrderHd> findByPaymentStatusIn(List<String> paymentStatuses);
 
     List<DgOrderHd> findByPaymentStatusInAndOrderStatusIn(List<String> paymentStatuses, List<String> orderStatusFilter);
+
+
+    DgOrderHd findByVisitId(Visit visitId);
 }
 
 

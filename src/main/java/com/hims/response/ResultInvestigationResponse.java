@@ -7,5 +7,6 @@ import java.util.List;
 public class ResultInvestigationResponse {
      private Long investigationId;
      private String investigationName;
+     private String diagNo;
      List<ResultSubInvestigationResponse> resultSubInvestigationResponseList;
 }
