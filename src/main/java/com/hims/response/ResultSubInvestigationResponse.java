@@ -10,5 +10,6 @@ public class ResultSubInvestigationResponse {
     private String sampleName;
     private String unit;
     private String normalRange;
+    private String resultType;
 
 }

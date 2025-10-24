@@ -262,6 +262,7 @@ DgNormalValueRepository dgNormalValueRepository;
 
                     sub.setNormalRange(normalRange);
                     investigation.getResultSubInvestigationResponseList().add(sub);
+                    sub.setResultType(subInvest.getResultType());
                 }
             }
 
