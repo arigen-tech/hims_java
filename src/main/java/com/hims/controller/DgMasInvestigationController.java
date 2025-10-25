@@ -1,6 +1,7 @@
 package com.hims.controller;
 
 import com.hims.request.DgMasInvestigationRequest;
+import com.hims.request.DgMasInvestigationSingleReqest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DgMasInvestigationResponse;
 import com.hims.service.DgMasInvestigationService;
@@ -33,7 +34,7 @@ public class DgMasInvestigationController {
     }
 
     @PostMapping("/create-investigation")
-    public ResponseEntity<ApiResponse<DgMasInvestigationResponse>> addInvestigation(@RequestBody DgMasInvestigationRequest investigationRequest){
+    public ResponseEntity<ApiResponse<DgMasInvestigationResponse>> addInvestigation(@RequestBody DgMasInvestigationSingleReqest investigationRequest){
         return new ResponseEntity<>(dgMasInvestigationService.createInvestigation(investigationRequest), HttpStatus.CREATED);
     }
 

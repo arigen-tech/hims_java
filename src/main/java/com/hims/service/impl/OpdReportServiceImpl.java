@@ -34,6 +34,8 @@ public class OpdReportServiceImpl implements OpdReportService {
     @Autowired
     private VisitRepository visitRepo;
 
+    private String path = "src/main/resources/Assets/arigen_health.png";
+
     @Override
     public byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception {
         InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jrxml");
@@ -65,9 +67,10 @@ public class OpdReportServiceImpl implements OpdReportService {
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("visit_id", billingHeader.getVisit().getId());
+            parameters.put("path", path);
 
             Connection conn = dataSource.getConnection();
-            byte[] data = reportDeclare("opd_billing", parameters, conn);
+            byte[] data = reportDeclare("opd_billing_maxx", parameters, conn);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
