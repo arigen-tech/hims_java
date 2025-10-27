@@ -10,5 +10,5 @@ import lombok.Setter;
 public class DgFixedValueResponse {
     private Long fixedId;
     private String fixedValue;
-    private long subChargeCodeId;
+    private long subInvestigationId;
 }

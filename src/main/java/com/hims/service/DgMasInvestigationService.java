@@ -1,5 +1,6 @@
 package com.hims.service;
 
+import com.hims.request.DgMasInvestigationMultiRequest;
 import com.hims.request.DgMasInvestigationRequest;
 import com.hims.request.DgMasInvestigationSingleReqest;
 import com.hims.response.ApiResponse;
@@ -23,6 +24,6 @@ public interface DgMasInvestigationService {
     public ApiResponse<DgMasInvestigationSingleResponse> updateSingleInvestigation(Long investigationId, DgMasInvestigationSingleReqest investigationRequest);
 
     @Transactional(rollbackFor = {Exception.class})
-    public ApiResponse <DgMasInvestigationResponse> updateMultipleInvestigation(Long investigationId, DgMasInvestigationRequest investigationRequest);
+    public ApiResponse<String> updateMultipleInvestigation(DgMasInvestigationMultiRequest multiRequest);
 
 }

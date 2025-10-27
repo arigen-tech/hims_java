@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalTime;
@@ -293,162 +294,193 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         }
     }
 
+
     @Override
-    public ApiResponse<DgMasInvestigationResponse> updateMultipleInvestigation(Long investigationId, DgMasInvestigationRequest investigationRequest) {
-        Optional<DgMasInvestigation> masInvestigation = dgMasInvestigationRepo.findById(investigationId);
-        if (masInvestigation.isPresent()) {
-            DgMasInvestigation dmi = masInvestigation.get();
-            dmi.setInvestigationName(investigationRequest.getInvestigationName());
-            dmi.setConfidential(investigationRequest.getConfidential());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
-            }
+    @Transactional
+    public ApiResponse<String> updateMultipleInvestigation(DgMasInvestigationMultiRequest multiRequest) {
+        Optional<DgMasInvestigation> masInvestOpt = dgMasInvestigationRepo.findById(multiRequest.getInvestigationId());
+        DgMasInvestigation masInvestigation = masInvestOpt.get();
+        if(masInvestigation != null){
+            for (DgSubMasInvestigationRequest subInvestObj : multiRequest.getMasInvestReq()) {
+                if (subInvestObj.getSubInvestigationId() == null) {
+//                    adding sub_mas_investigation here
+                    DgSubMasInvestigation newSubObj = new DgSubMasInvestigation();
+                    newSubObj.setSubInvestigationCode(subInvestObj.getSubInvestigationCode());
+                    newSubObj.setSubInvestigationName(subInvestObj.getSubInvestigationName());
+                    newSubObj.setResultType(subInvestObj.getResultType());
+                    newSubObj.setComparisonType(subInvestObj.getComparisonType());
 
-            dmi.setLastChgBy(currentUser.getUsername());
-            dmi.setLastChgDate(Instant.now());
-            dmi.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+//                    condition for comparison type
+                    if ("n".equalsIgnoreCase(subInvestObj.getComparisonType())) {
+                        // delete normal values by normalId
+                        if (subInvestObj.getNormalValueIdsToDelete() != null) {
+                            for (Long normalId : subInvestObj.getNormalValueIdsToDelete()) {
+                                normalRepo.deleteById(normalId);
+                            }
+                        }
 
-            dmi.setMaxNormalValue(investigationRequest.getMaxNormalValue());
-            dmi.setMinNormalValue(investigationRequest.getMinNormalValue());
-//            dmi.setAppearInDischargeSummary(investigationRequest.getAppearInDischargeSummary());
-//            dmi.setInvestigationType(investigationRequest.getInvestigationType());
-//            dmi.setMultipleResults(investigationRequest.getMultipleResults());
-//            dmi.setQuantity(investigationRequest.getQuantity());
-//            dmi.setNormalValue(investigationRequest.getNormalValue());
-//            dmi.setAppointmentRequired(investigationRequest.getAppointmentRequired());
-//            dmi.setTestOrderNo(investigationRequest.getTestOrderNo());
-//            dmi.setNumericOrString(investigationRequest.getNumericOrString());
-//            dmi.setHicCode(investigationRequest.getHicCode());
+                        // add or update normal values
+                        if (subInvestObj.getNormalValues() != null) {
+                            for (DgNormalValueRequest nv : subInvestObj.getNormalValues()) {
+                                DgNormalValue entity;
+                                if (nv.getNormalId() != null) {
+                                    entity = normalRepo.findById(nv.getNormalId()).orElse(new DgNormalValue());
+                                } else {
+                                    entity = new DgNormalValue();
+                                }
+                                entity.setSex(nv.getSex());
+                                entity.setFromAge(nv.getFromAge());
+                                entity.setToAge(nv.getToAge());
+                                entity.setMinNormalValue(nv.getMinNormalValue());
+                                entity.setMaxNormalValue(nv.getMaxNormalValue());
+                                entity.setNormalValue(nv.getNormalValue());
+                                Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(nv.getMainChargeCodeId());
+                                if (mmcc.isPresent()) {
+                                    entity.setMainChargeCodeId(mmcc.get());
+                                } else {
+                                    return ResponseUtils.createNotFoundResponse("masMainChargeCodeId not found", 404);
+                                }
+                                entity.setSubInvestigationId(newSubObj);
+                                normalRepo.save(entity);
+                            }
+                        }
 
-            if (investigationRequest.getMainChargeCodeId() != null) {
-                Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(investigationRequest.getMainChargeCodeId());
-                if (mmcc.isPresent()) {
-                    dmi.setMainChargeCodeId(mmcc.get());
+                    } else if ("f".equalsIgnoreCase(subInvestObj.getComparisonType())) {
+                        // deleting fixed values by fixedId
+                        if (subInvestObj.getFixedValueIdsToDelete() != null) {
+                            for (Long fixedId : subInvestObj.getFixedValueIdsToDelete()) {
+                                fixedRepo.deleteById(fixedId);
+                            }
+                        }
+
+                        // add/update fixed values
+                        if (subInvestObj.getFixedValues() != null) {
+                            for (DgFixedValueRequest fv : subInvestObj.getFixedValues()) {
+                                DgFixedValue entity;
+                                if (fv.getFixedId() != null) {
+                                    entity = fixedRepo.findById(fv.getFixedId()).orElse(new DgFixedValue());
+                                } else {
+                                    entity = new DgFixedValue();
+                                }
+                                entity.setFixedValue(fv.getFixedValue());
+                                entity.setSubInvestigationId(newSubObj);
+                                fixedRepo.save(entity);
+                            }
+                        }
+                    }
+
+                    Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subInvestObj.getMainChargeCodeId());
+                    if(mmcc.isPresent()) {
+                        newSubObj.setMainChargeCodeId(mmcc.get());
+                    } else {
+                        return ResponseUtils.createNotFoundResponse("masMainChargeCodeId not found", 404);
+                    }
+                    Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(subInvestObj.getSubChargeCodeId());
+                    if(mscc.isPresent()) {
+                        newSubObj.setSubChargeCodeId(mscc.get());
+                    } else {
+                        return ResponseUtils.createNotFoundResponse("subChargeCodeId not found", 404);
+                    }
+                    Optional<DgUom> du = uomRepo.findById(subInvestObj.getUomId());
+                    if(du.isPresent()) {
+                        newSubObj.setUomId(du.get());
+                    } else {
+                        return ResponseUtils.createNotFoundResponse("uomId not found", 404);
+                    }
+                    newSubObj.setInvestigationId(masInvestigation);
+                    subInvestigationRepo.save(newSubObj);
                 } else {
-                    return ResponseUtils.createNotFoundResponse("masMainChargeCodeId not found", 404);
+
+//                    updating sub_mas_investigation here
+                    Optional<DgSubMasInvestigation> existingOpt = subInvestigationRepo.findById(subInvestObj.getSubInvestigationId());
+                    if (existingOpt.isPresent()) {
+                        DgSubMasInvestigation existing = existingOpt.get();
+                        existing.setSubInvestigationName(subInvestObj.getSubInvestigationName());
+                        existing.setSubInvestigationCode(subInvestObj.getSubInvestigationCode());
+                        existing.setResultType(subInvestObj.getResultType());
+                        existing.setComparisonType(subInvestObj.getComparisonType());
+
+                        if ("n".equalsIgnoreCase(subInvestObj.getComparisonType())) {
+                            // delete normal values by normalId
+                            if (subInvestObj.getNormalValueIdsToDelete() != null) {
+                                for (Long normalId : subInvestObj.getNormalValueIdsToDelete()) {
+                                    normalRepo.deleteById(normalId);
+                                }
+                            }
+
+                            // add or update normal values
+                            if (subInvestObj.getNormalValues() != null) {
+                                for (DgNormalValueRequest nv : subInvestObj.getNormalValues()) {
+                                    DgNormalValue entity;
+                                    if (nv.getNormalId() != null) {
+                                        entity = normalRepo.findById(nv.getNormalId()).orElse(new DgNormalValue());
+                                    } else {
+                                        entity = new DgNormalValue();
+                                    }
+                                    entity.setSex(nv.getSex());
+                                    entity.setFromAge(nv.getFromAge());
+                                    entity.setToAge(nv.getToAge());
+                                    entity.setMinNormalValue(nv.getMinNormalValue());
+                                    entity.setMaxNormalValue(nv.getMaxNormalValue());
+                                    entity.setNormalValue(nv.getNormalValue());
+                                    Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(nv.getMainChargeCodeId());
+                                    if (mmcc.isPresent()) {
+                                        entity.setMainChargeCodeId(mmcc.get());
+                                    } else {
+                                        return ResponseUtils.createNotFoundResponse("masMainChargeCodeId not found", 404);
+                                    }
+                                    entity.setSubInvestigationId(existing);
+                                    normalRepo.save(entity);
+                                }
+                            }
+
+                        } else if ("f".equalsIgnoreCase(subInvestObj.getComparisonType())) {
+                            // deleting fixed values by fixedId
+                            if (subInvestObj.getFixedValueIdsToDelete() != null) {
+                                for (Long fixedId : subInvestObj.getFixedValueIdsToDelete()) {
+                                    fixedRepo.deleteById(fixedId);
+                                }
+                            }
+
+                            // add/update fixed values
+                            if (subInvestObj.getFixedValues() != null) {
+                                for (DgFixedValueRequest fv : subInvestObj.getFixedValues()) {
+                                    DgFixedValue entity;
+                                    if (fv.getFixedId() != null) {
+                                        entity = fixedRepo.findById(fv.getFixedId()).orElse(new DgFixedValue());
+                                    } else {
+                                        entity = new DgFixedValue();
+                                    }
+                                    entity.setFixedValue(fv.getFixedValue());
+                                    entity.setSubInvestigationId(existing);
+                                    fixedRepo.save(entity);
+                                }
+                            }
+                        }
+
+                        Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subInvestObj.getMainChargeCodeId());
+                        existing.setMainChargeCodeId(mmcc.get());
+                        Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(subInvestObj.getSubChargeCodeId());
+                        existing.setSubChargeCodeId(mscc.get());
+                        Optional<DgUom> du = uomRepo.findById(subInvestObj.getUomId());
+                        existing.setUomId(du.get());
+                        existing.setInvestigationId(masInvestigation); // Ensure linkage
+                        subInvestigationRepo.save(existing);
+                    }
                 }
             }
-
-            if (investigationRequest.getUomId() != null) {
-                Optional<DgUom> du = uomRepo.findById(investigationRequest.getUomId());
-                if (du.isPresent()) {
-                    dmi.setUomId(du.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("uomId not found", 404);
+            if (multiRequest.getSubInvestigationIdsToDelete() != null && !multiRequest.getSubInvestigationIdsToDelete().isEmpty()) {
+                for (Long subIdToDelete : multiRequest.getSubInvestigationIdsToDelete()) {
+                    subInvestigationRepo.deleteById(subIdToDelete);
                 }
             }
-
-            if (investigationRequest.getSubChargeCodeId() != null) {
-                Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(investigationRequest.getSubChargeCodeId());
-                if (mscc.isPresent()) {
-                    dmi.setSubChargeCodeId(mscc.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("subChargeCodeId not found", 404);
-                }
-            }
-
-            if (investigationRequest.getSampleId() != null) {
-                Optional<DgMasSample> dms = sampleRepo.findById(investigationRequest.getSampleId());
-                if (dms.isPresent()) {
-                    dmi.setSampleId(dms.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("sampleId not found", 404);
-                }
-            }
-
-
-
-            if (investigationRequest.getCollectionId() != null) {
-                Optional<DgMasCollection> dmc = collectionRepo.findById(investigationRequest.getCollectionId());
-                if (dmc.isPresent()) {
-                    dmi.setCollectionId(dmc.get());
-                } else {
-                    return ResponseUtils.createNotFoundResponse("collectionId not found", 404);
-                }
-            }
-//            dmi.setEquipmentId(investigationRequest.getEquipmentId());
-//            dmi.setBloodReactionTest(investigationRequest.getBloodReactionTest());
-//            dmi.setBloodBankScreenTest(investigationRequest.getBloodBankScreenTest());
-//            dmi.setInstructions(investigationRequest.getInstructions());
-//            dmi.setDiscountApplicable(investigationRequest.getDiscountApplicable());
-//            dmi.setGenderApplicable(investigationRequest.getGenderApplicable());
-//            dmi.setDiscount(investigationRequest.getDiscount());
-//            dmi.setPrice(investigationRequest.getPrice());
-
-            // saving the updated masInvestigation
-            DgMasInvestigation updatedInvestigation = dgMasInvestigationRepo.save(dmi);
-
-            //Saving DgSubMasInvestigation
-            List<DgSubMasInvestigationRequest> subRequests = investigationRequest.getSubMasInvestigationRequestlist();
-            List<DgSubMasInvestigation> subList = new ArrayList<>();
-            for(DgSubMasInvestigationRequest subRequest : subRequests) {
-                DgSubMasInvestigation subInvestigation = new DgSubMasInvestigation();
-                subInvestigation.setSubInvestigationCode(subRequest.getSubInvestigationCode());
-                subInvestigation.setSubInvestigationName(subRequest.getSubInvestigationName());
-
-                subInvestigation.setResultType(subRequest.getResultType());
-                subInvestigation.setComparisonType(subRequest.getComparisonType());
-                Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subRequest.getMainChargeCodeId());
-                subInvestigation.setMainChargeCodeId(mmcc.get());
-                Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(subRequest.getSubChargeCodeId());
-                subInvestigation.setSubChargeCodeId(mscc.get());
-
-                Optional<DgUom> du = uomRepo.findById(subRequest.getUomId());
-                subInvestigation.setUomId(du.get());
-//                subInvestigation.setOrderNo(subRequest.getOrderNo());
-//                Optional<DgMasSample> dms = sampleRepo.findById(subRequest.getSampleId());
-//                subInvestigation.setSampleId(dms.get());
-                subInvestigation.setInvestigationId(updatedInvestigation);
-                subList.add(subInvestigation);
-            }
-
-            //saving the updated subInvestigation
-            subInvestigationRepo.saveAll(subList);
-
-            //Saving DgFixedValue
-            List<DgFixedValueRequest> fixedRequests = investigationRequest.getFixedValueRequestList();
-            List<DgFixedValue> fixedList = new ArrayList<>();
-            for(DgFixedValueRequest fixedRequest : fixedRequests){
-                DgFixedValue fixedValue = new DgFixedValue();
-                fixedValue.setFixedValue(fixedRequest.getFixedValue());
-                Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(fixedRequest.getSubChargeCodeId());
-                fixedValue.setSubChargeCodeId(mscc.get());
-                fixedList.add(fixedValue);
-            }
-
-            //saving the updated fixedValue
-            fixedRepo.saveAll(fixedList);
-
-            //saving DgNormalValue
-            List<DgNormalValueRequest> normalRequests = investigationRequest.getNormalValueRequestList();
-            List<DgNormalValue> normalList = new ArrayList<>();
-            for (DgNormalValueRequest normalRequest : normalRequests){
-                DgNormalValue normalValue = new DgNormalValue();
-                normalValue.setSex(normalRequest.getSex());
-                normalValue.setFromAge(normalRequest.getFromAge());
-                normalValue.setToAge(normalRequest.getToAge());
-                normalValue.setMinNormalValue(normalRequest.getMinNormalValue());
-                normalValue.setMaxNormalValue(normalRequest.getMaxNormalValue());
-                normalValue.setNormalValue(normalRequest.getNormalValue());
-                Optional<DgSubMasInvestigation> dsmi = subInvestigationRepo.findById(normalRequest.getSubInvestigationId());
-                normalValue.setSubInvestigationId(dsmi.get());
-                Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(normalRequest.getMainChargeCodeId());
-                normalValue.setMainChargeCodeId(mmcc.get());
-                normalList.add(normalValue);
-            }
-
-            //saving the updated normalValue
-            normalRepo.saveAll(normalList);
-
-            // Map to response
-            DgMasInvestigationResponse response = mapToResponseMulti(updatedInvestigation, subList, fixedList, normalList);
-
-            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
         } else {
-            return ResponseUtils.createNotFoundResponse("investigationId not found", 404);
+            return ResponseUtils.createSuccessResponse("Investigation ID not found", new TypeReference<>() {
+            });
         }
+        return ResponseUtils.createSuccessResponse("update Successfully", new TypeReference<>() {
+        });
+
     }
 
     private User getCurrentUser() {
@@ -531,7 +563,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             DgFixedValueResponse resp = new DgFixedValueResponse();
             resp.setFixedId(fixed.getFixedId());
             resp.setFixedValue(fixed.getFixedValue());
-            resp.setSubChargeCodeId(fixed.getSubChargeCodeId() != null ? fixed.getSubChargeCodeId().getSubId() : 0L);
+            resp.setSubInvestigationId(fixed.getSubInvestigationId() != null ? fixed.getSubInvestigationId().getSubInvestigationId() : 0L);
             return resp;
         }).collect(Collectors.toList());
         dmir.setFixedValueResponseList(fixedValResponses);

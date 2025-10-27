@@ -1,5 +1,6 @@
 package com.hims.controller;
 
+import com.hims.request.DgMasInvestigationMultiRequest;
 import com.hims.request.DgMasInvestigationRequest;
 import com.hims.request.DgMasInvestigationSingleReqest;
 import com.hims.response.ApiResponse;
@@ -52,10 +53,9 @@ public class DgMasInvestigationController {
     }
 
     @PutMapping("/update-multiple-investigation/{investigationId}")
-    public ResponseEntity<ApiResponse<DgMasInvestigationResponse>> updateMultiInvestigation(
-            @PathVariable Long investigationId,
-            @RequestBody DgMasInvestigationRequest investigationRequest ) {
-        return new ResponseEntity<>(dgMasInvestigationService.updateMultipleInvestigation(investigationId, investigationRequest), HttpStatus.OK);
+    public ResponseEntity<ApiResponse<String>> updateMultiInvestigation(
+            @RequestBody DgMasInvestigationMultiRequest dmiMultiReq ) {
+        return new ResponseEntity<>(dgMasInvestigationService.updateMultipleInvestigation(dmiMultiReq), HttpStatus.OK);
     }
 
 }

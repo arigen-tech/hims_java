@@ -16,6 +16,6 @@ public class DgFixedValue {
     private String fixedValue;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "sub_chargecode_id")
-    private MasSubChargeCode subChargeCodeId;
+    @JoinColumn(name = "sub_investigation_id")
+    private DgSubMasInvestigation subInvestigationId;
 }
