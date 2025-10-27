@@ -13,6 +13,8 @@ public interface DgMasInvestigationService {
 
     ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag);
 
+    ApiResponse<String> changeInvestigationStatus(Long investigationId,String status);
+
     @Transactional(rollbackFor = {Exception.class})
     public ApiResponse<DgMasInvestigationResponse> createInvestigation(DgMasInvestigationSingleReqest investigationRequest);
 

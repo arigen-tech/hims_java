@@ -33,6 +33,11 @@ public class DgMasInvestigationController {
         return dgMasInvestigationService.getAllInvestigations(flag);
     }
 
+    @PutMapping("/change-status/{id}")
+    public ResponseEntity<?> changeInvestigationStatus(@PathVariable Long id,@RequestParam String status){
+        return ResponseEntity.ok(dgMasInvestigationService.changeInvestigationStatus(id,status));
+    }
+
     @PostMapping("/create-investigation")
     public ResponseEntity<ApiResponse<DgMasInvestigationResponse>> addInvestigation(@RequestBody DgMasInvestigationSingleReqest investigationRequest){
         return new ResponseEntity<>(dgMasInvestigationService.createInvestigation(investigationRequest), HttpStatus.CREATED);

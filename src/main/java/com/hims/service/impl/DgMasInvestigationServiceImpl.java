@@ -117,6 +117,33 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         }
     }
 
+    @Override
+    public ApiResponse<String> changeInvestigationStatus(Long investigationId, String status) {
+        try {
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            Optional<DgMasInvestigation> dgMasInvestigationOpt = dgMasInvestigationRepo.findById(investigationId);
+            if(dgMasInvestigationOpt.isEmpty()){
+                return  ResponseUtils.createNotFoundResponse("Invalid Investigation ID",HttpStatus.NOT_FOUND.value());
+            }
+            DgMasInvestigation dgMasInvestigation = dgMasInvestigationOpt.get();
+            dgMasInvestigation.setStatus(status);
+            dgMasInvestigation.setLastChgBy(currentUser.getUsername());
+            dgMasInvestigation.setLastChgDate(Instant.now());
+            dgMasInvestigation.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            dgMasInvestigationRepo.save(dgMasInvestigation);
+            return  ResponseUtils.createSuccessResponse("Investigation Status Changed Successfully", new TypeReference<>() {}) ;
+        } catch (Exception e) {
+            log.error("Unexpected error changing investigation status: {}", e.getMessage(), e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An unexpected error occurred", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
 
     @Override
     public ApiResponse<DgMasInvestigationResponse> createInvestigation(DgMasInvestigationSingleReqest investigationRequest) {
