@@ -4,6 +4,7 @@ import com.hims.request.DgMasInvestigationRequest;
 import com.hims.request.DgMasInvestigationSingleReqest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DgMasInvestigationResponse;
+import com.hims.response.DgMasInvestigationSingleResponse;
 import com.hims.service.DgMasInvestigationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -29,7 +30,7 @@ public class DgMasInvestigationController {
     }
 
     @GetMapping("/getAll/{flag}")
-    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(@PathVariable int flag) {
+    public ApiResponse<List<DgMasInvestigationSingleResponse>> getAllInvestigations(@PathVariable int flag) {
         return dgMasInvestigationService.getAllInvestigations(flag);
     }
 
@@ -39,14 +40,14 @@ public class DgMasInvestigationController {
     }
 
     @PostMapping("/create-investigation")
-    public ResponseEntity<ApiResponse<DgMasInvestigationResponse>> addInvestigation(@RequestBody DgMasInvestigationSingleReqest investigationRequest){
+    public ResponseEntity<ApiResponse<DgMasInvestigationSingleResponse>> addInvestigation(@RequestBody DgMasInvestigationSingleReqest investigationRequest){
         return new ResponseEntity<>(dgMasInvestigationService.createInvestigation(investigationRequest), HttpStatus.CREATED);
     }
 
     @PutMapping("/update-single-investigation/{investigationId}")
-    public ResponseEntity<ApiResponse<DgMasInvestigationResponse>> updateOneInvestigation(
+    public ResponseEntity<ApiResponse<DgMasInvestigationSingleResponse>> updateOneInvestigation(
             @PathVariable Long investigationId,
-            @RequestBody DgMasInvestigationRequest investigationRequest ) {
+            @RequestBody DgMasInvestigationSingleReqest investigationRequest ) {
         return new ResponseEntity<>(dgMasInvestigationService.updateSingleInvestigation(investigationId, investigationRequest), HttpStatus.OK);
     }
 

@@ -14,7 +14,6 @@ import java.util.List;
 
 @Getter
 @Setter
-@Data
 public class DgMasInvestigationResponse {
     private Long investigationId;
     private String investigationName;

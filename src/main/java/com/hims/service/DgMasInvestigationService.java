@@ -4,6 +4,7 @@ import com.hims.request.DgMasInvestigationRequest;
 import com.hims.request.DgMasInvestigationSingleReqest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DgMasInvestigationResponse;
+import com.hims.response.DgMasInvestigationSingleResponse;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -11,15 +12,15 @@ import java.util.List;
 public interface DgMasInvestigationService {
     ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable);
 
-    ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag);
+    ApiResponse<List<DgMasInvestigationSingleResponse>> getAllInvestigations(int flag);
 
     ApiResponse<String> changeInvestigationStatus(Long investigationId,String status);
 
     @Transactional(rollbackFor = {Exception.class})
-    public ApiResponse<DgMasInvestigationResponse> createInvestigation(DgMasInvestigationSingleReqest investigationRequest);
+    public ApiResponse<DgMasInvestigationSingleResponse> createInvestigation(DgMasInvestigationSingleReqest investigationRequest);
 
     @Transactional(rollbackFor = {Exception.class})
-    public ApiResponse<DgMasInvestigationResponse> updateSingleInvestigation(Long investigationId, DgMasInvestigationRequest investigationRequest);
+    public ApiResponse<DgMasInvestigationSingleResponse> updateSingleInvestigation(Long investigationId, DgMasInvestigationSingleReqest investigationRequest);
 
     @Transactional(rollbackFor = {Exception.class})
     public ApiResponse <DgMasInvestigationResponse> updateMultipleInvestigation(Long investigationId, DgMasInvestigationRequest investigationRequest);
