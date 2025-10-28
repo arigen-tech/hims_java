@@ -7,4 +7,5 @@ import lombok.Setter;
 @Setter
 public class AppsetupResponse {
     private String msg;
+    private String billinghdId;
 }

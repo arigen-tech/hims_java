@@ -14,6 +14,10 @@ public class OpeningBalanceDtResponse {
     private Long balanceTId;
     private Long balanceMId;
     private Long itemId;
+    private String itemName;
+    private String itemUnit;
+    private BigDecimal itemGst;
+    private String itemCode;
     private String batchNo;
     private LocalDate manufactureDate;
     private LocalDate expiryDate;
@@ -29,7 +33,8 @@ public class OpeningBalanceDtResponse {
     private BigDecimal totalMrpValue;
     private Long brandId;
     private Long manufacturerId;
-    private String BrandName;
+    private String brandName;
     private String manufacturerName;
+
 
 }

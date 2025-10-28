@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.21.2-8434a0bd7c3bbc37cbf916f2968d35e4b165821a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="opd_biling_maxx" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="26e9412c-746d-4df1-be4e-d2f6300f378b">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="visit_id" class="java.lang.Long"/>
+	<queryString>
+		<![CDATA[select 
+row_number() over(order by visit_no) as row_num, *
+from
+	(select
+	distinct (bh.visit_id) as visit_no,
+	bh.hospital_address as registered_office,
+	p.p_mobile_number as patient_contact,
+	bh.patient_display_name as patient_name,
+	concat(bh.patient_age || '/' || bh.patient_gender) as age_sex,
+	coalesce(concat(coalesce(p.p_address1, p.p_address2) || ',' || p.p_city || ',' || p.pincode), 'NA') as patient_address,
+	--coalesce
+	--	(case
+	--	 	when p.p_address1 is not null then concat(p.p_address1 || ',' || p.p_city || ',' || p.pincode)
+	--	 	when p.p_address2 is not null then concat(p.p_address2 || ',' || p.p_city || ',' || p.pincode)
+	--	 	else 'NA'
+	--	end, 'NA') as patient_address,
+	coalesce(bh.referred_by, 'self') as referred_by,
+	bh.billing_date as bill_date,
+	bh.patient_id as patient_id,
+	bh.bill_no,
+	coalesce(bh.gstn_bill_no, 'NA') as gstn_bill,
+	coalesce(bh.hospital_gstin, 'NA') as gstn_no,
+	coalesce(mso.service_name, 'General Consultation') as opd_service_name,
+	msc.sac_code,
+	--work on qty later,
+	(bh.total_amount + bh.discount_amount - bh.tax_total) as base_price,
+	bh.discount_amount,
+	bh.net_amount,
+	bh.tax_total,
+	bh.total_amount as bill_amount,
+	concat('INR ' || bh.total_amount) as total,
+	coalesce(bh.total_paid, 0) as total_paid,
+	coalesce(pd.payment_mode, 'Cash') as payment_mode
+	from billing_header as bh
+	left join patient as p on bh.patient_id = p.patient_id
+	left join billing_details as bd on bh.bill_hd_id = bd.bill_hd_id
+	left join mas_service_opd as mso on bd.opd_service_id = mso.id
+	left join mas_service_category as msc on bh.service_category_id = msc.id
+	left join billing_payments as bp on bh.billing_hd_id = bp.billing_hd_id
+	left join payment_details as pd on bp.payment_id = pd.payment_id)
+where visit_no = $P{visit_id}]]>
+	</queryString>
+	<field name="row_num" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="row_num"/>
+		<property name="com.jaspersoft.studio.field.label" value="row_num"/>
+	</field>
+	<field name="visit_no" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="visit_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="visit_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="registered_office" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="registered_office"/>
+		<property name="com.jaspersoft.studio.field.label" value="registered_office"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="patient_contact" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_contact"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_contact"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="patient_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="age_sex" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="age_sex"/>
+		<property name="com.jaspersoft.studio.field.label" value="age_sex"/>
+	</field>
+	<field name="patient_address" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_address"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_address"/>
+	</field>
+	<field name="referred_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="referred_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="referred_by"/>
+	</field>
+	<field name="bill_date" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="bill_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="bill_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="patient_id" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="patient_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="bill_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="bill_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="bill_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="gstn_bill" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gstn_bill"/>
+		<property name="com.jaspersoft.studio.field.label" value="gstn_bill"/>
+	</field>
+	<field name="gstn_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gstn_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="gstn_no"/>
+	</field>
+	<field name="opd_service_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="opd_service_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="opd_service_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_service_opd"/>
+	</field>
+	<field name="sac_code" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="sac_code"/>
+		<property name="com.jaspersoft.studio.field.label" value="sac_code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_service_category"/>
+	</field>
+	<field name="base_price" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="base_price"/>
+		<property name="com.jaspersoft.studio.field.label" value="base_price"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_service_opd"/>
+	</field>
+	<field name="discount_amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="discount_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="discount_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="net_amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="net_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="net_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="tax_total" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="tax_total"/>
+		<property name="com.jaspersoft.studio.field.label" value="tax_total"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="bill_amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="bill_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="bill_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="total" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="total"/>
+		<property name="com.jaspersoft.studio.field.label" value="total"/>
+	</field>
+	<field name="total_paid" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="total_paid"/>
+		<property name="com.jaspersoft.studio.field.label" value="total_paid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="payment_mode" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="payment_mode"/>
+		<property name="com.jaspersoft.studio.field.label" value="payment_mode"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="80" splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+			<staticText>
+				<reportElement x="10" y="0" width="220" height="49" forecolor="#4CBAE6" uuid="f13c5c3a-d1d3-43a6-ba90-663016aec3d5"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font size="20"/>
+				</textElement>
+				<text><![CDATA[Arigen Healthcare]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="340" y="40" width="100" height="19" uuid="d51e4011-5d36-4025-b496-c90bf3137dbd"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Hospital Address]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="167" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="40" width="100" height="15" uuid="8a4776bf-5a13-4381-83eb-908d4999b08f">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Mobile No. :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="55" width="100" height="15" uuid="78464070-ad8d-45da-8170-1583b13b649a">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient Name :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="70" width="100" height="15" uuid="c38df6c8-161f-4b4e-86f9-48df22c2122e">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Age/sex :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="85" width="100" height="15" uuid="47f077be-a3af-4c5f-8d1c-0dc95f0fef63">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Address :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="110" width="100" height="15" uuid="fa67be25-2b78-41c5-a4a9-d972df5339e2">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Referred :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="8" width="555" height="22" uuid="c4a69511-42cf-4d8b-ad3c-45d4d6400f4e"/>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bill of Supply]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="40" width="100" height="15" uuid="5b66db8d-4326-4178-a6b8-32a276124682"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bill Date :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="55" width="100" height="15" uuid="97d2a13c-ded0-455c-9356-4c4ccdc65de9"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient Id / SSN :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="70" width="100" height="15" uuid="7157ee53-036b-448e-a1a5-37b85a9aeddb"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bill No. :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="85" width="100" height="15" uuid="759c4dd2-0612-47e8-9042-6f1d53da2e66"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[GSTN Bill :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="110" width="100" height="15" uuid="b695c83c-0507-4328-9997-da642c764829"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[GSTN No :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="110" y="40" width="100" height="15" uuid="cad240da-0c9b-4bdf-80a2-03a99d64069d"/>
+				<textFieldExpression><![CDATA[$F{patient_contact}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="110" y="55" width="100" height="15" uuid="1a8a34ef-9dfc-406c-bb93-2403525ebfc1"/>
+				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="110" y="70" width="100" height="15" uuid="c591409c-008b-4182-b05f-5a6b10cab0a3"/>
+				<textFieldExpression><![CDATA[$F{age_sex}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="110" y="85" width="150" height="25" uuid="b3a1ddd0-0b23-4360-9a0a-a85d08ebac26"/>
+				<textFieldExpression><![CDATA[$F{patient_address}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="110" y="110" width="100" height="15" uuid="bb9445e5-da24-45d8-b5d2-cfc89e7c552b"/>
+				<textFieldExpression><![CDATA[$F{referred_by}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="390" y="40" width="134" height="15" uuid="6b1784ce-e0ad-41a2-be72-caf50496364d"/>
+				<textFieldExpression><![CDATA[$F{bill_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="390" y="55" width="134" height="15" uuid="d4d2fcec-4417-40be-ad1c-dbcbf21859e5"/>
+				<textFieldExpression><![CDATA[$F{patient_id}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="390" y="70" width="134" height="15" uuid="bb399567-09d7-459a-af49-a36c762518fa"/>
+				<textFieldExpression><![CDATA[$F{bill_no}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="390" y="85" width="134" height="15" uuid="f4a02682-53cc-41ce-8cbb-aaedfcf7c6d9"/>
+				<textFieldExpression><![CDATA[$F{gstn_bill}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="390" y="110" width="134" height="15" uuid="706bc03d-9a3a-44a7-8956-c8682952867f"/>
+				<textFieldExpression><![CDATA[$F{gstn_no}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="234" y="140" width="61" height="15" uuid="37272d58-6a74-4245-a05c-78ee36630719">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Base Price]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="293" y="140" width="62" height="15" uuid="64cd4530-3872-4fdc-a2c2-2add28a58c53">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Discount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="421" y="140" width="63" height="15" uuid="3964409e-c578-444e-8b4e-ba67a76d776f">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tax Amt]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="159" y="140" width="30" height="15" uuid="baf24057-cfa2-4d9c-8188-1c4608ec1f3b">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[SAC]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="51" y="140" width="103" height="15" uuid="d65e2a0e-0854-4f51-b0e8-08b998885148">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Services]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="140" width="33" height="15" uuid="225bec84-40b3-449c-aac6-b928aef7851d">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[S.No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="484" y="140" width="70" height="15" uuid="cb019643-3bd0-4253-a431-a3c70513622a">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bill Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="195" y="140" width="40" height="15" uuid="7b4a6c0e-45a6-4160-84e5-5f22e5826e34">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="161" width="555" height="1" uuid="46248f44-0197-4a53-9084-2e67fae46269"/>
+			</line>
+			<line>
+				<reportElement x="0" y="135" width="555" height="1" uuid="4170a237-87d4-495e-a2d7-0b33369e98e8"/>
+			</line>
+			<staticText>
+				<reportElement x="354" y="140" width="68" height="15" uuid="1bb27fde-ed4c-40d0-8b9b-684d289761d6">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Net Amount]]></text>
+			</staticText>
+			<line>
+				<reportElement x="154" y="136" width="1" height="31" uuid="1a88253e-3064-46a7-8597-bc894dbfb6ac"/>
+			</line>
+			<line>
+				<reportElement x="44" y="136" width="1" height="31" uuid="7b12ac97-e235-4efa-b324-2f08806c27d9"/>
+			</line>
+			<line>
+				<reportElement x="194" y="136" width="1" height="31" uuid="e43e9a04-c36b-4328-9dfa-a42e6ef25c2b"/>
+			</line>
+			<line>
+				<reportElement x="234" y="136" width="1" height="31" uuid="3057fa54-22ff-43a8-ae18-a818ab36ac2c"/>
+			</line>
+			<line>
+				<reportElement x="294" y="136" width="1" height="31" uuid="ad6d8361-6b8b-4737-878a-ce122a32016e"/>
+			</line>
+			<line>
+				<reportElement x="354" y="136" width="1" height="31" uuid="3d3d4331-abd4-46de-9243-bf4f41be3491"/>
+			</line>
+			<line>
+				<reportElement x="421" y="136" width="1" height="31" uuid="e1b18d93-b3ee-4445-9a07-411b97132d2d"/>
+			</line>
+			<line>
+				<reportElement x="483" y="136" width="1" height="31" uuid="66c35ab6-94b8-461c-b825-3e5b0c20e081"/>
+			</line>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="35">
+			<textField>
+				<reportElement x="293" y="0" width="61" height="15" uuid="056b6204-91da-4ad3-8a37-aa03ae1296f9"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{discount_amount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="159" y="0" width="30" height="18" uuid="8f888961-fb0f-4426-b32d-5b81ed7107d1"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{sac_code}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="34" width="555" height="1" uuid="b76cbacb-65dc-4066-9b50-dbeefacb9cdb"/>
+			</line>
+			<textField>
+				<reportElement x="420" y="0" width="64" height="15" uuid="11776c02-9b2a-4ee6-b351-2ae7e6ad22ff"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{tax_total}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="484" y="0" width="70" height="15" uuid="99750169-adfe-42d4-9fc4-fdf6560075f1"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{bill_amount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="44" y="0" width="111" height="30" uuid="feb35caa-2974-4edc-9dc1-32ffa7f068e1"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{opd_service_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="234" y="0" width="59" height="14" uuid="e370cde0-71d6-492b-a92b-f5b7be8c5269"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{base_price}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="355" y="0" width="65" height="15" uuid="661eb06f-8733-40da-ac0b-b2b77b1ed298"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{net_amount}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="44" y="0" width="1" height="34" uuid="4835e149-25e9-437b-89be-8e7a5645dd88"/>
+			</line>
+			<line>
+				<reportElement x="154" y="0" width="1" height="34" uuid="50674db6-4763-44a2-b05f-e7bb4c63a344"/>
+			</line>
+			<line>
+				<reportElement x="194" y="0" width="1" height="34" uuid="6733d7bb-05e1-49fe-bc95-2cecf0fb2849"/>
+			</line>
+			<line>
+				<reportElement x="234" y="0" width="1" height="34" uuid="49486ffb-dd12-4731-8381-790ed0c1d765"/>
+			</line>
+			<line>
+				<reportElement x="294" y="0" width="1" height="34" uuid="3d976084-2811-4db9-9662-58c6a8678fd1"/>
+			</line>
+			<line>
+				<reportElement x="354" y="0" width="1" height="34" uuid="d3047ae3-beee-4ba7-8dc4-a769fc3e5ade"/>
+			</line>
+			<line>
+				<reportElement x="421" y="0" width="1" height="34" uuid="6fd1dd6a-fc43-46fb-88bf-35481698c698"/>
+			</line>
+			<line>
+				<reportElement x="483" y="0" width="1" height="34" uuid="98ea2892-7072-4ce3-9dfe-495ab1b20a90"/>
+			</line>
+			<textField>
+				<reportElement x="0" y="0" width="45" height="18" uuid="525d7e62-dff5-4c09-a98b-d48407b07127"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{row_num}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="62">
+			<staticText>
+				<reportElement x="10" y="10" width="90" height="15" uuid="1bb354a8-6d74-4c45-9c66-ee2b8455d191">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Payment Mode(s)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="450" y="30" width="74" height="15" uuid="55ebf8a0-8943-4a7f-9b9a-ab25a9d73f9e">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Signature]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="10" width="100" height="15" uuid="5b59377a-19f0-4ebf-9b4f-9b71526335d6"/>
+				<textFieldExpression><![CDATA[$F{payment_mode}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="65" splitType="Stretch">
+			<staticText>
+				<reportElement x="231" y="20" width="50" height="15" uuid="cb440961-0590-4411-9358-82c42f8cca7a">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total :]]></text>
+			</staticText>
+			<line>
+				<reportElement x="281" y="35" width="273" height="1" uuid="5e6e3f12-31d0-4132-afed-9e39563fc2e5"/>
+			</line>
+			<staticText>
+				<reportElement x="281" y="50" width="88" height="15" uuid="3011a18c-4036-4e2c-b444-9cb64fca4037">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Paid by Pateint]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="417" y="50" width="10" height="15" uuid="b840d1b1-a9bd-4ff1-9aab-79905309b1db">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="293" y="20" width="87" height="15" uuid="496a151f-e5b9-4801-aedf-6c50a3d11e8c"/>
+				<textFieldExpression><![CDATA[$F{total}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="440" y="50" width="87" height="15" uuid="f8e319be-8325-488e-834a-5ff875148a73"/>
+				<textFieldExpression><![CDATA[$F{total_paid}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

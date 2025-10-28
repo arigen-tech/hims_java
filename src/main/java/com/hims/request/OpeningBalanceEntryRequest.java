@@ -9,5 +9,7 @@ public class OpeningBalanceEntryRequest {
     private Long departmentId;
     private String enteredBy;
     private LocalDateTime enteredDt;
+    private String status;
     private List<OpeningBalanceDtRequest> storeBalanceDtList;
+    private List<Long> deletedDt;
 }

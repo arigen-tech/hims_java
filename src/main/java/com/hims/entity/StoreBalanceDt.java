@@ -52,6 +52,10 @@ public class StoreBalanceDt {
     @JoinColumn(name = "hsn_code")
     private MasHSN hsnCode;
 
+    @Column(name = "is_approved")
+    private Boolean isApproved = false;
+
+
     @Column(name = "base_rate_per_unit",  precision = 10, scale = 2,insertable = false, updatable = false)
     private BigDecimal baseRatePerUnit;
 
@@ -62,7 +66,7 @@ public class StoreBalanceDt {
     private BigDecimal totalPurchaseCost;
 
     @Column(name = "total_mrp_value", precision = 12, scale = 2,insertable = false, updatable = false)
-    private BigDecimal totalMrpValue;
+    private BigDecimal totalMrp;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "brand_id")

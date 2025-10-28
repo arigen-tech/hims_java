@@ -1,6 +1,7 @@
 package com.hims.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,19 +23,18 @@ public class StoreItemBatchStock {
     private Long stockId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "hospital_id")
+    @JoinColumn(name = "hospital_id", nullable=false)
     private MasHospital hospitalId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "department_id")
+    @JoinColumn(name = "department_id", nullable=false)
     private MasDepartment departmentId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "item_id")
     private MasStoreItem itemId;
 
-    @Column(name = "manufacturer_id")
-    private Long manufacturerId;
+
 
     @Column(name = "batch_no")
     private String batchNo;
@@ -45,26 +45,29 @@ public class StoreItemBatchStock {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
-    @Column(name = "opening_stock")
-    private Long openingStock;
+    @Column(name = "opening_balance_qty")
+    private Long openingBalanceQty;
 
-    @Column(name = "received_qty")
-    private Long receivedQty;
+    @Column(name = "po_received_qty")
+    private Long poReceivedQty;
 
-    @Column(name = "issued_qty")
-    private Long issuedQty;
+    @Column(name = "indent_received_qty")
+    private Long indentReceivedQty;
 
-    @Column(name = "balance_qty")
-    private Long balanceQty;
+    @Column(name = "indent_issue_qty")
+    private Long indentIssueQty;
 
-    @Column(name = "stock_inward_qty")
-    private Long stockInwardQty;
+    @Column(name = "opd_issue_qty")
+    private Long opdIssueQty;
 
-    @Column(name = "stock_outward_qty")
-    private Long stockOutwardQty;
+    @Column(name = "stock_surplus")
+    private Long stockSurplus;
 
-    @Column(name = "stock_deficit_qty")
-    private Long stockDeficitQty;
+    @Column(name = "stock_deficient")
+    private Long stockDeficient;
+
+    @Column(name = "closing_stock")
+    private Long closingStock;
 
     @Column(name = "qty")
     private Long qty;
@@ -85,13 +88,13 @@ public class StoreItemBatchStock {
     @JoinColumn(name = "hsn_code")
     private MasHSN hsnCode;
 
-    @Column(name = "gst_amount_per_unit", precision = 12, scale = 2)
+    @Column(name = "gst_amount_per_unit", precision = 12, scale = 2, insertable = false, updatable = false)
     private BigDecimal gstAmountPerUnit;
 
-    @Column(name = "total_purchase_cost", precision = 12, scale = 2)
+    @Column(name = "total_purchase_cost", precision = 12, scale = 2, insertable = false, updatable = false)
     private BigDecimal totalPurchaseCost;
 
-    @Column(name = "total_mrp_value", precision = 12, scale = 2)
+    @Column(name = "total_mrp_value", precision = 12, scale = 2, insertable = false, updatable = false)
     private BigDecimal totalMrpValue;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -99,12 +102,12 @@ public class StoreItemBatchStock {
     private MasBrand brandId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "manufacturer")
-    private MasManufacturer manufacturer;
+    @JoinColumn(name = "manufacturer_id")
+    private MasManufacturer manufacturerId;
 
-    @Column(name = "last_updated_dt")
-    private LocalDateTime lastUpdatedDt;
+    @Column(name = "last_chg_date")
+    private LocalDateTime lastChgDate;
 
-    @Column(name = "last_updated_by")
-    private String lastUpdatedBy;
+    @Column(name = "last_chg_by")
+    private String lastChgBy;
 }

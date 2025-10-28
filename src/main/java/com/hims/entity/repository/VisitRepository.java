@@ -1,5 +1,6 @@
 package com.hims.entity.repository;
 
+import com.hims.entity.BillingHeader;
 import com.hims.entity.MasHospital;
 import com.hims.entity.Visit;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -7,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface VisitRepository extends JpaRepository<Visit, Long> {
 
@@ -48,9 +50,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
 
 
+    Visit findByBillingHd(BillingHeader obj);
 
-
-
-
+    Optional<Visit> findById(Long id);
 
 }

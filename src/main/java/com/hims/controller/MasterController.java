@@ -4,20 +4,13 @@ import com.hims.entity.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
-import com.hims.service.impl.MasStoreItemServiceImp;
 import com.hims.service.impl.UserDepartmentServiceImpl;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -31,6 +24,8 @@ public class MasterController {
     private MasServiceOpdService masServiceOpdService;
     @Autowired
     private MasApplicationService masApplicationService;
+    @Autowired
+    private DgFixedValueService dgFixedValueService;
 
     @Autowired
     private MasStoreItemService masStoreItemService;
@@ -98,6 +93,8 @@ public class MasterController {
     private MasBrandService masBrandService;
     @Autowired
     private MasManufacturerService masManufacturerService;
+    @Autowired
+    private DgMasCollectionService dgMasCollectionService;
 
     //    ================================Mas Application Controller================================//
 
@@ -678,6 +675,12 @@ public class MasterController {
         return new ResponseEntity<>(masItemTypeService.getAllMasItemTypeStatus(flag), HttpStatus.OK);
 
     }
+    @GetMapping("/masItemType/findByGroupId/{id}")
+    public ResponseEntity<ApiResponse<List<MasItemTypeResponse>>> findItemType(@PathVariable Long id) {
+        return new ResponseEntity<>(masItemTypeService.findItemType(id), HttpStatus.OK);
+
+    }
+
 
 
     //    ================================Mas MainChargeCode Controller================================//
@@ -980,6 +983,12 @@ public class MasterController {
         ApiResponse<MasStoreSectionResponse> response = masStoreSectionService.updateStoreSection(id, masStoreSectionRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @GetMapping("/storeSection/findByItemType/{id}")
+    public ApiResponse<List<MasStoreSectionResponse>> findStoreSectionByItemType(@PathVariable int id) {
+        return masStoreSectionService.findStoreSectionByItemType(id);
+    }
+
+
 
 
     //    ================================Mas Item Class Controller================================//
@@ -992,6 +1001,10 @@ public class MasterController {
     @GetMapping("/masItemClass/getAll/{flag}")
     public ApiResponse<List<MasItemClassResponse>> getAllMasItemClass(@PathVariable int flag) {
         return masItemClassService.getAllMasItemClass(flag);
+    }
+    @GetMapping("/masItemClass/getAllBySectionId/{id}")
+    public ApiResponse<List<MasItemClassResponse>> getBySectionId(@PathVariable int id) {
+        return masItemClassService.getAllBySectionId(id);
     }
 
     @GetMapping("/masItemClass/getById/{id}")
@@ -1042,6 +1055,10 @@ public class MasterController {
     public ResponseEntity<ApiResponse<MasItemCategoryResponse>> updateMasItemCategory(@PathVariable int id, @RequestBody MasItemCategoryRequest masItemCategoryRequest) {
         ApiResponse<MasItemCategoryResponse> response = masItemCategoryService.updateMasItemClass(id, masItemCategoryRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/masItemCategory/findBySectionId/{id}")
+    public ApiResponse<List<MasItemCategoryResponse>> findByMasItemCategoryBbySectionId(@PathVariable int id) {
+        return masItemCategoryService.findByMasItemCategoryBbySectionId(id);
     }
 
 
@@ -1109,6 +1126,16 @@ public class MasterController {
     }
 
 
+    @GetMapping("/masServiceCategory/getGstConfig/{flag}")
+    public ResponseEntity<ApiResponse<GstConfigResponse>> getGstConfig(@PathVariable int flag) {
+        ApiResponse<GstConfigResponse> response = masServiceCategoryService.getGstConfig(flag);
+
+        HttpStatus status = (response.getStatus() == HttpStatus.OK.value()) ? HttpStatus.OK : HttpStatus.NOT_FOUND;
+
+        return new ResponseEntity<>(response, status);
+    }
+
+
     //    ================================Mas Store Item Controller================================//
     @PostMapping("/masStoreItem/create")
     public ResponseEntity<ApiResponse<MasStoreItemResponse>> addMasItemCategory(@RequestBody MasStoreItemRequest masStoreItemRequest) {
@@ -1123,9 +1150,9 @@ public class MasterController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/masStoreItem/getAll/{flag}")
-    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStoreItem(@PathVariable int flag) {
-        return masStoreItemService.getAllMasStoreItem(flag);
+    @GetMapping("/masStoreItem/getAll/{flag}/{hospitalId}/{departmentId}")
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(@PathVariable int flag,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
+        return masStoreItemService.getAllMasStoreItem(flag,hospitalId,departmentId);
     }
 
     @PutMapping("/masStoreItem/update/{id}")
@@ -1252,4 +1279,47 @@ public class MasterController {
 
 
     }
+    //    ================================ DgMasCollection Controller================================//
+
+
+    @GetMapping("/DgMasCollection/getAll/{flag}")
+    public ApiResponse<List<DgMasCollectionResponse>> getAllDgMasCollection(@PathVariable int flag) {
+        return dgMasCollectionService.getDgMasCollection(flag);
+  }
+
+   @GetMapping("/DgMasCollection/getById/{id}")
+    public ResponseEntity<ApiResponse<DgMasCollectionResponse>> getDgMasCollectionById(@PathVariable Long id) {
+       ApiResponse<DgMasCollectionResponse> response = dgMasCollectionService.findById(id);
+       return new ResponseEntity<>(response, HttpStatus.OK);
+   }
+
+    @PostMapping("/DgMasCollection/create")
+    public ResponseEntity<ApiResponse<DgMasCollectionResponse>> addDgMasCollection(@RequestBody DgMasCollectionRequest dgMasCollectionRequest) {
+        ApiResponse<DgMasCollectionResponse> response =  dgMasCollectionService.addDgMasCollection(dgMasCollectionRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/DgMasCollection/update/{id}")
+    public ResponseEntity<ApiResponse<DgMasCollectionResponse>> updateDgMasCollection(
+            @PathVariable Long id,
+            @RequestBody DgMasCollectionRequest request) {
+        ApiResponse<DgMasCollectionResponse> response = dgMasCollectionService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/DgMasCollection/status/{id}")
+    public ResponseEntity<ApiResponse<DgMasCollectionResponse>> changeDgMasCollectionStatus(@PathVariable Long id, @RequestParam String status) {
+        ApiResponse<DgMasCollectionResponse> response = dgMasCollectionService.changeDgMasCollectionStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+    //    ================================ DgFixedValue Controller================================//
+
+
+    @GetMapping("/DgFixedValue/getAll")
+    public ApiResponse<List<DgFixedValue>> getAllDgFixedValue() {
+        return dgFixedValueService.getDgFixedValue();
+    }
+
 }

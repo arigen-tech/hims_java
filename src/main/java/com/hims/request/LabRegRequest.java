@@ -9,9 +9,9 @@ import java.util.List;
 @Setter
 public class LabRegRequest {
     List<LabInvestigationReq> labInvestigationReq;
-    List<LabPackegReq> labPackegReqs;
+   // List<LabPackegReq> labPackegReqs;
     private Long patientId;
-    private Long totalAmount;
+    //private Long totalAmount;
    // private Long discountAmount;
 
 }

@@ -82,4 +82,8 @@ public class Visit {
     @Column(name = "pre_consultation", length = 1)
     private String preConsultation;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billing_hd_id")
+    private BillingHeader billingHd;
+
 }

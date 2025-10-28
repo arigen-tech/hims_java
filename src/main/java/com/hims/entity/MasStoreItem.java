@@ -36,13 +36,13 @@ public class MasStoreItem {
     private String lastChgTime;
 
     @Column(name = "a_disp_qty", precision = 19, scale = 2)
-    private BigDecimal aDispQty;
+    private BigDecimal adispQty;
 
     @Column(name = "hospital_id")
-    private Integer hospitalId;
+    private Long hospitalId;
 
-//    @Column(name = "department_id")
-//    private Integer departmentId;
+    @Column(name = "department_id")
+    private Long departmentId;
 
     @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "dispensing_unit")
@@ -73,6 +73,10 @@ public class MasStoreItem {
     @JoinColumn(name = "item_class_id")
     @org.hibernate.annotations.NotFound(action = NotFoundAction.IGNORE)
     private MasItemClass itemClassId;
+
+    @ManyToOne(fetch =  FetchType.EAGER)
+    @JoinColumn(name = "item_category_id")
+    private MasItemCategory masItemCategory;
 
     @ManyToOne(fetch =  FetchType.EAGER)
     @JoinColumn(name = "hsn_code")

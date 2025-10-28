@@ -1,9 +1,11 @@
 package com.hims.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -28,7 +30,7 @@ public class DgOrderDt {
     private String orderStatus;
 
     @Column(name = "createdby", length = 100)
-    private int createdBy;
+    private String createdBy;
 
 //    @Column(name = "create_don")
 //    private LocalDate createdOn;
@@ -39,7 +41,7 @@ public class DgOrderDt {
     @Column(name = "last_chg_date")
     private LocalDate lastChgDate;
 
-    @Column(name = "last_chg_time", length = 10)
+    @Column(name = "last_chg_time", length = 64)
     private String lastChgTime;
 
     @Column(name = "appointment_date")
@@ -50,7 +52,7 @@ public class DgOrderDt {
     private DgMasInvestigation investigationId;
 
     @Column(name = "sub_chargeid")
-    private int subChargeid;
+    private long subChargeid;
 
     @Column(name = "main_chargecode_id")
     private long mainChargecodeId;
@@ -62,10 +64,19 @@ public class DgOrderDt {
     @Column(name = "billing_status", length = 1)
     private String billingStatus;
 
-    @Column(name = " msg_sent", length = 1)
-    private String msgSent;
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "package_id")
     private DgInvestigationPackage packageId;
+
+    @Column(name = "createdon")
+    private Instant createdon;
+
+    @Size(max = 1)
+    @Column(name = "msg_sent", length = 1)
+    private String msgSent;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billing_hd_id")
+    private BillingHeader billingHd;
+
 }

@@ -177,6 +177,20 @@ private MasItemCategoryRepository masItemCategoryRepository;
 
     }
 
+    @Override
+    public ApiResponse<List<MasItemCategoryResponse>> findByMasItemCategoryBbySectionId(int id) {
+        List<MasItemCategory> masItemCategory=masItemCategoryRepository.findByMasStoreSectionSectionId(id);
+
+
+
+        List<MasItemCategoryResponse> responses = masItemCategory.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
+        });
+    }
+
     private MasItemCategoryResponse mapToResponse(MasItemCategory masItemCategory) {
         MasItemCategoryResponse response = new  MasItemCategoryResponse();
         response.setItemCategoryId(masItemCategory.getItemCategoryId());

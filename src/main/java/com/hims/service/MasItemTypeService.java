@@ -17,4 +17,6 @@ public interface MasItemTypeService {
     ApiResponse<MasItemTypeResponse> getByMasItemTypeStatus(int id);
 
     ApiResponse<List<MasItemTypeResponse>> getAllMasItemTypeStatus(int flag);
+
+    ApiResponse<List<MasItemTypeResponse>> findItemType(Long id);
 }

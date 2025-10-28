@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Getter
@@ -35,7 +36,7 @@ public class BillingHeader {
     private String patientDisplayName;
 
     @Column(name = "patient_age")
-    private Integer patientAge;
+    private String patientAge;
 
     @Size(max = 10)
     @Column(name = "patient_gender", length = 10)
@@ -113,7 +114,7 @@ public class BillingHeader {
     private Instant updatedDt;
 
 
-    @Column(name = "billing_hd_id", nullable = false)
+    @Column(name = "billing_hd_id")//, nullable = false
     private Integer billingHdId;
 
     @Column(name = "bill_date")

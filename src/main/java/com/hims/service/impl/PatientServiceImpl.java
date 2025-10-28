@@ -79,6 +79,9 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     private AuthUtil authUtil;
 
+    @Value("${serviceCategoryOPD}")
+    private String serviceCategoryOPD;
+
     @Override
     public ApiResponse<PatientRegFollowUpResp> registerPatientWithOpd(PatientRequest request, OpdPatientDetailRequest opdPatientDetailRequest, VisitRequest visit) {
         PatientRegFollowUpResp resp=new PatientRegFollowUpResp();
@@ -172,28 +175,29 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public ApiResponse<List<Patient>> searchPatient(PatientSearchReq req) {
-        String mobileNo = req.getMobileNo().trim();
-//        if (mobileNo != null && mobileNo.trim().isEmpty()) {
-//            mobileNo = null;
-//        }
-
-        String uhidNo = req.getUhidNo().trim();
-//        if (uhidNo != null && uhidNo.trim().isEmpty()) {
-//            uhidNo = null;
-//        }
-
+        // Helper method to clean string parameters
+        String mobileNo = cleanStringParameter(req.getMobileNo());
+        String uhidNo = cleanStringParameter(req.getUhidNo());
+        String patientName = cleanStringParameter(req.getPatientName());
         LocalDate appointmentDate = req.getAppointmentDate();
+
         List<Patient> patientList;
+
         if (appointmentDate != null) {
-            patientList = patientRepository.searchPatients(mobileNo, req.getPatientName(), uhidNo, req.getAppointmentDate());
+            patientList = patientRepository.searchPatients(mobileNo, patientName, uhidNo, appointmentDate);
         } else {
-            patientList = patientRepository.searchPatients(mobileNo, req.getPatientName(), uhidNo);
+            patientList = patientRepository.searchPatients(mobileNo, patientName, uhidNo);
         }
 
-        return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {
-        });
+        return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {});
     }
 
+    private String cleanStringParameter(String param) {
+        if (param == null || param.trim().isEmpty()) {
+            return null;
+        }
+        return param.trim();
+    }
     @Override
     public ApiResponse<List<Visit>> getPendingPreConsultations() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -436,9 +440,9 @@ public class PatientServiceImpl implements PatientService {
         // Save visit
         Visit savedVisit=visitRepository.save(newVisit);
         //create billing header and detail
-        Optional<MasServiceCategory> serviceCategory=masServiceCategoryRepository.findBySacCode("998515");
+        MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
         MasDiscount discount=new MasDiscount();
-        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory.get(),null);
+        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
 
         return savedVisit;
     }

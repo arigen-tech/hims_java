@@ -21,8 +21,14 @@ public class PackageInvestigationMappingController {
     private PackageInvestigationMappingService mapService;
 
     @PostMapping("/add")
-    public ResponseEntity<ApiResponse<PackageInvestigationMappingDTO>> createPackMap(@RequestBody PackageInvestigationMappingRequest mapRequest){
-        return new ResponseEntity<>(mapService.createPackMap(mapRequest), HttpStatus.CREATED);
+    public ResponseEntity<ApiResponse<List<PackageInvestigationMappingDTO>>> createPackMap(
+            @RequestBody PackageInvestigationMappingRequest request) {
+        return new ResponseEntity<>(mapService.createPackMap(request), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<PackageInvestigationMappingDTO>>> getAllMappings(@PathVariable int flag) {
+        return new ResponseEntity<>(mapService.getAllMappings(flag), HttpStatus.OK);
     }
 
     @PutMapping("/update/{pimId}")
@@ -47,5 +53,19 @@ public class PackageInvestigationMappingController {
     @GetMapping("/getAllPackageMap/{flag}")
     public ResponseEntity<ApiResponse<List<PackageInvestigationMappingDTO>>> getAllPackageMap (@PathVariable int flag){
         return new ResponseEntity<>(mapService.getAllPackageMap(flag), HttpStatus.OK);
+    }
+
+    // New endpoint to get investigations by package ID
+    @GetMapping("/getByPackageId/{packageId}")
+    public ResponseEntity<ApiResponse<List<PackageInvestigationMappingDTO>>> getInvestigationsByPackageId(@PathVariable Long packageId) {
+        return new ResponseEntity<>(mapService.getInvestigationsByPackageId(packageId), HttpStatus.OK);
+    }
+
+    // New endpoint to update package investigations
+    @PutMapping("/updatePackageInvestigations/{packageId}")
+    public ResponseEntity<ApiResponse<List<PackageInvestigationMappingDTO>>> updatePackageInvestigations(
+            @PathVariable Long packageId,
+            @RequestBody PackageInvestigationMappingRequest request) {
+        return new ResponseEntity<>(mapService.updatePackageInvestigations(packageId, request), HttpStatus.OK);
     }
 }

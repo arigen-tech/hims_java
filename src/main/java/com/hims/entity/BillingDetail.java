@@ -100,4 +100,8 @@ public class BillingDetail {
     @JoinColumn(name = "package_id")
     private DgInvestigationPackage packageField;
 
+
+    @Column(name = "payment_status", length = 1)
+    private String paymentStatus;
+
 }
