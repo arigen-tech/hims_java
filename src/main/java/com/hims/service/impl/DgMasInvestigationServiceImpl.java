@@ -16,12 +16,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.*;
+
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -577,6 +576,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             List<DgSubMasInvestigation> subInvestigationList,
             List<DgFixedValue> fixedValList,
             List<DgNormalValue> normalValList) {
+
         DgMasInvestigationResponse dmir = new DgMasInvestigationResponse();
         dmir.setInvestigationId(masInvest.getInvestigationId());
         dmir.setInvestigationName(masInvest.getInvestigationName());
@@ -596,26 +596,42 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dmir.setSampleName(masInvest.getSampleId() != null ? masInvest.getSampleId().getSampleDescription() : null);
         dmir.setCollectionId(masInvest.getCollectionId() != null ? masInvest.getCollectionId().getCollectionId() : null);
         dmir.setCollectionName(masInvest.getCollectionId() != null ? masInvest.getCollectionId().getCollectionName() : null);
-//        dmir.setAppearInDischargeSummary(masInvest.getAppearInDischargeSummary());
-//        dmir.setQuantity(masInvest.getQuantity());
-//        dmir.setNormalValue(masInvest.getNormalValue());
-//        dmir.setLastChgBy(masInvest.getLastChgBy());
-//        dmir.setLastChgTime(masInvest.getLastChgTime());
-//        dmir.setLastChgDate(masInvest.getLastChgDate());
-//        dmir.setAppointmentRequired(masInvest.getAppointmentRequired());
-//        dmir.setTestOrderNo(masInvest.getTestOrderNo());
-//        dmir.setNumericOrString(masInvest.getNumericOrString());
-//        dmir.setHicCode(masInvest.getHicCode());
-//        dmir.setEquipmentId(masInvest.getEquipmentId());
-//        dmir.setBloodReactionTest(masInvest.getBloodReactionTest());
-//        dmir.setBloodBankScreenTest(masInvest.getBloodBankScreenTest());
-//        dmir.setInstructions(masInvest.getInstructions());
-//        dmir.setDiscountApplicable(masInvest.getDiscountApplicable());
-//        dmir.setGenderApplicable(masInvest.getGenderApplicable());
-//        dmir.setDiscount(masInvest.getDiscount());
-//        dmir.setPrice(masInvest.getPrice());
 
-        // Sub Investigations
+        // --- Group fixed values by subInvestigationId ---
+        Map<Long, List<DgFixedValueResponse>> fixedBySub = fixedValList.stream()
+                .map(fixed -> {
+                    DgFixedValueResponse resp = new DgFixedValueResponse();
+                    resp.setFixedId(fixed.getFixedId());
+                    resp.setFixedValue(fixed.getFixedValue());
+                    resp.setSubInvestigationId(
+                            fixed.getSubInvestigationId() != null ? fixed.getSubInvestigationId().getSubInvestigationId() : 0L
+                    );
+                    return resp;
+                })
+                .collect(Collectors.groupingBy(DgFixedValueResponse::getSubInvestigationId));
+
+        // --- Group normal values by subInvestigationId ---
+        Map<Long, List<DgNormalValueResponse>> normalBySub = normalValList.stream()
+                .map(normal -> {
+                    DgNormalValueResponse resp = new DgNormalValueResponse();
+                    resp.setNormalId(normal.getNormalId());
+                    resp.setSex(normal.getSex());
+                    resp.setFromAge(normal.getFromAge());
+                    resp.setToAge(normal.getToAge());
+                    resp.setMinNormalValue(normal.getMinNormalValue());
+                    resp.setMaxNormalValue(normal.getMaxNormalValue());
+                    resp.setNormalValue(normal.getNormalValue());
+                    resp.setSubInvestigationId(
+                            normal.getSubInvestigationId() != null ? normal.getSubInvestigationId().getSubInvestigationId() : null
+                    );
+                    resp.setMainChargeCodeId(
+                            normal.getMainChargeCodeId() != null ? normal.getMainChargeCodeId().getChargecodeId() : null
+                    );
+                    return resp;
+                })
+                .collect(Collectors.groupingBy(DgNormalValueResponse::getSubInvestigationId));
+
+        // --- Build SubInvestigation responses with nested fixed/normal values ---
         List<DgSubMasInvestigationResponse> subInvestResponses = subInvestigationList.stream().map(sub -> {
             DgSubMasInvestigationResponse resp = new DgSubMasInvestigationResponse();
             resp.setSubInvestigationId(sub.getSubInvestigationId());
@@ -629,39 +645,15 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             resp.setSampleId(sub.getSampleId() != null ? sub.getSampleId().getId() : null);
             resp.setUomId(sub.getUomId() != null ? sub.getUomId().getId() : null);
             resp.setInvestigationId(sub.getInvestigationId() != null ? sub.getInvestigationId().getInvestigationId() : null);
-//            resp.setOrderNo(sub.getOrderNo());
-//            resp.setLastChgBy(sub.getLastChgBy());
-//            resp.setLastChgDate(sub.getLastChgDate());
-//            resp.setLastChgTime(sub.getLastChgTime());
+
+            // attach fixed + normal values for this subInvestigation
+            resp.setFixedValueResponseList(fixedBySub.getOrDefault(sub.getSubInvestigationId(), Collections.emptyList()));
+            resp.setNormalValueResponseList(normalBySub.getOrDefault(sub.getSubInvestigationId(), Collections.emptyList()));
+
             return resp;
         }).collect(Collectors.toList());
+
         dmir.setSubInvestigationResponseList(subInvestResponses);
-
-        // Fixed Values
-        List<DgFixedValueResponse> fixedValResponses = fixedValList.stream().map(fixed -> {
-            DgFixedValueResponse resp = new DgFixedValueResponse();
-            resp.setFixedId(fixed.getFixedId());
-            resp.setFixedValue(fixed.getFixedValue());
-            resp.setSubInvestigationId(fixed.getSubInvestigationId() != null ? fixed.getSubInvestigationId().getSubInvestigationId() : 0L);
-            return resp;
-        }).collect(Collectors.toList());
-        dmir.setFixedValueResponseList(fixedValResponses);
-
-        // Normal Values
-        List<DgNormalValueResponse> normalValResponses = normalValList.stream().map(normal -> {
-            DgNormalValueResponse resp = new DgNormalValueResponse();
-            resp.setNormalId(normal.getNormalId());
-            resp.setSex(normal.getSex());
-            resp.setFromAge(normal.getFromAge());
-            resp.setToAge(normal.getToAge());
-            resp.setMinNormalValue(normal.getMinNormalValue());
-            resp.setMaxNormalValue(normal.getMaxNormalValue());
-            resp.setNormalValue(normal.getNormalValue());
-            resp.setSubInvestigationId(normal.getSubInvestigationId() != null ? normal.getSubInvestigationId().getSubInvestigationId() : null);
-            resp.setMainChargeCodeId(normal.getMainChargeCodeId() != null ? normal.getMainChargeCodeId().getChargecodeId() : null);
-            return resp;
-        }).collect(Collectors.toList());
-        dmir.setNormalValueResponseList(normalValResponses);
 
         return dmir;
     }
