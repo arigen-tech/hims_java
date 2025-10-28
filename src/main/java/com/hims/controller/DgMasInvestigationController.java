@@ -31,7 +31,7 @@ public class DgMasInvestigationController {
     }
 
     @GetMapping("/getAll/{flag}")
-    public ApiResponse<List<DgMasInvestigationSingleResponse>> getAllInvestigations(@PathVariable int flag) {
+    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(@PathVariable int flag) {
         return dgMasInvestigationService.getAllInvestigations(flag);
     }
 

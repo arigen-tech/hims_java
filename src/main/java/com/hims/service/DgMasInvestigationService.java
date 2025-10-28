@@ -13,7 +13,7 @@ import java.util.List;
 public interface DgMasInvestigationService {
     ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable);
 
-    ApiResponse<List<DgMasInvestigationSingleResponse>> getAllInvestigations(int flag);
+    ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag);
 
     ApiResponse<String> changeInvestigationStatus(Long investigationId,String status);
 

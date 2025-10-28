@@ -39,8 +39,8 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
 
 
 
-    List<DgMasInvestigation> findByStatusIgnoreCase(String status);
-    List<DgMasInvestigation> findByStatusInIgnoreCase(List<String> statuses);
+    List<DgMasInvestigation> findByStatusIgnoreCaseOrderByLastChgDateDesc(String status);
+    List<DgMasInvestigation> findByStatusInIgnoreCaseOrderByLastChgDateDesc(List<String> statuses);
 
     DgMasInvestigation findByinvestigationId(Long investigationId);
 
