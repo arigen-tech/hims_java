@@ -9,7 +9,10 @@ public class ResultSubInvestigationResponse {
     private Long sampleId;
     private String sampleName;
     private String unit;
-    private String normalRange;
-    private String resultType;
+    private String normalValue;
+    private Long normalId;
+    private String fixedValue;
+    private Long fixedId;
+    private String comparisonType;
 
 }

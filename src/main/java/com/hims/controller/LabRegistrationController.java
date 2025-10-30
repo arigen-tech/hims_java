@@ -1,13 +1,11 @@
 package com.hims.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.request.InvestigationValidationRequest;
-import com.hims.request.LabRegRequest;
-import com.hims.request.PaymentUpdateRequest;
-import com.hims.request.SampleCollectionRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
+import com.hims.service.ResultService;
 import com.hims.service.SampleValidationService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,6 +29,8 @@ public class LabRegistrationController {
     LabRegistrationServices labRegistrationServices;
     @Autowired
     SampleValidationService validationService;
+    @Autowired
+    ResultService resultService;
 
 
     @Autowired
@@ -81,6 +81,11 @@ public class LabRegistrationController {
     public ResponseEntity<ApiResponse<List<ResultResponse>>> getValidated() {
         ApiResponse<List<ResultResponse>> responseList = validationService.getValidatedResultEntries();
         return ResponseEntity.ok(responseList);
+    }
+    @PostMapping("/saveResultEntry")
+    public ResponseEntity<ApiResponse<String>> saveOrUpdate(@RequestBody ResultEntryMainRequest request) {
+        ApiResponse<String> response = resultService.saveOrUpdateResultEntry(request);
+        return ResponseEntity.ok(response);
     }
 
 

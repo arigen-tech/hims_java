@@ -12,6 +12,8 @@ public interface DgNormalValueRepository extends JpaRepository<DgNormalValue, Lo
 
     DgNormalValue findBySubInvestigationId(DgSubMasInvestigation subInvestigationId);
 
+    DgNormalValue findFirstBySubInvestigationIdAndSexAndFromAgeLessThanEqualAndToAgeGreaterThanEqual(DgSubMasInvestigation subInvest, String upperCase, Long ageInYears, Long ageInYears1);
+
     List<DgNormalValue> findBySubInvestigationId_InvestigationId(DgMasInvestigation masInvest);
 
 }

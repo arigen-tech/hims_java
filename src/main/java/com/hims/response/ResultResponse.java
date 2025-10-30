@@ -10,6 +10,7 @@ public class ResultResponse {
     private Long patientId;
     private String patientName;
     private String relation;
+    private Long relationId;
     private String patientGender;
     private String patientAge; // keep as String (e.g., "51 Years")
     private String patientPhoneNo;
@@ -18,9 +19,13 @@ public class ResultResponse {
     private String orderNo;
     private LocalTime  collectedTime;
     private String department;
+    private Long DepartmentId;
     private  String doctorName;
     private Long subChargeCodeId;
     private String subChargeCodeName;
     private String enteredBy;
+    private Long visitId;
+    private Long sampleCollectionHeaderId;
+
     List<ResultInvestigationResponse> resultInvestigationResponseList;
 }

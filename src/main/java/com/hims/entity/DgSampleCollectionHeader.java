@@ -30,6 +30,7 @@ public class DgSampleCollectionHeader {
 
     @Column(name = "order_by_department")
     private Integer orderByDepartment;
+
     @Column(name = "collection_center_id")
     private Long collectionCenterId;
 

@@ -1,0 +1,27 @@
+package com.hims.entity.repository;
+
+import com.hims.entity.DgResultEntryHeader;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface DgResultEntryHeaderRepository extends JpaRepository<DgResultEntryHeader,Long> {
+
+    Optional<DgResultEntryHeader> findBySampleCollectionHeaderId_SampleCollectionHeaderIdAndSubChargeCodeId_SubId(Long sampleCollectionHeaderId, Long subChargeCodeId);
+
+//    @Query("""
+//        SELECT h FROM DgResultEntryHeader h
+//        JOIN FETCH h.sampleCollectionHeaderId sch
+//        JOIN FETCH sch.patientId p
+//        WHERE p.patientId = :patientId AND h.subChargecodeId.subChargecodeId = :subChargeCodeId
+//    """)
+//    Optional<DgResultEntryHeader> findExistingHeader(
+//            @Param("subChargeCodeId") Long subChargeCodeId);
+//
+//
+//    Optional<DgResultEntryHeader> findByPatientAndSubChargeCodeId( Long subChargeCodeId);
+}

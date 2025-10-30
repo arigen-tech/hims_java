@@ -74,4 +74,9 @@ public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSam
 """)
 List<DgSampleCollectionDetails> findAllByHeaderResultEntryAndValidationStatusLogic();
 
+
+
+    List<DgSampleCollectionDetails> findBySampleCollectionHeader_SampleCollectionHeaderIdAndSampleCollectionHeader_SubChargeCode_SubId(Long sampleHeaderId, Long subChargeCodeId);
+
+  //  List<DgSampleCollectionDetails> findBySampleCollectionHeader_SampleCollectionHeaderIdAndSubChargeCode_SubId(Long sampleHeaderId, Long subChargeCodeId);
 }
