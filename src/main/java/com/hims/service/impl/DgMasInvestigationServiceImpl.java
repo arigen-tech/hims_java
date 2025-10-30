@@ -373,12 +373,16 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                     newSubObj.setStatus("y");
                     newSubObj.setResultType(subInvestObj.getResultType());
                     newSubObj.setComparisonType(subInvestObj.getComparisonType());
+                    newSubObj.setLastChgBy(currentUser.getUsername());
+                    newSubObj.setLastChgDate(Instant.now());
+                    newSubObj.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
                     Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subInvestObj.getMainChargeCodeId());
                     if(mmcc.isPresent()) {
                         newSubObj.setMainChargeCodeId(mmcc.get());
                     } else {
                         return ResponseUtils.createNotFoundResponse("masMainChargeCodeId not found", 404);
                     }
+                    newSubObj.setSampleId(masInvestigation.getSampleId());
                     Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(subInvestObj.getSubChargeCodeId());
                     if(mscc.isPresent()) {
                         newSubObj.setSubChargeCodeId(mscc.get());
@@ -467,10 +471,14 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         existing.setSubInvestigationCode(subInvestObj.getSubInvestigationCode());
                         existing.setResultType(subInvestObj.getResultType());
                         existing.setComparisonType(subInvestObj.getComparisonType());
+                        existing.setLastChgBy(currentUser.getUsername());
+                        existing.setLastChgDate(Instant.now());
+                        existing.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
                         Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subInvestObj.getMainChargeCodeId());
                         existing.setMainChargeCodeId(mmcc.get());
                         Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(subInvestObj.getSubChargeCodeId());
                         existing.setSubChargeCodeId(mscc.get());
+                        existing.setSampleId(masInvestigation.getSampleId());
                         Optional<DgUom> du = uomRepo.findById(subInvestObj.getUomId());
                         existing.setUomId(du.get());
                         existing.setInvestigationId(masInvestigation); // Ensure linkage
