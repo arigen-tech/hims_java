@@ -14,5 +14,6 @@ public class ResultSubInvestigationResponse {
     private String fixedValue;
     private Long fixedId;
     private String comparisonType;
+    private String resultType;
 
 }

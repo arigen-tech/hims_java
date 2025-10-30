@@ -259,6 +259,7 @@ DgFixedValueRepository dgFixedValueRepository;
                     sub.setSampleName(subInvest.getSampleId() != null ? subInvest.getSampleId().getSampleDescription() : null);
                     sub.setUnit(subInvest.getUomId() != null ? subInvest.getUomId().getName() : null);
                     sub.setComparisonType(subInvest.getComparisonType());
+                    sub.setResultType(subInvest.getResultType());
 
                     // Extract Patient Info for Normal Range
                     var patient = header.getPatientId();
