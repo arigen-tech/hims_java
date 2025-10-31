@@ -180,14 +180,20 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             masInvestigation.setMinNormalValue(investigationRequest.getMinNormalValue());
             Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(investigationRequest.getMainChargeCodeId());
             masInvestigation.setMainChargeCodeId(mmcc.get());
-            Optional<DgUom> du = uomRepo.findById(investigationRequest.getUomId());
-            masInvestigation.setUomId(du.get());
+            if(investigationRequest.getUomId()!=null){
+                Optional<DgUom> du = uomRepo.findById(investigationRequest.getUomId());
+                masInvestigation.setUomId(du.orElseThrow());
+            }else{
+                masInvestigation.setUomId(null);
+            }
             Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(investigationRequest.getSubChargeCodeId());
             masInvestigation.setSubChargeCodeId(mscc.get());
             Optional<DgMasSample> dms = sampleRepo.findById(investigationRequest.getSampleId());
             masInvestigation.setSampleId(dms.get());
             Optional<DgMasCollection> dmc = collectionRepo.findById(investigationRequest.getCollectionId());
             masInvestigation.setCollectionId(dmc.get());
+            masInvestigation.setGenderApplicable(investigationRequest.getGenderApplicable());
+
 //            masInvestigation.setMultipleResults(investigationRequest.getMultipleResults());
 //            masInvestigation.setQuantity(investigationRequest.getQuantity());
 //            masInvestigation.setNormalValue(investigationRequest.getNormalValue());
@@ -201,7 +207,6 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 //            masInvestigation.setBloodBankScreenTest(investigationRequest.getBloodBankScreenTest());
 //            masInvestigation.setInstructions(investigationRequest.getInstructions());
 //            masInvestigation.setDiscountApplicable(investigationRequest.getDiscountApplicable());
-//            masInvestigation.setGenderApplicable(investigationRequest.getGenderApplicable());
 //            masInvestigation.setDiscount(investigationRequest.getDiscount());
 //            masInvestigation.setPrice(investigationRequest.getPrice());
             return ResponseUtils.createSuccessResponse(mapToResponse(dgMasInvestigationRepo.save(masInvestigation)), new TypeReference<>() {
@@ -248,7 +253,10 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                     } else {
                         return ResponseUtils.createNotFoundResponse("uomId not found", 404);
                     }
+                }else{
+                    dmi.setUomId(null);
                 }
+
                 if (investigationRequest.getSubChargeCodeId() != null) {
                     Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(investigationRequest.getSubChargeCodeId());
                     if (mscc.isPresent()) {
@@ -273,6 +281,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         return ResponseUtils.createNotFoundResponse("collectionId not found", 404);
                     }
                 }
+                dmi.setGenderApplicable(investigationRequest.getGenderApplicable());
 //                dmi.setAppearInDischargeSummary(investigationRequest.getAppearInDischargeSummary());
 //                dmi.setMultipleResults(investigationRequest.getMultipleResults());
 //                dmi.setQuantity(investigationRequest.getQuantity());
@@ -286,7 +295,6 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 //                dmi.setBloodBankScreenTest(investigationRequest.getBloodBankScreenTest());
 //                dmi.setInstructions(investigationRequest.getInstructions());
 //                dmi.setDiscountApplicable(investigationRequest.getDiscountApplicable());
-//                dmi.setGenderApplicable(investigationRequest.getGenderApplicable());
 //                dmi.setDiscount(investigationRequest.getDiscount());
 //                dmi.setPrice(investigationRequest.getPrice());
                 return ResponseUtils.createSuccessResponse(mapToResponse(dgMasInvestigationRepo.save(dmi)), new TypeReference<>() {
@@ -336,6 +344,8 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             } else {
                 return ResponseUtils.createNotFoundResponse("uomId not found", 404);
             }
+        }else{
+            masInvestigation.setUomId(null);
         }
         if (multiRequest.getSubChargeCodeId() != null) {
             Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(multiRequest.getSubChargeCodeId());
@@ -361,6 +371,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 return ResponseUtils.createNotFoundResponse("collectionId not found", 404);
             }
         }
+        masInvestigation.setGenderApplicable(multiRequest.getGenderApplicable());
         dgMasInvestigationRepo.save(masInvestigation);
 
         if(masInvestigation != null){
@@ -604,6 +615,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dmir.setSampleName(masInvest.getSampleId() != null ? masInvest.getSampleId().getSampleDescription() : null);
         dmir.setCollectionId(masInvest.getCollectionId() != null ? masInvest.getCollectionId().getCollectionId() : null);
         dmir.setCollectionName(masInvest.getCollectionId() != null ? masInvest.getCollectionId().getCollectionName() : null);
+        dmir.setGenderApplicable(masInvest.getGenderApplicable());
 
         // --- Group fixed values by subInvestigationId ---
         Map<Long, List<DgFixedValueResponse>> fixedBySub = fixedValList.stream()
@@ -686,6 +698,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dto.setSampleName(entity.getSampleId() != null ? entity.getSampleId().getSampleDescription() : null);
         dto.setCollectionId(entity.getCollectionId() != null ? entity.getCollectionId().getCollectionId() : null);
         dto.setCollectionName(entity.getCollectionId() != null ? entity.getCollectionId().getCollectionName() : null);
+        dto.setGenderApplicable(entity.getGenderApplicable());
 //        dto.setQuantity(entity.getQuantity());
 //        dto.setNormalValue(entity.getNormalValue());
 //        dto.setLastChgBy(entity.getLastChgBy());
@@ -701,7 +714,6 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 //        dto.setBloodBankScreenTest(entity.getBloodBankScreenTest());
 //        dto.setInstructions(entity.getInstructions());
 //        dto.setDiscountApplicable(entity.getDiscountApplicable());
-//        dto.setGenderApplicable(entity.getGenderApplicable());
 //        dto.setDiscount(entity.getDiscount());
 //        dto.setPrice(entity.getPrice());
         return dto;

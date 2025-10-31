@@ -17,6 +17,7 @@ public class DgMasInvestigationMultiRequest {
     private Long subChargeCodeId;
     private Long sampleId;
     private Long collectionId;
+    private String genderApplicable;
     private List<DgSubMasInvestigationRequest> masInvestReq;
     private List<Long> subInvestigationIdsToDelete;
 }
