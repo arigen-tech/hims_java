@@ -258,12 +258,9 @@ DgFixedValueRepository dgFixedValueRepository;
                                 normalRange = invObj.getNormalValue();
                             } else if (invObj.getMinNormalValue() != null && invObj.getMaxNormalValue() != null) {
                                 normalRange = invObj.getMinNormalValue() + " - " + invObj.getMaxNormalValue();
-                            } else if (invObj.getMinNormalValue() != null) {
-                                normalRange = "Min: " + invObj.getMinNormalValue();
-                            } else if (invObj.getMaxNormalValue() != null) {
-                                normalRange = "Max: " + invObj.getMaxNormalValue();
+
                             } else {
-                                normalRange = null;
+                                normalRange = null; //
                             }
 
                             inv.setNormalValue(normalRange);
@@ -312,13 +309,19 @@ DgFixedValueRepository dgFixedValueRepository;
                     } else {
                         dgNormalValue = dgNormalValueRepository.findBySubInvestigationId(subInvest);
                     }
+
                     if (dgNormalValue != null) {
-                        String normalRange;
-                       if (dgNormalValue.getMinNormalValue() != null && dgNormalValue.getMaxNormalValue() != null) {
-                           normalRange = dgNormalValue.getMinNormalValue() + " - " + dgNormalValue.getMaxNormalValue();
-                        } else {
+                        String normalRange = null;
+
+                        // 🟢 Step 1: if a direct normalValue string exists, use that
+                        if (dgNormalValue.getNormalValue() != null && !dgNormalValue.getNormalValue().isBlank()) {
                             normalRange = dgNormalValue.getNormalValue();
-                       }
+                        }
+                        // 🟡 Step 2: otherwise, try min–max range
+                        else if (dgNormalValue.getMinNormalValue() != null && dgNormalValue.getMaxNormalValue() != null) {
+                            normalRange = dgNormalValue.getMinNormalValue() + " - " + dgNormalValue.getMaxNormalValue();
+                        }
+
                         sub.setNormalValue(normalRange);
                         sub.setNormalId(dgNormalValue.getNormalId());
                     }

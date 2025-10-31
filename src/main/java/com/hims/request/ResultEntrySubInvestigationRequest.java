@@ -16,8 +16,6 @@ public class ResultEntrySubInvestigationRequest {
     private Long uomId;
     private Long investigationId;
     private Long subInvestigationId;
-   private Long normalValueId;
-    private Long fixedValueId;
-
-
+//   private Long normalValueId;
+//    private Long fixedValueId;
 }
