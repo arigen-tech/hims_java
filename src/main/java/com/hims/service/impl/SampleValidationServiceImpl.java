@@ -233,16 +233,46 @@ DgFixedValueRepository dgFixedValueRepository;
                         .filter(i -> i.getInvestigationId().equals(detail.getInvestigationId().getInvestigationId()))
                         .findFirst()
                         .orElseGet(() -> {
-                            ResultInvestigationResponse inv = new ResultInvestigationResponse();
-                            inv.setInvestigationId(detail.getInvestigationId().getInvestigationId());
-                            inv.setInvestigationName(detail.getInvestigationId().getInvestigationName());
-                            inv.setSampleCollectionDetailsId(detail.getSampleCollectionDetailsId());
-                            inv.setSampleId(detail.getInvestigationId().getSampleId().getId()!=null?detail.getInvestigationId().getSampleId().getId():null);
-                            inv.setSampleName(detail.getInvestigationId().getSampleId().getSampleDescription()!=null?detail.getInvestigationId().getSampleId().getSampleDescription():null);
-                            inv.setUnitId(detail.getInvestigationId().getUomId().getId()!=null?detail.getInvestigationId().getUomId().getId():null);
-                            inv.setUnitName(detail.getInvestigationId().getUomId()!=null?detail.getInvestigationId().getUomId().getName():null);
+                            DgMasInvestigation invObj = detail.getInvestigationId();
 
+                            ResultInvestigationResponse inv = new ResultInvestigationResponse();
+                            inv.setInvestigationId(invObj.getInvestigationId());
+                            inv.setInvestigationName(invObj.getInvestigationName());
+                            inv.setSampleCollectionDetailsId(detail.getSampleCollectionDetailsId());
+
+                            // --- Sample details
+                            if (invObj.getSampleId() != null) {
+                                inv.setSampleId(invObj.getSampleId().getId());
+                                inv.setSampleName(invObj.getSampleId().getSampleDescription());
+                            }
+
+                            // --- Unit details
+                            if (invObj.getUomId() != null) {
+                                inv.setUnitId(invObj.getUomId().getId());
+                                inv.setUnitName(invObj.getUomId().getName());
+                            }
+
+                            String normalRange = null;
+
+                            if (invObj.getNormalValue() != null && !invObj.getNormalValue().isBlank()) {
+                                normalRange = invObj.getNormalValue();
+                            } else if (invObj.getMinNormalValue() != null && invObj.getMaxNormalValue() != null) {
+                                normalRange = invObj.getMinNormalValue() + " - " + invObj.getMaxNormalValue();
+                            } else if (invObj.getMinNormalValue() != null) {
+                                normalRange = "Min: " + invObj.getMinNormalValue();
+                            } else if (invObj.getMaxNormalValue() != null) {
+                                normalRange = "Max: " + invObj.getMaxNormalValue();
+                            } else {
+                                normalRange = null;
+                            }
+
+                            inv.setNormalValue(normalRange);
+
+
+                            // --- Initialize Sub Investigation List
                             inv.setResultSubInvestigationResponseList(new ArrayList<>());
+
+                            // --- Add to parent list
                             response.getResultInvestigationResponseList().add(inv);
                             return inv;
                         });
@@ -294,11 +324,19 @@ DgFixedValueRepository dgFixedValueRepository;
                     }
 
                     //  Fetch Fixed Value
-                    DgFixedValue dgFixedValue = dgFixedValueRepository.findFirstBySubInvestigationId(subInvest);
-                    if (dgFixedValue != null) {
-                        sub.setFixedValue(dgFixedValue.getFixedValue());
-                        sub.setFixedId(dgFixedValue.getFixedId());
+                    List<DgFixedValue> dgFixedValue = dgFixedValueRepository.findBySubInvestigationId(subInvest);
+                    List<DgFixedValueResponse> dgFixedValueResponses=new ArrayList<>();
+                    for(DgFixedValue dgFixedValue1 :dgFixedValue){
+                        DgFixedValueResponse dgFixedValueResponse=new DgFixedValueResponse();
+                               dgFixedValueResponse.setFixedId(dgFixedValue1.getFixedId());
+                        dgFixedValueResponse.setFixedValue(dgFixedValue1.getFixedValue());
+                        dgFixedValueResponse.setSubInvestigationId(subInvest.getSubInvestigationId());
+                        dgFixedValueResponses.add(dgFixedValueResponse);
+
+
                     }
+                    sub.setDgFixedValueResponseList(dgFixedValueResponses);
+
 
                     investigation.getResultSubInvestigationResponseList().add(sub);
                 }

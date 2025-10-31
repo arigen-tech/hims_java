@@ -11,7 +11,8 @@ import java.util.Optional;
 @Repository
 public interface DgResultEntryHeaderRepository extends JpaRepository<DgResultEntryHeader,Long> {
 
-    Optional<DgResultEntryHeader> findBySampleCollectionHeaderId_SampleCollectionHeaderIdAndSubChargeCodeId_SubId(Long sampleCollectionHeaderId, Long subChargeCodeId);
+Optional<DgResultEntryHeader> findBySampleCollectionHeaderId_SampleCollectionHeaderIdAndSubChargeCodeId_SubId(Long sampleCollectionHeaderId, Long subChargeCodeId);
+
 
 //    @Query("""
 //        SELECT h FROM DgResultEntryHeader h

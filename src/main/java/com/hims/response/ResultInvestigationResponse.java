@@ -13,6 +13,6 @@ public class ResultInvestigationResponse {
       private String sampleName;
       private String unitName;
       private Long unitId;
-
-     List<ResultSubInvestigationResponse> resultSubInvestigationResponseList;
+      private String normalValue;
+      List<ResultSubInvestigationResponse> resultSubInvestigationResponseList;
 }

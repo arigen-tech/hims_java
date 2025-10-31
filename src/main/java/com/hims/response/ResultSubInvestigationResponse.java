@@ -1,6 +1,9 @@
 package com.hims.response;
 
+import com.hims.entity.DgFixedValue;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class ResultSubInvestigationResponse {
@@ -11,8 +14,7 @@ public class ResultSubInvestigationResponse {
     private String unit;
     private String normalValue;
     private Long normalId;
-    private String fixedValue;
-    private Long fixedId;
+     private List<DgFixedValueResponse> dgFixedValueResponseList;
     private String comparisonType;
     private String resultType;
 

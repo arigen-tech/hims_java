@@ -157,6 +157,29 @@ public class ResultServiceImpl implements ResultService {
                         detail.setUomId(subInvestigation.getUomId());
                         detail.setNormalId(dgNormalValueRepository.findById(subReq.getNormalValueId()).orElse(null));
                         detail.setFixedId(dgFixedValueRepository.findById(subReq.getFixedValueId()).orElse(null));
+//                        Optional<DgNormalValue> dgNormalValue=dgNormalValueRepository.findById(subInvestigation.getSubInvestigationId());
+//                        detail.setNormalId(dgNormalValue.get().getNormalId()!=null?dgNormalValue.get().getNormalId():null);
+//                        Optional<DgFixedValue> dgFixedValue=dgFixedValueRepository.findById(subInvestigation.getSubInvestigationId());
+//                        detail.setFixedId(dgFixedValue.get().getFixedId()!=null?dgFixedValue.get().getFixedId():null);
+
+//                        Optional<DgNormalValue> dgNormalValueOpt = dgNormalValueRepository.findById(subReq.getSubInvestigationId());
+//                        if (dgNormalValueOpt.isPresent()) {
+//                            DgNormalValue dgNormalValue = dgNormalValueOpt.get();
+//                            detail.setNormalId(dgNormalValue.getNormalId());
+//                            detail.setFixedId(null);  // only one at a time
+//                        } else {
+//                            // If not found in normal table, check in fixed table
+//                            Optional<DgFixedValue> dgFixedValueOpt = dgFixedValueRepository.findById(subReq.getSubInvestigationId());
+//                            if (dgFixedValueOpt.isPresent()) {
+//                                DgFixedValue dgFixedValue = dgFixedValueOpt.get();
+//                                detail.setFixedId(dgFixedValue.getFixedId());
+//                                detail.setNormalId(null);
+//                            } else {
+//                                // Neither fixed nor normal value found
+//                                detail.setNormalId(null);
+//                                detail.setFixedId(null);
+//                            }
+//                        }
                         detail.setResultDetailStatus("n");
                     }
                     detailRepo.save(detail);

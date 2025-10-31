@@ -11,6 +11,8 @@ import java.util.List;
 @Repository
 public interface DgFixedValueRepository extends JpaRepository<DgFixedValue,Long> {
 
-    DgFixedValue findFirstBySubInvestigationId(DgSubMasInvestigation subInvest);
+   // DgFixedValue findFirstBySubInvestigationId(DgSubMasInvestigation subInvest);
     List<DgFixedValue> findBySubInvestigationId_InvestigationId(DgMasInvestigation masInvest);
+
+    List<DgFixedValue> findBySubInvestigationId(DgSubMasInvestigation subInvest);
 }
