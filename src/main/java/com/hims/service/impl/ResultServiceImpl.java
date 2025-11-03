@@ -129,9 +129,12 @@ public class ResultServiceImpl implements ResultService {
                 //  If at least one sub-investigation has result → process ALL sub-investigations
                 for (ResultEntrySubInvestigationRequest subReq : invReq.getResultEntryDetailsRequestList()) {
 
-                    DgSubMasInvestigation subInvestigation = dgSubMasInvestigationRepository.findById(subReq.getSubInvestigationId())
-                            .orElseThrow(() -> new RuntimeException("Invalid SubInvestigation ID: " + subReq.getSubInvestigationId()));
-
+                    //
+                    DgSubMasInvestigation subInvestigation = null;
+                    if (subReq.getSubInvestigationId() != null) {
+                        subInvestigation = dgSubMasInvestigationRepository.findById(subReq.getSubInvestigationId())
+                                .orElse(null);
+                    }
                     Optional<DgResultEntryDetail> existingDetailOpt =
                             detailRepo.findByResultEntryIdAndInvestigationIdAndSubInvestigationId(
                                     header, investigation, subInvestigation
@@ -154,10 +157,13 @@ public class ResultServiceImpl implements ResultService {
                         detail.setRemarks(subReq.getRemarks());
                         detail.setSampleId(masSampleRepository.findById(subReq.getSampleId()).orElse(null));
                         detail.setChargeCodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
-                        detail.setUomId(subInvestigation.getUomId());
-                       // detail.setNormalId(dgNormalValueRepository.findById(subReq.getNormalValueId()).orElse(null));
-                     //  detail.setFixedId(dgFixedValueRepository.findById(subReq.getFixedValueId()).orElse(null));
-             detail.setResultDetailStatus("n");
+                        if(subInvestigation!=null){
+                            detail.setUomId(subInvestigation.getUomId());
+                        }else{
+                            detail.setUomId(investigation.getUomId());
+
+                        }
+                        detail.setResultDetailStatus("n");
                     }
                     detailRepo.save(detail);
                 }
@@ -167,28 +173,8 @@ public class ResultServiceImpl implements ResultService {
                 dgSampleCollectionDetailsRepository.save(dgSampleCollectionDetails);
             }
 
-            //After all investigations processed ---
-            Long subChargeCodeId = request.getSubChargeCodeId();
-            Long sampleHeaderId = request.getSampleCollectionHeaderId();
-
-            List<DgSampleCollectionDetails> allDetails =
-                    dgSampleCollectionDetailsRepository.findBySampleCollectionHeader_SampleCollectionHeaderIdAndSampleCollectionHeader_SubChargeCode_SubId(
-                            sampleHeaderId, subChargeCodeId
-                    );
-
-            boolean allDone = allDetails.stream()
-                    .allMatch(d -> "y".equals(d.getResult_status()));
-
-            if (allDone) {
-                DgSampleCollectionHeader headerObj =
-                        dgSampleCollectionHeaderRepository.findById(sampleHeaderId)
-                                .orElseThrow(() -> new RuntimeException("Invalid Sample Header ID: " + sampleHeaderId));
-
-                if ("n".equals(headerObj.getResult_entry_status())) {
-                    headerObj.setResult_entry_status("y");
-                    dgSampleCollectionHeaderRepository.save(headerObj);
-                }
-            }
+            //After all investigations processed
+            updateResultEntryStatusIfComplete(request.getSampleCollectionHeaderId(), request.getSubChargeCodeId());
 
             return ResponseUtils.createSuccessResponse("Result entry saved/updated successfully!", new TypeReference<>() {}
             );
@@ -199,5 +185,27 @@ public class ResultServiceImpl implements ResultService {
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+    private void updateResultEntryStatusIfComplete(Long sampleHeaderId, Long subChargeCodeId) {
+        List<DgSampleCollectionDetails> allDetails =
+                dgSampleCollectionDetailsRepository
+                        .findBySampleCollectionHeader_SampleCollectionHeaderIdAndSampleCollectionHeader_SubChargeCode_SubId(
+                                sampleHeaderId, subChargeCodeId
+                        );
 
+        boolean allDone = allDetails.stream()
+                .allMatch(d -> "y".equals(d.getResult_status()));
+
+        if (allDone) {
+            DgSampleCollectionHeader headerObj =
+                    dgSampleCollectionHeaderRepository.findById(sampleHeaderId)
+                            .orElseThrow(() -> new RuntimeException("Invalid Sample Header ID: " + sampleHeaderId));
+
+            if ("n".equals(headerObj.getResult_entry_status())) {
+                headerObj.setResult_entry_status("y");
+                dgSampleCollectionHeaderRepository.save(headerObj);
+            }
+        }
     }
+
+
+}

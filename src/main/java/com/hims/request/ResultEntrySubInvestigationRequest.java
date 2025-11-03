@@ -13,9 +13,7 @@ public class ResultEntrySubInvestigationRequest {
     private String remarks;
     private Long chargeCodeId;
     private Long sampleId;
-    private Long uomId;
     private Long investigationId;
     private Long subInvestigationId;
-//   private Long normalValueId;
-//    private Long fixedValueId;
+
 }
