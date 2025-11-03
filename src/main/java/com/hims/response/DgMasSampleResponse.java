@@ -13,7 +13,5 @@ public class DgMasSampleResponse {
     private String sampleCode;
     private String sampleDescription;
     private String status;
-    private String lastChgBy;
-    private Instant lastChgDate;
 
 }
