@@ -38,6 +38,9 @@ DgFixedValueRepository dgFixedValueRepository;
     @Autowired
     AuthUtil authUtil;
 
+    @Autowired
+    private MasSubChargeCodeRepository subChargeCodeRepository;
+
 
 
     @Override
@@ -217,7 +220,8 @@ DgFixedValueRepository dgFixedValueRepository;
                             r.setCollectedTime(header.getCollection_time() != null ? header.getCollection_time().toLocalTime() : null);
                             r.setOrderNo(patient.getUhidNo());
                             r.setDepartment(header.getDepartmentId() != null ? header.getDepartmentId().getDepartmentName() : null);
-                            r.setDepartmentId(header.getDepartmentId() != null ? header.getDepartmentId().getId() : null);
+                            MasSubChargeCode masSubChargeCode = subChargeCodeRepository.findById(header.getSubChargeCode().getSubId()).orElseThrow();
+                            r.setMainChargeCodeId(masSubChargeCode.getMainChargeId().getChargecodeId());
                             r.setDoctorName(header.getHospitalId() != null ? header.getHospitalId().getHospitalName() : null);
                             r.setVisitId(header.getVisitId() != null ? header.getVisitId().getId() : null);
                             r.setSampleCollectionHeaderId(header.getSampleCollectionHeaderId());

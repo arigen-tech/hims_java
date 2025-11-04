@@ -19,7 +19,8 @@ public class ResultResponse {
     private String orderNo;
     private LocalTime  collectedTime;
     private String department;
-    private Long departmentId;
+//    private Long departmentId;
+    private Long mainChargeCodeId;
     private  String doctorName;
     private Long subChargeCodeId;
     private String subChargeCodeName;
