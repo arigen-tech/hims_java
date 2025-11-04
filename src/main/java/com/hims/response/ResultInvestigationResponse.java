@@ -14,5 +14,6 @@ public class ResultInvestigationResponse {
       private String unitName;
       private Long unitId;
       private String normalValue;
+      private String resultType;
       List<ResultSubInvestigationResponse> resultSubInvestigationResponseList;
 }

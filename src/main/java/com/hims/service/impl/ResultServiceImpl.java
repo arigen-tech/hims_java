@@ -155,6 +155,7 @@ public class ResultServiceImpl implements ResultService {
                         detail.setSampleCollectionDetailsId(dgSampleCollectionDetails);
                         detail.setResult(subReq.getResult());
                         detail.setRemarks(subReq.getRemarks());
+                        detail.setResultType(subReq.getResultType());
                         detail.setSampleId(masSampleRepository.findById(subReq.getSampleId()).orElse(null));
                         detail.setChargeCodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
                         if(subInvestigation!=null){

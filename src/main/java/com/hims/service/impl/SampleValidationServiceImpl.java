@@ -239,6 +239,7 @@ DgFixedValueRepository dgFixedValueRepository;
                             inv.setInvestigationId(invObj.getInvestigationId());
                             inv.setInvestigationName(invObj.getInvestigationName());
                             inv.setSampleCollectionDetailsId(detail.getSampleCollectionDetailsId());
+                            inv.setResultType(invObj.getInvestigationType());
 
                             // --- Sample details
                             if (invObj.getSampleId() != null) {
