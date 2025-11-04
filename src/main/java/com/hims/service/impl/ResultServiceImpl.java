@@ -158,6 +158,8 @@ public class ResultServiceImpl implements ResultService {
                         detail.setResultType(subReq.getResultType());
                         detail.setSampleId(masSampleRepository.findById(subReq.getSampleId()).orElse(null));
                         detail.setChargeCodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
+                        detail.setFixedId(dgFixedValueRepository.findById(subReq.getFixedId()).orElse(null));
+                        detail.setNormalId(dgNormalValueRepository.findById(subReq.getNormalId()).orElse(null));
                         if(subInvestigation!=null){
                             detail.setUomId(subInvestigation.getUomId());
                         }else{
