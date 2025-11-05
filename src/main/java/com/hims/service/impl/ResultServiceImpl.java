@@ -122,8 +122,14 @@ public class ResultServiceImpl implements ResultService {
                 header.setLastChgdTime(String.valueOf(LocalTime.now()));
                 header.setResultNo(createInvoice());
                 header.setHospitalId(currentUser.getHospital());
-                Optional<DgOrderHd> dgOrderH=labHdRepository.findById(Math.toIntExact(request.getPatientId()));
-                header.setOrderHd(dgOrderH.orElseThrow());
+//                Optional<DgOrderHd> dgOrderH=labHdRepository.findById(Math.toIntExact(request.getPatientId()));
+//                header.setOrderHd(dgOrderH.get());
+                Optional<DgOrderHd> dgOrderH = labHdRepository.findByPatientId_Id(request.getPatientId());
+
+                DgOrderHd orderHd = dgOrderH.orElseThrow(() ->
+                        new RuntimeException("No order found for patient ID: " + request.getPatientId()));
+
+                header.setOrderHd(orderHd);
                 header.setHinId(patientRepository.findById(request.getPatientId()).orElse(null));
                 header.setMainChargecodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
                 header.setSubChargeCodeId(subChargeRepo.findById(request.getSubChargeCodeId()).orElse(null));
