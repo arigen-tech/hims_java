@@ -10,7 +10,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Getter
 @Setter
@@ -122,6 +121,6 @@ public class DgResultEntryHeader {
     private LocalDateTime updateOn;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "orderHd_id")
-    private DgOrderHd orderHdId;
+    @JoinColumn(name = "order_hd_id")
+    private DgOrderHd orderHd;
 }

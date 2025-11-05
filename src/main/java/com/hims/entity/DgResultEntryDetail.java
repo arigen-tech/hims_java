@@ -84,6 +84,11 @@ public class DgResultEntryDetail {
     private DgSampleCollectionDetails sampleCollectionDetailsId;
 
    // private Integer nprmalId;
+   @Column(name = "normal_range")
+    private String normalRange;
+
+    @Column(name = "fixed_value")
+    private String FixedValue;
 
 
 }

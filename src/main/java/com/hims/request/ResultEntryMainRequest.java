@@ -16,6 +16,7 @@ public class ResultEntryMainRequest {
     private Long subChargeCodeId;
     private String clinicalNotes;
     private Long sampleCollectionHeaderId;
+    private Long patientId;
 
     private List<ResultEntryInvestigationRequest> investigationList;
 }
