@@ -19,6 +19,8 @@ public class ResultEntrySubInvestigationRequest {
     private String comparisonType;
     private Long fixedId;
     private Long normalId;
+    private String normalRange;
+    private String fixedValue;
 
 
 }

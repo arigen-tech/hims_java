@@ -10,6 +10,7 @@ import com.hims.response.ApiResponse;
 import com.hims.response.DgMasSampleResponse;
 import com.hims.service.ResultService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -52,13 +53,28 @@ public class ResultServiceImpl implements ResultService {
     private DgNormalValueRepository dgNormalValueRepository;
     @Autowired
     private DgFixedValueRepository dgFixedValueRepository;
+    @Autowired
+    private PatientRepository patientRepository;
+    @Autowired
+    private LabHdRepository labHdRepository;
 
     @Autowired
     AuthUtil authUtil;
+    private final RandomNumGenerator randomNumGenerator;
+
+    public  ResultServiceImpl(RandomNumGenerator randomNumGenerator) {
+        this.randomNumGenerator = randomNumGenerator;
+
+    }
+
+    public String createInvoice() {
+        return randomNumGenerator.generateOrderNumber("RES",true,true);
+    }
+
 
     @Override
 
-    public ApiResponse<String> saveOrUpdateResultEntry(ResultEntryMainRequest request) {
+    public ApiResponse<String>  saveOrUpdateResultEntry(ResultEntryMainRequest request) {
         try {
             Long depart = authUtil.getCurrentDepartmentId();
             MasDepartment depObj = masDepartmentRepository.getById(depart);
@@ -99,16 +115,20 @@ public class ResultServiceImpl implements ResultService {
 
                 header.setSampleCollectionHeaderId(dgSampleCollectionHeader);
                 header.setResultStatus("n");
+              //  header.setVerified("n");
                 header.setDepartmentId(depObj);
                 header.setLastChgdBy(currentUser.getLastChangedBy());
                 header.setLastChgdDate(LocalDate.now());
                 header.setLastChgdTime(String.valueOf(LocalTime.now()));
+                header.setResultNo(createInvoice());
                 header.setHospitalId(currentUser.getHospital());
+                Optional<DgOrderHd> dgOrderH=labHdRepository.findById(Math.toIntExact(request.getPatientId()));
+                header.setOrderHd(dgOrderH.orElseThrow());
+                header.setHinId(patientRepository.findById(request.getPatientId()).orElse(null));
                 header.setMainChargecodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
                 header.setSubChargeCodeId(subChargeRepo.findById(request.getSubChargeCodeId()).orElse(null));
                 header = headerRepo.save(header);
             }
-
             // Save or Update Details
             for (ResultEntryInvestigationRequest invReq : request.getInvestigationList()) {
                 DgMasInvestigation investigation = dgMasInvestigationRepository.findById(invReq.getInvestigationId())
@@ -156,6 +176,7 @@ public class ResultServiceImpl implements ResultService {
                         detail.setResult(subReq.getResult());
                         detail.setRemarks(subReq.getRemarks());
                         detail.setResultType(subReq.getResultType());
+                        detail.setValidated("n");
                         detail.setSampleId(masSampleRepository.findById(subReq.getSampleId()).orElse(null));
                         detail.setChargeCodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
                         if("n".equalsIgnoreCase(subReq.getComparisonType())){
