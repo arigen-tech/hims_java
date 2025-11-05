@@ -1,5 +1,8 @@
 package com.hims.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -12,6 +15,7 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "visit")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Visit {
 
     @Id
@@ -82,6 +86,7 @@ public class Visit {
     @Column(name = "pre_consultation", length = 1)
     private String preConsultation;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "billing_hd_id")
     private BillingHeader billingHd;

@@ -54,4 +54,5 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     Optional<Visit> findById(Long id);
 
+    List findByPatientId(Integer patient);
 }
