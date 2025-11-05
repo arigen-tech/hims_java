@@ -192,8 +192,6 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             masInvestigation.setSampleId(dms.get());
             Optional<DgMasCollection> dmc = collectionRepo.findById(investigationRequest.getCollectionId());
             masInvestigation.setCollectionId(dmc.get());
-            masInvestigation.setGenderApplicable(investigationRequest.getGenderApplicable());
-
 //            masInvestigation.setMultipleResults(investigationRequest.getMultipleResults());
 //            masInvestigation.setQuantity(investigationRequest.getQuantity());
 //            masInvestigation.setNormalValue(investigationRequest.getNormalValue());

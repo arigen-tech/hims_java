@@ -95,6 +95,8 @@ public class MasterController {
     private MasManufacturerService masManufacturerService;
     @Autowired
     private DgMasCollectionService dgMasCollectionService;
+    @Autowired
+    private MasSymptomsService masSymptomsService;
 
     //    ================================Mas Application Controller================================//
 
@@ -1322,4 +1324,42 @@ public class MasterController {
         return dgFixedValueService.getDgFixedValue();
     }
 
+
+    //    ================================ MasSymptoms Controller================================//
+
+    @PostMapping ("/MasSymptoms/create")
+    public ResponseEntity<ApiResponse<MasSymptomsResponse>> addSymptom(@RequestBody MasSymptomsRequest symptomsReq){
+        ApiResponse<MasSymptomsResponse> response = masSymptomsService.createSymptom(symptomsReq);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/MasSymptoms/update/{id}")
+    public ResponseEntity<ApiResponse<MasSymptomsResponse>> updateSymptom(
+            @PathVariable Long id,
+            @RequestBody MasSymptomsRequest symptomsReq){
+        ApiResponse<MasSymptomsResponse> response = masSymptomsService.updateSymptom(id, symptomsReq);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/MasSymptoms/changeStatus/{id}")
+    public ResponseEntity<ApiResponse<MasSymptomsResponse>> changeSymptomStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        ApiResponse<MasSymptomsResponse> response = masSymptomsService.changeSymptomStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/MasSymptoms/getSymptomsById/{id}")
+    public ResponseEntity<ApiResponse<MasSymptomsResponse>> getSymptomsById(
+            @PathVariable Long id ) {
+        ApiResponse<MasSymptomsResponse> response = masSymptomsService.findBySymptomId(id);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/MasSymptoms/getAllSymptoms/{flag}")
+    public  ApiResponse<List<MasSymptomsResponse>> getAllSymptomsByFlag(
+            @PathVariable int flag
+    ) {
+        return masSymptomsService.getAllSymptoms(flag);
+    }
 }
