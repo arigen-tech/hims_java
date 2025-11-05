@@ -187,6 +187,8 @@ public class ResultServiceImpl implements ResultService {
                             detail.setFixedId(null);
                             detail.setNormalId(null);
                         }
+                        detail.setNormalRange(subReq.getNormalRange());
+                        detail.setFixedValue(subReq.getFixedValue());
                         if(subInvestigation!=null){
                             detail.setUomId(subInvestigation.getUomId());
                         }else{
