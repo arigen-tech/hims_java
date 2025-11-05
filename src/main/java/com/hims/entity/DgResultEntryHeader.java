@@ -66,8 +66,6 @@ public class DgResultEntryHeader {
     @Column(name = "received_by",length = 50)
     private String receivedBy;
 
-    @Column(name = "result_type",length = 1)
-    private String resultType;
 
     @Column(name = "impression",length = 50)
     private String impression;
@@ -80,9 +78,7 @@ public class DgResultEntryHeader {
     @JoinColumn(name = "hospital_id")
     private MasHospital hospitalId;
 
-//    @ManyToOne(fetch = FetchType.EAGER)
-//    @JoinColumn(name = "investigation_id")
-//    private DgMasInvestigation investigationId;
+
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "main_chargecode_id")
@@ -111,21 +107,21 @@ public class DgResultEntryHeader {
     private MasSubChargeCode subChargeCodeId;
 
 
-  //  private Integer resultVerifiedBy;//
-
-
- //   private Integer hinId;//
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "hin_id")
+    private Patient hinId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "employee_id")
     private MasEmployee employeeId;
 
+    @Column(name = "result_update_by")
+   private Integer resultUpdatedBy;
 
- //   private Integer resultUpdatedBy;//
-
-    @UpdateTimestamp
+    @Column(name = "update_on")
     private LocalDateTime updateOn;
 
-
-
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "orderHd_id")
+    private DgOrderHd orderHdId;
 }
