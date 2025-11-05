@@ -16,6 +16,7 @@ public class ResultEntrySubInvestigationRequest {
     private Long investigationId;
     private Long subInvestigationId;
     private String resultType;
+    private String comparisonType;
     private Long fixedId;
     private Long normalId;
 
