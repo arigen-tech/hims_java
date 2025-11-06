@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,13 +38,14 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     private MasDepartmentRepository departmentRepo;
 
     @Autowired
+    private AuthUtil authUtil;
+
+    @Autowired
     private DgMasInvestigationRepository dgMasInvestigationRepo;
 
     @Autowired
     private UserRepo userRepo;
 
-    @Autowired
-    private AuthUtil authUtil;
 
     @Autowired
     private LabHdRepository labHdRepository;
@@ -52,7 +54,16 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     private LabDtRepository labDtRepository;
 
     @Autowired
+    private MasFrequencyRepository frequencyRepo;
+
+    @Autowired
+    private MasStoreItemRepository itemRepo;
+
+    @Autowired
     private final RandomNumGenerator randomNumGenerator;
+
+    @Autowired
+    private OpdTemplateTreatmentRepository opdTemplateTreatmentRepository;
 
     public OpdTemplateServiceImpl(RandomNumGenerator randomNumGenerator) {
         this.randomNumGenerator = randomNumGenerator;
@@ -80,10 +91,11 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     @Override
     public ApiResponse<OpdTemplateResponse> createOpdTemplate(OpdTemplateRequest opdTempReq) {
         try{
+            Long depId = authUtil.getCurrentDepartmentId();
             OpdTemplate opdt = new OpdTemplate();
             opdt.setOpdTemplateName(opdTempReq.getOpdTemplateName());
             opdt.setOpdTemplateCode(opdTempReq.getOpdTemplateCode());
-            opdt.setOpdTemplateType(opdTempReq.getOpdTemplateType());
+            opdt.setOpdTemplateType("I");
             User currentUser = getCurrentUser();
             if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
@@ -93,7 +105,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             opdt.setLastChgBy(currentUser.getUsername());
             opdt.setLastChgDate(Instant.now());
             opdt.setStatus("y");
-            MasDepartment department = departmentRepo.findById(opdTempReq.getDepartmentId())
+            MasDepartment department = departmentRepo.findById(depId)
                     .orElseThrow(() -> new RuntimeException("Department not found"));
             opdt.setDepartmentId(department);
             User doctor = userRepo.findById(currentUser.getUserId())
@@ -341,4 +353,206 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
 
         return response;
     }
+
+
+
+
+    // ======================= OPD TEMPLATE TREATMENT SECTION ======================= //
+
+    @Override
+    @Transactional
+    public ApiResponse<OpdTemplateResponse> saveOpdTemplateTreatment(OpdTemplateRequest request) {
+        try {
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+
+            Long depId = authUtil.getCurrentDepartmentId();
+
+            // Create template
+            OpdTemplate template = new OpdTemplate();
+            template.setOpdTemplateCode(request.getOpdTemplateCode());
+            template.setOpdTemplateName(request.getOpdTemplateName());
+            template.setOpdTemplateType("P");
+            template.setLastChgBy(currentUser.getUsername());
+            template.setLastChgDate(Instant.now());
+            template.setStatus("y");
+
+            // Department & Doctor mapping
+            MasDepartment department = departmentRepo.findById(depId)
+                    .orElseThrow(() -> new RuntimeException("Department not found"));
+            template.setDepartmentId(department);
+
+            User doctor = userRepo.findById(currentUser.getUserId())
+                    .orElseThrow(() -> new RuntimeException("Doctor not found"));
+            template.setDoctorId(doctor);
+
+            // Save template first
+            OpdTemplate savedTemplate = opdTempRepo.save(template);
+
+            // Map Treatments
+            List<OpdTemplateTreatment> treatments = request.getTreatments().stream().map(t -> {
+                OpdTemplateTreatment entity = new OpdTemplateTreatment();
+                entity.setDosage(t.getDosage());
+                entity.setNoOfDays(t.getNoOfDays());
+                entity.setTotal(t.getTotal());
+                entity.setInstruction(t.getInstruction());
+
+                // Frequency Mapping
+                MasFrequency frequency = frequencyRepo.findById(t.getFrequencyId())
+                        .orElseThrow(() -> new RuntimeException("Frequency not found with ID: " + t.getFrequencyId()));
+                entity.setFrequency(frequency);
+
+                // Item Mapping
+                MasStoreItem item = itemRepo.findById(t.getItemId())
+                        .orElseThrow(() -> new RuntimeException("Item not found with ID: " + t.getItemId()));
+                entity.setItem(item);
+
+                entity.setTemplate(savedTemplate);
+                return entity;
+            }).collect(Collectors.toList());
+
+            opdTemplateTreatmentRepository.saveAll(treatments);
+
+            OpdTemplateResponse response = mapTemplateTreatmentToResponse(savedTemplate, treatments);
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Failed to save OPD Template Treatment: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+
+    @Override
+    @Transactional
+    public ApiResponse<OpdTemplateResponse> updateOpdTemplateTreatment(Long templateId, OpdTemplateRequest request) {
+        try {
+
+            Long depId = authUtil.getCurrentDepartmentId();
+
+            OpdTemplate existingTemplate = opdTempRepo.findById(templateId)
+                    .orElseThrow(() -> new RuntimeException("Template not found with ID: " + templateId));
+
+            existingTemplate.setOpdTemplateName(request.getOpdTemplateName());
+            existingTemplate.setOpdTemplateCode(request.getOpdTemplateCode());
+//            existingTemplate.setOpdTemplateType(request.getOpdTemplateType());
+            existingTemplate.setLastChgDate(Instant.now());
+
+            MasDepartment department = departmentRepo.findById(depId)
+                    .orElseThrow(() -> new RuntimeException("Department not found"));
+            existingTemplate.setDepartmentId(department);
+
+            User currentUser = getCurrentUser();
+            existingTemplate.setLastChgBy(currentUser.getUsername());
+
+            // Delete old treatments
+            opdTemplateTreatmentRepository.deleteAllByTemplate(existingTemplate);
+
+            // Add new treatments
+            List<OpdTemplateTreatment> newTreatments = request.getTreatments().stream().map(t -> {
+                OpdTemplateTreatment entity = new OpdTemplateTreatment();
+                entity.setDosage(t.getDosage());
+                entity.setNoOfDays(t.getNoOfDays());
+                entity.setTotal(t.getTotal());
+                entity.setInstruction(t.getInstruction());
+
+                // Frequency Mapping
+                MasFrequency frequency = frequencyRepo.findById(t.getFrequencyId())
+                        .orElseThrow(() -> new RuntimeException("Frequency not found with ID: " + t.getFrequencyId()));
+                entity.setFrequency(frequency);
+
+                // Item Mapping
+                MasStoreItem item = itemRepo.findById(t.getItemId())
+                        .orElseThrow(() -> new RuntimeException("Item not found with ID: " + t.getItemId()));
+                entity.setItem(item);
+
+                entity.setTemplate(existingTemplate);
+                return entity;
+            }).collect(Collectors.toList());
+
+            opdTemplateTreatmentRepository.saveAll(newTreatments);
+
+            OpdTemplateResponse response = mapTemplateTreatmentToResponse(existingTemplate, newTreatments);
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Failed to update OPD Template Treatment: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+
+    @Override
+    public ApiResponse<List<OpdTemplateResponse>> getAllOpdTemplateTreatments(int flag) {
+        try {
+            List<OpdTemplate> templates;
+
+            // Filter based on flag
+            if (flag == 1) {
+                templates = opdTempRepo.findByStatusIgnoreCase("Y");
+            } else if (flag == 0) {
+                templates = opdTempRepo.findByStatusInIgnoreCase(List.of("Y", "N"));
+            } else {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Invalid flag value. Use 0 or 1.", 400);
+            }
+
+            // ✅ Filter templates whose type = 'p'
+            templates = templates.stream()
+                    .filter(t -> t.getOpdTemplateType() != null && t.getOpdTemplateType().equalsIgnoreCase("P"))
+                    .collect(Collectors.toList());
+
+            // Map to response
+            List<OpdTemplateResponse> responses = templates.stream().map(template -> {
+                List<OpdTemplateTreatment> treatments = opdTemplateTreatmentRepository.findByTemplate(template);
+                List<OpdTemplateInvestigation> investigations = opdTempInvestRepo.findByOpdTemplateId(template);
+                return mapTemplateTreatmentToResponse(template, treatments);
+            }).collect(Collectors.toList());
+
+            return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Failed to fetch OPD Template Treatments: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+
+    private OpdTemplateResponse mapTemplateTreatmentToResponse(OpdTemplate template, List<OpdTemplateTreatment> treatments) {
+        OpdTemplateResponse resp = new OpdTemplateResponse();
+        resp.setTemplateId(template.getTemplateId());
+        resp.setOpdTemplateName(template.getOpdTemplateName());
+        resp.setOpdTemplateCode(template.getOpdTemplateCode());
+        resp.setOpdTemplateType(template.getOpdTemplateType());
+        resp.setLastChgBy(template.getLastChgBy());
+        resp.setLastChgDate(template.getLastChgDate());
+        resp.setStatus(template.getStatus());
+        resp.setDepartmentId(template.getDepartmentId() != null ? template.getDepartmentId().getId() : null);
+        resp.setDoctorId(template.getDoctorId() != null ? template.getDoctorId().getUserId() : null);
+
+        resp.setTreatments(treatments.stream().map(t -> {
+            TreatmentResponse tr = new TreatmentResponse();
+            tr.setTreatmentTemp(t.getTreatmentid());
+            tr.setDosage(t.getDosage());
+            tr.setNoOfDays(t.getNoOfDays());
+            tr.setTotal(t.getTotal());
+            tr.setInstruction(t.getInstruction());
+            tr.setFrequencyId(t.getFrequency() != null ? t.getFrequency().getFrequency_id() : null);
+            tr.setItemId(t.getItem() != null ? t.getItem().getItemId() : null);
+            return tr;
+        }).collect(Collectors.toList()));
+
+        return resp;
+    }
+
+
+
+
+
 }

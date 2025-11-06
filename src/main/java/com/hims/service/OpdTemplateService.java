@@ -21,4 +21,8 @@ public interface OpdTemplateService {
     public ApiResponse<String> updateOpdTemplate(OpdTempInvReq opdTempInvReq);
 
     public ApiResponse<InvestigationByTemplateResponse> multiInvestigationTemplate (InvestigationByTemplateRequest investByTempReq);
+
+    public ApiResponse<List<OpdTemplateResponse>> getAllOpdTemplateTreatments(int flag);
+    public ApiResponse<OpdTemplateResponse> saveOpdTemplateTreatment(OpdTemplateRequest request);
+    public ApiResponse<OpdTemplateResponse> updateOpdTemplateTreatment(Long templateId, OpdTemplateRequest request);
 }

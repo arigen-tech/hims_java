@@ -9,6 +9,7 @@ public class OpdTemplateRequest {
     private String opdTemplateCode;
     private String opdTemplateName;
     private String opdTemplateType;
-    private Long departmentId;
+//    private Long departmentId;
     List<OpdTemplateInvestigationRequest> investigationRequestList;
+    private List<OpdTemplateTreatmentRequest> treatments;
 }

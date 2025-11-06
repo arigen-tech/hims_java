@@ -48,4 +48,20 @@ public class OpdTemplateController {
             @RequestBody InvestigationByTemplateRequest investByTempReq ) {
         return new ResponseEntity<>(opdTempService.multiInvestigationTemplate(investByTempReq), HttpStatus.OK);
     }
+
+    @PostMapping("/save")
+    public ApiResponse<OpdTemplateResponse> save(@RequestBody OpdTemplateRequest request) {
+        return opdTempService.saveOpdTemplateTreatment(request);
+    }
+
+    @PutMapping("/updateOpdTemplateTreatment/{templateId}")
+    public ApiResponse<OpdTemplateResponse> update(@PathVariable Long templateId, @RequestBody OpdTemplateRequest request) {
+        return opdTempService.updateOpdTemplateTreatment(templateId, request);
+    }
+
+    @GetMapping("/getAll/{flag}")
+    public ApiResponse<List<OpdTemplateResponse>> getAllOpdTemplateTreatments(@PathVariable int flag) {
+        return opdTempService.getAllOpdTemplateTreatments(flag);
+    }
+
 }

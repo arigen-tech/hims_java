@@ -17,4 +17,7 @@ public class OpdTemplateResponse {
     private Long departmentId;
     private Long doctorId;
     List<OpdTemplateInvestigationResponse> investigationResponseList;
+
+    private List<TreatmentResponse> treatments;
+
 }
