@@ -6,7 +6,7 @@ import java.util.List;
 
 @Data
 public class ResultEntrySubInvestigationRes {
-
+    private Long resultEntryDetailsId;
     private Long subInvestigationId;
     private String subInvestigationName;
     private String sampleName;

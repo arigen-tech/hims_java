@@ -87,4 +87,8 @@ public class LabRegistrationController {
         ApiResponse<String> response = resultService.saveOrUpdateResultEntry(request);
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/unvalidated")
+    public ApiResponse<List<DgResultEntryValidationResponse>> getAllUnvalidatedResults() {
+        return  resultService.getUnvalidatedResults();
+    }
 }

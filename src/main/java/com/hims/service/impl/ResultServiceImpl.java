@@ -6,8 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.ResultEntryInvestigationRequest;
 import com.hims.request.ResultEntryMainRequest;
 import com.hims.request.ResultEntrySubInvestigationRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.DgMasSampleResponse;
+import com.hims.response.*;
 import com.hims.service.ResultService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
@@ -20,8 +19,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+
 
 @Service
 public class ResultServiceImpl implements ResultService {
@@ -60,6 +64,7 @@ public class ResultServiceImpl implements ResultService {
 
     @Autowired
     AuthUtil authUtil;
+
     private final RandomNumGenerator randomNumGenerator;
 
     public  ResultServiceImpl(RandomNumGenerator randomNumGenerator) {
@@ -223,6 +228,111 @@ public class ResultServiceImpl implements ResultService {
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
+    @Override
+    public ApiResponse<List<DgResultEntryValidationResponse>> getUnvalidatedResults() {
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {},
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+
+            // Fetch headers with resultStatus = 'n' and details having validated = 'n'
+            List<DgResultEntryHeader> headerList = headerRepo.findAllUnvalidatedHeaders();
+
+            List<DgResultEntryValidationResponse> responseList = new ArrayList<>();
+
+            for (DgResultEntryHeader header : headerList) {
+                DgResultEntryValidationResponse headerDto = new DgResultEntryValidationResponse();
+
+                // ===== Header-level mapping =====
+                headerDto.setResultEntryHeaderId(header.getResultEntryId());
+                headerDto.setOrderDate(header.getOrderHd() != null && header.getOrderHd().getOrderDate() != null
+                        ? header.getOrderHd().getOrderDate().toString() : null);
+                headerDto.setResultTime(header.getResultTime());
+                headerDto.setResultDate(header.getResultDate());
+                headerDto.setResultEntredBy(currentUser.getUsername());
+                headerDto.setValidatedBy(currentUser.getUsername());
+                headerDto.setEnteredBy(header.getLastChgdBy());
+                headerDto.setPatientId(header.getHinId() != null ? header.getHinId().getId() : null);
+                headerDto.setPatientName(header.getHinId() != null ? header.getHinId().getPatientFn() : null);
+                headerDto.setRelationId(header.getRelationId().getId()!=null?header.getRelationId().getId():null);
+               headerDto.setRelation(header.getRelationId().getId()!=null?header.getRelationId().getRelationName():null);
+                headerDto.setPatientGender(header.getHinId() != null ? header.getHinId().getPatientGender().getGenderName() : null);
+               headerDto.setPatientAge(header.getHinId() != null ? header.getHinId().getPatientAge() : null);
+                headerDto.setPatientPhnNum(header.getHinId() != null ? header.getHinId().getPatientMobileNumber() : null);
+                headerDto.setSubChargeCodeId(header.getSubChargeCodeId() != null ? header.getSubChargeCodeId().getSubId() : null);
+                headerDto.setSubChargeCodeName(header.getSubChargeCodeId() != null ? header.getSubChargeCodeId().getSubName() : null);
+               headerDto.setMainChargeCode(header.getMainChargecodeId() != null ? header.getMainChargecodeId().getChargecodeId() : null);
+
+
+               // ===== Detail-level mapping =====
+                List<DgResultEntryDetail> detailList = detailRepo.findByResultEntryIdAndValidated(header, "n");
+
+                // Group details by Investigation
+                Map<Long, List<DgResultEntryDetail>> investigationMap = detailList.stream()
+                        .filter(d -> d.getInvestigationId() != null)
+                        .collect(Collectors.groupingBy(d -> d.getInvestigationId().getInvestigationId()));
+
+                List<ResultEntryInvestigationResponse> investigationResponseList = new ArrayList<>();
+
+                for (Map.Entry<Long, List<DgResultEntryDetail>> entry : investigationMap.entrySet()) {
+                    Long investigationId = entry.getKey();
+                    List<DgResultEntryDetail> subDetails = entry.getValue();
+                    DgMasInvestigation inv = subDetails.get(0).getInvestigationId();
+                    ResultEntryInvestigationResponse invDto = new ResultEntryInvestigationResponse();
+                    invDto.setInvestigationId(investigationId);
+                    invDto.setInvestigationName(inv != null ? inv.getInvestigationName() : null);
+                    invDto.setSampleName(inv != null && inv.getSampleId() != null ? inv.getSampleId().getSampleDescription() : null);
+
+                    // Always show main investigation (even if no sub-investigation)
+                    DgResultEntryDetail firstDetail = subDetails.get(0);
+                    invDto.setResultEntryDetailsId(firstDetail.getResultEntryDetailId());
+                    invDto.setResult(firstDetail.getResult());
+                    invDto.setRemarks(firstDetail.getRemarks());
+                    invDto.setNormalValue(firstDetail.getNormalRange());
+                    invDto.setUnit(firstDetail.getUomId() != null ? firstDetail.getUomId().getName() : null);
+
+                    // ===== Sub-Investigation info (if present) =====
+                    List<ResultEntrySubInvestigationRes> subList = new ArrayList<>();
+                    for (DgResultEntryDetail sub : subDetails) {
+                        if (sub.getSubInvestigationId() != null) {
+                            ResultEntrySubInvestigationRes subDto = new ResultEntrySubInvestigationRes();
+                            subDto.setResultEntryDetailsId(sub.getResultEntryDetailId());
+                            subDto.setSubInvestigationId(sub.getSubInvestigationId().getSubInvestigationId());
+                            subDto.setSubInvestigationName(sub.getSubInvestigationId().getSubInvestigationName());
+                            subDto.setSampleName(sub.getSampleId() != null ? sub.getSampleId().getSampleDescription() : null);
+                            subDto.setUnit(sub.getUomId() != null ? sub.getUomId().getName() : null);
+                            subDto.setNormalValue(sub.getNormalRange());
+                            subDto.setResult(sub.getResult());
+                            subDto.setRemarks(sub.getRemarks());
+                            subList.add(subDto);
+                        }
+                    }
+
+                    // keep empty list ([]) instead of null for frontend convenience
+                    invDto.setResultEntrySubInvestigationRes(subList);
+
+                    investigationResponseList.add(invDto);
+                }
+
+                headerDto.setResultEntryInvestigationResponses(investigationResponseList);
+                responseList.add(headerDto);
+            }
+
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+
     private void updateResultEntryStatusIfComplete(Long sampleHeaderId, Long subChargeCodeId) {
         List<DgSampleCollectionDetails> allDetails =
                 dgSampleCollectionDetailsRepository

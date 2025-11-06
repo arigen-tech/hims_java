@@ -6,14 +6,15 @@ import java.util.List;
 
 @Data
 public class ResultEntryInvestigationResponse {
-
+    private Long resultEntryDetailsId;
     private Long investigationId;
-    private Long investigationName;
+    private String investigationName;
     private String diagNo;
     private String unit;
     private String sampleName;
-    private String normalValue;
+    private String remarks;
     private String result;
-    private Long resultEntryDetailsId;
-    private List<ResultEntrySubInvestigationRes> resultEntrySubInvestigationResponses;
+    private String normalValue;
+    List<ResultEntrySubInvestigationRes> resultEntrySubInvestigationRes;
+
 }

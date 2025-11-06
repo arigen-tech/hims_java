@@ -2,6 +2,7 @@ package com.hims.response;
 
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -17,17 +18,16 @@ public class DgResultEntryValidationResponse {
     private String patientAge;
     private String patientPhnNum;
     private String orderDate;
-    private LocalDateTime collectedDate;
-    private String orderNum;
-    private LocalTime collectedTime;
-    private String department;
+    private String resultTime;
+    private LocalDate resultDate;
+    private String resultEntredBy;
     private Long mainChargeCode;
-    private String doctorName;
+  //  private String doctorName;
     private Long subChargeCodeId;
     private String subChargeCodeName;
     private String enteredBy;
-    private Long visitId;
     private Long resultEntryHeaderId;
+    private String validatedBy;
     private List<ResultEntryInvestigationResponse> resultEntryInvestigationResponses;
 
 }
