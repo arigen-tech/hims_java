@@ -8,7 +8,7 @@ import java.util.List;
 public class OpdTemplateRequest {
     private String opdTemplateCode;
     private String opdTemplateName;
-    private String opdTemplateType;
+//    private String opdTemplateType;
 //    private Long departmentId;
     List<OpdTemplateInvestigationRequest> investigationRequestList;
     private List<OpdTemplateTreatmentRequest> treatments;

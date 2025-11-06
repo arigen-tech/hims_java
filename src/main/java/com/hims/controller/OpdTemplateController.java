@@ -31,6 +31,11 @@ public class OpdTemplateController {
         return new ResponseEntity<>(opdTempService.getByTemplateId(templateId), HttpStatus.OK);
     }
 
+    @GetMapping("/getByTemplateType/{opdTemplateType}")
+    public ResponseEntity<ApiResponse<List<OpdTemplateResponse>>> getByOpdTemplateType (@PathVariable String opdTemplateType){
+        return new ResponseEntity<>(opdTempService.getByOpdTemplateType(opdTemplateType), HttpStatus.OK);
+    }
+
     @PostMapping("/create-opdTemplate")
     public ResponseEntity<ApiResponse<OpdTemplateResponse>> creatingOpdTemplate (@RequestBody OpdTemplateRequest opdTempReq){
         return new ResponseEntity<>(opdTempService.createOpdTemplate(opdTempReq), HttpStatus.CREATED);

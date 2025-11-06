@@ -89,6 +89,26 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     }
 
     @Override
+    public ApiResponse<List<OpdTemplateResponse>> getByOpdTemplateType(String opdTemplateType) {
+        List<OpdTemplate> templateList = opdTempRepo.findByOpdTemplateType(opdTemplateType);
+
+        if (templateList.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("Template not found", 404);
+        }
+
+        List<OpdTemplateResponse> responseList = new ArrayList<>();
+
+        for (OpdTemplate opdTemplate : templateList) {
+            List<OpdTemplateInvestigation> investigationList = opdTempInvestRepo.findByOpdTemplateId(opdTemplate);
+            OpdTemplateResponse response = mapToResponse(opdTemplate, investigationList);
+            responseList.add(response);
+        }
+
+        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+    }
+
+
+    @Override
     public ApiResponse<OpdTemplateResponse> createOpdTemplate(OpdTemplateRequest opdTempReq) {
         try{
             Long depId = authUtil.getCurrentDepartmentId();
@@ -140,7 +160,6 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     @Transactional
     public ApiResponse<String> updateOpdTemplate(OpdTempInvReq opdTempInvReq) {
         try{
-
             Optional<OpdTemplate> opdObj = opdTempRepo.findById(opdTempInvReq.getTemplateId());
             if (opdObj.get() != null){
                 for (OpdTemplateInvestigationRequest opdDetail: opdTempInvReq.getOpdTempInvest()){
