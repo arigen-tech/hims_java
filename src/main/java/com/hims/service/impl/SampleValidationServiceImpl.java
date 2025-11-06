@@ -178,19 +178,20 @@ DgFixedValueRepository dgFixedValueRepository;
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
+
             // Fetch details using your query
             List<DgSampleCollectionDetails> detailsList = detailsRepo.findAllByHeaderResultEntryAndValidationStatusLogic();
-            // Group by Patient + SubChargeCode
+
+            // 🟢 Group by Sample Collection Header (not patient + subChargeCode)
             Map<String, ResultResponse> responseMap = new LinkedHashMap<>();
+
             for (DgSampleCollectionDetails detail : detailsList) {
 
                 DgSampleCollectionHeader header = detail.getSampleCollectionHeader();
-                Long patientId = header.getPatientId().getId();
-                String subChargeCode = header.getSubChargeCode() != null ? header.getSubChargeCode().getSubCode() : null;
+                Long headerId = header.getSampleCollectionHeaderId();
+                String key = String.valueOf(headerId); // Grouping by header ID
 
-                String key = patientId + "_" + subChargeCode;
-
-                //  Group by Patient + SubChargeCode ---
+                // Group by Header
                 ResultResponse response = responseMap.computeIfAbsent(
                         key,
                         k -> {
@@ -213,6 +214,7 @@ DgFixedValueRepository dgFixedValueRepository;
                             r.setPatientGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
                             r.setPatientAge(patient.getPatientAge());
                             r.setPatientPhoneNo(patient.getPatientMobileNumber());
+
                             DgOrderHd dgOrderHd = labHdRepository.findByVisitId(header.getVisitId());
                             r.setOrderDate(String.valueOf(dgOrderHd.getOrderDate()));
                             r.setEnteredBy(currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName());
@@ -220,11 +222,13 @@ DgFixedValueRepository dgFixedValueRepository;
                             r.setCollectedTime(header.getCollection_time() != null ? header.getCollection_time().toLocalTime() : null);
                             r.setOrderNo(patient.getUhidNo());
                             r.setDepartment(header.getDepartmentId() != null ? header.getDepartmentId().getDepartmentName() : null);
-                            MasSubChargeCode masSubChargeCode = subChargeCodeRepository.findById(header.getSubChargeCode().getSubId()).orElseThrow();
+
+                            MasSubChargeCode masSubChargeCode =
+                                    subChargeCodeRepository.findById(header.getSubChargeCode().getSubId()).orElseThrow();
                             r.setMainChargeCodeId(masSubChargeCode.getMainChargeId().getChargecodeId());
                             r.setDoctorName(header.getHospitalId() != null ? header.getHospitalId().getHospitalName() : null);
                             r.setVisitId(header.getVisitId() != null ? header.getVisitId().getId() : null);
-                            r.setSampleCollectionHeaderId(header.getSampleCollectionHeaderId());
+                            r.setSampleCollectionHeaderId(headerId);
                             r.setSubChargeCodeId(header.getSubChargeCode().getSubId());
                             r.setSubChargeCodeName(header.getSubChargeCode().getSubName());
                             r.setResultInvestigationResponseList(new ArrayList<>());
@@ -232,7 +236,7 @@ DgFixedValueRepository dgFixedValueRepository;
                         }
                 );
 
-                //  Group by Investigation
+                // 🧩 Group by Investigation
                 ResultInvestigationResponse investigation = response.getResultInvestigationResponseList().stream()
                         .filter(i -> i.getInvestigationId().equals(detail.getInvestigationId().getInvestigationId()))
                         .findFirst()
@@ -258,28 +262,20 @@ DgFixedValueRepository dgFixedValueRepository;
                             }
 
                             String normalRange = null;
-
                             if (invObj.getNormalValue() != null && !invObj.getNormalValue().isBlank()) {
                                 normalRange = invObj.getNormalValue();
                             } else if (invObj.getMinNormalValue() != null && invObj.getMaxNormalValue() != null) {
                                 normalRange = invObj.getMinNormalValue() + " - " + invObj.getMaxNormalValue();
-
-                            } else {
-                                normalRange = null; //
                             }
 
                             inv.setNormalValue(normalRange);
 
-
-                            // --- Initialize Sub Investigation List
                             inv.setResultSubInvestigationResponseList(new ArrayList<>());
-
-                            // --- Add to parent list
                             response.getResultInvestigationResponseList().add(inv);
                             return inv;
                         });
 
-                //  Fetch Sub-Investigations
+                // 🧪 Fetch Sub-Investigations
                 List<DgSubMasInvestigation> subList =
                         dgSubMasInvestigationRepository.findByInvestigationId(detail.getInvestigationId().getInvestigationId());
 
@@ -293,9 +289,9 @@ DgFixedValueRepository dgFixedValueRepository;
                     sub.setComparisonType(subInvest.getComparisonType());
                     sub.setResultType(subInvest.getResultType());
 
-                    // Extract Patient Info for Normal Range
+                    // --- Patient info for Normal Range
                     var patient = header.getPatientId();
-                    String gender = patient.getPatientGender() != null ? patient.getPatientGender().getGenderCode(): null;
+                    String gender = patient.getPatientGender() != null ? patient.getPatientGender().getGenderCode() : null;
                     String ageStr = patient.getPatientAge(); // e.g. "24Y 8M 9D"
 
                     Long ageInYears = null;
@@ -305,7 +301,7 @@ DgFixedValueRepository dgFixedValueRepository;
                         } catch (Exception ignored) {}
                     }
 
-                    //  Fetch Normal Value
+                    // --- Fetch Normal Value
                     DgNormalValue dgNormalValue = null;
                     if (ageInYears != null && gender != null) {
                         dgNormalValue = dgNormalValueRepository
@@ -317,13 +313,9 @@ DgFixedValueRepository dgFixedValueRepository;
 
                     if (dgNormalValue != null) {
                         String normalRange = null;
-
-                        // 🟢 Step 1: if a direct normalValue string exists, use that
                         if (dgNormalValue.getNormalValue() != null && !dgNormalValue.getNormalValue().isBlank()) {
                             normalRange = dgNormalValue.getNormalValue();
-                        }
-                        // 🟡 Step 2: otherwise, try min–max range
-                        else if (dgNormalValue.getMinNormalValue() != null && dgNormalValue.getMaxNormalValue() != null) {
+                        } else if (dgNormalValue.getMinNormalValue() != null && dgNormalValue.getMaxNormalValue() != null) {
                             normalRange = dgNormalValue.getMinNormalValue() + " - " + dgNormalValue.getMaxNormalValue();
                         }
 
@@ -331,24 +323,23 @@ DgFixedValueRepository dgFixedValueRepository;
                         sub.setNormalId(dgNormalValue.getNormalId());
                     }
 
-                    //  Fetch Fixed Value
+                    // --- Fetch Fixed Values
                     List<DgFixedValue> dgFixedValue = dgFixedValueRepository.findBySubInvestigationId(subInvest);
-                    List<DgFixedValueResponse> dgFixedValueResponses=new ArrayList<>();
-                    for(DgFixedValue dgFixedValue1 :dgFixedValue){
-                        DgFixedValueResponse dgFixedValueResponse=new DgFixedValueResponse();
-                               dgFixedValueResponse.setFixedId(dgFixedValue1.getFixedId());
+                    List<DgFixedValueResponse> dgFixedValueResponses = new ArrayList<>();
+                    for (DgFixedValue dgFixedValue1 : dgFixedValue) {
+                        DgFixedValueResponse dgFixedValueResponse = new DgFixedValueResponse();
+                        dgFixedValueResponse.setFixedId(dgFixedValue1.getFixedId());
                         dgFixedValueResponse.setFixedValue(dgFixedValue1.getFixedValue());
                         dgFixedValueResponse.setSubInvestigationId(subInvest.getSubInvestigationId());
                         dgFixedValueResponses.add(dgFixedValueResponse);
-
-
                     }
                     sub.setDgFixedValueResponseList(dgFixedValueResponses);
-
 
                     investigation.getResultSubInvestigationResponseList().add(sub);
                 }
             }
+
+            //  Return success response
             return ResponseUtils.createSuccessResponse(new ArrayList<>(responseMap.values()), new TypeReference<>() {});
 
         } catch (Exception e) {
@@ -357,6 +348,7 @@ DgFixedValueRepository dgFixedValueRepository;
                     "Internal Server Error", HttpStatus.BAD_REQUEST.value());
         }
     }
+
 }
 
 
