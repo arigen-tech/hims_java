@@ -89,22 +89,36 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     }
 
     @Override
-    public ApiResponse<List<OpdTemplateResponse>> getByOpdTemplateType(String opdTemplateType) {
-        List<OpdTemplate> templateList = opdTempRepo.findByOpdTemplateType(opdTemplateType);
+    public ApiResponse<List<OpdTemplateResponse>> getAllTemplateInvestigations(int flag) {
+        try {
+            List<OpdTemplate> templates;
 
-        if (templateList.isEmpty()) {
-            return ResponseUtils.createNotFoundResponse("Template not found", 404);
+            if (flag == 1) {
+                templates = opdTempRepo.findByStatusIgnoreCase("Y");
+            } else if (flag == 0) {
+                templates = opdTempRepo.findByStatusInIgnoreCase(List.of("Y", "N"));
+            } else {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Invalid flag value. Use 0 or 1.", 400);
+            }
+
+            templates = templates.stream()
+                    .filter(t -> t.getOpdTemplateType() != null && t.getOpdTemplateType().equalsIgnoreCase("I"))
+                    .collect(Collectors.toList());
+
+            List<OpdTemplateResponse> responses = templates.stream().map(template -> {
+                List<OpdTemplateTreatment> treatments = opdTemplateTreatmentRepository.findByTemplate(template);
+                List<OpdTemplateInvestigation> investigations = opdTempInvestRepo.findByOpdTemplateId(template);
+                return mapTemplateTreatmentToResponse(template, treatments);
+            }).collect(Collectors.toList());
+
+            return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Failed to fetch OPD Template Treatments: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
-
-        List<OpdTemplateResponse> responseList = new ArrayList<>();
-
-        for (OpdTemplate opdTemplate : templateList) {
-            List<OpdTemplateInvestigation> investigationList = opdTempInvestRepo.findByOpdTemplateId(opdTemplate);
-            OpdTemplateResponse response = mapToResponse(opdTemplate, investigationList);
-            responseList.add(response);
-        }
-
-        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
     }
 
 

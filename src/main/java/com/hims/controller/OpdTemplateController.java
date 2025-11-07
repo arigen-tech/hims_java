@@ -1,13 +1,10 @@
 package com.hims.controller;
 
-import com.hims.entity.OpdTemplateInvestigation;
 import com.hims.request.InvestigationByTemplateRequest;
 import com.hims.request.OpdTempInvReq;
-import com.hims.request.OpdTemplateInvestigationRequest;
 import com.hims.request.OpdTemplateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.InvestigationByTemplateResponse;
-import com.hims.response.OpdTemplateInvestigationResponse;
 import com.hims.response.OpdTemplateResponse;
 import com.hims.service.OpdTemplateService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,9 +28,9 @@ public class OpdTemplateController {
         return new ResponseEntity<>(opdTempService.getByTemplateId(templateId), HttpStatus.OK);
     }
 
-    @GetMapping("/getByTemplateType/{opdTemplateType}")
-    public ResponseEntity<ApiResponse<List<OpdTemplateResponse>>> getByOpdTemplateType (@PathVariable String opdTemplateType){
-        return new ResponseEntity<>(opdTempService.getByOpdTemplateType(opdTemplateType), HttpStatus.OK);
+    @GetMapping("/getAllTemplateInvestigations/{flag}")
+    public ResponseEntity<ApiResponse<List<OpdTemplateResponse>>> getByOpdTemplateType (@PathVariable int flag){
+        return new ResponseEntity<>(opdTempService.getAllTemplateInvestigations(flag), HttpStatus.OK);
     }
 
     @PostMapping("/create-opdTemplate")
