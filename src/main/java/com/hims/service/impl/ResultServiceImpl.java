@@ -343,6 +343,7 @@ public class ResultServiceImpl implements ResultService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<String> updateResultValidation( ResultValidationUpdateRequest request) {
         try {
             User currentUser = authUtil.getCurrentUser();
@@ -351,6 +352,10 @@ public class ResultServiceImpl implements ResultService {
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
+
+            //For Date Time Formating
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
 
             // 🔹 Step 1: Fetch header
             Optional<DgResultEntryHeader> optionalHeader = headerRepo.findById(request.getResultEntryHeaderId());
@@ -396,8 +401,8 @@ public class ResultServiceImpl implements ResultService {
                 header.setResultStatus("y"); // All validated
                // header.setVerified("y");
                header.setVerifiedOn(LocalDate.now());
-               header.setVerifiedTime(LocalTime.now().toString());
-               header.setResultVerifiedBy(Math.toIntExact(currentUser.getUserId()));
+                header.setVerifiedTime(LocalTime.now().format(formatter));
+                header.setResultVerifiedBy(Math.toIntExact(currentUser.getUserId()));
               // header.setResultUpdatedBy(currentUser.getUsername());
               //  header.setUpdateOn(LocalDateTime.now());
                 headerRepo.save(header);
