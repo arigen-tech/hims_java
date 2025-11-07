@@ -3,9 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.request.ResultEntryInvestigationRequest;
-import com.hims.request.ResultEntryMainRequest;
-import com.hims.request.ResultEntrySubInvestigationRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.ResultService;
 import com.hims.utils.AuthUtil;
@@ -18,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -342,6 +341,82 @@ public class ResultServiceImpl implements ResultService {
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
+    @Override
+    public ApiResponse<String> updateResultValidation( ResultValidationUpdateRequest request) {
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {},
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+
+            // 🔹 Step 1: Fetch header
+            Optional<DgResultEntryHeader> optionalHeader = headerRepo.findById(request.getResultEntryHeaderId());
+            if (optionalHeader.isEmpty()) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {},
+                        "Result entry header not found", HttpStatus.NOT_FOUND.value());
+            }
+
+            DgResultEntryHeader header = optionalHeader.get();
+//            System.out.println("header = " + header);
+
+            // 🔹 Step 2: Loop through validation list and update details
+            for (ResultEntryValidationRequest validationReq : request.getValidationList()) {
+                Optional<DgResultEntryDetail> optionalDetail = detailRepo.findById(validationReq.getResultEntryDetailsId());
+                if (optionalDetail.isEmpty()) continue;
+
+                DgResultEntryDetail detail = optionalDetail.get();
+
+                // Update result and remarks
+                detail.setResult(validationReq.getResult());
+                detail.setRemarks(validationReq.getRemarks());
+                if("f".equalsIgnoreCase(validationReq.getComparisonType())){
+                    detail.setFixedId(dgFixedValueRepository.findById(validationReq.getFixedId()).orElse(null));
+                }
+
+                // Set validated status
+                if (Boolean.TRUE.equals(validationReq.getValidated())) {
+                    detail.setValidated("y");
+                }
+
+                // Save each detail
+                detailRepo.save(detail);
+            }
+
+            // 🔹 Step 3: Check if all details are validated
+            List<DgResultEntryDetail> allDetails = detailRepo.findByResultEntryId(header);
+            boolean allValidated = allDetails.stream()
+                    .allMatch(d -> "y".equalsIgnoreCase(d.getValidated()));
+
+            // 🔹 Step 4: Update header if all details validated
+            if (allValidated) {
+                header.setResultStatus("y"); // All validated
+               // header.setVerified("y");
+               header.setVerifiedOn(LocalDate.now());
+               header.setVerifiedTime(LocalTime.now().toString());
+               header.setResultVerifiedBy(Math.toIntExact(currentUser.getUserId()));
+              // header.setResultUpdatedBy(currentUser.getUsername());
+              //  header.setUpdateOn(LocalDateTime.now());
+                headerRepo.save(header);
+            }
+
+            return ResponseUtils.createSuccessResponse(
+                    "Result entry validation updated successfully",
+                    new TypeReference<String>() {
+                    });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {},
+                    "Error while validating result entry: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
 
 
     private void updateResultEntryStatusIfComplete(Long sampleHeaderId, Long subChargeCodeId) {

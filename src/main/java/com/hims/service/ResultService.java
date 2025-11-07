@@ -1,6 +1,7 @@
 package com.hims.service;
 
 import com.hims.request.ResultEntryMainRequest;
+import com.hims.request.ResultValidationUpdateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DgResultEntryValidationResponse;
 
@@ -10,4 +11,6 @@ public interface ResultService {
    ApiResponse<String> saveOrUpdateResultEntry(ResultEntryMainRequest request);
 
    ApiResponse<List<DgResultEntryValidationResponse>> getUnvalidatedResults();
+
+   ApiResponse<String> updateResultValidation( ResultValidationUpdateRequest request);
 }

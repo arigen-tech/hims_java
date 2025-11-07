@@ -74,46 +74,47 @@ public class DgResultEntryHeader {
     private Integer testOrderNo;
 
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hospital_id")
     private MasHospital hospitalId;
 
 
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "main_chargecode_id")
     private  MasMainChargeCode mainChargecodeId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private MasDepartment departmentId;
 
 
    // private Integer prescribedBy;//
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sample_collection_header_id")
     private DgSampleCollectionHeader sampleCollectionHeaderId;
 
 
    // private Integer inpatientId;//
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "relation_id")
     private MasRelation relationId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_chargecode_id")
     private MasSubChargeCode subChargeCodeId;
 
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hin_id")
     private Patient hinId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "employee_id")
-    private MasEmployee employeeId;
+
+    @Column(name = "result_verified_by")
+    private Integer resultVerifiedBy;
+
 
     @Column(name = "result_update_by")
    private Integer resultUpdatedBy;
@@ -121,7 +122,7 @@ public class DgResultEntryHeader {
     @Column(name = "update_on")
     private LocalDateTime updateOn;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_hd_id")
     private DgOrderHd orderHd;
 }

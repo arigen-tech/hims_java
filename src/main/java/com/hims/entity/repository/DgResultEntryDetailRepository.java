@@ -4,7 +4,10 @@ import com.hims.entity.DgMasInvestigation;
 import com.hims.entity.DgResultEntryDetail;
 import com.hims.entity.DgResultEntryHeader;
 import com.hims.entity.DgSubMasInvestigation;
+import io.netty.resolver.dns.DnsServerAddresses;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,4 +18,8 @@ public interface DgResultEntryDetailRepository extends JpaRepository<DgResultEnt
     Optional<DgResultEntryDetail> findByResultEntryIdAndInvestigationIdAndSubInvestigationId(DgResultEntryHeader header, DgMasInvestigation investigation, DgSubMasInvestigation subInvestigation);
 
     List<DgResultEntryDetail> findByResultEntryIdAndValidated(DgResultEntryHeader header, String n);
+
+
+
+    List<DgResultEntryDetail> findByResultEntryId(DgResultEntryHeader resultEntryId);
 }

@@ -91,4 +91,11 @@ public class LabRegistrationController {
     public ApiResponse<List<DgResultEntryValidationResponse>> getAllUnvalidatedResults() {
         return  resultService.getUnvalidatedResults();
     }
+    @PutMapping("/validate")
+    public ApiResponse<String> updateResultValidation(
+            @RequestBody ResultValidationUpdateRequest request) {
+        return resultService.updateResultValidation(request);
+    }
+
+
 }
