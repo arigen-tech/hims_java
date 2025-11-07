@@ -15,4 +15,5 @@ public interface DgFixedValueRepository extends JpaRepository<DgFixedValue,Long>
     List<DgFixedValue> findBySubInvestigationId_InvestigationId(DgMasInvestigation masInvest);
 
     List<DgFixedValue> findBySubInvestigationId(DgSubMasInvestigation subInvest);
+
 }

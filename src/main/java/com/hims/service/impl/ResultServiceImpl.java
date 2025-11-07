@@ -316,6 +316,9 @@ public class ResultServiceImpl implements ResultService {
                                 subDto.setComparisonType(sub.getSubInvestigationId().getComparisonType());
                                 subDto.setFixedId(sub.getFixedId().getFixedId());
                             }
+                            List<DgFixedValue> fixedDropdownValues = dgFixedValueRepository.findBySubInvestigationId(sub.getSubInvestigationId());
+                            subDto.setFixedDropdownValues(fixedDropdownValues.stream().map(this::mapToDgFixedValueResponse).toList());
+
                             subList.add(subDto);
                         }
                     }
@@ -361,6 +364,14 @@ public class ResultServiceImpl implements ResultService {
                 dgSampleCollectionHeaderRepository.save(headerObj);
             }
         }
+    }
+
+    private DgFixedValueResponse mapToDgFixedValueResponse(DgFixedValue entity){
+        DgFixedValueResponse response= new DgFixedValueResponse();
+        response.setFixedId(entity.getFixedId());
+        response.setFixedValue(entity.getFixedValue());
+        response.setSubInvestigationId(entity.getSubInvestigationId().getSubInvestigationId());
+        return response;
     }
 
 
