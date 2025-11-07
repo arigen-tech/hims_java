@@ -11,6 +11,7 @@ import com.hims.service.ResultService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 
 
 @Service
+@Slf4j
 public class ResultServiceImpl implements ResultService {
     @Autowired
     private DgResultEntryHeaderRepository headerRepo;
@@ -308,6 +310,12 @@ public class ResultServiceImpl implements ResultService {
                             subDto.setNormalValue(sub.getNormalRange());
                             subDto.setResult(sub.getResult());
                             subDto.setRemarks(sub.getRemarks());
+                            String comparisonType = sub.getSubInvestigationId().getComparisonType();
+                            log.info("comparisonType : {}",comparisonType);
+                            if("f".equalsIgnoreCase(sub.getSubInvestigationId().getComparisonType())){
+                                subDto.setComparisonType(sub.getSubInvestigationId().getComparisonType());
+                                subDto.setFixedId(sub.getFixedId().getFixedId());
+                            }
                             subList.add(subDto);
                         }
                     }

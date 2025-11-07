@@ -14,4 +14,6 @@ public class ResultEntrySubInvestigationRes {
     private String normalValue;
     private String result;
     private String remarks;
+    private String comparisonType;
+    private Long fixedId;
 }
