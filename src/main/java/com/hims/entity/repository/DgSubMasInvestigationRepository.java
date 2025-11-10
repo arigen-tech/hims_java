@@ -12,4 +12,8 @@ public interface DgSubMasInvestigationRepository extends JpaRepository<DgSubMasI
             "WHERE s.investigationId.investigationId = :investigationId " +
             "AND s.status = 'y'")
     List<DgSubMasInvestigation> findByInvestigationId(@Param("investigationId") Long investigationId);
+
+    List<DgSubMasInvestigation> findByInvestigationIdIn(List<Long> investigationIds);
+
+    List<DgSubMasInvestigation> findByInvestigationId_InvestigationIdIn(List<Long> investigationIds);
 }

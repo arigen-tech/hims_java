@@ -6,6 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.DgMasInvestigationService;
+import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     @Autowired
     private DgNormalValueRepository normalRepo;
 
+    @Autowired
+    private AuthUtil authUtil;
+
     @Value("${investigation.mainChargecodeId}")
     private Long mainChargecodeId;
 
@@ -82,6 +86,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 
     @Override
     public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag) {
+//        long startTime = System.currentTimeMillis();
         try {
             List<DgMasInvestigation> investigationList;
             if (flag == 1) {
@@ -97,25 +102,54 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 );
             }
 
-            if (investigationList == null) {
-                investigationList = new ArrayList<>();
+            if (investigationList == null || investigationList.isEmpty()) {
+                return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
             }
+
+            List<Long> investigationIds = investigationList.stream()
+                    .map(DgMasInvestigation::getInvestigationId)
+                    .collect(Collectors.toList());
+
+            List<DgSubMasInvestigation> allSubList =
+                    subInvestigationRepo.findByInvestigationId_InvestigationIdIn(investigationIds);
+
+            List<DgFixedValue> allFixedList =
+                    fixedRepo.findBySubInvestigationId_InvestigationId_InvestigationIdIn(investigationIds);
+
+            List<DgNormalValue> allNormalList =
+                    normalRepo.findBySubInvestigationId_InvestigationId_InvestigationIdIn(investigationIds);
+
+
+            Map<Long, List<DgSubMasInvestigation>> subMap = allSubList.stream()
+                    .collect(Collectors.groupingBy(sub -> sub.getInvestigationId().getInvestigationId()));
+
+            Map<Long, List<DgFixedValue>> fixedMap = allFixedList.stream()
+                    .collect(Collectors.groupingBy(f -> f.getSubInvestigationId().getInvestigationId().getInvestigationId()));
+
+            Map<Long, List<DgNormalValue>> normalMap = allNormalList.stream()
+                    .collect(Collectors.groupingBy(n -> n.getSubInvestigationId().getInvestigationId().getInvestigationId()));
+
 
             List<DgMasInvestigationResponse> responseList = investigationList.stream()
                     .map(masInvest -> {
-                        // fetch related entities for this masInvest
-                        List<DgSubMasInvestigation> subList = subInvestigationRepo.findByInvestigationId(masInvest.getInvestigationId());
-                        List<DgFixedValue> fixedList = fixedRepo.findBySubInvestigationId_InvestigationId(masInvest);
-                        List<DgNormalValue> normalList = normalRepo.findBySubInvestigationId_InvestigationId(masInvest);
-
-                        // map to response
-                        return mapToResponseMulti(masInvest, subList, fixedList, normalList);
+                        Long id = masInvest.getInvestigationId();
+                        return mapToResponseMulti(
+                                masInvest,
+                                subMap.getOrDefault(id, Collections.emptyList()),
+                                fixedMap.getOrDefault(id, Collections.emptyList()),
+                                normalMap.getOrDefault(id, Collections.emptyList())
+                        );
                     })
                     .collect(Collectors.toList());
 
+//            long endTime = System.currentTimeMillis();
+//            log.info("getAllInvestigations executed successfully in {} ms", endTime - startTime);
+
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
         } catch (Exception e) {
-            e.printStackTrace();
+//            long endTime = System.currentTimeMillis();
+//            log.error("getAllInvestigations failed after {} ms. Error: {}", endTime - startTime, e.getMessage(), e);
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},
@@ -218,6 +252,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 
     @Override
     public ApiResponse<DgMasInvestigationSingleResponse> updateSingleInvestigation(Long investigationId, DgMasInvestigationSingleReqest investigationRequest) {
+        User currentUser = authUtil.getCurrentUser();
         try{
             Optional<DgMasInvestigation> masInvestigation = dgMasInvestigationRepo.findById(investigationId);
             if (masInvestigation.isPresent()) {
@@ -225,12 +260,6 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 dmi.setInvestigationName(investigationRequest.getInvestigationName());
                 dmi.setConfidential(investigationRequest.getConfidential());
                 dmi.setInvestigationType(investigationRequest.getInvestigationType());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                            },
-                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
-                }
                 dmi.setLastChgBy(currentUser.getUsername());
                 dmi.setLastChgDate(Instant.now());
                 dmi.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
@@ -311,17 +340,12 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     @Override
     @Transactional
     public ApiResponse<String> updateMultipleInvestigation(DgMasInvestigationMultiRequest multiRequest) {
+        User currentUser = authUtil.getCurrentUser();
         Optional<DgMasInvestigation> masInvestOpt = dgMasInvestigationRepo.findById(multiRequest.getInvestigationId());
         DgMasInvestigation masInvestigation = masInvestOpt.get();
         masInvestigation.setInvestigationName(multiRequest.getInvestigationName());
         masInvestigation.setConfidential(multiRequest.getConfidential());
         masInvestigation.setInvestigationType(multiRequest.getInvestigationType());
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    },
-                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
-        }
         masInvestigation.setLastChgBy(currentUser.getUsername());
         masInvestigation.setLastChgDate(Instant.now());
         masInvestigation.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
