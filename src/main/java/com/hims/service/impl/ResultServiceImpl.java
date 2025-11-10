@@ -79,7 +79,7 @@ public class ResultServiceImpl implements ResultService {
 
 
     @Override
-
+    @Transactional
     public ApiResponse<String>  saveOrUpdateResultEntry(ResultEntryMainRequest request) {
         try {
             Long depart = authUtil.getCurrentDepartmentId();
@@ -106,6 +106,7 @@ public class ResultServiceImpl implements ResultService {
                 header.setRemarks(request.getClinicalNotes());
                 header.setLastChgdBy(currentUser.getLastChangedBy());
                 header.setLastChgdDate(LocalDate.now());
+                header.setResultStatus("n");
                 header.setLastChgdTime(String.valueOf(LocalTime.now()));
             } else {
                 // Create new header
@@ -113,6 +114,7 @@ public class ResultServiceImpl implements ResultService {
                 header.setRelationId(masRelationRepository.findById(request.getRelationId()).orElse(null));
                 header.setRemarks(request.getClinicalNotes());
                 header.setResultDate(LocalDate.now());
+
                 header.setResultTime(String.valueOf(LocalTime.now()));
 
                 DgSampleCollectionHeader dgSampleCollectionHeader =
