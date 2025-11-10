@@ -141,4 +141,7 @@ public class BillingHeader {
     @JoinColumn(name = "visit_id", nullable = false)
     private Visit visit;
 
+    @Column(name = "registration_cost")
+    private BigDecimal registrationCost;
+
 }

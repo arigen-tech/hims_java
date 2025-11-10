@@ -41,6 +41,8 @@ public class BillingServiceImpl implements BillingService {
     AuthUtil authUtil;
     @Autowired
     PatientRepository patientRepository;
+    @Autowired
+    private MasHospitalRepository masHospitalRepository;
 
     @Override
     @Transactional
@@ -93,6 +95,8 @@ public class BillingServiceImpl implements BillingService {
             header.setVisit(visit);
             header.setServiceCategory(serviceCategory);
             header.setBillingHdId(0);
+            header.setRegistrationCost(visit.getHospital().getRegistrationCost());
+
             BillingHeader savedHeader = billingHeaderRepository.save(header);
             response.setHeader(savedHeader);
             if (savedHeader != null) {

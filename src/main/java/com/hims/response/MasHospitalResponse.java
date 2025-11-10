@@ -2,6 +2,8 @@ package com.hims.response;
 
 import lombok.Getter;
 import lombok.Setter;
+
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -31,4 +33,5 @@ public class MasHospitalResponse {
     private String regCostApplicable;
     private String appCostApplicable;
     private String preConsultationAvailable;
+    private BigDecimal registrationCost;
 }
