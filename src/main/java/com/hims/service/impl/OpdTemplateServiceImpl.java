@@ -109,7 +109,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             List<OpdTemplateResponse> responses = templates.stream().map(template -> {
                 List<OpdTemplateTreatment> treatments = opdTemplateTreatmentRepository.findByTemplate(template);
                 List<OpdTemplateInvestigation> investigations = opdTempInvestRepo.findByOpdTemplateId(template);
-                return mapTemplateTreatmentToResponse(template, treatments);
+                return mapToResponse(template, investigations);
             }).collect(Collectors.toList());
 
             return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
