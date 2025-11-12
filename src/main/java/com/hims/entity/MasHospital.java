@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -94,5 +96,8 @@ public class MasHospital {
     @Size(max = 255)
     @Column(name = "email", length = 255)
     private String email;
+
+    @Column(name = "registration_cost")
+    private BigDecimal registrationCost;
 
 }

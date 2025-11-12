@@ -2,6 +2,8 @@ package com.hims.request;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class MasHospitalRequest {
     private String hospitalCode;
@@ -19,4 +21,5 @@ public class MasHospitalRequest {
     private String regCostApplicable;
     private String appCostApplicable;
     private String preConsultationAvailable;
+    private BigDecimal registrationCost;
 }
