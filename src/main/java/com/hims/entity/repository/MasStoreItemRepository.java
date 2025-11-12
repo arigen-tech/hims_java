@@ -15,6 +15,10 @@ public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long>
 
     Optional<MasStoreItem> findByPvmsNo(String code);
 
+    List<MasStoreItem> findByStatusIgnoreCaseAndSectionId_SectionId(String status, Integer sectionId);
+
+    List<MasStoreItem> findByStatusInIgnoreCaseAndSectionId_SectionId(List<String> statuses, Integer sectionId);
+
 
 
     Optional<MasStoreItem> findFirstByPvmsNoOrNomenclature(String pvmsNo, String nomenclature);

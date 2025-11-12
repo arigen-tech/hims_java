@@ -1180,6 +1180,10 @@ public class MasterController {
         return masStoreItemService.getAllMasStore(flag);
     }
 
+    @GetMapping("/masStoreItem/getAllBySectionOnly/{flag}")
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemBySectionOnly(@PathVariable int flag) {
+        return masStoreItemService.getAllMasStoreItemBySectionOnly(flag);
+    }
 
 
     //    ================================Mas HSN  Controller================================//

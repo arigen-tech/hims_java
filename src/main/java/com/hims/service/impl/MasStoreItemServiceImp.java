@@ -11,6 +11,7 @@ import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -55,6 +56,10 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     private UserDepartmentRepository userDepartmentRepository;
 @Autowired
 private MasDepartmentRepository masDepartmentRepository;
+
+    @Value("${masstoreitem.section.id}")
+    private Integer sectionId;
+
 
     private static final Logger log = LoggerFactory.getLogger(DoctorRosterServicesImpl.class);
 
@@ -369,6 +374,36 @@ private MasDepartmentRepository masDepartmentRepository;
 
 
      }
+
+    @Override
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemBySectionOnly(int flag) {
+
+        List<MasStoreItem> masStoreItems;
+
+        if (flag == 1) {
+            masStoreItems = masStoreItemRepository
+                    .findByStatusIgnoreCaseAndSectionId_SectionId("y", sectionId);
+        } else if (flag == 0) {
+            masStoreItems = masStoreItemRepository
+                    .findByStatusInIgnoreCaseAndSectionId_SectionId(List.of("y", "n"), sectionId);
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasStoreItemResponse> responses = masStoreItems.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+    }
+
+
+
+
+
+
+
 
     private MasStoreItemResponse convertToResponse(MasStoreItem item) {
         MasStoreItemResponse response = new MasStoreItemResponse();
