@@ -257,7 +257,7 @@ public class ResultServiceImpl implements ResultService {
                 headerDto.setResultTime(header.getResultTime());
                 headerDto.setResultDate(header.getResultDate());
                 headerDto.setResultEntredBy(currentUser.getUsername());
-                headerDto.setValidatedBy(currentUser.getUsername());
+                headerDto.setValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
                 headerDto.setEnteredBy(header.getLastChgdBy());
                 headerDto.setPatientId(header.getHinId() != null ? header.getHinId().getId() : null);
                 headerDto.setPatientName(header.getHinId() != null ? header.getHinId().getPatientFn() : null);
