@@ -15,6 +15,7 @@ public class ResultEntryInvestigationResponse {
     private String remarks;
     private String result;
     private String normalValue;
+    private Boolean inRange;
     List<ResultEntrySubInvestigationRes> resultEntrySubInvestigationRes;
 
 }

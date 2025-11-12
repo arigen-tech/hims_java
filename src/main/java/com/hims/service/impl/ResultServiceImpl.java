@@ -297,6 +297,7 @@ public class ResultServiceImpl implements ResultService {
                     invDto.setRemarks(firstDetail.getRemarks());
                     invDto.setNormalValue(firstDetail.getNormalRange());
                     invDto.setUnit(firstDetail.getUomId() != null ? firstDetail.getUomId().getName() : null);
+                    invDto.setInRange(isResultWithinRange(firstDetail.getResult(), firstDetail.getNormalRange()));
 
                     // ===== Sub-Investigation info (if present) =====
                     List<ResultEntrySubInvestigationRes> subList = new ArrayList<>();
@@ -319,7 +320,7 @@ public class ResultServiceImpl implements ResultService {
                             }
                             List<DgFixedValue> fixedDropdownValues = dgFixedValueRepository.findBySubInvestigationId(sub.getSubInvestigationId());
                             subDto.setFixedDropdownValues(fixedDropdownValues.stream().map(this::mapToDgFixedValueResponse).toList());
-
+                            subDto.setInRange(isResultWithinRange(sub.getResult(), sub.getNormalRange()));
                             subList.add(subDto);
                         }
                     }
@@ -448,6 +449,30 @@ public class ResultServiceImpl implements ResultService {
         }
     }
 
+    private Boolean isResultWithinRange(String resultStr, String normalRangeStr) {
+        if (resultStr == null || normalRangeStr == null) {
+            return null; // no meaningful comparison possible
+        }
+
+        try {
+            // Expecting normal range like "0.3 - 5.6"
+            String[] parts = normalRangeStr.split("-");
+            if (parts.length != 2) {
+                return null; // invalid range format
+            }
+
+            double min = Double.parseDouble(parts[0].trim());
+            double max = Double.parseDouble(parts[1].trim());
+            double result = Double.parseDouble(resultStr.trim());
+
+            return result >= min && result <= max;
+        } catch (NumberFormatException e) {
+            // Not numeric (like "Positive", "+", "++", "Trace")
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
     private DgFixedValueResponse mapToDgFixedValueResponse(DgFixedValue entity){
         DgFixedValueResponse response= new DgFixedValueResponse();
         response.setFixedId(entity.getFixedId());
