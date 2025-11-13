@@ -93,6 +93,14 @@ public class PatientController {
 
 
 
+    @GetMapping("/getWaitingList")
+    public ResponseEntity<ApiResponse<List<Visit>>> getWaitingList(){
+        ApiResponse<List<Visit>> response = patientService.getWaitingList();
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+
+
     @PostMapping("/patient-details")
     public ResponseEntity<ApiResponse<OpdPatientDetail>> createOpdPatientDetail(
             @Valid @RequestBody OpdPatientDetailFinalRequest request) {
