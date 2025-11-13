@@ -715,10 +715,55 @@ public class ResultServiceImpl implements ResultService {
         }
     }
 
-//    @Override
-//    public ApiResponse<String> updateResult(ResultUpdateRequest request) {
-//
-//    }
+    @Override
+    @Transactional
+    public ApiResponse<String> updateResult(ResultUpdateRequest request) {
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {},
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            // Fetch header
+            Optional<DgResultEntryHeader> optionalHeader = headerRepo.findById(request.getResultEntryHeaderId());
+            if (optionalHeader.isEmpty()) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {},
+                        "Header not found", HttpStatus.NOT_FOUND.value());
+            }
+            DgResultEntryHeader header = optionalHeader.get();
+
+            // Update all details
+            for (ResultUpdateDetailRequest detailReq : request.getResultUpdateDetailRequests()) {
+                Optional<DgResultEntryDetail> optionalDetail = detailRepo.findById(detailReq.getResultEntryDetailsId());
+                if (optionalDetail.isEmpty()) continue;
+                DgResultEntryDetail detail = optionalDetail.get();
+                if (!Objects.equals(detail.getResultEntryId().getResultEntryId(), header.getResultEntryId())) {
+                    continue; // Skip if detail not under this header
+                }
+                // Update result and remarks per detail
+                detail.setResult(detailReq.getResult());
+                detail.setRemarks(detailReq.getRemarks());
+                if("f".equalsIgnoreCase(detailReq.getComparisonType())){
+                    detail.setFixedId(dgFixedValueRepository.findById(detailReq.getFixedId()).orElse(null));
+                }
+                detailRepo.save(detail);
+            }
+            //  Update header audit fields
+            header.setResultUpdatedBy(Math.toIntExact(currentUser.getUserId()));  // Who updated
+            header.setUpdateOn(LocalDateTime.now());           // When updated
+            headerRepo.save(header);
+            return ResponseUtils.createSuccessResponse(
+                    "Result and remarks updated successfully", new TypeReference<>() {});
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+    }
 
 
     private void updateResultEntryStatusIfComplete(Long sampleHeaderId, Long subChargeCodeId) {

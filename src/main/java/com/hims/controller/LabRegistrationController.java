@@ -100,10 +100,10 @@ public class LabRegistrationController {
     public ApiResponse<List<ResultEntryUpdateResponse>> getUpdate() {
         return  resultService.getUpdate();
     }
-//    @PutMapping("/update")
-//    public ApiResponse<String> updateResult(
-//            @RequestBody ResultUpdateRequest request) {
-//        return resultService.updateResult(request);
-//
-//    }
+    @PutMapping("/update")
+    public ApiResponse<String> updateResult(@RequestBody ResultUpdateRequest request) {
+
+        return resultService.updateResult(request);
+
+    }
 }

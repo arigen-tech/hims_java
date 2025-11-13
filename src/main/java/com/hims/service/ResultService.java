@@ -18,5 +18,5 @@ public interface ResultService {
 
    ApiResponse<List<ResultEntryUpdateResponse>> getUpdate();
 
-  // ApiResponse<String> updateResult(ResultUpdateRequest request);
+   ApiResponse<String> updateResult(ResultUpdateRequest request);
 }
