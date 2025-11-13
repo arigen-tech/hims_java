@@ -2,15 +2,18 @@ package com.hims.controller;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.PatientRegFollowUpResp;
+import com.hims.service.OpdPatientDetailService;
 import com.hims.service.PatientService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,6 +33,9 @@ public class PatientController {
     PatientService patientService;
     @Autowired
     private PatientRepository patientRepository;
+
+    @Autowired
+    private OpdPatientDetailService opdPatientDetailService;
 
 
     @PostMapping("/register")
@@ -85,4 +91,20 @@ public class PatientController {
         return ResponseEntity.ok(exists);
     }
 
+
+
+    @PostMapping("/patient-details")
+    public ResponseEntity<ApiResponse<OpdPatientDetail>> createOpdPatientDetail(
+            @Valid @RequestBody OpdPatientDetailFinalRequest request) {
+
+        ApiResponse<OpdPatientDetail> response = opdPatientDetailService.createOpdPatientDetail(request);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/activeVisit")
+    public ResponseEntity<ApiResponse<List<Visit>>> getActiveVisits() {
+        ApiResponse<List<Visit>> response = opdPatientDetailService.getActiveVisits();
+        return ResponseEntity.ok(response);
+    }
 }

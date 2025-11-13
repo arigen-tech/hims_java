@@ -31,8 +31,8 @@ public class PatientPrescriptionDt {
     @Column(name = "days")
     private Integer days;
 
-    @Column(name = "ordered_qty", precision = 12, scale = 2, nullable = false)
-    private BigDecimal orderedQty;
+    @Column(name = "total", precision = 12, scale = 2, nullable = false)
+    private BigDecimal total;
 
     @Column(name = "issued_qty", precision = 12, scale = 2)
     private BigDecimal issuedQty = BigDecimal.ZERO;
@@ -43,7 +43,7 @@ public class PatientPrescriptionDt {
     @Column(name = "instruction", length = 200)
     private String instruction;
 
-    @Column(name = "unit_price", precision = 12, scale = 2, nullable = false)
+    @Column(name = "unit_price", precision = 12, scale = 2)
     private BigDecimal unitPrice;
 
     @Column(name = "discount", precision = 5, scale = 2)
@@ -67,9 +67,9 @@ public class PatientPrescriptionDt {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "prescription_hd_id", insertable = false, updatable = false)
-//    private PatientPrescriptionHd prescriptionHeader;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "prescription_hd_id", insertable = false, updatable = false)
+    private PatientPrescriptionHd prescriptionHeader;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id", insertable = false, updatable = false)

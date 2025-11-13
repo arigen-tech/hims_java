@@ -1,0 +1,7 @@
+package com.hims.entity.repository;
+
+import com.hims.entity.PatientPrescriptionHd;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PatientPrescriptionHdRepository extends JpaRepository<PatientPrescriptionHd, Long> {
+}
