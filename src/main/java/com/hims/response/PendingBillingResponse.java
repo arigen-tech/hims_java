@@ -21,6 +21,7 @@ public class PendingBillingResponse {
     private BigDecimal amount;
     private String billingStatus;
     private String address;
+    private BigDecimal registrationCost;
 
 
     private List<BillingDetailResponse> details;

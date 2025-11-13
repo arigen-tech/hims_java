@@ -6,6 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,12 +43,15 @@ public class BillingServiceImpl implements BillingService {
     @Autowired
     PatientRepository patientRepository;
     @Autowired
+    private RandomNumGenerator randomNumGenerator;
+    @Autowired
     private MasHospitalRepository masHospitalRepository;
 
     @Override
     @Transactional
     public ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount) {
         BillingHeader header = new BillingHeader();
+        String orderNum = createInvoices();
         OpdBillingPaymentResponse response = new OpdBillingPaymentResponse();
         User currentUser = authUtil.getCurrentUser();
         try {
@@ -66,7 +70,8 @@ public class BillingServiceImpl implements BillingService {
             header.setReferredBy(visit.getIniDoctor().getFirstName() + " " + visit.getIniDoctor().getMiddleName() + " " + visit.getIniDoctor().getLastName());
             header.setGstnBillNo("");
             header.setBillDate(OffsetDateTime.now());
-            Optional<MasServiceOpd> serviceOpd = masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory);
+            Instant currentDate = Instant.now();
+            Optional<MasServiceOpd> serviceOpd = masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatIdAndCurrentDate(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory, currentDate);
             if (serviceOpd.isPresent()) {
                 if (discount != null) {
                     if (discount.getDisPercentage() != null && discount.getMaxDiscount() != null) {
@@ -81,6 +86,13 @@ public class BillingServiceImpl implements BillingService {
                 header.setTotalAmount(total);
                 header.setTaxTotal(BigDecimal.valueOf(0));
                 header.setTotalPaid(BigDecimal.valueOf(0));
+            }else if (serviceOpd.isEmpty()) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "MasServiceOPD or Tariff is not defined yet",
+                        400
+                );
             }
             header.setDiscountAmount(totalDiscount);
             header.setPaymentStatus("n");
@@ -88,7 +100,7 @@ public class BillingServiceImpl implements BillingService {
             header.setUpdatedDt(Instant.now());
             header.setCreatedDt(Instant.now());
             header.setInvoiceNo("");
-            header.setBillNo("");
+            header.setBillNo(orderNum);
             header.setUpdatedAt(OffsetDateTime.now());
             header.setBillingDate(Instant.now());
             header.setDiscount(discount);
@@ -169,6 +181,10 @@ public class BillingServiceImpl implements BillingService {
         }
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
         });
+    }
+
+    public String createInvoices() {
+        return randomNumGenerator.generateOrderNumber("BILL",true,true);
     }
 
     public boolean setPaymentDetail(BillingHeader savedHeader) {

@@ -202,7 +202,17 @@ public class PatientServiceImpl implements PatientService {
     public ApiResponse<List<Visit>> getPendingPreConsultations() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User current_user=userRepository.findByUserName(username);
-        List<Visit> response=visitRepository.findByHospitalAndPreConsultation(current_user.getHospital(),"n");
+        List<Visit> response=visitRepository.findByHospitalAndPreConsultationAndBillingStatus(current_user.getHospital(),"n","y");
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
+        });
+    }
+
+
+    @Override
+    public ApiResponse<List<Visit>> getWaitingList() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User current_user=userRepository.findByUserName(username);
+        List<Visit> response=visitRepository.findByHospitalAndPreConsultationAndBillingStatus(current_user.getHospital(),"y","y");
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
         });
     }
@@ -408,11 +418,15 @@ public class PatientServiceImpl implements PatientService {
         newVisit.setTokenNo(nextToken);
         newVisit.setVisitDate(visit.getVisitDate());
         newVisit.setLastChgDate(Instant.now());
-        newVisit.setVisitStatus("p");
+        newVisit.setVisitStatus("n");
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.findById(visit.getDepartmentId()).get());
         newVisit.setDoctorName(visit.getDoctorName());
-        newVisit.setBillingStatus("n");
+        if(setup.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
+            newVisit.setBillingStatus("y");
+        }else{
+            newVisit.setBillingStatus("n");
+        }
         newVisit.setPatient(patient);
         if (visit.getDoctorId() != null) {
             userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setDoctor);
@@ -442,7 +456,10 @@ public class PatientServiceImpl implements PatientService {
         //create billing header and detail
         MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
         MasDiscount discount=new MasDiscount();
-        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
+        // no need to generate bill if appCost is NO
+        if(newVisit.getBillingStatus().equalsIgnoreCase("n")){
+            ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
+        }
 
         return savedVisit;
     }

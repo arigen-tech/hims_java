@@ -32,7 +32,14 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                                             @Param("sessionId") Long sessionId);
 
 
-    List<Visit> findByHospitalAndPreConsultation(MasHospital hospital,String preConsultation);
+//    List<Visit> findByHospitalAndPreConsultationAndBillingStatus(MasHospital hospital,String preConsultation, String billingStatus);
+
+    @Query("SELECT v FROM Visit v WHERE v.hospital = :hospital AND v.preConsultation = :preConsultation AND v.billingStatus = :billingStatus")
+    List<Visit> findByHospitalAndPreConsultationAndBillingStatus(@Param("hospital") MasHospital hospital,
+                                                                 @Param("preConsultation") String preConsultation,
+                                                                 @Param("billingStatus") String billingStatus);
+
+
 
     @Query(value = "SELECT COUNT(v.token_no) FROM visit v " +
             "WHERE v.hospital_id = :hospitalId " +

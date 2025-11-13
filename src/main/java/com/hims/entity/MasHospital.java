@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -99,5 +98,4 @@ public class MasHospital {
 
     @Column(name = "registration_cost")
     private BigDecimal registrationCost;
-
 }

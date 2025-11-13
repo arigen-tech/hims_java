@@ -19,6 +19,7 @@ public interface PatientService {
 
     ApiResponse<List<Visit>> getPendingPreConsultations();
 
+    ApiResponse<List<Visit>> getWaitingList();
 
     ApiResponse<String> saveVitalDetails(OpdPatientDetailRequest request);
 }

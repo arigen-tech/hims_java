@@ -163,9 +163,9 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             hospital.setRegCostApplicable(hospitalRequest.getRegCostApplicable());
             hospital.setAppCostApplicable(hospitalRequest.getAppCostApplicable());
             hospital.setPreConsultationAvailable(hospitalRequest.getPreConsultationAvailable());
-            if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase("y")){
+            if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase("y")) {
                 hospital.setRegistrationCost(hospitalRequest.getRegistrationCost());
-            } else{
+            }else{
                 hospital.setRegistrationCost(BigDecimal.valueOf(0));
             }
             MasHospital savedHospital = masHospitalRepository.save(hospital);
@@ -223,9 +223,9 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 existingHospital.setRegCostApplicable(hospitalRequest.getRegCostApplicable());
                 existingHospital.setAppCostApplicable(hospitalRequest.getAppCostApplicable());
                 existingHospital.setPreConsultationAvailable(hospitalRequest.getPreConsultationAvailable());
-                if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase("y")){
+                if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase("y")) {
                     existingHospital.setRegistrationCost(hospitalRequest.getRegistrationCost());
-                } else{
+                }else{
                     existingHospital.setRegistrationCost(BigDecimal.valueOf(0));
                 }
 
