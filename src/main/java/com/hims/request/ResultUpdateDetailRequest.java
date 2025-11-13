@@ -7,7 +7,6 @@ public class ResultUpdateDetailRequest {
     private Long resultEntryDetailsId;
     private String result;
     private String remarks;
-    private Boolean validated;  // true = validated, false/null = pending
     private Long fixedId;
     private String comparisonType;
 }

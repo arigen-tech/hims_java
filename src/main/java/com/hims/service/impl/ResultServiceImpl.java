@@ -733,7 +733,6 @@ public class ResultServiceImpl implements ResultService {
                         "Header not found", HttpStatus.NOT_FOUND.value());
             }
             DgResultEntryHeader header = optionalHeader.get();
-
             // Update all details
             for (ResultUpdateDetailRequest detailReq : request.getResultUpdateDetailRequests()) {
                 Optional<DgResultEntryDetail> optionalDetail = detailRepo.findById(detailReq.getResultEntryDetailsId());
