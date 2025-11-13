@@ -96,6 +96,14 @@ public class LabRegistrationController {
             @RequestBody ResultValidationUpdateRequest request) {
         return resultService.updateResultValidation(request);
     }
-
-
+    @GetMapping("/getUpdate")
+    public ApiResponse<List<ResultEntryUpdateResponse>> getUpdate() {
+        return  resultService.getUpdate();
+    }
+//    @PutMapping("/update")
+//    public ApiResponse<String> updateResult(
+//            @RequestBody ResultUpdateRequest request) {
+//        return resultService.updateResult(request);
+//
+//    }
 }

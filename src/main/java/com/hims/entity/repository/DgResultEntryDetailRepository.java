@@ -20,6 +20,12 @@ public interface DgResultEntryDetailRepository extends JpaRepository<DgResultEnt
     List<DgResultEntryDetail> findByResultEntryIdAndValidated(DgResultEntryHeader header, String n);
 
 
-
     List<DgResultEntryDetail> findByResultEntryId(DgResultEntryHeader resultEntryId);
+    @Query("SELECT d FROM DgResultEntryDetail d " +
+            "WHERE d.resultEntryId = :header " +
+            "AND LOWER(d.validated) = 'y'")
+    List<DgResultEntryDetail> findValidatedDetailsByHeader(@Param("header") DgResultEntryHeader header);
+
+
+
 }

@@ -22,19 +22,10 @@ Optional<DgResultEntryHeader> findBySampleCollectionHeaderId_SampleCollectionHea
             "WHERE h.resultStatus = 'n' AND d.validated = 'n'")
     List<DgResultEntryHeader> findAllUnvalidatedHeaders();
 
-//    @Modifying
-//    @Transactional
-//    @Query("UPDATE DgResultEntryHeader h SET h.resultStatus = :status WHERE h.resultEntryId = :headerId")
-//    void updateResultStatus(@Param("headerId") Long headerId, @Param("status") String status);
-//    @Query("""
-//        SELECT h FROM DgResultEntryHeader h
-//        JOIN FETCH h.sampleCollectionHeaderId sch
-//        JOIN FETCH sch.patientId p
-//        WHERE p.patientId = :patientId AND h.subChargecodeId.subChargecodeId = :subChargeCodeId
-//    """)
-//    Optional<DgResultEntryHeader> findExistingHeader(
-//            @Param("subChargeCodeId") Long subChargeCodeId);
-//
-//
-//    Optional<DgResultEntryHeader> findByPatientAndSubChargeCodeId( Long subChargeCodeId);
+
+
+
+
+
+
 }

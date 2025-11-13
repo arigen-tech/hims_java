@@ -9,7 +9,6 @@ import java.util.List;
 
 @Data
 public class DgResultEntryValidationResponse {
-
     private Long patientId;
     private String patientName;
     private Long relationId;

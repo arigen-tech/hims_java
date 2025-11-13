@@ -46,7 +46,6 @@ public class MasStoreItem {
 
     @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "dispensing_unit")
-
     private MasStoreUnit dispUnit;
 
     @ManyToOne(fetch =  FetchType.LAZY)
