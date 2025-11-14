@@ -5,6 +5,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.OpdPatientDetailFinalRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.OpdPatientRecallResponce;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
@@ -19,9 +20,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,211 +55,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     public String createOrderNum() {
         return randomNumGenerator.generateOrderNumber("OPD",true,true);
     }
-
-//    @Override
-//    @Transactional
-//    public ApiResponse<OpdPatientDetail> createOpdPatientDetail(OpdPatientDetailFinalRequest request) {
-//        log.info("start print ");
-//        log.info(String.valueOf(request));
-//        Long deptId = authUtil.getCurrentDepartmentId();
-//        User useObj = authUtil.getCurrentUser();
-//        OpdPatientDetail opdPatientDetail = new OpdPatientDetail();
-//
-//        //  Map vital details
-//        opdPatientDetail.setHeight(request.getHeight());
-//        opdPatientDetail.setIdealWeight(request.getIdealWeight());
-//        opdPatientDetail.setWeight(request.getWeight());
-//        opdPatientDetail.setPulse(request.getPulse());
-//        opdPatientDetail.setTemperature(request.getTemperature());
-//        opdPatientDetail.setRr(request.getRr());
-//        opdPatientDetail.setBmi(request.getBmi());
-//        opdPatientDetail.setSpo2(request.getSpo2());
-//        opdPatientDetail.setBpSystolic(request.getBpSystolic());
-//        opdPatientDetail.setBpDiastolic(request.getBpDiastolic());
-//        opdPatientDetail.setMlcFlag(request.getMlcFlag());
-//
-//        // Diagnosis
-//
-//        if ((request.getWorkingDiag() != null && !request.getWorkingDiag().isBlank()) ||
-//                (request.getIcdDiag() != null && !request.getIcdDiag().isEmpty())) {
-//
-//            opdPatientDetail.setWorkingDiag(request.getWorkingDiag());
-//
-//            if (request.getIcdDiag() != null && !request.getIcdDiag().isEmpty()) {
-//                String icd = String.join(",", request.getIcdDiag());
-//                opdPatientDetail.setIcdDiag(icd);
-//            } else {
-//                opdPatientDetail.setIcdDiag(null);
-//            }
-//
-//        } else {
-//            return ResponseUtils.createFailureResponse(
-//                    null,
-//                    new TypeReference<>() {},
-//                    "One is mandatory: Working Diagnosis or ICD Diagnosis.",
-//                    400
-//            );
-//        }
-//
-//
-//
-//
-//        // Clinical history
-//        opdPatientDetail.setPastMedicalHistory(request.getPastMedicalHistory());
-//        opdPatientDetail.setFamilyHistory(request.getFamilyHistory());
-////        opdPatientDetail.setPresentComplaints(request.getPresentComplaints());
-//        opdPatientDetail.setClinicalExamination(request.getClinicalExamination());
-//        opdPatientDetail.setPatientSignsSymptoms(request.getPatientSignsSymptoms());
-//
-//
-//
-//        //  Investigation
-//
-//        String OderNumOPD = createOrderNum();
-//        Map<LocalDate, List<OpdPatientDetailFinalRequest.Investigation>> groupedByDate =
-//                request.getInvestigation().stream()
-//                        .collect(Collectors.groupingBy(OpdPatientDetailFinalRequest.Investigation::getInvestigationDate));
-//
-//
-//        for (Map.Entry<LocalDate, List<OpdPatientDetailFinalRequest.Investigation>> entry : groupedByDate.entrySet()) {
-//            LocalDate investigationDate = entry.getKey();
-//            List<OpdPatientDetailFinalRequest.Investigation> invList = entry.getValue();
-//
-//            // Create and save DgOrderHd (header)
-//            DgOrderHd dgOrderHd = new DgOrderHd();
-//            dgOrderHd.setOrderDate(LocalDate.now());
-//            dgOrderHd.setAppointmentDate(investigationDate);
-//            dgOrderHd.setOrderNo(OderNumOPD);
-//            dgOrderHd.setOrderStatus("n");
-//            dgOrderHd.setCollectionStatus("n");
-//            dgOrderHd.setPaymentStatus("n");
-//            dgOrderHd.setDiscountId(1);
-//            Optional<Patient> pObj = patientRepository.findById(request.getPatientId());
-//            dgOrderHd.setPatientId(pObj.get());
-//            dgOrderHd.setDepartmentId(Math.toIntExact(request.getDepartmentId()));
-//            dgOrderHd.setHospitalId(Math.toIntExact(request.getHospitalId()));
-//            Optional<Visit> VistObj = visitRepository.findById(request.getVisitId());
-//            dgOrderHd.setVisitId(VistObj.get());
-//            dgOrderHd.setLastChgBy(useObj.getFirstName()+" "+useObj.getLastName());
-//            dgOrderHd.setCreatedBy(useObj.getFirstName()+" "+useObj.getLastName());
-//            dgOrderHd.setCreatedOn(LocalDate.now());
-//            dgOrderHd.setLastChgDate(LocalDate.now());
-//            dgOrderHd.setLastChgTime(LocalTime.now().toString());
-//
-//
-//            dgOrderHd = dgOrderHdRepo.save(dgOrderHd);
-//
-//            // For each investigation under this date
-//            for (OpdPatientDetailFinalRequest.Investigation invObj : invList) {
-//                DgOrderDt dgOrderDt = new DgOrderDt();
-//                Optional<DgMasInvestigation> invObj1 = dgMasInvestigationRepository.findById(invObj.getId());
-//                dgOrderDt.setInvestigationId(invObj1.get());
-//                dgOrderDt.setOrderhdId(dgOrderHd);
-//                dgOrderDt.setAppointmentDate(invObj.getInvestigationDate());
-//                dgOrderDt.setLastChgBy(useObj.getFirstName()+" "+useObj.getLastName());
-//                dgOrderDt.setCreatedBy(useObj.getFirstName()+" "+useObj.getLastName());
-//                dgOrderDt.setLastChgDate(LocalDate.now());
-//                dgOrderDt.setBillingStatus("n");
-//                dgOrderDt.setOrderStatus("n");
-//                dgOrderDt.setOrderQty(1);
-//                dgOrderDt.setCreatedon(Instant.now());
-//                dgOrderDt.setLastChgTime(LocalTime.now().toString());
-//
-//                dgOrderDt.setMainChargecodeId(invObj1.get().getMainChargeCodeId().getChargecodeId());
-//                dgOrderDt.setSubChargeid(invObj1.get().getSubChargeCodeId().getSubId());
-////                dt.setPackageId(pkgObj);
-//
-//                dgOrderDtRepo.save(dgOrderDt);
-//
-//            }
-//        }
-//
-//
-//        //        Treatment
-//
-//        PatientPrescriptionHd precHdObj = new PatientPrescriptionHd();
-//        precHdObj.setHospitalId(useObj.getHospital().getId());
-//        precHdObj.setNisNo(null);
-//        precHdObj.setPatientId(useObj.getUserId());
-//        precHdObj.setDepartmentId(authUtil.getCurrentDepartmentId());
-//        precHdObj.setDoctorName(useObj.getFirstName()+" "+useObj.getLastName());
-//        precHdObj.setPrescriptionDate(LocalDateTime.now());
-//        precHdObj.setStatus("n");
-//        precHdObj.setCreatedBy(useObj.getFirstName()+" "+useObj.getLastName());
-//        precHdObj.setIssuedBy(null);
-//        precHdObj.setIssuedDate(null);
-//        precHdObj.setTotalCost(null);
-//        precHdObj.setTotalGst(null);
-//        precHdObj.setTotalDiscount(null);
-//        precHdObj.setNetAmount(null);
-//        PatientPrescriptionHd newPatieHd = patientPrescriptionHdRepository.save(precHdObj);
-//
-//
-//        for (OpdPatientDetailFinalRequest.Treatment trtObj: request.getTreatment()) {
-//
-//            PatientPrescriptionDt precDtObj = new PatientPrescriptionDt();
-//            precDtObj.setPrescriptionHdId(newPatieHd.getPrescriptionHdId());
-//            precDtObj.setItemId(trtObj.getItemId());
-//            precDtObj.setDosage(trtObj.getDosage());
-//            precDtObj.setFrequency(trtObj.getFrequency());
-//            precDtObj.setDays(trtObj.getDays());
-//            precDtObj.setTotal(trtObj.getTotal());
-//            precDtObj.setIssuedQty(null);
-//            precDtObj.setRoute(null);
-//            precDtObj.setInstruction(trtObj.getInstraction());
-//            precDtObj.setUnitPrice(null);
-//            precDtObj.setDiscount(null);
-//            precDtObj.setGstRate(null);
-//            precDtObj.setLineCost(null);
-//            precDtObj.setSubstituteItemId(null);
-//            precDtObj.setStatus("n");
-//            precDtObj.setBatchNo(null);
-//            precDtObj.setExpiryDate(null);
-//            patientPrescriptionDtRepository.save(precDtObj);
-//
-//        }
-//
-//
-//
-//        // General details
-//        opdPatientDetail.setOpdDate(request.getOpdDate());
-//        opdPatientDetail.setVaration(request.getVaration());
-//        opdPatientDetail.setFollowUpFlag(request.getFollowUpFlag());
-//        opdPatientDetail.setFollowUpDays(request.getFollowUpDays());
-//        opdPatientDetail.setTreatmentAdvice(request.getTreatmentAdvice());
-//        opdPatientDetail.setSosFlag(request.getSosFlag());
-//        opdPatientDetail.setRecmmdMedAdvice(request.getRecmmdMedAdvice());
-//        opdPatientDetail.setMedicineFlag(request.getMedicineFlag());
-//        opdPatientDetail.setLabFlag(request.getLabFlag());
-//        opdPatientDetail.setRadioFlag(request.getRadioFlag());
-//        opdPatientDetail.setReferralFlag(request.getReferralFlag());
-//        opdPatientDetail.setPoliceStation(request.getPoliceStation());
-//        opdPatientDetail.setPoliceName(request.getPoliceName());
-//
-//        if (request.getPatientId() != null) {
-//            opdPatientDetail.setPatient(patientRepository.findById(request.getPatientId()).orElse(null));
-//        }
-//        if (request.getVisitId() != null) {
-//            opdPatientDetail.setVisit(visitRepository.findById(request.getVisitId()).orElse(null));
-//        }
-//        if (deptId != null) {
-//            opdPatientDetail.setDepartment(departmentRepository.findById(deptId).orElse(null));
-//        }
-//        if (useObj.getHospital().getId() != null) {
-//            opdPatientDetail.setHospital(hospitalRepository.findById(useObj.getHospital().getId()).orElse(null));
-//        }
-//        if (useObj.getUserId() != null) {
-//            opdPatientDetail.setDoctor(userRepository.findById(useObj.getUserId()).orElse(null));
-//        }
-//
-//        opdPatientDetail.setLastChgDate(Instant.now());
-//        opdPatientDetail.setLastChgBy(useObj.getUsername()); // or get from logged-in user
-//
-//        OpdPatientDetail saved = opdPatientDetailRepository.save(opdPatientDetail);
-//
-//        return ResponseUtils.createSuccessResponse(saved, new TypeReference<>() {
-//        });
-//    }
 
 
     @Override
@@ -462,5 +256,217 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return ResponseUtils.createSuccessResponse(activeVisits, new TypeReference<>() {});
     }
 
+    @Override
+    public ApiResponse<List<OpdPatientRecallResponce>> getRecallVisit(String name, String mobile, LocalDate visitDate) {
+
+        if (visitDate == null && mobile == null && name == null) {
+            visitDate = LocalDate.now();
+        }
+
+        if (mobile == null || mobile.trim().isEmpty()) {
+            mobile = "";
+        } else {
+            mobile = mobile.trim();
+        }
+
+        if (name == null || name.trim().isEmpty()) {
+            name = "";
+        } else {
+            name = name.trim();
+        }
+
+        List<Visit> recallVisit = visitRepository.searchRecallVisits(visitDate, mobile, name);
+
+        List<OpdPatientRecallResponce> responseList = new ArrayList<>();
+
+        for (Visit visitObj : recallVisit) {
+
+            Patient patientObj = visitObj.getPatient();
+            if (patientObj == null) continue;
+
+            User docObj = visitObj.getDoctor();
+            MasDepartment deptObj = visitObj.getDepartment();
+            MasGender genderObj = patientObj.getPatientGender();
+            MasRelation relationObj = patientObj.getPatientRelation();
+
+            OpdPatientDetail opdPatientObj =
+                    opdPatientDetailRepository.findByVisitId(visitObj.getId());
+
+            DgOrderHd dgOrderHd =
+                    dgOrderHdRepo.findByVisitId(visitObj);
+
+            List<DgOrderDt> dgOrderDtList = dgOrderHd != null
+                    ? dgOrderDtRepo.findByOrderhdId(dgOrderHd)
+                    : Collections.emptyList();
+
+            PatientPrescriptionHd patientPrescHdObj =
+                    patientPrescriptionHdRepository.findByPatientId(patientObj.getId());
+
+            List<PatientPrescriptionDt> prescDtList =
+                    patientPrescHdObj != null
+                            ? patientPrescriptionDtRepository.findByPrescriptionHdId(
+                            patientPrescHdObj.getPrescriptionHdId())
+                            : Collections.emptyList();
+
+            // ------------ Build Response ----------
+            OpdPatientRecallResponce response = new OpdPatientRecallResponce();
+
+            // Build patient name
+            String patientName = buildFullName(
+                    patientObj.getPatientFn(),
+                    patientObj.getPatientMn(),
+                    patientObj.getPatientLn()
+            );
+            response.setPatientName(patientName);
+
+            response.setMobileNo(patientObj.getPatientMobileNumber());
+            response.setGender(genderObj != null ? genderObj.getGenderName() : null);
+            response.setRelation(relationObj != null ? relationObj.getRelationName() : null);
+            response.setDob(patientObj.getPatientDob());
+            response.setAge(patientObj.getPatientAge());
+            response.setDeptId(deptObj != null ? deptObj.getId() : null);
+            response.setDeptName(deptObj != null ? deptObj.getDepartmentName() : null);
+            response.setDocterId(docObj != null ? docObj.getUserId() : null);
+
+            // Build doctor name
+            if (docObj != null) {
+                String doctorName = buildFullName(
+                        docObj.getFirstName(),
+                        docObj.getMiddleName(),
+                        docObj.getLastName()
+                );
+                response.setDocterName(doctorName);
+            }
+
+            response.setVisitId(visitObj.getId());
+            response.setPatientId(patientObj.getId());
+
+            // --------------------- OPD DATA --------------------
+            if (opdPatientObj != null) {
+                response.setOpdPatientId(opdPatientObj.getOpdPatientDetailsId());
+                response.setOpdDate(opdPatientObj.getOpdDate());
+                response.setPastMedicalHistory(opdPatientObj.getPastMedicalHistory());
+                response.setFamilyHistory(opdPatientObj.getFamilyHistory());
+                response.setPatientSignsSymptoms(opdPatientObj.getPatientSignsSymptoms());
+                response.setClinicalExamination(opdPatientObj.getClinicalExamination());
+                response.setHeight(opdPatientObj.getHeight());
+                response.setIdealWeight(opdPatientObj.getIdealWeight());
+                response.setWeight(opdPatientObj.getWeight());
+                response.setPulse(opdPatientObj.getPulse());
+                response.setTemperature(opdPatientObj.getTemperature());
+                response.setRr(opdPatientObj.getRr());
+                response.setBmi(opdPatientObj.getBmi());
+                response.setSpo2(opdPatientObj.getSpo2());
+                response.setBpSystolic(opdPatientObj.getBpSystolic());
+                response.setBpDiastolic(opdPatientObj.getBpDiastolic());
+                response.setMlcFlag(opdPatientObj.getMlcFlag());
+                response.setWorkingDiag(opdPatientObj.getWorkingDiag());
+
+                if (opdPatientObj.getIcdDiag() != null && !opdPatientObj.getIcdDiag().isEmpty()) {
+                    List<String> icdList = Arrays.stream(opdPatientObj.getIcdDiag().split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isBlank())
+                            .toList();
+                    response.setIcdDiag(icdList);
+                }
+
+                response.setLabFlag(opdPatientObj.getLabFlag());
+                response.setRadioFlag(opdPatientObj.getRadioFlag());
+            }
+
+            // --------------------- DG ORDER HD MAP ---------------------
+            if (dgOrderHd != null) {
+                OpdPatientRecallResponce.NewDgOrderHd hd = new OpdPatientRecallResponce.NewDgOrderHd();
+                hd.setDgOrderHdId(dgOrderHd.getId());
+                hd.setOrderDate(dgOrderHd.getOrderDate());
+                hd.setOrderNo(dgOrderHd.getOrderNo());
+                hd.setOrderStatus(dgOrderHd.getOrderStatus());
+                hd.setCollectionStatus(dgOrderHd.getCollectionStatus());
+                hd.setPaymentStatus(dgOrderHd.getPaymentStatus());
+                hd.setAppointmentDate(dgOrderHd.getAppointmentDate());
+                response.setDgOrderHd(hd);
+            }
+
+            // --------------------- DG ORDER DT LIST MAP ---------------------
+            List<OpdPatientRecallResponce.NewDgOrderDt> dtList = new ArrayList<>();
+
+            for (DgOrderDt dt : dgOrderDtList) {
+                OpdPatientRecallResponce.NewDgOrderDt newDt = new OpdPatientRecallResponce.NewDgOrderDt();
+
+                newDt.setDgOrderDtId(dt.getId());
+                newDt.setOrderQty(dt.getOrderQty());
+                newDt.setOrderStatus(dt.getOrderStatus());
+                newDt.setAppointmentDate(dt.getAppointmentDate());
+                newDt.setInvestigationId(dt.getInvestigationId());
+                newDt.setBillingStatus(dt.getBillingStatus());
+                newDt.setPackageId(dt.getPackageId());
+                newDt.setBillingHd(dt.getBillingHd());
+                newDt.setInvestigationName(
+                        dt.getInvestigationId() != null
+                                ? dt.getInvestigationId().getInvestigationName()
+                                : null
+                );
+
+                dtList.add(newDt);
+            }
+
+            response.setDgOrderDts(dtList);
+
+            // -------------------- PRESCRIPTION HD MAP --------------------
+            if (patientPrescHdObj != null) {
+                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd =
+                        new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
+
+                hd.setPrescriptionHdId(patientPrescHdObj.getPrescriptionHdId());
+                hd.setStatus(patientPrescHdObj.getStatus());
+                hd.setPrescriptionDate(patientPrescHdObj.getPrescriptionDate());
+
+                response.setPatientPrescriptionHd(hd);
+            }
+
+            // -------------------- PRESCRIPTION DT MAP --------------------
+            List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newPrescList = new ArrayList<>();
+
+            for (PatientPrescriptionDt dt : prescDtList) {
+                OpdPatientRecallResponce.NewDPatientPrescriptionDt newDt =
+                        new OpdPatientRecallResponce.NewDPatientPrescriptionDt();
+
+                newDt.setPrescriptionDtId(dt.getPrescriptionDtId());
+                newDt.setPrescriptionHdId(dt.getPrescriptionHdId());
+                newDt.setStatus(dt.getStatus());
+                newDt.setDosage(dt.getDosage());
+                newDt.setFrequency(dt.getFrequency());
+                newDt.setDays(dt.getDays());
+                newDt.setTotal(dt.getTotal());
+                newDt.setInstraction(dt.getInstruction());
+                newDt.setItemId(dt.getItemId());
+                newDt.setItemName(masStoreItemRepository.findById(dt.getItemId()).get().getNomenclature());
+                newPrescList.add(newDt);
+            }
+
+            response.setPatientPrescriptionDts(newPrescList);
+
+            responseList.add(response);
+        }
+
+        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+    }
+
+
+    private String buildFullName(String firstName, String middleName, String lastName) {
+        StringBuilder name = new StringBuilder();
+        if (firstName != null && !firstName.trim().isEmpty()) {
+            name.append(firstName.trim());
+        }
+        if (middleName != null && !middleName.trim().isEmpty()) {
+            if (name.length() > 0) name.append(" ");
+            name.append(middleName.trim());
+        }
+        if (lastName != null && !lastName.trim().isEmpty()) {
+            if (name.length() > 0) name.append(" ");
+            name.append(lastName.trim());
+        }
+        return name.toString().trim();
+    }
 }
 

@@ -8,6 +8,7 @@ import com.hims.entity.Visit;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
+import com.hims.response.OpdPatientRecallResponce;
 import com.hims.response.PatientRegFollowUpResp;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.service.PatientService;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -115,4 +117,17 @@ public class PatientController {
         ApiResponse<List<Visit>> response = opdPatientDetailService.getActiveVisits();
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/recallVisit")
+    public ResponseEntity<ApiResponse<List<OpdPatientRecallResponce>>> getRecallVisits(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String mobile,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate visitDate
+    ) {
+        ApiResponse<List<OpdPatientRecallResponce>> response =
+                opdPatientDetailService.getRecallVisit(name, mobile, visitDate);
+
+        return ResponseEntity.ok(response);
+    }
+
 }

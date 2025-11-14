@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,4 +65,32 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     List findByPatientId(Integer patient);
 
     List<Visit> findByVisitStatusAndBillingStatus(String visitStatus, String billingStatus);
+
+    List<Visit> findByVisitStatus(String visitStatus);
+
+    @Query(value = """
+    SELECT v.* FROM visit v
+    JOIN patient p ON p.patient_id = v.patient_id
+    WHERE v.visit_status = 'c'
+      AND (
+            :visitDate IS NULL
+            OR DATE(v.visit_date) = :visitDate
+      )
+      AND (
+            :mobile = '' 
+            OR p.p_mobile_number = :mobile
+      )
+      AND (
+            :name = '' 
+            OR LOWER(p.p_fn) LIKE '%' || LOWER(:name) || '%'
+            OR LOWER(p.p_mn) LIKE '%' || LOWER(:name) || '%'
+            OR LOWER(p.p_ln) LIKE '%' || LOWER(:name) || '%'
+      )
+""", nativeQuery = true)
+    List<Visit> searchRecallVisits(
+            @Param("visitDate") LocalDate visitDate,
+            @Param("mobile") String mobile,
+            @Param("name") String name
+    );
+
 }

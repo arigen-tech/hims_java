@@ -24,15 +24,15 @@ public class Patient {
     private String uhidNo;
 
     @Size(max = 50)
-    @Column(name = "p_fn", length = 50)
+    @Column(name = "p_fn", length = 50, columnDefinition = "VARCHAR(50)")
     private String patientFn;
 
     @Size(max = 50)
-    @Column(name = "p_mn", length = 50)
+    @Column(name = "p_mn", length = 50, columnDefinition = "VARCHAR(50)")
     private String patientMn;
 
     @Size(max = 30)
-    @Column(name = "p_ln", length = 30)
+    @Column(name = "p_ln", length = 30, columnDefinition = "VARCHAR(30)")
     private String patientLn;
 
     @Column(name = "p_dob")

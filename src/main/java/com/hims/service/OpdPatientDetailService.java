@@ -4,11 +4,15 @@ import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Visit;
 import com.hims.request.OpdPatientDetailFinalRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.OpdPatientRecallResponce;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface OpdPatientDetailService {
     ApiResponse<OpdPatientDetail> createOpdPatientDetail(OpdPatientDetailFinalRequest request);
 
     ApiResponse<List<Visit>> getActiveVisits();
+
+    ApiResponse<List<OpdPatientRecallResponce>> getRecallVisit(String name, String mobile, LocalDate visitDate);
 }
