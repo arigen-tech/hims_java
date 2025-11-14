@@ -425,147 +425,6 @@ public class ResultServiceImpl implements ResultService {
 
     @Override
     public ApiResponse<List<ResultEntryUpdateResponse>> getUpdate() {
-//        try {
-//            User currentUser = authUtil.getCurrentUser();
-//            if (currentUser == null) {
-//                return ResponseUtils.createFailureResponse(
-//                        null, new TypeReference<>() {},
-//                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
-//            }
-//
-//            // Step 1: Fetch all headers (y/n/null)
-//            List<DgResultEntryHeader> headerList = headerRepo.findAll();
-//            if (headerList.isEmpty()) {
-//                return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
-//            }
-//
-//            // Step 2: Group headers by OrderHdId
-//            Map<Long, List<DgResultEntryHeader>> groupedByOrder =
-//                    headerList.stream()
-//                            .filter(h -> h.getOrderHd() != null)
-//                            .collect(Collectors.groupingBy(h -> (long) h.getOrderHd().getId()));
-//
-//            List<ResultEntryUpdateResponse> responseList = new ArrayList<>();
-//
-//            // Step 3: Process each order group
-//            for (Map.Entry<Long, List<DgResultEntryHeader>> entry : groupedByOrder.entrySet()) {
-//                Long orderHdId = entry.getKey();
-//                List<DgResultEntryHeader> headersForOrder = entry.getValue();
-//
-//                DgOrderHd order = headersForOrder.get(0).getOrderHd();
-//                DgResultEntryHeader firstHeader = headersForOrder.get(0);
-//
-//                ResultEntryUpdateResponse orderResponse = new ResultEntryUpdateResponse();
-//                orderResponse.setOrderHdId(orderHdId);
-//               DgOrderHd dgOrderHd= labHdRepository.findById(orderHdId);
-//               orderResponse.setOrderNo(dgOrderHd.getOrderNo());
-//                orderResponse.setOrderDate(String.valueOf(dgOrderHd.getOrderDate()));
-//                orderResponse.setOrderTime(dgOrderHd.getLastChgTime());
-//
-//
-//
-//                // Patient Info
-//                if (firstHeader.getHinId() != null) {
-//                    orderResponse.setPatientId(firstHeader.getHinId().getId());
-//                    String fullName = Stream.of(
-//                                    firstHeader.getHinId().getPatientFn(),
-//                                    firstHeader.getHinId().getPatientMn(),
-//                                    firstHeader.getHinId().getPatientLn()
-//                            )
-//                            .filter(Objects::nonNull)
-//                            .collect(Collectors.joining(" "));
-//
-//                    orderResponse.setPatientName(fullName);
-//                    orderResponse.setPatientGender(firstHeader.getHinId().getPatientGender().getGenderName());
-//                    orderResponse.setPatientAge(firstHeader.getHinId().getPatientAge());
-//                    orderResponse.setPatientPhnNum(firstHeader.getHinId().getPatientMobileNumber());
-//                }
-//
-//                // Relation Info
-//                if (firstHeader.getRelationId() != null) {
-//                    orderResponse.setRelationId(firstHeader.getRelationId().getId());
-//                    orderResponse.setRelation(firstHeader.getRelationId().getRelationName());
-//                }
-//
-//
-//                // Step 4: Fetch details (based on header status + detail validate status)
-//                List<DgResultEntryDetail> allDetails = new ArrayList<>();
-//
-//                for (DgResultEntryHeader h : headersForOrder) {
-//                    // case 1: Header resultStatus is y/n
-//                    if ("y".equalsIgnoreCase(h.getResultStatus()) ||
-//                            "n".equalsIgnoreCase(h.getResultStatus())) {
-//                        List<DgResultEntryDetail> details = detailRepo.findValidatedDetailsByHeader(h);
-//                        allDetails.addAll(details);
-//                    }
-//
-//                }
-//                if (allDetails.isEmpty()) continue; // skip if no matching details
-//
-//                // Step 5: Group details by investigation
-//                Map<Long, List<DgResultEntryDetail>> investigationMap = allDetails.stream()
-//                        .filter(d -> d.getInvestigationId() != null)
-//                        .collect(Collectors.groupingBy(d -> d.getInvestigationId().getInvestigationId()));
-//
-//                List<ResultEntryUpdateInvestigationResponse> investigationResponses = new ArrayList<>();
-//
-//                for (Map.Entry<Long, List<DgResultEntryDetail>> invEntry : investigationMap.entrySet()) {
-//                    List<DgResultEntryDetail> invDetails = invEntry.getValue();
-//                    DgMasInvestigation inv = invDetails.get(0).getInvestigationId();
-//
-//                    ResultEntryUpdateInvestigationResponse invDto = new ResultEntryUpdateInvestigationResponse();
-//                    invDto.setInvestigationId(inv.getInvestigationId());
-//                    invDto.setInvestigationName(inv.getInvestigationName());
-//                    invDto.setSampleName(inv.getSampleId() != null ? inv.getSampleId().getSampleDescription() : null);
-//
-//                    DgResultEntryDetail firstDetail = invDetails.get(0);
-//                    invDto.setResultEntryDetailsId(firstDetail.getResultEntryDetailId());
-//                    invDto.setResult(firstDetail.getResult());
-//                    invDto.setRemarks(firstDetail.getRemarks());
-//                    invDto.setNormalValue(firstDetail.getNormalRange());
-//                    invDto.setUnit(firstDetail.getUomId() != null ? firstDetail.getUomId().getName() : null);
-//
-//                    // Sub-investigations
-//                    List<ResultEntryUpdateSubInvestigationResponse> subList = new ArrayList<>();
-//                    for (DgResultEntryDetail sub : invDetails) {
-//                        if (sub.getSubInvestigationId() != null) {
-//                            ResultEntryUpdateSubInvestigationResponse subDto = new ResultEntryUpdateSubInvestigationResponse();
-//                            subDto.setResultEntryDetailsId(sub.getResultEntryDetailId());
-//                            subDto.setSubInvestigationId(sub.getSubInvestigationId().getSubInvestigationId());
-//                            subDto.setSubInvestigationName(sub.getSubInvestigationId().getSubInvestigationName());
-//                            subDto.setSampleName(sub.getSampleId() != null ? sub.getSampleId().getSampleDescription() : null);
-//                            subDto.setUnit(sub.getUomId() != null ? sub.getUomId().getName() : null);
-//                            subDto.setNormalValue(sub.getNormalRange());
-//                            subDto.setResult(sub.getResult());
-//                            subDto.setRemarks(sub.getRemarks());
-//
-//                            String comparisonType = sub.getSubInvestigationId().getComparisonType();
-//                            if ("f".equalsIgnoreCase(comparisonType)) {
-//                                subDto.setComparisonType(comparisonType);
-//                                subDto.setFixedId(sub.getFixedId() != null ? sub.getFixedId().getFixedId() : null);
-//
-//                                List<DgFixedValue> fixedDropdownValues =
-//                                        dgFixedValueRepository.findBySubInvestigationId(sub.getSubInvestigationId());
-//                                subDto.setFixedDropdownValues(
-//                                        fixedDropdownValues.stream()
-//                                                .map(this::mapToDgFixedValueResponse)
-//                                                .toList());
-//                            }
-//                            subList.add(subDto);
-//                        }
-//                    }
-//                    invDto.setEntryUpdateSubInvestigationResponses(subList);
-//                    investigationResponses.add(invDto);
-//                }
-//                orderResponse.setResultEntryUpdateInvestigationResponses(investigationResponses);
-//                responseList.add(orderResponse);
-//            }
-//            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
-//        }
 
         try {
             User currentUser = authUtil.getCurrentUser();
@@ -581,16 +440,24 @@ public class ResultServiceImpl implements ResultService {
                 return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
             }
 
-            // Step 2: Group headers by OrderHdId
-            Map<Long, List<DgResultEntryHeader>> groupedByOrder =
-                    headerList.stream()
-                            .filter(h -> h.getOrderHd() != null)
-                            .collect(Collectors.groupingBy(h -> (long) h.getOrderHd().getId()));
+            // Step 2: Group headers by OrderHdId and sort descending
+            Map<Long, List<DgResultEntryHeader>> groupedByOrder = headerList.stream()
+                    .filter(h -> h.getOrderHd() != null)
+                    .collect(Collectors.groupingBy(h -> (long) h.getOrderHd().getId()));
+
+            Map<Long, List<DgResultEntryHeader>> sortedGroupedByOrder = groupedByOrder.entrySet().stream()
+                    .sorted(Map.Entry.<Long, List<DgResultEntryHeader>>comparingByKey().reversed())
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            Map.Entry::getValue,
+                            (a, b) -> a,
+                            LinkedHashMap::new
+                    ));
 
             List<ResultEntryUpdateResponse> responseList = new ArrayList<>();
 
             // Step 3: For each Order
-            for (Map.Entry<Long, List<DgResultEntryHeader>> orderEntry : groupedByOrder.entrySet()) {
+            for (Map.Entry<Long, List<DgResultEntryHeader>> orderEntry : sortedGroupedByOrder.entrySet()) {
                 Long orderHdId = orderEntry.getKey();
                 List<DgResultEntryHeader> headersForOrder = orderEntry.getValue();
 
@@ -630,7 +497,7 @@ public class ResultServiceImpl implements ResultService {
                     ResultEntryUpdateHeaderResponse headerDto = new ResultEntryUpdateHeaderResponse();
                     headerDto.setResultEntryHeaderId(header.getResultEntryId());
 
-                    // Only consider validated (y/n) headers
+                    // Only consider validated headers (y/n)
                     if (!"y".equalsIgnoreCase(header.getResultStatus()) &&
                             !"n".equalsIgnoreCase(header.getResultStatus())) {
                         continue;
