@@ -425,6 +425,161 @@ public class ResultServiceImpl implements ResultService {
 
     @Override
     public ApiResponse<List<ResultEntryUpdateResponse>> getUpdate() {
+//
+//        try {
+//            User currentUser = authUtil.getCurrentUser();
+//            if (currentUser == null) {
+//                return ResponseUtils.createFailureResponse(
+//                        null, new TypeReference<>() {},
+//                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+//            }
+//
+//            // Step 1: Fetch all headers
+//            List<DgResultEntryHeader> headerList = headerRepo.findAll();
+//            if (headerList.isEmpty()) {
+//                return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
+//            }
+//
+//            // Step 2: Group headers by OrderHdId and sort descending
+//            Map<Long, List<DgResultEntryHeader>> groupedByOrder = headerList.stream()
+//                    .filter(h -> h.getOrderHd() != null)
+//                    .collect(Collectors.groupingBy(h -> (long) h.getOrderHd().getId()));
+//
+//            Map<Long, List<DgResultEntryHeader>> sortedGroupedByOrder = groupedByOrder.entrySet().stream()
+//                    .sorted(Map.Entry.<Long, List<DgResultEntryHeader>>comparingByKey().reversed())
+//                    .collect(Collectors.toMap(
+//                            Map.Entry::getKey,
+//                            Map.Entry::getValue,
+//                            (a, b) -> a,
+//                            LinkedHashMap::new
+//                    ));
+//
+//            List<ResultEntryUpdateResponse> responseList = new ArrayList<>();
+//
+//            // Step 3: For each Order
+//            for (Map.Entry<Long, List<DgResultEntryHeader>> orderEntry : sortedGroupedByOrder.entrySet()) {
+//                Long orderHdId = orderEntry.getKey();
+//                List<DgResultEntryHeader> headersForOrder = orderEntry.getValue();
+//
+//                DgOrderHd order = headersForOrder.get(0).getOrderHd();
+//                ResultEntryUpdateResponse orderResponse = new ResultEntryUpdateResponse();
+//
+//                orderResponse.setOrderHdId(orderHdId);
+//                orderResponse.setOrderNo(order.getOrderNo());
+//                orderResponse.setOrderDate(String.valueOf(order.getOrderDate()));
+//                orderResponse.setOrderTime(order.getLastChgTime());
+//
+//                // Patient Info
+//                DgResultEntryHeader firstHeader = headersForOrder.get(0);
+//                if (firstHeader.getHinId() != null) {
+//                    orderResponse.setPatientId(firstHeader.getHinId().getId());
+//                    String fullName = Stream.of(
+//                                    firstHeader.getHinId().getPatientFn(),
+//                                    firstHeader.getHinId().getPatientMn(),
+//                                    firstHeader.getHinId().getPatientLn())
+//                            .filter(Objects::nonNull)
+//                            .collect(Collectors.joining(" "));
+//                    orderResponse.setPatientName(fullName);
+//                    orderResponse.setPatientGender(firstHeader.getHinId().getPatientGender().getGenderName());
+//                    orderResponse.setPatientAge(firstHeader.getHinId().getPatientAge());
+//                    orderResponse.setPatientPhnNum(firstHeader.getHinId().getPatientMobileNumber());
+//                }
+//
+//                if (firstHeader.getRelationId() != null) {
+//                    orderResponse.setRelationId(firstHeader.getRelationId().getId());
+//                    orderResponse.setRelation(firstHeader.getRelationId().getRelationName());
+//                }
+//
+//                // Step 4: For each header under this order
+//                List<ResultEntryUpdateHeaderResponse> headerResponses = new ArrayList<>();
+//
+//                for (DgResultEntryHeader header : headersForOrder) {
+//                    ResultEntryUpdateHeaderResponse headerDto = new ResultEntryUpdateHeaderResponse();
+//                    headerDto.setResultEntryHeaderId(header.getResultEntryId());
+//
+//                    // Only consider validated headers (y/n)
+//                    if (!"y".equalsIgnoreCase(header.getResultStatus()) &&
+//                            !"n".equalsIgnoreCase(header.getResultStatus())) {
+//                        continue;
+//                    }
+//
+//                    // Step 5: Fetch validated details for header
+//                    List<DgResultEntryDetail> details = detailRepo.findValidatedDetailsByHeader(header);
+//                    if (details.isEmpty()) continue;
+//
+//                    // Step 6: Group details by Investigation
+//                    Map<Long, List<DgResultEntryDetail>> investigationMap = details.stream()
+//                            .filter(d -> d.getInvestigationId() != null)
+//                            .collect(Collectors.groupingBy(d -> d.getInvestigationId().getInvestigationId()));
+//
+//                    List<ResultEntryUpdateInvestigationResponse> investigationResponses = new ArrayList<>();
+//
+//                    for (Map.Entry<Long, List<DgResultEntryDetail>> invEntry : investigationMap.entrySet()) {
+//                        List<DgResultEntryDetail> invDetails = invEntry.getValue();
+//                        DgMasInvestigation inv = invDetails.get(0).getInvestigationId();
+//
+//                        ResultEntryUpdateInvestigationResponse invDto = new ResultEntryUpdateInvestigationResponse();
+//                        invDto.setInvestigationId(inv.getInvestigationId());
+//                        invDto.setInvestigationName(inv.getInvestigationName());
+//                        invDto.setSampleName(inv.getSampleId() != null ? inv.getSampleId().getSampleDescription() : null);
+//
+//                        DgResultEntryDetail firstDetail = invDetails.get(0);
+//                        invDto.setResultEntryDetailsId(firstDetail.getResultEntryDetailId());
+//                        invDto.setResult(firstDetail.getResult());
+//                        invDto.setRemarks(firstDetail.getRemarks());
+//                        invDto.setNormalValue(firstDetail.getNormalRange());
+//                        invDto.setUnit(firstDetail.getUomId() != null ? firstDetail.getUomId().getName() : null);
+//                        invDto.setInRange(isResultWithinRange(firstDetail.getResult(), firstDetail.getNormalRange()));
+//
+//                        // Step 7: Sub Investigations
+//                        List<ResultEntryUpdateSubInvestigationResponse> subList = new ArrayList<>();
+//                        for (DgResultEntryDetail sub : invDetails) {
+//                            if (sub.getSubInvestigationId() != null) {
+//                                ResultEntryUpdateSubInvestigationResponse subDto = new ResultEntryUpdateSubInvestigationResponse();
+//                                subDto.setResultEntryDetailsId(sub.getResultEntryDetailId());
+//                                subDto.setSubInvestigationId(sub.getSubInvestigationId().getSubInvestigationId());
+//                                subDto.setSubInvestigationName(sub.getSubInvestigationId().getSubInvestigationName());
+//                                subDto.setSampleName(sub.getSampleId() != null ? sub.getSampleId().getSampleDescription() : null);
+//                                subDto.setUnit(sub.getUomId() != null ? sub.getUomId().getName() : null);
+//                                subDto.setNormalValue(sub.getNormalRange());
+//                                subDto.setResult(sub.getResult());
+//                                subDto.setRemarks(sub.getRemarks());
+//                                subDto.setInRange(isResultWithinRange(sub.getResult(), sub.getNormalRange()));
+//
+//                                String comparisonType = sub.getSubInvestigationId().getComparisonType();
+//                                if ("f".equalsIgnoreCase(comparisonType)) {
+//                                    subDto.setComparisonType(comparisonType);
+//                                    subDto.setFixedId(sub.getFixedId() != null ? sub.getFixedId().getFixedId() : null);
+//
+//                                    List<DgFixedValue> fixedDropdownValues =
+//                                            dgFixedValueRepository.findBySubInvestigationId(sub.getSubInvestigationId());
+//                                    subDto.setFixedDropdownValues(
+//                                            fixedDropdownValues.stream()
+//                                                    .map(this::mapToDgFixedValueResponse)
+//                                                    .toList());
+//                                }
+//                                subList.add(subDto);
+//                            }
+//                        }
+//
+//                        invDto.setEntryUpdateSubInvestigationResponses(subList);
+//                        investigationResponses.add(invDto);
+//                    }
+//
+//                    headerDto.setResultEntryUpdateInvestigationResponseList(investigationResponses);
+//                    headerResponses.add(headerDto);
+//                }
+//
+//                orderResponse.setResultEntryUpdateHeaderResponses(headerResponses);
+//                responseList.add(orderResponse);
+//            }
+//
+//            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseUtils.createFailureResponse(
+//                    null, new TypeReference<>() {}, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+//        }
 
         try {
             User currentUser = authUtil.getCurrentUser();
@@ -494,16 +649,21 @@ public class ResultServiceImpl implements ResultService {
                 List<ResultEntryUpdateHeaderResponse> headerResponses = new ArrayList<>();
 
                 for (DgResultEntryHeader header : headersForOrder) {
+
+                    // ❗ NEW LOGIC: Check if header contains at least one validated (status = 'y') detail
+                    List<DgResultEntryDetail> allDetails = detailRepo.findByResultEntryId(header);
+                    boolean hasValidatedDetail = allDetails.stream()
+                            .anyMatch(d -> "y".equalsIgnoreCase(d.getValidated()));
+
+                    if (!hasValidatedDetail) {
+                        continue; // Skip this header
+                    }
+
+                    // Now header is valid → proceed normally
                     ResultEntryUpdateHeaderResponse headerDto = new ResultEntryUpdateHeaderResponse();
                     headerDto.setResultEntryHeaderId(header.getResultEntryId());
 
-                    // Only consider validated headers (y/n)
-                    if (!"y".equalsIgnoreCase(header.getResultStatus()) &&
-                            !"n".equalsIgnoreCase(header.getResultStatus())) {
-                        continue;
-                    }
-
-                    // Step 5: Fetch validated details for header
+                    // Step 5: Fetch only validated details
                     List<DgResultEntryDetail> details = detailRepo.findValidatedDetailsByHeader(header);
                     if (details.isEmpty()) continue;
 
@@ -571,7 +731,11 @@ public class ResultServiceImpl implements ResultService {
                 }
 
                 orderResponse.setResultEntryUpdateHeaderResponses(headerResponses);
-                responseList.add(orderResponse);
+
+                // Add only if headers exist
+                if (!headerResponses.isEmpty()) {
+                    responseList.add(orderResponse);
+                }
             }
 
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
