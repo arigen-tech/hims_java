@@ -179,6 +179,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setDiscountId(1);
                 hd.setPatientId(patient);
                 hd.setVisitId(savedVisit);
+                hd.setSource("lab source");
                 hd.setDepartmentId(departmentId.intValue());
                 hd.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                 hd.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
