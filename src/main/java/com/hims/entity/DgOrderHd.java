@@ -26,6 +26,9 @@ public class DgOrderHd {
     @Column(name = "order_status", length = 1)
     private String orderStatus;
 
+    @Column(name = "source", length = 25)
+    private String source;
+
     @Column(name = "collection_status", length =1)
     private String collectionStatus;
 
