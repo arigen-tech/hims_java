@@ -17,5 +17,6 @@ public class ResultSubInvestigationResponse {
      private List<DgFixedValueResponse> dgFixedValueResponseList;
     private String comparisonType;
     private String resultType;
+    private String fixedValueExpectedResult;
 
 }

@@ -334,6 +334,7 @@ DgFixedValueRepository dgFixedValueRepository;
                         dgFixedValueResponses.add(dgFixedValueResponse);
                     }
                     sub.setDgFixedValueResponseList(dgFixedValueResponses);
+                    sub.setFixedValueExpectedResult(subInvest.getFixedValueExpectedValue());
 
                     investigation.getResultSubInvestigationResponseList().add(sub);
                 }

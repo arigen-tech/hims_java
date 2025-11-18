@@ -83,6 +83,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     @Autowired
     private MasMainChargeCodeRepository masMainChargeCodeRepository;
 
+    @Value("${app.pending.days}")
+    private int pendingDays;
+
 
 
     public  LabRegistrationServicesImpl(RandomNumGenerator randomNumGenerator,
@@ -617,9 +620,13 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         List<String> orderStatusFilter = Arrays.asList("p", "n");
 //        String orderStatusFilter = "n";
 
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(pendingDays);
+
+
         // Fetch only records matching both filters in DB
         List<DgOrderHd> orderHdList = labHdRepository
-                .findByPaymentStatusInAndOrderStatusIn(paymentStatuses, orderStatusFilter);
+                .findPendingOrdersByDateRange(paymentStatuses, orderStatusFilter,startDate,endDate);
 
         List<PendingSampleResponse> responseList = new ArrayList<>();
 

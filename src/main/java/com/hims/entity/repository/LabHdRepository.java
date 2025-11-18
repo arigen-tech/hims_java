@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,22 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
     List<DgOrderHd> findByPaymentStatusIn(List<String> paymentStatuses);
 
     List<DgOrderHd> findByPaymentStatusInAndOrderStatusIn(List<String> paymentStatuses, List<String> orderStatusFilter);
+
+    @Query("SELECT o FROM DgOrderHd o " +
+            "JOIN FETCH o.patientId p " +
+            "JOIN FETCH o.visitId v " +
+            "WHERE o.paymentStatus IN :paymentStatuses " +
+            "AND o.orderStatus IN :orderStatusFilter " +
+            "AND o.orderDate BETWEEN :startDate AND :endDate " +
+            "ORDER BY o.orderDate DESC")
+    List<DgOrderHd> findPendingOrdersByDateRange(
+            List<String> paymentStatuses,
+            List<String> orderStatusFilter,
+            LocalDate startDate,
+            LocalDate endDate
+    );
+
+
 
 
     DgOrderHd findByVisitId(Visit visitId);
