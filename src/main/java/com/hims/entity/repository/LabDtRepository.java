@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.BillingHeader;
+import com.hims.entity.DgMasInvestigation;
 import com.hims.entity.DgOrderDt;
 import com.hims.entity.DgOrderHd;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> {
@@ -35,6 +37,10 @@ public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> {
     List<DgOrderDt> findByOrderhdIdAndBillingStatusAndOrderStatus(DgOrderHd orderhdId, String billingStatus, String orderStatus);
 
     List<DgOrderDt> findByOrderhdIdId(int orderHdId);
+
+    List<DgOrderDt> findByOrderhdIdAndBillingStatus(DgOrderHd orderHd, String n);
+
+    Optional<DgOrderDt> findByOrderhdIdAndInvestigationId(DgOrderHd existingOrderHd, DgMasInvestigation invEntity);
 //SELECT b FROM DgOrderDt b WHERE b.billingHd.id = :billHdId AND b.billingStatus = 'y'
 
 }

@@ -7,6 +7,7 @@ import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
 import com.hims.service.ResultService;
 import com.hims.service.SampleValidationService;
+import com.hims.service.impl.BillingServiceImpl;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -32,9 +33,14 @@ public class LabRegistrationController {
     @Autowired
     ResultService resultService;
 
+      // or your service interface
+
+
 
     @Autowired
     BillingService billingService;
+
+
     @PostMapping("/registration")
     public ResponseEntity<ApiResponse<AppsetupResponse>> appSetupResponse(@RequestBody LabRegRequest request) {
         return new ResponseEntity<>(labRegistrationServices.labReg(request), HttpStatus.OK);
@@ -106,4 +112,14 @@ public class LabRegistrationController {
         return resultService.updateResult(request);
 
     }
+
+
+    @PostMapping("/registration/billing")
+    public ApiResponse<AppsetupResponse> labRegistrationForExistingOrder(
+            @RequestBody LabBillingOnlyRequest labReq) {
+        return labRegistrationServices.labRegForExistingOrder(labReq);
+    }
+
+
+
 }

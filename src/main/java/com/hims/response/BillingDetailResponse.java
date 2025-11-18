@@ -19,6 +19,7 @@ public class BillingDetailResponse {
     private BigDecimal taxPercent;
     private BigDecimal taxAmount;
     private BigDecimal netAmount;
+    private BigDecimal Total;
     private String paymentStatus;
 
 

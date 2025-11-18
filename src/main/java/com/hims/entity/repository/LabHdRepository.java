@@ -26,6 +26,9 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
     Optional<DgOrderHd> findByPatientId_Id(Long patientId);
 
     DgOrderHd findById(Long orderHdId);
+
+    List<DgOrderHd> findByPaymentStatusInAndSource(List<String> paymentStatuses, String source);
+
 }
 
 

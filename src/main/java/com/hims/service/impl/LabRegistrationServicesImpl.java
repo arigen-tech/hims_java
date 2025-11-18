@@ -1015,4 +1015,141 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
 }
 
 
+    @Transactional
+    @Override
+    public ApiResponse<AppsetupResponse> labRegForExistingOrder(LabBillingOnlyRequest labReq) {
+        User currentUser = authUtil.getCurrentUser();
+        AppsetupResponse res = new AppsetupResponse();
+
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
+        }
+
+        if (labReq.getPatientId() == null) {
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
+                    "Patient ID must not be null", HttpStatus.BAD_REQUEST.value());
+        }
+
+        if (labReq.getOrderhdid() == null) {
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
+                    "Orderhdid must not be null for billing flow", HttpStatus.BAD_REQUEST.value());
+        }
+
+        Patient patient = patientRepository.findById(labReq.getPatientId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid patient ID: " + labReq.getPatientId()));
+
+        DgOrderHd existingOrderHd = labHdRepository.findById(labReq.getOrderhdid());
+        if (existingOrderHd == null) {
+            throw new IllegalArgumentException("Invalid orderhdid: " + labReq.getOrderhdid());
+        }
+
+        Visit visit = existingOrderHd.getVisitId();
+        if (visit == null) {
+            throw new IllegalArgumentException("No visit linked to this orderhdid: " + labReq.getOrderhdid());
+        }
+
+        try {
+            // ✅ Calculate sum, discount, tax based on ALL items in request
+            BigDecimal sum = BigDecimal.ZERO;
+            BigDecimal tax = BigDecimal.ZERO;
+            BigDecimal disc = BigDecimal.ZERO;
+            MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
+
+            for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {
+                sum = sum.add(BigDecimal.valueOf(inv.getActualAmount()));
+                disc = disc.add(BigDecimal.valueOf(inv.getDiscountedAmount()));
+                if (servCat.getGstApplicable()) {
+                    tax = tax.add(
+                            BigDecimal.valueOf(servCat.getGstPercent())
+                                    .multiply(BigDecimal.valueOf(inv.getActualAmount())
+                                            .subtract(BigDecimal.valueOf(inv.getDiscountedAmount())))
+                                    .divide(BigDecimal.valueOf(100))
+                    );
+                }
+            }
+
+            // ✅ Create BillingHeader
+            BillingHeader billingHeader = BillingHeaderDataSave(
+                    existingOrderHd,
+                    visit,
+                    null,
+                    currentUser,
+                    sum,
+                    tax,
+                    disc
+            );
+
+            res.setBillinghdId(billingHeader.getId().toString());
+
+            // ✅ Get ALL existing order details for this order
+            List<DgOrderDt> allOrderDetails = labDtRepository.findByOrderhdId(existingOrderHd);
+            System.out.println("Found " + allOrderDetails.size() + " existing order details for orderhdid: " + existingOrderHd.getId());
+
+            // ✅ Link ALL order details to billing header
+            for (DgOrderDt orderDetail : allOrderDetails) {
+                orderDetail.setBillingHd(billingHeader);
+                labDtRepository.save(orderDetail);
+                System.out.println("✓ Linked order detail ID: " + orderDetail.getId() + " to billing header");
+            }
+
+            // ✅ Create BillingDetail rows ONLY for items that exist in order details
+            // This is the KEY FIX - match request items with existing order details
+            for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {
+                if (inv.getType().equalsIgnoreCase("i")) {
+                    // Investigation type
+                    DgMasInvestigation invEntity = investigation.findById(inv.getId())
+                            .orElseThrow(() -> new IllegalArgumentException("Invalid Investigation ID: " + inv.getId()));
+
+                    // Find matching order detail in the existing order
+                    DgOrderDt matchingOrderDt = allOrderDetails.stream()
+                            .filter(dt -> dt.getInvestigationId() != null &&
+                                    dt.getInvestigationId().getInvestigationId() == invEntity.getInvestigationId() &&
+                                    dt.getPackageId() == null) // Investigation, not package
+                            .findFirst()
+                            .orElse(null);
+
+                    if (matchingOrderDt == null) {
+                        System.err.println("❌ WARNING: No order detail found for investigation ID: " + inv.getId());
+                        continue;
+                    }
+
+                    System.out.println("✓ Creating billing detail for investigation: " + invEntity.getInvestigationName() + " (OrderDt ID: " + matchingOrderDt.getId() + ")");
+                    BillingDetaiDataSave(billingHeader, matchingOrderDt, inv);
+
+                } else {
+                    // Package type
+                    DgInvestigationPackage pkgObj = dgInvestigationPackageRepository.findById(inv.getId())
+                            .orElseThrow(() -> new IllegalArgumentException("Invalid package ID: " + inv.getId()));
+
+                    // Find matching order detail in the existing order
+                    DgOrderDt matchingOrderDt = allOrderDetails.stream()
+                            .filter(dt -> dt.getPackageId() != null &&
+                                    dt.getPackageId().getPackId() == pkgObj.getPackId())
+                            .findFirst()
+                            .orElse(null);
+
+                    if (matchingOrderDt == null) {
+                        System.err.println("❌ WARNING: No order detail found for package ID: " + inv.getId());
+                        continue;
+                    }
+
+                    System.out.println("✓ Creating billing detail for package: " + pkgObj.getPackName() + " (OrderDt ID: " + matchingOrderDt.getId() + ")");
+                    BillingDetaiDataSavePackage(billingHeader, pkgObj, inv);
+                }
+            }
+
+            System.out.println("✓ Successfully created billing for existing order. Billing ID: " + billingHeader.getId());
+            System.out.println("✓ Linked " + allOrderDetails.size() + " order details to billing header");
+            System.out.println("✓ Created billing details for " + labReq.getLabInvestigationReq().size() + " items");
+
+            res.setMsg("Success");
+            return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error: " + e.getMessage(), 500);
+        }
+    }
+
 }
