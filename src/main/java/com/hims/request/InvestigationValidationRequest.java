@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class InvestigationValidationRequest {
+    private Long sampleHeaderId;
     private Long detailId;
     private Boolean accepted;
-   // private Boolean rejected;
-   // private String reason;
+    private String reason;
 }

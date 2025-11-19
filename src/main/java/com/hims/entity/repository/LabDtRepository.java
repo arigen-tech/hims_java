@@ -2,8 +2,10 @@ package com.hims.entity.repository;
 
 import com.hims.entity.BillingHeader;
 import com.hims.entity.DgMasInvestigation;
+import com.hims.entity.DgMasInvestigation;
 import com.hims.entity.DgOrderDt;
 import com.hims.entity.DgOrderHd;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +14,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> {
@@ -41,6 +46,35 @@ public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> {
     List<DgOrderDt> findByOrderhdIdAndBillingStatus(DgOrderHd orderHd, String n);
 
     Optional<DgOrderDt> findByOrderhdIdAndInvestigationId(DgOrderHd existingOrderHd, DgMasInvestigation invEntity);
+
+    @Modifying
+    @Query("UPDATE DgOrderDt d SET d.orderStatus = :status WHERE d.id = :id")
+    void updateOrderStatus(Long id, String status);
+
+
+    @Query("SELECT d.orderhdId.id FROM DgOrderDt d WHERE d.id IN :detailIds")
+    Set<Long> findOrderHdIdsByDetailIds(@Param("detailIds") List<Long> detailIds);
+
+    @Query("SELECT COUNT(d) FROM DgOrderDt d WHERE d.orderhdId.id = :hdId")
+    long countTotalByOrderHd(@Param("hdId") Long hdId);
+
+
+    @Query("SELECT COUNT(d) FROM DgOrderDt d WHERE d.orderhdId.id = :hdId AND d.orderStatus = 'y'")
+    long countAcceptedByOrderHd(@Param("hdId") Long hdId);
+
+
+    @Query("SELECT d FROM DgOrderDt d WHERE d.orderhdId.id = :orderHdId AND d.investigationId.investigationId = :invId")
+    DgOrderDt findByOrderHdIdAndInvestigationId(Long orderHdId, Long invId);
+
+    @Query("SELECT d.orderStatus FROM DgOrderDt d WHERE d.orderhdId.id = :orderHdId")
+    List<String> getOrderStatusesOfOrderHd(Long orderHdId);
+
+
+
+    DgOrderDt findByOrderhdId_IdAndInvestigationId_InvestigationId(long id, Long investigationId);
+
+
+
 //SELECT b FROM DgOrderDt b WHERE b.billingHd.id = :billHdId AND b.billingStatus = 'y'
 
 }

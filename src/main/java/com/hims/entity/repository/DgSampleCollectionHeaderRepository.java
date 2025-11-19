@@ -10,8 +10,18 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DgSampleCollectionHeaderRepository extends JpaRepository<DgSampleCollectionHeader,Long> {
+//    @Modifying
+//    @Transactional
+//    @Query("UPDATE DgSampleCollectionHeader h SET h.validated = :status WHERE h.sampleCollectionHeaderId = :headerId")
+//    int updateOrderStatus(@Param("headerId") Long headerId, @Param("status") String status);
+//
+//    @Modifying
+//    @Transactional
+//    @Query("UPDATE DgSampleCollectionHeader h SET h.sampleOrderStatus = :status WHERE h.sampleCollectionHeaderId = :hdId")
+//    void updateCollectionStatus(@Param("hdId") Long hdId, @Param("status") String status);
+
+
     @Modifying
-    @Transactional
     @Query("UPDATE DgSampleCollectionHeader h SET h.validated = :status WHERE h.sampleCollectionHeaderId = :headerId")
-    int updateOrderStatus(@Param("headerId") Long headerId, @Param("status") String status);
+    void updateValidationStatus(Long headerId, String status);
 }
