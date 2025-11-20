@@ -3,6 +3,7 @@ package com.hims.entity.repository;
 import com.hims.entity.DgOrderHd;
 import com.hims.entity.Visit;
 import com.hims.response.PendingSampleResponse;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -49,6 +50,7 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
 
 
 
+    @Transactional
     @Modifying
     @Query("UPDATE DgOrderHd h SET h.orderStatus = :status WHERE h.id = :id")
     void updateOrderStatus(Long id, String status);
