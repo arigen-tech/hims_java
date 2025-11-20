@@ -139,12 +139,15 @@ DgFixedValueRepository dgFixedValueRepository;
                             allRejected ? "r" :
                                     "y"; // partial = y
 
-            headerRepo.updateValidationStatus(headerId, finalHeaderStatus);
-            log.info("Header Validation Status = {}", finalHeaderStatus);
+//            int i = headerRepo.updateValidationStatus(headerId, finalHeaderStatus);
+
+//            log.info("Header Validation Update = {}", i);
 
             // 5) SET HEADER VALIDATION DATE + VALIDATED BY
             DgSampleCollectionHeader header =
                     headerRepo.findById(headerId).orElseThrow();
+
+            header.setValidated(finalHeaderStatus);
 
             header.setValidation_date(LocalDate.now());
             header.setValidatedBy(currentUser.getUsername());
