@@ -18,7 +18,7 @@ public class MasStoreItemResponse {
     private Long lastChgBy;
     private LocalDate lastChgDate;
     private String lastChgTime;
-
+    private Long stocks;
     private BigDecimal adispQty;
     private Long hospitalId;
     private Long departmentId;

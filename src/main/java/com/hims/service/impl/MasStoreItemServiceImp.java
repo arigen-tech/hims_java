@@ -48,6 +48,12 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     private MasItemCategoryRepository masItemCategoryRepository;
 
     @Autowired
+    private  StoreItemBatchStockRepository storeItemBatchStockRepository;
+
+    @Value("${hos.define.dayOfExparyDrug}")
+    private Integer hospDefinedDays;
+
+    @Autowired
     UserRepo userRepo;
     @Autowired
     AuthUtil authUtil;
@@ -445,6 +451,48 @@ private MasDepartmentRepository masDepartmentRepository;
             response.setHsnCode(item.getHsnCode()!=null?item.getHsnCode().getHsnCode():null);
             response.setHsnGstPercent(item.getHsnCode()!=null?item.getHsnCode().getGstRate():null);
 
+        if (item == null) {
+            response.setStocks(0L);
+        } else {
+
+            Optional<MasStoreItem> itemOpt = masStoreItemRepository.findById(item.getItemId());
+
+            if (itemOpt.isEmpty()) {
+                response.setStocks(0L);
+            } else {
+
+                MasStoreItem itemEntity = itemOpt.get();
+
+                List<StoreItemBatchStock> stockList =
+                        storeItemBatchStockRepository.findByItemId(itemEntity);
+
+                if (stockList == null || stockList.isEmpty()) {
+                    response.setStocks(0L);
+                } else {
+
+                    //filter expiryDate > today + hospDefinedDays
+                    int hospDays = hospDefinedDays;
+                    LocalDate threshold = LocalDate.now().plusDays(hospDays);
+
+                    List<StoreItemBatchStock> validStockList = stockList.stream()
+                            .filter(s ->
+                                    s.getExpiryDate() != null &&
+                                            s.getExpiryDate().isAfter(threshold)
+                            )
+                            .collect(Collectors.toList());
+
+                    // sum closing stock for valid batches
+                    long totalClosingStock = validStockList.stream()
+                            .mapToLong(s -> s.getClosingStock() != null ? s.getClosingStock() : 0L)
+                            .sum();
+
+                    response.setStocks(totalClosingStock);
+
+                }
+            }
+        }
+
+
         response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
         response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
         return response;
@@ -459,6 +507,8 @@ private MasDepartmentRepository masDepartmentRepository;
         response.setDispUnit(item.getDispUnit()!=null?item.getUnitAU().getUnitName():null);
         response.setHsnGstPercentage(item.getHsnCode()!=null?item.getHsnCode().getGstRate():null);
         response.setHsnCode(item.getHsnCode()!=null?item.getHsnCode().getHsnCode():null);
+        response.setADispQty(item.getAdispQty());
+        response.setItemClassName(item.getItemClassId() !=null ? item.getItemClassId().getItemClassName() : null);
         return response;
     }
 
