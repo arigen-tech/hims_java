@@ -20,8 +20,4 @@ public interface DgSampleCollectionHeaderRepository extends JpaRepository<DgSamp
 //    @Query("UPDATE DgSampleCollectionHeader h SET h.sampleOrderStatus = :status WHERE h.sampleCollectionHeaderId = :hdId")
 //    void updateCollectionStatus(@Param("hdId") Long hdId, @Param("status") String status);
 
-
-    @Modifying
-    @Query("UPDATE DgSampleCollectionHeader h SET h.validated = :status WHERE h.sampleCollectionHeaderId = :headerId")
-    void updateValidationStatus(Long headerId, String status);
 }

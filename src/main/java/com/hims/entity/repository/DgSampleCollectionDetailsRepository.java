@@ -72,21 +72,6 @@ List<DgSampleCollectionDetails> findBySampleCollectionHeader_SampleCollectionHea
 
 
 
-
-
-
-
-
-
-    @Modifying
-    @Transactional
-    @Query("UPDATE DgSampleCollectionDetails d SET d.validated = :status WHERE d.sampleCollectionDetailsId = :detailId")
-    int updateValidationStatusByOrderDetailId(@Param("detailId") Long detailId,
-                                              @Param("status") String status);
-
-
-
-
     @Query("SELECT d.validated FROM DgSampleCollectionDetails d WHERE d.sampleCollectionHeader.sampleCollectionHeaderId = :headerId")
     List<String> getValidationStatusOfHeader(Long headerId);
 

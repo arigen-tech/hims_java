@@ -45,26 +45,10 @@ public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> {
 
     List<DgOrderDt> findByOrderhdIdAndBillingStatus(DgOrderHd orderHd, String n);
 
-    Optional<DgOrderDt> findByOrderhdIdAndInvestigationId(DgOrderHd existingOrderHd, DgMasInvestigation invEntity);
-
+    @Transactional
     @Modifying
     @Query("UPDATE DgOrderDt d SET d.orderStatus = :status WHERE d.id = :id")
     void updateOrderStatus(Long id, String status);
-
-
-    @Query("SELECT d.orderhdId.id FROM DgOrderDt d WHERE d.id IN :detailIds")
-    Set<Long> findOrderHdIdsByDetailIds(@Param("detailIds") List<Long> detailIds);
-
-    @Query("SELECT COUNT(d) FROM DgOrderDt d WHERE d.orderhdId.id = :hdId")
-    long countTotalByOrderHd(@Param("hdId") Long hdId);
-
-
-    @Query("SELECT COUNT(d) FROM DgOrderDt d WHERE d.orderhdId.id = :hdId AND d.orderStatus = 'y'")
-    long countAcceptedByOrderHd(@Param("hdId") Long hdId);
-
-
-    @Query("SELECT d FROM DgOrderDt d WHERE d.orderhdId.id = :orderHdId AND d.investigationId.investigationId = :invId")
-    DgOrderDt findByOrderHdIdAndInvestigationId(Long orderHdId, Long invId);
 
     @Query("SELECT d.orderStatus FROM DgOrderDt d WHERE d.orderhdId.id = :orderHdId")
     List<String> getOrderStatusesOfOrderHd(Long orderHdId);
@@ -73,8 +57,5 @@ public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> {
 
     DgOrderDt findByOrderhdId_IdAndInvestigationId_InvestigationId(long id, Long investigationId);
 
-
-
-//SELECT b FROM DgOrderDt b WHERE b.billingHd.id = :billHdId AND b.billingStatus = 'y'
 
 }
