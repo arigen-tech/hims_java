@@ -8,6 +8,8 @@ import com.hims.response.*;
 import com.hims.service.SampleValidationService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -48,63 +50,17 @@ DgFixedValueRepository dgFixedValueRepository;
     @Autowired
     private  LabHdRepository orderHdRepo;
 
+    @PersistenceContext
+    private EntityManager entityManager;
 
 
     @Override
     @Transactional
     public ApiResponse<String> validateInvestigations(List<InvestigationValidationRequest> requests) {
-//        try {
-//            log.info("Investigation validation Process Started..");
-//
-//            // 1. Update detail validations
-//            for (InvestigationValidationRequest req : requests) {
-//                String validated = (req.getAccepted() != null && req.getAccepted()) ? "y" : null;
-//                detailsRepo.updateValidationStatus(req.getDetailId(), validated);
-//            }
-//
-//            // 2. Collect all involved headerIds
-//            List<Long> detailIds = requests.stream()
-//                    .map(InvestigationValidationRequest::getDetailId)
-//                    .collect(Collectors.toList());
-//
-//            Set<Long> headerIds = detailsRepo.findHeaderIdsByDetailIds(detailIds);
-//
-//            // 3. Update header status for each header
-//            for (Long headerId : headerIds) {
-//
-//                long total = detailsRepo.countTotalByHeaderId(headerId);
-//                long accepted = detailsRepo.countAcceptedByHeaderId(headerId);
-//                long rejected = total - accepted;
-//
-//                String orderStatus;
-//
-//                if (accepted == total) {
-//                    orderStatus = "y";  // All Accepted
-//                }
-//                else if (rejected == total) {
-//                    orderStatus = "n";  // All Rejected
-//                }
-//                else {
-//                    orderStatus = "n";  // Partial (Some accepted + Some rejected)
-//                }
-//
-//                headerRepo.updateOrderStatus(headerId, orderStatus);
-//            }
-//
-//            log.info("Investigation validation Process Ended..");
-//            return ResponseUtils.createSuccessResponse(
-//                    "Investigation validated successfully",
-//                    new TypeReference<String>() {});
-//        } catch (Exception e) {
-//            log.error("Sample Validate Error :: ", e);
-//            return ResponseUtils.createFailureResponse(
-//                    null, new TypeReference<>() {},
-//                    "Internal Server Error", HttpStatus.BAD_REQUEST.value());
-//        }
-
         try {
             log.info("Investigation validation process started...");
 
+            // 0) current user check
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(
@@ -113,75 +69,80 @@ DgFixedValueRepository dgFixedValueRepository;
             }
 
             Long headerId = requests.get(0).getSampleHeaderId();
+
+            // 1) LOOP ALL DETAILS
             for (InvestigationValidationRequest req : requests) {
 
-                // 1) FETCH DETAILS FIRST (for chain access)
+                // fetch details
                 DgSampleCollectionDetails details =
                         detailsRepo.findById(req.getDetailId())
                                 .orElseThrow(() -> new RuntimeException("Details not found"));
 
                 DgSampleCollectionHeader header = details.getSampleCollectionHeader();
-
-
                 Long investigationId = details.getInvestigationId().getInvestigationId();
                 boolean accepted = Boolean.TRUE.equals(req.getAccepted());
 
-
                 // 2) UPDATE SAMPLE COLLECTION DETAILS
-
-                String detailStatus = accepted ? "y" : "n";
+                String detailStatus = accepted ? "y" : "r";
                 detailsRepo.updateValidation(details.getSampleCollectionDetailsId(), detailStatus);
 
-                // 3) IF REJECTED → UPDATE ORDERDT
+                // 🔥 VERY IMPORTANT FIX — to ensure header sees updated statuses
+//                entityManager.flush();
+//                entityManager.clear();
+
+                // set entity fields also
+                details.setValidated(detailStatus);
 
                 if (!accepted) {
-
                     details.setRejected_reason(req.getReason());
-                    details.setOldSampleCollectionHdIdForReject( headerId );
-                    // Fetch OrderHd using Patient + Visit
-                    DgOrderHd orderHd = orderHdRepo.findByPatientId_IdAndVisitId_Id(
-                            header.getPatientId().getId(),
-                            header.getVisitId().getId()
-                    );
+                    details.setOldSampleCollectionHdIdForReject(headerId);
+                } else {
+                    details.setRejected_reason(null);
+                    details.setOldSampleCollectionHdIdForReject(null);
+                }
+                detailsRepo.save(details);
 
+                // 3) IF REJECTED → UPDATE ORDERDT
+                DgOrderHd orderHd = orderHdRepo.findByPatientId_IdAndVisitId_Id(
+                        header.getPatientId().getId(),
+                        header.getVisitId().getId()
+                );
 
-                    if (orderHd != null) {
+                if (orderHd != null) {
+                    DgOrderDt orderDt =
+                            orderDtRepo.findByOrderhdId_IdAndInvestigationId_InvestigationId(
+                                    orderHd.getId(),
+                                    investigationId
+                            );
 
-                        // Fetch OrderDt by OrderHd + Investigation
-                        DgOrderDt orderDt =
-                                orderDtRepo.findByOrderhdId_IdAndInvestigationId_InvestigationId(
-                                        (long) orderHd.getId(),
-                                        investigationId
-                                );
+                    if (orderDt != null) {
+                        String orderDtStatus = accepted ? "y" : "n";
+                        orderDtRepo.updateOrderStatus((long) orderDt.getId(), orderDtStatus);
 
-                        if (orderDt != null) {
-                            orderDtRepo.updateOrderStatus((long) orderDt.getId(), "n");
-                            log.info("OrderDt {} rejected", orderDt.getId());
-                        }
+                        // update entity
+                        orderDt.setOrderStatus(orderDtStatus);
+                        orderDtRepo.save(orderDt);
+
+                        log.info("OrderDt {} -> {}", orderDt.getId(), orderDtStatus);
                     }
                 }
-            }
+            } // end loop
 
-
-            // 4) UPDATE HEADER STATUS
-
+            // 4) UPDATE HEADER VALIDATION STATUS
             List<String> headerStatuses = detailsRepo.getValidationStatusOfHeader(headerId);
 
             boolean allAccepted = headerStatuses.stream().allMatch(s -> s.equals("y"));
-            boolean allRejected = headerStatuses.stream().allMatch(s -> s.equals("n"));
+            boolean allRejected = headerStatuses.stream().allMatch(s -> s.equals("r"));
 
             String finalHeaderStatus =
                     allAccepted ? "y" :
-                            allRejected ? "y" :
-                                    "y"; // Partial
+                            allRejected ? "r" :
+                                    "y"; // partial = y
 
             headerRepo.updateValidationStatus(headerId, finalHeaderStatus);
+            log.info("Header Validation Status = {}", finalHeaderStatus);
 
-
-
-            // 5) UPDATE ORDERHD STATUS
-
-            // Fetch patient + visit via first detail again
+            // 5) SET HEADER VALIDATION DATE + VALIDATED BY
             DgSampleCollectionHeader header =
                     headerRepo.findById(headerId).orElseThrow();
 
@@ -189,12 +150,12 @@ DgFixedValueRepository dgFixedValueRepository;
             header.setValidatedBy(currentUser.getUsername());
             headerRepo.save(header);
 
+            // 6) UPDATE ORDERHD STATUS
             DgOrderHd orderHd =
                     orderHdRepo.findByPatientId_IdAndVisitId_Id(
                             header.getPatientId().getId(),
                             header.getVisitId().getId()
                     );
-
 
             if (orderHd != null) {
 
@@ -202,165 +163,39 @@ DgFixedValueRepository dgFixedValueRepository;
                         orderDtRepo.getOrderStatusesOfOrderHd((long) orderHd.getId());
 
                 boolean allOrderDtRejected =
-                        orderDtStatuses.stream().allMatch(s -> s.equals("r"));
+                        orderDtStatuses.stream().allMatch(s -> s.equals("n"));
 
                 boolean allOrderDtAccepted =
                         orderDtStatuses.stream().allMatch(s -> s.equals("y"));
 
                 String finalOrderStatus;
                 if (allOrderDtRejected) {
-                    finalOrderStatus = "n";  // <-- As per requirement
+                    finalOrderStatus = "n";
                 } else if (allOrderDtAccepted) {
                     finalOrderStatus = "y";
                 } else {
-                    finalOrderStatus = "p";  // Partial
+                    finalOrderStatus = "p";
                 }
 
                 orderHdRepo.updateOrderStatus((long) orderHd.getId(), finalOrderStatus);
 
+                orderHd.setOrderStatus(finalOrderStatus);
+                orderHdRepo.save(orderHd);
+
                 log.info("OrderHd {} Updated to {}", orderHd.getId(), finalOrderStatus);
             }
+
             return ResponseUtils.createSuccessResponse(
                     "Investigation validated successfully",
-                   new TypeReference<String>() {});
-        } catch (Exception e) {
+                    new TypeReference<String>() {});
+        }
+        catch (Exception e) {
             log.error("Sample Validate Error :: ", e);
-           return ResponseUtils.createFailureResponse(
-                   null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {},
                     "Internal Server Error", HttpStatus.BAD_REQUEST.value());
         }
 
-//        try {
-//            log.info("Investigation validation process started...");
-//
-//            User currentUser = authUtil.getCurrentUser();
-//            if (currentUser == null) {
-//                return ResponseUtils.createFailureResponse(
-//                        null, new TypeReference<>() {},
-//                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
-//            }
-//
-//            Long headerId = requests.get(0).getSampleHeaderId();
-//
-//            // ======================
-//            // LOOP THROUGH DETAILS
-//            // ======================
-//            for (InvestigationValidationRequest req : requests) {
-//
-//                // 1) Fetch sample details
-//                DgSampleCollectionDetails details =
-//                        detailsRepo.findById(req.getDetailId())
-//                                .orElseThrow(() -> new RuntimeException("Details not found"));
-//
-//                DgSampleCollectionHeader header = details.getSampleCollectionHeader();
-//
-//                Long investigationId = details.getInvestigationId().getInvestigationId();
-//                boolean accepted = Boolean.TRUE.equals(req.getAccepted());
-//
-//                // ==============================
-//                // 2) UPDATE DETAILS VALIDATION
-//                // ==============================
-//                String detailStatus = accepted ? "y" : "n";
-//
-//                // Update validated field
-//                details.setValidated(detailStatus);
-//
-//                // Save rejected reason if rejected
-//                if (!accepted) {
-//                    details.setRejected_reason(req.getReason());
-//                    details.setOldSampleCollectionHdIdForReject(headerId);
-//                }
-//
-//                detailsRepo.save(details);
-//
-//                // ==============================
-//                // 3) IF REJECTED → UPDATE ORDERDT
-//                // ==============================
-//                if (!accepted) {
-//
-//                    DgOrderHd orderHd = orderHdRepo.findByPatientId_IdAndVisitId_Id(
-//                            header.getPatientId().getId(),
-//                            header.getVisitId().getId()
-//                    );
-//
-//                    if (orderHd != null) {
-//
-//                        DgOrderDt orderDt =
-//                                orderDtRepo.findByOrderhdId_IdAndInvestigationId_InvestigationId(
-//                                        (long) orderHd.getId(),
-//                                        investigationId
-//                                );
-//
-//                        if (orderDt != null) {
-//                            orderDtRepo.updateOrderStatus((long) orderDt.getId(), "n");
-//                            log.info("OrderDt {} rejected", orderDt.getId());
-//                        }
-//                    }
-//                }
-//            }
-//
-//            // =====================================
-//            // 4) UPDATE HEADER VALIDATION (ALWAYS Y)
-//            // =====================================
-//            headerRepo.updateValidationStatus(headerId, "y");
-//
-//            // Update header audit fields
-//            DgSampleCollectionHeader headerObj =
-//                    headerRepo.findById(headerId).orElseThrow();
-//
-//            headerObj.setValidation_date(LocalDate.now());
-//            headerObj.setValidatedBy(currentUser.getUsername());
-//
-//            headerRepo.save(headerObj);
-//
-//            // ==============================
-//            // 5) UPDATE ORDERHD STATUS
-//            // ==============================
-//            DgOrderHd orderHd =
-//                    orderHdRepo.findByPatientId_IdAndVisitId_Id(
-//                            headerObj.getPatientId().getId(),
-//                            headerObj.getVisitId().getId()
-//                    );
-//
-//            if (orderHd != null) {
-//
-//                List<String> orderDtStatuses =
-//                        orderDtRepo.getOrderStatusesOfOrderHd((long) orderHd.getId());
-//
-//                boolean allOrderDtRejected =
-//                        orderDtStatuses.stream().allMatch(s -> s.equals("n"));
-//
-//                boolean allOrderDtAccepted =
-//                        orderDtStatuses.stream().allMatch(s -> s.equals("y"));
-//
-//                String finalOrderStatus;
-//
-//                if (allOrderDtRejected) {
-//                    finalOrderStatus = "n";
-//                } else if (allOrderDtAccepted) {
-//                    finalOrderStatus = "y";
-//                } else {
-//                    finalOrderStatus = "p";
-//                }
-//
-//                orderHdRepo.updateOrderStatus((long) orderHd.getId(), finalOrderStatus);
-//
-//                log.info("OrderHd {} Updated to {}", orderHd.getId(), finalOrderStatus);
-//            }
-//
-//            return ResponseUtils.createSuccessResponse(
-//                    "Investigation validated successfully",
-//                    new TypeReference<String>() {}
-//            );
-//
-//        } catch (Exception e) {
-//
-//            log.error("Sample Validate Error :: ", e);
-//
-//            return ResponseUtils.createFailureResponse(
-//                    null, new TypeReference<>() {},
-//                    "Internal Server Error", HttpStatus.BAD_REQUEST.value());
-//        }
 
     }
     @Override
