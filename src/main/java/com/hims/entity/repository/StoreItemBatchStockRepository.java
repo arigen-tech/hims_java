@@ -62,4 +62,8 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
     List<StoreItemBatchStock> findByExpiryDateBetweenAndHospitalIdIdAndDepartmentIdId(LocalDate fromDate, LocalDate toDate, Long hospitalId, Long departmentId);
 
     List<StoreItemBatchStock> findByHospitalIdIdAndDepartmentIdIdAndExpiryDateGreaterThanEqual(Long hospitalId, Long departmentId, LocalDate now);
+
+    List<StoreItemBatchStock> findByItemId(MasStoreItem itemId);
+
+
 }
