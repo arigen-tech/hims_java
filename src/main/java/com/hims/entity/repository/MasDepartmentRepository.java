@@ -10,4 +10,5 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
    List<MasDepartment> findByStatusIgnoreCase(String status);
    List<MasDepartment> findByStatusInIgnoreCase(List<String> statuses);
 
+    List<MasDepartment> findByIdIn(List<Long> fixedIds);
 }
