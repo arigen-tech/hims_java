@@ -27,6 +27,8 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static com.hims.helperUtil.ConverterUtils.ageCalculator;
 
 @Service
@@ -646,14 +648,26 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 PendingSampleResponse response = new PendingSampleResponse();
                 response.setReqDate(orderHd.getOrderDate());
                 response.setVistId(visit != null ? visit.getId() : null);
+                String fullName = "";
+                if (patient != null) {
+                 fullName = Stream.of(
+                                    patient.getPatientFn(),
+                                    patient.getPatientMn(),
+                                    patient.getPatientLn()
+                            )
+                            .filter(name -> name != null && !name.trim().isEmpty())
+                            .collect(Collectors.joining(" "));
+                }
 
-                response.setPatientName(
-                        patient != null
-                                ? (patient.getPatientFn() != null ? patient.getPatientFn() : "") +
-                                " " +
-                                (patient.getPatientLn() != null ? patient.getPatientLn() : "")
-                                : ""
-                );
+                response.setPatientName(fullName);
+
+//                response.setPatientName(
+//                        patient != null
+//                                ? (patient.getPatientFn() != null ? patient.getPatientFn() : "") +
+//                                " " +
+//                                (patient.getPatientLn() != null ? patient.getPatientLn() : "")
+//                                : ""
+//                );
 
                 response.setRelation(
                         patient != null && patient.getPatientRelation() != null
