@@ -88,9 +88,14 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     @Value("${app.pending.days}")
     private int pendingDays;
-    private String getCurrentTimeFormatted(LocalTime orderTime) {
-        return orderTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+    private String getCurrentTimeFormatted(Instant instant) {
+        LocalTime time = instant
+                .atZone(ZoneId.systemDefault())
+                .toLocalTime();
+
+        return time.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
     }
+
 
 
     public  LabRegistrationServicesImpl(RandomNumGenerator randomNumGenerator,
@@ -180,7 +185,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setAppointmentDate(date);
                 hd.setOrderDate(LocalDate.now());
                 hd.setOrderNo(createInvoice());
-                hd.setOrderTime(LocalTime.now());
+                hd.setOrderTime(Instant.now());
                 hd.setOrderStatus("n");
                 hd.setCollectionStatus("n");
                 hd.setPaymentStatus("n");
@@ -696,7 +701,11 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 response.setDoctorName(visit != null ? visit.getDoctorName() : "");
                 response.setOrderhdId(Long.valueOf(orderHd.getId()));
                 response.setOrderNo(orderHd.getOrderNo());
-                response.setOrderTime(getCurrentTimeFormatted(orderHd.getOrderTime()));
+                response.setOrderTime(
+                        orderHd.getOrderTime() != null
+                                ? getCurrentTimeFormatted(orderHd.getOrderTime())
+                                : null
+                );
 
                 response.setInvestigation(investigation != null ? investigation.getInvestigationName() : "");
                 response.setInvestigationId(investigation != null ? investigation.getInvestigationId() : null);
