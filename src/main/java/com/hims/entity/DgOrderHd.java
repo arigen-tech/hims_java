@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Data
@@ -81,5 +82,8 @@ public class DgOrderHd {
 
     @Column(name = "last_chg_by", length = 50)
     private String lastChgBy;
+
+    @Column(name = "order_time")
+    private LocalTime orderTime;
 
 }

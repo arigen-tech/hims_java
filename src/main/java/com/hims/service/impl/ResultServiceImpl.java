@@ -247,6 +247,13 @@ public class ResultServiceImpl implements ResultService {
 
             for (DgResultEntryHeader header : headerList) {
                 DgResultEntryValidationResponse headerDto = new DgResultEntryValidationResponse();
+                String fullName = Stream.of(
+                                header.getHinId().getPatientFn(),
+                                header.getHinId().getPatientMn(),
+                                header.getHinId().getPatientLn()
+                        )
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.joining(" "));
 
                 // ===== Header-level mapping =====
                 headerDto.setResultEntryHeaderId(header.getResultEntryId());
@@ -258,7 +265,9 @@ public class ResultServiceImpl implements ResultService {
                 headerDto.setValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
                 headerDto.setEnteredBy(header.getLastChgdBy());
                 headerDto.setPatientId(header.getHinId() != null ? header.getHinId().getId() : null);
-                headerDto.setPatientName(header.getHinId() != null ? header.getHinId().getPatientFn() : null);
+
+                headerDto.setPatientName(fullName);
+               // headerDto.setPatientName(header.getHinId() != null ? header.getHinId().getPatientFn() : null);
                 headerDto.setRelationId(header.getRelationId().getId()!=null?header.getRelationId().getId():null);
                headerDto.setRelation(header.getRelationId().getId()!=null?header.getRelationId().getRelationName():null);
                 headerDto.setPatientGender(header.getHinId() != null ? header.getHinId().getPatientGender().getGenderName() : null);

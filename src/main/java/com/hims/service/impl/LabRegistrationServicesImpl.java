@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -87,7 +88,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     @Value("${app.pending.days}")
     private int pendingDays;
-
+    private String getCurrentTimeFormatted(LocalTime orderTime) {
+        return orderTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+    }
 
 
     public  LabRegistrationServicesImpl(RandomNumGenerator randomNumGenerator,
@@ -177,6 +180,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setAppointmentDate(date);
                 hd.setOrderDate(LocalDate.now());
                 hd.setOrderNo(createInvoice());
+                hd.setOrderTime(LocalTime.now());
                 hd.setOrderStatus("n");
                 hd.setCollectionStatus("n");
                 hd.setPaymentStatus("n");
@@ -692,6 +696,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 response.setDoctorName(visit != null ? visit.getDoctorName() : "");
                 response.setOrderhdId(Long.valueOf(orderHd.getId()));
                 response.setOrderNo(orderHd.getOrderNo());
+                response.setOrderTime(getCurrentTimeFormatted(orderHd.getOrderTime()));
 
                 response.setInvestigation(investigation != null ? investigation.getInvestigationName() : "");
                 response.setInvestigationId(investigation != null ? investigation.getInvestigationId() : null);
