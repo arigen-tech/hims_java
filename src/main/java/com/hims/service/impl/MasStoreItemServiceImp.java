@@ -8,6 +8,7 @@ import com.hims.response.*;
 import com.hims.service.MasStoreItemService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
+import com.hims.utils.StockFound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,8 +51,6 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     @Autowired
     private  StoreItemBatchStockRepository storeItemBatchStockRepository;
 
-    @Value("${hos.define.dayOfExparyDrug}")
-    private Integer hospDefinedDays;
 
     @Autowired
     UserRepo userRepo;
@@ -59,12 +58,34 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     AuthUtil authUtil;
 
     @Autowired
+    StockFound stockFound;
+
+    @Autowired
     private UserDepartmentRepository userDepartmentRepository;
-@Autowired
-private MasDepartmentRepository masDepartmentRepository;
+
+    @Autowired
+    private MasDepartmentRepository masDepartmentRepository;
 
     @Value("${masstoreitem.section.id}")
     private Integer sectionId;
+
+    @Value("${hos.define.storeDay}")
+    private Integer hospDefinedstoreDays;
+
+    @Value("${hos.define.storeId}")
+    private Integer deptIdStore;
+
+    @Value("${hos.define.dispensaryDay}")
+    private Integer hospDefineddispDays;
+
+    @Value("${hos.define.dispensaryId}")
+    private Integer dispdeptId;
+
+    @Value("${hos.define.wardPharmDay}")
+    private Integer hospDefinedwardDays;
+
+    @Value("${hos.define.wardPharmacyId}")
+    private Integer warddeptId;
 
 
     private static final Logger log = LoggerFactory.getLogger(DoctorRosterServicesImpl.class);
@@ -426,71 +447,41 @@ private MasDepartmentRepository masDepartmentRepository;
         response.setDepartmentId(item.getDepartmentId());
         response.setAdispQty(item.getAdispQty());
 
-            response.setGroupId(item.getGroupId()!=null?item.getGroupId().getId():null);
-            response.setGroupName(item.getGroupId()!=null?item.getGroupId().getGroupName():null);
+        response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
+        response.setGroupName(item.getGroupId() != null ? item.getGroupId().getGroupName() : null);
+
+
+        response.setItemClassId(item.getItemClassId() != null ? item.getItemClassId().getItemClassId() : null);
+        response.setItemClassName(item.getItemClassId() != null ? item.getItemClassId().getItemClassName() : null);
+
+
+        response.setItemTypeId(item.getItemTypeId() != null ? item.getItemTypeId().getId() : null);
+        response.setItemTypeName(item.getItemTypeId() != null ? item.getItemTypeId().getName() : null);
+
+        response.setSectionId(item.getSectionId() != null ? item.getSectionId().getSectionId() : null);
+        response.setSectionName(item.getSectionId() != null ? item.getSectionId().getSectionName() : null);
+
+        response.setDispUnit(item.getDispUnit() != null ? item.getDispUnit().getUnitId() : null);
+        response.setDispUnitName(item.getDispUnit() != null ? item.getDispUnit().getUnitName() : null);
+
+        response.setUnitAU(item.getUnitAU() != null ? item.getUnitAU().getUnitId() : null);
+        response.setUnitAuName(item.getUnitAU() != null ? item.getUnitAU().getUnitName() : null);
+
+        response.setHsnCode(item.getHsnCode() != null ? item.getHsnCode().getHsnCode() : null);
+        response.setHsnGstPercent(item.getHsnCode() != null ? item.getHsnCode().getGstRate() : null);
+
+
+        Long avlableStokes = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), deptIdStore, item.getItemId(), hospDefinedstoreDays);
+        response.setStorestocks(avlableStokes);
+        Long dispstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), dispdeptId, item.getItemId(), hospDefineddispDays);
+        response.setDispstocks(dispstocks);
+        Long wardstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), warddeptId, item.getItemId(), hospDefinedwardDays);
+        response.setDispstocks(dispstocks);
 
 
 
-            response.setItemClassId(item.getItemClassId()!=null?item.getItemClassId().getItemClassId():null);
-            response.setItemClassName(item.getItemClassId()!=null?item.getItemClassId().getItemClassName():null);
 
 
-
-            response.setItemTypeId(item.getItemTypeId()!=null?item.getItemTypeId().getId():null);
-            response.setItemTypeName(item.getItemTypeId()!=null?item.getItemTypeId().getName():null);
-
-            response.setSectionId(item.getSectionId()!=null?item.getSectionId().getSectionId():null);
-            response.setSectionName(item.getSectionId()!=null?item.getSectionId().getSectionName():null);
-
-            response.setDispUnit(item.getDispUnit() !=null?item.getDispUnit().getUnitId():null);
-            response.setDispUnitName(item.getDispUnit()!=null?item.getDispUnit().getUnitName():null);
-
-            response.setUnitAU(item.getUnitAU()!=null?item.getUnitAU().getUnitId():null);
-            response.setUnitAuName(item.getUnitAU()!=null?item.getUnitAU().getUnitName():null);
-
-            response.setHsnCode(item.getHsnCode()!=null?item.getHsnCode().getHsnCode():null);
-            response.setHsnGstPercent(item.getHsnCode()!=null?item.getHsnCode().getGstRate():null);
-
-        if (item == null) {
-            response.setStocks(0L);
-        } else {
-
-            Optional<MasStoreItem> itemOpt = masStoreItemRepository.findById(item.getItemId());
-
-            if (itemOpt.isEmpty()) {
-                response.setStocks(0L);
-            } else {
-
-                MasStoreItem itemEntity = itemOpt.get();
-
-                List<StoreItemBatchStock> stockList =
-                        storeItemBatchStockRepository.findByItemId(itemEntity);
-
-                if (stockList == null || stockList.isEmpty()) {
-                    response.setStocks(0L);
-                } else {
-
-                    //filter expiryDate > today + hospDefinedDays
-                    int hospDays = hospDefinedDays;
-                    LocalDate threshold = LocalDate.now().plusDays(hospDays);
-
-                    List<StoreItemBatchStock> validStockList = stockList.stream()
-                            .filter(s ->
-                                    s.getExpiryDate() != null &&
-                                            s.getExpiryDate().isAfter(threshold)
-                            )
-                            .collect(Collectors.toList());
-
-                    // sum closing stock for valid batches
-                    long totalClosingStock = validStockList.stream()
-                            .mapToLong(s -> s.getClosingStock() != null ? s.getClosingStock() : 0L)
-                            .sum();
-
-                    response.setStocks(totalClosingStock);
-
-                }
-            }
-        }
 
 
         response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);

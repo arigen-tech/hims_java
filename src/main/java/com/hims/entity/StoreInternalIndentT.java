@@ -41,8 +41,12 @@ public class StoreInternalIndentT {
     @Column(name = "item_cost", precision = 14, scale = 2)
     private BigDecimal itemCost;
 
-    @Column(name = "total_cost", precision = 14, scale = 2)
+//    @Column(name = "total_cost", precision = 14, scale = 2)
+//    private BigDecimal totalCost;
+
+    @Column(name = "total_cost", precision = 14, scale = 2, insertable = false, updatable = false)
     private BigDecimal totalCost;
+
 
     @Column(name = "issue_status", length = 2)
     private String issueStatus;

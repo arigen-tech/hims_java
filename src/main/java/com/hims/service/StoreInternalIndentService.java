@@ -12,7 +12,7 @@ public interface StoreInternalIndentService {
     ApiResponse<StoreInternalIndentResponse> saveIndent(StoreInternalIndentRequest request);
 
     // Submit — backend sets status "Y"
-    ApiResponse<StoreInternalIndentResponse> submitIndent(Long indentMId);
+    public ApiResponse<StoreInternalIndentResponse> submitIndent(StoreInternalIndentRequest request);
 
     ApiResponse<StoreInternalIndentResponse> getIndentById(Long indentMId);
 

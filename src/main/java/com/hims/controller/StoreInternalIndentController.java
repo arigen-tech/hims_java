@@ -31,9 +31,9 @@ public class StoreInternalIndentController {
     /**
      * Submit an existing indent - backend sets status "Y"
      */
-    @PostMapping("/submit/{indentMId}")
-    public ApiResponse<StoreInternalIndentResponse> submitIndent(@PathVariable Long indentMId) {
-        return indentService.submitIndent(indentMId);
+    @PostMapping("/submit")
+    public ApiResponse<StoreInternalIndentResponse> submitIndent(@RequestBody StoreInternalIndentRequest request) {
+        return indentService.submitIndent(request);
     }
 
     /**

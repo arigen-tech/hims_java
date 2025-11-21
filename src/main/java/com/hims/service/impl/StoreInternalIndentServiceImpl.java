@@ -57,9 +57,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             indentM.setIndentDate(
                     request.getIndentDate() != null ? request.getIndentDate() : LocalDateTime.now()
             );
-            indentM.setIndentNo(
-                    request.getIndentNo() == null ? generateIndentNo() : request.getIndentNo()
-            );
+            indentM.setIndentNo(generateIndentNo());
 
             // from department = current login department (id from token)
             Long deptId = authUtil.getCurrentDepartmentId();
@@ -109,55 +107,112 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 detail.setItemId(item);
 
                 detail.setRequestedQty(dReq.getRequestedQty());
-                detail.setApprovedQty(dReq.getApprovedQty());
-                detail.setIssuedQty(dReq.getIssuedQty());
-                detail.setReceivedQty(dReq.getReceivedQty());
                 detail.setAvailableStock(dReq.getAvailableStock());
-                detail.setItemCost(dReq.getItemCost());
-
-                BigDecimal lineTotal = dReq.getTotalCost();
-                if (lineTotal == null && dReq.getItemCost() != null && dReq.getRequestedQty() != null) {
-                    lineTotal = dReq.getItemCost().multiply(dReq.getRequestedQty());
-                }
-                detail.setTotalCost(lineTotal);
-                detail.setIssueStatus(dReq.getIssueStatus());
-
-                if (lineTotal != null) {
-                    totalCost = totalCost.add(lineTotal);
-                }
+                detail.setIssueStatus("N");
 
                 indentTRepository.save(detail);
             }
         }
 
-        indentM.setTotalCost(totalCost);
         indentMRepository.save(indentM);
 
         StoreInternalIndentResponse resp = buildResponse(indentM);
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<StoreInternalIndentResponse>() {});
     }
-
     // Submit indent — backend sets status = "Y"
     @Override
     @Transactional
-    public ApiResponse<StoreInternalIndentResponse> submitIndent(Long indentMId) {
-        StoreInternalIndentM indentM = indentMRepository.findById(indentMId)
-                .orElseThrow(() -> new RuntimeException("Indent not found"));
+    public ApiResponse<StoreInternalIndentResponse> submitIndent(StoreInternalIndentRequest request) {
+        StoreInternalIndentM indentM;
+        boolean isNew = (request.getIndentMId() == null);
 
         User currentUser = authUtil.getCurrentUser();
         String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
-        // change status to Submitted
-        indentM.setStatus("Y");
-        indentM.setApprovedBy(currentUserName);
-        indentM.setApprovedDate(LocalDateTime.now());
+        if (isNew) {
+            // CREATE NEW INDENT WITH SUBMITTED STATUS
+            indentM = new StoreInternalIndentM();
+            indentM.setCreatedDate(LocalDateTime.now());
+            indentM.setCreatedBy(currentUserName);
+            indentM.setIndentDate(
+                    request.getIndentDate() != null ? request.getIndentDate() : LocalDateTime.now()
+            );
+            indentM.setIndentNo(generateIndentNo());
 
+            // from department = current login department (id from token)
+            Long deptId = authUtil.getCurrentDepartmentId();
+            if (deptId == null) {
+                throw new RuntimeException("Current department id not found in token");
+            }
+            MasDepartment fromDept = masDepartmentRepository.findById(deptId)
+                    .orElseThrow(() -> new RuntimeException("Current department not found"));
+            indentM.setFromDeptId(fromDept);
+
+            // Set submitted status directly for new entries
+            indentM.setStatus("Y"); // Submitted status
+            indentM.setApprovedBy(currentUserName);
+            indentM.setApprovedDate(LocalDateTime.now());
+
+        } else {
+            // UPDATE EXISTING INDENT STATUS TO SUBMITTED
+            indentM = indentMRepository.findById(request.getIndentMId())
+                    .orElseThrow(() -> new RuntimeException("Indent not found for update"));
+
+            // Only update status and approval info, keep existing created info
+            indentM.setStatus("Y"); // Submitted status
+            indentM.setApprovedBy(currentUserName);
+            indentM.setApprovedDate(LocalDateTime.now());
+        }
+
+        // to department
+        if (request.getToDeptId() != null) {
+            MasDepartment toDept = masDepartmentRepository.findById(request.getToDeptId())
+                    .orElseThrow(() -> new RuntimeException("To department not found"));
+            indentM.setToDeptId(toDept);
+        } else {
+            indentM.setToDeptId(null);
+        }
+
+        // Save header first to get id
         indentM = indentMRepository.save(indentM);
+
+        // Only process items for NEW entries, for existing entries keep existing items
+        if (isNew) {
+            // Delete previous details and reinsert (for new entries, this should be empty anyway)
+            List<StoreInternalIndentT> prev = indentTRepository.findByIndentM(indentM);
+            if (prev != null && !prev.isEmpty()) {
+                indentTRepository.deleteAll(prev);
+            }
+
+            BigDecimal totalCost = BigDecimal.ZERO;
+
+            if (request.getItems() != null) {
+                for (StoreInternalIndentDetailRequest dReq : request.getItems()) {
+                    StoreInternalIndentT detail = new StoreInternalIndentT();
+                    detail.setIndentM(indentM);
+
+                    MasStoreItem item = masStoreItemRepository.findById(dReq.getItemId())
+                            .orElseThrow(() -> new RuntimeException("Item not found: " + dReq.getItemId()));
+                    detail.setItemId(item);
+
+                    detail.setRequestedQty(dReq.getRequestedQty());
+                    detail.setAvailableStock(dReq.getAvailableStock());
+                    detail.setIssueStatus(
+                            dReq.getIssueStatus()!= null ? dReq.getIssueStatus() : "N"
+                    );
+
+
+                            indentTRepository.save(detail);
+                }
+            }
+
+            indentM.setTotalCost(totalCost);
+            indentMRepository.save(indentM);
+        }
 
         StoreInternalIndentResponse resp = buildResponse(indentM);
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<StoreInternalIndentResponse>() {});
     }
-
     @Override
     @Transactional(readOnly = true)
     public ApiResponse<StoreInternalIndentResponse> getIndentById(Long indentMId) {
@@ -194,7 +249,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Override
     @Transactional
     public ApiResponse<StoreInternalIndentResponse> createIndentFromROL(StoreInternalIndentRequest baseRequest) {
-        baseRequest.setSourceType("R");
+//        baseRequest.setSourceType("R");
         return saveIndent(baseRequest); // backend sets status S
     }
 
