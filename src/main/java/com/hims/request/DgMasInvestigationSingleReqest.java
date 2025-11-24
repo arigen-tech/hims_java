@@ -17,4 +17,6 @@ public class DgMasInvestigationSingleReqest {
     private String minNormalValue;
     private String investigationType;
     private String genderApplicable;
+    private Long categoryId;
+    private Long methodId;
 }
