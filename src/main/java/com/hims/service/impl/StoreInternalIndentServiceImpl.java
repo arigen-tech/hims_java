@@ -387,71 +387,131 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             Long hospitalId = authUtil.getCurrentUser().getHospital().getId();
 
             if (currentDeptId == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<List<ROLItemResponse>>() {},
-                        "Current department id not found in token", 400);
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<List<ROLItemResponse>>() {},
+                        "Current department id not found in token",
+                        400
+                );
             }
 
-            List<MasStoreItem> allItems = masStoreItemRepository.findByHospitalIdAndDepartmentId(hospitalId, currentDeptId);
+            // Fetch ACTIVE items for this hospital + department
+            List<MasStoreItem> allItems =
+                    masStoreItemRepository.findByStatusIgnoreCaseAndHospitalIdAndDepartmentId(
+                            "y", hospitalId, currentDeptId
+                    );
+
             List<ROLItemResponse> rolItems = new ArrayList<>();
 
             for (MasStoreItem item : allItems) {
                 Long currentStock = calculateCurrentStock(item.getItemId(), currentDeptId);
                 Integer reorderLevel = getReorderLevelForDepartment(item, currentDeptId);
 
+                // Calculate stocks for different departments
+                Long storeStock = calculateStockForDepartment(item.getItemId(), departmentConfig.getStoreId());
+                Long wardStock = calculateStockForDepartment(item.getItemId(), departmentConfig.getWardPharmacyId());
+                Long dispStock = calculateStockForDepartment(item.getItemId(), departmentConfig.getDispensaryId());
+
                 if (reorderLevel != null && reorderLevel > 0 && currentStock <= reorderLevel) {
-                    ROLItemResponse rolItem = new ROLItemResponse(item, currentStock, reorderLevel);
-                    rolItems.add(rolItem);
+                    rolItems.add(new ROLItemResponse(item, currentStock, reorderLevel, storeStock, wardStock, dispStock));
                 }
             }
 
-            return ResponseUtils.createSuccessResponse(rolItems, new TypeReference<List<ROLItemResponse>>() {});
+            return ResponseUtils.createSuccessResponse(
+                    rolItems,
+                    new TypeReference<List<ROLItemResponse>>() {}
+            );
         } catch (Exception e) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<List<ROLItemResponse>>() {},
-                    "Error fetching ROL items: " + e.getMessage(), 500);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<List<ROLItemResponse>>() {},
+                    "Error fetching ROL items: " + e.getMessage(),
+                    500
+            );
         }
     }
 
-    private Long calculateCurrentStock(Long itemId, Long departmentId) {
+    // Helper method to calculate stock for specific department
+    private Long calculateStockForDepartment(Long itemId, Long departmentId) {
         try {
             LocalDate today = LocalDate.now();
-            Integer expiryDays = getExpiryDaysForDepartment(departmentId);
-            LocalDate expiryThreshold = today.plusDays(expiryDays);
-
-            List<StoreItemBatchStock> validBatches = storeItemBatchStockRepository
-                    .findByItemId_ItemIdAndDepartmentId_IdAndExpiryDateAfter(itemId, departmentId, expiryThreshold);
-
-            return validBatches.stream()
-                    .mapToLong(batch -> {
-                        Long closingStock = batch.getClosingStock();
-                        return closingStock != null ? closingStock : 0L;
-                    })
+            List<StoreItemBatchStock> batches = storeItemBatchStockRepository.findNonExpiredBatchesForROL(
+                    itemId, departmentId, today
+            );
+            return batches.stream()
+                    .map(batch -> batch.getClosingStock() != null ? batch.getClosingStock() : 0L)
+                    .mapToLong(Long::longValue)
                     .sum();
         } catch (Exception e) {
+            e.printStackTrace();
             return 0L;
         }
     }
 
-    private Integer getReorderLevelForDepartment(MasStoreItem item, Long departmentId) {
-        if (departmentId.equals(departmentConfig.getType().getStore())) {
-            return item.getReOrderLevelStore();
-        } else if (departmentId.equals(departmentConfig.getType().getDispensary())) {
-            return item.getReOrderLevelDispensary();
-        } else if (departmentId.equals(departmentConfig.getType().getWard())) {
-            return item.getWardROL() != null ? item.getWardROL().intValue() : null;
-        } else {
-            return item.getReOrderLevelStore();
+
+
+
+    private Long calculateCurrentStock(Long itemId, Long departmentId) {
+        try {
+            LocalDate today = LocalDate.now();
+
+            List<StoreItemBatchStock> validBatches =
+                    storeItemBatchStockRepository.findNonExpiredBatchesForROL(
+                            itemId,
+                            departmentId,
+                            today
+                    );
+
+            return validBatches.stream()
+                    .map(batch -> batch.getClosingStock() != null ? batch.getClosingStock() : 0L)
+                    .mapToLong(Long::longValue)
+                    .sum();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0L;
         }
     }
 
-    private Integer getExpiryDaysForDepartment(Long departmentId) {
-        if (departmentId.equals(departmentConfig.getType().getStore())) {
-            return departmentConfig.getStockExpiry().getStore();
-        } else if (departmentId.equals(departmentConfig.getType().getDispensary())) {
-            return departmentConfig.getStockExpiry().getDispensary();
-        } else if (departmentId.equals(departmentConfig.getType().getWard())) {
-            return departmentConfig.getStockExpiry().getWard();
-        } else {
-            return departmentConfig.getStockExpiry().getGeneral();
+
+
+    private Integer getReorderLevelForDepartment(MasStoreItem item, Long departmentId) {
+        // ward pharmacy
+        if (departmentId.equals(departmentConfig.getWardPharmacyId())) {
+            return item.getWardROL() != null ? item.getWardROL().intValue() : null;
         }
+
+        // main store
+        if (departmentId.equals(departmentConfig.getStoreId())) {
+            return item.getStoreROL() != null ? item.getStoreROL().intValue() : null;
+        }
+
+        // dispensary
+        if (departmentId.equals(departmentConfig.getDispensaryId())) {
+            return item.getDispROL() != null ? item.getDispROL().intValue() : null;
+        }
+
+        // general medicine (if you want to treat as storeROL or wardROL)
+        if (departmentId.equals(departmentConfig.getGeneralMedicineId())) {
+            return item.getStoreROL() != null ? item.getStoreROL().intValue() : null;
+        }
+
+        // default fallback
+        return item.getStoreROL() != null
+                ? item.getStoreROL().intValue()
+                : (item.getWardROL() != null ? item.getWardROL().intValue() : null);
     }
+
+
+//    private Integer getExpiryDaysForDepartment(Long departmentId) {
+//        if (departmentId.equals(departmentConfig.getType().getStore())) {
+//            return departmentConfig.getStockExpiry().getStore();
+//        } else if (departmentId.equals(departmentConfig.getType().getDispensary())) {
+//            return departmentConfig.getStockExpiry().getDispensary();
+//        } else if (departmentId.equals(departmentConfig.getType().getWard())) {
+//            return departmentConfig.getStockExpiry().getWard();
+//        } else {
+//            return departmentConfig.getStockExpiry().getGeneral();
+//        }
+//    }
+
 }
