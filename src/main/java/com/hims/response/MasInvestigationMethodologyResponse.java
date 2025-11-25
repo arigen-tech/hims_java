@@ -6,7 +6,7 @@ import lombok.Data;
 public class MasInvestigationMethodologyResponse {
     private Long methodId;
     private String methodName;
-    private Long investigationId;
+
     private String note;
 
 }

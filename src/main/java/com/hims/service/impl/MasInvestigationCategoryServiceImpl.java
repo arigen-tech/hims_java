@@ -53,11 +53,7 @@ public class MasInvestigationCategoryServiceImpl implements MasInvestigationCate
             masInvestigationCategory.setCategoryName(request.getCategoryName());
             masInvestigationCategory.setLastChgBy(getCurrentUser().getUsername());
             masInvestigationCategory.setLastChgDate(LocalDate.now());
-            masInvestigationCategory.setInvestigation(
-                    request.getInvestigationId() != null
-                            ? dgMasInvestigationRepository.findByinvestigationId(request.getInvestigationId())
-                            : null
-            );
+
             masInvestigationCategoryRepository.save(masInvestigationCategory);
             log.info("MasInvestigationCategory created successfully.");
             return ResponseUtils.createSuccessResponse("MasInvestigationCategoryCreate", new TypeReference<>() {
@@ -101,10 +97,7 @@ public class MasInvestigationCategoryServiceImpl implements MasInvestigationCate
             }
             MasInvestigationCategory masInvestigationCategory1 = masInvestigationCategory.get();
             masInvestigationCategory1.setCategoryName(request.getCategoryName());
-            masInvestigationCategory1.setInvestigation(request.getInvestigationId() != null
-                    ? dgMasInvestigationRepository.findByinvestigationId(request.getInvestigationId())
-                    : null
-            );
+
 
             masInvestigationCategory1.setLastChgDate(LocalDate.now());
             masInvestigationCategory1.setLastChgBy(getCurrentUser().getUsername());
@@ -140,11 +133,7 @@ public class MasInvestigationCategoryServiceImpl implements MasInvestigationCate
         MasInvestigationCategoryResponse masInvestigationCategoryResponse=new MasInvestigationCategoryResponse();
         masInvestigationCategoryResponse.setCategoryId(masInvestigationCategory.getCategoryId());
         masInvestigationCategoryResponse.setCategoryName(masInvestigationCategory.getCategoryName());
-        masInvestigationCategoryResponse.setInvestigationId(
-                masInvestigationCategory.getInvestigation() != null
-                        ?  masInvestigationCategory.getInvestigation().getInvestigationId()
-                        : null
-        );
+
         return masInvestigationCategoryResponse;
     }
     private List<MasInvestigationCategoryResponse> convertList(List<MasInvestigationCategory> list) {

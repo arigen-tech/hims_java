@@ -52,10 +52,7 @@ public class MasInvestigationMethodologyServiceImpl implements MasInvestigationM
 
             MasInvestigationMethodology masInvestigationMethodology=new MasInvestigationMethodology();
             masInvestigationMethodology.setMethodName(request.getMethodName());
-            masInvestigationMethodology.setInvestigation(request.getInvestigationId() != null
-                    ? dgMasInvestigationRepository.findByinvestigationId(request.getInvestigationId())
-                    : null
-            );
+
 
             masInvestigationMethodology.setNote(request.getNote());
             masInvestigationMethodology.setLastChgBy(getCurrentUser().getUsername());
@@ -101,10 +98,7 @@ public class MasInvestigationMethodologyServiceImpl implements MasInvestigationM
             }
             MasInvestigationMethodology masInvestigationCategory1 = masInvestigationCategory.get();
             masInvestigationCategory1.setMethodName(request.getMethodName());
-            masInvestigationCategory1.setInvestigation(request.getInvestigationId() != null
-                    ? dgMasInvestigationRepository.findByinvestigationId(request.getInvestigationId())
-                    : null
-            );
+
 
             masInvestigationCategory1.setLastChgDate(LocalDate.now());
             masInvestigationCategory1.setLastChgBy(getCurrentUser().getUsername());
@@ -143,11 +137,7 @@ public class MasInvestigationMethodologyServiceImpl implements MasInvestigationM
         masInvestigationCategoryResponse.setMethodId(masInvestigationMethodology.getMethodId());
         masInvestigationCategoryResponse.setMethodName(masInvestigationMethodology.getMethodName());
         masInvestigationCategoryResponse.setNote(masInvestigationMethodology.getNote());
-        masInvestigationCategoryResponse.setInvestigationId(
-                masInvestigationMethodology.getInvestigation() != null
-                        ? masInvestigationMethodology.getInvestigation().getInvestigationId()
-                        : null
-        );
+
         return masInvestigationCategoryResponse;
     }
     private List<MasInvestigationMethodologyResponse> convertList(List<MasInvestigationMethodology> list) {

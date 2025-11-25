@@ -22,9 +22,7 @@ public class MasInvestigationMethodology {
     @Column(name="notes",length=100)
     private String note;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name="investigation_id")
-    private DgMasInvestigation investigation;
+
 
     @Column(name="last_chg_by",length=100)
     private String lastChgBy;

@@ -19,9 +19,7 @@ public class MasInvestigationCategory {
     @Column(name="category_name",length=100)
     private String categoryName;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name="investigation_id")
-    private DgMasInvestigation investigation;
+
 
     @Column(name="last_chg_by",length=100)
     private String lastChgBy;

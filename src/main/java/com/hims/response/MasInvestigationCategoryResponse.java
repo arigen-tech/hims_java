@@ -6,5 +6,5 @@ import lombok.Data;
 public class MasInvestigationCategoryResponse {
     private Long categoryId;
     private String categoryName;
-    private Long investigationId;
+
 }

@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class MasInvestigationCategoryRequest {
     private String categoryName;
-    private Long investigationId;
+
 }
