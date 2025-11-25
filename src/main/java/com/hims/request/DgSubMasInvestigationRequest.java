@@ -15,6 +15,7 @@ public class DgSubMasInvestigationRequest {
     private Long mainChargeCodeId;
     private Long subChargeCodeId;
     private Long uomId;
+    private String fixedValueExpectedResult;
 
     private List<DgFixedValueRequest> fixedValues;
     private List<DgNormalValueRequest> normalValues;

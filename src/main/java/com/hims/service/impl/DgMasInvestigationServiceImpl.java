@@ -472,6 +472,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         return ResponseUtils.createNotFoundResponse("uomId not found", 404);
                     }
                     newSubObj.setInvestigationId(masInvestigation);
+                    newSubObj.setFixedValueExpectedValue(subInvestObj.getFixedValueExpectedResult());
                     subInvestigationRepo.save(newSubObj);
 
 //                    condition for comparison type
@@ -558,6 +559,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         Optional<DgUom> du = uomRepo.findById(subInvestObj.getUomId());
                         existing.setUomId(du.get());
                         existing.setInvestigationId(masInvestigation); // Ensure linkage
+                        existing.setFixedValueExpectedValue(subInvestObj.getFixedValueExpectedResult());
                         subInvestigationRepo.save(existing);
 
                         if ("n".equalsIgnoreCase(subInvestObj.getComparisonType())) {
@@ -741,6 +743,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             resp.setSampleId(sub.getSampleId() != null ? sub.getSampleId().getId() : null);
             resp.setUomId(sub.getUomId() != null ? sub.getUomId().getId() : null);
             resp.setInvestigationId(sub.getInvestigationId() != null ? sub.getInvestigationId().getInvestigationId() : null);
+            resp.setFixedValueExpectedResult(sub.getFixedValueExpectedValue());
 
             // attach fixed + normal values for this subInvestigation
             resp.setFixedValueResponseList(fixedBySub.getOrDefault(sub.getSubInvestigationId(), Collections.emptyList()));

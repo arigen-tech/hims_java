@@ -125,4 +125,7 @@ public class DgResultEntryHeader {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_hd_id")
     private DgOrderHd orderHd;
+
+    @Column(name = "result_entered_by",length = 200)
+    private  String resultEnteredBy;
 }

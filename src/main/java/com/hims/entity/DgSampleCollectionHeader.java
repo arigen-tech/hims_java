@@ -3,6 +3,7 @@ package com.hims.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -85,4 +86,7 @@ public class DgSampleCollectionHeader {
 
     @Column(name="validated")
     private String validated;
+
+    @Column(name = "validation_time")
+    private Instant validationTime;
 }
