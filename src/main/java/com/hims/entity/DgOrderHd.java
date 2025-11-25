@@ -3,6 +3,7 @@ package com.hims.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -84,6 +85,6 @@ public class DgOrderHd {
     private String lastChgBy;
 
     @Column(name = "order_time")
-    private LocalTime orderTime;
+    private Instant orderTime;
 
 }

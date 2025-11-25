@@ -83,6 +83,11 @@ public class DgMasInvestigation {
     @Column(name = "price", length=255)
     private Double price;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "category_id")
+    private MasInvestigationCategory categoryId;
 
-
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "method_id")
+    private MasInvestigationMethodology methodId;
 }
