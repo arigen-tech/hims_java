@@ -15,9 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -69,6 +67,14 @@ public class ResultServiceImpl implements ResultService {
     public  ResultServiceImpl(RandomNumGenerator randomNumGenerator) {
         this.randomNumGenerator = randomNumGenerator;
 
+    }
+
+    private String getCurrentTimeFormatted(Instant instant) {
+        LocalTime time = instant
+                .atZone(ZoneId.systemDefault())
+                .toLocalTime();
+
+        return time.format(DateTimeFormatter.ofPattern("HH:mm"));
     }
 
     public String createInvoice() {
@@ -128,6 +134,7 @@ public class ResultServiceImpl implements ResultService {
                 header.setLastChgdTime(String.valueOf(LocalTime.now()));
                 header.setResultNo(createInvoice());
                 header.setHospitalId(currentUser.getHospital());
+                header.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
 //                Optional<DgOrderHd> dgOrderH=labHdRepository.findById(Math.toIntExact(request.getPatientId()));
 //                header.setOrderHd(dgOrderH.get());
                 Optional<DgOrderHd> dgOrderH = labHdRepository.findByPatientId_Id(request.getPatientId());
@@ -261,7 +268,7 @@ public class ResultServiceImpl implements ResultService {
                         ? header.getOrderHd().getOrderDate().toString() : null);
                 headerDto.setResultTime(header.getResultTime());
                 headerDto.setResultDate(header.getResultDate());
-                headerDto.setResultEntredBy(currentUser.getUsername());
+//                headerDto.setResultEntredBy(currentUser.getUsername());
                 headerDto.setValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
                 headerDto.setEnteredBy(header.getLastChgdBy());
                 headerDto.setPatientId(header.getHinId() != null ? header.getHinId().getId() : null);
@@ -276,7 +283,8 @@ public class ResultServiceImpl implements ResultService {
                 headerDto.setSubChargeCodeId(header.getSubChargeCodeId() != null ? header.getSubChargeCodeId().getSubId() : null);
                 headerDto.setSubChargeCodeName(header.getSubChargeCodeId() != null ? header.getSubChargeCodeId().getSubName() : null);
                headerDto.setMainChargeCode(header.getMainChargecodeId() != null ? header.getMainChargecodeId().getChargecodeId() : null);
-
+               headerDto.setMainChargeCodeName(header.getMainChargecodeId() != null ? header.getMainChargecodeId().getChargecodeCode().toUpperCase() : null);
+               headerDto.setResultEnteredBy(header.getResultEnteredBy());
 
                // ===== Detail-level mapping =====
                 List<DgResultEntryDetail> detailList = detailRepo.findByResultEntryIdAndValidated(header, "n");
@@ -631,7 +639,9 @@ public class ResultServiceImpl implements ResultService {
                 orderResponse.setOrderHdId(orderHdId);
                 orderResponse.setOrderNo(order.getOrderNo());
                 orderResponse.setOrderDate(String.valueOf(order.getOrderDate()));
-                orderResponse.setOrderTime(order.getLastChgTime());
+                log.info("Order Time from Db : {}",order.getOrderTime());
+                orderResponse.setOrderTime(getCurrentTimeFormatted(order.getOrderTime()));
+                log.info("After formating Order Time : {}",getCurrentTimeFormatted(order.getOrderTime()));
 
                 // Patient Info
                 DgResultEntryHeader firstHeader = headersForOrder.get(0);

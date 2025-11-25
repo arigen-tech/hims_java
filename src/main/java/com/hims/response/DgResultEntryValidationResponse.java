@@ -19,14 +19,15 @@ public class DgResultEntryValidationResponse {
     private String orderDate;
     private String resultTime;
     private LocalDate resultDate;
-    private String resultEntredBy;
     private Long mainChargeCode;
+    private String mainChargeCodeName;
   //  private String doctorName;
     private Long subChargeCodeId;
     private String subChargeCodeName;
     private String enteredBy;
     private Long resultEntryHeaderId;
     private String validatedBy;
+    private String resultEnteredBy;
     private List<ResultEntryInvestigationResponse> resultEntryInvestigationResponses;
 
 }

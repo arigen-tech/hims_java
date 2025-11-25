@@ -16,7 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,6 +56,15 @@ DgFixedValueRepository dgFixedValueRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
+
+
+    private String getCurrentTimeFormatted(Instant instant) {
+        LocalTime time = instant
+                .atZone(ZoneId.systemDefault())
+                .toLocalTime();
+
+        return time.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+    }
 
 
     @Override
@@ -150,7 +163,8 @@ DgFixedValueRepository dgFixedValueRepository;
             header.setValidated(finalHeaderStatus);
 
             header.setValidation_date(LocalDate.now());
-            header.setValidatedBy(currentUser.getUsername());
+            header.setValidationTime(Instant.now());
+            header.setValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
             headerRepo.save(header);
 
             // 6) UPDATE ORDERHD STATUS
@@ -334,7 +348,11 @@ DgFixedValueRepository dgFixedValueRepository;
 
                             DgOrderHd dgOrderHd = labHdRepository.findByVisitId(header.getVisitId());
                             r.setOrderDate(String.valueOf(dgOrderHd.getOrderDate()));
-                            r.setEnteredBy(currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName());
+                            r.setOrderTime(getCurrentTimeFormatted(dgOrderHd.getOrderTime()));
+                            r.setCollectedBy(header.getCollection_by());
+                            r.setValidatedBy(header.getValidatedBy());
+                            r.setValidatedDate(header.getValidation_date());
+                            r.setValidatedTime(header.getValidationTime()!=null?getCurrentTimeFormatted(header.getValidationTime()):null);
                             r.setCollectedDate(header.getCollection_time());
                             r.setCollectedTime(header.getCollection_time() != null ? header.getCollection_time().toLocalTime() : null);
                             r.setOrderNo(patient.getUhidNo());
