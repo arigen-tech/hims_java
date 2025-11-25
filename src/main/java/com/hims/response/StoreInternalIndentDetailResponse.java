@@ -19,4 +19,7 @@ public class StoreInternalIndentDetailResponse {
     private BigDecimal itemCost;
     private BigDecimal totalCost;
     private String issueStatus;
+    private String reason;
+    private String unitAuName;
+    private Long unitAUid;
 }

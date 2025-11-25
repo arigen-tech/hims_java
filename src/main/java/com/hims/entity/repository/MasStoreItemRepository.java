@@ -29,4 +29,6 @@ public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long>
     Optional<MasStoreItem> findByNomenclatureAndItemIdNot(String nomenclature, Long id);
 
     List<MasStoreItem> findByStatus(String y);
+
+    List<MasStoreItem> findByHospitalIdAndDepartmentId(Long hospitalId, Long currentDeptId);
 }

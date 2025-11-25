@@ -3,6 +3,7 @@ package com.hims.service;
 import com.hims.entity.MasDepartment;
 import com.hims.request.StoreInternalIndentRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.ROLItemResponse;
 import com.hims.response.StoreInternalIndentResponse;
 
 import java.util.List;
@@ -23,4 +24,7 @@ public interface StoreInternalIndentService {
     ApiResponse<StoreInternalIndentResponse> createIndentFromPrevious(Long previousIndentMId);
 
     public List<MasDepartment> getOtherFixedDepartmentsForCurrentUser();
+
+    ApiResponse<List<ROLItemResponse>> getROLItems();
+
 }

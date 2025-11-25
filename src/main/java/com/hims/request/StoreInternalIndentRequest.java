@@ -15,5 +15,7 @@ public class StoreInternalIndentRequest {
 //    private BigDecimal totalCost;      // optional - will be recalculated
 //    private String sourceType;         // "M"=Manual, "R"=ROL, "P"=Previous (optional)
 
+    private List<Long> deletedT;
+
     private List<StoreInternalIndentDetailRequest> items;
 }

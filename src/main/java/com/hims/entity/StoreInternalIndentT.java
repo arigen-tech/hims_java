@@ -50,4 +50,7 @@ public class StoreInternalIndentT {
 
     @Column(name = "issue_status", length = 2)
     private String issueStatus;
+
+    @Column(name = "reason", length = 200)
+    private String reason;
 }

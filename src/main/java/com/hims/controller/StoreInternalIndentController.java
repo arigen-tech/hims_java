@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasDepartment;
 import com.hims.request.StoreInternalIndentRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.ROLItemResponse;
 import com.hims.response.StoreInternalIndentResponse;
 import com.hims.service.StoreInternalIndentService;
 import com.hims.utils.ResponseUtils;
@@ -47,7 +48,7 @@ public class StoreInternalIndentController {
     /**
      * List indents of current department. Optional status filter ("S" or "Y")
      */
-    @GetMapping("/list")
+    @GetMapping("/getallindent")
     public ApiResponse<List<StoreInternalIndentResponse>> list(@RequestParam(value = "status", required = false) String status) {
         return indentService.listIndentsByCurrentDept(status);
     }
@@ -75,6 +76,11 @@ public class StoreInternalIndentController {
                 list,
                 new TypeReference<List<MasDepartment>>() {}
         );
+    }
+
+    @GetMapping("/rol-items")
+    public ApiResponse<List<ROLItemResponse>> getROLItems() {
+        return indentService.getROLItems();
     }
 
 }

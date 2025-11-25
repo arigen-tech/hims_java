@@ -36,6 +36,7 @@ public class StoreInternalIndentResponse {
     private String receivedBy;
     private LocalDateTime receivedDate;
 
+
     private String issueNo;
 
     private List<StoreInternalIndentDetailResponse> items;

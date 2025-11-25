@@ -87,6 +87,34 @@ public class MasStoreItem {
     @Column(name = "re_order_level_store")
     private Integer reOrderLevelStore;
 
+    @Column(name = "store_rol", precision = 19, scale = 0)
+    private BigDecimal storeROL;
+
+    @Column(name = "disp_rol", precision = 19, scale = 0)
+    private BigDecimal dispROL;
+
+    @Column(name = "ward_rol", precision = 19, scale = 0)
+    private BigDecimal wardROL;
+
+    @Column(name = "store_rol_manual", length = 10)
+    private String storeRoLManual;
+
+    @Column(name = "disp_rol_manual", length = 10)
+    private String dispRoLManual;
+
+    @Column(name = "ward_rol_manual", length = 10)
+    private String wardRoLManual;
+
+    @Column(name = "store_rol_auto", length = 10)
+    private String storeRoLAuto;
+
+    @Column(name = "disp_rol_auto", length = 10)
+    private String dispRoLAuto;
+
+    @Column(name = "ward_rol_auto", length = 10)
+    private String wardRoLAuto;
+
+
 
 
 

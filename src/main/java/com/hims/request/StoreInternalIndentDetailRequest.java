@@ -16,4 +16,5 @@ public class StoreInternalIndentDetailRequest {
 //    private BigDecimal itemCost;
 //    private BigDecimal totalCost;
     private String issueStatus;
+    private String reason;
 }
