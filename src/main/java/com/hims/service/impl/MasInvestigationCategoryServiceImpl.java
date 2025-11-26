@@ -73,7 +73,7 @@ public class MasInvestigationCategoryServiceImpl implements MasInvestigationCate
         try {
 
             List<MasInvestigationCategory> masInvestigationCategories =
-                    masInvestigationCategoryRepository.findAll();
+                    masInvestigationCategoryRepository.findAllByOrderByLastChgDateDesc();
             return ResponseUtils.createSuccessResponse(
                     convertList(masInvestigationCategories),
                     new TypeReference<>() {
