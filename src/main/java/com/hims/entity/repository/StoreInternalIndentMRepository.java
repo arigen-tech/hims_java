@@ -19,4 +19,11 @@ public interface StoreInternalIndentMRepository extends JpaRepository<StoreInter
     List<StoreInternalIndentM> findByFromDeptId_IdAndStatus(Long deptId, String status);
 
     List<StoreInternalIndentM> findByStatus(String status);
+
+
+    List<StoreInternalIndentM> findByStatusOrderByIndentMIdDesc(String status);
+    List<StoreInternalIndentM> findAllByOrderByIndentMIdDesc();
+
+
+    List<StoreInternalIndentM> findByFromDeptId_IdAndStatusIn(Long deptId, List<String> allowedStatuses);
 }

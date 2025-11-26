@@ -73,4 +73,7 @@ public class StoreInternalIndentM {
     @Column(name = "status", length = 50)
     private String status;
 
+    @Column(name = "remarks", length = 200)
+    private String remarks;
+
 }

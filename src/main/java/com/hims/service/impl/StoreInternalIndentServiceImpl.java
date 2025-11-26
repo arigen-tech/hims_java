@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.request.StoreInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentDetailRequest;
 import com.hims.request.StoreInternalIndentRequest;
 import com.hims.response.ApiResponse;
@@ -57,6 +58,126 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Transactional
     public ApiResponse<StoreInternalIndentResponse> submitIndent(StoreInternalIndentRequest request) {
         return processIndent(request, "Y"); // "Y" for Submit
+    }
+
+    // NEW: Approval/Rejection method
+    @Override
+    @Transactional
+    public ApiResponse<StoreInternalIndentResponse> approveRejectIndent(StoreInternalIndentApprovalRequest request) {
+        try {
+            StoreInternalIndentM indentM = indentMRepository.findById(request.getIndentMId())
+                    .orElseThrow(() -> new RuntimeException("Indent not found with ID: " + request.getIndentMId()));
+
+            // Validate current status - only pending indents (Y) can be approved/rejected
+            if (!"Y".equalsIgnoreCase(indentM.getStatus())) {
+                throw new RuntimeException("Only pending indents can be approved or rejected. Current status: " + indentM.getStatus());
+            }
+
+            User currentUser = authUtil.getCurrentUser();
+            String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
+
+            // Validate action
+            if (!"approved".equalsIgnoreCase(request.getAction()) && !"rejected".equalsIgnoreCase(request.getAction())) {
+                throw new RuntimeException("Invalid action. Must be 'approved' or 'rejected'");
+            }
+
+            // Update status based on action
+            String newStatus = "approved".equalsIgnoreCase(request.getAction()) ? "A" : "R";
+
+            indentM.setStatus(newStatus);
+            indentM.setApprovedBy(currentUserName);
+            indentM.setApprovedDate(LocalDateTime.now());
+            indentM.setRemarks(request.getRemarks());
+
+            // Handle items update if provided
+            if (request.getItems() != null && !request.getItems().isEmpty()) {
+                for (StoreInternalIndentDetailRequest itemReq : request.getItems()) {
+                    if (itemReq.getIndentTId() != null) {
+                        // Update existing item
+                        Optional<StoreInternalIndentT> existingDetail = indentTRepository.findById(itemReq.getIndentTId());
+                        if (existingDetail.isPresent()) {
+                            StoreInternalIndentT detail = existingDetail.get();
+
+                            // Verify this detail belongs to the current indent
+                            if (!detail.getIndentM().getIndentMId().equals(indentM.getIndentMId())) {
+                                throw new RuntimeException("Indent detail does not belong to this indent");
+                            }
+
+                            // Update fields if provided
+                            if (itemReq.getRequestedQty() != null) {
+                                detail.setRequestedQty(itemReq.getRequestedQty());
+                            }
+
+                            // Calculate and update current available stock
+                            Long currentStock = calculateCurrentStock(detail.getItemId().getItemId(), indentM.getFromDeptId().getId());
+                            detail.setAvailableStock(BigDecimal.valueOf(currentStock));
+
+                            if (itemReq.getReason() != null) {
+                                detail.setReason(itemReq.getReason());
+                            }
+
+                            indentTRepository.save(detail);
+                        }
+                    }
+                }
+            }
+
+            // Handle deleted items
+            handleDeletedItemsForApproval(request.getDeletedT(), indentM);
+
+            // Save the updated indent
+            indentM = indentMRepository.save(indentM);
+
+            // Build and return response
+            StoreInternalIndentResponse response = buildResponse(indentM);
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<StoreInternalIndentResponse>() {});
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null,
+                    new TypeReference<StoreInternalIndentResponse>() {},
+                    "Error processing indent: " + e.getMessage(), 400);
+        }
+    }
+    // Helper method for handling deleted items in approval
+    private void handleDeletedItemsForApproval(List<Long> deletedT, StoreInternalIndentM indentM) {
+        if (deletedT != null && !deletedT.isEmpty()) {
+            for (Long deletedId : deletedT) {
+                Optional<StoreInternalIndentT> toDelete = indentTRepository.findById(deletedId);
+                if (toDelete.isPresent() &&
+                        toDelete.get().getIndentM().getIndentMId().equals(indentM.getIndentMId())) {
+                    indentTRepository.deleteById(deletedId);
+                }
+            }
+        }
+    }
+
+    // Get all indents with status filter
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending() {
+        try {
+            // Only status Y (pending), ordered by indentMId desc
+            List<StoreInternalIndentM> indents =
+                    indentMRepository.findByStatusOrderByIndentMIdDesc("Y");
+
+            List<StoreInternalIndentResponse> responseList = new ArrayList<>();
+            for (StoreInternalIndentM indent : indents) {
+                responseList.add(buildResponse(indent));
+            }
+
+            return ResponseUtils.createSuccessResponse(
+                    responseList,
+                    new TypeReference<List<StoreInternalIndentResponse>>() {}
+            );
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<List<StoreInternalIndentResponse>>() {},
+                    "Error fetching pending indents: " + e.getMessage(),
+                    500
+            );
+        }
     }
 
     // Common method to process both save and submit
@@ -216,24 +337,25 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<List<StoreInternalIndentResponse>> listIndentsByCurrentDept(String status) {
+    public ApiResponse<List<StoreInternalIndentResponse>> listIndentsByCurrentDept() {
         Long deptId = authUtil.getCurrentDepartmentId();
         if (deptId == null) {
             throw new RuntimeException("Current department id not found in token");
         }
 
-        List<StoreInternalIndentM> list;
-        if (status != null && !status.isEmpty()) {
-            list = indentMRepository.findByFromDeptId_IdAndStatus(deptId, status);
-        } else {
-            list = indentMRepository.findByFromDeptId_Id(deptId);
-        }
+        List<String> allowedStatuses = Arrays.asList("S", "Y");
+        List<StoreInternalIndentM> list =
+                indentMRepository.findByFromDeptId_IdAndStatusIn(deptId, allowedStatuses);
 
         List<StoreInternalIndentResponse> respList = new ArrayList<>();
         for (StoreInternalIndentM m : list) {
             respList.add(buildResponse(m));
         }
-        return ResponseUtils.createSuccessResponse(respList, new TypeReference<List<StoreInternalIndentResponse>>() {});
+
+        return ResponseUtils.createSuccessResponse(
+                respList,
+                new TypeReference<List<StoreInternalIndentResponse>>() {}
+        );
     }
 
     // Create from ROL
@@ -347,6 +469,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         res.setReceivedBy(m.getReceivedBy());
         res.setReceivedDate(m.getReceivedDate());
         res.setIssueNo(m.getIssueNo());
+        res.setRemark(m.getRemarks()); // Add remarks to response
 
         return res;
     }
@@ -448,9 +571,6 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         }
     }
 
-
-
-
     private Long calculateCurrentStock(Long itemId, Long departmentId) {
         try {
             LocalDate today = LocalDate.now();
@@ -471,8 +591,6 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             return 0L;
         }
     }
-
-
 
     private Integer getReorderLevelForDepartment(MasStoreItem item, Long departmentId) {
         // ward pharmacy
@@ -500,18 +618,4 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 ? item.getStoreROL().intValue()
                 : (item.getWardROL() != null ? item.getWardROL().intValue() : null);
     }
-
-
-//    private Integer getExpiryDaysForDepartment(Long departmentId) {
-//        if (departmentId.equals(departmentConfig.getType().getStore())) {
-//            return departmentConfig.getStockExpiry().getStore();
-//        } else if (departmentId.equals(departmentConfig.getType().getDispensary())) {
-//            return departmentConfig.getStockExpiry().getDispensary();
-//        } else if (departmentId.equals(departmentConfig.getType().getWard())) {
-//            return departmentConfig.getStockExpiry().getWard();
-//        } else {
-//            return departmentConfig.getStockExpiry().getGeneral();
-//        }
-//    }
-
 }

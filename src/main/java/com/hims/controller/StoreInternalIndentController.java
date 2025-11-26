@@ -2,6 +2,7 @@ package com.hims.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasDepartment;
+import com.hims.request.StoreInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.ROLItemResponse;
@@ -49,9 +50,10 @@ public class StoreInternalIndentController {
      * List indents of current department. Optional status filter ("S" or "Y")
      */
     @GetMapping("/getallindent")
-    public ApiResponse<List<StoreInternalIndentResponse>> list(@RequestParam(value = "status", required = false) String status) {
-        return indentService.listIndentsByCurrentDept(status);
+    public ApiResponse<List<StoreInternalIndentResponse>> list() {
+        return indentService.listIndentsByCurrentDept();
     }
+
 
     /**
      * Create indent from ROL (body contains items or backend can compute them)
@@ -82,5 +84,18 @@ public class StoreInternalIndentController {
     public ApiResponse<List<ROLItemResponse>> getROLItems() {
         return indentService.getROLItems();
     }
+
+
+
+    @PostMapping("/approve")
+    public ApiResponse<StoreInternalIndentResponse> approveRejectIndent(@RequestBody StoreInternalIndentApprovalRequest request) {
+        return indentService.approveRejectIndent(request);
+    }
+
+    @GetMapping("/getallindentforpending")
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending() {
+        return indentService.getAllIndentsForPending();
+    }
+
 
 }

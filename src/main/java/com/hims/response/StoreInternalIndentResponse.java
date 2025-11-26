@@ -39,5 +39,7 @@ public class StoreInternalIndentResponse {
 
     private String issueNo;
 
+    private String remark;
+
     private List<StoreInternalIndentDetailResponse> items;
 }

@@ -1,6 +1,7 @@
 package com.hims.service;
 
 import com.hims.entity.MasDepartment;
+import com.hims.request.StoreInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.ROLItemResponse;
@@ -17,7 +18,8 @@ public interface StoreInternalIndentService {
 
     ApiResponse<StoreInternalIndentResponse> getIndentById(Long indentMId);
 
-    ApiResponse<List<StoreInternalIndentResponse>> listIndentsByCurrentDept(String status);
+    ApiResponse<List<StoreInternalIndentResponse>> listIndentsByCurrentDept();
+
 
     // Import endpoints
     ApiResponse<StoreInternalIndentResponse> createIndentFromROL(StoreInternalIndentRequest baseRequest);
@@ -26,5 +28,8 @@ public interface StoreInternalIndentService {
     public List<MasDepartment> getOtherFixedDepartmentsForCurrentUser();
 
     ApiResponse<List<ROLItemResponse>> getROLItems();
+
+    ApiResponse<StoreInternalIndentResponse> approveRejectIndent(StoreInternalIndentApprovalRequest request);
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending();
 
 }
