@@ -502,6 +502,59 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     }
 
     // ================================Rol=============================
+//    @Override
+//    @Transactional(readOnly = true)
+//    public ApiResponse<List<ROLItemResponse>> getROLItems() {
+//        try {
+//            Long currentDeptId = authUtil.getCurrentDepartmentId();
+//            Long hospitalId = authUtil.getCurrentUser().getHospital().getId();
+//
+//            if (currentDeptId == null) {
+//                return ResponseUtils.createFailureResponse(
+//                        null,
+//                        new TypeReference<List<ROLItemResponse>>() {},
+//                        "Current department id not found in token",
+//                        400
+//                );
+//            }
+//
+//            // Fetch ACTIVE items for this hospital + department
+//            List<MasStoreItem> allItems =
+//                    masStoreItemRepository.findByStatusIgnoreCaseAndHospitalIdAndDepartmentId(
+//                            "y", hospitalId, currentDeptId
+//                    );
+//
+//            List<ROLItemResponse> rolItems = new ArrayList<>();
+//
+//            for (MasStoreItem item : allItems) {
+//                Long currentStock = calculateCurrentStock(item.getItemId(), currentDeptId);
+//                Integer reorderLevel = getReorderLevelForDepartment(item, currentDeptId);
+//
+//                // Calculate stocks for different departments
+//                Long storeStock = calculateStockForDepartment(item.getItemId(), departmentConfig.getStoreId());
+//                Long wardStock = calculateStockForDepartment(item.getItemId(), departmentConfig.getWardPharmacyId());
+//                Long dispStock = calculateStockForDepartment(item.getItemId(), departmentConfig.getDispensaryId());
+//
+//                if (reorderLevel != null && reorderLevel > 0 && currentStock <= reorderLevel) {
+//                    rolItems.add(new ROLItemResponse(item, currentStock, reorderLevel, storeStock, wardStock, dispStock));
+//                }
+//            }
+//
+//            return ResponseUtils.createSuccessResponse(
+//                    rolItems,
+//                    new TypeReference<List<ROLItemResponse>>() {}
+//            );
+//        } catch (Exception e) {
+//            return ResponseUtils.createFailureResponse(
+//                    null,
+//                    new TypeReference<List<ROLItemResponse>>() {},
+//                    "Error fetching ROL items: " + e.getMessage(),
+//                    500
+//            );
+//        }
+//    }
+
+
     @Override
     @Transactional(readOnly = true)
     public ApiResponse<List<ROLItemResponse>> getROLItems() {
@@ -518,6 +571,11 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 );
             }
 
+            // Get items that were EVER indented by this department
+            List<Long> indentedItemIds = getIndentedItemIds(currentDeptId);
+
+            System.out.println("Excluding " + indentedItemIds.size() + " previously indented items from ROL");
+
             // Fetch ACTIVE items for this hospital + department
             List<MasStoreItem> allItems =
                     masStoreItemRepository.findByStatusIgnoreCaseAndHospitalIdAndDepartmentId(
@@ -527,6 +585,11 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             List<ROLItemResponse> rolItems = new ArrayList<>();
 
             for (MasStoreItem item : allItems) {
+                // Skip if this item was EVER indented by this department
+                if (indentedItemIds.contains(item.getItemId())) {
+                    continue;
+                }
+
                 Long currentStock = calculateCurrentStock(item.getItemId(), currentDeptId);
                 Integer reorderLevel = getReorderLevelForDepartment(item, currentDeptId);
 
@@ -539,6 +602,8 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     rolItems.add(new ROLItemResponse(item, currentStock, reorderLevel, storeStock, wardStock, dispStock));
                 }
             }
+
+            System.out.println("Returning " + rolItems.size() + " ROL items after permanent filtering");
 
             return ResponseUtils.createSuccessResponse(
                     rolItems,
@@ -553,6 +618,27 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             );
         }
     }
+
+    private List<Long> getIndentedItemIds(Long departmentId) {
+        try {
+            List<String> statuses = Arrays.asList("S", "Y", "A");
+
+            List<Long> indentedItems = indentTRepository.findIndentedItemIds(
+                    departmentId,
+                    statuses
+            );
+
+            return indentedItems != null ? indentedItems : new ArrayList<>();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+
+
+
 
     // Helper method to calculate stock for specific department
     private Long calculateStockForDepartment(Long itemId, Long departmentId) {
