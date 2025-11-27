@@ -12,6 +12,7 @@ import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,12 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
 
     @Autowired
     private OpdTemplateInvestigationRepository opdTempInvestRepo;
+
+    @Autowired
+    private  StoreItemBatchStockRepository storeItemBatchStockRepository;
+
+    @Autowired
+    private MasStoreItemRepository masStoreItemRepository;
 
     @Autowired
     private MasDepartmentRepository departmentRepo;
@@ -64,6 +71,9 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
 
     @Autowired
     private OpdTemplateTreatmentRepository opdTemplateTreatmentRepository;
+
+    @Value("${hos.define.dayOfExparyDrug}")
+    private Integer hospDefinedDays;
 
     public OpdTemplateServiceImpl(RandomNumGenerator randomNumGenerator) {
         this.randomNumGenerator = randomNumGenerator;
@@ -341,6 +351,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             opir.setTemplateInvestigationId(template.getTemplateInvestigationId());
             opir.setOpdTemplateId(template.getOpdTemplateId() != null ? template.getOpdTemplateId().getTemplateId() : null);
             opir.setInvestigationId(template.getInvestigationId() != null ? template.getInvestigationId().getInvestigationId() : null);
+            opir.setInvestigationName(template.getInvestigationId() != null ? template.getInvestigationId().getInvestigationName() : null);
             return opir;
         }).collect(Collectors.toList());
         opr.setInvestigationResponseList(opdTempInvestResponses);
@@ -578,6 +589,49 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             tr.setInstruction(t.getInstruction());
             tr.setFrequencyId(t.getFrequency() != null ? t.getFrequency().getFrequency_id() : null);
             tr.setItemId(t.getItem() != null ? t.getItem().getItemId() : null);
+            tr.setDispU(t.getItem() != null ? t.getItem().getDispUnit().getUnitName() : null);
+            tr.setItemName(t.getItem() != null ? t.getItem().getNomenclature() : null);
+            if (t.getItem() == null) {
+                tr.setStocks(0L);
+            } else {
+
+                Optional<MasStoreItem> itemOpt = masStoreItemRepository.findById(t.getItem().getItemId());
+
+                if (itemOpt.isEmpty()) {
+                    tr.setStocks(0L);
+                } else {
+
+                    MasStoreItem itemEntity = itemOpt.get();
+
+                    List<StoreItemBatchStock> stockList =
+                            storeItemBatchStockRepository.findByItemId(itemEntity);
+
+                    if (stockList == null || stockList.isEmpty()) {
+                        tr.setStocks(0L);
+                    } else {
+
+                        //filter expiryDate > today + hospDefinedDays
+                        int hospDays = hospDefinedDays;
+                        LocalDate threshold = LocalDate.now().plusDays(hospDays);
+
+                        List<StoreItemBatchStock> validStockList = stockList.stream()
+                                .filter(s ->
+                                        s.getExpiryDate() != null &&
+                                                s.getExpiryDate().isAfter(threshold)
+                                )
+                                .collect(Collectors.toList());
+
+                        // sum closing stock for valid batches
+                        long totalClosingStock = validStockList.stream()
+                                .mapToLong(s -> s.getClosingStock() != null ? s.getClosingStock() : 0L)
+                                .sum();
+
+                        tr.setStocks(totalClosingStock);
+
+                    }
+                }
+            }
+
             return tr;
         }).collect(Collectors.toList()));
 

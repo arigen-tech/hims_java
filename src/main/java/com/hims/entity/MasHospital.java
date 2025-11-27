@@ -33,6 +33,13 @@ public class MasHospital {
     @Column(name = "status", nullable = false, length = 1)
     private String status;
 
+    @Column(name = "medicine_billing", nullable = false, length = 1)
+    private String medicineBilling;
+
+    @Column(name = "lab_billing", nullable = false, length = 1)
+    private String labBilling;
+
+
     @Size(max = 50)
     @Column(name = "address", length = 50)
     private String address;

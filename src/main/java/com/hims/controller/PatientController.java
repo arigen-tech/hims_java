@@ -7,12 +7,11 @@ import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.request.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.OpdPatientRecallResponce;
-import com.hims.response.PatientRegFollowUpResp;
+import com.hims.response.*;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.service.PatientService;
 import com.hims.utils.ResponseUtils;
+import com.hims.utils.StockFound;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +23,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @Tag(name = "PatientController", description = "This controller is used for any Patient Related task.")
@@ -38,6 +39,7 @@ public class PatientController {
 
     @Autowired
     private OpdPatientDetailService opdPatientDetailService;
+
 
 
     @PostMapping("/register")
@@ -112,11 +114,31 @@ public class PatientController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/activeVisit")
-    public ResponseEntity<ApiResponse<List<Visit>>> getActiveVisits() {
-        ApiResponse<List<Visit>> response = opdPatientDetailService.getActiveVisits();
+
+    @PutMapping("/update-recall-patient")
+    public ResponseEntity<ApiResponse<OpdPatientDetail>> updateRecallOpdPatient(
+            @Valid @RequestBody RecallOpdPatientDetailRequest request) {
+
+        ApiResponse<OpdPatientDetail> response = opdPatientDetailService.recallOpdPatientDetail(request);
+
         return ResponseEntity.ok(response);
     }
+
+
+//    @GetMapping("/activeVisit")
+//    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> getActiveVisits() {
+//        ApiResponse<List<OpdPatientDetailsWaitingresponce>> response = opdPatientDetailService.getActiveVisits();
+//        return ResponseEntity.ok(response);
+//    }
+
+    @PostMapping("/activeVisit/search")
+    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> searchActiveVisits(
+            @RequestBody ActiveVisitSearchRequest request
+    ) {
+        return ResponseEntity.ok(opdPatientDetailService.getActiveVisitsWithFilters(request));
+    }
+
+
 
     @GetMapping("/recallVisit")
     public ResponseEntity<ApiResponse<List<OpdPatientRecallResponce>>> getRecallVisits(
@@ -129,5 +151,6 @@ public class PatientController {
 
         return ResponseEntity.ok(response);
     }
+
 
 }

@@ -11,5 +11,8 @@ public  class TreatmentResponse {
     private String instruction;
     private Long frequencyId;
     private Long itemId;
+    private String itemName;
+    private String dispU;
+    private Long stocks;
 }
 

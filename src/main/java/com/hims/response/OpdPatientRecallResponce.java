@@ -27,6 +27,7 @@ public class OpdPatientRecallResponce {
     private String docterName;
     private Long visitId;
     private Long patientId;
+    private Long hospitalId;
 
     //============================== For OpdPatientDetails ==================================
 
@@ -53,14 +54,14 @@ public class OpdPatientRecallResponce {
 
     //=============diagnosis============
     private String workingDiag;
-    private List<String> icdDiag;
+    private List<IcdDiagnosis> icdDiag;
 
 
     //==================== Investigation ==================
     private String labFlag;
     private String radioFlag;
-    private NewDgOrderHd dgOrderHd;
-    private List<NewDgOrderDt> dgOrderDts;
+    private List<NewDgOrderHd> dgOrderHdList;
+
 
     //======================== Treatment ====================
     private NewDPatientPrescriptionHd patientPrescriptionHd;
@@ -77,6 +78,8 @@ public class OpdPatientRecallResponce {
         private String collectionStatus;
         private String paymentStatus;
         private LocalDate appointmentDate ;
+        private List<NewDgOrderDt> dgOrderDts;
+
     }
 
     //=========================== DgOrderDt =====================
@@ -87,10 +90,10 @@ public class OpdPatientRecallResponce {
         private int orderQty;
         private String orderStatus;
         private LocalDate appointmentDate;
-        private DgMasInvestigation investigationId;
+        private Long investigationId;
         private String billingStatus;
-        private DgInvestigationPackage packageId;
-        private BillingHeader billingHd;
+        private Long packageId;
+        private Integer billingHd;
         private String investigationName;
     }
 
@@ -111,10 +114,21 @@ public class OpdPatientRecallResponce {
         private String status;
         private String dosage;
         private String frequency;
+        private Long frequencyId;
+        private String depUnit;
         private Integer days;
         private BigDecimal total;
         private String instraction;
         private Long itemId;
         private String itemName;
+        private Long stocks;
+    }
+
+    @Getter
+    @Setter
+    public static class IcdDiagnosis{
+        private Long id;
+        private Long icdId;
+        private String icdDiagName;
     }
 }

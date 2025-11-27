@@ -7,6 +7,7 @@ import com.hims.service.*;
 import com.hims.service.impl.UserDepartmentServiceImpl;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,9 @@ public class MasterController {
     private MasServiceCategoryService masServiceCategoryService;
     @Autowired
     private MasServiceOpdService masServiceOpdService;
+
+    @Autowired
+    private MasIcdService masIcdService;
     @Autowired
     private MasApplicationService masApplicationService;
     @Autowired
@@ -1414,6 +1418,24 @@ public class MasterController {
         ApiResponse<MasInvestigationMethodologyResponse > response = masInvestigationMethodologyService.findById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+
+
+//    ===============================Mas Icd=====================================
+//    @GetMapping("/masIcd/all/{flag}")
+//    public ApiResponse<List<MasIcdResponse>> getAllIcds(@PathVariable int flag) {
+//        return masIcdService.getAllIcds(flag);
+//    }
+
+    @GetMapping("/masIcd/all")
+    public ApiResponse<Page<MasIcdResponse>> getAllIcd(
+            @RequestParam int flag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return masIcdService.getAllIcd(flag, page, size);
+    }
+
 
 
 }

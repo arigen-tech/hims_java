@@ -73,8 +73,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     JOIN patient p ON p.patient_id = v.patient_id
     WHERE v.visit_status = 'c'
       AND (
-            :visitDate IS NULL
-            OR DATE(v.visit_date) = :visitDate
+            CAST(:visitDate AS DATE) IS NULL
+            OR DATE(v.visit_date) = CAST(:visitDate AS DATE)
       )
       AND (
             :mobile = '' 
@@ -92,5 +92,32 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("mobile") String mobile,
             @Param("name") String name
     );
+
+
+    @Query(value = """
+SELECT v.* FROM visit v
+JOIN patient p ON p.patient_id = v.patient_id
+WHERE v.visit_status = 'n'
+  AND v.billing_status = 'y'
+  AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
+  AND (:sessionId IS NULL OR v.session_id = :sessionId)
+  AND (:employeeNo IS NULL OR p.uhid_no = :employeeNo)
+  AND (
+        :patientName IS NULL OR
+        LOWER(
+            CAST(p.p_fn AS VARCHAR) || ' ' ||
+            CAST(p.p_mn AS VARCHAR) || ' ' ||
+            CAST(p.p_ln AS VARCHAR)
+        ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+      )
+""",
+            nativeQuery = true)
+    List<Visit> findActiveVisitsWithFilters(
+            @Param("doctorId") Long doctorId,
+            @Param("sessionId") Long sessionId,
+            @Param("employeeNo") String employeeNo,
+            @Param("patientName") String patientName
+    );
+
 
 }

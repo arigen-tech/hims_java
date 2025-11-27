@@ -39,6 +39,9 @@ public class PatientPrescriptionHd {
     @Column(name = "status", nullable = false, length = 1)
     private String status = "N";
 
+    @Column(name = "billing_status", nullable = false, length = 1)
+    private String billingStatus;
+
     @Column(name = "created_by", nullable = false, length = 200)
     private String createdBy;
 

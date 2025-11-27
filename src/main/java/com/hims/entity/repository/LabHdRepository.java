@@ -23,6 +23,9 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
 
     List<DgOrderHd> findByPaymentStatusInAndOrderStatusIn(List<String> paymentStatuses, List<String> orderStatusFilter);
 
+    List<DgOrderHd> findAllByVisitId(Visit visit);
+
+
     @Query("SELECT o FROM DgOrderHd o " +
             "JOIN FETCH o.patientId p " +
             "JOIN FETCH o.visitId v " +

@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface PatientPrescriptionDtRepository extends JpaRepository<PatientPrescriptionDt, Long> {
     List<PatientPrescriptionDt> findByPrescriptionHdId(Long prescriptionHdId);
+
+    void deleteByPrescriptionHdId(Long prescriptionHdId);
 }

@@ -2,7 +2,6 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasRole;
-import com.hims.entity.MasStoreItem;
 import com.hims.entity.User;
 import com.hims.entity.UserDepartment;
 import com.hims.entity.repository.MasDepartmentRepository;
@@ -18,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -92,6 +92,49 @@ public class UserServiceImpl implements UserService {
                 }
             }
         }
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    }
+
+
+    @Override
+    public ApiResponse<List<UserResponse>> getAllDoctors() {
+
+        List<UserResponse> response = new ArrayList<>();
+
+        // Fetch DOCTOR role
+        Optional<MasRole> doctorRole = masRoleRepository.findByRoleDesc("DOCTOR");
+        if (doctorRole.isEmpty()) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "No role for Doctor Found", 500);
+        }
+
+        Long doctorRoleId = doctorRole.get().getId();
+
+        // Fetch all users
+        List<User> allUsers = userRepository.findAll();
+
+        for (User user : allUsers) {
+            if (user.getRoleId() != null) {
+
+                // Convert comma-separated role IDs → List<Long>
+                List<Long> roleIds = Arrays.stream(user.getRoleId().split(","))
+                        .map(String::trim)
+                        .map(Long::valueOf)
+                        .collect(Collectors.toList());
+
+                // Only DOCTOR users
+                if (roleIds.contains(doctorRoleId)) {
+                    UserResponse doctor = new UserResponse();
+                    doctor.setFirstName(user.getFirstName());
+                    doctor.setMiddleName(user.getMiddleName());
+                    doctor.setLastName(user.getLastName());
+                    doctor.setUserId(user.getUserId());
+
+                    response.add(doctor);
+                }
+            }
+        }
+
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
     }
 

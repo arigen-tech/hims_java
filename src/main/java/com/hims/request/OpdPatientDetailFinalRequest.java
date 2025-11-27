@@ -48,7 +48,7 @@ public class OpdPatientDetailFinalRequest {
 
     // ======================== Diagnosis ========================
     private String workingDiag;
-    private List<String> icdDiag;
+    private List<IcdDiagnosis> icdDiag;
 
     // ======================== Clinical History =================
     private String pastMedicalHistory;
@@ -79,6 +79,14 @@ public class OpdPatientDetailFinalRequest {
     private Long doctorId;
 
     // ======================== Inner Class ======================
+
+    @Getter
+    @Setter
+    public static class IcdDiagnosis{
+        private Long icdId;
+        private String icdDiagName;
+    }
+
     @Getter
     @Setter
     public static class Investigation {
