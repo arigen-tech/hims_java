@@ -137,12 +137,12 @@ public class ResultServiceImpl implements ResultService {
                 header.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
 //                Optional<DgOrderHd> dgOrderH=labHdRepository.findById(Math.toIntExact(request.getPatientId()));
 //                header.setOrderHd(dgOrderH.get());
-                Optional<DgOrderHd> dgOrderH = labHdRepository.findByPatientId_Id(request.getPatientId());
+               // Optional<DgOrderHd> dgOrderH = labHdRepository.findByPatientId_IdAndOrderstatusN(request.getPatientId(),"n");
+                DgOrderHd dgOrderH=labHdRepository.findByPatientId_IdAndVisitId_Id(request.getPatientId(),request.getVisitId());
+//                DgOrderHd orderHd = dgOrderH.orElseThrow(() ->
+//                        new RuntimeException("No order found for patient ID: " + request.getPatientId()));
 
-                DgOrderHd orderHd = dgOrderH.orElseThrow(() ->
-                        new RuntimeException("No order found for patient ID: " + request.getPatientId()));
-
-                header.setOrderHd(orderHd);
+                header.setOrderHd(dgOrderH);
                 header.setHinId(patientRepository.findById(request.getPatientId()).orElse(null));
                 header.setMainChargecodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
                 header.setSubChargeCodeId(subChargeRepo.findById(request.getSubChargeCodeId()).orElse(null));
