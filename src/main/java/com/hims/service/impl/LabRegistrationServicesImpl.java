@@ -85,6 +85,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     private DgMasCollectionRepository dgMasCollectionRepository;
     @Autowired
     private MasMainChargeCodeRepository masMainChargeCodeRepository;
+    @Autowired
+    private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
     @Value("${app.pending.days}")
     private int pendingDays;
@@ -1084,7 +1086,10 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                                     Long.valueOf(subChargeCodeId)
                             );
             DgSampleCollectionHeader header;
-
+            Optional<Visit> visit = visitRepository.findById((long) sampleReq.getVisitId());
+            if (visit.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("Visit not found", 404);
+            }
             if (existingHeaderOpt.isPresent()) {
                 // REUSE EXISTING HEADER (MERGE)
                 header = existingHeaderOpt.get();
@@ -1092,10 +1097,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                 // CREATE NEW HEADER
                 header = new DgSampleCollectionHeader();
 
-                Optional<Visit> visit = visitRepository.findById((long) sampleReq.getVisitId());
-                if (visit.isEmpty()) {
-                    return ResponseUtils.createNotFoundResponse("Visit not found", 404);
-                }
+
 
                 header.setVisitId(visit.get());
                 header.setPatientId(visit.get().getPatient());
@@ -1139,6 +1141,13 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
 
                 detail.setEmpanelledStatus(detailReq.getEmpanelledStatus());
 
+                LabTurnAroundTime labTurnAroundTime=new LabTurnAroundTime();
+                labTurnAroundTime.setInvestigation(masInvestigation.get());
+                labTurnAroundTime.setOrderHd(labHdRepository.findById(sampleReq.getOrderHdId()).get());
+                labTurnAroundTime.setPatient(visit.get().getPatient());
+                labTurnAroundTime.setSampleCollectionDateTime(LocalDateTime.now());
+                labTurnAroundTime.setSampleCollectedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                labTurnAroundTimeRepository.save( labTurnAroundTime);
                 Optional<DgMasSample> dgMasSample =
                         dgMasSampleRepository.findById((long) detailReq.getSampleId());
                 detail.setSampleId(dgMasSample.orElse(null));
