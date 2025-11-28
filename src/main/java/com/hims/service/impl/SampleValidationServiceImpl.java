@@ -16,10 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,6 +39,9 @@ DgNormalValueRepository dgNormalValueRepository;
     LabHdRepository labHdRepository;
 @Autowired
 DgFixedValueRepository dgFixedValueRepository;
+
+@Autowired
+private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
     @Autowired
     AuthUtil authUtil;
 
@@ -96,7 +96,19 @@ DgFixedValueRepository dgFixedValueRepository;
                 boolean accepted = Boolean.TRUE.equals(req.getAccepted());
 
                 // 2) UPDATE SAMPLE COLLECTION DETAILS
-                String detailStatus = accepted ? "y" : "r";
+
+                int orderHdId = header.getVisitId().getBillingHd().getHdorder().getId();
+
+                LabTurnAroundTime labTurnAroundTime = labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_Id(orderHdId, investigationId, header.getPatientId().getId());
+                String detailStatus;
+                if(accepted){
+                    detailStatus="y";
+                    labTurnAroundTime.setIsReject(false);
+                }else{
+                    detailStatus="r";
+                    labTurnAroundTime.setIsReject(true);
+                }
+//                String detailStatus = accepted ? "y" : "r";
                 detailsRepo.updateValidation(details.getSampleCollectionDetailsId(), detailStatus);
 
                 // 🔥 VERY IMPORTANT FIX — to ensure header sees updated statuses
@@ -113,6 +125,14 @@ DgFixedValueRepository dgFixedValueRepository;
                     details.setRejected_reason(null);
                     details.setOldSampleCollectionHdIdForReject(null);
                 }
+
+
+
+
+                labTurnAroundTime.setSampleValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                labTurnAroundTime.setSampleValidatedDateTime(LocalDateTime.now());
+
+
                 detailsRepo.save(details);
 
                 // 3) IF REJECTED → UPDATE ORDERDT
@@ -147,6 +167,8 @@ DgFixedValueRepository dgFixedValueRepository;
             boolean allAccepted = headerStatuses.stream().allMatch(s -> s.equals("y"));
             boolean allRejected = headerStatuses.stream().allMatch(s -> s.equals("r"));
 
+
+
             String finalHeaderStatus =
                     allAccepted ? "y" :
                             allRejected ? "r" :
@@ -165,7 +187,16 @@ DgFixedValueRepository dgFixedValueRepository;
             header.setValidation_date(LocalDate.now());
             header.setValidationTime(Instant.now());
             header.setValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+
+
+            //LabTurnAroundTime Set
+
+            LabTurnAroundTime labTurnAroundTime= new LabTurnAroundTime();
+            labTurnAroundTime.setSampleValidatedBy(currentUser.getFirstName()+" "+currentUser);
+
             headerRepo.save(header);
+
+
 
             // 6) UPDATE ORDERHD STATUS
             DgOrderHd orderHd =
