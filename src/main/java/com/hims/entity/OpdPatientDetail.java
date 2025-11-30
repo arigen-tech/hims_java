@@ -87,6 +87,12 @@ public class OpdPatientDetail {
     @Column(name = "family_history", length = Integer.MAX_VALUE)
     private String familyHistory;
 
+    @Column(name = "patient_signs_symptoms", length = Integer.MAX_VALUE)
+    private String patientSignsSymptoms;
+
+    @Column(name = "clinical_examination", length = Integer.MAX_VALUE)
+    private String clinicalExamination;
+
     @Column(name = "treatment_advice", length = Integer.MAX_VALUE)
     private String treatmentAdvice;
 
@@ -156,5 +162,7 @@ public class OpdPatientDetail {
     @Size(max = 200)
     @Column(name = "last_chg_by", length = 200)
     private String lastChgBy;
+
+
 
 }

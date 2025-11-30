@@ -15,7 +15,8 @@ public class MasStoreItemResponse2 {
     private String dispUnit;
     private BigDecimal hsnGstPercentage;
     private String HsnCode;
-
+    private String itemClassName;
+    private BigDecimal aDispQty;
 
 
 }

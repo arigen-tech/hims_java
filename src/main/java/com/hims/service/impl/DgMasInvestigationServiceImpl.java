@@ -6,6 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.DgMasInvestigationService;
+import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,15 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     @Autowired
     private DgNormalValueRepository normalRepo;
 
+    @Autowired
+    private MasInvestigationCategoryRepository micRepo;
+
+    @Autowired
+    private MasInvestigationMethodologyRepository mimRepo;
+
+    @Autowired
+    private AuthUtil authUtil;
+
     @Value("${investigation.mainChargecodeId}")
     private Long mainChargecodeId;
 
@@ -82,6 +92,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 
     @Override
     public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag) {
+//        long startTime = System.currentTimeMillis();
         try {
             List<DgMasInvestigation> investigationList;
             if (flag == 1) {
@@ -97,25 +108,54 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 );
             }
 
-            if (investigationList == null) {
-                investigationList = new ArrayList<>();
+            if (investigationList == null || investigationList.isEmpty()) {
+                return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
             }
+
+            List<Long> investigationIds = investigationList.stream()
+                    .map(DgMasInvestigation::getInvestigationId)
+                    .collect(Collectors.toList());
+
+            List<DgSubMasInvestigation> allSubList =
+                    subInvestigationRepo.findByInvestigationId_InvestigationIdIn(investigationIds);
+
+            List<DgFixedValue> allFixedList =
+                    fixedRepo.findBySubInvestigationId_InvestigationId_InvestigationIdIn(investigationIds);
+
+            List<DgNormalValue> allNormalList =
+                    normalRepo.findBySubInvestigationId_InvestigationId_InvestigationIdIn(investigationIds);
+
+
+            Map<Long, List<DgSubMasInvestigation>> subMap = allSubList.stream()
+                    .collect(Collectors.groupingBy(sub -> sub.getInvestigationId().getInvestigationId()));
+
+            Map<Long, List<DgFixedValue>> fixedMap = allFixedList.stream()
+                    .collect(Collectors.groupingBy(f -> f.getSubInvestigationId().getInvestigationId().getInvestigationId()));
+
+            Map<Long, List<DgNormalValue>> normalMap = allNormalList.stream()
+                    .collect(Collectors.groupingBy(n -> n.getSubInvestigationId().getInvestigationId().getInvestigationId()));
+
 
             List<DgMasInvestigationResponse> responseList = investigationList.stream()
                     .map(masInvest -> {
-                        // fetch related entities for this masInvest
-                        List<DgSubMasInvestigation> subList = subInvestigationRepo.findByInvestigationId(masInvest.getInvestigationId());
-                        List<DgFixedValue> fixedList = fixedRepo.findBySubInvestigationId_InvestigationId(masInvest);
-                        List<DgNormalValue> normalList = normalRepo.findBySubInvestigationId_InvestigationId(masInvest);
-
-                        // map to response
-                        return mapToResponseMulti(masInvest, subList, fixedList, normalList);
+                        Long id = masInvest.getInvestigationId();
+                        return mapToResponseMulti(
+                                masInvest,
+                                subMap.getOrDefault(id, Collections.emptyList()),
+                                fixedMap.getOrDefault(id, Collections.emptyList()),
+                                normalMap.getOrDefault(id, Collections.emptyList())
+                        );
                     })
                     .collect(Collectors.toList());
 
+//            long endTime = System.currentTimeMillis();
+//            log.info("getAllInvestigations executed successfully in {} ms", endTime - startTime);
+
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
         } catch (Exception e) {
-            e.printStackTrace();
+//            long endTime = System.currentTimeMillis();
+//            log.error("getAllInvestigations failed after {} ms. Error: {}", endTime - startTime, e.getMessage(), e);
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},
@@ -180,14 +220,22 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             masInvestigation.setMinNormalValue(investigationRequest.getMinNormalValue());
             Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(investigationRequest.getMainChargeCodeId());
             masInvestigation.setMainChargeCodeId(mmcc.get());
-            Optional<DgUom> du = uomRepo.findById(investigationRequest.getUomId());
-            masInvestigation.setUomId(du.get());
+            if(investigationRequest.getUomId()!=null){
+                Optional<DgUom> du = uomRepo.findById(investigationRequest.getUomId());
+                masInvestigation.setUomId(du.orElseThrow());
+            }else{
+                masInvestigation.setUomId(null);
+            }
             Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(investigationRequest.getSubChargeCodeId());
             masInvestigation.setSubChargeCodeId(mscc.get());
             Optional<DgMasSample> dms = sampleRepo.findById(investigationRequest.getSampleId());
             masInvestigation.setSampleId(dms.get());
             Optional<DgMasCollection> dmc = collectionRepo.findById(investigationRequest.getCollectionId());
             masInvestigation.setCollectionId(dmc.get());
+            Optional<MasInvestigationCategory> mic = micRepo.findById(investigationRequest.getCategoryId());
+            masInvestigation.setCategoryId(mic.get());
+            Optional<MasInvestigationMethodology> mim = mimRepo.findById(investigationRequest.getMethodId());
+            masInvestigation.setMethodId(mim.get());
 //            masInvestigation.setMultipleResults(investigationRequest.getMultipleResults());
 //            masInvestigation.setQuantity(investigationRequest.getQuantity());
 //            masInvestigation.setNormalValue(investigationRequest.getNormalValue());
@@ -201,7 +249,6 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 //            masInvestigation.setBloodBankScreenTest(investigationRequest.getBloodBankScreenTest());
 //            masInvestigation.setInstructions(investigationRequest.getInstructions());
 //            masInvestigation.setDiscountApplicable(investigationRequest.getDiscountApplicable());
-//            masInvestigation.setGenderApplicable(investigationRequest.getGenderApplicable());
 //            masInvestigation.setDiscount(investigationRequest.getDiscount());
 //            masInvestigation.setPrice(investigationRequest.getPrice());
             return ResponseUtils.createSuccessResponse(mapToResponse(dgMasInvestigationRepo.save(masInvestigation)), new TypeReference<>() {
@@ -215,6 +262,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 
     @Override
     public ApiResponse<DgMasInvestigationSingleResponse> updateSingleInvestigation(Long investigationId, DgMasInvestigationSingleReqest investigationRequest) {
+        User currentUser = authUtil.getCurrentUser();
         try{
             Optional<DgMasInvestigation> masInvestigation = dgMasInvestigationRepo.findById(investigationId);
             if (masInvestigation.isPresent()) {
@@ -222,12 +270,6 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 dmi.setInvestigationName(investigationRequest.getInvestigationName());
                 dmi.setConfidential(investigationRequest.getConfidential());
                 dmi.setInvestigationType(investigationRequest.getInvestigationType());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                            },
-                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
-                }
                 dmi.setLastChgBy(currentUser.getUsername());
                 dmi.setLastChgDate(Instant.now());
                 dmi.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
@@ -248,7 +290,10 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                     } else {
                         return ResponseUtils.createNotFoundResponse("uomId not found", 404);
                     }
+                }else{
+                    dmi.setUomId(null);
                 }
+
                 if (investigationRequest.getSubChargeCodeId() != null) {
                     Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(investigationRequest.getSubChargeCodeId());
                     if (mscc.isPresent()) {
@@ -273,6 +318,24 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         return ResponseUtils.createNotFoundResponse("collectionId not found", 404);
                     }
                 }
+                dmi.setGenderApplicable(investigationRequest.getGenderApplicable());
+
+                if (investigationRequest.getCategoryId() != null) {
+                    Optional<MasInvestigationCategory> mic = micRepo.findById(investigationRequest.getCategoryId());
+                    if (mic.isPresent()) {
+                        dmi.setCategoryId(mic.get());
+                    } else {
+                        return ResponseUtils.createNotFoundResponse("categoryId not found", 404);
+                    }
+                }
+                if (investigationRequest.getMethodId() != null) {
+                    Optional<MasInvestigationMethodology> mim = mimRepo.findById(investigationRequest.getMethodId());
+                    if(mim.isPresent()) {
+                        dmi.setMethodId(mim.get());
+                    } else {
+                        return ResponseUtils.createNotFoundResponse("methodId not found", 404);
+                    }
+                }
 //                dmi.setAppearInDischargeSummary(investigationRequest.getAppearInDischargeSummary());
 //                dmi.setMultipleResults(investigationRequest.getMultipleResults());
 //                dmi.setQuantity(investigationRequest.getQuantity());
@@ -286,7 +349,6 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 //                dmi.setBloodBankScreenTest(investigationRequest.getBloodBankScreenTest());
 //                dmi.setInstructions(investigationRequest.getInstructions());
 //                dmi.setDiscountApplicable(investigationRequest.getDiscountApplicable());
-//                dmi.setGenderApplicable(investigationRequest.getGenderApplicable());
 //                dmi.setDiscount(investigationRequest.getDiscount());
 //                dmi.setPrice(investigationRequest.getPrice());
                 return ResponseUtils.createSuccessResponse(mapToResponse(dgMasInvestigationRepo.save(dmi)), new TypeReference<>() {
@@ -305,17 +367,12 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     @Override
     @Transactional
     public ApiResponse<String> updateMultipleInvestigation(DgMasInvestigationMultiRequest multiRequest) {
+        User currentUser = authUtil.getCurrentUser();
         Optional<DgMasInvestigation> masInvestOpt = dgMasInvestigationRepo.findById(multiRequest.getInvestigationId());
         DgMasInvestigation masInvestigation = masInvestOpt.get();
         masInvestigation.setInvestigationName(multiRequest.getInvestigationName());
         masInvestigation.setConfidential(multiRequest.getConfidential());
         masInvestigation.setInvestigationType(multiRequest.getInvestigationType());
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    },
-                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
-        }
         masInvestigation.setLastChgBy(currentUser.getUsername());
         masInvestigation.setLastChgDate(Instant.now());
         masInvestigation.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
@@ -336,6 +393,8 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             } else {
                 return ResponseUtils.createNotFoundResponse("uomId not found", 404);
             }
+        }else{
+            masInvestigation.setUomId(null);
         }
         if (multiRequest.getSubChargeCodeId() != null) {
             Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(multiRequest.getSubChargeCodeId());
@@ -361,6 +420,23 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 return ResponseUtils.createNotFoundResponse("collectionId not found", 404);
             }
         }
+        masInvestigation.setGenderApplicable(multiRequest.getGenderApplicable());
+        if (multiRequest.getCategoryId() != null) {
+            Optional<MasInvestigationCategory> mic = micRepo.findById(multiRequest.getCategoryId());
+            if(mic.isPresent()) {
+                masInvestigation.setCategoryId(mic.get());
+            } else {
+                return ResponseUtils.createNotFoundResponse("categoryId not found", 404);
+            }
+        }
+        if(multiRequest.getMethodId() != null) {
+            Optional<MasInvestigationMethodology> mim = mimRepo.findById(multiRequest.getMethodId());
+            if(mim.isPresent()) {
+                masInvestigation.setMethodId(mim.get());
+            } else {
+                return ResponseUtils.createNotFoundResponse("methodId not found", 404);
+            }
+        }
         dgMasInvestigationRepo.save(masInvestigation);
 
         if(masInvestigation != null){
@@ -373,12 +449,16 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                     newSubObj.setStatus("y");
                     newSubObj.setResultType(subInvestObj.getResultType());
                     newSubObj.setComparisonType(subInvestObj.getComparisonType());
+                    newSubObj.setLastChgBy(currentUser.getUsername());
+                    newSubObj.setLastChgDate(Instant.now());
+                    newSubObj.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
                     Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subInvestObj.getMainChargeCodeId());
                     if(mmcc.isPresent()) {
                         newSubObj.setMainChargeCodeId(mmcc.get());
                     } else {
                         return ResponseUtils.createNotFoundResponse("masMainChargeCodeId not found", 404);
                     }
+                    newSubObj.setSampleId(masInvestigation.getSampleId());
                     Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(subInvestObj.getSubChargeCodeId());
                     if(mscc.isPresent()) {
                         newSubObj.setSubChargeCodeId(mscc.get());
@@ -392,6 +472,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         return ResponseUtils.createNotFoundResponse("uomId not found", 404);
                     }
                     newSubObj.setInvestigationId(masInvestigation);
+                    newSubObj.setFixedValueExpectedValue(subInvestObj.getFixedValueExpectedResult());
                     subInvestigationRepo.save(newSubObj);
 
 //                    condition for comparison type
@@ -467,13 +548,18 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         existing.setSubInvestigationCode(subInvestObj.getSubInvestigationCode());
                         existing.setResultType(subInvestObj.getResultType());
                         existing.setComparisonType(subInvestObj.getComparisonType());
+                        existing.setLastChgBy(currentUser.getUsername());
+                        existing.setLastChgDate(Instant.now());
+                        existing.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
                         Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subInvestObj.getMainChargeCodeId());
                         existing.setMainChargeCodeId(mmcc.get());
                         Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(subInvestObj.getSubChargeCodeId());
                         existing.setSubChargeCodeId(mscc.get());
+                        existing.setSampleId(masInvestigation.getSampleId());
                         Optional<DgUom> du = uomRepo.findById(subInvestObj.getUomId());
                         existing.setUomId(du.get());
                         existing.setInvestigationId(masInvestigation); // Ensure linkage
+                        existing.setFixedValueExpectedValue(subInvestObj.getFixedValueExpectedResult());
                         subInvestigationRepo.save(existing);
 
                         if ("n".equalsIgnoreCase(subInvestObj.getComparisonType())) {
@@ -581,6 +667,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dmir.setInvestigationId(masInvest.getInvestigationId());
         dmir.setInvestigationName(masInvest.getInvestigationName());
         dmir.setStatus(masInvest.getStatus());
+        dmir.setLastChgBy(masInvest.getLastChgBy());
+        dmir.setLastChgDate(masInvest.getLastChgDate());
+        dmir.setLastChgTime(masInvest.getLastChgTime());
         dmir.setConfidential(masInvest.getConfidential());
         dmir.setInvestigationType(masInvest.getInvestigationType());
         dmir.setMultipleResults(masInvest.getMultipleResults());
@@ -590,18 +679,24 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dmir.setMainChargeCodeName(masInvest.getMainChargeCodeId() != null ? masInvest.getMainChargeCodeId().getChargecodeName() : null);
         dmir.setUomId(masInvest.getUomId() != null ? masInvest.getUomId().getId() : null);
         dmir.setUomName(masInvest.getUomId() != null ? masInvest.getUomId().getName() : null);
+        dmir.setCategoryId(masInvest.getCategoryId() != null ? masInvest.getCategoryId().getCategoryId() : null);
+        dmir.setCategoryName(masInvest.getCategoryId() != null ? masInvest.getCategoryId().getCategoryName() :  null);
+        dmir.setMethodId(masInvest.getMethodId() != null ? masInvest.getMethodId().getMethodId() : null);
+        dmir.setMethodName(masInvest.getMethodId() != null ? masInvest.getMethodId().getMethodName() : null);
         dmir.setSubChargeCodeId(masInvest.getSubChargeCodeId() != null ? masInvest.getSubChargeCodeId().getSubId() : null);
         dmir.setSubChargeCodeName(masInvest.getSubChargeCodeId() != null ? masInvest.getSubChargeCodeId().getSubName() : null);
         dmir.setSampleId(masInvest.getSampleId() != null ? masInvest.getSampleId().getId() : null);
         dmir.setSampleName(masInvest.getSampleId() != null ? masInvest.getSampleId().getSampleDescription() : null);
         dmir.setCollectionId(masInvest.getCollectionId() != null ? masInvest.getCollectionId().getCollectionId() : null);
         dmir.setCollectionName(masInvest.getCollectionId() != null ? masInvest.getCollectionId().getCollectionName() : null);
+        dmir.setGenderApplicable(masInvest.getGenderApplicable());
 
         // --- Group fixed values by subInvestigationId ---
         Map<Long, List<DgFixedValueResponse>> fixedBySub = fixedValList.stream()
                 .map(fixed -> {
                     DgFixedValueResponse resp = new DgFixedValueResponse();
                     resp.setFixedId(fixed.getFixedId());
+//                    resp.setLas
                     resp.setFixedValue(fixed.getFixedValue());
                     resp.setSubInvestigationId(
                             fixed.getSubInvestigationId() != null ? fixed.getSubInvestigationId().getSubInvestigationId() : 0L
@@ -638,6 +733,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             resp.setSubInvestigationCode(sub.getSubInvestigationCode());
             resp.setSubInvestigationName(sub.getSubInvestigationName());
             resp.setStatus(sub.getStatus());
+            resp.setLastChgBy(sub.getLastChgBy());
+            resp.setLastChgDate(sub.getLastChgDate());
+            resp.setLastChgTime(sub.getLastChgTime());
             resp.setResultType(sub.getResultType());
             resp.setComparisonType(sub.getComparisonType());
             resp.setMainChargeCodeId(sub.getMainChargeCodeId() != null ? sub.getMainChargeCodeId().getChargecodeId() : null);
@@ -645,6 +743,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             resp.setSampleId(sub.getSampleId() != null ? sub.getSampleId().getId() : null);
             resp.setUomId(sub.getUomId() != null ? sub.getUomId().getId() : null);
             resp.setInvestigationId(sub.getInvestigationId() != null ? sub.getInvestigationId().getInvestigationId() : null);
+            resp.setFixedValueExpectedResult(sub.getFixedValueExpectedValue());
 
             // attach fixed + normal values for this subInvestigation
             resp.setFixedValueResponseList(fixedBySub.getOrDefault(sub.getSubInvestigationId(), Collections.emptyList()));
@@ -663,6 +762,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dto.setInvestigationId(entity.getInvestigationId());
         dto.setInvestigationName(entity.getInvestigationName());
         dto.setStatus(entity.getStatus());
+        dto.setLastChgBy(entity.getLastChgBy());
+        dto.setLastChgTime(entity.getLastChgTime());
+        dto.setLastChgDate(entity.getLastChgDate());
         dto.setConfidential(entity.getConfidential());
         dto.setInvestigationType(entity.getInvestigationType());
         dto.setMultipleResults(entity.getMultipleResults());
@@ -672,17 +774,19 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dto.setMainChargeCodeName(entity.getMainChargeCodeId() != null ? entity.getMainChargeCodeId().getChargecodeName() : null);
         dto.setUomId(entity.getUomId() != null ? entity.getUomId().getId() : null);
         dto.setUomName(entity.getUomId() != null ? entity.getUomId().getName() : null);
+        dto.setCategoryId(entity.getCategoryId() != null ? entity.getCategoryId().getCategoryId() : null);
+        dto.setCategoryName(entity.getCategoryId() != null ? entity.getCategoryId().getCategoryName() : null);
+        dto.setMethodId(entity.getMethodId() != null ? entity.getMethodId().getMethodId() : null);
+        dto.setMethodName(entity.getMethodId() != null ? entity.getMethodId().getMethodName() : null);
         dto.setSubChargeCodeId(entity.getSubChargeCodeId() != null ? entity.getSubChargeCodeId().getSubId() : null);
         dto.setSubChargeCodeName(entity.getSubChargeCodeId() != null ? entity.getSubChargeCodeId().getSubName() : null);
         dto.setSampleId(entity.getSampleId() != null ? entity.getSampleId().getId() : null);
         dto.setSampleName(entity.getSampleId() != null ? entity.getSampleId().getSampleDescription() : null);
         dto.setCollectionId(entity.getCollectionId() != null ? entity.getCollectionId().getCollectionId() : null);
         dto.setCollectionName(entity.getCollectionId() != null ? entity.getCollectionId().getCollectionName() : null);
+        dto.setGenderApplicable(entity.getGenderApplicable());
 //        dto.setQuantity(entity.getQuantity());
 //        dto.setNormalValue(entity.getNormalValue());
-//        dto.setLastChgBy(entity.getLastChgBy());
-//        dto.setLastChgTime(entity.getLastChgTime());
-//        dto.setLastChgDate(entity.getLastChgDate());
 //        dto.setAppointmentRequired(entity.getAppointmentRequired());
 //        dto.setTestOrderNo(entity.getTestOrderNo());
 //        dto.setNumericOrString(entity.getNumericOrString());
@@ -693,7 +797,6 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 //        dto.setBloodBankScreenTest(entity.getBloodBankScreenTest());
 //        dto.setInstructions(entity.getInstructions());
 //        dto.setDiscountApplicable(entity.getDiscountApplicable());
-//        dto.setGenderApplicable(entity.getGenderApplicable());
 //        dto.setDiscount(entity.getDiscount());
 //        dto.setPrice(entity.getPrice());
         return dto;

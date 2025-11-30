@@ -10,6 +10,5 @@ import java.time.Instant;
 public class DgMasSampleRequest {
     private String sampleCode;
     private String sampleDescription;
-    private String status;
 
 }

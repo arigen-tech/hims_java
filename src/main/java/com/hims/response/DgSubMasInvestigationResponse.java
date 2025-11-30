@@ -27,6 +27,7 @@ public class DgSubMasInvestigationResponse {
     private Long sampleId;
     private Long uomId;
     private Long investigationId;
+    private String fixedValueExpectedResult;
     private List<DgFixedValueResponse> fixedValueResponseList;
     private List<DgNormalValueResponse> normalValueResponseList;
 }

@@ -14,7 +14,7 @@ public interface MasFrequencyRepository extends JpaRepository<MasFrequency,Long>
 
     List<MasFrequency> findByStatusIgnoreCase(String y);
 
-
+    MasFrequency findByFrequencyName (String name);
 
     List<MasFrequency> findByStatusInIgnoreCase(List<String> y);
 }

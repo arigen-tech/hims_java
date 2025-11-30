@@ -8,5 +8,12 @@ public class ResultInvestigationResponse {
      private Long investigationId;
      private String investigationName;
      private String diagNo;
-     List<ResultSubInvestigationResponse> resultSubInvestigationResponseList;
+     private Long sampleCollectionDetailsId;
+      private Long sampleId;
+      private String sampleName;
+      private String unitName;
+      private Long unitId;
+      private String normalValue;
+      private String resultType;
+      List<ResultSubInvestigationResponse> resultSubInvestigationResponseList;
 }

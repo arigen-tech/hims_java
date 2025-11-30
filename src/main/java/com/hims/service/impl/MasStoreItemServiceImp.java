@@ -8,9 +8,11 @@ import com.hims.response.*;
 import com.hims.service.MasStoreItemService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
+import com.hims.utils.StockFound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -47,14 +49,44 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     private MasItemCategoryRepository masItemCategoryRepository;
 
     @Autowired
+    private  StoreItemBatchStockRepository storeItemBatchStockRepository;
+
+
+    @Autowired
     UserRepo userRepo;
     @Autowired
     AuthUtil authUtil;
 
     @Autowired
+    StockFound stockFound;
+
+    @Autowired
     private UserDepartmentRepository userDepartmentRepository;
-@Autowired
-private MasDepartmentRepository masDepartmentRepository;
+
+    @Autowired
+    private MasDepartmentRepository masDepartmentRepository;
+
+    @Value("${masstoreitem.section.id}")
+    private Integer sectionId;
+
+    @Value("${hos.define.storeDay}")
+    private Integer hospDefinedstoreDays;
+
+    @Value("${hos.define.storeId}")
+    private Integer deptIdStore;
+
+    @Value("${hos.define.dispensaryDay}")
+    private Integer hospDefineddispDays;
+
+    @Value("${hos.define.dispensaryId}")
+    private Integer dispdeptId;
+
+    @Value("${hos.define.wardPharmDay}")
+    private Integer hospDefinedwardDays;
+
+    @Value("${hos.define.wardPharmacyId}")
+    private Integer warddeptId;
+
 
     private static final Logger log = LoggerFactory.getLogger(DoctorRosterServicesImpl.class);
 
@@ -370,6 +402,36 @@ private MasDepartmentRepository masDepartmentRepository;
 
      }
 
+    @Override
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemBySectionOnly(int flag) {
+
+        List<MasStoreItem> masStoreItems;
+
+        if (flag == 1) {
+            masStoreItems = masStoreItemRepository
+                    .findByStatusIgnoreCaseAndSectionId_SectionId("y", sectionId);
+        } else if (flag == 0) {
+            masStoreItems = masStoreItemRepository
+                    .findByStatusInIgnoreCaseAndSectionId_SectionId(List.of("y", "n"), sectionId);
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasStoreItemResponse> responses = masStoreItems.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+    }
+
+
+
+
+
+
+
+
     private MasStoreItemResponse convertToResponse(MasStoreItem item) {
         MasStoreItemResponse response = new MasStoreItemResponse();
         response.setItemId(item.getItemId());
@@ -385,30 +447,42 @@ private MasDepartmentRepository masDepartmentRepository;
         response.setDepartmentId(item.getDepartmentId());
         response.setAdispQty(item.getAdispQty());
 
-            response.setGroupId(item.getGroupId()!=null?item.getGroupId().getId():null);
-            response.setGroupName(item.getGroupId()!=null?item.getGroupId().getGroupName():null);
+        response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
+        response.setGroupName(item.getGroupId() != null ? item.getGroupId().getGroupName() : null);
+
+
+        response.setItemClassId(item.getItemClassId() != null ? item.getItemClassId().getItemClassId() : null);
+        response.setItemClassName(item.getItemClassId() != null ? item.getItemClassId().getItemClassName() : null);
+
+
+        response.setItemTypeId(item.getItemTypeId() != null ? item.getItemTypeId().getId() : null);
+        response.setItemTypeName(item.getItemTypeId() != null ? item.getItemTypeId().getName() : null);
+
+        response.setSectionId(item.getSectionId() != null ? item.getSectionId().getSectionId() : null);
+        response.setSectionName(item.getSectionId() != null ? item.getSectionId().getSectionName() : null);
+
+        response.setDispUnit(item.getDispUnit() != null ? item.getDispUnit().getUnitId() : null);
+        response.setDispUnitName(item.getDispUnit() != null ? item.getDispUnit().getUnitName() : null);
+
+        response.setUnitAU(item.getUnitAU() != null ? item.getUnitAU().getUnitId() : null);
+        response.setUnitAuName(item.getUnitAU() != null ? item.getUnitAU().getUnitName() : null);
+
+        response.setHsnCode(item.getHsnCode() != null ? item.getHsnCode().getHsnCode() : null);
+        response.setHsnGstPercent(item.getHsnCode() != null ? item.getHsnCode().getGstRate() : null);
+
+
+        Long avlableStokes = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), deptIdStore, item.getItemId(), hospDefinedstoreDays);
+        response.setStorestocks(avlableStokes);
+        Long dispstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), dispdeptId, item.getItemId(), hospDefineddispDays);
+        response.setDispstocks(dispstocks);
+        Long wardstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), warddeptId, item.getItemId(), hospDefinedwardDays);
+        response.setDispstocks(dispstocks);
 
 
 
-            response.setItemClassId(item.getItemClassId()!=null?item.getItemClassId().getItemClassId():null);
-            response.setItemClassName(item.getItemClassId()!=null?item.getItemClassId().getItemClassName():null);
 
 
 
-            response.setItemTypeId(item.getItemTypeId()!=null?item.getItemTypeId().getId():null);
-            response.setItemTypeName(item.getItemTypeId()!=null?item.getItemTypeId().getName():null);
-
-            response.setSectionId(item.getSectionId()!=null?item.getSectionId().getSectionId():null);
-            response.setSectionName(item.getSectionId()!=null?item.getSectionId().getSectionName():null);
-
-            response.setDispUnit(item.getDispUnit() !=null?item.getDispUnit().getUnitId():null);
-            response.setDispUnitName(item.getDispUnit()!=null?item.getDispUnit().getUnitName():null);
-
-            response.setUnitAU(item.getUnitAU()!=null?item.getUnitAU().getUnitId():null);
-            response.setUnitAuName(item.getUnitAU()!=null?item.getUnitAU().getUnitName():null);
-
-            response.setHsnCode(item.getHsnCode()!=null?item.getHsnCode().getHsnCode():null);
-            response.setHsnGstPercent(item.getHsnCode()!=null?item.getHsnCode().getGstRate():null);
 
         response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
         response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
@@ -424,6 +498,8 @@ private MasDepartmentRepository masDepartmentRepository;
         response.setDispUnit(item.getDispUnit()!=null?item.getUnitAU().getUnitName():null);
         response.setHsnGstPercentage(item.getHsnCode()!=null?item.getHsnCode().getGstRate():null);
         response.setHsnCode(item.getHsnCode()!=null?item.getHsnCode().getHsnCode():null);
+        response.setADispQty(item.getAdispQty());
+        response.setItemClassName(item.getItemClassId() !=null ? item.getItemClassId().getItemClassName() : null);
         return response;
     }
 

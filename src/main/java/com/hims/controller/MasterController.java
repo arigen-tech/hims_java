@@ -7,6 +7,7 @@ import com.hims.service.*;
 import com.hims.service.impl.UserDepartmentServiceImpl;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,9 @@ public class MasterController {
     private MasServiceCategoryService masServiceCategoryService;
     @Autowired
     private MasServiceOpdService masServiceOpdService;
+
+    @Autowired
+    private MasIcdService masIcdService;
     @Autowired
     private MasApplicationService masApplicationService;
     @Autowired
@@ -95,6 +99,12 @@ public class MasterController {
     private MasManufacturerService masManufacturerService;
     @Autowired
     private DgMasCollectionService dgMasCollectionService;
+    @Autowired
+    private MasSymptomsService masSymptomsService;
+    @Autowired
+    private MasInvestigationCategoryService masInvestigationCategoryService;
+    @Autowired
+    private MasInvestigationMethodologyService masInvestigationMethodologyService;
 
     //    ================================Mas Application Controller================================//
 
@@ -1178,6 +1188,10 @@ public class MasterController {
         return masStoreItemService.getAllMasStore(flag);
     }
 
+    @GetMapping("/masStoreItem/getAllBySectionOnly/{flag}")
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemBySectionOnly(@PathVariable int flag) {
+        return masStoreItemService.getAllMasStoreItemBySectionOnly(flag);
+    }
 
 
     //    ================================Mas HSN  Controller================================//
@@ -1321,5 +1335,107 @@ public class MasterController {
     public ApiResponse<List<DgFixedValue>> getAllDgFixedValue() {
         return dgFixedValueService.getDgFixedValue();
     }
+
+
+    //    ================================ MasSymptoms Controller================================//
+
+    @PostMapping ("/MasSymptoms/create")
+    public ResponseEntity<ApiResponse<MasSymptomsResponse>> addSymptom(@RequestBody MasSymptomsRequest symptomsReq){
+        ApiResponse<MasSymptomsResponse> response = masSymptomsService.createSymptom(symptomsReq);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/MasSymptoms/update/{id}")
+    public ResponseEntity<ApiResponse<MasSymptomsResponse>> updateSymptom(
+            @PathVariable Long id,
+            @RequestBody MasSymptomsRequest symptomsReq){
+        ApiResponse<MasSymptomsResponse> response = masSymptomsService.updateSymptom(id, symptomsReq);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/MasSymptoms/changeStatus/{id}")
+    public ResponseEntity<ApiResponse<MasSymptomsResponse>> changeSymptomStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        ApiResponse<MasSymptomsResponse> response = masSymptomsService.changeSymptomStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/MasSymptoms/getSymptomsById/{id}")
+    public ResponseEntity<ApiResponse<MasSymptomsResponse>> getSymptomsById(
+            @PathVariable Long id ) {
+        ApiResponse<MasSymptomsResponse> response = masSymptomsService.findBySymptomId(id);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/MasSymptoms/getAllSymptoms/{flag}")
+    public  ApiResponse<List<MasSymptomsResponse>> getAllSymptomsByFlag(
+            @PathVariable int flag
+    ) {
+        return masSymptomsService.getAllSymptoms(flag);
+    }
+
+  //  ============================================ Mas Investigtion Category=====================================
+
+    @PostMapping("/masInvestigationCategory/create")
+    public ResponseEntity<ApiResponse<String>> createCategory(@RequestBody MasInvestigationCategoryRequest request){
+        return new ResponseEntity<>(masInvestigationCategoryService.create(request),HttpStatus.CREATED);
+    }
+
+    @PutMapping("/masInvestigationCategory/update/{id}")
+    public ResponseEntity<ApiResponse<String>> updateMasInvestigationCategory(@PathVariable Long id, @RequestBody MasInvestigationCategoryRequest  request) {
+        return new ResponseEntity<>(masInvestigationCategoryService.update(id,request), HttpStatus.OK);
+    }
+    @GetMapping("/masInvestigationCategory/findAll")
+    public ResponseEntity<ApiResponse<List<MasInvestigationCategoryResponse>>> getCategory() {
+        ApiResponse<List<MasInvestigationCategoryResponse>> response = masInvestigationCategoryService.get();
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/masInvestigationCategory/getById/{id}")
+    public ResponseEntity<ApiResponse<MasInvestigationCategoryResponse>> getByCategory(@PathVariable Long id) {
+        ApiResponse<MasInvestigationCategoryResponse> response = masInvestigationCategoryService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+
+    //  ============================================ Mas Investigtion Methodology=====================================
+    @PostMapping("/masInvestigationMethodology/create")
+    public ResponseEntity<ApiResponse<String>> createMethodology(@RequestBody MasInvestigationMethodologyRequest request){
+        return new ResponseEntity<>(masInvestigationMethodologyService.create(request),HttpStatus.CREATED);
+    }
+    @PutMapping("/masInvestigationMethodology/update/{id}")
+    public ResponseEntity<ApiResponse<String>> updateMasInvestigationMethodology(@PathVariable Long id, @RequestBody MasInvestigationMethodologyRequest  request) {
+        return new ResponseEntity<>(masInvestigationMethodologyService.update(id,request), HttpStatus.OK);
+    }
+    @GetMapping("/masInvestigationMethodology/findAll")
+    public ResponseEntity<ApiResponse<List<MasInvestigationMethodologyResponse >>> getMethodology() {
+        ApiResponse<List<MasInvestigationMethodologyResponse >> response = masInvestigationMethodologyService.get();
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/masInvestigationMethodology/getById/{id}")
+    public ResponseEntity<ApiResponse<MasInvestigationMethodologyResponse >> getMasHSNById(@PathVariable Long id) {
+        ApiResponse<MasInvestigationMethodologyResponse > response = masInvestigationMethodologyService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+
+//    ===============================Mas Icd=====================================
+//    @GetMapping("/masIcd/all/{flag}")
+//    public ApiResponse<List<MasIcdResponse>> getAllIcds(@PathVariable int flag) {
+//        return masIcdService.getAllIcds(flag);
+//    }
+
+    @GetMapping("/masIcd/all")
+    public ApiResponse<Page<MasIcdResponse>> getAllIcd(
+            @RequestParam int flag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return masIcdService.getAllIcd(flag, page, size);
+    }
+
+
 
 }

@@ -37,6 +37,10 @@ public class DgMasInvestigationResponse {
     private String mainChargeCodeName;
     private Long uomId;
     private String uomName;
+    private Long categoryId;
+    private String categoryName;
+    private Long methodId;
+    private String methodName;
     private Long subChargeCodeId;
     private String subChargeCodeName;
     private Long sampleId;

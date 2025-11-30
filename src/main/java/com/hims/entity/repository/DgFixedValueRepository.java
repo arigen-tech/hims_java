@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.DgFixedValue;
+import com.hims.entity.DgSubMasInvestigation;
 import com.hims.entity.DgMasInvestigation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -9,6 +10,12 @@ import java.util.List;
 
 @Repository
 public interface DgFixedValueRepository extends JpaRepository<DgFixedValue,Long> {
-    List<DgFixedValue> findBySubInvestigationId_InvestigationId(DgMasInvestigation masInvest);
-}
 
+   // DgFixedValue findFirstBySubInvestigationId(DgSubMasInvestigation subInvest);
+    List<DgFixedValue> findBySubInvestigationId_InvestigationId(DgMasInvestigation masInvest);
+
+    List<DgFixedValue> findBySubInvestigationId(DgSubMasInvestigation subInvest);
+
+
+    List<DgFixedValue> findBySubInvestigationId_InvestigationId_InvestigationIdIn(List<Long> investigationIds);
+}

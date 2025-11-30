@@ -17,7 +17,7 @@ public class HospitalIndexController {
             "              <tr>\n" +
             "                <td width=\"65%\" valign=\"top\">\n" +
             "                  <span style=\"font-size:20px;font-weight:bold;color:#1a237e;display:block;margin-bottom:5px;\">Hospital Internal Management System is running now.</span>\n" +
-            "                  <span style=\"font-size:13px;color:#444;margin-bottom:15px;display:block;\">Now Release Version 1.0 — Under Testing</span>\n" +
+            "                  <span style=\"font-size:13px;color:#444;margin-bottom:15px;display:block;\">Now Release Version 2.0 — Under Testing</span>\n" +
             "                  <div style=\"background:#1976d2;color:#ffffff;border-radius:8px;padding:20px;margin-bottom:20px;\">\n" +
             "                    <span>The Hospital Internal Management System (HIMS) simplifies patient record keeping, appointment scheduling, billing, and staff coordination.</span><br/><br/>\n" +
             "                    <span>It helps hospitals and clinics streamline workflows, improve patient care, and securely manage sensitive health data in one place.</span>\n" +

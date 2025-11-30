@@ -31,6 +31,12 @@ public class UserController {
         return new ResponseEntity<>(userService.getAllDoctorsBySpeciality(speciality), HttpStatus.OK);
     }
 
+    @GetMapping("/allDoctor/list")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllDoctors() {
+        return ResponseEntity.ok(userService.getAllDoctors());
+    }
+
+
     @GetMapping("/getAll/{flag}")
     @Operation(summary = "Get all users", description = "Get all users with filter by status (0: all users, 1: active users only)")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers(@PathVariable int flag) {

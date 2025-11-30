@@ -3,7 +3,9 @@ package com.hims.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Data
@@ -25,6 +27,9 @@ public class DgOrderHd {
 
     @Column(name = "order_status", length = 1)
     private String orderStatus;
+
+    @Column(name = "source", length = 25)
+    private String source;
 
     @Column(name = "collection_status", length =1)
     private String collectionStatus;
@@ -78,5 +83,8 @@ public class DgOrderHd {
 
     @Column(name = "last_chg_by", length = 50)
     private String lastChgBy;
+
+    @Column(name = "order_time")
+    private Instant orderTime;
 
 }

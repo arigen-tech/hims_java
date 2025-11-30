@@ -18,20 +18,12 @@ public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSam
 
 
 
-
     @Modifying
     @Transactional
-    @Query("UPDATE DgSampleCollectionDetails d SET d.validated = :validated WHERE d.sampleCollectionDetailsId = :detailId")
-    int updateValidationStatus(@Param("detailId") Long detailId, @Param("validated") String validated);
+    @Query("UPDATE DgSampleCollectionDetails d SET d.validated = :status WHERE d.sampleCollectionDetailsId = :id")
+    void updateValidation(@Param("id") Long id, @Param("status") String status);
 
-    @Query("SELECT d.sampleCollectionHeader.sampleCollectionHeaderId FROM DgSampleCollectionDetails d WHERE d.sampleCollectionDetailsId IN :detailIds")
-    Set<Long> findHeaderIdsByDetailIds(@Param("detailIds") List<Long> detailIds);
 
-    @Query("SELECT COUNT(d) FROM DgSampleCollectionDetails d WHERE d.sampleCollectionHeader.sampleCollectionHeaderId = :headerId AND d.validated = 'y'")
-    long countAcceptedByHeaderId(@Param("headerId") Long headerId);
-
-    @Query("SELECT COUNT(d) FROM DgSampleCollectionDetails d WHERE d.sampleCollectionHeader.sampleCollectionHeaderId = :headerId")
-    long countTotalByHeaderId(@Param("headerId") Long headerId);
 
     @Query("""
     SELECT d FROM DgSampleCollectionDetails d
@@ -73,5 +65,14 @@ public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSam
         AND d.result_status = 'n'
 """)
 List<DgSampleCollectionDetails> findAllByHeaderResultEntryAndValidationStatusLogic();
+
+
+
+List<DgSampleCollectionDetails> findBySampleCollectionHeader_SampleCollectionHeaderIdAndSampleCollectionHeader_SubChargeCode_SubId(Long sampleHeaderId, Long subChargeCodeId);
+
+
+
+    @Query("SELECT d.validated FROM DgSampleCollectionDetails d WHERE d.sampleCollectionHeader.sampleCollectionHeaderId = :headerId")
+    List<String> getValidationStatusOfHeader(Long headerId);
 
 }

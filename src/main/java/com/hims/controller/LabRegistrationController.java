@@ -1,14 +1,13 @@
 package com.hims.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.request.InvestigationValidationRequest;
-import com.hims.request.LabRegRequest;
-import com.hims.request.PaymentUpdateRequest;
-import com.hims.request.SampleCollectionRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
+import com.hims.service.ResultService;
 import com.hims.service.SampleValidationService;
+import com.hims.service.impl.BillingServiceImpl;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +30,17 @@ public class LabRegistrationController {
     LabRegistrationServices labRegistrationServices;
     @Autowired
     SampleValidationService validationService;
+    @Autowired
+    ResultService resultService;
+
+      // or your service interface
+
 
 
     @Autowired
     BillingService billingService;
+
+
     @PostMapping("/registration")
     public ResponseEntity<ApiResponse<AppsetupResponse>> appSetupResponse(@RequestBody LabRegRequest request) {
         return new ResponseEntity<>(labRegistrationServices.labReg(request), HttpStatus.OK);
@@ -82,6 +88,38 @@ public class LabRegistrationController {
         ApiResponse<List<ResultResponse>> responseList = validationService.getValidatedResultEntries();
         return ResponseEntity.ok(responseList);
     }
+    @PostMapping("/saveResultEntry")
+    public ResponseEntity<ApiResponse<String>> saveOrUpdate(@RequestBody ResultEntryMainRequest request) {
+        ApiResponse<String> response = resultService.saveOrUpdateResultEntry(request);
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/unvalidated")
+    public ApiResponse<List<DgResultEntryValidationResponse>> getAllUnvalidatedResults() {
+        return  resultService.getUnvalidatedResults();
+    }
+    @PutMapping("/validate")
+    public ApiResponse<String> updateResultValidation(
+            @RequestBody ResultValidationUpdateRequest request) {
+        return resultService.updateResultValidation(request);
+    }
+    @GetMapping("/getUpdate")
+    public ApiResponse<List<ResultEntryUpdateResponse>> getUpdate() {
+        return  resultService.getUpdate();
+    }
+    @PutMapping("/update")
+    public ApiResponse<String> updateResult(@RequestBody ResultUpdateRequest request) {
+
+        return resultService.updateResult(request);
+
+    }
+
+
+    @PostMapping("/registration/billing")
+    public ApiResponse<AppsetupResponse> labRegistrationForExistingOrder(
+            @RequestBody LabBillingOnlyRequest labReq) {
+        return labRegistrationServices.labRegForExistingOrder(labReq);
+    }
+
 
 
 }

@@ -2,16 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.DgMasSample;
-import com.hims.entity.DgUom;
 import com.hims.entity.User;
 import com.hims.entity.repository.DgMasSampleRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.request.DgMasSampleRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DgMasSampleResponse;
-import com.hims.response.DgUomResponse;
 import com.hims.service.DgMasSampleService;
-import com.hims.service.DgUomService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,112 +33,129 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
     @Override
     public ApiResponse<DgMasSampleResponse> addDgMasSample(DgMasSampleRequest dgMasSampleRequest) {
 
-        DgMasSample dgMasSample = new DgMasSample();
-        dgMasSample.setSampleCode(dgMasSampleRequest.getSampleCode());
-        dgMasSample.setSampleDescription(dgMasSampleRequest.getSampleDescription());
-        if ("y".equals(dgMasSampleRequest.getStatus()) || "n".equals(dgMasSampleRequest.getStatus())) {
-            dgMasSample.setStatus(dgMasSampleRequest.getStatus());
-        } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "Invalid status. Status should be 'y' or 'n'", 400);
+        try {
+            log.info("Adding DgMasSample Process Started...");
+            DgMasSample dgMasSample = new DgMasSample();
+            dgMasSample.setSampleCode(dgMasSampleRequest.getSampleCode());
+            dgMasSample.setSampleDescription(dgMasSampleRequest.getSampleDescription());
+            dgMasSample.setStatus("y");
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            dgMasSample.setLastChgBy(currentUser.getUsername());
+            dgMasSample.setLastChgDate(Instant.now());
+            log.info("Adding DgMasSample Process Ended...");
+            return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save(dgMasSample)), new TypeReference<>() {
+            });
+        }catch (Exception e){
+            log.error("Unexpected Error ::",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    },
-                    "Current user not found", HttpStatus.UNAUTHORIZED.value());
-        }
-        dgMasSample.setLastChgBy(currentUser.getUsername());
-        dgMasSample.setLastChgDate(Instant.now());
-        return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save(dgMasSample)), new TypeReference<>() {
-        });
     }
 
     @Override
     public ApiResponse<DgMasSampleResponse> getByIdDgMas(Long id) {
-        Optional<DgMasSample> dgMasSample = dgMasSampleRepository.findById(id);
-        if (dgMasSample.isPresent()) {
-            DgMasSample newDgMasSample = dgMasSample.get();
-            return ResponseUtils.createSuccessResponse(convertedToResponse(newDgMasSample), new TypeReference<>() {
-            });
-        } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "DgMasSample data not found", 404);
+        try {
+            log.info("Fetching DgMasSample By Id Process Started...");
+            Optional<DgMasSample> dgMasSample = dgMasSampleRepository.findById(id);
+            if (dgMasSample.isPresent()) {
+                DgMasSample newDgMasSample = dgMasSample.get();
+                log.info("Fetching DgMasSample By Id Process Started...");
+                return ResponseUtils.createSuccessResponse(convertedToResponse(newDgMasSample), new TypeReference<>() {
+                });
+            } else {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "DgMasSample data not found", 404);
 
+            }
+        }catch (Exception e){
+            log.error("Unexpected Error ::",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
-
-
     }
 
     @Override
     public ApiResponse<List<DgMasSampleResponse>> getAllDgMas(int flag) {
-        List<DgMasSample> dpUom;
-        if(flag==1){
-            dpUom=dgMasSampleRepository.findByStatus("y");
-        }else if(flag==0){
-            dpUom=dgMasSampleRepository.findAll();
+        try {
+            List<DgMasSample> dpUom;
+            if(flag==1){
+                dpUom=dgMasSampleRepository.findByStatusOrderByLastChgDateDesc("y");
+            }else if(flag==0){
+                dpUom=dgMasSampleRepository.findByStatusInOrderByLastChgDateDesc(List.of("y","n"));
+            }else{
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+            }
+            List<DgMasSampleResponse> responses = dpUom.stream()
+                    .map(this::convertedToResponse)
+                    .collect(Collectors.toList());
 
-        }else{
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+            return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+        }catch (Exception e){
+            log.error("Unexpected Error ::",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
-        List<DgMasSampleResponse> responses = dpUom.stream()
-                .map(this::convertedToResponse)
-                .collect(Collectors.toList());
-
-        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
     @Override
     public ApiResponse<DgMasSampleResponse> updateByStatusDgMas(Long id, String status) {
-        Optional<DgMasSample> dgUom = dgMasSampleRepository.findById(id);
-        if (dgUom.isPresent()) {
-            DgMasSample newDgUom = dgUom.get();
-            if(status.equals("n")||status.equals("y")){
-                newDgUom.setStatus(status);
+        try {
+            Optional<DgMasSample> dgUom = dgMasSampleRepository.findById(id);
+            if (dgUom.isPresent()) {
+                DgMasSample newDgUom = dgUom.get();
+                if(status.equals("n")||status.equals("y")){
+                    newDgUom.setStatus(status);
+                }else{
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, "Invalid status. Status should be 'y' or 'n'", 400);
+                }
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                newDgUom.setLastChgBy(currentUser.getUsername());
+                return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save(newDgUom)), new TypeReference<>() {
+                });
+
             }else{
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                }, "Invalid status. Status should be 'y' or 'n'", 400);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "DgMasSample not found", 404);
             }
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
-            }
-            newDgUom.setLastChgBy(currentUser.getUsername());
-            return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save(newDgUom)), new TypeReference<>() {
-            });
-
-        }else{
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "DgMasSample not found", 404);
+        }catch (Exception e){
+            log.error("Unexpected Error ::",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
-
     }
 
     @Override
     public ApiResponse<DgMasSampleResponse> updateByIdDgMas(Long id, DgMasSampleRequest dgMasSampleRequest) {
-        Optional<DgMasSample> dgUom=dgMasSampleRepository.findById(id);
-        if(dgUom.isPresent()){
-            DgMasSample newDgMas=dgUom.get();
-            if ("y".equals(dgMasSampleRequest.getStatus()) || "n".equals(dgMasSampleRequest.getStatus())) {
-                newDgMas.setStatus(dgMasSampleRequest.getStatus());
-            } else {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                }, "Invalid status. Status should be 'y' or 'n'", 400);
-            }
-            newDgMas.setSampleCode(dgMasSampleRequest.getSampleCode());
-            newDgMas.setSampleDescription(dgMasSampleRequest.getSampleDescription());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
-            }
-            newDgMas.setLastChgBy(currentUser.getUsername());
-            newDgMas.setLastChgDate(Instant.now());
-            return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save( newDgMas)), new TypeReference<>() {
-            });
+        try {
+            log.info("MasSample updating process started...");
+            Optional<DgMasSample> dgUom=dgMasSampleRepository.findById(id);
+            if(dgUom.isPresent()){
+                DgMasSample newDgMas=dgUom.get();
+                newDgMas.setSampleCode(dgMasSampleRequest.getSampleCode());
+                newDgMas.setSampleDescription(dgMasSampleRequest.getSampleDescription());
+                newDgMas.setStatus("y");
+                User currentUser = getCurrentUser();
+                if (currentUser == null) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                }
+                newDgMas.setLastChgBy(currentUser.getUsername());
+                newDgMas.setLastChgDate(Instant.now());
+                log.info("MasSample updating process ended...");
+                return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save( newDgMas)), new TypeReference<>() {
+                });
 
-        }else{
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "DgMasSample data not found", 404);
+            }else{
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "DgMasSample data not found", 404);
+            }
+        }catch (Exception e){
+            log.error("Unexpected Error ::",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
@@ -152,8 +166,6 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
         response.setSampleCode(dgMasSample.getSampleCode());
         response.setSampleDescription(dgMasSample.getSampleDescription());
         response.setStatus(dgMasSample.getStatus());
-        response.setLastChgBy(dgMasSample.getLastChgBy());
-        response.setLastChgDate(dgMasSample.getLastChgDate());
        return response;
 
     }

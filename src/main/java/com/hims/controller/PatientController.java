@@ -2,24 +2,30 @@ package com.hims.controller;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.request.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.PatientRegFollowUpResp;
+import com.hims.response.*;
+import com.hims.service.OpdPatientDetailService;
 import com.hims.service.PatientService;
 import com.hims.utils.ResponseUtils;
+import com.hims.utils.StockFound;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @Tag(name = "PatientController", description = "This controller is used for any Patient Related task.")
@@ -30,6 +36,10 @@ public class PatientController {
     PatientService patientService;
     @Autowired
     private PatientRepository patientRepository;
+
+    @Autowired
+    private OpdPatientDetailService opdPatientDetailService;
+
 
 
     @PostMapping("/register")
@@ -83,6 +93,71 @@ public class PatientController {
                 mobile.trim(),
                 relation);
         return ResponseEntity.ok(exists);
+    }
+
+
+
+    @GetMapping("/getWaitingList")
+    public ResponseEntity<ApiResponse<List<Visit>>> getWaitingList(){
+        ApiResponse<List<Visit>> response = patientService.getWaitingList();
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+
+
+    @PostMapping("/patient-details")
+    public ResponseEntity<ApiResponse<OpdPatientDetail>> createOpdPatientDetail(
+            @Valid @RequestBody OpdPatientDetailFinalRequest request) {
+
+        ApiResponse<OpdPatientDetail> response = opdPatientDetailService.createOpdPatientDetail(request);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PutMapping("/update-recall-patient")
+    public ResponseEntity<ApiResponse<OpdPatientDetail>> updateRecallOpdPatient(
+            @Valid @RequestBody RecallOpdPatientDetailRequest request) {
+
+        ApiResponse<OpdPatientDetail> response = opdPatientDetailService.recallOpdPatientDetail(request);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/activeVisit")
+    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> getActiveVisits() {
+        ApiResponse<List<OpdPatientDetailsWaitingresponce>> response = opdPatientDetailService.getActiveVisits();
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/activeVisit/search")
+    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> searchActiveVisits(
+            @RequestBody ActiveVisitSearchRequest request
+    ) {
+        return ResponseEntity.ok(opdPatientDetailService.getActiveVisitsWithFilters(request));
+    }
+
+
+
+    @GetMapping("/recallVisit")
+    public ResponseEntity<ApiResponse<List<OpdPatientRecallResponce>>> getRecallVisits(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String mobile,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate visitDate
+    ) {
+        ApiResponse<List<OpdPatientRecallResponce>> response =
+                opdPatientDetailService.getRecallVisit(name, mobile, visitDate);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PutMapping("/changeStatusForClose/{visitId}/{status}")
+    public ApiResponse<String> updateStatusForClose(
+            @PathVariable Long visitId,
+            @PathVariable String status) {
+        return opdPatientDetailService.updateVisitStatus(visitId, status);
     }
 
 }

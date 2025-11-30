@@ -32,6 +32,7 @@ public class PendingSampleResponse {
     private Long sampleId;
     private Long mainChargcodeId;
     private Long collectionId;
+    private String orderTime;
 
 
 

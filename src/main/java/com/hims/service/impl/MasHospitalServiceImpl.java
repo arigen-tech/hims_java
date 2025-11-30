@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -114,6 +115,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
         response.setRegCostApplicable(hospital.getRegCostApplicable());
         response.setAppCostApplicable(hospital.getAppCostApplicable());
         response.setPreConsultationAvailable(hospital.getPreConsultationAvailable());
+        response.setRegistrationCost(hospital.getRegistrationCost());
 
         return response;
     }
@@ -161,7 +163,11 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             hospital.setRegCostApplicable(hospitalRequest.getRegCostApplicable());
             hospital.setAppCostApplicable(hospitalRequest.getAppCostApplicable());
             hospital.setPreConsultationAvailable(hospitalRequest.getPreConsultationAvailable());
-
+            if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase("y")) {
+                hospital.setRegistrationCost(hospitalRequest.getRegistrationCost());
+            }else{
+                hospital.setRegistrationCost(BigDecimal.valueOf(0));
+            }
             MasHospital savedHospital = masHospitalRepository.save(hospital);
             return ResponseUtils.createSuccessResponse(convertToResponse(savedHospital), new TypeReference<>() {
             });
@@ -217,6 +223,11 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 existingHospital.setRegCostApplicable(hospitalRequest.getRegCostApplicable());
                 existingHospital.setAppCostApplicable(hospitalRequest.getAppCostApplicable());
                 existingHospital.setPreConsultationAvailable(hospitalRequest.getPreConsultationAvailable());
+                if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase("y")) {
+                    existingHospital.setRegistrationCost(hospitalRequest.getRegistrationCost());
+                }else{
+                    existingHospital.setRegistrationCost(BigDecimal.valueOf(0));
+                }
 
                 MasHospital updatedHospital = masHospitalRepository.save(existingHospital);
                 return ResponseUtils.createSuccessResponse(convertToResponse(updatedHospital), new TypeReference<>() {

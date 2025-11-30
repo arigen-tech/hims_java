@@ -63,4 +63,7 @@ public class DgSubMasInvestigation {
     @JoinColumn(name = "investigation_id")
     private DgMasInvestigation investigationId;
 
+    @Column(name = "fixed_value_expected_result", length = 1)
+    private String fixedValueExpectedValue;
+
 }

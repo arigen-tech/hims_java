@@ -9,6 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 public class PaymentUpdateRequest {
+    private String billingType;
     private int billHeaderId;
     private BigDecimal amount;
     private String  mode;

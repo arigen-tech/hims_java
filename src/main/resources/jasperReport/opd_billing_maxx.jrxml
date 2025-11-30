@@ -3,10 +3,11 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="opd_biling_maxx" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="26e9412c-746d-4df1-be4e-d2f6300f378b">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
-	<parameter name="visit_id" class="java.lang.Long"/>
-	<parameter name="path" class="java.lang.String"/>
-	<queryString>
-		<![CDATA[select 
+	<subDataset name="registration_cost" uuid="36c119ad-1844-425a-9501-3549fd795b45">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+		<queryString language="SQL">
+			<![CDATA[select 
     row_number() over (order by bh.visit_id) as row_num,
     bh.visit_id as visit_no,
     bh.hospital_address,
@@ -35,8 +36,15 @@
     bh.net_amount,
     bh.tax_total,
     bh.total_amount as bill_amount,
-    concat(bh.total_amount, ' INR') as total,
-    num_to_words(bh.total_amount) as total_in_words,
+	mh.registration_cost as registration_cost,
+    case
+		when v.visit_type ilike 'n' then bh.total_amount + mh.registration_cost || ' INR'
+		when v.visit_type ilike 'f' then bh.total_amount || ' INR'
+	end as total,
+	case
+		when v.visit_type ilike 'n' then num_to_words (bh.total_amount + mh.registration_cost) || ' only'
+		when v.visit_type ilike 'f' then num_to_words (bh.total_amount) ||  ' only'
+	end as total_in_words,
     concat(coalesce(bh.total_paid, 0), ' INR') as total_paid,
     coalesce(pd.payment_mode, 'cash') as payment_mode,
 	coalesce(bp.payment_reference_number, 'NA') as payment_reference_number
@@ -47,16 +55,94 @@ left join mas_service_opd as mso on bd.opd_service_id = mso.id
 left join mas_service_category as msc on bh.service_category_id = msc.id
 left join billing_payments as bp on bh.billing_hd_id = bp.billing_hd_id
 left join payment_details as pd on bp.payment_id = pd.payment_id
-where bh.visit_id = $P{visit_id}
+left join mas_hospital as mh on bh.hospital_id = mh.hospital_id
+left join visit as v on bh.visit_id = v.visit_id
 group by 
     bh.visit_id, bh.hospital_address, p.p_mobile_number, bh.patient_display_name, bh.patient_age,
     bh.patient_gender, p.p_address1, p.p_address2, p.p_city, p.p_pincode, bh.referred_by, bh.billing_date, 
     bh.patient_id, bh.bill_no, bh.gstn_bill_no, bh.hospital_gstin, mso.service_name, msc.sac_code, bh.total_amount, 
-    bh.discount_amount, bh.net_amount, bh.tax_total, bh.total_paid, pd.payment_mode, bp.payment_reference_number]]>
+    bh.discount_amount, bh.net_amount, bh.tax_total, bh.total_paid, pd.payment_mode, bp.payment_reference_number,
+	v.visit_type, mh.registration_cost]]>
+		</queryString>
+		<field name="registration_cost" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="registration_cost"/>
+			<property name="com.jaspersoft.studio.field.label" value="registration_cost"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+		</field>
+	</subDataset>
+	<parameter name="visit_id" class="java.lang.Long"/>
+	<parameter name="path" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[select
+	case
+		when v.visit_type ilike 'n' then row_number() over (order by bh.visit_id) + 1
+		else row_number() over (order by bh.visit_id)
+    end as row_num,
+	v.visit_type,
+    bh.visit_id as visit_no,
+    mh.address as hospital_address,
+    p.p_mobile_number as patient_contact,
+    bh.patient_display_name as patient_name,
+    concat(bh.patient_age, '/', bh.patient_gender) as age_sex,
+    coalesce(
+        case
+            when p.p_address1 is not null then concat(p.p_address1, ',', p.p_city, ',', p.p_pincode)
+            when p.p_address2 is not null then concat(p.p_address2, ',', p.p_city, ',', p.p_pincode)
+            else 'NA'
+        end, 
+        'NA'
+    ) as patient_address,    
+    coalesce(bh.referred_by, 'Self') as referred_by,
+    bh.billing_date as bill_date,
+    bh.patient_id,
+    bh.bill_no,
+    coalesce(bh.gstn_bill_no, 'NA') as gstn_bill,
+    coalesce(bh.hospital_gstin, 'NA') as gstn_no,
+	msc.service_cat_name as opd_service_name,
+    msc.sac_code,
+	count(msc.service_cat_name) as qty,
+    (bh.total_amount + bh.discount_amount - bh.tax_total) as base_price,
+    bh.discount_amount,
+    bh.net_amount,
+    bh.tax_total,
+    bh.total_amount as bill_amount,
+	mh.registration_cost as registration_cost,
+    case
+		when v.visit_type ilike 'n' then bh.total_amount + mh.registration_cost || ' INR'
+		when v.visit_type ilike 'f' then bh.total_amount || ' INR'
+	end as total,
+	case
+		when v.visit_type ilike 'n' then num_to_words (bh.total_amount + mh.registration_cost)
+		when v.visit_type ilike 'f' then num_to_words (bh.total_amount)
+	end as total_in_words,
+    concat(coalesce(bh.total_paid, 0), ' INR') as total_paid,
+    coalesce(pd.payment_mode, 'cash') as payment_mode,
+	coalesce(pd.payment_reference_no, 'NA') as payment_reference_number,
+	 cast(pd.payment_date as date) as payment_date
+from billing_header as bh
+left join patient as p on bh.patient_id = p.patient_id
+left join billing_details as bd on bh.bill_hd_id = bd.bill_hd_id
+left join mas_service_opd as mso on bd.opd_service_id = mso.id
+left join mas_service_category as msc on bh.service_category_id = msc.id
+left join payment_details as pd on bh.bill_hd_id = pd.billing_hd_id
+left join mas_hospital as mh on bh.hospital_id = mh.hospital_id
+left join visit as v on bh.visit_id = v.visit_id
+where bh.visit_id = $P{visit_id}
+group by 
+    bh.visit_id, mh.address, p.p_mobile_number, bh.patient_display_name, bh.patient_age,
+    bh.patient_gender, p.p_address1, p.p_address2, p.p_city, p.p_pincode, bh.referred_by, bh.billing_date, 
+    bh.patient_id, bh.bill_no, bh.gstn_bill_no, bh.hospital_gstin, msc.service_cat_name, msc.sac_code, bh.total_amount, 
+    bh.discount_amount, bh.net_amount, bh.tax_total, bh.total_paid, pd.payment_mode, pd.payment_reference_no,
+	v.visit_type, mh.registration_cost, pd.payment_date]]>
 	</queryString>
 	<field name="row_num" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="row_num"/>
 		<property name="com.jaspersoft.studio.field.label" value="row_num"/>
+	</field>
+	<field name="visit_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="visit_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="visit_type"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
 	</field>
 	<field name="visit_no" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="visit_no"/>
@@ -66,7 +152,7 @@ group by
 	<field name="hospital_address" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="hospital_address"/>
 		<property name="com.jaspersoft.studio.field.label" value="hospital_address"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
 	</field>
 	<field name="patient_contact" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="patient_contact"/>
@@ -95,7 +181,7 @@ group by
 		<property name="com.jaspersoft.studio.field.label" value="bill_date"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
 	</field>
-	<field name="patient_id" class="java.lang.Integer">
+	<field name="patient_id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="patient_id"/>
 		<property name="com.jaspersoft.studio.field.label" value="patient_id"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
@@ -116,7 +202,7 @@ group by
 	<field name="opd_service_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="opd_service_name"/>
 		<property name="com.jaspersoft.studio.field.label" value="opd_service_name"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="mas_service_opd"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_service_category"/>
 	</field>
 	<field name="sac_code" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="sac_code"/>
@@ -152,6 +238,11 @@ group by
 		<property name="com.jaspersoft.studio.field.label" value="bill_amount"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
 	</field>
+	<field name="registration_cost" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="registration_cost"/>
+		<property name="com.jaspersoft.studio.field.label" value="registration_cost"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
 	<field name="total" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="total"/>
 		<property name="com.jaspersoft.studio.field.label" value="total"/>
@@ -173,6 +264,11 @@ group by
 		<property name="com.jaspersoft.studio.field.name" value="payment_reference_number"/>
 		<property name="com.jaspersoft.studio.field.label" value="payment_reference_number"/>
 	</field>
+	<field name="payment_date" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="payment_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="payment_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
+	</field>
 	<background>
 		<band splitType="Stretch"/>
 	</background>
@@ -191,9 +287,9 @@ group by
 		</band>
 	</title>
 	<pageHeader>
-		<band height="167" splitType="Stretch">
+		<band height="165" splitType="Stretch">
 			<staticText>
-				<reportElement x="10" y="40" width="100" height="15" uuid="8a4776bf-5a13-4381-83eb-908d4999b08f">
+				<reportElement x="10" y="35" width="100" height="15" uuid="8a4776bf-5a13-4381-83eb-908d4999b08f">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
@@ -203,7 +299,7 @@ group by
 				<text><![CDATA[Mobile No. :]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="10" y="55" width="100" height="15" uuid="78464070-ad8d-45da-8170-1583b13b649a">
+				<reportElement x="10" y="50" width="100" height="15" uuid="78464070-ad8d-45da-8170-1583b13b649a">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
@@ -213,7 +309,7 @@ group by
 				<text><![CDATA[Patient Name :]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="10" y="70" width="100" height="15" uuid="c38df6c8-161f-4b4e-86f9-48df22c2122e">
+				<reportElement x="10" y="65" width="100" height="15" uuid="c38df6c8-161f-4b4e-86f9-48df22c2122e">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
@@ -223,7 +319,7 @@ group by
 				<text><![CDATA[Age/sex :]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="10" y="85" width="100" height="15" uuid="47f077be-a3af-4c5f-8d1c-0dc95f0fef63">
+				<reportElement x="10" y="80" width="100" height="15" uuid="47f077be-a3af-4c5f-8d1c-0dc95f0fef63">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
@@ -250,28 +346,28 @@ group by
 				<text><![CDATA[Bill of Supply]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="290" y="40" width="100" height="15" uuid="5b66db8d-4326-4178-a6b8-32a276124682"/>
+				<reportElement x="290" y="35" width="100" height="15" uuid="5b66db8d-4326-4178-a6b8-32a276124682"/>
 				<textElement textAlignment="Left">
 					<font isBold="true"/>
 				</textElement>
 				<text><![CDATA[Bill Date :]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="290" y="55" width="100" height="15" uuid="97d2a13c-ded0-455c-9356-4c4ccdc65de9"/>
+				<reportElement x="290" y="50" width="100" height="15" uuid="97d2a13c-ded0-455c-9356-4c4ccdc65de9"/>
 				<textElement textAlignment="Left">
 					<font isBold="true"/>
 				</textElement>
 				<text><![CDATA[Patient Id / SSN :]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="290" y="70" width="100" height="15" uuid="7157ee53-036b-448e-a1a5-37b85a9aeddb"/>
+				<reportElement x="290" y="65" width="100" height="15" uuid="7157ee53-036b-448e-a1a5-37b85a9aeddb"/>
 				<textElement textAlignment="Left">
 					<font isBold="true"/>
 				</textElement>
 				<text><![CDATA[Bill No. :]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="290" y="85" width="100" height="15" uuid="759c4dd2-0612-47e8-9042-6f1d53da2e66"/>
+				<reportElement x="290" y="80" width="100" height="15" uuid="759c4dd2-0612-47e8-9042-6f1d53da2e66"/>
 				<textElement textAlignment="Left">
 					<font isBold="true"/>
 				</textElement>
@@ -285,19 +381,19 @@ group by
 				<text><![CDATA[GSTN No :]]></text>
 			</staticText>
 			<textField>
-				<reportElement x="110" y="40" width="100" height="15" uuid="cad240da-0c9b-4bdf-80a2-03a99d64069d"/>
+				<reportElement x="110" y="35" width="100" height="15" uuid="cad240da-0c9b-4bdf-80a2-03a99d64069d"/>
 				<textFieldExpression><![CDATA[$F{patient_contact}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="110" y="55" width="100" height="15" uuid="1a8a34ef-9dfc-406c-bb93-2403525ebfc1"/>
+				<reportElement x="110" y="50" width="100" height="15" uuid="1a8a34ef-9dfc-406c-bb93-2403525ebfc1"/>
 				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="110" y="70" width="100" height="15" uuid="c591409c-008b-4182-b05f-5a6b10cab0a3"/>
+				<reportElement x="110" y="65" width="100" height="15" uuid="c591409c-008b-4182-b05f-5a6b10cab0a3"/>
 				<textFieldExpression><![CDATA[$F{age_sex}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="110" y="85" width="150" height="25" uuid="b3a1ddd0-0b23-4360-9a0a-a85d08ebac26"/>
+				<reportElement x="110" y="80" width="166" height="25" uuid="b3a1ddd0-0b23-4360-9a0a-a85d08ebac26"/>
 				<textFieldExpression><![CDATA[$F{patient_address}]]></textFieldExpression>
 			</textField>
 			<textField>
@@ -305,19 +401,19 @@ group by
 				<textFieldExpression><![CDATA[$F{referred_by}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="390" y="40" width="134" height="15" uuid="6b1784ce-e0ad-41a2-be72-caf50496364d"/>
+				<reportElement x="390" y="35" width="134" height="15" uuid="6b1784ce-e0ad-41a2-be72-caf50496364d"/>
 				<textFieldExpression><![CDATA[$F{bill_date}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="390" y="55" width="134" height="15" uuid="d4d2fcec-4417-40be-ad1c-dbcbf21859e5"/>
+				<reportElement x="390" y="50" width="134" height="15" uuid="d4d2fcec-4417-40be-ad1c-dbcbf21859e5"/>
 				<textFieldExpression><![CDATA[$F{patient_id}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="390" y="70" width="134" height="15" uuid="bb399567-09d7-459a-af49-a36c762518fa"/>
+				<reportElement x="390" y="65" width="134" height="15" uuid="bb399567-09d7-459a-af49-a36c762518fa"/>
 				<textFieldExpression><![CDATA[$F{bill_no}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="390" y="85" width="134" height="15" uuid="f4a02682-53cc-41ce-8cbb-aaedfcf7c6d9"/>
+				<reportElement x="390" y="80" width="134" height="15" uuid="f4a02682-53cc-41ce-8cbb-aaedfcf7c6d9"/>
 				<textFieldExpression><![CDATA[$F{gstn_bill}]]></textFieldExpression>
 			</textField>
 			<textField>
@@ -421,151 +517,187 @@ group by
 				<text><![CDATA[Net Amount]]></text>
 			</staticText>
 			<line>
-				<reportElement x="154" y="136" width="1" height="31" uuid="1a88253e-3064-46a7-8597-bc894dbfb6ac"/>
+				<reportElement x="154" y="136" width="1" height="26" uuid="1a88253e-3064-46a7-8597-bc894dbfb6ac"/>
 			</line>
 			<line>
-				<reportElement x="44" y="136" width="1" height="31" uuid="7b12ac97-e235-4efa-b324-2f08806c27d9"/>
+				<reportElement x="44" y="136" width="1" height="26" uuid="7b12ac97-e235-4efa-b324-2f08806c27d9"/>
 			</line>
 			<line>
-				<reportElement x="194" y="136" width="1" height="31" uuid="e43e9a04-c36b-4328-9dfa-a42e6ef25c2b"/>
+				<reportElement x="194" y="136" width="1" height="26" uuid="e43e9a04-c36b-4328-9dfa-a42e6ef25c2b"/>
 			</line>
 			<line>
-				<reportElement x="234" y="136" width="1" height="31" uuid="3057fa54-22ff-43a8-ae18-a818ab36ac2c"/>
+				<reportElement x="234" y="136" width="1" height="26" uuid="3057fa54-22ff-43a8-ae18-a818ab36ac2c"/>
 			</line>
 			<line>
-				<reportElement x="294" y="136" width="1" height="31" uuid="ad6d8361-6b8b-4737-878a-ce122a32016e"/>
+				<reportElement x="294" y="136" width="1" height="26" uuid="ad6d8361-6b8b-4737-878a-ce122a32016e"/>
 			</line>
 			<line>
-				<reportElement x="354" y="136" width="1" height="31" uuid="3d3d4331-abd4-46de-9243-bf4f41be3491"/>
+				<reportElement x="354" y="136" width="1" height="26" uuid="3d3d4331-abd4-46de-9243-bf4f41be3491"/>
 			</line>
 			<line>
-				<reportElement x="421" y="136" width="1" height="31" uuid="e1b18d93-b3ee-4445-9a07-411b97132d2d"/>
+				<reportElement x="421" y="136" width="1" height="26" uuid="e1b18d93-b3ee-4445-9a07-411b97132d2d"/>
 			</line>
 			<line>
-				<reportElement x="483" y="136" width="1" height="31" uuid="66c35ab6-94b8-461c-b825-3e5b0c20e081"/>
+				<reportElement x="483" y="136" width="1" height="26" uuid="66c35ab6-94b8-461c-b825-3e5b0c20e081"/>
 			</line>
 		</band>
 	</pageHeader>
 	<detail>
-		<band height="35">
+		<band height="24" splitType="Stretch">
+			<printWhenExpression><![CDATA[$F{visit_type}.equalsIgnoreCase("n")]]></printWhenExpression>
+			<frame>
+				<reportElement positionType="Float" x="0" y="-2" width="555" height="26" isRemoveLineWhenBlank="true" uuid="7c886afd-41b5-4eb9-a67f-199182dc22f9">
+					<property name="com.jaspersoft.studio.layout"/>
+					<printWhenExpression><![CDATA[$F{visit_type}.equalsIgnoreCase("n")]]></printWhenExpression>
+				</reportElement>
+				<line>
+					<reportElement x="0" y="25" width="555" height="1" isRemoveLineWhenBlank="true" uuid="b76cbacb-65dc-4066-9b50-dbeefacb9cdb"/>
+				</line>
+				<line>
+					<reportElement x="44" y="-6" width="1" height="32" isRemoveLineWhenBlank="true" uuid="4835e149-25e9-437b-89be-8e7a5645dd88"/>
+				</line>
+				<line>
+					<reportElement x="154" y="-6" width="1" height="32" isRemoveLineWhenBlank="true" uuid="50674db6-4763-44a2-b05f-e7bb4c63a344"/>
+				</line>
+				<line>
+					<reportElement x="194" y="-6" width="1" height="32" uuid="6733d7bb-05e1-49fe-bc95-2cecf0fb2849"/>
+				</line>
+				<line>
+					<reportElement x="234" y="-6" width="1" height="32" uuid="49486ffb-dd12-4731-8381-790ed0c1d765"/>
+				</line>
+				<line>
+					<reportElement x="294" y="-6" width="1" height="32" uuid="3d976084-2811-4db9-9662-58c6a8678fd1"/>
+				</line>
+				<line>
+					<reportElement x="354" y="-6" width="1" height="32" uuid="d3047ae3-beee-4ba7-8dc4-a769fc3e5ade"/>
+				</line>
+				<line>
+					<reportElement x="421" y="-6" width="1" height="32" uuid="6fd1dd6a-fc43-46fb-88bf-35481698c698"/>
+				</line>
+				<line>
+					<reportElement x="483" y="-6" width="1" height="32" uuid="98ea2892-7072-4ce3-9dfe-495ab1b20a90"/>
+				</line>
+				<textField>
+					<reportElement x="199" y="0" width="32" height="19" isRemoveLineWhenBlank="true" uuid="45b97bf2-f18b-4715-9213-3fb8d152a934"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle"/>
+					<textFieldExpression><![CDATA[1]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="234" y="2" width="59" height="14" isRemoveLineWhenBlank="true" uuid="f073dbb4-9244-4e6b-9619-83621cb34c00"/>
+					<textElement textAlignment="Center"/>
+					<textFieldExpression><![CDATA[$F{registration_cost}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="355" y="2" width="65" height="15" isRemoveLineWhenBlank="true" uuid="6ffb0bb9-7264-496c-81e1-1191c769816f"/>
+					<textElement textAlignment="Center"/>
+					<textFieldExpression><![CDATA[$F{registration_cost}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="484" y="2" width="70" height="15" isRemoveLineWhenBlank="true" uuid="6ecdd6da-aafe-490d-80be-0efbbcbc2c4f"/>
+					<textElement textAlignment="Center"/>
+					<textFieldExpression><![CDATA[$F{registration_cost}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="48" y="2" width="100" height="16" isRemoveLineWhenBlank="true" uuid="bb2d6124-a206-415d-ae48-446ed3adc3c0"/>
+					<textElement textAlignment="Center">
+						<font isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA["Registration Cost"]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="292" y="2" width="61" height="15" isRemoveLineWhenBlank="true" uuid="b819eb3b-f843-4cee-8f86-b3640c4cfdff"/>
+					<textElement textAlignment="Center"/>
+					<textFieldExpression><![CDATA["0.00"]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="419" y="2" width="64" height="15" isRemoveLineWhenBlank="true" uuid="b65f4d57-ed1e-40dc-a8d3-6c45aef5205e"/>
+					<textElement textAlignment="Center"/>
+					<textFieldExpression><![CDATA["0.00"]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="0" y="1" width="43" height="18" uuid="95558c74-ef42-463a-83a3-2806888c9222"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle"/>
+					<textFieldExpression><![CDATA[1]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+		<band height="31">
 			<textField>
-				<reportElement x="293" y="0" width="61" height="15" uuid="056b6204-91da-4ad3-8a37-aa03ae1296f9"/>
-				<textElement textAlignment="Center"/>
-				<textFieldExpression><![CDATA[$F{discount_amount}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="159" y="0" width="30" height="18" uuid="8f888961-fb0f-4426-b32d-5b81ed7107d1"/>
-				<textElement textAlignment="Center"/>
-				<textFieldExpression><![CDATA[$F{sac_code}]]></textFieldExpression>
-			</textField>
-			<line>
-				<reportElement x="0" y="34" width="555" height="1" uuid="b76cbacb-65dc-4066-9b50-dbeefacb9cdb"/>
-			</line>
-			<textField>
-				<reportElement x="420" y="0" width="64" height="15" uuid="11776c02-9b2a-4ee6-b351-2ae7e6ad22ff"/>
-				<textElement textAlignment="Center"/>
-				<textFieldExpression><![CDATA[$F{tax_total}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="484" y="0" width="70" height="15" uuid="99750169-adfe-42d4-9fc4-fdf6560075f1"/>
-				<textElement textAlignment="Center"/>
-				<textFieldExpression><![CDATA[$F{bill_amount}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="44" y="0" width="111" height="30" uuid="feb35caa-2974-4edc-9dc1-32ffa7f068e1"/>
-				<textElement textAlignment="Center"/>
-				<textFieldExpression><![CDATA[$F{opd_service_name}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="234" y="0" width="59" height="14" uuid="e370cde0-71d6-492b-a92b-f5b7be8c5269"/>
-				<textElement textAlignment="Center"/>
-				<textFieldExpression><![CDATA[$F{base_price}]]></textFieldExpression>
-			</textField>
-			<textField>
-				<reportElement x="355" y="0" width="65" height="15" uuid="661eb06f-8733-40da-ac0b-b2b77b1ed298"/>
-				<textElement textAlignment="Center"/>
-				<textFieldExpression><![CDATA[$F{net_amount}]]></textFieldExpression>
-			</textField>
-			<line>
-				<reportElement x="44" y="0" width="1" height="34" uuid="4835e149-25e9-437b-89be-8e7a5645dd88"/>
-			</line>
-			<line>
-				<reportElement x="154" y="0" width="1" height="34" uuid="50674db6-4763-44a2-b05f-e7bb4c63a344"/>
-			</line>
-			<line>
-				<reportElement x="194" y="0" width="1" height="34" uuid="6733d7bb-05e1-49fe-bc95-2cecf0fb2849"/>
-			</line>
-			<line>
-				<reportElement x="234" y="0" width="1" height="34" uuid="49486ffb-dd12-4731-8381-790ed0c1d765"/>
-			</line>
-			<line>
-				<reportElement x="294" y="0" width="1" height="34" uuid="3d976084-2811-4db9-9662-58c6a8678fd1"/>
-			</line>
-			<line>
-				<reportElement x="354" y="0" width="1" height="34" uuid="d3047ae3-beee-4ba7-8dc4-a769fc3e5ade"/>
-			</line>
-			<line>
-				<reportElement x="421" y="0" width="1" height="34" uuid="6fd1dd6a-fc43-46fb-88bf-35481698c698"/>
-			</line>
-			<line>
-				<reportElement x="483" y="0" width="1" height="34" uuid="98ea2892-7072-4ce3-9dfe-495ab1b20a90"/>
-			</line>
-			<textField>
-				<reportElement x="0" y="0" width="45" height="18" uuid="525d7e62-dff5-4c09-a98b-d48407b07127"/>
+				<reportElement x="-1" y="9" width="45" height="18" uuid="f0366925-97b3-42c2-9205-469b5cad0774"/>
 				<textElement textAlignment="Center"/>
 				<textFieldExpression><![CDATA[$F{row_num}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="200" y="0" width="30" height="18" uuid="e4b7addf-8b75-495b-9dc0-ef2f17380476"/>
+				<reportElement x="43" y="9" width="111" height="14" uuid="4a23ad88-f71d-4478-9c57-8e26dc3fb8c3"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{opd_service_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="158" y="9" width="30" height="18" uuid="b616642e-7ccb-4a2f-9c97-f3bec2ebcc2c"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{sac_code}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="199" y="9" width="30" height="18" uuid="5b3be2b1-d3b5-494e-b291-349e737a933d"/>
 				<textElement textAlignment="Center"/>
 				<textFieldExpression><![CDATA[$F{qty}]]></textFieldExpression>
 			</textField>
+			<textField>
+				<reportElement x="233" y="9" width="59" height="14" uuid="1d10308f-bbce-4c93-8b41-f5234218bb3d"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{base_price}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="292" y="9" width="61" height="15" uuid="c440e6c6-c652-4a43-b5f6-f90892e116b0"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{discount_amount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="354" y="9" width="65" height="15" uuid="8192c2fe-8277-4264-9628-113295230ca1"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{net_amount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="419" y="9" width="64" height="15" uuid="60428a2d-3b09-44f3-8ed8-93fe5965df3a"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{tax_total}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="483" y="9" width="70" height="15" uuid="9a740109-db7e-49e4-89e6-6a90915c5527"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{bill_amount}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="44" y="-4" width="1" height="31" uuid="44dc5a3a-3623-4bc9-ab25-3773e365355c"/>
+			</line>
+			<line>
+				<reportElement x="154" y="-3" width="1" height="29" uuid="c7cf0e11-136d-43bd-b5bd-5200d099cacd"/>
+			</line>
+			<line>
+				<reportElement x="194" y="-3" width="1" height="29" uuid="7b7a6fef-9950-4f47-ac15-4372ffaa907b"/>
+			</line>
+			<line>
+				<reportElement x="234" y="-3" width="1" height="29" uuid="b597b385-f8e4-406f-84d3-dae4ce9e622f"/>
+			</line>
+			<line>
+				<reportElement x="294" y="-3" width="1" height="29" uuid="8d052527-97e5-4124-8745-21e23575b8e5"/>
+			</line>
+			<line>
+				<reportElement x="354" y="-3" width="1" height="29" uuid="9b303611-697b-4626-8045-b6c84ef6e2a3"/>
+			</line>
+			<line>
+				<reportElement x="421" y="-3" width="1" height="29" uuid="c42f448b-5c97-4b22-9563-9d02e0cf45e2"/>
+			</line>
+			<line>
+				<reportElement x="483" y="-3" width="1" height="29" uuid="5d0ddca0-689c-454c-860f-3c90670c1d12"/>
+			</line>
+			<line>
+				<reportElement x="0" y="26" width="555" height="1" uuid="d51639e4-d2c4-42f7-b048-8a9453080de7"/>
+			</line>
 		</band>
 	</detail>
-	<pageFooter>
-		<band height="62">
-			<staticText>
-				<reportElement x="10" y="10" width="130" height="15" uuid="1bb354a8-6d74-4c45-9c66-ee2b8455d191">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				</reportElement>
-				<textElement textAlignment="Left">
-					<font isBold="true"/>
-				</textElement>
-				<text><![CDATA[Payment Mode(s)]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="450" y="30" width="74" height="15" uuid="55ebf8a0-8943-4a7f-9b9a-ab25a9d73f9e">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				</reportElement>
-				<textElement textAlignment="Right">
-					<font isBold="true"/>
-				</textElement>
-				<text><![CDATA[Signature]]></text>
-			</staticText>
-			<textField>
-				<reportElement x="140" y="10" width="100" height="15" uuid="5b59377a-19f0-4ebf-9b4f-9b71526335d6"/>
-				<textFieldExpression><![CDATA[$F{payment_mode}]]></textFieldExpression>
-			</textField>
-			<staticText>
-				<reportElement x="10" y="25" width="130" height="15" uuid="2e1fc537-02a0-4db0-96c2-df907cdee02e">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				</reportElement>
-				<textElement textAlignment="Left">
-					<font isBold="true"/>
-				</textElement>
-				<text><![CDATA[Payment Reference No]]></text>
-			</staticText>
-			<textField>
-				<reportElement x="140" y="25" width="100" height="15" uuid="f8b1360c-d007-405f-b067-eb560ed891ea"/>
-				<textFieldExpression><![CDATA[$F{payment_reference_number}]]></textFieldExpression>
-			</textField>
-		</band>
-	</pageFooter>
 	<summary>
-		<band height="124" splitType="Stretch">
+		<band height="191" splitType="Stretch">
 			<staticText>
 				<reportElement x="220" y="20" width="50" height="15" uuid="cb440961-0590-4411-9358-82c42f8cca7a">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
@@ -641,6 +773,52 @@ group by
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
+			<textField>
+				<reportElement x="15" y="176" width="279" height="15" uuid="0d944a8c-5bff-42af-a2dc-2e4f48b01c81"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Date of Payment :  " + $F{payment_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="15" y="137" width="280" height="15" uuid="86aa5774-8fca-4f74-b201-c1010a478a1a"/>
+				<textFieldExpression><![CDATA[$F{payment_mode} + " received for " + $F{total_paid}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="15" y="155" width="280" height="15" uuid="9d16f725-f844-4f28-88f7-6b3cb48fd170"/>
+				<textFieldExpression><![CDATA["with Payment Ref no " + $F{payment_reference_number}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="15" y="117" width="110" height="15" uuid="0d1dd1ef-fb59-44c2-be5d-7989279348f7">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Payment Mode(s)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="455" y="137" width="74" height="15" uuid="e8fc0bce-3b2f-40ec-acfd-f675edd106e2">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Signature]]></text>
+			</staticText>
 		</band>
 	</summary>
+	<noData>
+		<band height="27">
+			<staticText>
+				<reportElement x="0" y="0" width="555" height="27" uuid="55949cf4-36bf-44fa-b505-f8aaf641aaca"/>
+				<textElement textAlignment="Center">
+					<font size="16"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOUND]]></text>
+			</staticText>
+		</band>
+	</noData>
 </jasperReport>

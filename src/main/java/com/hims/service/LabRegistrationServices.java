@@ -1,5 +1,6 @@
 package com.hims.service;
 
+import com.hims.request.LabBillingOnlyRequest;
 import com.hims.request.LabRegRequest;
 import com.hims.request.PaymentUpdateRequest;
 import com.hims.request.SampleCollectionRequest;
@@ -17,4 +18,5 @@ public interface LabRegistrationServices {
 
     List<PendingSampleResponse> getPendingSamples();
     ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest labreq);
+    public ApiResponse<AppsetupResponse> labRegForExistingOrder(LabBillingOnlyRequest labReq);
 }

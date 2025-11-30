@@ -1,8 +1,11 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.BillingHeader;
+import com.hims.entity.DgMasInvestigation;
+import com.hims.entity.DgMasInvestigation;
 import com.hims.entity.DgOrderDt;
 import com.hims.entity.DgOrderHd;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -10,6 +13,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> {
@@ -35,6 +42,20 @@ public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> {
     List<DgOrderDt> findByOrderhdIdAndBillingStatusAndOrderStatus(DgOrderHd orderhdId, String billingStatus, String orderStatus);
 
     List<DgOrderDt> findByOrderhdIdId(int orderHdId);
-//SELECT b FROM DgOrderDt b WHERE b.billingHd.id = :billHdId AND b.billingStatus = 'y'
+
+    List<DgOrderDt> findByOrderhdIdAndBillingStatus(DgOrderHd orderHd, String n);
+
+    @Transactional
+    @Modifying
+    @Query("UPDATE DgOrderDt d SET d.orderStatus = :status WHERE d.id = :id")
+    void updateOrderStatus(Long id, String status);
+
+    @Query("SELECT d.orderStatus FROM DgOrderDt d WHERE d.orderhdId.id = :orderHdId")
+    List<String> getOrderStatusesOfOrderHd(Long orderHdId);
+
+
+
+    DgOrderDt findByOrderhdId_IdAndInvestigationId_InvestigationId(long id, Long investigationId);
+
 
 }
