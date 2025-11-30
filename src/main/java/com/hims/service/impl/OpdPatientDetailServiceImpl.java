@@ -17,6 +17,7 @@ import com.hims.utils.StockFound;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -1087,6 +1088,22 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
 
         return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+    }
+
+    @Override
+    public ApiResponse<String> updateVisitStatus(Long visitId, String status) {
+
+        Visit visit = visitRepository.findById(visitId)
+                .orElseThrow(() -> new RuntimeException("Visit not found with id: " + visitId));
+
+        visit.setVisitStatus(status);
+
+        visitRepository.save(visit);
+
+        return ResponseUtils.createSuccessResponse(
+                "Status updated successfully",
+                new TypeReference<>() {}
+        );
     }
 
 

@@ -125,11 +125,11 @@ public class PatientController {
     }
 
 
-//    @GetMapping("/activeVisit")
-//    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> getActiveVisits() {
-//        ApiResponse<List<OpdPatientDetailsWaitingresponce>> response = opdPatientDetailService.getActiveVisits();
-//        return ResponseEntity.ok(response);
-//    }
+    @GetMapping("/activeVisit")
+    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> getActiveVisits() {
+        ApiResponse<List<OpdPatientDetailsWaitingresponce>> response = opdPatientDetailService.getActiveVisits();
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping("/activeVisit/search")
     public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> searchActiveVisits(
@@ -152,5 +152,12 @@ public class PatientController {
         return ResponseEntity.ok(response);
     }
 
+
+    @PutMapping("/changeStatusForClose/{visitId}/{status}")
+    public ApiResponse<String> updateStatusForClose(
+            @PathVariable Long visitId,
+            @PathVariable String status) {
+        return opdPatientDetailService.updateVisitStatus(visitId, status);
+    }
 
 }

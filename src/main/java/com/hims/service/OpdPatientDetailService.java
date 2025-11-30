@@ -8,6 +8,7 @@ import com.hims.response.ApiResponse;
 import com.hims.response.OpdPatientDetailsWaitingresponce;
 import com.hims.response.OpdPatientRecallResponce;
 import com.hims.response.RecallOpdPatientDetailRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -24,4 +25,6 @@ public interface OpdPatientDetailService {
     ApiResponse<List<OpdPatientDetailsWaitingresponce>> getActiveVisitsWithFilters(ActiveVisitSearchRequest req);
 
     ApiResponse<List<OpdPatientRecallResponce>> getRecallVisit(String name, String mobile, LocalDate visitDate);
+
+    ApiResponse<String> updateVisitStatus(Long visitId, String status);
 }
