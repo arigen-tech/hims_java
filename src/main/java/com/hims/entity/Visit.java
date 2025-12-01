@@ -91,4 +91,7 @@ public class Visit {
     @JoinColumn(name = "billing_hd_id")
     private BillingHeader billingHd;
 
+    @Column(name="visit_type",length=1)
+    private String visitType;
+
 }

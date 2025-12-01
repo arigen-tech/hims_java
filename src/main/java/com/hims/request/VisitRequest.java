@@ -21,4 +21,5 @@ public class VisitRequest {
     private Long iniDoctorId;
     private Long sessionId;
     private String billingStatus;
+    private String visitType;
 }

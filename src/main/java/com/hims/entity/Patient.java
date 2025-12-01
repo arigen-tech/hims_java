@@ -193,4 +193,7 @@ public class Patient {
     @JoinColumn(name = "p_hospital_id")
     private MasHospital patientHospital;
 
+    public String getFullName(){
+        return patientFn+" "+patientMn +" "+patientLn;
+    }
 }

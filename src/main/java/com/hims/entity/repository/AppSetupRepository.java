@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,12 +28,12 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
                                           @Param("session") MasOpdSession session);
     @Query("SELECT a FROM AppSetup a " +
             "WHERE a.doctorId.id = :doctorId " +
-            "AND a.hospital.id = :hospitalId " +
+            "AND a.dept.Id = :departmentId " +
             "AND a.session.id = :sessionId " +
             "AND a.days LIKE %:dayName%")
     Optional<AppSetup> findByDoctorHospitalSessionAndDayName(
             @Param("doctorId") Long doctorId,
-            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
             @Param("sessionId") Long sessionId,
             @Param("dayName") String dayName);
 

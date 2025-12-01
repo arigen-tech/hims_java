@@ -1,16 +1,16 @@
 package com.hims.response;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 
-@Data
-public class PendingBillingResponse {
-
-    private Long billinghdid;
+@Getter
+@Setter
+public class OPDBillingPatientResponse {
+    //private Long billinghdid;
     private Long patientid;
     private String patientName;
     private String mobileNo;
@@ -27,19 +27,16 @@ public class PendingBillingResponse {
     private String orderhdPaymentStatus;
     private String flag;
     private String source;
-    private String patientUhid;
 
-    private String visitType;
-    private Long tokenNo;
-    private Instant visitDate;
-    private String sessionName;
-    private BigDecimal registrationCost;
+//    private String visitType;
+//    private Long tokenNo;
+//    private Instant visitDate;
+//    private String sessionName;
+//    private BigDecimal registrationCost;
 
 
 
     private List<AppointmentBlock> appointments;
     private List<BillingDetailResponse> details;
-
-
 
 }

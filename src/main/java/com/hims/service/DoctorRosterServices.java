@@ -16,7 +16,7 @@ public interface DoctorRosterServices {
     ApiResponse<AppsetupResponse> doctorRoster(DoctorRosterRequest doctertReq);
 
 
-    ApiResponse<List<DoctorRosterDTO>> getDoctorRoster(Long deptId, Long doctorId, LocalDate rosterDate);
+    ApiResponse<List<DoctorRosterDTO>> getDoctorRoster(Long deptId, Long doctorId, LocalDate rosterDate , Long sessionId);
 
     ApiResponse<DoctorRosterResponseDTO> getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate, boolean isProduction);
 }

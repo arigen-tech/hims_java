@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -92,6 +93,17 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("mobile") String mobile,
             @Param("name") String name
     );
+
+    List<Visit> findByBillingStatusIn(List<String> billingStatus);
+
+    @Query("SELECT COUNT(v) FROM Visit v WHERE v.id = :patientId")
+    Long countByPatientId(@Param("patientId") Long patientId);
+
+    @Query("SELECT COUNT(v) FROM Visit v WHERE v.patient.id = :patientId AND DATE(v.visitDate) = :visitDate")
+    int countByPatientIdAndVisitDate(@Param("patientId") Long patientId,
+                                     @Param("visitDate") Instant visitDate);
+
+
 
 
     @Query(value = """

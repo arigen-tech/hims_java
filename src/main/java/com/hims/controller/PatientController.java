@@ -44,7 +44,7 @@ public class PatientController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> registerPatient(@RequestBody PatientRegistrationReq request) {
-        ApiResponse<PatientRegFollowUpResp> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail(),request.getVisit());
+        ApiResponse<PatientRegFollowUpResp> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail(), request.getVisits());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @PostMapping("/update")
@@ -125,11 +125,11 @@ public class PatientController {
     }
 
 
-    @GetMapping("/activeVisit")
-    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> getActiveVisits() {
-        ApiResponse<List<OpdPatientDetailsWaitingresponce>> response = opdPatientDetailService.getActiveVisits();
-        return ResponseEntity.ok(response);
-    }
+//    @GetMapping("/activeVisit")
+//    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> getActiveVisits() {
+//        ApiResponse<List<OpdPatientDetailsWaitingresponce>> response = opdPatientDetailService.getActiveVisits();
+//        return ResponseEntity.ok(response);
+//    }
 
     @PostMapping("/activeVisit/search")
     public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> searchActiveVisits(

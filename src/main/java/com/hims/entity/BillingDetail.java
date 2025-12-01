@@ -104,4 +104,7 @@ public class BillingDetail {
     @Column(name = "payment_status", length = 1)
     private String paymentStatus;
 
+    @Column(name = "registration_cost",precision = 10, scale = 2)
+    private BigDecimal registrationCost;
+
 }
