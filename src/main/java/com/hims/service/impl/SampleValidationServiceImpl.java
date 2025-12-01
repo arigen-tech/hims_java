@@ -99,7 +99,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
                 int orderHdId = header.getVisitId().getBillingHd().getHdorder().getId();
 
-                LabTurnAroundTime labTurnAroundTime = labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_Id(orderHdId, investigationId, header.getPatientId().getId());
+                LabTurnAroundTime labTurnAroundTime = labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(orderHdId, investigationId, header.getPatientId().getId(),null);
                 String detailStatus;
                 if(accepted){
                     detailStatus="y";
@@ -131,6 +131,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
                 labTurnAroundTime.setSampleValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
                 labTurnAroundTime.setSampleValidatedDateTime(LocalDateTime.now());
+                labTurnAroundTimeRepository.save(labTurnAroundTime);
 
 
                 detailsRepo.save(details);

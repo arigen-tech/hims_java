@@ -13,4 +13,13 @@ public interface LabTurnAroundTimeRepository  extends JpaRepository<LabTurnAroun
             Long investigationId,
             Long patientId
     );
+    LabTurnAroundTime findByIsRejectAndOrderHd_IdAndInvestigation_InvestigationIdAndPatient_Id(
+            Boolean isReject,
+            int orderHdId,
+            Long investigationId,
+            Long patientId
+
+    );
+
+    LabTurnAroundTime findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(int id, Long investigationId, Long id1, Boolean s );
 }
