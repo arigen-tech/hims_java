@@ -31,7 +31,7 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
             "AND a.dept.Id = :departmentId " +
             "AND a.session.id = :sessionId " +
             "AND a.days LIKE %:dayName%")
-    Optional<AppSetup> findByDoctorHospitalSessionAndDayName(
+    List<AppSetup> findByDoctorHospitalSessionAndDayName(
             @Param("doctorId") Long doctorId,
             @Param("departmentId") Long departmentId,
             @Param("sessionId") Long sessionId,
