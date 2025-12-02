@@ -106,6 +106,9 @@ public class MasterController {
     @Autowired
     private MasInvestigationMethodologyService masInvestigationMethodologyService;
 
+    @Autowired
+    private MasCareLevelService masCareLevelService;
+
     //    ================================Mas Application Controller================================//
 
     @GetMapping("/mas-applications/getAll/{flag}")
@@ -1434,6 +1437,28 @@ public class MasterController {
             @RequestParam(defaultValue = "20") int size
     ) {
         return masIcdService.getAllIcd(flag, page, size);
+    }
+
+    //  ============================================ Mas Care Level=====================================
+    @PostMapping("/mas-care-level/create")
+    public ResponseEntity<?> createCareLevel(@RequestBody MasCareLevelRequest request){
+        return ResponseEntity.status(HttpStatus.CREATED).body(masCareLevelService.createCareLevel(request));
+    }
+    @PutMapping("/mas-care-level/update/{careId}")
+    public ResponseEntity<?> updateCareLevel(@PathVariable Long careId, @RequestBody MasCareLevelRequest  request) {
+        return ResponseEntity.ok(masCareLevelService.updateCareLevel(careId,request));
+    }
+    @PutMapping("/mas-care-level/update-status/{careId}")
+    public ResponseEntity<?> updateStatusCareLevel(@PathVariable Long careId, @RequestParam String status) {
+        return ResponseEntity.ok(masCareLevelService.changeActiveStatus(careId,status));
+    }
+    @GetMapping("/mas-care-level/getAll/{flag}")
+    public ResponseEntity<?> getAllCareLevel(@PathVariable int flag){
+        return ResponseEntity.ok(masCareLevelService.getAll(flag));
+    }
+    @GetMapping("/mas-care-level/getById/{careId}")
+    public ResponseEntity<?> getMasCareById(@PathVariable Long careId) {
+        return ResponseEntity.ok(masCareLevelService.getById(careId));
     }
 
 
