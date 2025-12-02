@@ -105,9 +105,26 @@ public class MasterController {
     private MasInvestigationCategoryService masInvestigationCategoryService;
     @Autowired
     private MasInvestigationMethodologyService masInvestigationMethodologyService;
+    @Autowired
+    private MasWardCategoryService masWardCategoryService;
 
     @Autowired
     private MasCareLevelService masCareLevelService;
+    @Autowired
+    private MasWardService masWardService;
+
+    @Autowired
+    private  MasRoomCategoryService masRoomCategoryService;
+    @Autowired
+    private MasBedTypeService masBedTypeService;
+
+    @Autowired
+    private  MasRoomService masRoomService;
+
+    @Autowired
+    private MasBedStatusService masBedStatusService;
+
+
 
     //    ================================Mas Application Controller================================//
 
@@ -1459,6 +1476,205 @@ public class MasterController {
     @GetMapping("/mas-care-level/getById/{careId}")
     public ResponseEntity<?> getMasCareById(@PathVariable Long careId) {
         return ResponseEntity.ok(masCareLevelService.getById(careId));
+    }
+
+
+    //    ===============================Mas Ward Category=====================================
+
+    @GetMapping("/masWardCategory/getAll/{flag}")
+    public ApiResponse<List<MasWardCategoryResponse >> getAllMasWard(@PathVariable int flag) {
+        return masWardCategoryService.getAllMasWardCategory(flag);
+    }
+
+    @GetMapping("/masWardCategory/getById/{id}")
+    public ResponseEntity<ApiResponse<MasWardCategoryResponse >> getMasWardById(@PathVariable Long id) {
+        ApiResponse<MasWardCategoryResponse> response = masWardCategoryService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/masWardCategory/create")
+    public ResponseEntity<ApiResponse<MasWardCategoryResponse >> addMasWard(@RequestBody MasWardCategoryRequest  request) {
+        ApiResponse<MasWardCategoryResponse> response = masWardCategoryService.addMasWard(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/masWardCategory/update/{id}")
+    public ResponseEntity<ApiResponse<MasWardCategoryResponse >> updateMasWard(
+            @PathVariable Long id,
+            @RequestBody MasWardCategoryRequest  request) {
+        ApiResponse<MasWardCategoryResponse> response = masWardCategoryService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/masWardCategory/status/{id}")
+    public ResponseEntity<ApiResponse<MasWardCategoryResponse >> changeMasWardStatus(@PathVariable Long id, @RequestParam String status) {
+        ApiResponse<MasWardCategoryResponse> response = masWardCategoryService.changeMasWardStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+    //    ===============================Mas Ward =====================================
+
+    @GetMapping("/masWard/getAll/{flag}")
+    public ApiResponse<List<MasWardResponse >> getMasWard(@PathVariable int flag) {
+        return masWardService.getAllMasWardCategory(flag);
+    }
+
+    @GetMapping("/masWard/getById/{id}")
+    public ResponseEntity<ApiResponse<MasWardResponse >> getWardById(@PathVariable Long id) {
+        ApiResponse<MasWardResponse> response = masWardService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/masWard/create")
+    public ResponseEntity<ApiResponse<MasWardResponse >> addWard(@RequestBody MasWardRequest  request) {
+        ApiResponse<MasWardResponse> response = masWardService.addMasWard(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/masWard/update/{id}")
+    public ResponseEntity<ApiResponse<MasWardResponse >> updateWard(
+            @PathVariable Long id,
+            @RequestBody MasWardRequest  request) {
+        ApiResponse<MasWardResponse> response = masWardService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/masWard/status/{id}")
+    public ResponseEntity<ApiResponse<MasWardResponse >> changeWardStatus(@PathVariable Long id, @RequestParam String status) {
+        ApiResponse<MasWardResponse> response = masWardService.changeMasWardStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    //  ============================================ Mas Room Category =====================================
+
+
+    @PostMapping("mas-room-category/create")
+    public ResponseEntity<?> createRoomCategory(@RequestBody MasRoomCategoryRequest request) {
+        return ResponseEntity.ok(masRoomCategoryService.createRoomCategory(request));
+    }
+
+    @PutMapping("mas-room-category/update/{roomCategoryId}")
+    public ResponseEntity<?> updateRoomCategory(
+            @PathVariable Long roomCategoryId,
+            @RequestBody MasRoomCategoryRequest request) {
+        return ResponseEntity.ok(masRoomCategoryService.updateRoomCategory(roomCategoryId, request));
+    }
+
+    @PutMapping("mas-room-category/status/{roomCategoryId}")
+    public ResponseEntity<ApiResponse<MasRoomCategoryResponse>> changeStatus(
+            @PathVariable Long roomCategoryId,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masRoomCategoryService.changeActiveStatus(roomCategoryId, status));
+    }
+
+    @GetMapping("mas-room-category/getById/{roomCategoryId}")
+    public ResponseEntity<?> getById(@PathVariable Long roomCategoryId) {
+        return ResponseEntity.ok(masRoomCategoryService.getById(roomCategoryId));
+    }
+
+    @GetMapping("mas-room-category/getAll/{flag}")
+    public ResponseEntity<?> getAllRoomCategory(@PathVariable int flag) {
+        return ResponseEntity.ok(masRoomCategoryService.getAll(flag));
+    }
+
+
+    //  ============================================ Mas Room =====================================
+
+
+    @PostMapping("mas-room/create")
+    public ResponseEntity<ApiResponse<MasRoomResponse>> create(@RequestBody MasRoomRequest request) {
+        return ResponseEntity.ok(masRoomService.createRoom(request));
+    }
+
+    @PutMapping("mas-room/update/{roomId}")
+    public ResponseEntity<ApiResponse<MasRoomResponse>> update(
+            @PathVariable Long roomId,
+            @RequestBody MasRoomRequest request) {
+        return ResponseEntity.ok(masRoomService.updateRoom(roomId, request));
+    }
+
+    @PutMapping("mas-room/status/{roomId}")
+    public ResponseEntity<ApiResponse<MasRoomResponse>> changeRoomStatus(
+            @PathVariable Long roomId,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masRoomService.changeActiveStatus(roomId, status));
+    }
+
+    @GetMapping("mas-room/{roomId}")
+    public ResponseEntity<ApiResponse<MasRoomResponse>> getRoomById(@PathVariable Long roomId) {
+        return ResponseEntity.ok(masRoomService.getById(roomId));
+    }
+
+    @GetMapping("mas-room/all/{flag}")
+    public ResponseEntity<ApiResponse<List<MasRoomResponse>>> getAllRoom(@PathVariable int flag) {
+        return ResponseEntity.ok(masRoomService.getAll(flag));
+    }
+
+
+
+    //  ============================================ Mas Bed Type =====================================
+
+
+    @PostMapping("masBedType/create")
+    public ResponseEntity<?> createBed(@RequestBody MasBedTypeRequest request) {
+        return ResponseEntity.ok(masBedTypeService.createRoomCategory(request));
+    }
+
+    @PutMapping("masBedType/update/{id}")
+    public ResponseEntity<?> updateBed(
+            @PathVariable Long id,
+            @RequestBody MasBedTypeRequest request) {
+        return ResponseEntity.ok(masBedTypeService.updateRoomCategory(id, request));
+    }
+
+    @PutMapping("masBedType/status/{id}")
+    public ResponseEntity<ApiResponse<MasBedTypeResponse>> changeBedStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masBedTypeService.changeActiveStatus(id, status));
+    }
+
+    @GetMapping("masBedType/getById/{id}")
+    public ResponseEntity<?> getByIdBed(@PathVariable Long id) {
+        return ResponseEntity.ok(masBedTypeService.getById(id));
+    }
+
+    @GetMapping("masBedType/getAll/{flag}")
+    public ResponseEntity<?> getAllBed(@PathVariable int flag) {
+        return ResponseEntity.ok(masBedTypeService.getAll(flag));
+    }
+
+    //  ============================================ Mas Bed Status =====================================
+
+
+    @PostMapping("mas-bed-status/create")
+    public ResponseEntity<ApiResponse<MasBedStatusResponse>> create(@RequestBody MasBedStatusRequest request) {
+        return ResponseEntity.ok(masBedStatusService.createBedStatus(request));
+    }
+
+    @PutMapping("mas-bed-status/update/{id}")
+    public ResponseEntity<?> update(
+            @PathVariable Long id,
+            @RequestBody MasBedStatusRequest request) {
+        return ResponseEntity.ok(masBedStatusService.updateBedStatus(id, request));
+    }
+
+    @PutMapping("mas-bed-status/status/{id}")
+    public ResponseEntity<ApiResponse<MasBedStatusResponse>> changeMasBedStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masBedStatusService.changeActiveStatus(id, status));
+    }
+
+    @GetMapping("mas-bed-status/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBedStatusResponse>> getMasBedStatusById(@PathVariable Long id) {
+        return ResponseEntity.ok(masBedStatusService.getById(id));
+    }
+
+    @GetMapping("mas-bed-status/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasBedStatusResponse>>> getAllBedStatus(@PathVariable int flag) {
+        return ResponseEntity.ok(masBedStatusService.getAll(flag));
     }
 
 
