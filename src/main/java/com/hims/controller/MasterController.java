@@ -105,9 +105,13 @@ public class MasterController {
     private MasInvestigationCategoryService masInvestigationCategoryService;
     @Autowired
     private MasInvestigationMethodologyService masInvestigationMethodologyService;
+    @Autowired
+    private MasWardCategoryService masWardCategoryService;
 
     @Autowired
     private MasCareLevelService masCareLevelService;
+    @Autowired
+    private MasWardService masWardService;
 
     @Autowired
     private  MasRoomCategoryService masRoomCategoryService;
@@ -1465,6 +1469,73 @@ public class MasterController {
         return ResponseEntity.ok(masCareLevelService.getById(careId));
     }
 
+
+    //    ===============================Mas Ward Category=====================================
+
+    @GetMapping("/masWardCategory/getAll/{flag}")
+    public ApiResponse<List<MasWardCategoryResponse >> getAllMasWard(@PathVariable int flag) {
+        return masWardCategoryService.getAllMasWardCategory(flag);
+    }
+
+    @GetMapping("/masWardCategory/getById/{id}")
+    public ResponseEntity<ApiResponse<MasWardCategoryResponse >> getMasWardById(@PathVariable Long id) {
+        ApiResponse<MasWardCategoryResponse> response = masWardCategoryService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/masWardCategory/create")
+    public ResponseEntity<ApiResponse<MasWardCategoryResponse >> addMasWard(@RequestBody MasWardCategoryRequest  request) {
+        ApiResponse<MasWardCategoryResponse> response = masWardCategoryService.addMasWard(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/masWardCategory/update/{id}")
+    public ResponseEntity<ApiResponse<MasWardCategoryResponse >> updateMasWard(
+            @PathVariable Long id,
+            @RequestBody MasWardCategoryRequest  request) {
+        ApiResponse<MasWardCategoryResponse> response = masWardCategoryService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/masWardCategory/status/{id}")
+    public ResponseEntity<ApiResponse<MasWardCategoryResponse >> changeMasWardStatus(@PathVariable Long id, @RequestParam String status) {
+        ApiResponse<MasWardCategoryResponse> response = masWardCategoryService.changeMasWardStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+    //    ===============================Mas Ward =====================================
+
+    @GetMapping("/masWard/getAll/{flag}")
+    public ApiResponse<List<MasWardResponse >> getMasWard(@PathVariable int flag) {
+        return masWardService.getAllMasWardCategory(flag);
+    }
+
+    @GetMapping("/masWard/getById/{id}")
+    public ResponseEntity<ApiResponse<MasWardResponse >> getWardById(@PathVariable Long id) {
+        ApiResponse<MasWardResponse> response = masWardService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/masWard/create")
+    public ResponseEntity<ApiResponse<MasWardResponse >> addWard(@RequestBody MasWardRequest  request) {
+        ApiResponse<MasWardResponse> response = masWardService.addMasWard(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/masWard/update/{id}")
+    public ResponseEntity<ApiResponse<MasWardResponse >> updateWard(
+            @PathVariable Long id,
+            @RequestBody MasWardRequest  request) {
+        ApiResponse<MasWardResponse> response = masWardService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/masWard/status/{id}")
+    public ResponseEntity<ApiResponse<MasWardResponse >> changeWardStatus(@PathVariable Long id, @RequestParam String status) {
+        ApiResponse<MasWardResponse> response = masWardService.changeMasWardStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
     //  ============================================ Mas Room Category =====================================
 
