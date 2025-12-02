@@ -2,6 +2,7 @@ package com.hims.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasDepartment;
+import com.hims.request.IssueInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentRequest;
 import com.hims.response.ApiResponse;
@@ -93,8 +94,23 @@ public class StoreInternalIndentController {
     }
 
     @GetMapping("/getallindentforpending")
-    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending() {
-        return indentService.getAllIndentsForPending();
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending(
+            @RequestParam("deptId") Long deptId) {
+        return indentService.getAllIndentsForPending(deptId);
+    }
+
+    @GetMapping("/getallindentforapproved")
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForApproved(
+            @RequestParam("deptId") Long deptId) {
+        return indentService.getAllIndentsForApproved(deptId);
+    }
+
+
+
+    @PostMapping("/submitapprove")
+    public ApiResponse<StoreInternalIndentResponse> approveIndent(
+            @RequestBody IssueInternalIndentApprovalRequest request) {
+        return indentService.submitApprovedIndent(request);
     }
 
 

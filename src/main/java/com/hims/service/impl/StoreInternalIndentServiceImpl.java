@@ -3,9 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.request.StoreInternalIndentApprovalRequest;
-import com.hims.request.StoreInternalIndentDetailRequest;
-import com.hims.request.StoreInternalIndentRequest;
+import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.ROLItemResponse;
 import com.hims.response.StoreInternalIndentDetailResponse;
@@ -23,10 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -154,11 +149,14 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     // Get all indents with status filter
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending() {
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending(Long deptId) {
         try {
-            // Only status Y (pending), ordered by indentMId desc
+            // ✅ use toDeptId instead of fromDeptId
             List<StoreInternalIndentM> indents =
-                    indentMRepository.findByStatusOrderByIndentMIdDesc("Y");
+                    indentMRepository.findByToDeptId_IdAndStatus(deptId, "Y");
+
+            // if you did NOT create the OrderBy method above, sort here
+            indents.sort(Comparator.comparing(StoreInternalIndentM::getIndentMId).reversed());
 
             List<StoreInternalIndentResponse> responseList = new ArrayList<>();
             for (StoreInternalIndentM indent : indents) {
@@ -180,6 +178,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         }
     }
 
+
     // Common method to process both save and submit
     private ApiResponse<StoreInternalIndentResponse> processIndent(StoreInternalIndentRequest request, String status) {
         StoreInternalIndentM indentM;
@@ -192,6 +191,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             indentM = new StoreInternalIndentM();
             indentM.setCreatedDate(LocalDateTime.now());
             indentM.setCreatedBy(currentUserName);
+            // Set indent date on create
             indentM.setIndentDate(
                     request.getIndentDate() != null ? request.getIndentDate() : LocalDateTime.now()
             );
@@ -207,6 +207,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             indentM.setFromDeptId(fromDept);
 
         } else {
+            // Existing indent
             indentM = indentMRepository.findById(request.getIndentMId())
                     .orElseThrow(() -> new RuntimeException("Indent not found for update"));
         }
@@ -223,10 +224,15 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         // Set status (S for save/draft, Y for submit)
         indentM.setStatus(status);
 
-        // For submitted indents, set approval info
+        // For submitted indents, set approval info and UPDATE indent date
         if ("Y".equals(status)) {
             indentM.setApprovedBy(currentUserName);
             indentM.setApprovedDate(LocalDateTime.now());
+
+            // 🔹 Update indent date on submit
+            indentM.setIndentDate(
+                    request.getIndentDate() != null ? request.getIndentDate() : LocalDateTime.now()
+            );
         }
 
         // Save header first to get id
@@ -274,14 +280,16 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
                 // Update fields
                 detail.setRequestedQty(dReq.getRequestedQty());
-                detail.setAvailableStock(dReq.getAvailableStock() != null ? dReq.getAvailableStock() : BigDecimal.valueOf(0));
+                detail.setAvailableStock(
+                        dReq.getAvailableStock() != null ? dReq.getAvailableStock() : BigDecimal.valueOf(0)
+                );
                 detail.setReason(dReq.getReason() != null ? dReq.getReason() : "");
 
                 indentTRepository.save(detail);
             }
         }
 
-        // Handle deleted items - FIXED: Properly handle single Long or List<Long>
+        // Handle deleted items
         handleDeletedItems(request, indentM);
 
         StoreInternalIndentResponse resp = buildResponse(indentM);
@@ -405,6 +413,155 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         StoreInternalIndentResponse resp = buildResponse(newHeader);
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<StoreInternalIndentResponse>() {});
     }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForApproved(Long deptId) {
+        try {
+            // ✅ use toDeptId instead of fromDeptId
+            List<StoreInternalIndentM> indents =
+                    indentMRepository.findByToDeptId_IdAndStatus(deptId, "A");
+
+            indents.sort(Comparator.comparing(StoreInternalIndentM::getIndentMId).reversed());
+
+            List<StoreInternalIndentResponse> responseList = new ArrayList<>();
+            for (StoreInternalIndentM indent : indents) {
+                responseList.add(buildResponse(indent));
+            }
+
+            return ResponseUtils.createSuccessResponse(
+                    responseList,
+                    new TypeReference<List<StoreInternalIndentResponse>>() {}
+            );
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<List<StoreInternalIndentResponse>>() {},
+                    "Error fetching approved indents: " + e.getMessage(),
+                    500
+            );
+        }
+    }
+
+    // Submit approved indent for issue - updates status from A to AA
+    @Override
+    @Transactional
+    public ApiResponse<StoreInternalIndentResponse> submitApprovedIndent(IssueInternalIndentApprovalRequest request) {
+        try {
+            // 1. Load indent master
+            StoreInternalIndentM indentM = indentMRepository.findById(request.getIndentMId())
+                    .orElseThrow(() -> new RuntimeException("Indent not found with ID: " + request.getIndentMId()));
+
+            // 2. Only indents with status A are allowed
+            if (!"A".equalsIgnoreCase(indentM.getStatus())) {
+                throw new RuntimeException(
+                        "Only indents with status 'A' can be processed. Current status: " + indentM.getStatus());
+            }
+
+            // 3. Current user
+            User currentUser = authUtil.getCurrentUser();
+            String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
+
+            String action = request.getAction() != null ? request.getAction().trim().toLowerCase() : "";
+
+            // 4. Common item processing (approve qty + reason)
+            if (request.getItems() != null && !request.getItems().isEmpty()) {
+                for (IssueInternalIndentDetailRequest itemReq : request.getItems()) {
+                    if (itemReq.getIndentTId() != null) {
+                        StoreInternalIndentT detail = indentTRepository.findById(itemReq.getIndentTId())
+                                .orElseThrow(() -> new RuntimeException(
+                                        "Indent detail not found with ID: " + itemReq.getIndentTId()));
+
+                        // Ensure this detail belongs to the current indent
+                        if (!detail.getIndentM().getIndentMId().equals(indentM.getIndentMId())) {
+                            throw new RuntimeException("Indent detail does not belong to this indent");
+                        }
+
+                        // Update approve quantity if provided
+                        if (itemReq.getApproveQty() != null) {
+                            detail.setApprovedQty(itemReq.getApproveQty());
+                        }
+
+                        // Update reason if provided
+                        if (itemReq.getReason() != null) {
+                            detail.setReason(itemReq.getReason());
+                        }
+
+                        indentTRepository.save(detail);
+                    }
+                }
+            }
+
+            // 5. Action-based status change
+            if ("approved".equals(action)) {
+                // Submitted for issue
+                indentM.setStatus("AA");                 // Approved and submitted for issue
+                indentM.setIssuedBy(currentUserName);
+                indentM.setIssuedDate(LocalDateTime.now());
+            } else if ("rejected".equals(action)) {
+                // Rejected after approval
+                indentM.setStatus("RR");                 // Rejected after approval
+                indentM.setApprovedBy(currentUserName);  // who rejected
+                indentM.setApprovedDate(LocalDateTime.now());
+            } else {
+                throw new RuntimeException(
+                        "Invalid action. Must be 'approved' or 'rejected'. Provided: " + request.getAction());
+            }
+
+            // 6. Set remarks (common)
+            indentM.setRemarks(request.getRemarks());
+
+            // 7. If you add deletedT in IssueInternalIndentApprovalRequest, you can enable this:
+            // handleDeletedItemsForSubmit(request.getDeletedT(), indentM);
+
+            // 8. Save master
+            indentM = indentMRepository.save(indentM);
+
+            // 9. Build response
+            StoreInternalIndentResponse response = buildResponse(indentM);
+            return ResponseUtils.createSuccessResponse(
+                    response,
+                    new TypeReference<StoreInternalIndentResponse>() {}
+            );
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<StoreInternalIndentResponse>() {},
+                    "Error submitting indent: " + e.getMessage(),
+                    400
+            );
+        }
+    }
+    // Helper method for handling deleted items in submit
+    private void handleDeletedItemsForSubmit(List<Long> deletedT, StoreInternalIndentM indentM) {
+        if (deletedT != null && !deletedT.isEmpty()) {
+            for (Long deletedId : deletedT) {
+                Optional<StoreInternalIndentT> toDelete = indentTRepository.findById(deletedId);
+                if (toDelete.isPresent() &&
+                        toDelete.get().getIndentM().getIndentMId().equals(indentM.getIndentMId())) {
+                    indentTRepository.deleteById(deletedId);
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // ---------- Helpers ----------
     private String generateIndentNo() {
@@ -621,7 +778,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
     private List<Long> getIndentedItemIds(Long departmentId) {
         try {
-            List<String> statuses = Arrays.asList("S", "Y", "A");
+            List<String> statuses = Arrays.asList("S", "Y");
 
             List<Long> indentedItems = indentTRepository.findIndentedItemIds(
                     departmentId,
