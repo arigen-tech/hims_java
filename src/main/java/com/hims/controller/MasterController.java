@@ -1488,7 +1488,7 @@ public class MasterController {
         return ResponseEntity.ok(masRoomCategoryService.changeActiveStatus(roomCategoryId, status));
     }
 
-    @GetMapping("mas-room-category/getById{roomCategoryId}")
+    @GetMapping("mas-room-category/getById/{roomCategoryId}")
     public ResponseEntity<?> getById(@PathVariable Long roomCategoryId) {
         return ResponseEntity.ok(masRoomCategoryService.getById(roomCategoryId));
     }
