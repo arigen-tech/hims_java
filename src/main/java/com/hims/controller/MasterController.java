@@ -109,6 +109,10 @@ public class MasterController {
     @Autowired
     private MasCareLevelService masCareLevelService;
 
+    @Autowired
+    private  MasRoomCategoryService masRoomCategoryService;
+
+
     //    ================================Mas Application Controller================================//
 
     @GetMapping("/mas-applications/getAll/{flag}")
@@ -1460,6 +1464,41 @@ public class MasterController {
     public ResponseEntity<?> getMasCareById(@PathVariable Long careId) {
         return ResponseEntity.ok(masCareLevelService.getById(careId));
     }
+
+
+    //  ============================================ Mas Room Category =====================================
+
+
+    @PostMapping("room-category/create")
+    public ResponseEntity<?> createRoomCategory(@RequestBody MasRoomCategoryRequest request) {
+        return ResponseEntity.ok(masRoomCategoryService.createRoomCategory(request));
+    }
+
+    @PutMapping("room-category/{roomCategoryId}")
+    public ResponseEntity<?> updateRoomCategory(
+            @PathVariable Long roomCategoryId,
+            @RequestBody MasRoomCategoryRequest request) {
+        return ResponseEntity.ok(masRoomCategoryService.updateRoomCategory(roomCategoryId, request));
+    }
+
+    @PutMapping("room-category/status/{roomCategoryId}")
+    public ResponseEntity<ApiResponse<MasRoomCategoryResponse>> changeStatus(
+            @PathVariable Long roomCategoryId,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masRoomCategoryService.changeActiveStatus(roomCategoryId, status));
+    }
+
+    @GetMapping("room-category/{roomCategoryId}")
+    public ResponseEntity<?> getById(@PathVariable Long roomCategoryId) {
+        return ResponseEntity.ok(masRoomCategoryService.getById(roomCategoryId));
+    }
+
+    @GetMapping("room-category/all/{flag}")
+    public ResponseEntity<?> getAllRoomCategory(@PathVariable int flag) {
+        return ResponseEntity.ok(masRoomCategoryService.getAll(flag));
+    }
+
+
 
 
 

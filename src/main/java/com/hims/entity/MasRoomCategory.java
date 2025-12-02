@@ -5,36 +5,30 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
-@Table(name = "mas_care_level")
-public class MasCareLevel {
+@Table(name = "mas_room_category")
+public class MasRoomCategory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "care_id")
-    private Long careId;
+    @Column(name = "room_category_id")
+    private Long roomCategoryId;
 
-    @Column(name = "care_level_name",nullable = false,length = 50)
-    private String careLevelName;
+    @Column(name = "room_category_name",length = 50,nullable = false)
+    private String roomCategoryName;
 
-    @Column(name = "description",length = 200)
-    private String description;
-
-    @Column(name = "status",length = 1)
+    @Column(name = "status")
     private String status;
 
-
-    @UpdateTimestamp
     @Column(name = "last_update_date")
-    private LocalDate lastUpdateDate;
+    private LocalDate lastUpdatedDate;
 
     @Column(name = "created_by",length = 200)
     private String createdBy;
