@@ -42,7 +42,7 @@ public class MasRoomCategoryServiceImpl implements MasRoomCategoryService {
             entity.setStatus("y");
             entity.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
             entity.setUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-            entity.setLastUpdatedDate(LocalDate.now());
+//            entity.setLastUpdatedDate(LocalDate.now());
 
             MasRoomCategory saved = masRoomCategoryRepo.save(entity);
 
@@ -69,7 +69,7 @@ public class MasRoomCategoryServiceImpl implements MasRoomCategoryService {
 
             entity.setRoomCategoryName(request.getRoomCategoryName());
             entity.setUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-            entity.setLastUpdatedDate(LocalDate.now());
+//            entity.setLastUpdatedDate(LocalDate.now());
 
             MasRoomCategory saved = masRoomCategoryRepo.save(entity);
 
@@ -96,7 +96,7 @@ public class MasRoomCategoryServiceImpl implements MasRoomCategoryService {
 
             entity.setStatus(status);
             entity.setUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-            entity.setLastUpdatedDate(LocalDate.now());
+//            entity.setLastUpdatedDate(LocalDate.now());
 
             MasRoomCategory saved = masRoomCategoryRepo.save(entity);
 
