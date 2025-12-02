@@ -1469,31 +1469,31 @@ public class MasterController {
     //  ============================================ Mas Room Category =====================================
 
 
-    @PostMapping("room-category/create")
+    @PostMapping("mas-room-category/create")
     public ResponseEntity<?> createRoomCategory(@RequestBody MasRoomCategoryRequest request) {
         return ResponseEntity.ok(masRoomCategoryService.createRoomCategory(request));
     }
 
-    @PutMapping("room-category/{roomCategoryId}")
+    @PutMapping("mas-room-category/update/{roomCategoryId}")
     public ResponseEntity<?> updateRoomCategory(
             @PathVariable Long roomCategoryId,
             @RequestBody MasRoomCategoryRequest request) {
         return ResponseEntity.ok(masRoomCategoryService.updateRoomCategory(roomCategoryId, request));
     }
 
-    @PutMapping("room-category/status/{roomCategoryId}")
+    @PutMapping("mas-room-category/status/{roomCategoryId}")
     public ResponseEntity<ApiResponse<MasRoomCategoryResponse>> changeStatus(
             @PathVariable Long roomCategoryId,
             @RequestParam String status) {
         return ResponseEntity.ok(masRoomCategoryService.changeActiveStatus(roomCategoryId, status));
     }
 
-    @GetMapping("room-category/{roomCategoryId}")
+    @GetMapping("mas-room-category/getById{roomCategoryId}")
     public ResponseEntity<?> getById(@PathVariable Long roomCategoryId) {
         return ResponseEntity.ok(masRoomCategoryService.getById(roomCategoryId));
     }
 
-    @GetMapping("room-category/all/{flag}")
+    @GetMapping("mas-room-category/getAll/{flag}")
     public ResponseEntity<?> getAllRoomCategory(@PathVariable int flag) {
         return ResponseEntity.ok(masRoomCategoryService.getAll(flag));
     }
