@@ -84,8 +84,5 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
                                                           @Param("today") LocalDate today);
 
 
-
-
-
-
+    List<StoreItemBatchStock> findByItemId_ItemId(Long itemId);
 }

@@ -36,4 +36,7 @@ public interface StoreInternalIndentService {
     public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForApproved(Long deptId);
 
     ApiResponse<StoreInternalIndentResponse> submitApprovedIndent(IssueInternalIndentApprovalRequest request);
+
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForIssueDepartment(Long deptId);
+
 }

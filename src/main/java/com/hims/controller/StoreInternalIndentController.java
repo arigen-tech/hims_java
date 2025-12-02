@@ -113,5 +113,13 @@ public class StoreInternalIndentController {
         return indentService.submitApprovedIndent(request);
     }
 
+    @GetMapping("/getallindentforissue")
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForIssueDepartment(
+            @RequestParam("deptId") Long deptId) {
+
+        return indentService.getAllIndentsForIssueDepartment(deptId);
+    }
+
+
 
 }

@@ -476,7 +476,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         Long dispstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), dispdeptId, item.getItemId(), hospDefineddispDays);
         response.setDispstocks(dispstocks);
         Long wardstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), warddeptId, item.getItemId(), hospDefinedwardDays);
-        response.setDispstocks(dispstocks);
+        response.setWardstocks(wardstocks );
 
 
 

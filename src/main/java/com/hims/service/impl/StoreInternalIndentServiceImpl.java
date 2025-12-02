@@ -4,14 +4,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.ROLItemResponse;
-import com.hims.response.StoreInternalIndentDetailResponse;
-import com.hims.response.StoreInternalIndentResponse;
+import com.hims.response.*;
 import com.hims.service.StoreInternalIndentService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.DepartmentConfig;
 import com.hims.utils.ResponseUtils;
+import com.hims.utils.StockFound;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,8 +36,30 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Autowired
     DepartmentConfig departmentConfig;
 
+    @Autowired
+    StockFound stockFound;
+
+
     @Value("${fixed.departments}")
     private String fixedDepartmentsConfig;
+
+    @Value("${hos.define.storeDay}")
+    private Integer hospDefinedstoreDays;
+
+    @Value("${hos.define.storeId}")
+    private Integer deptIdStore;
+
+    @Value("${hos.define.dispensaryDay}")
+    private Integer hospDefineddispDays;
+
+    @Value("${hos.define.dispensaryId}")
+    private Integer dispdeptId;
+
+    @Value("${hos.define.wardPharmDay}")
+    private Integer hospDefinedwardDays;
+
+    @Value("${hos.define.wardPharmacyId}")
+    private Integer warddeptId;
 
     // Save (draft). Backend will set status = "S"
     @Override
@@ -554,6 +574,113 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
 
 
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForIssueDepartment(Long deptId) {
+        try {
+
+            // Fetch only "AA" status indents for issue dept
+            List<StoreInternalIndentM> indents =
+                    indentMRepository.findByToDeptId_IdAndStatus(deptId, "AA");
+
+            // Sort DESC (latest indent first)
+            indents.sort(Comparator.comparing(StoreInternalIndentM::getIndentMId).reversed());
+
+            List<StoreInternalIndentResponse> masterResponseList = new ArrayList<>();
+
+            for (StoreInternalIndentM indent : indents) {
+
+
+                StoreInternalIndentResponse masterResp = buildResponse(indent);
+
+
+                // DETAILS PART
+
+                List<StoreInternalIndentT> details =
+                        indentTRepository.findByIndentM(indent);
+
+                List<StoreInternalIndentDetailResponse> detailResponseList = new ArrayList<>();
+
+                for (StoreInternalIndentT detail : details) {
+
+                    StoreInternalIndentDetailResponse d = new StoreInternalIndentDetailResponse();
+
+                    d.setIndentTId(detail.getIndentTId());
+                    d.setItemId(detail.getItemId().getItemId());
+                    d.setItemName(detail.getItemId().getNomenclature());
+                    d.setPvmsNo(detail.getItemId().getPvmsNo());
+
+                    d.setRequestedQty(detail.getRequestedQty());
+                    d.setApprovedQty(detail.getApprovedQty());
+                    d.setIssuedQty(detail.getIssuedQty());
+                    d.setReceivedQty(detail.getReceivedQty());
+                    d.setAvailableStock(detail.getAvailableStock());
+                    d.setItemCost(detail.getItemCost());
+                    d.setTotalCost(detail.getTotalCost());
+                    d.setIssueStatus(detail.getIssueStatus());
+                    d.setReason(detail.getReason());
+
+
+//                     BATCH STOCK
+
+                    List<StoreItemBatchStock> batchStocks =
+                            storeItemBatchStockRepository.findByItemId_ItemId(
+                                    detail.getItemId().getItemId()
+                            );
+
+                    Long itemId = detail.getItemId().getItemId();
+
+                    Map<String, StoreItemBatchStock> bestBatchMap = batchStocks.stream()
+                            .collect(Collectors.groupingBy(
+                                    StoreItemBatchStock::getBatchNo,
+                                    Collectors.collectingAndThen(
+                                            Collectors.minBy(Comparator.comparing(StoreItemBatchStock::getExpiryDate)),
+                                            Optional::get
+                                    )
+                            ));
+
+                    // Map batches
+                    List<BatchResponse> batchResponseList = batchStocks.stream().map(batch -> {
+                        BatchResponse br = new BatchResponse();
+                        br.setBatchNo(batch.getBatchNo());
+                        br.setManufactureDate(batch.getManufactureDate());
+                        br.setExpiryDate(batch.getExpiryDate());
+                        br.setBatchstock(batch.getClosingStock());
+
+                        Long avlableStokes = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), deptIdStore, itemId, hospDefinedstoreDays);
+                        br.setStorestocks(avlableStokes);
+                        Long dispstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), dispdeptId, itemId, hospDefineddispDays);
+                        br.setDispstocks(dispstocks);
+                        Long wardstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), warddeptId, itemId, hospDefinedwardDays);
+                        br.setWardstocks(wardstocks );
+
+                        return br;
+                    }).collect(Collectors.toList());
+
+                    d.setBatches(batchResponseList);
+
+                    detailResponseList.add(d);
+                }
+
+                masterResp.setItems(detailResponseList);
+                masterResponseList.add(masterResp);
+            }
+
+            return ResponseUtils.createSuccessResponse(
+                    masterResponseList,
+                    new TypeReference<List<StoreInternalIndentResponse>>() {}
+            );
+
+        } catch (Exception e) {
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<List<StoreInternalIndentResponse>>() {},
+                    "Error fetching indents: " + e.getMessage(),
+                    500
+            );
+        }
+    }
 
 
 
