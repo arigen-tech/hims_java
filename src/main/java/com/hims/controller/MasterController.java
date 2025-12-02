@@ -115,6 +115,8 @@ public class MasterController {
 
     @Autowired
     private  MasRoomCategoryService masRoomCategoryService;
+    @Autowired
+    private MasBedTypeService masBedTypeService;
 
     @Autowired
     private  MasRoomService masRoomService;
@@ -1606,6 +1608,39 @@ public class MasterController {
         return ResponseEntity.ok(masRoomService.getAll(flag));
     }
 
+
+
+    //  ============================================ Mas Bed Type =====================================
+
+
+    @PostMapping("masBedType/create")
+    public ResponseEntity<?> createBed(@RequestBody MasBedTypeRequest request) {
+        return ResponseEntity.ok(masBedTypeService.createRoomCategory(request));
+    }
+
+    @PutMapping("masBedType/update/{id}")
+    public ResponseEntity<?> updateBed(
+            @PathVariable Long id,
+            @RequestBody MasBedTypeRequest request) {
+        return ResponseEntity.ok(masBedTypeService.updateRoomCategory(id, request));
+    }
+
+    @PutMapping("masBedType/status/{id}")
+    public ResponseEntity<ApiResponse<MasBedTypeResponse>> changeBedStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masBedTypeService.changeActiveStatus(id, status));
+    }
+
+    @GetMapping("masBedType/getById/{id}")
+    public ResponseEntity<?> getByIdBed(@PathVariable Long id) {
+        return ResponseEntity.ok(masBedTypeService.getById(id));
+    }
+
+    @GetMapping("masBedType/getAll/{flag}")
+    public ResponseEntity<?> getAllBed(@PathVariable int flag) {
+        return ResponseEntity.ok(masBedTypeService.getAll(flag));
+    }
 
 
 
