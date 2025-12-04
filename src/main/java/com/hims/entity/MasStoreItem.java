@@ -96,22 +96,22 @@ public class MasStoreItem {
     @Column(name = "ward_rol", precision = 19, scale = 0)
     private BigDecimal wardROL;
 
-    @Column(name = "store_rol_manual", length = 10)
+    @Column(name = "store_rol_is_manual", length = 10)
     private String storeRoLManual;
 
-    @Column(name = "disp_rol_manual", length = 10)
+    @Column(name = "disp_rol_is_manual", length = 10)
     private String dispRoLManual;
 
-    @Column(name = "ward_rol_manual", length = 10)
+    @Column(name = "ward_rol_is_manual", length = 10)
     private String wardRoLManual;
 
-    @Column(name = "store_rol_auto", length = 10)
+    @Column(name = "store_rol_is_auto", length = 10)
     private String storeRoLAuto;
 
-    @Column(name = "disp_rol_auto", length = 10)
+    @Column(name = "disp_rol_is_auto", length = 10)
     private String dispRoLAuto;
 
-    @Column(name = "ward_rol_auto", length = 10)
+    @Column(name = "ward_rol_is_auto", length = 10)
     private String wardRoLAuto;
 
 
