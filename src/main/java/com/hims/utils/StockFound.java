@@ -23,47 +23,72 @@ public class StockFound {
 
     public Long getAvailableStocks(Long hospitalId, Integer departmentId, Long itemId, Integer noOfDays) {
 
-        if (itemId == null || departmentId == null || noOfDays == null || hospitalId == null) {
+        System.out.println("===== DEBUG: getAvailableStocks() START =====");
+        System.out.println("Input → hospitalId=" + hospitalId +
+                ", departmentId=" + departmentId +
+                ", itemId=" + itemId +
+                ", noOfDays=" + noOfDays);
+
+        if (hospitalId == null || departmentId == null || itemId == null || noOfDays == null) {
+            System.out.println("❌ Invalid input");
             return null;
         }
 
-        // Fetch item
         Optional<MasStoreItem> itemOpt = masStoreItemRepository.findById(itemId);
         if (itemOpt.isEmpty()) {
+            System.out.println("❌ Item NOT found");
             return null;
         }
-        MasStoreItem itemEntity = itemOpt.get();
 
-        // Fetch all stocks for the item
-        List<StoreItemBatchStock> stockList =
-                storeItemBatchStockRepository.findByItemId(itemEntity);
+        MasStoreItem itemEntity = itemOpt.get();
+        List<StoreItemBatchStock> stockList = storeItemBatchStockRepository.findByItemId(itemEntity);
 
         if (stockList == null || stockList.isEmpty()) {
+            System.out.println("❌ No stock found");
             return null;
         }
 
-        // threshold for expiry filtering
+        System.out.println("✔ Total Stock Records Found: " + stockList.size());
+
         LocalDate threshold = LocalDate.now().plusDays(noOfDays);
+        System.out.println("Threshold Expiry Date: " + threshold);
 
-        // Apply hospital, department, expiry and closingStock > 0 filtering
-        long totalClosingStock = stockList.stream()
-                .filter(s ->
-                        s.getHospitalId() != null &&
-                                s.getHospitalId().getId().equals(hospitalId) &&
+        System.out.println("----- FILTERING START -----");
 
-                                s.getDepartmentId() != null &&
-                                s.getDepartmentId().getId().equals(departmentId) &&
+        long totalClosingStock =
+                stockList.stream()
+                        .filter(s -> {
 
-                                s.getClosingStock() != null &&
-                                s.getClosingStock() > 0 &&
+                            boolean hospitalMatch = s.getHospitalId() != null &&
+                                    String.valueOf(s.getHospitalId().getId())
+                                            .equals(String.valueOf(hospitalId));
 
-                                s.getExpiryDate() != null &&
-                                s.getExpiryDate().isAfter(threshold)
-                )
-                .mapToLong(s -> s.getClosingStock())
-                .sum();
+                            boolean deptMatch = s.getDepartmentId() != null &&
+                                    String.valueOf(s.getDepartmentId().getId())
+                                            .equals(String.valueOf(departmentId));
+
+                            boolean closingMatch = s.getClosingStock() != null &&
+                                    s.getClosingStock() > 0;
+
+                            boolean expiryMatch = s.getExpiryDate() != null &&
+                                    !s.getExpiryDate().isBefore(threshold);
+
+                            System.out.println("Checking StockId=" + s.getStockId() +
+                                    " -> hospitalMatch=" + hospitalMatch +
+                                    ", deptMatch=" + deptMatch +
+                                    ", closingMatch=" + closingMatch +
+                                    ", expiryMatch=" + expiryMatch);
+
+                            return hospitalMatch && deptMatch && closingMatch && expiryMatch;
+                        })
+                        .mapToLong(StoreItemBatchStock::getClosingStock)
+                        .sum();
+
+        System.out.println("===== FINAL TOTAL = " + totalClosingStock + " =====");
+        System.out.println("===== DEBUG END =====");
 
         return totalClosingStock;
     }
+
 
 }
