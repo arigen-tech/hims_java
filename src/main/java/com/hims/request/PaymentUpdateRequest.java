@@ -11,7 +11,7 @@ import java.util.List;
 public class PaymentUpdateRequest {
 
     private String billingType;
-
+    private List<Integer> billHeaderIds;
     private int billHeaderId;
     private BigDecimal amount;
     private String mode;

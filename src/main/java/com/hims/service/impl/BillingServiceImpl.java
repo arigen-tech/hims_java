@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hims.helperUtil.ConverterUtils.ageCalculator;
 
@@ -183,30 +184,6 @@ public class BillingServiceImpl implements BillingService {
         return randomNumGenerator.generateOrderNumber("BILL",true,true);
     }
 
-    public boolean setPaymentDetail(BillingHeader savedHeader) {
-        PaymentDetail payment = new PaymentDetail();
-        boolean paymentFlag = false;
-        try {
-            payment.setBillingHd(savedHeader);
-            payment.setPaymentDate(Instant.now());
-            payment.setAmount(savedHeader.getNetAmount());
-            payment.setPaymentMode("Cash");
-            payment.setPaymentReferenceNo("NA");
-            payment.setCreatedAt(Instant.now());
-            payment.setCreatedBy(authUtil.getCurrentUser().getFirstName());
-            payment.setPaymentStatus("y");
-            payment.setUpdatedAt(Instant.now());
-            PaymentDetail savedPayment = paymentDetailRepository.save(payment);
-            if (savedPayment != null) {
-                paymentFlag = true;
-            }
-
-        } catch (Exception e) {
-            paymentFlag = false;
-        }
-        return paymentFlag;
-    }
-
     @Override
     public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
         try {
@@ -233,8 +210,8 @@ public class BillingServiceImpl implements BillingService {
             List<PendingBillingResponse> combinedList = new ArrayList<>();
             combinedList.addAll(billingResponses);
             combinedList.addAll(orderResponses);
+            combinedList = mergeConsultation(combinedList);
 
-            // 5️⃣ Return final response
             return ResponseUtils.createSuccessResponse(
                     combinedList,
                     new TypeReference<List<PendingBillingResponse>>() {}
@@ -259,9 +236,21 @@ public class BillingServiceImpl implements BillingService {
 
         if (header.getVisit() != null && header.getVisit().getPatient() != null) {
             response.setPatientid(header.getVisit().getPatient().getId());
+            response.setPatientUhid(header.getVisit().getPatient().getUhidNo());
+            response.setTokenNo(header.getVisit().getTokenNo());
+            String sessionName = Optional.ofNullable(header.getVisit())
+                    .map(v -> v.getSession())
+                    .map(s -> s.getSessionName())
+                    .orElse(null);
+
+            response.setSessionName(sessionName);
+            response.setVisitType(header.getVisit().getVisitType());
+            response.setVisitDate(header.getVisit().getVisitDate());
+
         } else {
             response.setPatientid(null);
         }
+
 
         // ✅ Mobile from Visit → Patient
         if (header.getVisit() != null && header.getVisit().getPatient() != null) {
@@ -480,6 +469,136 @@ public class BillingServiceImpl implements BillingService {
         return response;
     }
 
+    public List<PendingBillingResponse> mergeConsultation(List<PendingBillingResponse> list) {
+
+        Map<String, List<PendingBillingResponse>> groups = new LinkedHashMap<>();
+        List<PendingBillingResponse> finalList = new ArrayList<>();
+
+        for (PendingBillingResponse item : list) {
+
+            // LAB or other types → NO MERGE
+            if (!"Consultation Services".equalsIgnoreCase(item.getBillingType())) {
+                finalList.add(item);
+                continue;
+            }
+
+            // Group key (patient + type + date)
+            String key = item.getPatientid() + "|"
+                    + item.getBillingType() + "|"
+                    + item.getVisitDate();
+
+            groups.computeIfAbsent(key, k -> new ArrayList<>()).add(item);
+        }
+
+        // Process each group
+        for (List<PendingBillingResponse> group : groups.values()) {
+
+            // ----------------------------------
+            // CASE 1: ONLY ONE ENTRY → BUT ADD APPOINTMENT + billingHeaderIds
+            // ----------------------------------
+            if (group.size() == 1) {
+
+                PendingBillingResponse single = group.get(0);
+
+                // BillingHeaderIds
+                single.setBillingHeaderIds(
+                        Collections.singletonList(single.getBillinghdid())
+                );
+
+                // Appointments
+                AppointmentBlock ab = new AppointmentBlock();
+                ab.setBillingHdId(single.getBillinghdid());
+                ab.setConsultedDoctor(single.getConsultedDoctor());
+                ab.setDepartment(single.getDepartment());
+                ab.setSessionName(single.getSessionName());
+                ab.setVisitDate(single.getVisitDate());
+                ab.setTokenNo(single.getTokenNo());
+                ab.setVisitType(single.getVisitType());
+
+                single.setAppointments(Collections.singletonList(ab));
+
+                // Details already present
+                if (single.getDetails() == null) {
+                    single.setDetails(new ArrayList<>());
+                }
+
+                finalList.add(single);
+                continue;
+            }
+
+            // ----------------------------------
+            // CASE 2: MULTIPLE ENTRIES → MERGE
+            // ----------------------------------
+            PendingBillingResponse merged = new PendingBillingResponse();
+            PendingBillingResponse first = group.get(0);
+
+            // Copy top-level fields
+            merged.setPatientid(first.getPatientid());
+            merged.setPatientUhid(first.getPatientUhid());
+            merged.setPatientName(first.getPatientName());
+            merged.setMobileNo(first.getMobileNo());
+            merged.setAge(first.getAge());
+            merged.setSex(first.getSex());
+            merged.setRelation(first.getRelation());
+            merged.setBillingType(first.getBillingType());
+            merged.setConsultedDoctor(first.getConsultedDoctor());
+            merged.setDepartment(first.getDepartment());
+            merged.setAddress(first.getAddress());
+            merged.setVisitType(first.getVisitType());
+            merged.setVisitDate(first.getVisitDate());
+            merged.setSessionName(first.getSessionName());
+            merged.setBillingStatus(first.getBillingStatus());
+            merged.setTokenNo(first.getTokenNo());
+            merged.setVisitDate(first.getVisitDate());
+            merged.setVisitType(first.getVisitType());
+
+            // Billing header IDs
+            merged.setBillingHeaderIds(
+                    group.stream()
+                            .map(PendingBillingResponse::getBillinghdid)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList())
+            );
+
+            // Appointments
+            List<AppointmentBlock> appointmentList = new ArrayList<>();
+            for (PendingBillingResponse item : group) {
+                AppointmentBlock ab = new AppointmentBlock();
+                ab.setBillingHdId(item.getBillinghdid());
+                ab.setConsultedDoctor(item.getConsultedDoctor());
+                ab.setDepartment(item.getDepartment());
+                ab.setSessionName(item.getSessionName());
+                ab.setVisitDate(item.getVisitDate());
+                ab.setTokenNo(item.getTokenNo());
+                ab.setVisitType(item.getVisitType());
+                appointmentList.add(ab);
+            }
+            merged.setAppointments(appointmentList);
+
+            // Merge details
+            merged.setDetails(
+                    group.stream()
+                            .flatMap(it -> it.getDetails() == null ? Stream.empty() : it.getDetails().stream())
+                            .collect(Collectors.toList())
+            );
+
+            // Sum amounts
+            merged.setAmount(
+                    group.stream()
+                            .map(PendingBillingResponse::getAmount)
+                            .filter(Objects::nonNull)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            );
+
+            // Final billinghdid = first ID
+            merged.setBillinghdid(merged.getBillingHeaderIds().get(0));
+            finalList.add(merged);
+        }
+
+        return finalList;
+    }
+
+
     // ✅ METHOD: Get current investigation price from price details table
     private BigDecimal getCurrentInvestigationPrice(DgMasInvestigation investigation) {
         try {
@@ -529,7 +648,8 @@ public class BillingServiceImpl implements BillingService {
         d.setTaxAmount(detail.getTaxAmount());
         d.setNetAmount(detail.getNetAmount());
         d.setPaymentStatus(safe(detail.getPaymentStatus()));
-
+        d.setRegistrationCost(detail.getRegistrationCost());
+        d.setTotal(detail.getNetAmount());
         // ✅ Include Investigation
         if (detail.getInvestigation() != null) {
             d.setInvestigationId(detail.getInvestigation().getInvestigationId());

@@ -36,7 +36,7 @@ public class PendingBillingResponse {
     private BigDecimal registrationCost;
 
 
-
+    private List<Long> billingHeaderIds;
     private List<AppointmentBlock> appointments;
     private List<BillingDetailResponse> details;
 
