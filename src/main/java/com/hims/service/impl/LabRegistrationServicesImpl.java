@@ -765,6 +765,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 response.setDoctorName(visit != null ? visit.getDoctorName() : "");
                 response.setOrderhdId(Long.valueOf(orderHd.getId()));
                 response.setOrderNo(orderHd.getOrderNo());
+
                 response.setOrderTime(
                         orderHd.getOrderTime() != null
                                 ? getCurrentTimeFormatted(orderHd.getOrderTime())

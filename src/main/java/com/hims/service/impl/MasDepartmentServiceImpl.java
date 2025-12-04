@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasDepartment;
+import com.hims.entity.MasWardCategory;
 import com.hims.entity.repository.*;
 import com.hims.request.MasDepartmentRequest;
 import com.hims.response.ApiResponse;
@@ -36,6 +37,8 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
 
     @Autowired
     private MasHospitalRepository masHospitalRepository;
+    @Autowired
+    private MasWardCategoryRepository masWardCategoryRepository;
 
     private boolean isValidStatus(String status) {
         return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
@@ -58,6 +61,9 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         department.setLastChgBy(request.getLastChgBy());
         department.setLastChgTime(getCurrentTimeFormatted());
         department.setLastChgDate(Instant.now());
+        if (request.getWardCategoryId() != null) {
+            department.setWardCategory( masWardCategoryRepository.findById(request.getWardCategoryId()).orElse(null));
+        }
 
         if (request.getDepartmentTypeId() != null) {
             department.setDepartmentType(masDepartmentTypeRepository.findById(request.getDepartmentTypeId()).orElse(null));
@@ -100,6 +106,9 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
             department.setLastChgBy(request.getLastChgBy());
             department.setLastChgTime(getCurrentTimeFormatted());
             department.setLastChgDate(Instant.now());
+            if (request.getWardCategoryId() != null) {
+                department.setWardCategory( masWardCategoryRepository.findById(request.getWardCategoryId()).orElse(null));
+            }
 
             if (request.getDepartmentTypeId() != null) {
                 department.setDepartmentType(masDepartmentTypeRepository.findById(request.getDepartmentTypeId()).orElse(null));
@@ -157,6 +166,10 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         response.setLastChgBy(department.getLastChgBy());
         response.setLastChgDate(department.getLastChgDate());
         response.setLastChgTime(department.getLastChgTime());
+        if(department.getWardCategory()!=null){
+            response.setWardCategoryId(department.getWardCategory().getId());
+            response.setWardCategoryName(department.getWardCategory().getCategoryName());
+        }
         if (department.getDepartmentType() != null) {
             response.setDepartmentTypeId(department.getDepartmentType().getId());
             response.setDepartmentTypeName(department.getDepartmentType().getDepartmentTypeName());
