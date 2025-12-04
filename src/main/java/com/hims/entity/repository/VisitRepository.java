@@ -111,6 +111,7 @@ SELECT v.* FROM visit v
 JOIN patient p ON p.patient_id = v.patient_id
 WHERE v.visit_status = 'n'
   AND v.billing_status = 'y'
+  AND DATE(v.visit_date) = :visitDate   -- match only the date part
   AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
   AND (:sessionId IS NULL OR v.session_id = :sessionId)
   AND (:employeeNo IS NULL OR p.uhid_no = :employeeNo)
@@ -122,14 +123,35 @@ WHERE v.visit_status = 'n'
             CAST(p.p_ln AS VARCHAR)
         ) LIKE LOWER(CONCAT('%', :patientName, '%'))
       )
-""",
-            nativeQuery = true)
+""", nativeQuery = true)
     List<Visit> findActiveVisitsWithFilters(
             @Param("doctorId") Long doctorId,
             @Param("sessionId") Long sessionId,
             @Param("employeeNo") String employeeNo,
-            @Param("patientName") String patientName
+            @Param("patientName") String patientName,
+            @Param("visitDate") LocalDate visitDate
     );
+
+
+
+    @Query("""
+    SELECT v FROM Visit v 
+    WHERE v.doctor.userId = :doctorId 
+    AND CAST(v.visitDate AS date) = CAST(:visitDate AS date)
+    AND v.displayPatientStatus = :status
+""")
+    Optional<Visit> findCpVisit(Long doctorId, Instant visitDate, String status);
+
+
+    @Query("""
+    SELECT v FROM Visit v 
+    WHERE v.doctor.userId = :doctorId
+    AND CAST(v.visitDate AS date) = CAST(:visitDate AS date)
+    AND v.tokenNo > :tokenNo
+    ORDER BY v.tokenNo ASC
+""")
+    List<Visit> findNextVisits(Long doctorId, Instant visitDate, Long tokenNo);
+
 
 
 }

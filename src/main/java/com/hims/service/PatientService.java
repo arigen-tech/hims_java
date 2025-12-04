@@ -7,6 +7,7 @@ import com.hims.response.ApiResponse;
 import com.hims.response.PatientRegFollowUpResp;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface PatientService {
@@ -22,5 +23,7 @@ public interface PatientService {
     ApiResponse<List<Visit>> getWaitingList();
 
     ApiResponse<String> saveVitalDetails(OpdPatientDetailRequest request);
+
+
 
     }

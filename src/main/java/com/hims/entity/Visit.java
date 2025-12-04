@@ -94,4 +94,8 @@ public class Visit {
     @Column(name="visit_type",length=1)
     private String visitType;
 
+    @Size(max = 2)
+    @Column(name = "display_patient_status", length = 2)
+    private String displayPatientStatus;
+
 }
