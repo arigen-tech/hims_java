@@ -432,7 +432,10 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
      }
 
     @Override
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemBySectionOnly(int flag) {
+    public ApiResponse<List<MasStoreItemResponseWithStock>> getAllMasStoreItemBySectionOnly(int flag) {
+
+        long apiStart = System.currentTimeMillis();
+        System.out.println("⏳ API START: getAllMasStoreItemBySectionOnly");
 
         List<MasStoreItem> masStoreItems;
 
@@ -447,21 +450,62 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                     "Invalid flag value. Use 0 or 1.", 400);
         }
 
-        List<MasStoreItemResponse> responses = masStoreItems.stream()
-                .map(this::convertToResponse)
+        long fetchEnd = System.currentTimeMillis();
+        System.out.println("⏱ Time to fetch MasStoreItems: " + (fetchEnd - apiStart) + " ms");
+
+        // ✅ Fetch all stocks in one query
+        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemIds(masStoreItems);
+
+        // Group stocks by itemId
+        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
+                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
+
+        long convertStart = System.currentTimeMillis();
+
+        List<MasStoreItemResponseWithStock> responses = masStoreItems.stream()
+                .map(item -> convertToResponsefast(item, stockMap))
                 .collect(Collectors.toList());
 
+        long convertEnd = System.currentTimeMillis();
+        System.out.println("⏱ Time to convert items: " + (convertEnd - convertStart) + " ms");
+
+        long apiEnd = System.currentTimeMillis();
+        System.out.println("✅ TOTAL API TIME: " + (apiEnd - apiStart) + " ms");
+
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
-
-
-
     }
 
 
+    private MasStoreItemResponseWithStock convertToResponsefast(MasStoreItem item,
+                                                                Map<Long, List<StoreItemBatchStock>> stockMap) {
 
+        long start = System.currentTimeMillis();
 
+        MasStoreItemResponseWithStock response = new MasStoreItemResponseWithStock();
+        response.setItemId(item.getItemId());
+        response.setNomenclature(item.getNomenclature());
+        response.setPvmsNo(item.getPvmsNo());
+        response.setAdispQty(item.getAdispQty());
+        response.setSectionId(item.getSectionId() != null ? item.getSectionId().getSectionId() : null);
 
+        response.setDispUnit(item.getDispUnit() != null ? item.getDispUnit().getUnitId() : null);
+        response.setDispUnitName(item.getDispUnit() != null ? item.getDispUnit().getUnitName() : null);
 
+        response.setUnitAU(item.getUnitAU() != null ? item.getUnitAU().getUnitId() : null);
+        response.setUnitAuName(item.getUnitAU() != null ? item.getUnitAU().getUnitName() : null);
+        // ✅ Use preloaded stock
+        List<StoreItemBatchStock> stockList = stockMap.getOrDefault(item.getItemId(), List.of());
+        long hospitalId = getCurrentUser().getHospital().getId();
+
+        long storeStocks = stockFound.calculateAvailableStock(stockList, hospitalId, deptIdStore, hospDefinedstoreDays);
+
+        response.setStorestocks(storeStocks);
+
+        long end = System.currentTimeMillis();
+        System.out.println("⏱ convertToResponse() for itemId=" + item.getItemId() + " took: " + (end - start) + " ms");
+
+        return response;
+    }
 
 
 
@@ -476,8 +520,6 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setLastChgDate(item.getLastChgDate());
         response.setLastChgBy(item.getLastChgBy());
         response.setLastChgTime(item.getLastChgTime());
-//        response.setHospitalId(item.getHospitalId());
-//        response.setDepartmentId(item.getDepartmentId());
         response.setAdispQty(item.getAdispQty());
 
         response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
@@ -503,17 +545,12 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setHsnCode(item.getHsnCode() != null ? item.getHsnCode().getHsnCode() : null);
         response.setHsnGstPercent(item.getHsnCode() != null ? item.getHsnCode().getGstRate() : null);
 
-        Long avlableStokes = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), deptIdStore, item.getItemId(), hospDefinedstoreDays);
-        response.setStorestocks(avlableStokes);
-        Long dispstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), dispdeptId, item.getItemId(), hospDefineddispDays);
-        response.setDispstocks(dispstocks);
-        Long wardstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), warddeptId, item.getItemId(), hospDefinedwardDays);
-        response.setWardstocks(wardstocks );
-
         response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
         response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
+
         return response;
     }
+
 
     private MasStoreItemResponse2 convertToResponse2(MasStoreItem item) {
         MasStoreItemResponse2 response = new MasStoreItemResponse2();

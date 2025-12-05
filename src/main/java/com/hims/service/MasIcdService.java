@@ -11,5 +11,6 @@ public interface MasIcdService {
 
 //    ApiResponse<List<MasIcdResponse>> getAllIcds(int flag);
 
-    ApiResponse<Page<MasIcdResponse>> getAllIcd(int flag, int page, int size);
+
+    ApiResponse<Page<MasIcdResponse>> getAllIcd(int flag, int page, int size, String search);
 }

@@ -90,5 +90,28 @@ public class StockFound {
         return totalClosingStock;
     }
 
+    public long calculateAvailableStock(List<StoreItemBatchStock> stockList,
+                                        Long hospitalId,
+                                        Integer departmentId,
+                                        Integer noOfDays) {
+
+        LocalDate threshold = LocalDate.now().plusDays(noOfDays);
+
+        return stockList.stream()
+                .filter(s ->
+                        s.getHospitalId() != null &&
+                                s.getHospitalId().getId().equals(hospitalId) &&
+                                s.getDepartmentId() != null &&
+                                s.getDepartmentId().getId().equals(departmentId) &&
+                                s.getClosingStock() != null &&
+                                s.getClosingStock() > 0 &&
+                                s.getExpiryDate() != null &&
+                                !s.getExpiryDate().isBefore(threshold)
+                )
+                .mapToLong(StoreItemBatchStock::getClosingStock)
+                .sum();
+    }
+
+
 
 }

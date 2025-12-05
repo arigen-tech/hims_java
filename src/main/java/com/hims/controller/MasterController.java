@@ -1182,9 +1182,9 @@ public class MasterController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/masStoreItem/getAll/{flag}/{hospitalId}/{departmentId}")
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(@PathVariable int flag,@PathVariable Long hospitalId,@PathVariable Long departmentId) {
-        return masStoreItemService.getAllMasStoreItem(flag,hospitalId,departmentId);
+    @GetMapping("/masStoreItem/getAll/{flag}")
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(@PathVariable int flag) {
+        return masStoreItemService.getAllMasStoreItem(flag);
     }
 
     @PutMapping("/masStoreItem/update/{id}")
@@ -1211,7 +1211,7 @@ public class MasterController {
     }
 
     @GetMapping("/masStoreItem/getAllBySectionOnly/{flag}")
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemBySectionOnly(@PathVariable int flag) {
+    public ApiResponse<List<MasStoreItemResponseWithStock>> getAllMasStoreItemBySectionOnly(@PathVariable int flag) {
         return masStoreItemService.getAllMasStoreItemBySectionOnly(flag);
     }
 
@@ -1453,10 +1453,12 @@ public class MasterController {
     public ApiResponse<Page<MasIcdResponse>> getAllIcd(
             @RequestParam int flag,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search
     ) {
-        return masIcdService.getAllIcd(flag, page, size);
+        return masIcdService.getAllIcd(flag, page, size, search);
     }
+
 
     //  ============================================ Mas Care Level=====================================
     @PostMapping("/mas-care-level/create")

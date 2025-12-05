@@ -40,6 +40,9 @@ public class PatientController {
     private PatientRepository patientRepository;
 
     @Autowired
+    private StockFound stockFound;
+
+    @Autowired
     private OpdPatientDetailService opdPatientDetailService;
 
     @Autowired
@@ -177,5 +180,24 @@ public class PatientController {
         messagingTemplate.convertAndSend("/topic/statusUpdated", "updated");
 
         return ResponseEntity.ok(updatedVisit);
+    }
+
+
+    @GetMapping("/available")
+    public ResponseEntity<?> getAvailableStock(
+            @RequestParam Long hospitalId,
+            @RequestParam Integer departmentId,
+            @RequestParam Long itemId,
+            @RequestParam Integer noOfDays
+    ) {
+
+        Long availableStock = stockFound.getAvailableStocks(hospitalId, departmentId, itemId, noOfDays);
+
+        if (availableStock == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Stock not found or invalid inputs.");
+        }
+
+        return ResponseEntity.ok(availableStock);
     }
 }
