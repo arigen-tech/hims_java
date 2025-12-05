@@ -41,9 +41,6 @@ public class MasStoreItemResponse {
     private String groupName;
     private String itemClassName;
     private BigDecimal hsnGstPercent;
-
-
-
     private Integer reOrderLevelDispensary;
     private Integer reOrderLevelStore;
 

@@ -7,10 +7,10 @@ import org.hibernate.annotations.NotFoundAction;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
 @Entity
 @Data
-@Table(name="mas_store_item")
+@Table(name = "mas_store_item")
+
 public class MasStoreItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,11 +38,11 @@ public class MasStoreItem {
     @Column(name = "a_disp_qty", precision = 19, scale = 2)
     private BigDecimal adispQty;
 
-    @Column(name = "hospital_id")
-    private Long hospitalId;
-
-    @Column(name = "department_id")
-    private Long departmentId;
+//    @Column(name = "hospital_id")
+//    private Long hospitalId;
+//
+//    @Column(name = "department_id")
+//    private Long departmentId;
 
     @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "dispensing_unit")
@@ -55,7 +55,6 @@ public class MasStoreItem {
 
     @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "section_id")
-
     private MasStoreSection sectionId;
 
     @ManyToOne(fetch =  FetchType.LAZY)

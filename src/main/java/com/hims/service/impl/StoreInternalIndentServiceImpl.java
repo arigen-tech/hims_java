@@ -862,8 +862,8 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
             // Fetch ACTIVE items for this hospital + department
             List<MasStoreItem> allItems =
-                    masStoreItemRepository.findByStatusIgnoreCaseAndHospitalIdAndDepartmentId(
-                            "y", hospitalId, currentDeptId
+                    masStoreItemRepository.findByStatusIgnoreCase(
+                            "y"
                     );
 
             List<ROLItemResponse> rolItems = new ArrayList<>();
