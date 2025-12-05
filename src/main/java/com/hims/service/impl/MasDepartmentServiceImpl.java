@@ -11,6 +11,7 @@ import com.hims.response.MasUserDepartmentResponse;
 import com.hims.service.MasDepartmentService;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -39,6 +40,9 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
     private MasHospitalRepository masHospitalRepository;
     @Autowired
     private MasWardCategoryRepository masWardCategoryRepository;
+
+    @Value("${dept.type.ward}")
+    private  Long WARD_ID;
 
     private boolean isValidStatus(String status) {
         return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
@@ -106,13 +110,28 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
             department.setLastChgBy(request.getLastChgBy());
             department.setLastChgTime(getCurrentTimeFormatted());
             department.setLastChgDate(Instant.now());
-            if (request.getWardCategoryId() != null) {
-                department.setWardCategory( masWardCategoryRepository.findById(request.getWardCategoryId()).orElse(null));
-            }
+
 
             if (request.getDepartmentTypeId() != null) {
-                department.setDepartmentType(masDepartmentTypeRepository.findById(request.getDepartmentTypeId()).orElse(null));
+
+                // If selected type = WARD
+                if (request.getDepartmentTypeId().equals(WARD_ID)) {
+
+                        department.setWardCategory(
+                                masWardCategoryRepository.findById(request.getWardCategoryId()).orElse(null)
+                        );
+
+                } else {
+                    // If NOT WARD → Always reset to null
+                    department.setWardCategory(null);
+                }
+
+                // Set department type always
+                department.setDepartmentType(
+                        masDepartmentTypeRepository.findById(request.getDepartmentTypeId()).orElse(null)
+                );
             }
+
 
             if (request.getHospitalId() != null) {
                 department.setHospital(masHospitalRepository.findById(request.getHospitalId()).orElse(null));
