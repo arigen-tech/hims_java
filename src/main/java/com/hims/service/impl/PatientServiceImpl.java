@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
@@ -67,6 +68,10 @@ public class PatientServiceImpl implements PatientService {
     MasOpdSessionRepository masOpdSessionRepository;
     @Autowired
     AppSetupRepository appSetupRepository;
+
+    @Autowired
+    PaymentDetailRepository paymentDetailRepository;
+
     @Value("${upload.image.path}")
     private String baseUrl;
     @Autowired
@@ -109,31 +114,33 @@ public class PatientServiceImpl implements PatientService {
         }
         Patient patient = savePatient(request,false);
         resp.setPatient(patient);
-
         OpdPatientDetail newOpd=new OpdPatientDetail();
-        List<Visit> savedVisits = new ArrayList<>();
-        if (visit != null && !visit.isEmpty()) {
-            for (VisitRequest v : visit) {
+//        if(opdPatientDetailRequest!=null&&visit==null){
+//            newOpd = addOpdDetaials(null, opdPatientDetailRequest, patient);
+//        }
+        if(visit!=null){
+            List<Visit> savedVisits = new ArrayList<>();
+            if (visit != null && !visit.isEmpty()) {
+                for (VisitRequest v : visit) {
 
-                Instant today = v.getVisitDate();
-                String visitType = getVisitTypeForToday(patient.getId(), today);
+                    Instant today = v.getVisitDate();
+                    String visitType = getVisitTypeForToday(patient.getId(), today);
 
-                v.setVisitType(visitType);
-                Visit saved = createSingleAppointment(v, patient);
-                savedVisits.add(saved);
+                    v.setVisitType(visitType);
+                    Visit saved = createSingleAppointment(v, patient);
+                    savedVisits.add(saved);
 
-                if (saved.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-                    newOpd = addOpdDetaials(saved, opdPatientDetailRequest, patient);
+                    if (saved.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
+                        newOpd = addOpdDetaials(saved, opdPatientDetailRequest, patient);
+                    }
                 }
             }
 
-
+            resp.setVisits(savedVisits);
+            OPDBillingPatientResponse finalResponse =  buildFinalResponse(patient,savedVisits);
+            resp.setOpdBillingPatientResponse(finalResponse);
         }
-
-        resp.setVisits(savedVisits);
         resp.setOpdPatientDetail(newOpd);
-        OPDBillingPatientResponse finalResponse =  buildFinalResponse(patient,savedVisits);
-        resp.setOpdBillingPatientResponse(finalResponse);
 
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {
         });
@@ -207,6 +214,80 @@ public class PatientServiceImpl implements PatientService {
         response.setDetails(details);
 
         return response;
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse paymentStatusReq(PaymentUpdateRequest request) {
+        PaymentResponse res = new PaymentResponse();
+        try{
+
+                List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
+                if (opdPayments == null || opdPayments.isEmpty()) {
+                    throw new RuntimeException("OPD payment items missing in request.");
+                }
+
+                List<OpdPaymentItem> paymentItemList = new ArrayList<>();
+
+                for (PaymentUpdateRequest.OpdBillPayment opd : opdPayments) {
+                    Integer billHeaderId = opd.getBillHeaderId();
+                    BigDecimal netAmount = opd.getNetAmount();
+
+                    BillingHeader header = billingHeaderRepository.findById(billHeaderId)
+                            .orElseThrow(() -> new RuntimeException("OPD Bill Header not found: " + billHeaderId));
+
+                    Visit visit = header.getVisit();
+                    if (visit == null) {
+                        throw new RuntimeException("Visit not linked with OPD Bill Header " + billHeaderId);
+                    }
+
+                    // create payment detail per appointment
+                    PaymentDetail paymentDetail = new PaymentDetail();
+                    paymentDetail.setPaymentMode(request.getMode());
+                    paymentDetail.setPaymentStatus("y");
+                    paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
+                    paymentDetail.setPaymentDate(Instant.now());
+                    paymentDetail.setAmount(netAmount);
+                    paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+                    paymentDetail.setCreatedAt(Instant.now());
+                    paymentDetail.setUpdatedAt(Instant.now());
+                    paymentDetail.setBillingHd(header);
+                    paymentDetailRepository.save(paymentDetail);
+
+                    // update billing header totals/status
+                    BigDecimal oldPaid = header.getTotalPaid() == null ? BigDecimal.ZERO : header.getTotalPaid();
+                    header.setTotalPaid(oldPaid.add(netAmount));
+                    header.setPaymentStatus("y");
+                    billingHeaderRepository.save(header);
+
+                    // update visit
+                    visit.setBillingStatus("y");
+                    visit.setBillingHd(header);
+                    visitRepository.save(visit);
+
+                    // prepare response item
+                    OpdPaymentItem item = new OpdPaymentItem();
+                    item.setBillHeaderId(billHeaderId);
+                    item.setVisitId(visit.getId());
+                    item.setNetAmount(netAmount);
+                    item.setPatientName(visit.getPatient().getFullName());
+                    item.setTokenNo(visit.getTokenNo());
+                    item.setDoctorName(visit.getDoctorName());
+                    paymentItemList.add(item);
+                }
+
+                res.setMsg("Success");
+                res.setPaymentStatus("y");
+                res.setBillPayments(paymentItemList);
+
+                return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
+
+        } catch (SDDException e) {
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
+        }
     }
 
 

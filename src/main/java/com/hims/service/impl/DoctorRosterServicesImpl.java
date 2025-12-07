@@ -301,8 +301,15 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
             Long sessionId) {
 
         Long hospitalId = roster.getHospital().getId();
-        String dayName = rosterDate.getDayOfWeek().name().substring(0, 1).toUpperCase()
-                + rosterDate.getDayOfWeek().name().substring(1).toLowerCase();
+        String dayName = LocalDate.now()
+                .getDayOfWeek()
+                .name()
+                .substring(0, 1)
+                .toUpperCase() + LocalDate.now()
+                .getDayOfWeek()
+                .name()
+                .substring(1)
+                .toLowerCase();
         List<AppSetup> optionalSetup =
                 appSetupRepository.findByDoctorHospitalSessionAndDayName(
                         doctorId, roster.getDepartment().getId(), sessionId, dayName);

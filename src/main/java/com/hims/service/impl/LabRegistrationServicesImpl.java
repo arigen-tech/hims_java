@@ -378,71 +378,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     public ApiResponse paymentStatusReq(PaymentUpdateRequest request) {
         PaymentResponse res = new PaymentResponse();
         try{
-            String billingType = "";
-            if(request.getBillingType().equalsIgnoreCase("Consultation Services")){
-                billingType=request.getBillingType();
-            }
-
-            if ("Consultation Services".equalsIgnoreCase(billingType)) {
-
-                List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
-                if (opdPayments == null || opdPayments.isEmpty()) {
-                    throw new RuntimeException("OPD payment items missing in request.");
-                }
-
-                List<OpdPaymentItem> paymentItemList = new ArrayList<>();
-
-                for (PaymentUpdateRequest.OpdBillPayment opd : opdPayments) {
-                    Integer billHeaderId = opd.getBillHeaderId();
-                    BigDecimal netAmount = opd.getNetAmount();
-
-                    BillingHeader header = billingHeaderRepository.findById(billHeaderId)
-                            .orElseThrow(() -> new RuntimeException("OPD Bill Header not found: " + billHeaderId));
-
-                    Visit visit = header.getVisit();
-                    if (visit == null) {
-                        throw new RuntimeException("Visit not linked with OPD Bill Header " + billHeaderId);
-                    }
-
-                    // create payment detail per appointment
-                    PaymentDetail paymentDetail = new PaymentDetail();
-                    paymentDetail.setPaymentMode(request.getMode());
-                    paymentDetail.setPaymentStatus("y");
-                    paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
-                    paymentDetail.setPaymentDate(Instant.now());
-                    paymentDetail.setAmount(netAmount);
-                    paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
-                    paymentDetail.setCreatedAt(Instant.now());
-                    paymentDetail.setUpdatedAt(Instant.now());
-                    paymentDetail.setBillingHd(header);
-                    paymentDetailRepository.save(paymentDetail);
-
-                    // update billing header totals/status
-                    BigDecimal oldPaid = header.getTotalPaid() == null ? BigDecimal.ZERO : header.getTotalPaid();
-                    header.setTotalPaid(oldPaid.add(netAmount));
-                    header.setPaymentStatus("y");
-                    billingHeaderRepository.save(header);
-
-                    // update visit
-                    visit.setBillingStatus("y");
-                    visit.setBillingHd(header);
-                    visitRepository.save(visit);
-
-                    // prepare response item
-                    OpdPaymentItem item = new OpdPaymentItem();
-                    item.setBillHeaderId(billHeaderId);
-                    item.setVisitId(visit.getId());
-                    item.setNetAmount(netAmount);
-                    paymentItemList.add(item);
-                }
-
-                res.setMsg("Success");
-                res.setPaymentStatus("y");
-                res.setBillPayments(paymentItemList);
-
-                return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
-            }else {
-
 
                 //Payment table data inserted
                 // User currentUser = authUtil.getCurrentUser();
@@ -556,7 +491,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 //            labHdRepository.save(hdorderObj);
 //            visitRepository.save(visit);
 //            billingHeaderRepository.save(billingHeader);
-            }
         } catch (SDDException e) {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
         } catch (Exception e) {

@@ -5,6 +5,7 @@ import com.hims.entity.Visit;
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.PatientRegFollowUpResp;
+import com.hims.response.PaymentResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
@@ -25,5 +26,7 @@ public interface PatientService {
     ApiResponse<String> saveVitalDetails(OpdPatientDetailRequest request);
 
 
+
+    ApiResponse<PaymentResponse> paymentStatusReq(PaymentUpdateRequest opdreq);
 
     }

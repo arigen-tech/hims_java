@@ -200,4 +200,9 @@ public class PatientController {
 
         return ResponseEntity.ok(availableStock);
     }
+    @PostMapping("/updatepaymentstatus")
+    public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
+        return new ResponseEntity<>(patientService.paymentStatusReq(request), HttpStatus.OK);
+    }
+
 }
