@@ -1,6 +1,7 @@
 package com.hims.controller;
 
 import com.hims.entity.*;
+import com.hims.entity.repository.MasMedicalHistoryRepository;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
@@ -125,6 +126,9 @@ public class MasterController {
     private MasBedStatusService masBedStatusService;
     @Autowired
     private MasBedService masBedService;
+
+    @Autowired
+    private MasMedicalHistoryService masMedicalHistoryService;
 
 
 
@@ -1713,6 +1717,35 @@ public class MasterController {
     public ResponseEntity<?> getAllMasBed(@PathVariable int flag) {
         return ResponseEntity.ok(masBedService.getAll(flag));
     }
+
+
+    //    =============================== Mas Medical History =====================================
+
+    @GetMapping("/masMedicalHistory/getAll/{flag}")
+    public ApiResponse<List<MasMedicalHistoryResponse>> getmasMedicalHistory(@PathVariable int flag) {
+        return masMedicalHistoryService.getAllMas(flag);
+    }
+
+    @PostMapping("/masMedicalHistory/create")
+    public ResponseEntity<ApiResponse<MasMedicalHistoryResponse>> addMasMedicalHistory(@RequestBody  MasMedicalHistoryRequest request) {
+        ApiResponse<MasMedicalHistoryResponse> response = masMedicalHistoryService.addMas(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/masMedicalHistory/update/{id}")
+    public ResponseEntity<ApiResponse<MasMedicalHistoryResponse>> updateMasMedicalHistory(
+            @PathVariable Long id,
+            @RequestBody  MasMedicalHistoryRequest  request) {
+        ApiResponse<MasMedicalHistoryResponse> response = masMedicalHistoryService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/masMedicalHistory/status/{id}")
+    public ResponseEntity<ApiResponse<MasMedicalHistoryResponse>> changeMasMedicalHistory(@PathVariable Long id, @RequestParam String status) {
+        ApiResponse<MasMedicalHistoryResponse> response = masMedicalHistoryService.changeMasStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 
 
 }
