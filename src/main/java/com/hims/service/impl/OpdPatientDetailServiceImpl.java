@@ -3,12 +3,10 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.RecordNotFoundException;
 import com.hims.request.ActiveVisitSearchRequest;
 import com.hims.request.OpdPatientDetailFinalRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.OpdPatientDetailsWaitingresponce;
-import com.hims.response.OpdPatientRecallResponce;
-import com.hims.response.RecallOpdPatientDetailRequest;
+import com.hims.response.*;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
@@ -17,7 +15,6 @@ import com.hims.utils.StockFound;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,6 +68,45 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     public String createOrderNum() {
         return randomNumGenerator.generateOrderNumber("OPD",true,true);
     }
+
+
+    @Override
+    public ApiResponse<OpdPatientVitalResponce> getOpdPatientByVisit(Long visitId) {
+
+        if (visitId == null) {
+            throw new IllegalArgumentException("Visit ID must not be null");
+        }
+
+        OpdPatientDetail opdPObj = opdPatientDetailRepository.findByVisitId(visitId);
+
+        if (opdPObj == null) {
+            return ResponseUtils.createNotFoundResponse("OPD details not found for visitId: " + visitId, 404);
+        }
+
+        OpdPatientVitalResponce responseDto = mapToVitalResponse(opdPObj);
+
+        return ResponseUtils.createSuccessResponse(responseDto, new TypeReference<>() {});
+    }
+
+    private OpdPatientVitalResponce mapToVitalResponse(OpdPatientDetail opd) {
+
+        OpdPatientVitalResponce res = new OpdPatientVitalResponce();
+
+        res.setOpdPatientDetailsId(opd.getOpdPatientDetailsId());
+        res.setHeight(opd.getHeight());
+        res.setWeight(opd.getWeight());
+        res.setPulse(opd.getPulse());
+        res.setTemperature(opd.getTemperature());
+        res.setRr(opd.getRr());
+        res.setBmi(opd.getBmi());
+        res.setSpo2(opd.getSpo2());
+        res.setBpSystolic(opd.getBpSystolic());
+        res.setBpDiastolic(opd.getBpDiastolic());
+        res.setMlcFlag(opd.getMlcFlag());
+
+        return res;
+    }
+
 
 
     @Override

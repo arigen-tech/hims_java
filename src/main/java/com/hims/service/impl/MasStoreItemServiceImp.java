@@ -487,7 +487,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setPvmsNo(item.getPvmsNo());
         response.setAdispQty(item.getAdispQty());
         response.setSectionId(item.getSectionId() != null ? item.getSectionId().getSectionId() : null);
-
+        response.setItemClassId(item.getItemClassId() != null ? item.getItemClassId().getItemClassId() : null);
+        response.setItemClassName(item.getItemClassId() != null ? item.getItemClassId().getItemClassName() : null);
         response.setDispUnit(item.getDispUnit() != null ? item.getDispUnit().getUnitId() : null);
         response.setDispUnitName(item.getDispUnit() != null ? item.getDispUnit().getUnitName() : null);
 

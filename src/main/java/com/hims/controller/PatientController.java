@@ -48,6 +48,17 @@ public class PatientController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+
+
+    @GetMapping("/getOpdByVisit")
+    public ResponseEntity<ApiResponse<OpdPatientVitalResponce>> getOpdPatientByVisit(
+            @RequestParam Long visitId) {
+
+        ApiResponse<OpdPatientVitalResponce> response = opdPatientDetailService.getOpdPatientByVisit(visitId);
+        return ResponseEntity.ok(response);
+    }
+
+
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> registerPatient(@RequestBody PatientRegistrationReq request) {
         ApiResponse<PatientRegFollowUpResp> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail(), request.getVisits());

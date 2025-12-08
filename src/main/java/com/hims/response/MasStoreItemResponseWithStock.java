@@ -14,6 +14,8 @@ public class MasStoreItemResponseWithStock {
     private String nomenclature;
     private Long storestocks;
     private BigDecimal adispQty;
+    private String itemClassName;
+    private Integer itemClassId;
     private Long unitAU;
     private Long dispUnit;
     private Integer sectionId;

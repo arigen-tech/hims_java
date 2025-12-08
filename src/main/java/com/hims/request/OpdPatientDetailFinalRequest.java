@@ -77,6 +77,7 @@ public class OpdPatientDetailFinalRequest {
     private Long departmentId;
     private Long hospitalId;
     private Long doctorId;
+    private Long opdPatientDetailId;
 
     // ======================== Inner Class ======================
 
