@@ -1622,14 +1622,14 @@ public class MasterController {
 
     @PostMapping("masBedType/create")
     public ResponseEntity<?> createBed(@RequestBody MasBedTypeRequest request) {
-        return ResponseEntity.ok(masBedTypeService.createRoomCategory(request));
+        return ResponseEntity.ok(masBedTypeService.masBedTypeCreate(request));
     }
 
     @PutMapping("masBedType/update/{id}")
     public ResponseEntity<?> updateBed(
             @PathVariable Long id,
             @RequestBody MasBedTypeRequest request) {
-        return ResponseEntity.ok(masBedTypeService.updateRoomCategory(id, request));
+        return ResponseEntity.ok(masBedTypeService.masBedTypeUpdate(id, request));
     }
 
     @PutMapping("masBedType/status/{id}")

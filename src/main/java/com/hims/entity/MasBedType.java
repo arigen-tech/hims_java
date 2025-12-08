@@ -2,6 +2,7 @@ package com.hims.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 
@@ -23,6 +24,7 @@ public class MasBedType {
     @Column(name = "status", length = 1)
     private String status;
 
+    @UpdateTimestamp
     @Column(name = "last_update_date")
     private LocalDate lastUpdateDate;
 

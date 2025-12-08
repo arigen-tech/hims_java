@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface MasBedTypeService {
-    Object createRoomCategory(MasBedTypeRequest request);
+    ApiResponse<?> masBedTypeCreate(MasBedTypeRequest request);
 
-    Object updateRoomCategory(Long id, MasBedTypeRequest request);
+    ApiResponse<?> masBedTypeUpdate(Long id, MasBedTypeRequest request);
 
     ApiResponse<MasBedTypeResponse> changeActiveStatus(Long id, String status);
 
-    Object getById(Long id);
+    ApiResponse<?> getById(Long id);
 
-    Object getAll(int flag);
+    ApiResponse<?> getAll(int flag);
 }
