@@ -579,6 +579,10 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForIssueDepartment(Long deptId) {
         try {
 
+            if (deptId == null) {
+                throw new RuntimeException("deptId is required");
+            }
+
             // Fetch only "AA" status indents for issue dept
             List<StoreInternalIndentM> indents =
                     indentMRepository.findByToDeptId_IdAndStatus(deptId, "AA");
@@ -590,12 +594,9 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
             for (StoreInternalIndentM indent : indents) {
 
-
                 StoreInternalIndentResponse masterResp = buildResponse(indent);
 
-
                 // DETAILS PART
-
                 List<StoreInternalIndentT> details =
                         indentTRepository.findByIndentM(indent);
 
@@ -609,6 +610,8 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     d.setItemId(detail.getItemId().getItemId());
                     d.setItemName(detail.getItemId().getNomenclature());
                     d.setPvmsNo(detail.getItemId().getPvmsNo());
+                    d.setUnitAuName(detail.getItemId().getUnitAU().getUnitName());
+                    d.setUnitAUid(detail.getItemId().getUnitAU().getUnitId());
 
                     d.setRequestedQty(detail.getRequestedQty());
                     d.setApprovedQty(detail.getApprovedQty());
@@ -621,7 +624,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     d.setReason(detail.getReason());
 
 
-//                     BATCH STOCK
+                    // ========================= BATCH STOCK =========================
 
                     List<StoreItemBatchStock> batchStocks =
                             storeItemBatchStockRepository.findByItemId_ItemId(
@@ -629,30 +632,50 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                             );
 
                     Long itemId = detail.getItemId().getItemId();
+                    Long hospitalId = authUtil.getCurrentUser().getHospital().getId();
 
-                    Map<String, StoreItemBatchStock> bestBatchMap = batchStocks.stream()
-                            .collect(Collectors.groupingBy(
-                                    StoreItemBatchStock::getBatchNo,
-                                    Collectors.collectingAndThen(
-                                            Collectors.minBy(Comparator.comparing(StoreItemBatchStock::getExpiryDate)),
-                                            Optional::get
-                                    )
-                            ));
-
-                    // Map batches
+                    // Map batches (preserve original behavior except batchstock)
                     List<BatchResponse> batchResponseList = batchStocks.stream().map(batch -> {
                         BatchResponse br = new BatchResponse();
                         br.setBatchNo(batch.getBatchNo());
                         br.setManufactureDate(batch.getManufactureDate());
                         br.setExpiryDate(batch.getExpiryDate());
-                        br.setBatchstock(batch.getClosingStock());
 
-                        Long avlableStokes = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), deptIdStore, itemId, hospDefinedstoreDays);
+                        // ===== UPDATED: show stock for the current department (deptId) =====
+                        // convert Long deptId -> Integer for stockFound API
+                        Integer deptIdAsInt = deptId.intValue();
+                        Long currentDeptStock = stockFound.getAvailableStocks(
+                                hospitalId,
+                                deptIdAsInt,
+                                itemId,
+                                hospDefinedstoreDays
+                        );
+                        br.setBatchstock(currentDeptStock);
+
+                        // ===== keep other department stocks as before =====
+                        Long avlableStokes = stockFound.getAvailableStocks(
+                                hospitalId,
+                                deptIdStore,
+                                itemId,
+                                hospDefinedstoreDays
+                        );
                         br.setStorestocks(avlableStokes);
-                        Long dispstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), dispdeptId, itemId, hospDefineddispDays);
+
+                        Long dispstocks = stockFound.getAvailableStocks(
+                                hospitalId,
+                                dispdeptId,
+                                itemId,
+                                hospDefineddispDays
+                        );
                         br.setDispstocks(dispstocks);
-                        Long wardstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), warddeptId, itemId, hospDefinedwardDays);
-                        br.setWardstocks(wardstocks );
+
+                        Long wardstocks = stockFound.getAvailableStocks(
+                                hospitalId,
+                                warddeptId,
+                                itemId,
+                                hospDefinedwardDays
+                        );
+                        br.setWardstocks(wardstocks);
 
                         return br;
                     }).collect(Collectors.toList());
