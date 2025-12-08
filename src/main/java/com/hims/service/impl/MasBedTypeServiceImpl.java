@@ -31,7 +31,7 @@ public class MasBedTypeServiceImpl implements MasBedTypeService {
     @Autowired
     private MasBedTypeRepository masBedTypeRepository;
     @Override
-    public Object createRoomCategory(MasBedTypeRequest request) {
+    public ApiResponse<?> masBedTypeCreate(MasBedTypeRequest request) {
         try {
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
@@ -54,7 +54,7 @@ public class MasBedTypeServiceImpl implements MasBedTypeService {
     }
 
     @Override
-    public Object updateRoomCategory(Long id, MasBedTypeRequest request) {
+    public ApiResponse<?> masBedTypeUpdate(Long id, MasBedTypeRequest request) {
         try {
 
             log.info("updateMasBed() method Started...");
@@ -105,7 +105,7 @@ public class MasBedTypeServiceImpl implements MasBedTypeService {
     }
 
     @Override
-    public Object getById(Long id) {
+    public ApiResponse<?> getById(Long id) {
         Optional<MasBedType> masBedType= masBedTypeRepository.findById(id);
         if(masBedType.isEmpty()){
             return ResponseUtils.createNotFoundResponse("MasBedType data not found",  404);
@@ -115,7 +115,7 @@ public class MasBedTypeServiceImpl implements MasBedTypeService {
     }
 
     @Override
-    public Object getAll(int flag) {
+    public ApiResponse<?> getAll(int flag) {
         try {
             log.info("Mas Bed Type get List Start");
             List<MasBedType> masBedTypes;

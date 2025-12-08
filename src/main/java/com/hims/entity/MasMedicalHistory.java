@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class MasMedicalHistory {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "medical_history_id")
@@ -22,10 +21,10 @@ public class MasMedicalHistory {
     private String medicalHistoryName;
 
     @Column(name = "status", length = 1, nullable = false)
-    private String status = "Y";
+    private String status;
 
     @Column(name = "last_update_date")
-    private LocalDateTime lastUpdateDate = LocalDateTime.now();
+    private LocalDateTime lastUpdateDate;
 
     @Column(name = "created_by", length = 200)
     private String createdBy;

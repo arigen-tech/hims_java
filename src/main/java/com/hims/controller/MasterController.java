@@ -1,11 +1,13 @@
 package com.hims.controller;
 
 import com.hims.entity.*;
+import com.hims.entity.repository.MasMedicalHistoryRepository;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
 import com.hims.service.impl.UserDepartmentServiceImpl;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,7 @@ import java.util.List;
 @RestController
 @Tag(name = "MasterController", description = "Controller for handling All Master")
 @RequestMapping("/master")
+@Slf4j
 public class MasterController {
 
     @Autowired
@@ -125,6 +128,15 @@ public class MasterController {
     private MasBedStatusService masBedStatusService;
     @Autowired
     private MasBedService masBedService;
+
+    @Autowired
+    private MasMedicalHistoryService masMedicalHistoryService;
+    @Autowired
+    private MasTreatmentAdviseService service;
+    @Autowired
+    private MasProcedureTypeService masProcedureTypeService;
+    @Autowired
+    private MasProcedureService masProcedureService;
 
 
 
@@ -1622,14 +1634,14 @@ public class MasterController {
 
     @PostMapping("masBedType/create")
     public ResponseEntity<?> createBed(@RequestBody MasBedTypeRequest request) {
-        return ResponseEntity.ok(masBedTypeService.createRoomCategory(request));
+        return ResponseEntity.ok(masBedTypeService.masBedTypeCreate(request));
     }
 
     @PutMapping("masBedType/update/{id}")
     public ResponseEntity<?> updateBed(
             @PathVariable Long id,
             @RequestBody MasBedTypeRequest request) {
-        return ResponseEntity.ok(masBedTypeService.updateRoomCategory(id, request));
+        return ResponseEntity.ok(masBedTypeService.masBedTypeUpdate(id, request));
     }
 
     @PutMapping("masBedType/status/{id}")
@@ -1713,6 +1725,146 @@ public class MasterController {
     public ResponseEntity<?> getAllMasBed(@PathVariable int flag) {
         return ResponseEntity.ok(masBedService.getAll(flag));
     }
+
+
+    //    =============================== Mas Medical History =====================================
+
+    @GetMapping("/masMedicalHistory/getAll/{flag}")
+    public ApiResponse<List<MasMedicalHistoryResponse>> getmasMedicalHistory(@PathVariable int flag) {
+        return masMedicalHistoryService.getAllMas(flag);
+    }
+
+    @PostMapping("/masMedicalHistory/create")
+    public ResponseEntity<ApiResponse<MasMedicalHistoryResponse>> addMasMedicalHistory(@RequestBody  MasMedicalHistoryRequest request) {
+        ApiResponse<MasMedicalHistoryResponse> response = masMedicalHistoryService.addMas(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/masMedicalHistory/update/{id}")
+    public ResponseEntity<ApiResponse<MasMedicalHistoryResponse>> updateMasMedicalHistory(
+            @PathVariable Long id,
+            @RequestBody  MasMedicalHistoryRequest  request) {
+        ApiResponse<MasMedicalHistoryResponse> response = masMedicalHistoryService.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("/masMedicalHistory/status/{id}")
+    public ResponseEntity<ApiResponse<MasMedicalHistoryResponse>> changeMasMedicalHistory(@PathVariable Long id, @RequestParam String status) {
+        ApiResponse<MasMedicalHistoryResponse> response = masMedicalHistoryService.changeMasStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+    //    =============================== Mas Treatment Advice =====================================
+
+
+    @GetMapping("masTreatmentAdvise/getAll/{flag}")
+    public ApiResponse<List<MasTreatmentAdviseResponse>> getAllTreatment(@PathVariable int flag) {
+        return service.getAll(flag);
+    }
+
+    @PostMapping("masTreatmentAdvise/create")
+    public ResponseEntity<ApiResponse<MasTreatmentAdviseResponse>> add(
+            @RequestBody MasTreatmentAdviseRequest request) {
+
+        ApiResponse<MasTreatmentAdviseResponse> response = service.add(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("masTreatmentAdvise/update/{id}")
+    public ResponseEntity<ApiResponse<MasTreatmentAdviseResponse>> update(
+            @PathVariable Long id,
+            @RequestBody MasTreatmentAdviseRequest request) {
+
+        ApiResponse<MasTreatmentAdviseResponse> response = service.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("masTreatmentAdvise/status/{id}")
+    public ResponseEntity<ApiResponse<MasTreatmentAdviseResponse>> changeStatusTreatment(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        ApiResponse<MasTreatmentAdviseResponse> response = service.changeStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    //    ===============================Mas Procedure Type =====================================
+
+    @GetMapping("masProcedureType/getAll/{flag}")
+    public ApiResponse<List<MasProcedureTypeResponse>> getAllProcedure(@PathVariable int flag) {
+        return  masProcedureTypeService.getAllProcedureType(flag);
+    }
+
+    @GetMapping("masProcedureType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> getByIdProcedure(@PathVariable Long id) {
+        return ResponseEntity.ok( masProcedureTypeService.findById(id));
+    }
+
+    @PostMapping("masProcedureType/create")
+    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> createProcedure(@RequestBody MasProcedureTypeRequest request) {
+        return new ResponseEntity<>( masProcedureTypeService.addProcedureType(request), HttpStatus.CREATED);
+    }
+
+    @PutMapping("masProcedureType/update/{id}")
+    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> updateProcedure(
+            @PathVariable Long id, @RequestBody MasProcedureTypeRequest request) {
+
+        return ResponseEntity.ok( masProcedureTypeService.update(id, request));
+    }
+
+    @PutMapping("masProcedureType/status/{id}")
+    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> changeStatusProcedure(
+            @PathVariable Long id, @RequestParam String status) {
+
+        return ResponseEntity.ok( masProcedureTypeService.changeStatus(id, status));
+    }
+
+    //    ===============================Mas Procedure  =====================================
+
+    @GetMapping("masProcedure/getAll/{flag}")
+    public ApiResponse<List<MasProcedureResponse>> getAllMasProcedure(@PathVariable int flag) {
+
+        log.info("Get all MasProcedure, flag={}", flag);
+        return masProcedureService.getAllMasProcedure(flag);
+    }
+
+
+    @GetMapping("masProcedure/getById/{id}")
+    public ResponseEntity<ApiResponse<MasProcedureResponse>> getByIdProcedure(@PathVariable Integer id) {
+
+        log.info("Get MasProcedure By Id={}", id);
+        return ResponseEntity.ok(masProcedureService.getMasProcedureById(id));
+    }
+
+
+    @PostMapping("masProcedure/create")
+    public ResponseEntity<ApiResponse<MasProcedureResponse>> createProcedure(
+            @RequestBody MasProcedureRequest request) {
+
+        log.info("Create MasProcedure request={}", request);
+        return new ResponseEntity<>(masProcedureService.addMasProcedure(request), HttpStatus.CREATED);
+    }
+
+
+    @PutMapping("masProcedure/update/{id}")
+    public ResponseEntity<ApiResponse<MasProcedureResponse>> updateProcedure(
+            @PathVariable Integer id,
+            @RequestBody MasProcedureRequest request) {
+
+        log.info("Update MasProcedure id={}, request={}", id, request);
+        return ResponseEntity.ok(masProcedureService.updateMasProcedure(id, request));
+    }
+
+
+    @PutMapping("masProcedure/status/{id}")
+    public ResponseEntity<ApiResponse<MasProcedureResponse>> changeStatusProcedure(
+            @PathVariable Integer id,
+            @RequestParam String status) {
+
+        log.info("Change status MasProcedure id={}, status={}", id, status);
+        return ResponseEntity.ok(masProcedureService.changeStatus(id, status));
+    }
+
 
 
 }
