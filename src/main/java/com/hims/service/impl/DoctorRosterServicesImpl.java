@@ -328,9 +328,10 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
         List<Long> existingTokens =
                 visitRepository.findAllTokensForSessionToday(doctorId, hospitalId, sessionId);
         Long nextToken = getNextAvailableToken(existingTokens, startToken, maxToken);
-        if (nextToken == null) {
+        if (nextToken>=maxToken) {
             return "No tokens available for today's session";
         }
+
         return "SUCCESS";
     }
 
