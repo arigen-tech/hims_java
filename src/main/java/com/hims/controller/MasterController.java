@@ -129,6 +129,8 @@ public class MasterController {
 
     @Autowired
     private MasMedicalHistoryService masMedicalHistoryService;
+    @Autowired
+    private MasTreatmentAdviseService service;
 
 
 
@@ -1746,6 +1748,40 @@ public class MasterController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+    //    =============================== Mas Treatment Advice =====================================
+
+
+    @GetMapping("masTreatmentAdvise/getAll/{flag}")
+    public ApiResponse<List<MasTreatmentAdviseResponse>> getAllTreatment(@PathVariable int flag) {
+        return service.getAll(flag);
+    }
+
+    @PostMapping("masTreatmentAdvise/create")
+    public ResponseEntity<ApiResponse<MasTreatmentAdviseResponse>> add(
+            @RequestBody MasTreatmentAdviseRequest request) {
+
+        ApiResponse<MasTreatmentAdviseResponse> response = service.add(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("masTreatmentAdvise/update/{id}")
+    public ResponseEntity<ApiResponse<MasTreatmentAdviseResponse>> update(
+            @PathVariable Long id,
+            @RequestBody MasTreatmentAdviseRequest request) {
+
+        ApiResponse<MasTreatmentAdviseResponse> response = service.update(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("masTreatmentAdvise/status/{id}")
+    public ResponseEntity<ApiResponse<MasTreatmentAdviseResponse>> changeStatusTreatment(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        ApiResponse<MasTreatmentAdviseResponse> response = service.changeStatus(id, status);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
 
 }

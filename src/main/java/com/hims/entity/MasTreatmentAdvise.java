@@ -20,16 +20,16 @@ public class MasTreatmentAdvise {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
-    private MasDepartment department;   // maps FK department_id
+    private MasDepartment department;
 
     @Column(name = "treatment_advice", length = 500, nullable = false)
     private String treatmentAdvice;
 
     @Column(name = "status", length = 1, nullable = false)
-    private String status = "Y";
+    private String status;
 
     @Column(name = "last_update_date")
-    private LocalDateTime lastUpdateDate = LocalDateTime.now();
+    private LocalDateTime lastUpdateDate;
 
     @Column(name = "created_by", length = 200)
     private String createdBy;
