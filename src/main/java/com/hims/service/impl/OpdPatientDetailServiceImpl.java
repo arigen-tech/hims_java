@@ -118,7 +118,18 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         Long deptId = authUtil.getCurrentDepartmentId();
         User useObj = authUtil.getCurrentUser();
 
-        OpdPatientDetail opdPatientDetail = new OpdPatientDetail();
+        OpdPatientDetail opdPatientDetail;
+
+        if (request.getOpdPatientDetailId() == null) {
+            opdPatientDetail = new OpdPatientDetail();
+            log.info("Creating new OpdPatientDetail record...");
+        } else {
+            opdPatientDetail = opdPatientDetailRepository.findById(request.getOpdPatientDetailId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "OpdPatientDetail not found with ID: " + request.getOpdPatientDetailId()
+                    ));
+            log.info("Updating existing OpdPatientDetail ID: {}", request.getOpdPatientDetailId());
+        }
 
         // ======================== VITAL DETAILS ====================
         opdPatientDetail.setHeight(request.getHeight());
