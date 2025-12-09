@@ -32,4 +32,8 @@ public class MasWardCategory {
     @Column(name = "last_updated_by",length=200)
     private String lastUpdatedBY;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "care_id")
+    private MasCareLevel masCareLevel;
+
 }

@@ -13,8 +13,9 @@ public class MasRoomResponse {
     private String roomName;
     private  String status;
     private LocalDate lastUpdatedDate;
-    private Long wardId;
+    private Long departmentId;
     private String wardName;
     private Long roomCategoryId;
     private String roomCategoryName;
+    private Integer noOfBeds;
 }

@@ -13,4 +13,6 @@ public class MasWardCategoryResponse {
     private LocalDate lastUpdateDate;
     private String createdBy;
     private  String  LastUpdatedBy;
+    private Long careId;
+    private String careLevelName;
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.DgUom;
 import com.hims.entity.MasWardCategory;
 import com.hims.entity.User;
+import com.hims.entity.repository.MasCareLevelRepo;
 import com.hims.entity.repository.MasWardCategoryRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasWardCategoryRequest;
@@ -32,6 +33,8 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
     AuthUtil authUtil;
     @Autowired
     private MasWardCategoryRepository masWardCategoryRepository;
+    @Autowired
+    private MasCareLevelRepo masCareLevelRepo;
 
 
     @Override
@@ -82,6 +85,7 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
         MasWardCategory masWardCategory=new MasWardCategory();
         masWardCategory.setCategoryName(request.getCategoryName());
         masWardCategory.setDescription(request.getDescription());
+        masWardCategory.setMasCareLevel(masCareLevelRepo.findById(request.getCareId()).orElseThrow(()-> new RuntimeException("Invalid care level Id")));
         masWardCategory.setStatus("y");
         masWardCategory.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
         masWardCategory.setLastUpdateDate(LocalDate.now());
@@ -105,6 +109,7 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
         MasWardCategory masWardCategory1=masWardCategory.get();
         masWardCategory1.setCategoryName(request.getCategoryName());
         masWardCategory1.setDescription(request.getDescription());
+        masWardCategory1.setMasCareLevel(masCareLevelRepo.findById(request.getCareId()).orElseThrow(()-> new RuntimeException("Invalid care level id")));
         masWardCategory1.setStatus("y");
         masWardCategory1.setLastUpdateDate(LocalDate.now());
         masWardCategory1.setLastUpdatedBY(currentUser.getFirstName()+" "+currentUser.getLastName());
@@ -150,6 +155,8 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
         response.setLastUpdatedBy(masWardCategory.getLastUpdatedBY());
         response.setStatus(masWardCategory.getStatus());
         response.setLastUpdateDate(masWardCategory.getLastUpdateDate());
+        response.setCareId(masWardCategory.getMasCareLevel().getCareId());
+        response.setCareLevelName(masWardCategory.getMasCareLevel().getCareLevelName());
         return response;
     }
 }

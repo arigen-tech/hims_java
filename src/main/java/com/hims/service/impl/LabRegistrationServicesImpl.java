@@ -153,6 +153,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         visit.setVisitDate(Instant.now());
         visit.setLastChgDate(Instant.now());
         visit.setDepartment(department);
+        visit.setDisplayPatientStatus("wp");
         Visit savedVisit = visitRepository.save(visit);
             // Validate all investigation appointment dates
             for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {

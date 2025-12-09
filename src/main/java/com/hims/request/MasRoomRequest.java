@@ -9,7 +9,7 @@ public class MasRoomRequest {
 
     private String roomName;
     private Integer noOfBeds;
-    private Long wardId;
+    private Long deptId;
     private Long roomCategoryId;
 
 }

@@ -38,7 +38,7 @@ public class MasBedServiceImpl implements MasBedService {
 
 
     @Override
-    public Object createRoomCategory(MasBedRequest request) {
+    public ApiResponse<?> createRoomCategory(MasBedRequest request) {
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
@@ -88,7 +88,7 @@ public class MasBedServiceImpl implements MasBedService {
     }
 
     @Override
-    public Object updateRoomCategory(Long id, MasBedRequest request) {
+    public ApiResponse<?> updateRoomCategory(Long id, MasBedRequest request) {
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
@@ -169,7 +169,7 @@ public class MasBedServiceImpl implements MasBedService {
     }
 
     @Override
-    public Object getById(Long id) {
+    public ApiResponse<?> getById(Long id) {
         try {
             Optional<MasBed> masBed = masBedRepository.findById(id);
             if (masBed.isEmpty()) {
@@ -192,7 +192,7 @@ public class MasBedServiceImpl implements MasBedService {
     }
 
     @Override
-    public Object getAll(int flag) {
+    public ApiResponse<?> getAll(int flag) {
         try {
             List<MasBed> masBeds;
 
@@ -230,13 +230,15 @@ public class MasBedServiceImpl implements MasBedService {
         res.setBedNumber(masBed.getBedNumber());
         res.setStatus(masBed.getStatus());
         res.setLastUpdateDate(masBed.getLastUpdateDate());
-        res.setCreatedBy(masBed.getCreatedBy());
-        res.setLastUpdatedBy(masBed.getLastUpdatedBy());
+//        res.setCreatedBy(masBed.getCreatedBy());
+//        res.setLastUpdatedBy(masBed.getLastUpdatedBy());
 
         // Room
         if (masBed.getRoomId() != null) {
             res.setRoomId(masBed.getRoomId().getRoomId());
             res.setRoomName(masBed.getRoomId().getRoomName());
+            res.setDepartmentId(masBed.getRoomId().getMasDepartment().getId());
+            res.setDepartmentName(masBed.getRoomId().getMasDepartment().getDepartmentName());
         }
 
 
@@ -250,6 +252,7 @@ public class MasBedServiceImpl implements MasBedService {
             res.setBedStatusId(masBed.getBedStatusId().getBedStatusId());
             res.setBedStatusName(masBed.getBedStatusId().getBedStatusName());
         }
+
 
         return res;
     }

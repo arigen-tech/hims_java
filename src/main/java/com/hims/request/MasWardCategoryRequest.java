@@ -6,4 +6,5 @@ import lombok.Data;
 public class MasWardCategoryRequest {
     private String categoryName;
     private String description;
+    private Long careId;
 }

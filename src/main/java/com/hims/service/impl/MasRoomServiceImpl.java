@@ -1,10 +1,8 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.MasRoom;
-import com.hims.entity.MasRoomCategory;
-import com.hims.entity.MasWard;
-import com.hims.entity.User;
+import com.hims.entity.*;
+import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasRoomRepo;
 import com.hims.entity.repository.MasRoomCategoryRepo;
 import com.hims.entity.repository.MasWardRepository;
@@ -32,6 +30,8 @@ public class MasRoomServiceImpl implements MasRoomService {
     private final MasWardRepository masWardRepo;
     private final AuthUtil authUtil;
 
+    private final MasDepartmentRepository departmentRepository;
+
     @Override
     public ApiResponse<MasRoomResponse> createRoom(MasRoomRequest request) {
         try {
@@ -44,14 +44,14 @@ public class MasRoomServiceImpl implements MasRoomService {
             MasRoomCategory category = masRoomCategoryRepo.findById(request.getRoomCategoryId())
                     .orElseThrow(() -> new RuntimeException("Invalid Room Category Id"));
 
-            MasWard ward = masWardRepo.findById(request.getWardId())
-                    .orElseThrow(() -> new RuntimeException("Invalid Ward Id"));
+            MasDepartment department = departmentRepository.findById(request.getDeptId())
+                    .orElseThrow(() -> new RuntimeException("Invalid Department Id"));
 
             MasRoom entity = new MasRoom();
             entity.setRoomName(request.getRoomName());
             entity.setNoOfBeds(request.getNoOfBeds());
             entity.setMasRoomCategory(category);
-            entity.setMasWard(ward);
+            entity.setMasDepartment(department);
             entity.setStatus("y");
             entity.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
             entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
@@ -82,13 +82,13 @@ public class MasRoomServiceImpl implements MasRoomService {
             MasRoomCategory category = masRoomCategoryRepo.findById(request.getRoomCategoryId())
                     .orElseThrow(() -> new RuntimeException("Invalid Room Category Id"));
 
-            MasWard ward = masWardRepo.findById(request.getWardId())
-                    .orElseThrow(() -> new RuntimeException("Invalid Ward Id"));
+            MasDepartment department = departmentRepository.findById(request.getDeptId())
+                    .orElseThrow(() -> new RuntimeException("Invalid Department Id"));
 
             entity.setRoomName(request.getRoomName());
             entity.setNoOfBeds(request.getNoOfBeds());
             entity.setMasRoomCategory(category);
-            entity.setMasWard(ward);
+            entity.setMasDepartment(department);
             entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
 //            entity.setLastUpdatedDate(LocalDate.now());
 
@@ -189,9 +189,10 @@ public class MasRoomServiceImpl implements MasRoomService {
         response.setStatus(entity.getStatus());
         response.setLastUpdatedDate(entity.getLastUpdatedDate());
 
-        if (entity.getMasWard() != null) {
-            response.setWardId(entity.getMasWard().getWardId());
-            response.setWardName(entity.getMasWard().getWardName());
+        response.setNoOfBeds(entity.getNoOfBeds());
+        if (entity.getMasDepartment() != null) {
+            response.setDepartmentId(entity.getMasDepartment().getId());
+            response.setWardName(entity.getMasDepartment().getDepartmentName());
         }
 
         if (entity.getMasRoomCategory() != null) {

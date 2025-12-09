@@ -20,6 +20,8 @@ public class MasBedResponse {
     private String bedStatusName;
     private String status;
     private LocalDate lastUpdateDate;
-    private String createdBy;
-    private String lastUpdatedBy;
+//    private String createdBy;
+//    private String lastUpdatedBy;
+    private  Long departmentId;
+    private String departmentName;
 }
