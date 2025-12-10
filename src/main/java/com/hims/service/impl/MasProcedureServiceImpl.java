@@ -52,10 +52,10 @@ public class MasProcedureServiceImpl implements MasProcedureService {
 
             if (flag == 1) {
                 log.info("Fetching active procedures only");
-                list = repository.findByStatusIgnoreCase("y");
+                list = repository.findByStatusIgnoreCaseOrderByLastChangedDateDesc("y");
             } else if (flag == 0) {
                 log.info("Fetching all procedures");
-                list = repository.findAll();
+                list = repository.findByStatusInOrderByLastChangedDateDesc(List.of("y","n"));
             } else {
                 log.warn("Invalid flag: {}", flag);
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
@@ -95,18 +95,18 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
         User user = authUtil.getCurrentUser();
-        Long depart= authUtil.getCurrentDepartmentId();
+//        Long depart= authUtil.getCurrentDepartmentId();
         if (user == null) {
             log.error("Create failed: current user not found");
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", 400);
         }
 
-        MasDepartment department = departmentRepository.findById(depart)
-                .orElse(null);
+        MasDepartment department = departmentRepository.findById(req.getDepartmentId())
+                .orElseThrow();
 
         MasProcedureType procedureType = procedureTypeRepository.findById(req.getProcedureTypeId())
-                .orElse(null);
+                .orElseThrow();
 
         MasProcedure p = MasProcedure.builder()
 
@@ -114,7 +114,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
                 .procedureName(req.getProcedureName())
                 .defaultStatus("y")
                 .status("y")
-                .procedureGroup(req.getProcedureGroup())
+//                .procedureGroup(req.getProcedureGroup())
                 .department(department)
                 .procedureType(procedureType)
                 .lastChangedBy(user.getFirstName())
@@ -133,7 +133,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         log.info("MasProcedure: Update Start | id={} | data={}", id, req);
 
         User user = authUtil.getCurrentUser();
-        Long depart=authUtil.getCurrentDepartmentId();
+//        Long depart=authUtil.getCurrentDepartmentId();
         if (user == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "User not found", 401);
@@ -147,13 +147,13 @@ public class MasProcedureServiceImpl implements MasProcedureService {
             return ResponseUtils.createNotFoundResponse("Procedure not found", 404);
         }
 
-        MasDepartment department = departmentRepository.findById(depart).orElse(null);
-        MasProcedureType type = procedureTypeRepository.findById(req.getProcedureTypeId()).orElse(null);
+        MasDepartment department = departmentRepository.findById(req.getDepartmentId()).orElseThrow();
+        MasProcedureType type = procedureTypeRepository.findById(req.getProcedureTypeId()).orElseThrow();
 
         procedure.setProcedureCode(req.getProcedureCode());
         procedure.setProcedureName(req.getProcedureName());
         procedure.setDefaultStatus("y");
-        procedure.setProcedureGroup(req.getProcedureGroup());
+//        procedure.setProcedureGroup(req.getProcedureGroup());
         procedure.setDepartment(department);
         procedure.setProcedureType(type);
         procedure.setLastChangedBy(user.getFirstName());
@@ -206,12 +206,13 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         res.setProcedureId(p.getProcedureId());
         res.setProcedureCode(p.getProcedureCode());
         res.setProcedureName(p.getProcedureName());
-        res.setDefaultStatus(p.getDefaultStatus());
+//        res.setDefaultStatus(p.getDefaultStatus());
         res.setStatus(p.getStatus());
-        res.setProcedureGroup(p.getProcedureGroup());
-        res.setLastChangedBy(p.getLastChangedBy());
+//        res.setProcedureGroup(p.getProcedureGroup());
+//        res.setLastChangedBy(p.getLastChangedBy());
         res.setLastChangedDate(p.getLastChangedDate());
         if (p.getDepartment() != null) {
+            res.setDepartmentId(p.getDepartment().getId());
             res.setDepartmentName(p.getDepartment().getDepartmentName());
         }
         if (p.getProcedureType() != null) {

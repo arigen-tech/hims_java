@@ -1742,8 +1742,8 @@ public class MasterController {
     //    =============================== Mas Medical History =====================================
 
     @GetMapping("/masMedicalHistory/getAll/{flag}")
-    public ApiResponse<List<MasMedicalHistoryResponse>> getmasMedicalHistory(@PathVariable int flag) {
-        return masMedicalHistoryService.getAllMas(flag);
+    public ResponseEntity<?> getMasMedicalHistory(@PathVariable int flag) {
+        return ResponseEntity.ok(masMedicalHistoryService.getAllMas(flag));
     }
 
     @PostMapping("/masMedicalHistory/create")
@@ -1803,8 +1803,8 @@ public class MasterController {
     //    ===============================Mas Procedure Type =====================================
 
     @GetMapping("masProcedureType/getAll/{flag}")
-    public ApiResponse<List<MasProcedureTypeResponse>> getAllProcedure(@PathVariable int flag) {
-        return  masProcedureTypeService.getAllProcedureType(flag);
+    public ResponseEntity<ApiResponse<List<MasProcedureTypeResponse>>> getAllProcedure(@PathVariable int flag) {
+        return  ResponseEntity.ok(masProcedureTypeService.getAllProcedureType(flag));
     }
 
     @GetMapping("masProcedureType/getById/{id}")
@@ -1834,10 +1834,10 @@ public class MasterController {
     //    ===============================Mas Procedure  =====================================
 
     @GetMapping("masProcedure/getAll/{flag}")
-    public ApiResponse<List<MasProcedureResponse>> getAllMasProcedure(@PathVariable int flag) {
+    public ResponseEntity<ApiResponse<List<MasProcedureResponse>>> getAllMasProcedure(@PathVariable int flag) {
 
         log.info("Get all MasProcedure, flag={}", flag);
-        return masProcedureService.getAllMasProcedure(flag);
+        return ResponseEntity.ok(masProcedureService.getAllMasProcedure(flag));
     }
 
 

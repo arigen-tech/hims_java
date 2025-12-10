@@ -32,9 +32,9 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
         try {
             List<MasMedicalHistory> masWards;
             if(flag==0){
-                masWards= masMedicalHistoryRepository.findByStatusIgnoreCaseIn(List.of("y","n"));
+                masWards= masMedicalHistoryRepository.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y","n"));
             } else if (flag==1) {
-                masWards= masMedicalHistoryRepository.findByStatusIgnoreCase("y");
+                masWards= masMedicalHistoryRepository.findByStatusIgnoreCaseOrderByLastUpdateDateDesc("y");
             }else{
                 return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Flag Value , Provide flag as 0 or 1", HttpStatus.BAD_REQUEST.value());
             }
@@ -123,9 +123,9 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
         masWardResponse.setMedicalHistoryId( masWard.getMedicalHistoryId());
         masWardResponse.setMedicalHistoryName( masWard.getMedicalHistoryName());
         masWardResponse.setStatus(masWard.getStatus());
-        masWardResponse.setLastUpdatedBy(masWard.getLastUpdatedBy());
+//        masWardResponse.setLastUpdatedBy(masWard.getLastUpdatedBy());
         masWardResponse.setLastUpdateDate(masWard.getLastUpdateDate());
-        masWardResponse.setCreatedBy(masWard.getCreatedBy());
+//        masWardResponse.setCreatedBy(masWard.getCreatedBy());
         return masWardResponse;
 
     }
