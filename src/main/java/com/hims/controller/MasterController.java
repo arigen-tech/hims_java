@@ -1771,8 +1771,8 @@ public class MasterController {
 
 
     @GetMapping("masTreatmentAdvise/getAll/{flag}")
-    public ApiResponse<List<MasTreatmentAdviseResponse>> getAllTreatment(@PathVariable int flag) {
-        return service.getAll(flag);
+    public ResponseEntity<?> getAllTreatment(@PathVariable int flag) {
+        return ResponseEntity.ok(service.getAll(flag));
     }
 
     @PostMapping("masTreatmentAdvise/create")

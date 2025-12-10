@@ -11,4 +11,5 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MasTreatmentAdviseRequest {
     private String treatmentAdvice;
+    private Long departmentId;
 }

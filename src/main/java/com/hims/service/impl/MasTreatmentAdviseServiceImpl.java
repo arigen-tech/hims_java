@@ -37,9 +37,9 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
             List<MasTreatmentAdvise> list;
 
             if (flag == 0) {
-                list = masTreatmentAdviseRepository.findByStatusIgnoreCaseIn(List.of("y", "n"));
+                list = masTreatmentAdviseRepository.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y", "n"));
             } else if (flag == 1) {
-                list = masTreatmentAdviseRepository.findByStatusIgnoreCase("y");
+                list = masTreatmentAdviseRepository.findByStatusIgnoreCaseOrderByLastUpdateDateDesc("y");
             } else {
                 return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Flag Value , Provide flag as 0 or 1", HttpStatus.BAD_REQUEST.value());
             }
@@ -71,7 +71,7 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", 404);
             }
 
-            MasDepartment department = masDepartmentRepository.findById(depart)
+            MasDepartment department = masDepartmentRepository.findById(request.getDepartmentId())
                     .orElseThrow(() -> new RuntimeException("Invalid Department Id"));
 
             MasTreatmentAdvise advise = new MasTreatmentAdvise();
@@ -107,7 +107,7 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
             MasTreatmentAdvise advise = masTreatmentAdviseRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Invalid Treatment Advise Id"));
 
-            MasDepartment department = masDepartmentRepository.findById(depart)
+            MasDepartment department = masDepartmentRepository.findById(request.getDepartmentId())
                     .orElseThrow(() -> new RuntimeException("Invalid Department Id"));
 
             advise.setDepartment(department);
