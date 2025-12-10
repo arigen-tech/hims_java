@@ -9,7 +9,7 @@ import java.util.List;
 
 @Data
 public class PendingBillingResponse {
-
+    private Long visitId;
     private Long billinghdid;
     private Long patientid;
     private String patientName;

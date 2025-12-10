@@ -92,6 +92,11 @@ public class PatientServiceImpl implements PatientService {
     @Value("${serviceCategoryOPD}")
     private String serviceCategoryOPD;
 
+    @Value("${serviceCategoryRegistration}")
+    private String serviceCategoryRegistration;
+
+
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<PatientRegFollowUpResp> registerPatientWithOpd(PatientRequest request, OpdPatientDetailRequest opdPatientDetailRequest, List<VisitRequest> visit) {
@@ -157,7 +162,7 @@ public class PatientServiceImpl implements PatientService {
         OPDBillingPatientResponse response = new OPDBillingPatientResponse();
         List<AppointmentBlock> blocks = new ArrayList<>();
         List<BillingDetailResponse> details = new ArrayList<>();
-
+        response.setUhid(patient.getUhidNo());
         response.setPatientid(patient.getId());
         response.setPatientName(patient.getFullName());
         response.setMobileNo(patient.getPatientMobileNumber());

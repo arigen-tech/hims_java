@@ -6,7 +6,7 @@ import java.time.Instant;
 
 @Data
 public class AppointmentBlock {
-    private long billingHdId;
+    private Long billingHdId;
     private Long visitId;
     private String visitType;
     private Long tokenNo;

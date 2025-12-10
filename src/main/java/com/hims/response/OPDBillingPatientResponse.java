@@ -27,13 +27,7 @@ public class OPDBillingPatientResponse {
     private String orderhdPaymentStatus;
     private String flag;
     private String source;
-
-//    private String visitType;
-//    private Long tokenNo;
-//    private Instant visitDate;
-//    private String sessionName;
-//    private BigDecimal registrationCost;
-
+    private String uhid;
 
 
     private List<AppointmentBlock> appointments;

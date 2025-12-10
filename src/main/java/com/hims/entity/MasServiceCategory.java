@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Getter
@@ -52,5 +53,8 @@ public class MasServiceCategory {
 
     @Column(name = "gst_percent")
     private Double gstPercent;
+
+    @Column(name = "registration_cost")
+    private BigDecimal registrationCost;
 
 }

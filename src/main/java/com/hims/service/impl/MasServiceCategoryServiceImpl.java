@@ -109,9 +109,10 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
             existing.setSacCode(req.getSacCode());
             existing.setGstApplicable(req.getGstApplicable());
             existing.setStatus(req.getStatus() != null ? req.getStatus() : existing.getStatus());
-
+            existing.setGstPercent(req.getGstPercent());
             existing.setLastChgBy(currentUser.getUsername());
             existing.setLastChgDt(Instant.now());
+            existing.setRegistrationCost(req.getRegistrationCost());
 
             MasServiceCategory updated = masServiceCategoryRepository.save(existing);
 
