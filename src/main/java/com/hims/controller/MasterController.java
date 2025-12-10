@@ -137,6 +137,12 @@ public class MasterController {
     private MasProcedureTypeService masProcedureTypeService;
     @Autowired
     private MasProcedureService masProcedureService;
+    @Autowired
+    private MasMealTypeService masMealTypeService;
+    @Autowired
+    private MasDietTypeService masDietTypeService;
+    @Autowired
+    private MasDietPreferenceService masDietPreferenceService;
 
 
 
@@ -1864,7 +1870,106 @@ public class MasterController {
         log.info("Change status MasProcedure id={}, status={}", id, status);
         return ResponseEntity.ok(masProcedureService.changeStatus(id, status));
     }
+    //    ===============================Mas Meal Type  =====================================
 
+    @GetMapping("masMealType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasMealTypeResponse>>> getAllMealType(@PathVariable int flag) {
+        return ResponseEntity.ok(masMealTypeService.getAllMealType(flag)) ;
+    }
+
+    @GetMapping("masMealType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasMealTypeResponse>> getByIdMealType(@PathVariable Long id) {
+        return ResponseEntity.ok(masMealTypeService.findById(id));
+    }
+
+    @PostMapping("masMealType/create")
+    public ResponseEntity<ApiResponse<MasMealTypeResponse>> createMealType(@RequestBody MasMealTypeRequest request) {
+        return new ResponseEntity<>(masMealTypeService.addMealType(request), HttpStatus.CREATED);
+    }
+
+    @PutMapping("masMealType/update/{id}")
+    public ResponseEntity<ApiResponse<MasMealTypeResponse>> updateMealType(
+            @PathVariable Long id,
+            @RequestBody MasMealTypeRequest request) {
+        return ResponseEntity.ok(masMealTypeService.update(id, request));
+    }
+
+    @PutMapping("masMealType/status/{id}")
+    public ResponseEntity<ApiResponse<MasMealTypeResponse>> changeStatusMealType(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masMealTypeService.changeStatus(id, status));
+    }
+
+    //    ===============================Mas Diet Type  =====================================
+
+    @GetMapping("masDietType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasDietTypeResponse>>> getAllDietType(@PathVariable int flag) {
+        return ResponseEntity.ok(masDietTypeService.getAllDietType(flag));
+    }
+
+    @GetMapping("masDietType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasDietTypeResponse>> getByIdDietType(@PathVariable Long id) {
+        return ResponseEntity.ok( masDietTypeService.findById(id));
+    }
+
+    @PostMapping("masDietType/create")
+    public ResponseEntity<ApiResponse<MasDietTypeResponse>> createDietType(@RequestBody MasDietTypeRequest request) {
+        return new ResponseEntity<>( masDietTypeService.addDietType(request), HttpStatus.CREATED);
+    }
+
+    @PutMapping("masDietType/update/{id}")
+    public ResponseEntity<ApiResponse<MasDietTypeResponse>> updateDietType(
+            @PathVariable Long id,
+            @RequestBody MasDietTypeRequest request) {
+        return ResponseEntity.ok( masDietTypeService.update(id, request));
+    }
+
+    @PutMapping("masDietType/status/{id}")
+    public ResponseEntity<ApiResponse<MasDietTypeResponse>> changeStatusDietType(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok( masDietTypeService.changeStatus(id, status));
+
+    }
+    //    ===============================Mas Diet Preference =====================================
+
+    @GetMapping("masDietPreference/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasDietPreferenceResponse>>> getAllDietPreference(@PathVariable int flag) {
+        return ResponseEntity.ok(masDietPreferenceService.getAll(flag));
+    }
+
+    @GetMapping("masDietPreference/getById/{id}")
+    public ResponseEntity<ApiResponse<MasDietPreferenceResponse>> getByIdDietPreference(@PathVariable Long id) {
+        ApiResponse<MasDietPreferenceResponse> response = masDietPreferenceService.getById(id);
+
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("masDietPreference/create")
+    public ResponseEntity<ApiResponse<MasDietPreferenceResponse>> createDietPreference(
+            @RequestBody MasDietPreferenceRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(masDietPreferenceService.create(request));
+    }
+
+    @PutMapping("masDietPreference/update/{id}")
+    public ResponseEntity<ApiResponse<MasDietPreferenceResponse>> updateDietPreference(
+            @PathVariable Long id,
+            @RequestBody MasDietPreferenceRequest request) {
+
+        ApiResponse<MasDietPreferenceResponse> response = masDietPreferenceService.update(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("masDietPreference/status/{id}")
+    public ResponseEntity<ApiResponse<MasDietPreferenceResponse>> changeStatusDietPreference(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        ApiResponse<MasDietPreferenceResponse> response = masDietPreferenceService.changeStatus(id, status);
+        return ResponseEntity.ok(response);
+    }
 
 
 }
