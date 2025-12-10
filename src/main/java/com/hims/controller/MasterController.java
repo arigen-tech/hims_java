@@ -149,6 +149,11 @@ public class MasterController {
     private MasAdmissionTypeService masAdmissionTypeService;
     @Autowired
     private MasRouteService masRouteService;
+    @Autowired
+    private MasIntakeTypeService masIntakeTypeService;
+    @Autowired
+    private MasIntakeItemService masIntakeItemService;
+
 
 
 
@@ -2076,6 +2081,70 @@ public class MasterController {
             @PathVariable Long id,
             @RequestParam String status) {
         return ResponseEntity.ok(masRouteService.changeStatus(id, status));
+    }
+
+//    ===============================Mas Intake Type=====================================
+
+
+
+    @GetMapping("masIntakeType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasIntakeTypeResponse>>> getAllIntake(@PathVariable int flag) {
+        return ResponseEntity.ok( masIntakeTypeService.getAll(flag));
+    }
+
+    @GetMapping("masIntakeType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasIntakeTypeResponse>> getByIdIntake(@PathVariable Long id) {
+        return ResponseEntity.ok( masIntakeTypeService.getById(id));
+    }
+
+    @PostMapping("masIntakeType/create")
+    public ResponseEntity<ApiResponse<MasIntakeTypeResponse>> createIntake(@RequestBody MasIntakeTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body( masIntakeTypeService.create(request));
+    }
+
+    @PutMapping("masIntakeType/update/{id}")
+    public ResponseEntity<ApiResponse<MasIntakeTypeResponse>> updateIntake(
+            @PathVariable Long id,
+            @RequestBody MasIntakeTypeRequest request) {
+        return ResponseEntity.ok( masIntakeTypeService.update(id, request));
+    }
+
+    @PutMapping("masIntakeType/status/{id}")
+    public ResponseEntity<ApiResponse<MasIntakeTypeResponse>> changeStatusIntake(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok( masIntakeTypeService.changeStatus(id, status));
+    }
+
+//    ===============================Mas Intake Item=====================================
+
+    @GetMapping("masIntakeItem/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasIntakeItemResponse>>> getAllIntakeItem(@PathVariable int flag) {
+        return ResponseEntity.ok(masIntakeItemService.getAll(flag));
+    }
+
+    @GetMapping("masIntakeItem/getById/{id}")
+    public ResponseEntity<ApiResponse<MasIntakeItemResponse>> getByIdIntakeItem(@PathVariable Long id) {
+        return ResponseEntity.ok(masIntakeItemService.getById(id));
+    }
+
+    @PostMapping("masIntakeItem/create")
+    public ResponseEntity<ApiResponse<MasIntakeItemResponse>> createIntakeItem(@RequestBody MasIntakeItemRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masIntakeItemService.create(request));
+    }
+
+    @PutMapping("masIntakeItem/update/{id}")
+    public ResponseEntity<ApiResponse<MasIntakeItemResponse>> updateIntakeItem(
+            @PathVariable Long id,
+            @RequestBody MasIntakeItemRequest request) {
+        return ResponseEntity.ok(masIntakeItemService.update(id, request));
+    }
+
+    @PutMapping("masIntakeItem/status/{id}")
+    public ResponseEntity<ApiResponse<MasIntakeItemResponse>> changeStatusIntakeItem(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masIntakeItemService.changeStatus(id, status));
     }
 
 }
