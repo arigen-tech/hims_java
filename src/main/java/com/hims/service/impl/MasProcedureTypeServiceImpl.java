@@ -165,7 +165,7 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
         }
 
         MasProcedureType procedure = procedureOpt.get();
-        procedure.setStatus(status.toUpperCase());
+        procedure.setStatus(status);
         procedure.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
         procedure.setLastUpdateDate(LocalDateTime.now());
 

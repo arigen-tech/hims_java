@@ -130,7 +130,7 @@ public class MasDietTypeServiceImpl implements MasDietTypeService {
         }
 
         MasDietType diet = dietOpt.get();
-        diet.setStatus(status.toUpperCase());
+        diet.setStatus(status);
         diet.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
         diet.setLastUpdateDate(LocalDateTime.now());
 

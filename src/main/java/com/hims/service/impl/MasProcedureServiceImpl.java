@@ -190,7 +190,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
                     "Status must be y or n", 400);
         }
 
-        procedure.setStatus(status.toUpperCase());
+        procedure.setStatus(status);
         procedure.setLastChangedDate(LocalDateTime.now());
         procedure.setLastChangedBy(user.getFirstName());
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");

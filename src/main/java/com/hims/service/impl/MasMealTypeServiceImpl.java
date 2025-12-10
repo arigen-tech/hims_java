@@ -132,7 +132,7 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
         }
 
         MasMealType meal = mealOpt.get();
-        meal.setStatus(status.toUpperCase());
+        meal.setStatus(status);
         meal.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
         meal.setLastUpdateDate(LocalDateTime.now());
 

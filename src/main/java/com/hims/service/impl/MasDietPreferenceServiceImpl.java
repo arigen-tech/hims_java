@@ -100,7 +100,7 @@ public class MasDietPreferenceServiceImpl implements MasDietPreferenceService {
         if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n"))
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid Status!", 400);
 
-        data.setStatus(status.toUpperCase());
+        data.setStatus(status);
         data.setLastUpdatedBy(user.getFirstName());
         data.setLastUpdateDate(LocalDateTime.now());
 

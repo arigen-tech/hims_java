@@ -143,6 +143,12 @@ public class MasterController {
     private MasDietTypeService masDietTypeService;
     @Autowired
     private MasDietPreferenceService masDietPreferenceService;
+    @Autowired
+    private MasDietScheduleStatusService masDietScheduleStatusService;
+    @Autowired
+    private MasAdmissionTypeService masAdmissionTypeService;
+    @Autowired
+    private MasRouteService masRouteService;
 
 
 
@@ -1971,5 +1977,105 @@ public class MasterController {
         return ResponseEntity.ok(response);
     }
 
+    //    ===============================Mas Diet Schedule Status=====================================
+
+    @GetMapping("masDietSchedule/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasDietScheduleStatusResponse>>> getAllSchedule(@PathVariable int flag) {
+        return ResponseEntity.ok(masDietScheduleStatusService.getAll(flag));
+    }
+
+    @GetMapping("masDietSchedule/getById/{id}")
+    public ResponseEntity<ApiResponse<MasDietScheduleStatusResponse>> getByIdSchedule(@PathVariable Long id) {
+        return ResponseEntity.ok(masDietScheduleStatusService.getById(id));
+    }
+
+    @PostMapping("masDietSchedule/create")
+    public ResponseEntity<ApiResponse<MasDietScheduleStatusResponse>> createSchedule(
+            @RequestBody MasDietScheduleStatusRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(masDietScheduleStatusService.create(request));
+    }
+
+    @PutMapping("masDietSchedule/update/{id}")
+    public ResponseEntity<ApiResponse<MasDietScheduleStatusResponse>> updateSchedule(
+            @PathVariable Long id,
+            @RequestBody MasDietScheduleStatusRequest request) {
+
+        return ResponseEntity.ok(masDietScheduleStatusService.update(id, request));
+    }
+
+    @PutMapping("masDietSchedule/status/{id}")
+    public ResponseEntity<ApiResponse<MasDietScheduleStatusResponse>> changeStatusSchedule(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(masDietScheduleStatusService.changeStatus(id, status));
+    }
+
+    //    ===============================Mas Admission Type=====================================
+
+    @GetMapping("masAdmissionType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasAdmissionTypeResponse>>> getAllAdmission (@PathVariable int flag) {
+        return ResponseEntity.ok(masAdmissionTypeService.getAll(flag));
+    }
+
+    @GetMapping("masAdmissionType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasAdmissionTypeResponse>> getByIdAdmission (@PathVariable Long id) {
+        return ResponseEntity.ok(masAdmissionTypeService.getById(id));
+    }
+
+    @PostMapping("masAdmissionType/create")
+    public ResponseEntity<ApiResponse<MasAdmissionTypeResponse>> createAdmission (
+            @RequestBody MasAdmissionTypeRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(masAdmissionTypeService.create(request));
+    }
+
+    @PutMapping("masAdmissionType/update/{id}")
+    public ResponseEntity<ApiResponse<MasAdmissionTypeResponse>> updateAdmission (
+            @PathVariable Long id,
+            @RequestBody MasAdmissionTypeRequest request) {
+
+        return ResponseEntity.ok(masAdmissionTypeService.update(id, request));
+    }
+
+    @PutMapping("masAdmissionType/status/{id}")
+    public ResponseEntity<ApiResponse<MasAdmissionTypeResponse>> changeStatusAdmission (
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(masAdmissionTypeService.changeStatus(id, status));
+    }
+
+    //    ===============================Mas Route=====================================
+
+    @GetMapping("masRoute/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasRouteResponse>>> getAllRoute(@PathVariable int flag) {
+        return ResponseEntity.ok(masRouteService.getAll(flag));
+    }
+
+    @GetMapping("masRoute/getById/{id}")
+    public ResponseEntity<ApiResponse<MasRouteResponse>> getByIdRoute(@PathVariable Long id) {
+        return ResponseEntity.ok(masRouteService.getById(id));
+    }
+
+    @PostMapping("masRoute/create")
+    public ResponseEntity<ApiResponse<MasRouteResponse>> createRoute(@RequestBody MasRouteRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masRouteService.create(request));
+    }
+
+    @PutMapping("masRoute/update/{id}")
+    public ResponseEntity<ApiResponse<MasRouteResponse>> updateRoute(
+            @PathVariable Long id,
+            @RequestBody MasRouteRequest request) {
+        return ResponseEntity.ok(masRouteService.update(id, request));
+    }
+
+    @PutMapping("masRoute/status/{id}")
+    public ResponseEntity<ApiResponse<MasRouteResponse>> changeStatusRoute(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masRouteService.changeStatus(id, status));
+    }
 
 }
