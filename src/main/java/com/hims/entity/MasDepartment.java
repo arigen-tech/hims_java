@@ -53,4 +53,13 @@ public class MasDepartment {
     @Column(name = "department_no", length = 50)
     private String departmentNo;
 
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "care_id")
+    private MasCareLevel careLevel;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ward_category_id")
+    private MasWardCategory wardCategory;
+
 }

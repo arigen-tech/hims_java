@@ -105,4 +105,10 @@ public class MasHospital {
 
     @Column(name = "registration_cost")
     private BigDecimal registrationCost;
+
+    @Column(name = "rol_is_Auto", length = 1)
+    private String roIsManual;
+
+    @Column(name = "rol_is_manual", length = 1)
+    private String rolIsAuto;
 }

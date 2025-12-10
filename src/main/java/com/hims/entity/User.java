@@ -165,4 +165,8 @@ public class User implements UserDetails {
         return true;
     }
 
+    public String getFullName(){
+        return firstName+" "+middleName+" " +lastName;
+    }
+
 }

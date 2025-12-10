@@ -34,4 +34,5 @@ public class DgMasInvestigationSingleResponse {
     private String maxNormalValue;
     private String minNormalValue;
     private String genderApplicable;
+    private String interpretation;
 }

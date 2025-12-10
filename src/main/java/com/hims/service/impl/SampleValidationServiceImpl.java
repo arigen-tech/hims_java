@@ -131,6 +131,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
                 labTurnAroundTime.setSampleValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
                 labTurnAroundTime.setSampleValidatedDateTime(LocalDateTime.now());
+                labTurnAroundTimeRepository.save(labTurnAroundTime);
 
 
                 detailsRepo.save(details);

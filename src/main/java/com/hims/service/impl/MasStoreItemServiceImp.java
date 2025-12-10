@@ -24,7 +24,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -119,7 +121,6 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Pvms No or Nomenclature already exists", HttpStatus.CONFLICT.value());
         }
-
         long deptId = authUtil.getCurrentDepartmentId();
         MasDepartment depObj = masDepartmentRepository.getById(deptId);
         MasStoreItem masStoreItem = new MasStoreItem();
@@ -127,13 +128,13 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setNomenclature(masStoreItemRequest.getNomenclature());
         masStoreItem.setStatus("y");
         masStoreItem.setAdispQty(masStoreItemRequest.getAdispQty());
-        masStoreItem.setHospitalId(currentUser.getHospital().getId());
-        masStoreItem.setDepartmentId(depObj.getId());
+//        masStoreItem.setHospitalId(currentUser.getHospital().getId());
+//        masStoreItem.setDepartmentId(depObj.getId());
         masStoreItem.setLastChgBy(currentUser.getUserId());
         masStoreItem.setLastChgDate(LocalDate.now());
         masStoreItem.setLastChgTime(getCurrentTimeFormatted());
-        masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore());
-        masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary());
+//        masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore());
+//        masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary());
 
         Optional<MasStoreUnit> masStoreUnit = masStoreUnitRepository.findById(masStoreItemRequest.getDispUnit());
         if (masStoreUnit.isEmpty()) {
@@ -176,6 +177,22 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setSectionId(masStoreSection.get());
         masStoreItem.setHsnCode(masHSN.get());
         masStoreItem.setMasItemCategory(masItemCategory.get());
+        masStoreItem.setStoreROL(masStoreItemRequest.getReOrderLevelStore());
+        masStoreItem.setDispROL(masStoreItemRequest.getReOrderLevelDispensary());
+        masStoreItem.setWardROL(masStoreItemRequest.getReOrderLevelWard());
+
+        MasHospital hospital = currentUser.getHospital();
+
+        if ("y".equalsIgnoreCase(hospital.getRoIsManual())) {
+            masStoreItem.setStoreRoLManual("y");
+            masStoreItem.setDispRoLManual("y");
+            masStoreItem.setWardRoLManual("y");
+
+        } else if("y".equalsIgnoreCase(hospital.getRolIsAuto())){
+            masStoreItem.setStoreRoLAuto("y");
+            masStoreItem.setDispRoLAuto("y");
+            masStoreItem.setWardRoLAuto("y");
+        }
 
         MasStoreItem savedItem = masStoreItemRepository.save(masStoreItem);
 
@@ -203,13 +220,13 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     }
 
     @Override
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag, Long hospitalId, Long departmentId) {
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag) {
 
         List<MasStoreItem> masStoreItems;
         if (flag == 1) {
-            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseAndHospitalIdAndDepartmentId("y",hospitalId,departmentId);
+            masStoreItems = masStoreItemRepository.findByStatusIgnoreCase("y");
         } else if (flag == 0) {
-            masStoreItems = masStoreItemRepository.findByStatusInIgnoreCaseAndHospitalIdAndDepartmentId(List.of("y", "n"),hospitalId,departmentId);
+            masStoreItems = masStoreItemRepository.findByStatusInIgnoreCase(List.of("y", "n"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);
@@ -266,10 +283,10 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             long deptId = authUtil.getCurrentDepartmentId();
             MasDepartment depObj = masDepartmentRepository.getById(deptId);
             item.setAdispQty(request.getAdispQty());
-            item.setReOrderLevelStore(request.getReOrderLevelStore());
-            item.setReOrderLevelDispensary(request.getReOrderLevelDispensary());
-            item.setHospitalId(currentUser.getHospital().getId());
-            item.setDepartmentId(depObj.getId());
+//            item.setReOrderLevelStore(request.getReOrderLevelStore());
+//            item.setReOrderLevelDispensary(request.getReOrderLevelDispensary());
+//            item.setHospitalId(currentUser.getHospital().getId());
+//            item.setDepartmentId(depObj.getId());
             item.setLastChgBy(currentUser.getUserId());
             item.setLastChgDate(LocalDate.now());
             item.setLastChgTime(getCurrentTimeFormatted());
@@ -312,6 +329,18 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             if (request.getMasItemCategoryId() != null) {
                 item.setMasItemCategory(masItemCategoryRepository.findById(request.getMasItemCategoryId())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ItemCategory not found")));
+            }
+            MasHospital hospital = currentUser.getHospital();
+
+            if ("y".equalsIgnoreCase(hospital.getRoIsManual())) {
+                item .setStoreRoLManual("y");
+                item .setDispRoLManual("y");
+                item .setWardRoLManual("y");
+
+            } else if("y".equalsIgnoreCase(hospital.getRolIsAuto())){
+                item .setStoreRoLAuto("y");
+                item .setDispRoLAuto("y");
+                item .setWardRoLAuto("y");
             }
 
             MasStoreItem updatedItem = masStoreItemRepository.save(item);
@@ -396,14 +425,17 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                  .map(this::convertToResponse2)
                  .collect(Collectors.toList());
 
-         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
+          return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
          });
 
 
      }
 
     @Override
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemBySectionOnly(int flag) {
+    public ApiResponse<List<MasStoreItemResponseWithStock>> getAllMasStoreItemBySectionOnly(int flag) {
+
+        long apiStart = System.currentTimeMillis();
+        System.out.println("⏳ API START: getAllMasStoreItemBySectionOnly");
 
         List<MasStoreItem> masStoreItems;
 
@@ -418,17 +450,63 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                     "Invalid flag value. Use 0 or 1.", 400);
         }
 
-        List<MasStoreItemResponse> responses = masStoreItems.stream()
-                .map(this::convertToResponse)
+        long fetchEnd = System.currentTimeMillis();
+        System.out.println("⏱ Time to fetch MasStoreItems: " + (fetchEnd - apiStart) + " ms");
+
+        // ✅ Fetch all stocks in one query
+        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemIds(masStoreItems);
+
+        // Group stocks by itemId
+        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
+                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
+
+        long convertStart = System.currentTimeMillis();
+
+        List<MasStoreItemResponseWithStock> responses = masStoreItems.stream()
+                .map(item -> convertToResponsefast(item, stockMap))
                 .collect(Collectors.toList());
+
+        long convertEnd = System.currentTimeMillis();
+        System.out.println("⏱ Time to convert items: " + (convertEnd - convertStart) + " ms");
+
+        long apiEnd = System.currentTimeMillis();
+        System.out.println("✅ TOTAL API TIME: " + (apiEnd - apiStart) + " ms");
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
 
+    private MasStoreItemResponseWithStock convertToResponsefast(MasStoreItem item,
+                                                                Map<Long, List<StoreItemBatchStock>> stockMap) {
 
+        long start = System.currentTimeMillis();
 
+        MasStoreItemResponseWithStock response = new MasStoreItemResponseWithStock();
+        response.setItemId(item.getItemId());
+        response.setNomenclature(item.getNomenclature());
+        response.setPvmsNo(item.getPvmsNo());
+        response.setAdispQty(item.getAdispQty());
+        response.setSectionId(item.getSectionId() != null ? item.getSectionId().getSectionId() : null);
+        response.setItemClassId(item.getItemClassId() != null ? item.getItemClassId().getItemClassId() : null);
+        response.setItemClassName(item.getItemClassId() != null ? item.getItemClassId().getItemClassName() : null);
+        response.setDispUnit(item.getDispUnit() != null ? item.getDispUnit().getUnitId() : null);
+        response.setDispUnitName(item.getDispUnit() != null ? item.getDispUnit().getUnitName() : null);
 
+        response.setUnitAU(item.getUnitAU() != null ? item.getUnitAU().getUnitId() : null);
+        response.setUnitAuName(item.getUnitAU() != null ? item.getUnitAU().getUnitName() : null);
+        // ✅ Use preloaded stock
+        List<StoreItemBatchStock> stockList = stockMap.getOrDefault(item.getItemId(), List.of());
+        long hospitalId = getCurrentUser().getHospital().getId();
+
+        long storeStocks = stockFound.calculateAvailableStock(stockList, hospitalId, deptIdStore, hospDefinedstoreDays);
+
+        response.setStorestocks(storeStocks);
+
+        long end = System.currentTimeMillis();
+        System.out.println("⏱ convertToResponse() for itemId=" + item.getItemId() + " took: " + (end - start) + " ms");
+
+        return response;
+    }
 
 
 
@@ -443,8 +521,6 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setLastChgDate(item.getLastChgDate());
         response.setLastChgBy(item.getLastChgBy());
         response.setLastChgTime(item.getLastChgTime());
-        response.setHospitalId(item.getHospitalId());
-        response.setDepartmentId(item.getDepartmentId());
         response.setAdispQty(item.getAdispQty());
 
         response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
@@ -470,24 +546,12 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setHsnCode(item.getHsnCode() != null ? item.getHsnCode().getHsnCode() : null);
         response.setHsnGstPercent(item.getHsnCode() != null ? item.getHsnCode().getGstRate() : null);
 
-
-        Long avlableStokes = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), deptIdStore, item.getItemId(), hospDefinedstoreDays);
-        response.setStorestocks(avlableStokes);
-        Long dispstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), dispdeptId, item.getItemId(), hospDefineddispDays);
-        response.setDispstocks(dispstocks);
-        Long wardstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), warddeptId, item.getItemId(), hospDefinedwardDays);
-        response.setDispstocks(dispstocks);
-
-
-
-
-
-
-
         response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
         response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
+
         return response;
     }
+
 
     private MasStoreItemResponse2 convertToResponse2(MasStoreItem item) {
         MasStoreItemResponse2 response = new MasStoreItemResponse2();
@@ -502,5 +566,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setItemClassName(item.getItemClassId() !=null ? item.getItemClassId().getItemClassName() : null);
         return response;
     }
+
+
 
 }

@@ -9,12 +9,22 @@ import java.util.List;
 @Getter
 @Setter
 public class PaymentUpdateRequest {
+
     private String billingType;
+    private List<Integer> billHeaderIds;
     private int billHeaderId;
     private BigDecimal amount;
-    private String  mode;
-    private String  paymentReferenceNo;
+    private String mode;
+    private String paymentReferenceNo;
     List<InvestigationandPackegBillStatus> investigationandPackegBillStatus;
 
+    private List<OpdBillPayment> opdBillPayments;
 
+    @Getter
+    @Setter
+    public static class OpdBillPayment {
+        private Integer billHeaderId;
+        private BigDecimal netAmount;
+    }
 }
+

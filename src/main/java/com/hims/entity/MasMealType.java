@@ -1,0 +1,40 @@
+package com.hims.entity;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+@Data
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "mas_meal_type")
+public class MasMealType {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "meal_type_id")
+    private Long mealTypeId;
+
+    @Column(name = "meal_type_name", length = 50)
+    private String mealTypeName;
+
+    @Column(name = "sequence_no")
+    private Integer sequenceNo;
+
+    @Column(name = "status", length = 1)
+    private String status;
+
+    @Column(name = "last_update_date")
+    private LocalDateTime lastUpdateDate;
+
+    @Column(name = "created_by", length = 200)
+    private String createdBy;
+
+    @Column(name = "last_updated_by", length = 200)
+    private String lastUpdatedBy;
+
+}

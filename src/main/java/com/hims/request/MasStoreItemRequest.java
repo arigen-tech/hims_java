@@ -1,6 +1,7 @@
 package com.hims.request;
 
 import com.hims.entity.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,6 +10,7 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
+@Data
 public class MasStoreItemRequest {
     private String pvmsNo;
     private String nomenclature;
@@ -20,9 +22,11 @@ public class MasStoreItemRequest {
     private Long unitAU;
     private Long dispUnit;
     private BigDecimal adispQty;
-    private Integer reOrderLevelDispensary;
-    private Integer reOrderLevelStore;
+    private BigDecimal  reOrderLevelDispensary;
+    private BigDecimal  reOrderLevelStore;
+    private BigDecimal  reOrderLevelWard;
     private String hsnCode;
+
 
 
   //  private String dosage;

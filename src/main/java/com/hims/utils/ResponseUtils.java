@@ -57,5 +57,12 @@ public class ResponseUtils {
         return response;
     }
 
+    public <T> ApiResponse<T> createSuccessResponse(T data, TypeReference<T> tClass, String msg) {
+        ApiResponse<T> response = new ApiResponse<>();
+        response.setResponse(data);
+        response.setStatus(HttpStatus.OK.value());
+        response.setMessage(msg);
+        return response;
+    }
 
 }

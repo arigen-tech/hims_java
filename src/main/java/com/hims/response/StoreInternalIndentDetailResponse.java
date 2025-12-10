@@ -3,6 +3,7 @@ package com.hims.response;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class StoreInternalIndentDetailResponse {
@@ -22,4 +23,7 @@ public class StoreInternalIndentDetailResponse {
     private String reason;
     private String unitAuName;
     private Long unitAUid;
+
+    private List<BatchResponse> batches;
+
 }

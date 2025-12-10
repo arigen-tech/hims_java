@@ -48,7 +48,7 @@ public class OpdReportServiceImpl implements OpdReportService {
     }
 
     @Override
-    public ResponseEntity<byte[]> generateOpdReport(Long visit) {
+    public ResponseEntity<byte[]>  generateOpdReport(Long visit) {
         try {
             if (visit == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)

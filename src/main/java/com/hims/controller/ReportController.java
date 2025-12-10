@@ -40,6 +40,12 @@ public class ReportController {
     @Autowired
     private DrugExpiryReportService expiryService;
 
+    @Autowired
+    private IndentReportService indentReportService;
+
+    @Autowired
+    private OpdTokenService opdTokenService;
+
     @GetMapping(value = "/labReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateLabReportPdf(
             @RequestParam String billNo,
@@ -116,6 +122,12 @@ public class ReportController {
     @GetMapping(value = "/indentReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateIndentReportPdf(
             @RequestParam Long indentMId ) {
-        return null;
+        return indentReportService.generateIndentReport(indentMId);
+    }
+
+    @GetMapping(value = "/opdToken", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> generateOpdTokenPdf(
+            @RequestParam Long visit ) {
+        return opdTokenService.generateOpdToken(visit);
     }
 }

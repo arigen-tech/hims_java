@@ -55,6 +55,7 @@ public class DgMasInvestigationResponse {
     private String genderApplicable;
     private String discount;
     private Double price;
+    private String interpretation;
     private List<DgSubMasInvestigationResponse> subInvestigationResponseList;
     private List<DgFixedValueResponse> fixedValueResponseList;
     private List<DgNormalValueResponse> normalValueResponseList;

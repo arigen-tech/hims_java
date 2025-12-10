@@ -20,6 +20,7 @@ public class DgMasInvestigationMultiRequest {
     private String genderApplicable;
     private Long categoryId;
     private Long methodId;
+    private String interpretation;
     private List<DgSubMasInvestigationRequest> masInvestReq;
     private List<Long> subInvestigationIdsToDelete;
 }

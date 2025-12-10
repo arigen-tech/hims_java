@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -93,12 +94,24 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("name") String name
     );
 
+    List<Visit> findByBillingStatusIn(List<String> billingStatus);
+
+    @Query("SELECT COUNT(v) FROM Visit v WHERE v.id = :patientId")
+    Long countByPatientId(@Param("patientId") Long patientId);
+
+    @Query("SELECT COUNT(v) FROM Visit v WHERE v.patient.id = :patientId AND DATE(v.visitDate) = :visitDate")
+    int countByPatientIdAndVisitDate(@Param("patientId") Long patientId,
+                                     @Param("visitDate") Instant visitDate);
+
+
+
 
     @Query(value = """
 SELECT v.* FROM visit v
 JOIN patient p ON p.patient_id = v.patient_id
 WHERE v.visit_status = 'n'
   AND v.billing_status = 'y'
+  AND DATE(v.visit_date) = :visitDate   -- match only the date part
   AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
   AND (:sessionId IS NULL OR v.session_id = :sessionId)
   AND (:employeeNo IS NULL OR p.uhid_no = :employeeNo)
@@ -110,14 +123,35 @@ WHERE v.visit_status = 'n'
             CAST(p.p_ln AS VARCHAR)
         ) LIKE LOWER(CONCAT('%', :patientName, '%'))
       )
-""",
-            nativeQuery = true)
+""", nativeQuery = true)
     List<Visit> findActiveVisitsWithFilters(
             @Param("doctorId") Long doctorId,
             @Param("sessionId") Long sessionId,
             @Param("employeeNo") String employeeNo,
-            @Param("patientName") String patientName
+            @Param("patientName") String patientName,
+            @Param("visitDate") LocalDate visitDate
     );
+
+
+
+    @Query("""
+    SELECT v FROM Visit v 
+    WHERE v.doctor.userId = :doctorId 
+    AND CAST(v.visitDate AS date) = CAST(:visitDate AS date)
+    AND v.displayPatientStatus = :status
+""")
+    Optional<Visit> findCpVisit(Long doctorId, Instant visitDate, String status);
+
+
+    @Query("""
+    SELECT v FROM Visit v 
+    WHERE v.doctor.userId = :doctorId
+    AND CAST(v.visitDate AS date) = CAST(:visitDate AS date)
+    AND v.tokenNo > :tokenNo
+    ORDER BY v.tokenNo ASC
+""")
+    List<Visit> findNextVisits(Long doctorId, Instant visitDate, Long tokenNo);
+
 
 
 }

@@ -32,6 +32,9 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
     @Value("${serviceCategoryLab}")
     private String serviceCategoryLabCode;
 
+    @Value("${serviceCategoryOPD}")
+    private String serviceCategoryOpdCode;
+
     public MasServiceCategoryServiceImpl(MasServiceCategoryRepository masServiceCategoryRepository) {
         this.masServiceCategoryRepository = masServiceCategoryRepository;
     }
@@ -106,9 +109,10 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
             existing.setSacCode(req.getSacCode());
             existing.setGstApplicable(req.getGstApplicable());
             existing.setStatus(req.getStatus() != null ? req.getStatus() : existing.getStatus());
-
+            existing.setGstPercent(req.getGstPercent());
             existing.setLastChgBy(currentUser.getUsername());
             existing.setLastChgDt(Instant.now());
+            existing.setRegistrationCost(req.getRegistrationCost());
 
             MasServiceCategory updated = masServiceCategoryRepository.save(existing);
 
@@ -148,8 +152,13 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
 
 
     @Override
-    public ApiResponse<GstConfigResponse> getGstConfig(int flag) {
-        MasServiceCategory category = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLabCode);
+    public ApiResponse<GstConfigResponse> getGstConfig(int flag , Integer catId) {
+        MasServiceCategory category;
+        if(catId!=null){
+             category = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOpdCode);
+        }else{
+             category = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLabCode);
+        }
 
         ApiResponse<GstConfigResponse> apiResponse = new ApiResponse<>();
 

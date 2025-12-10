@@ -1,6 +1,7 @@
 package com.hims.service;
 
 import com.hims.entity.MasDepartment;
+import com.hims.request.IssueInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentRequest;
 import com.hims.response.ApiResponse;
@@ -30,6 +31,12 @@ public interface StoreInternalIndentService {
     ApiResponse<List<ROLItemResponse>> getROLItems();
 
     ApiResponse<StoreInternalIndentResponse> approveRejectIndent(StoreInternalIndentApprovalRequest request);
-    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending();
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending(Long deptId);
+
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForApproved(Long deptId);
+
+    ApiResponse<StoreInternalIndentResponse> submitApprovedIndent(IssueInternalIndentApprovalRequest request);
+
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForIssueDepartment(Long deptId);
 
 }

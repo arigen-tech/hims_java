@@ -70,6 +70,7 @@ public class OpdPatientDetailFinalRequest {
     // ============================== Treatment ======================
     private List<Treatment> treatment;
 
+    private String treatmentAdvice;
 
     // ======================== Mapping IDs ======================
     private Long patientId;
@@ -77,6 +78,7 @@ public class OpdPatientDetailFinalRequest {
     private Long departmentId;
     private Long hospitalId;
     private Long doctorId;
+    private Long opdPatientDetailId;
 
     // ======================== Inner Class ======================
 

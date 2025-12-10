@@ -6,10 +6,13 @@ import com.hims.entity.Visit;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Setter
 @Getter
 public class PatientRegFollowUpResp {
     private Patient patient;
     private OpdPatientDetail opdPatientDetail;
-    private Visit visit;
+    private List<Visit> visits;
+    private OPDBillingPatientResponse opdBillingPatientResponse;
 }

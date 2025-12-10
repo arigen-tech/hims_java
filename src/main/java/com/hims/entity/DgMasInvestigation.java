@@ -90,4 +90,7 @@ public class DgMasInvestigation {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "method_id")
     private MasInvestigationMethodology methodId;
+
+    @Column(name = "interpretation",length = 500)
+    private String interpretation;
 }

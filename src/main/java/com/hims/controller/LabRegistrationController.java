@@ -34,9 +34,6 @@ public class LabRegistrationController {
     ResultService resultService;
 
       // or your service interface
-
-
-
     @Autowired
     BillingService billingService;
 
@@ -108,12 +105,9 @@ public class LabRegistrationController {
     }
     @PutMapping("/update")
     public ApiResponse<String> updateResult(@RequestBody ResultUpdateRequest request) {
-
         return resultService.updateResult(request);
 
     }
-
-
     @PostMapping("/registration/billing")
     public ApiResponse<AppsetupResponse> labRegistrationForExistingOrder(
             @RequestBody LabBillingOnlyRequest labReq) {

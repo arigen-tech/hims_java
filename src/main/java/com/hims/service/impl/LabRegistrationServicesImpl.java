@@ -6,10 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.ConverterUtils;
 import com.hims.request.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.AppsetupResponse;
-import com.hims.response.PaymentResponse;
-import com.hims.response.PendingSampleResponse;
+import com.hims.response.*;
 import com.hims.service.LabRegistrationServices;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
@@ -156,6 +153,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         visit.setVisitDate(Instant.now());
         visit.setLastChgDate(Instant.now());
         visit.setDepartment(department);
+        visit.setDisplayPatientStatus("wp");
         Visit savedVisit = visitRepository.save(visit);
             // Validate all investigation appointment dates
             for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {
@@ -178,9 +176,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                    // if(inves.isCheckStatus()){
                         sum=sum.add(BigDecimal.valueOf(inves.getActualAmount()));
                         disc=disc.add(BigDecimal.valueOf(inves.getDiscountedAmount()));
-                        if(servCat.getGstApplicable()){
-                            tax=tax.add(BigDecimal.valueOf(servCat.getGstPercent()).multiply(BigDecimal.valueOf(inves.getActualAmount()).subtract(BigDecimal.valueOf(inves.getDiscountedAmount()))).divide(BigDecimal.valueOf(100)));
-                        }
+                    if(servCat.getGstApplicable()){
+                        tax=tax.add(BigDecimal.valueOf(servCat.getGstPercent()).multiply(BigDecimal.valueOf(inves.getActualAmount()).subtract(BigDecimal.valueOf(inves.getDiscountedAmount()))).divide(BigDecimal.valueOf(100)));
+                    }
                    // }
                 }
                 DgOrderHd hd = new DgOrderHd();
@@ -381,73 +379,74 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     public ApiResponse paymentStatusReq(PaymentUpdateRequest request) {
         PaymentResponse res = new PaymentResponse();
         try{
-            //Payment table data inserted
-           // User currentUser = authUtil.getCurrentUser();
-            PaymentDetail paymentDetail = new PaymentDetail();
-            paymentDetail.setPaymentMode(request.getMode());
-            paymentDetail.setPaymentStatus("y");
-            paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
-            paymentDetail.setPaymentDate(Instant.now());
-            paymentDetail.setAmount(request.getAmount());
-            paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
-            paymentDetail.setCreatedAt(Instant.now());
-            paymentDetail.setUpdatedAt(Instant.now());
-            paymentDetail.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
-            PaymentDetail details=paymentDetailRepository.save(paymentDetail);
 
-            for (InvestigationandPackegBillStatus invpkg : request.getInvestigationandPackegBillStatus()) {
-                if (invpkg.getType().equalsIgnoreCase("i")) {
-                    int investigationId=invpkg.getId();
-                    int billHdId=request.getBillHeaderId();
-                    billingDetailRepository.updatePaymentStatusInvestigation("y", investigationId, billHdId);
-                    labDtRepository.updatePaymentStatusInvestigationDt("y",investigationId, billHdId);
-                }else{
-                    int pkgId=invpkg.getId();
-                    int billHdId=request.getBillHeaderId();
-                    billingDetailRepository.updatePaymentStatuPackeg("y", pkgId, billHdId);
-                    labDtRepository.updatePaymentStatusPackegDt("y",pkgId, billHdId);
+                //Payment table data inserted
+                // User currentUser = authUtil.getCurrentUser();
+                PaymentDetail paymentDetail = new PaymentDetail();
+                paymentDetail.setPaymentMode(request.getMode());
+                paymentDetail.setPaymentStatus("y");
+                paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
+                paymentDetail.setPaymentDate(Instant.now());
+                paymentDetail.setAmount(request.getAmount());
+                paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+                paymentDetail.setCreatedAt(Instant.now());
+                paymentDetail.setUpdatedAt(Instant.now());
+                paymentDetail.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
+                PaymentDetail details = paymentDetailRepository.save(paymentDetail);
+
+                for (InvestigationandPackegBillStatus invpkg : request.getInvestigationandPackegBillStatus()) {
+                    if (invpkg.getType().equalsIgnoreCase("i")) {
+                        int investigationId = invpkg.getId();
+                        int billHdId = request.getBillHeaderId();
+                        billingDetailRepository.updatePaymentStatusInvestigation("y", investigationId, billHdId);
+                        labDtRepository.updatePaymentStatusInvestigationDt("y", investigationId, billHdId);
+                    } else {
+                        int pkgId = invpkg.getId();
+                        int billHdId = request.getBillHeaderId();
+                        billingDetailRepository.updatePaymentStatuPackeg("y", pkgId, billHdId);
+                        labDtRepository.updatePaymentStatusPackegDt("y", pkgId, billHdId);
+                    }
                 }
-            }
-            boolean fullyPaid=true;
-            boolean partialPaid=false;
-            List<DgOrderDt> dtList= labDtRepository.findByStatus(request.getBillHeaderId());
-            for(DgOrderDt orderDt:dtList) {
-              if(orderDt.getBillingStatus().equalsIgnoreCase("n")){
-                  fullyPaid=false;
-                  partialPaid=true;
-                  break;
-              }
+                boolean fullyPaid = true;
+                boolean partialPaid = false;
+                List<DgOrderDt> dtList = labDtRepository.findByStatus(request.getBillHeaderId());
+                for (DgOrderDt orderDt : dtList) {
+                    if (orderDt.getBillingStatus().equalsIgnoreCase("n")) {
+                        fullyPaid = false;
+                        partialPaid = true;
+                        break;
+                    }
 //              else{
 //                  partialPaid=false;
 //                  fullyPaid=true;
 //              }
-            }
-            BillingHeader billingHeader=billingHeaderRepository.findById(request.getBillHeaderId()).get();
-            DgOrderHd hdorderObj = billingHeader.getHdorder();
-            Visit visit=visitRepository.findByBillingHd(billingHeader);
-            res.setBillNo(billingHeader.getBillNo());
-            res.setPaymentStatus(billingHeader.getPaymentStatus());
+                }
+                BillingHeader billingHeader = billingHeaderRepository.findById(request.getBillHeaderId()).get();
+                DgOrderHd hdorderObj = billingHeader.getHdorder();
+                Visit visit = visitRepository.findByBillingHd(billingHeader);
+                res.setBillNo(billingHeader.getBillNo());
+                res.setPaymentStatus(billingHeader.getPaymentStatus());
 
-            if(fullyPaid){
-                hdorderObj.setPaymentStatus("y");
-                visit.setBillingStatus("y");
-                billingHeader.setPaymentStatus("y");
-                res.setPaymentStatus("y");
-                BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
-                BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
-                billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
-            }else if(partialPaid){
-                hdorderObj.setPaymentStatus("p");
-                visit.setBillingStatus("p");
-                billingHeader.setPaymentStatus("p");
-                res.setPaymentStatus("p");
-                BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
-                BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
-                billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
-            }
-            labHdRepository.save(hdorderObj);
-            visitRepository.save(visit);
-            billingHeaderRepository.save(billingHeader);
+                if (fullyPaid) {
+                    hdorderObj.setPaymentStatus("y");
+                    visit.setBillingStatus("y");
+                    billingHeader.setPaymentStatus("y");
+                    res.setPaymentStatus("y");
+                    BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
+                    BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
+                    billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
+                } else if (partialPaid) {
+                    hdorderObj.setPaymentStatus("p");
+                    visit.setBillingStatus("p");
+                    billingHeader.setPaymentStatus("p");
+                    res.setPaymentStatus("p");
+                    BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
+                    BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
+                    billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
+                }
+                labHdRepository.save(hdorderObj);
+                visitRepository.save(visit);
+                billingHeaderRepository.save(billingHeader);
 
 //            BillingHeader billingHeader=billingHeaderRepository.findById(request.getBillHeaderId()).get();
 //            DgOrderHd hdorderObj = billingHeader.getHdorder();
@@ -493,17 +492,15 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 //            labHdRepository.save(hdorderObj);
 //            visitRepository.save(visit);
 //            billingHeaderRepository.save(billingHeader);
-
-           } catch (SDDException e) {
+        } catch (SDDException e) {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
-          } catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
         }
         res.setMsg("Success");
         return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
     }
-
 
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
             BillingHeader billingHeader = new BillingHeader();
@@ -703,6 +700,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 response.setDoctorName(visit != null ? visit.getDoctorName() : "");
                 response.setOrderhdId(Long.valueOf(orderHd.getId()));
                 response.setOrderNo(orderHd.getOrderNo());
+
                 response.setOrderTime(
                         orderHd.getOrderTime() != null
                                 ? getCurrentTimeFormatted(orderHd.getOrderTime())

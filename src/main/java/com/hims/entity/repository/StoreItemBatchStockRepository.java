@@ -84,8 +84,10 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
                                                           @Param("today") LocalDate today);
 
 
+    List<StoreItemBatchStock> findByItemId_ItemId(Long itemId);
 
 
-
+    @Query("SELECT s FROM StoreItemBatchStock s WHERE s.itemId IN :items")
+    List<StoreItemBatchStock> findByItemIds(@Param("items") List<MasStoreItem> items);
 
 }

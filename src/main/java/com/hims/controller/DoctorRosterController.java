@@ -38,9 +38,11 @@ public class DoctorRosterController {
     public ResponseEntity<ApiResponse<List<DoctorRosterDTO>>> findDoctorRoster(
             @RequestParam Long deptId,
             @RequestParam(required = false) Long doctorId,
-            @RequestParam LocalDate rosterDate) {
+            @RequestParam LocalDate rosterDate,
+            @RequestParam(required = false) Long sessionId
+            ) {
 
-        ApiResponse<List<DoctorRosterDTO>> doctorRosterList = doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate);
+        ApiResponse<List<DoctorRosterDTO>> doctorRosterList = doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate,sessionId);
 
         return ResponseEntity.ok(doctorRosterList);
     }

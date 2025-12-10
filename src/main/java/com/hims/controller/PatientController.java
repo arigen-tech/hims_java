@@ -19,9 +19,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -38,13 +40,28 @@ public class PatientController {
     private PatientRepository patientRepository;
 
     @Autowired
+    private StockFound stockFound;
+
+    @Autowired
     private OpdPatientDetailService opdPatientDetailService;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+
+
+    @GetMapping("/getOpdByVisit")
+    public ResponseEntity<ApiResponse<OpdPatientVitalResponce>> getOpdPatientByVisit(
+            @RequestParam Long visitId) {
+
+        ApiResponse<OpdPatientVitalResponce> response = opdPatientDetailService.getOpdPatientByVisit(visitId);
+        return ResponseEntity.ok(response);
+    }
 
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> registerPatient(@RequestBody PatientRegistrationReq request) {
-        ApiResponse<PatientRegFollowUpResp> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail(),request.getVisit());
+        ApiResponse<PatientRegFollowUpResp> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail(), request.getVisits());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @PostMapping("/update")
@@ -125,11 +142,11 @@ public class PatientController {
     }
 
 
-    @GetMapping("/activeVisit")
-    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> getActiveVisits() {
-        ApiResponse<List<OpdPatientDetailsWaitingresponce>> response = opdPatientDetailService.getActiveVisits();
-        return ResponseEntity.ok(response);
-    }
+//    @GetMapping("/activeVisit")
+//    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> getActiveVisits() {
+//        ApiResponse<List<OpdPatientDetailsWaitingresponce>> response = opdPatientDetailService.getActiveVisits();
+//        return ResponseEntity.ok(response);
+//    }
 
     @PostMapping("/activeVisit/search")
     public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> searchActiveVisits(
@@ -158,6 +175,45 @@ public class PatientController {
             @PathVariable Long visitId,
             @PathVariable String status) {
         return opdPatientDetailService.updateVisitStatus(visitId, status);
+    }
+
+
+    @PutMapping("/update-status")
+    public ResponseEntity<?> updateVisitStatus(
+            @RequestParam Long visitId,
+            @RequestParam Instant visitDate,
+            @RequestParam Long doctorId) {
+
+        Visit updatedVisit = opdPatientDetailService.updateVisitStatus(
+                visitId, visitDate, doctorId
+        );
+
+        messagingTemplate.convertAndSend("/topic/statusUpdated", "updated");
+
+        return ResponseEntity.ok(updatedVisit);
+    }
+
+
+    @GetMapping("/available")
+    public ResponseEntity<?> getAvailableStock(
+            @RequestParam Long hospitalId,
+            @RequestParam Integer departmentId,
+            @RequestParam Long itemId,
+            @RequestParam Integer noOfDays
+    ) {
+
+        Long availableStock = stockFound.getAvailableStocks(hospitalId, departmentId, itemId, noOfDays);
+
+        if (availableStock == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Stock not found or invalid inputs.");
+        }
+
+        return ResponseEntity.ok(availableStock);
+    }
+    @PostMapping("/updatepaymentstatus")
+    public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
+        return new ResponseEntity<>(patientService.paymentStatusReq(request), HttpStatus.OK);
     }
 
 }

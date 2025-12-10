@@ -13,4 +13,5 @@ public class MasDepartmentRequest {
     private String departmentNo;
     private String status;
     private String lastChgBy;
+    private Long wardCategoryId;
 }

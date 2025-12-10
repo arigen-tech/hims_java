@@ -15,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class MasIcdServiceImpl implements MasIcdService {
@@ -65,29 +64,29 @@ public class MasIcdServiceImpl implements MasIcdService {
 
 
     @Override
-    public ApiResponse<Page<MasIcdResponse>> getAllIcd(int flag, int page, int size) {
-
+    public ApiResponse<Page<MasIcdResponse>> getAllIcd(int flag, int page, int size, String search) {
         Pageable pageable = PageRequest.of(page, size);
 
         Page<MasIcd> icdPage;
 
-        if (flag == 1) {
-            icdPage = masIcdRepository.findByStatusIgnoreCase("y", pageable);
-        } else if (flag == 0) {
-            icdPage = masIcdRepository.findByStatusInIgnoreCase(List.of("Y", "N"), pageable);
-        } else {
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<>() {},
-                    "Invalid flag value. Use 0 or 1.",
-                    400
+        if (search != null && !search.trim().isEmpty()) {
+            icdPage = masIcdRepository.searchICD(
+                    flag,
+                    "%" + search.toLowerCase() + "%",
+                    pageable
             );
         }
 
-        Page<MasIcdResponse> responsePage = icdPage.map(this::convertToResponse);
 
+        else if (flag == 1) {
+            icdPage = masIcdRepository.findByStatusIgnoreCase("y", pageable);
+        }
+        else {
+            icdPage = masIcdRepository.findByStatusInIgnoreCase(List.of("Y", "N"), pageable);
+        }
+
+        Page<MasIcdResponse> responsePage = icdPage.map(this::convertToResponse);
         return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
     }
-
 
 }

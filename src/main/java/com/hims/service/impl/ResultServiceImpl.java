@@ -57,6 +57,10 @@ public class ResultServiceImpl implements ResultService {
     private PatientRepository patientRepository;
     @Autowired
     private LabHdRepository labHdRepository;
+    @Autowired
+    private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
+    @Autowired
+    private VisitRepository visitRepository;
 
 
     @Autowired
@@ -103,7 +107,8 @@ public class ResultServiceImpl implements ResultService {
                     );
 
             DgResultEntryHeader header;
-
+            DgOrderHd dgOrderH=labHdRepository.findByPatientId_IdAndVisitId_Id(request.getPatientId(),request.getVisitId());
+            Patient patientId = patientRepository.findById(request.getPatientId()).orElse(null);
             if (existingHeaderOpt.isPresent()) {
                 // Update existing header
                 header = existingHeaderOpt.get();
@@ -138,12 +143,11 @@ public class ResultServiceImpl implements ResultService {
 //                Optional<DgOrderHd> dgOrderH=labHdRepository.findById(Math.toIntExact(request.getPatientId()));
 //                header.setOrderHd(dgOrderH.get());
                // Optional<DgOrderHd> dgOrderH = labHdRepository.findByPatientId_IdAndOrderstatusN(request.getPatientId(),"n");
-                DgOrderHd dgOrderH=labHdRepository.findByPatientId_IdAndVisitId_Id(request.getPatientId(),request.getVisitId());
+
 //                DgOrderHd orderHd = dgOrderH.orElseThrow(() ->
 //                        new RuntimeException("No order found for patient ID: " + request.getPatientId()));
-
                 header.setOrderHd(dgOrderH);
-                header.setHinId(patientRepository.findById(request.getPatientId()).orElse(null));
+                header.setHinId(patientId);
                 header.setMainChargecodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
                 header.setSubChargeCodeId(subChargeRepo.findById(request.getSubChargeCodeId()).orElse(null));
                 header = headerRepo.save(header);
@@ -216,7 +220,12 @@ public class ResultServiceImpl implements ResultService {
                         }
                         detail.setResultDetailStatus("n");
                     }
+                    LabTurnAroundTime labTurnAroundTime=labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(dgOrderH.getId(),investigation.getInvestigationId(),patientId.getId(),false);
+                    labTurnAroundTime.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                    labTurnAroundTime.setResultEntryDateTime(LocalDateTime.now());
+                    labTurnAroundTimeRepository.save( labTurnAroundTime);
                     detailRepo.save(detail);
+
                 }
 
                 // Mark this investigation’s sample details as result entered
@@ -406,6 +415,10 @@ public class ResultServiceImpl implements ResultService {
                 }
 
                 // Save each detail
+                LabTurnAroundTime labTurnAroundTime=labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(header.getOrderHd().getId(),detail.getInvestigationId().getInvestigationId(),header.getHinId().getId(),false);
+                        labTurnAroundTime.setResultValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                        labTurnAroundTime.setResultValidationTime(LocalDateTime.now());
+                        labTurnAroundTimeRepository.save(labTurnAroundTime);
                 detailRepo.save(detail);
             }
 

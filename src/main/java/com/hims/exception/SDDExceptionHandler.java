@@ -26,4 +26,5 @@ public class SDDExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(errorApiResponse, HttpStatus.valueOf(sddException.getStatus()));
     }
 
+
 }

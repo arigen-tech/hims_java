@@ -21,6 +21,7 @@ public class BillingDetailResponse {
     private BigDecimal netAmount;
     private BigDecimal Total;
     private String paymentStatus;
+    private BigDecimal registrationCost;
 
 
     private Long investigationId;

@@ -19,4 +19,5 @@ public class DgMasInvestigationSingleReqest {
     private String genderApplicable;
     private Long categoryId;
     private Long methodId;
+    private String interpretation;
 }

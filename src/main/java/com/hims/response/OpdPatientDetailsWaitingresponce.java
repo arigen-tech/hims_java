@@ -2,6 +2,7 @@ package com.hims.response;
 
 import lombok.Data;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Data
@@ -24,4 +25,6 @@ public class OpdPatientDetailsWaitingresponce {
     private Long hospitalId;
     private Long sessionId;
     private String sessionName;
+    private String displayPatientStatus;
+    private Instant visitDate;
 }

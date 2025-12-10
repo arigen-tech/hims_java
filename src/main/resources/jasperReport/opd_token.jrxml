@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.21.2-8434a0bd7c3bbc37cbf916f2968d35e4b165821a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="opd_token" pageWidth="200" pageHeight="200" columnWidth="200" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="3eef8610-6055-4b6d-9a96-c5e56549300c">
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="visit_id" class="java.lang.Long"/>
+	<queryString>
+		<![CDATA[select
+	v.token_no,
+	mh.hospital_name,
+	coalesce(v.doctor_name, 'FirstEmp AD Dept') as doctor_name
+from visit v
+left join mas_hospital mh on v.hospital_id = mh.hospital_id
+left join patient p on v.patient_id = p.patient_id
+where v.visit_id = $P{visit_id}]]>
+	</queryString>
+	<field name="token_no" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="token_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="token_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
+	</field>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<field name="doctor_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="doctor_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="doctor_name"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="112" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="10" width="200" height="22" uuid="02973d6f-95ce-4b9e-abda-3b598bd5eff7"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Serif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name} + "(OPD)"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="32" width="200" height="20" uuid="d3b79826-568f-4944-ad7f-cd2f54fcd2bb"/>
+				<textElement textAlignment="Center">
+					<font fontName="Serif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{doctor_name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="59" y="52" width="30" height="20" uuid="9de0d60b-5292-4334-9181-fd4d6166f63d"/>
+				<textElement textAlignment="Right">
+					<font fontName="Serif"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="89" y="52" width="10" height="20" uuid="77a85219-3279-4bf7-9776-4b79359a4937"/>
+				<textElement textAlignment="Center">
+					<font fontName="Serif"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="99" y="52" width="91" height="20" uuid="d2df75ee-1ff8-4b29-8345-9a5cd5650454"/>
+				<textElement>
+					<font fontName="Serif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.text.SimpleDateFormat("dd/MM/yy").format(new java.util.Date())]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement isPrintRepeatedValues="false" x="99" y="72" width="91" height="20" uuid="291f445f-f9bc-4e13-86e6-2ce921562c48"/>
+				<textElement>
+					<font fontName="Serif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date())]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="59" y="72" width="30" height="20" uuid="02a76283-6621-4ae9-93fd-289e6729909c"/>
+				<textElement textAlignment="Right">
+					<font fontName="Serif"/>
+				</textElement>
+				<text><![CDATA[Time]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="89" y="72" width="10" height="20" uuid="de456d1c-5a8f-413d-932f-840460da2697"/>
+				<textElement textAlignment="Center">
+					<font fontName="Serif"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="92" width="200" height="20" uuid="dacb445e-9e86-4edd-9e81-6a3f2489b14e"/>
+				<textElement textAlignment="Center">
+					<font fontName="Serif" isBold="false"/>
+				</textElement>
+				<text><![CDATA[***TOKEN NO***]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="109" width="200" height="1" uuid="0797ed3e-8bd9-4681-89af-d53b2b9db566"/>
+			</line>
+		</band>
+	</title>
+	<detail>
+		<band height="72" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="200" height="50" uuid="a458bdec-a5a9-4c9c-a138-1427846eac00"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Serif" size="26"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{token_no}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="50" width="200" height="1" uuid="3aea5317-5ee8-4a12-b3f9-6c4b4fb9e4d0"/>
+			</line>
+			<staticText>
+				<reportElement x="0" y="52" width="200" height="20" uuid="23de68ec-9a36-4783-96c6-4b869453e5d2"/>
+				<textElement textAlignment="Center">
+					<font fontName="Serif" isBold="false"/>
+				</textElement>
+				<text><![CDATA[***Get Well Soon***]]></text>
+			</staticText>
+		</band>
+	</detail>
+</jasperReport>

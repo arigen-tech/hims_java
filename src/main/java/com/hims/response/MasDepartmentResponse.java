@@ -20,4 +20,6 @@ public class MasDepartmentResponse {
     private Long hospitalId;
     private String hospitalName;
     private String departmentNo;
+    private Long wardCategoryId;
+    private String wardCategoryName;
 }

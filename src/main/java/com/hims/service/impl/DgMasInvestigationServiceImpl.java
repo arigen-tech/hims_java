@@ -236,6 +236,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             masInvestigation.setCategoryId(mic.get());
             Optional<MasInvestigationMethodology> mim = mimRepo.findById(investigationRequest.getMethodId());
             masInvestigation.setMethodId(mim.get());
+            masInvestigation.setInterpretation(investigationRequest.getInterpretation());
 //            masInvestigation.setMultipleResults(investigationRequest.getMultipleResults());
 //            masInvestigation.setQuantity(investigationRequest.getQuantity());
 //            masInvestigation.setNormalValue(investigationRequest.getNormalValue());
@@ -336,6 +337,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         return ResponseUtils.createNotFoundResponse("methodId not found", 404);
                     }
                 }
+                dmi.setInterpretation(investigationRequest.getInterpretation());
 //                dmi.setAppearInDischargeSummary(investigationRequest.getAppearInDischargeSummary());
 //                dmi.setMultipleResults(investigationRequest.getMultipleResults());
 //                dmi.setQuantity(investigationRequest.getQuantity());
@@ -378,6 +380,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         masInvestigation.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         masInvestigation.setMaxNormalValue(multiRequest.getMaxNormalValue());
         masInvestigation.setMinNormalValue(multiRequest.getMinNormalValue());
+        masInvestigation.setInterpretation(multiRequest.getInterpretation());
         if (multiRequest.getMainChargeCodeId() != null) {
             Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(multiRequest.getMainChargeCodeId());
             if (mmcc.isPresent()) {
@@ -689,6 +692,8 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dmir.setSampleName(masInvest.getSampleId() != null ? masInvest.getSampleId().getSampleDescription() : null);
         dmir.setCollectionId(masInvest.getCollectionId() != null ? masInvest.getCollectionId().getCollectionId() : null);
         dmir.setCollectionName(masInvest.getCollectionId() != null ? masInvest.getCollectionId().getCollectionName() : null);
+        dmir.setCollectionName(masInvest.getCollectionId() != null ? masInvest.getCollectionId().getCollectionName() : null);
+        dmir.setInterpretation(masInvest.getInterpretation() != null ? masInvest.getInterpretation(): null);
         dmir.setGenderApplicable(masInvest.getGenderApplicable());
 
         // --- Group fixed values by subInvestigationId ---
@@ -785,6 +790,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dto.setCollectionId(entity.getCollectionId() != null ? entity.getCollectionId().getCollectionId() : null);
         dto.setCollectionName(entity.getCollectionId() != null ? entity.getCollectionId().getCollectionName() : null);
         dto.setGenderApplicable(entity.getGenderApplicable());
+        dto.setInterpretation(entity.getInterpretation());
 //        dto.setQuantity(entity.getQuantity());
 //        dto.setNormalValue(entity.getNormalValue());
 //        dto.setAppointmentRequired(entity.getAppointmentRequired());
