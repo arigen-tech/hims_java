@@ -31,6 +31,7 @@ public class RecallOpdPatientDetailRequest {
 
     private List<IcdDiagnosis> icdObj;
     private List<TreatmentRequest> treatments;
+    private String treatmentAdvice;
     private List<InvestigationRequest> investigations;
 
     private List<Long>removeIcdIds;
@@ -54,7 +55,7 @@ public class RecallOpdPatientDetailRequest {
         private String drugName;
         private String dispUnit;
         private String dosage;
-        private Integer frequency;
+        private String frequency;
         private Integer days;
         private Integer total;
         private String instruction;

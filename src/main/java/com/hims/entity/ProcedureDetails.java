@@ -14,8 +14,9 @@ import java.time.LocalDate;
 public class ProcedureDetails {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "procedure_details_id")
-    private Integer procedureDetailsId; // No auto-id
+    private Long procedureDetailsId;
 
     @Column(name = "remarks", length = 100)
     private String remarks;

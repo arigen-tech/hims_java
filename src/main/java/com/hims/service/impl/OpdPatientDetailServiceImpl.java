@@ -59,6 +59,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     private final MasStoreItemRepository masStoreItemRepository;
 
+    private final ProcedureHeaderRepository procedureHeaderRepository;
+
+    private final ProcedureDetailsRepository procedureDetailsRepository;
+
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
 
@@ -249,7 +253,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
 
         // ======================== TREATMENT ================================
-        opdPatientDetail.setTreatmentAdvice(request.getTreatmentAdvice()); // FIXED
+        opdPatientDetail.setTreatmentAdvice(request.getTreatmentAdvice());
 
         if (request.getTreatment() != null && !request.getTreatment().isEmpty()) {
 
@@ -287,6 +291,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 patientPrescriptionDtRepository.save(precDtObj);
             }
         }
+
+
+        // ================================ Procedure Care =====================
+        if (request.getProcedureCare() != null && !request.getProcedureCare().isEmpty()){
+
+        }
+
+        ProcedureHeader produHObj = procedureHeaderRepository.getReferenceById(2L);
+        ProcedureDetails produDObj = procedureDetailsRepository.getReferenceById(3L);
+
 
         // ====================== GENERAL DETAILS ===========================
         opdPatientDetail.setOpdDate(Instant.now());
@@ -464,6 +478,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
 
         //  TREATMENTS / PRESCRIPTIONS
+
+        opdObj.setTreatmentAdvice(request.getTreatmentAdvice());
         List<RecallOpdPatientDetailRequest.TreatmentRequest> treatmentObj = request.getTreatments();
 
         if (treatmentObj != null && !treatmentObj.isEmpty()) {
@@ -535,7 +551,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                         if (trt.getFrequency() == null) {
                             dt.setFrequency(null);
                         } else {
-                            dt.setFrequency(masFrequencyRepository.findById(Long.valueOf(trt.getFrequency())).get().getFrequencyName());
+                            dt.setFrequency(trt.getFrequency());
                         }
 
                         dt.setDays(trt.getDays());
@@ -981,6 +997,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 response.setPatientPrescriptionHd(newHd);
             }
 
+            response.setTreatmentAdvice(opdPatientObj.getTreatmentAdvice());
+
             // ------------------- PRESCRIPTION DT --------------------
             List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newPrescList =
                     new ArrayList<>();
@@ -1002,7 +1020,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                 // SAFE: Frequency
                 MasFrequency freq = masFrequencyRepository.findByFrequencyName(dt.getFrequency());
-                newDt.setFrequencyId(freq.getFrequency_id());
+                newDt.setFrequencyId(dt.getFrequency());
 
                 // SAFE: Item
                 masStoreItemRepository.findById(dt.getItemId()).ifPresent(item -> {

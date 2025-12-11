@@ -72,6 +72,10 @@ public class OpdPatientDetailFinalRequest {
 
     private String treatmentAdvice;
 
+
+    // ============================== Procedure Care =============================
+    private List<ProcedureCare> procedureCare;
+
     // ======================== Mapping IDs ======================
     private Long patientId;
     private Long visitId;
@@ -107,5 +111,15 @@ public class OpdPatientDetailFinalRequest {
         private BigDecimal total;
         private String instraction;
 
+    }
+
+    @Getter
+    @Setter
+    public static class ProcedureCare{
+        private Long procedureId;
+        private String procedureName;
+        private Long frequencyId;
+        private Long noOfDays;
+        private String remarks;
     }
 }
