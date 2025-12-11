@@ -4,7 +4,9 @@ import com.hims.entity.MasDepartment;
 import com.hims.request.IssueInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentRequest;
+import com.hims.request.StoreInternalIssueRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.PreviousIssueResponse;
 import com.hims.response.ROLItemResponse;
 import com.hims.response.StoreInternalIndentResponse;
 
@@ -38,5 +40,9 @@ public interface StoreInternalIndentService {
     ApiResponse<StoreInternalIndentResponse> submitApprovedIndent(IssueInternalIndentApprovalRequest request);
 
     public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForIssueDepartment(Long deptId);
+
+    public ApiResponse<StoreInternalIndentResponse> issueIndent(StoreInternalIssueRequest request);
+
+    public ApiResponse<List<PreviousIssueResponse>> getPreviousIssues(Long itemId, Long currentIndentMId);
 
 }

@@ -42,4 +42,6 @@ public class StoreInternalIndentResponse {
     private String remark;
 
     private List<StoreInternalIndentDetailResponse> items;
+
+
 }

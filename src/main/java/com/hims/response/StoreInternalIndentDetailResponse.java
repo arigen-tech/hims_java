@@ -26,4 +26,7 @@ public class StoreInternalIndentDetailResponse {
 
     private List<BatchResponse> batches;
 
+    // Optional: Include previous issues in the initial response
+    private List<PreviousIssueResponse> previousIssues;
+
 }

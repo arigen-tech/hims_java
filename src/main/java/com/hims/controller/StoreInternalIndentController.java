@@ -5,7 +5,9 @@ import com.hims.entity.MasDepartment;
 import com.hims.request.IssueInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentApprovalRequest;
 import com.hims.request.StoreInternalIndentRequest;
+import com.hims.request.StoreInternalIssueRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.PreviousIssueResponse;
 import com.hims.response.ROLItemResponse;
 import com.hims.response.StoreInternalIndentResponse;
 import com.hims.service.StoreInternalIndentService;
@@ -118,6 +120,22 @@ public class StoreInternalIndentController {
             @RequestParam("deptId") Long deptId) {
 
         return indentService.getAllIndentsForIssueDepartment(deptId);
+    }
+
+    @PostMapping("/issue")
+    public ApiResponse<StoreInternalIndentResponse> issueIndent(
+            @RequestBody StoreInternalIssueRequest request) {
+
+        return indentService.issueIndent(request);
+    }
+
+
+    @GetMapping("/getpreviousissues")
+    public ApiResponse<List<PreviousIssueResponse>> getPreviousIssues(
+            @RequestParam Long itemId,
+            @RequestParam(required = false) Long indentMId) {
+
+        return indentService.getPreviousIssues(itemId, indentMId);
     }
 
 
