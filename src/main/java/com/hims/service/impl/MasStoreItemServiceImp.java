@@ -232,9 +232,19 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             }, "Invalid flag value. Use 0 or 1.", 400);
         }
 
+        // ✅ Fetch all stocks in one query
+        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemIds(masStoreItems);
+
+        // Group stocks by itemId
+        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
+                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
+
+        long convertStart = System.currentTimeMillis();
+
         List<MasStoreItemResponse> responses = masStoreItems.stream()
-                .map(this::convertToResponse)
+                .map(item -> convertToResponsewithAllStock(item, stockMap))
                 .collect(Collectors.toList());
+
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
         });
@@ -549,6 +559,59 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
         response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
 
+        return response;
+    }
+
+    private MasStoreItemResponse convertToResponsewithAllStock(MasStoreItem item, Map<Long, List<StoreItemBatchStock>> stockMap) {
+        MasStoreItemResponse response = new MasStoreItemResponse();
+        response.setItemId(item.getItemId());
+        response.setNomenclature(item.getNomenclature());
+        response.setPvmsNo(item.getPvmsNo());
+        response.setStatus(item.getStatus());
+        response.setReOrderLevelStore(item.getReOrderLevelStore());
+        response.setReOrderLevelDispensary(item.getReOrderLevelDispensary());
+        response.setLastChgDate(item.getLastChgDate());
+        response.setLastChgBy(item.getLastChgBy());
+        response.setLastChgTime(item.getLastChgTime());
+        response.setAdispQty(item.getAdispQty());
+
+        response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
+        response.setGroupName(item.getGroupId() != null ? item.getGroupId().getGroupName() : null);
+
+
+        response.setItemClassId(item.getItemClassId() != null ? item.getItemClassId().getItemClassId() : null);
+        response.setItemClassName(item.getItemClassId() != null ? item.getItemClassId().getItemClassName() : null);
+
+
+        response.setItemTypeId(item.getItemTypeId() != null ? item.getItemTypeId().getId() : null);
+        response.setItemTypeName(item.getItemTypeId() != null ? item.getItemTypeId().getName() : null);
+
+        response.setSectionId(item.getSectionId() != null ? item.getSectionId().getSectionId() : null);
+        response.setSectionName(item.getSectionId() != null ? item.getSectionId().getSectionName() : null);
+
+        response.setDispUnit(item.getDispUnit() != null ? item.getDispUnit().getUnitId() : null);
+        response.setDispUnitName(item.getDispUnit() != null ? item.getDispUnit().getUnitName() : null);
+
+        response.setUnitAU(item.getUnitAU() != null ? item.getUnitAU().getUnitId() : null);
+        response.setUnitAuName(item.getUnitAU() != null ? item.getUnitAU().getUnitName() : null);
+
+        response.setHsnCode(item.getHsnCode() != null ? item.getHsnCode().getHsnCode() : null);
+        response.setHsnGstPercent(item.getHsnCode() != null ? item.getHsnCode().getGstRate() : null);
+
+        response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
+        response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
+
+
+        List<StoreItemBatchStock> stockList = stockMap.getOrDefault(item.getItemId(), List.of());
+        long hospitalId = getCurrentUser().getHospital().getId();
+
+        long storeStocks = stockFound.calculateAvailableStock(stockList, hospitalId, deptIdStore, hospDefinedstoreDays);
+        long wardStocks = stockFound.calculateAvailableStock(stockList, hospitalId, warddeptId, hospDefinedwardDays);
+        long diStocks = stockFound.calculateAvailableStock(stockList, hospitalId, dispdeptId, hospDefineddispDays);
+
+        response.setStorestocks(storeStocks);
+        response.setWardstocks(wardStocks);
+        response.setDispstocks(diStocks);
         return response;
     }
 
