@@ -46,6 +46,9 @@ public class ReportController {
     @Autowired
     private OpdTokenService opdTokenService;
 
+    @Autowired
+    private LabInvestigationResultReportService resultReportService;
+
     @GetMapping(value = "/labReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateLabReportPdf(
             @RequestParam String billNo,
@@ -129,5 +132,11 @@ public class ReportController {
     public ResponseEntity<byte[]> generateOpdTokenPdf(
             @RequestParam Long visit ) {
         return opdTokenService.generateOpdToken(visit);
+    }
+
+    @GetMapping(value = "/labInvestigationReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> generateLabInvestigationReport(
+            @RequestParam Long orderhd_id ) {
+        return resultReportService.generateLabInvestigationResultReport(orderhd_id);
     }
 }
