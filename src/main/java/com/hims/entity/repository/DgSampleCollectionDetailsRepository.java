@@ -25,20 +25,34 @@ public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSam
 
 
 
+//    @Query("""
+//    SELECT d FROM DgSampleCollectionDetails d
+//    JOIN FETCH d.sampleCollectionHeader h
+//    JOIN FETCH h.patientId p
+//    LEFT JOIN FETCH h.subChargeCode sc
+//    LEFT JOIN FETCH d.investigationId inv
+//    LEFT JOIN FETCH inv.sampleId s
+//    WHERE
+//        (h.validated = 'n' AND d.validated = 'n')
+//
+//""")
+//    List<DgSampleCollectionDetails> findAllByHeaderValidatedStatusLogic();
+
     @Query("""
-    SELECT d FROM DgSampleCollectionDetails d
+    SELECT d 
+    FROM DgSampleCollectionDetails d
     JOIN FETCH d.sampleCollectionHeader h
     JOIN FETCH h.patientId p
     LEFT JOIN FETCH h.subChargeCode sc
     LEFT JOIN FETCH d.investigationId inv
     LEFT JOIN FETCH inv.sampleId s
-    WHERE 
-        (h.validated = 'n' AND d.validated = 'n')
-       
+    WHERE h.validated = 'n' 
+      AND d.validated = 'n'
+    ORDER BY h.lastChgDate DESC
 """)
     List<DgSampleCollectionDetails> findAllByHeaderValidatedStatusLogic();
 
-//    @Query("""
+    //    @Query("""
 //        SELECT d FROM DgSampleCollectionDetails d
 //        JOIN FETCH d.sampleCollectionHeader h
 //        JOIN FETCH h.patientId p
@@ -51,7 +65,22 @@ public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSam
 //            (h.result_entry_status = 'p' AND d.result_status = 'y')
 //    """)
 //    List<DgSampleCollectionDetails> findAllByHeaderValidatedStatusLogic2();
-@Query("""
+//@Query("""
+//    SELECT d FROM DgSampleCollectionDetails d
+//    JOIN FETCH d.sampleCollectionHeader h
+//    JOIN FETCH h.patientId p
+//    LEFT JOIN FETCH h.subChargeCode sc
+//    LEFT JOIN FETCH d.investigationId inv
+//    LEFT JOIN FETCH inv.sampleId s
+//    WHERE
+//        h.result_entry_status = 'n'
+//        AND h.validated = 'y'
+//        AND d.validated = 'y'
+//        AND d.result_status = 'n'
+//""")
+//List<DgSampleCollectionDetails> findAllByHeaderResultEntryAndValidationStatusLogic();
+
+    @Query("""
     SELECT d FROM DgSampleCollectionDetails d
     JOIN FETCH d.sampleCollectionHeader h
     JOIN FETCH h.patientId p
@@ -63,8 +92,9 @@ public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSam
         AND h.validated = 'y'
         AND d.validated = 'y'
         AND d.result_status = 'n'
+    ORDER BY h.lastChgDate DESC
 """)
-List<DgSampleCollectionDetails> findAllByHeaderResultEntryAndValidationStatusLogic();
+    List<DgSampleCollectionDetails> findAllByHeaderResultEntryAndValidationStatusLogic();
 
 
 
