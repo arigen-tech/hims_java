@@ -42,14 +42,16 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
     @Override
     public ApiResponse<List<MasServiceCategory>> findAll(int flag) {
         List<MasServiceCategory> response;
-        if(flag==1){
 
-            response = masServiceCategoryRepository.findAllByStatus("y");
-        }else{
-            response = masServiceCategoryRepository.findAll();
+        if (flag == 1) {
+            response = masServiceCategoryRepository.findAllByStatusOrderByLastChgDateDescLastChgTimeDesc("y");
+        } else {
+            response = masServiceCategoryRepository.findAllByOrderByLastChgDateDescLastChgTimeDesc();
         }
-        return ResponseUtils.createSuccessResponse(response, new TypeReference<>(){});
+
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
     }
+
     @Override
     public ApiResponse<MasServiceCategory> save(MasServiceCategory req) {
         try {
