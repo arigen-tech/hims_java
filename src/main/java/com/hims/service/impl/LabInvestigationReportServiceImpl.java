@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class LabInvestigationReportServiceImpl implements LabInvestigationResultReportService {
@@ -39,24 +40,25 @@ public class LabInvestigationReportServiceImpl implements LabInvestigationResult
     }
 
     @Override
-    public ResponseEntity<byte[]> generateLabInvestigationResultReport(Long orderHdId) {
+    public ResponseEntity<byte[]> generateLabInvestigationResultReport(Integer orderHdId) {
         try{
             if (orderHdId == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Missing required parameter: orderhd_id".getBytes());
             }
 
-            DgOrderHd dgOrderHd = labRepo.findById(orderHdId);
+            Optional<DgOrderHd> dgOrderHd = labRepo.findById(orderHdId);
 
             Map<String, Object> parameters = new HashMap<>();
-            parameters.put("orderhd_id", dgOrderHd.getId());
+            parameters.put("orderhd_id", dgOrderHd.get().getId());
+
             Connection conn = dataSource.getConnection();
-            byte[] data = reportDeclare("opd_billing_maxx", parameters, conn);
+            byte[] data = reportDeclare("Lab_investigation_report", parameters, conn);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
             headers.setContentDisposition(ContentDisposition.builder("inline")
-                    .filename("opd_billing.pdf")
+                    .filename("Lab_investigation_report.pdf")
                     .build());
 
             return new ResponseEntity<>(data, headers, HttpStatus.OK);

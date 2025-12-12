@@ -136,7 +136,7 @@ public class ReportController {
 
     @GetMapping(value = "/labInvestigationReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateLabInvestigationReport(
-            @RequestParam Long orderhd_id ) {
+            @RequestParam Integer orderhd_id ) {
         return resultReportService.generateLabInvestigationResultReport(orderhd_id);
     }
 }

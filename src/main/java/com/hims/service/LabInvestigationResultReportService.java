@@ -7,5 +7,5 @@ import java.util.Map;
 
 public interface LabInvestigationResultReportService {
     byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception;
-    ResponseEntity<byte[]> generateLabInvestigationResultReport(Long orderHdId);
+    ResponseEntity<byte[]> generateLabInvestigationResultReport(Integer orderHdId);
 }
