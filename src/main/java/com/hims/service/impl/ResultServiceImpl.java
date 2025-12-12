@@ -294,6 +294,7 @@ public class ResultServiceImpl implements ResultService {
                headerDto.setMainChargeCode(header.getMainChargecodeId() != null ? header.getMainChargecodeId().getChargecodeId() : null);
                headerDto.setMainChargeCodeName(header.getMainChargecodeId() != null ? header.getMainChargecodeId().getChargecodeCode().toUpperCase() : null);
                headerDto.setResultEnteredBy(header.getResultEnteredBy());
+               headerDto.setOrderHdId((long) header.getOrderHd().getId());
 
                // ===== Detail-level mapping =====
                 List<DgResultEntryDetail> detailList = detailRepo.findByResultEntryIdAndValidated(header, "n");
@@ -620,7 +621,9 @@ public class ResultServiceImpl implements ResultService {
             }
 
             // Step 1: Fetch all headers
-            List<DgResultEntryHeader> headerList = headerRepo.findAll();
+           // List<DgResultEntryHeader> headerList = headerRepo.findAll();
+            List<DgResultEntryHeader> headerList = headerRepo.findAllByOrderByLastChgdDateDescLastChgdTimeDesc();
+
             if (headerList.isEmpty()) {
                 return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
             }

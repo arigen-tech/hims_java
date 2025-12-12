@@ -16,16 +16,22 @@ public interface DgResultEntryHeaderRepository extends JpaRepository<DgResultEnt
 
 Optional<DgResultEntryHeader> findBySampleCollectionHeaderId_SampleCollectionHeaderIdAndSubChargeCodeId_SubId(Long sampleCollectionHeaderId, Long subChargeCodeId);
 
+//
+//    @Query("SELECT DISTINCT h FROM DgResultEntryHeader h " +
+//            "JOIN DgResultEntryDetail d ON d.resultEntryId = h " +
+//            "WHERE h.resultStatus = 'n' AND d.validated = 'n'")
+//    List<DgResultEntryHeader> findAllUnvalidatedHeaders();
 
-    @Query("SELECT DISTINCT h FROM DgResultEntryHeader h " +
-            "JOIN DgResultEntryDetail d ON d.resultEntryId = h " +
-            "WHERE h.resultStatus = 'n' AND d.validated = 'n'")
+    @Query("""
+    SELECT DISTINCT h 
+    FROM DgResultEntryHeader h
+    JOIN DgResultEntryDetail d ON d.resultEntryId = h
+    WHERE h.resultStatus = 'n' 
+      AND d.validated = 'n'
+    ORDER BY h.lastChgdDate DESC, h.lastChgdTime DESC
+""")
     List<DgResultEntryHeader> findAllUnvalidatedHeaders();
 
 
-
-
-
-
-
+    List<DgResultEntryHeader> findAllByOrderByLastChgdDateDescLastChgdTimeDesc();
 }
