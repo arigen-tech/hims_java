@@ -65,6 +65,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     List findByPatientId(Integer patient);
 
+    List findByPatientId(Long patient);
+
     List<Visit> findByVisitStatusAndBillingStatus(String visitStatus, String billingStatus);
 
     List<Visit> findByVisitStatus(String visitStatus);
@@ -152,6 +154,10 @@ WHERE v.visit_status = 'n'
 """)
     List<Visit> findNextVisits(Long doctorId, Instant visitDate, Long tokenNo);
 
-
+    Optional<Visit> findByPatientIdAndVisitDateAndSessionId(
+            Long patientId,
+            Instant visitDate,
+            Long sessionId
+    );
 
 }

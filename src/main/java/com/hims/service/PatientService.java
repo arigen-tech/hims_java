@@ -4,6 +4,7 @@ import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
+import com.hims.response.FollowUpPatientResponseDetails;
 import com.hims.response.PatientRegFollowUpResp;
 import com.hims.response.PaymentResponse;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +25,8 @@ public interface PatientService {
     ApiResponse<List<Visit>> getWaitingList();
 
     ApiResponse<String> saveVitalDetails(OpdPatientDetailRequest request);
+
+    ApiResponse<FollowUpPatientResponseDetails> getAllFollowUpDetails(Long patient);
 
 
 
