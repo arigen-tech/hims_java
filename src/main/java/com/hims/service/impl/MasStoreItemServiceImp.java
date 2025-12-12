@@ -17,14 +17,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -249,6 +246,36 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
         });
     }
+
+
+    @Override
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithotStock(int flag) {
+
+        List<MasStoreItem> masStoreItems;
+        if (flag == 1) {
+            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc("y");
+        } else if (flag == 0) {
+            masStoreItems = masStoreItemRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("y", "n"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        // ✅ Fetch all stocks in one query
+        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemIds(masStoreItems);
+
+        // Group stocks by itemId
+        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
+                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
+
+        List<MasStoreItemResponse> responses = masStoreItems.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
+        });
+    }
+
 
     @Override
     public ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request) {

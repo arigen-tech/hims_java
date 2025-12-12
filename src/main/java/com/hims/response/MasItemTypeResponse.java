@@ -29,4 +29,6 @@ public class MasItemTypeResponse {
 
     private Integer masStoreGroupId;
 
+    private String masStoreGroupName;
+
 }

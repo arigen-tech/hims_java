@@ -14,6 +14,10 @@ public interface MasItemClassRepository extends JpaRepository<MasItemClass,Integ
 
     List<MasItemClass> findByStatusInIgnoreCase(List<String> y);
 
+    List<MasItemClass> findByStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(String y);
+
+    List<MasItemClass> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+
    // List<MasItemClass> findBySectionId(int id);
 
 

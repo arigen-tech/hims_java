@@ -18,6 +18,8 @@ public interface MasStoreItemService {
 
     ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag);
 
+    ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithotStock(int flag);
+
     ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request);
 
     ApiResponse<MasStoreItemResponse> changeMasStoreItemStatus(Long id, String status);

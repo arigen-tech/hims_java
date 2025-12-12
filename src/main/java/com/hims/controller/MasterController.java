@@ -1223,6 +1223,11 @@ public class MasterController {
         return masStoreItemService.getAllMasStoreItem(flag);
     }
 
+    @GetMapping("/masStoreItemWithotStock/getAll/{flag}")
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithotStock(@PathVariable int flag) {
+        return masStoreItemService.getAllMasStoreItemWithotStock(flag);
+    }
+
     @PutMapping("/masStoreItem/update/{id}")
     public ResponseEntity<ApiResponse<MasStoreItemResponse>> updateMasStoreItem(
             @PathVariable Long id,

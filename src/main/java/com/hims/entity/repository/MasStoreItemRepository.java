@@ -1,5 +1,6 @@
 package com.hims.entity.repository;
 
+import com.hims.entity.MasItemCategory;
 import com.hims.entity.MasStoreItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -29,9 +30,12 @@ public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long>
     Optional<MasStoreItem> findByNomenclatureAndItemIdNot(String nomenclature, Long id);
 
     List<MasStoreItem> findByStatus(String y);
-
     List<MasStoreItem> findByStatusIgnoreCase(String y);
-
     List<MasStoreItem> findByStatusInIgnoreCase(List<String> y);
+
+    List<MasStoreItem> findByStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(String status);
+
+    List<MasStoreItem> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> statuses);
+
 
 }
