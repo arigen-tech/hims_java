@@ -602,16 +602,13 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
 
 
-        List<StoreItemBatchStock> stockList = stockMap.getOrDefault(item.getItemId(), List.of());
-        long hospitalId = getCurrentUser().getHospital().getId();
+        Long avlableStokes = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), deptIdStore, item.getItemId(), hospDefinedstoreDays);
+        response.setStorestocks(avlableStokes);
+        Long dispstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), dispdeptId, item.getItemId(), hospDefineddispDays);
+        response.setDispstocks(dispstocks);
+        Long wardstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), warddeptId, item.getItemId(), hospDefinedwardDays);
+        response.setWardstocks(wardstocks );
 
-        long storeStocks = stockFound.calculateAvailableStock(stockList, hospitalId, deptIdStore, hospDefinedstoreDays);
-        long wardStocks = stockFound.calculateAvailableStock(stockList, hospitalId, warddeptId, hospDefinedwardDays);
-        long diStocks = stockFound.calculateAvailableStock(stockList, hospitalId, dispdeptId, hospDefineddispDays);
-
-        response.setStorestocks(storeStocks);
-        response.setWardstocks(wardStocks);
-        response.setDispstocks(diStocks);
         return response;
     }
 
