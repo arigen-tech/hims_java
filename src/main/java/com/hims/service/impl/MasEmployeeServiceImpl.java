@@ -621,6 +621,10 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             UserDepartment newUserdept = new UserDepartment();
             newUserdept.setUser(createNewUser);
             newUserdept.setDepartment(deptObj);
+            newUserdept.setStatus("y");
+            newUserdept.setLasUpdatedDt(OffsetDateTime.now());
+            newUserdept.setLastChgBy(currentUser.getUsername());
+            newUserdept.setLasUpdatedDt(OffsetDateTime.now());
             userDepartmentRepository.save(newUserdept);
 
 
