@@ -23,11 +23,12 @@ public class OPDBillingPatientResponse {
     private BigDecimal amount;
     private String billingStatus;
     private String address;
-    private Integer  orderhdid;
+    private Integer orderhdid;
     private String orderhdPaymentStatus;
     private String flag;
     private String source;
     private String uhid;
+    private BigDecimal registrationCost;
 
 
     private List<AppointmentBlock> appointments;

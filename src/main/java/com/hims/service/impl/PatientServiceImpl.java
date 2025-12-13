@@ -174,27 +174,15 @@ public class PatientServiceImpl implements PatientService {
 
             // fetch billing detail safely
             List<BillingDetail> bDetails = billingDetailRepository.findByBillingHd(billingHeader);
-
-            BillingDetail yEntry = null;
-            BillingDetail nEntry = null;
-
-            if (bDetails != null && !bDetails.isEmpty()) {
-                for (BillingDetail bd : bDetails) {
-                    if ("Y".equalsIgnoreCase(bd.getPaymentStatus())) {
-                        yEntry = bd;
-                    } else if ("N".equalsIgnoreCase(bd.getPaymentStatus())) {
-                        nEntry = bd;
-                    }
-                }
+            BillingDetail billingDetail=null;
+            for(BillingDetail bdt : bDetails){
+               if(bdt.getServiceCategory().getServiceCatName().equalsIgnoreCase("Registration Service")) {
+                   response.setRegistrationCost(bdt.getServiceCategory().getRegistrationCost());
+                }else{
+                   billingDetail = bdt;
+               }
             }
 
-            BillingDetail billingDetail = nEntry;
-
-            if (yEntry != null && billingDetail != null) {
-                BigDecimal updatedCost = billingDetail.getNetAmount()
-                        .add(yEntry.getNetAmount());  // Add Y amount
-                billingDetail.setNetAmount(updatedCost);
-            }
 
 
             AppointmentBlock appointmentBlock = new AppointmentBlock();
@@ -213,9 +201,9 @@ public class PatientServiceImpl implements PatientService {
             if (billingDetail != null) {
                 billingDetailResponse.setId(billingDetail.getId());
                 billingDetailResponse.setDiscount(billingDetail.getDiscount());
-                billingDetailResponse.setRegistrationCost(yEntry.getNetAmount());
+                billingDetailResponse.setRegistrationCost(billingDetail.getRegistrationCost());
                 billingDetailResponse.setBasePrice(billingDetail.getBasePrice());
-                billingDetailResponse.setNetAmount(billingDetail.getNetAmount().add(yEntry.getNetAmount()));
+                billingDetailResponse.setNetAmount(billingDetail.getNetAmount());
                 billingDetailResponse.setTaxAmount(billingDetail.getTaxAmount());
             } else {
                 billingDetailResponse.setId(null);
@@ -239,8 +227,8 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public ApiResponse paymentStatusReq(PaymentUpdateRequest request) {
         PaymentResponse res = new PaymentResponse();
+        BillingHeader header = new BillingHeader();
         try{
-
                 List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
                 if (opdPayments == null || opdPayments.isEmpty()) {
                     throw new RuntimeException("OPD payment items missing in request.");
@@ -252,15 +240,24 @@ public class PatientServiceImpl implements PatientService {
                     Integer billHeaderId = opd.getBillHeaderId();
                     BigDecimal netAmount = opd.getNetAmount();
 
-                    BillingHeader header = billingHeaderRepository.findById(billHeaderId)
-                            .orElseThrow(() -> new RuntimeException("OPD Bill Header not found: " + billHeaderId));
-
+                    Optional<BillingHeader> headerOpt = billingHeaderRepository.findById(billHeaderId);
+                    if (headerOpt.isPresent()) {
+                        header = headerOpt.get();
+                    } else {
+                        throw new Exception("BillingHeader not found with id: " + billHeaderId);
+                    }
+                    List<BillingDetail> details = billingDetailRepository.findByBillHdId(Long.valueOf(billHeaderId));
+                    if (details.size()>0) {
+                        for(BillingDetail bdt: details){
+                            bdt.setChargeCost(bdt.getNetAmount());
+                            bdt.setPaymentStatus("y");
+                        }
+                    }
                     Visit visit = header.getVisit();
                     if (visit == null) {
                         throw new RuntimeException("Visit not linked with OPD Bill Header " + billHeaderId);
                     }
 
-                    // create payment detail per appointment
                     PaymentDetail paymentDetail = new PaymentDetail();
                     paymentDetail.setPaymentMode(request.getMode());
                     paymentDetail.setPaymentStatus("y");
@@ -273,18 +270,15 @@ public class PatientServiceImpl implements PatientService {
                     paymentDetail.setBillingHd(header);
                     paymentDetailRepository.save(paymentDetail);
 
-                    // update billing header totals/status
                     BigDecimal oldPaid = header.getTotalPaid() == null ? BigDecimal.ZERO : header.getTotalPaid();
                     header.setTotalPaid(oldPaid.add(netAmount));
                     header.setPaymentStatus("y");
                     billingHeaderRepository.save(header);
 
-                    // update visit
                     visit.setBillingStatus("y");
                     visit.setBillingHd(header);
                     visitRepository.save(visit);
 
-                    // prepare response item
                     OpdPaymentItem item = new OpdPaymentItem();
                     item.setBillHeaderId(billHeaderId);
                     item.setVisitId(visit.getId());
@@ -294,7 +288,6 @@ public class PatientServiceImpl implements PatientService {
                     item.setDoctorName(visit.getDoctorName());
                     paymentItemList.add(item);
                 }
-
                 res.setMsg("Success");
                 res.setPaymentStatus("y");
                 res.setBillPayments(paymentItemList);

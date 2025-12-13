@@ -146,7 +146,7 @@ public class BillingServiceImpl implements BillingService {
                     detail.setServiceCategory(masServiceCategory);
                     detail.setServiceId(0L);
                     detail.setItemName("");
-                    detail.setPaymentStatus("y");
+                    detail.setPaymentStatus("n");
                     detail.setInvestigation(null);
                     detail.setChargeCost(masServiceCategory.getRegistrationCost());
                     detail.setBasePrice(masServiceCategory.getRegistrationCost());
@@ -263,8 +263,6 @@ public class BillingServiceImpl implements BillingService {
     private PendingBillingResponse mapToResponse(BillingHeader header) {
         PendingBillingResponse response = new PendingBillingResponse();
         response.setBillinghdid(header.getId());
-
-        // ✅ Name from BillingHeader
         response.setPatientName(safe(header.getPatientDisplayName()));
         response.setAddress(header.getPatientAddress());
         response.setVisitId(header.getVisit().getId());
@@ -285,16 +283,11 @@ public class BillingServiceImpl implements BillingService {
         } else {
             response.setPatientid(null);
         }
-
-
-        // ✅ Mobile from Visit → Patient
         if (header.getVisit() != null && header.getVisit().getPatient() != null) {
             response.setMobileNo(safe(header.getVisit().getPatient().getPatientMobileNumber()));
         } else {
             response.setMobileNo("");
         }
-
-        // ✅ Age from Patient DOB in Visit
         if (header.getVisit() != null && header.getVisit().getPatient() != null &&
                 header.getVisit().getPatient().getPatientDob() != null) {
             String ageStr = ageCalculator(header.getVisit().getPatient().getPatientDob());
@@ -302,29 +295,19 @@ public class BillingServiceImpl implements BillingService {
         } else {
             response.setAge("");
         }
-
-        // ✅ Gender from BillingHeader
         response.setSex(safe(header.getPatientGender()));
-
-        // ✅ Relation from Visit → Patient → patientRelation
         if (header.getVisit() != null && header.getVisit().getPatient() != null &&
                 header.getVisit().getPatient().getPatientRelation() != null) {
             response.setRelation(safe(header.getVisit().getPatient().getPatientRelation().getRelationName()));
         } else {
             response.setRelation("");
         }
-
-        // ✅ Consulted doctor
         response.setConsultedDoctor(safe(header.getReferredBy()));
-
-        // ✅ Department from Visit → Department
         if (header.getVisit() != null && header.getVisit().getDepartment() != null) {
             response.setDepartment(safe(header.getVisit().getDepartment().getDepartmentName()));
         } else {
             response.setDepartment("");
         }
-
-        // ✅ Billing type from ServiceCategory
         if (header.getServiceCategory() != null) {
             response.setBillingType(safe(header.getServiceCategory().getServiceCatName()));
         } else {
@@ -332,8 +315,6 @@ public class BillingServiceImpl implements BillingService {
         }
 
         response.setFlag("Direct");
-
-        // ✅ Amount
         response.setAmount(
                 header.getNetAmount() != null
                         ? header.getNetAmount().subtract(
@@ -341,21 +322,31 @@ public class BillingServiceImpl implements BillingService {
                 )
                         : BigDecimal.ZERO
         );
-
-        // ✅ Billing status
         response.setBillingStatus(safe(header.getPaymentStatus()));
-
-        // Set order fields as null for billing records
         response.setOrderhdid(null);
         response.setOrderhdPaymentStatus(null);
 
-        List<BillingDetail> detailsList = billingDetailRepository.findByBillHdIdAndPaymentStatusIn(
-                header.getId(), List.of("n", "p")
-        );
+            List<BillingDetail> detailsList = billingDetailRepository.findByBillHdIdAndPaymentStatusIn(
+                    header.getId(), List.of("n", "p")
+            );
+
+        Optional<BillingDetail> registrationServiceOpt = detailsList.stream()
+                .filter(bd -> bd.getServiceCategory() != null &&
+                        "Registration Service".equalsIgnoreCase(bd.getServiceCategory().getServiceCatName()))
+                .findFirst();
+        BigDecimal registrationCost = registrationServiceOpt
+                .map(bd -> bd.getServiceCategory().getRegistrationCost()) // Replace with actual method to get the value you need
+                .orElse(null);
 
         List<BillingDetailResponse> details = detailsList.stream()
+                .filter(bd -> bd.getServiceCategory() == null ||    // keep if null
+                        ! "Registration Service".equalsIgnoreCase(
+                                bd.getServiceCategory().getServiceCatName()
+                        )
+                )
                 .map(this::mapToDetailResponse)
                 .collect(Collectors.toList());
+        response.setRegistrationCost(registrationCost);
         response.setDetails(details);
         return response;
     }
