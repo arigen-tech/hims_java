@@ -8,7 +8,10 @@ import java.util.List;
 
 @Repository
 public interface MasIdentificationTypeRepository extends JpaRepository<MasIdentificationType, Long> {
-    List<MasIdentificationType> findByStatusIgnoreCase(String status);
-    List<MasIdentificationType> findByStatusInIgnoreCase(List<String> statuses);
+//    List<MasIdentificationType> findByStatusIgnoreCase(String status);
+//    List<MasIdentificationType> findByStatusInIgnoreCase(List<String> statuses);
 
+    List<MasIdentificationType> findByStatusIgnoreCaseOrderByIdentificationNameAsc(String y);
+
+    List<MasIdentificationType> findByStatusInIgnoreCaseOrderByLastChangedDateDesc(List<String> y);
 }

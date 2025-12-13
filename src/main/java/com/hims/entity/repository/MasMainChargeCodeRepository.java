@@ -8,5 +8,11 @@ import java.util.List;
 
 @Repository
 public interface MasMainChargeCodeRepository extends JpaRepository<MasMainChargeCode, Long> {
-    List<MasMainChargeCode> findByStatus(String status);
+  //  List<MasMainChargeCode> findByStatus(String status);
+
+
+
+    List<MasMainChargeCode> findAllByOrderByLastChgDateDescLastChgTimeDesc();
+
+    List<MasMainChargeCode> findByStatusOrderByChargecodeNameAsc(String y);
 }

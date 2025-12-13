@@ -130,7 +130,7 @@ public class MasItemTypeServiceImp implements MasItemTypeService
         List<MasItemType> masItemTypes;
 
         if (flag == 1) {
-            masItemTypes = masItemTypeRepository.findByStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc("Y");
+            masItemTypes = masItemTypeRepository.findByStatusIgnoreCaseOrderByNameAsc("Y");
         } else if (flag == 0) {
             masItemTypes = masItemTypeRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("Y", "N"));
         } else {

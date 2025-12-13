@@ -43,7 +43,7 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
 
     @Override
     public ApiResponse<List<UserDepartmentResponse>> getAllUserDepartments() {
-        List<UserDepartment> userDepartments = userDepartmentRepository.findAll();
+        List<UserDepartment> userDepartments = userDepartmentRepository.findAllByOrderByUserAsc();
         List<UserDepartmentResponse> responses = userDepartments.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());

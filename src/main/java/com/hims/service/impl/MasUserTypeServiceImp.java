@@ -24,9 +24,9 @@ public class MasUserTypeServiceImp implements MasUserTypeService {
     public ApiResponse<List<MasUserType>> getAllMasUserType(int flag) {
         List<MasUserType> masUserTypes;
         if (flag == 1) {
-            masUserTypes= masUserTypeRepository.findByStatusIgnoreCase("Y");
+            masUserTypes= masUserTypeRepository.findByStatusIgnoreCaseOrderByUserTypeNameAsc("Y");
         } else if (flag == 0) {
-            masUserTypes = masUserTypeRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            masUserTypes = masUserTypeRepository.findByStatusInIgnoreCaseOrderByLastChgDateDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

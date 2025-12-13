@@ -81,9 +81,9 @@ public class MasStoreSectionImp implements MasStoreSectionService {
         List<MasStoreSection> masStoreSections;
 
         if (flag == 1) {
-            masStoreSections = masStoreSectionRepository.findByStatusIgnoreCase("Y");
+            masStoreSections = masStoreSectionRepository.findByStatusIgnoreCaseOrderBySectionNameAsc("Y");
         } else if (flag == 0) {
-            masStoreSections = masStoreSectionRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            masStoreSections = masStoreSectionRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

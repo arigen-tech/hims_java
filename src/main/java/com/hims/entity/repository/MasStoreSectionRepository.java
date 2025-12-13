@@ -9,9 +9,13 @@ import java.util.List;
 @Repository
 public interface MasStoreSectionRepository extends JpaRepository<MasStoreSection,Integer> {
 
-    List<MasStoreSection> findByStatusIgnoreCase(String y);
-
-    List<MasStoreSection> findByStatusInIgnoreCase(List<String> y);
+//    List<MasStoreSection> findByStatusIgnoreCase(String y);
+//
+//    List<MasStoreSection> findByStatusInIgnoreCase(List<String> y);
 
     List<MasStoreSection> findByMasItemTypeId(int id);
+
+    List<MasStoreSection> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+
+    List<MasStoreSection> findByStatusIgnoreCaseOrderBySectionNameAsc(String y);
 }
