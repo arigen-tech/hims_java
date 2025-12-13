@@ -13,8 +13,8 @@ public class MasMealTypeResponse {
     private Integer sequenceNo;
     private String status;
     private LocalDateTime lastUpdateDate;
-    private String createdBy;
-    private String lastUpdatedBy;
+//    private String createdBy;
+//    private String lastUpdatedBy;
 
 
 }

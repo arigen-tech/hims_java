@@ -147,9 +147,9 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
                 type.getMealTypeName(),
                 type.getSequenceNo(),
                 type.getStatus(),
-                type.getLastUpdateDate(),
-                type.getCreatedBy(),
-                type.getLastUpdatedBy()
+                type.getLastUpdateDate()
+//                ,type.getCreatedBy(),
+//                type.getLastUpdatedBy()
         );
     }
 
