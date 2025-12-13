@@ -13,5 +13,7 @@ public interface MasBedTypeRepository extends JpaRepository<MasBedType,Long> {
 
     List<MasBedType> findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List<String> y);
 
-    List<MasBedType> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
+   // List<MasBedType> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
+
+    List<MasBedType> findByStatusIgnoreCaseOrderByBedTypeNameAsc(String y);
 }

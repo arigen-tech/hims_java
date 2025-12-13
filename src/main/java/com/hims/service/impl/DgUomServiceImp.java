@@ -79,9 +79,9 @@ public class DgUomServiceImp implements DgUomService {
     public ApiResponse<List<DgUomResponse>> getAllDgUom(int flag) {
         List<DgUom> dpUom;
         if(flag==1){
-            dpUom=dgUomRepository.findByStatus("y");
+            dpUom=dgUomRepository.findByStatusOrderByNameAsc("y");
         }else if(flag==0){
-            dpUom=dgUomRepository.findAll();
+            dpUom=dgUomRepository.findAllByOrderByLastChgDateDescLastChgTimeDesc();
 
         }else{
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);

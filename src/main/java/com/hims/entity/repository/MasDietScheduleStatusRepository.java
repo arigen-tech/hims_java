@@ -10,7 +10,9 @@ import java.util.List;
 public interface MasDietScheduleStatusRepository extends JpaRepository<MasDietScheduleStatus,Long> {
     List<MasDietScheduleStatus> findByStatusIgnoreCase(String y);
 
-    List<MasDietScheduleStatus> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
+  //  List<MasDietScheduleStatus> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
 
     List<MasDietScheduleStatus> findAllByOrderByLastUpdateDateDesc();
+
+    List<MasDietScheduleStatus> findByStatusIgnoreCaseOrderByStatusNameAsc(String y);
 }

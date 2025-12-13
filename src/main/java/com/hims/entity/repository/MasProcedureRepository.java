@@ -14,7 +14,13 @@ import java.util.List;
 public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long> {
     List<MasProcedure> findByStatusIgnoreCaseOrderByLastChangedDateDesc(String y);
 
-    List<MasProcedure> findByStatusInOrderByLastChangedDateDesc(List<String> statuses);
+//    List<MasProcedure> findByStatusIgnoreCaseOrderByLastChangedDateDesc(String y);
+//
+//    List<MasProcedure> findByStatusInOrderByLastChangedDateDesc(List<String> statuses);
+
+    List<MasProcedure> findByStatusIgnoreCaseOrderByProcedureNameAsc(String y);
+
+    List<MasProcedure> findAllByOrderByLastChangedDateDesc();
 
     // Optional query methods:
     // List<MasProcedure> findByDepartment_DepartmentId(Long departmentId);

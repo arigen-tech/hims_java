@@ -8,7 +8,11 @@ import java.util.List;
 
 @Repository
 public interface MasPatientAcuityRepository extends JpaRepository<MasPatientAcuity, Long> {
-    List<MasPatientAcuity> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
+   // List<MasPatientAcuity> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
 
     List<MasPatientAcuity> findAllByOrderByLastUpdateDateDesc();
+
+
+
+    List<MasPatientAcuity> findByStatusIgnoreCaseOrderByAcuityNameAsc(String y);
 }

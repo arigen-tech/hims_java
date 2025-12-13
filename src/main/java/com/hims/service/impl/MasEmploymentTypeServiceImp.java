@@ -25,9 +25,9 @@ public class MasEmploymentTypeServiceImp implements MasEmploymentTypeService {
     public ApiResponse<List<MasEmploymentTypeResponse>> getAllMasEmploymentType(int flag) {
         List<MasEmploymentType> masEmploymentTypes;
         if (flag == 1) {
-            masEmploymentTypes =  masEmploymentTypeRepository.findByStatusIgnoreCase("Y");
+            masEmploymentTypes =  masEmploymentTypeRepository.findByStatusIgnoreCaseOrderByEmploymentTypeAsc("Y");
         } else if (flag == 0) {
-            masEmploymentTypes = masEmploymentTypeRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            masEmploymentTypes = masEmploymentTypeRepository.findByStatusInIgnoreCaseOrderByLastChangedDateDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

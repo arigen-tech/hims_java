@@ -10,5 +10,8 @@ import java.util.List;
 public interface DgMasCollectionRepository extends JpaRepository<DgMasCollection,Long> {
 
 
-    List<DgMasCollection> findByStatus(String y);
+
+    List<DgMasCollection> findAllByOrderByCollectionNameAsc();
+
+    List<DgMasCollection> findByStatusOrderByLastChgDateDesc(String y);
 }

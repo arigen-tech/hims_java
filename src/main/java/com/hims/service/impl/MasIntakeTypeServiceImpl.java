@@ -30,7 +30,7 @@ public class MasIntakeTypeServiceImpl  implements MasIntakeTypeService {
         try {
             List<MasIntakeType> list =
                     (flag == 1)
-                            ? repository.findByStatusIgnoreCaseOrderByLastUpdateDateDesc("y")
+                            ? repository.findByStatusIgnoreCaseOrderByIntakeTypeNameAsc("y")
                             : repository.findAllByOrderByLastUpdateDateDesc();
 
             List<MasIntakeTypeResponse> response =

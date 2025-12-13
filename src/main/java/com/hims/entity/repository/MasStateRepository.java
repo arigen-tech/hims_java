@@ -9,4 +9,10 @@ public interface MasStateRepository extends JpaRepository<MasState, Long> {
     List<MasState> findByCountryIdAndStatusIgnoreCase(Long countryId, String status);
     List<MasState> findByStatusIgnoreCase(String status);
     List<MasState> findByStatusInIgnoreCase(List<String> statuses);
+
+
+
+    List<MasState> findByStatusIgnoreCaseInOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+
+    List<MasState> findByStatusIgnoreCaseOrderByStateNameAsc(String y);
 }

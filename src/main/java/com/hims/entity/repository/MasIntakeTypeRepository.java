@@ -8,7 +8,9 @@ import java.util.List;
 
 @Repository
 public interface MasIntakeTypeRepository extends JpaRepository<MasIntakeType, Long> {
-    List<MasIntakeType> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
+  //  List<MasIntakeType> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
 
     List<MasIntakeType> findAllByOrderByLastUpdateDateDesc();
+
+    List<MasIntakeType> findByStatusIgnoreCaseOrderByIntakeTypeNameAsc(String y);
 }

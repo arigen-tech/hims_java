@@ -8,7 +8,9 @@ import java.util.List;
 
 @Repository
 public interface MasAdmissionStatusRepository extends JpaRepository<MasAdmissionStatus, Long> {
-    List<MasAdmissionStatus> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
+  //  List<MasAdmissionStatus> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
 
     List<MasAdmissionStatus> findAllByOrderByLastUpdateDateDesc();
+
+    List<MasAdmissionStatus> findByStatusIgnoreCaseOrderByStatusCodeAsc(String y);
 }

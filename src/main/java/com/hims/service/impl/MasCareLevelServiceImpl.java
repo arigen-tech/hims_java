@@ -144,7 +144,7 @@ public class MasCareLevelServiceImpl implements MasCareLevelService {
             if(flag==0){
                 masCareLevels=masCareLevelRepo.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y","n"));
             } else if (flag==1) {
-                masCareLevels=masCareLevelRepo.findByStatusIgnoreCaseOrderByLastUpdateDateDesc("y");
+                masCareLevels=masCareLevelRepo.findByStatusIgnoreCaseOrderByCareLevelNameAsc("y");
             }else{
                 return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Flag Value , Provide flag as 0 or 1",HttpStatus.BAD_REQUEST.value());
             }

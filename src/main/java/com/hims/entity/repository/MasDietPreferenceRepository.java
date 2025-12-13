@@ -8,5 +8,11 @@ import java.util.List;
 
 @Repository
 public interface MasDietPreferenceRepository extends JpaRepository<MasDietPreference,Long> {
-    List<MasDietPreference> findByStatusIgnoreCase(String y);
+  //  List<MasDietPreference> findByStatusIgnoreCase(String y);
+
+    List<MasDietPreference> findByStatusIgnoreCaseOrderByPreferenceNameAsc(String y);
+
+   // List<MasDietPreference> findAllOrderByLastUpdateDateDesc();
+
+    List<MasDietPreference> findAllByOrderByLastUpdateDateDesc();
 }

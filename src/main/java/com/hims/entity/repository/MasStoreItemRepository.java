@@ -38,4 +38,7 @@ public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long>
     List<MasStoreItem> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> statuses);
 
 
+    List<MasStoreItem> findByStatusIgnoreCaseOrderByNomenclatureAsc(String y);
+
+    List<MasStoreItem> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
 }

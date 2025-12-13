@@ -55,10 +55,10 @@ public class MasProcedureServiceImpl implements MasProcedureService {
 
             if (flag == 1) {
                 log.info("Fetching active procedures only");
-                list = repository.findByStatusIgnoreCaseOrderByLastChangedDateDesc("y");
+                list = repository.findByStatusIgnoreCaseOrderByProcedureNameAsc("y");
             } else if (flag == 0) {
                 log.info("Fetching all procedures");
-                list = repository.findByStatusInOrderByLastChangedDateDesc(List.of("y","n"));
+                list = repository.findAllByOrderByLastChangedDateDesc();
             } else {
                 log.warn("Invalid flag: {}", flag);
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},

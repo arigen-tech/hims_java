@@ -30,7 +30,7 @@ public class MasAdmissionStatusServiceImpl implements MasAdmissionStatusService 
         try {
             List<MasAdmissionStatus> list =
                     (flag == 1)
-                            ? repository.findByStatusIgnoreCaseOrderByLastUpdateDateDesc("y")
+                            ? repository.findByStatusIgnoreCaseOrderByStatusCodeAsc("y")
                             : repository.findAllByOrderByLastUpdateDateDesc();
 
             List<MasAdmissionStatusResponse> res =

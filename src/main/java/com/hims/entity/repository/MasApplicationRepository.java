@@ -16,9 +16,12 @@ public interface MasApplicationRepository extends JpaRepository<MasApplication, 
     @Query(value = "SELECT COALESCE(MAX(app_sequence_no), 0) + 1 FROM mas_application WHERE parent_id = :parentId", nativeQuery = true)
     Long getNextAppSequenceNo(@Param("parentId") String parentId);
     List<MasApplication> findByParentId(String parentId);
-    List<MasApplication> findByParentIdIsNullOrParentId(String parentId);
+  //  List<MasApplication> findByParentIdIsNullOrParentId(String parentId);
 
-    List<MasApplication> findByParentIdAndStatusIgnoreCase(String parentId, String status);
+  //  List<MasApplication> findByParentIdAndStatusIgnoreCase(String parentId, String status);
 
 
+    List<MasApplication> findByStatusIgnoreCaseOrderByNameAsc(String y);
+
+    List<MasApplication> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
 }

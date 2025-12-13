@@ -30,7 +30,7 @@ public class MasDietScheduleStatusServiceImpl implements MasDietScheduleStatusSe
     public ApiResponse<List<MasDietScheduleStatusResponse>> getAll(int flag) {
         try {
             List<MasDietScheduleStatus> list =
-                    (flag == 1) ? repository.findByStatusIgnoreCaseOrderByLastUpdateDateDesc("y") : repository.findAllByOrderByLastUpdateDateDesc();
+                    (flag == 1) ? repository.findByStatusIgnoreCaseOrderByStatusNameAsc("y") : repository.findAllByOrderByLastUpdateDateDesc();
 
             List<MasDietScheduleStatusResponse> response =
                     list.stream().map(this::toResponse).collect(Collectors.toList());

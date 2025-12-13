@@ -14,7 +14,7 @@ public interface MasServiceCategoryRepository extends JpaRepository<MasServiceCa
     @Query(value = "SELECT service_cate_code FROM mas_service_category WHERE service_cate_code IS NOT NULL ORDER BY service_cate_code DESC LIMIT 1", nativeQuery = true)
     String findTopServiceCateCode();
 
-    List<MasServiceCategory> findAllByStatusOrderByLastChgDtDesc(String status);
+  //  List<MasServiceCategory> findAllByStatusOrderByLastChgDtDesc(String status);
 
     List<MasServiceCategory> findAllByOrderByLastChgDtDesc();
 
@@ -23,4 +23,5 @@ public interface MasServiceCategoryRepository extends JpaRepository<MasServiceCa
     Optional<MasServiceCategory> findBySacCode(String cateCode);
 
 
+    List<MasServiceCategory> findAllByStatusOrderByServiceCatNameAsc(String y);
 }

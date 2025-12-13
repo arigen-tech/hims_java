@@ -81,7 +81,7 @@ public class MasItemClassServiceImp implements MasItemClassService {
         List<MasItemClass> masItemClass;
 
         if (flag == 1) {
-            masItemClass = masItemClassRepository.findByStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc("y");
+            masItemClass = masItemClassRepository.findByStatusIgnoreCaseOrderByItemClassNameAsc("y");
         } else if (flag == 0) {
             masItemClass = masItemClassRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("y", "n"));
         } else {

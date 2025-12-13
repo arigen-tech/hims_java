@@ -10,7 +10,9 @@ import java.util.List;
 public interface MasRouteRepository extends JpaRepository<MasRoute, Long> {
 
 
-    List<MasRoute> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
+   // List<MasRoute> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
 
     List<MasRoute> findAllByOrderByLastUpdateDateDesc();
+
+    List<MasRoute> findByStatusIgnoreCaseOrderByRouteNameAsc(String y);
 }

@@ -146,9 +146,9 @@ public class MasCountryServiceImpl implements MasCountryService {
         List<MasCountry> countries;
 
         if (flag == 1) {
-            countries = masCountryRepository.findByStatusIgnoreCase("Y");
+            countries = masCountryRepository.findByStatusIgnoreCaseOrderByCountryNameAsc("Y");
         } else if (flag == 0) {
-            countries = masCountryRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            countries = masCountryRepository.findByStatusIgnoreCaseInOrderByLastChgDateDescLastChgTimeDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

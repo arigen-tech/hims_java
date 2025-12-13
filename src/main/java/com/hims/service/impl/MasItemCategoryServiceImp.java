@@ -83,7 +83,7 @@ private MasItemCategoryRepository masItemCategoryRepository;
         List<MasItemCategory> masItemCategory;
 
         if (flag == 1) {
-            masItemCategory = masItemCategoryRepository.findByStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc("y");
+            masItemCategory = masItemCategoryRepository.findByStatusIgnoreCaseOrderByItemCategoryNameAsc("y");
         } else if (flag == 0) {
             masItemCategory = masItemCategoryRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("y", "n"));
         } else {

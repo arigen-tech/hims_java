@@ -9,8 +9,11 @@ import java.util.List;
 @Repository
 public interface MasCareLevelRepo extends JpaRepository<MasCareLevel,Long> {
 
-    List<MasCareLevel> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String status);
+  //  List<MasCareLevel> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String status);
 
     List<MasCareLevel> findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List<String> statuses);
 
+
+
+    List<MasCareLevel> findByStatusIgnoreCaseOrderByCareLevelNameAsc(String y);
 }

@@ -37,9 +37,9 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
             List<MasTreatmentAdvise> list;
 
             if (flag == 0) {
-                list = masTreatmentAdviseRepository.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y", "n"));
+                list = masTreatmentAdviseRepository.findAllByOrderByLastUpdateDateDesc();
             } else if (flag == 1) {
-                list = masTreatmentAdviseRepository.findByStatusIgnoreCaseOrderByLastUpdateDateDesc("y");
+                list = masTreatmentAdviseRepository.findByStatusIgnoreCaseOrderByTreatmentAdviceAsc("y");
             } else {
                 return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Flag Value , Provide flag as 0 or 1", HttpStatus.BAD_REQUEST.value());
             }

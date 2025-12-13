@@ -30,7 +30,7 @@ public class MasPatientAcuityServiceImpl implements MasPatientAcuityService {
         try {
             List<MasPatientAcuity> list =
                     (flag == 1)
-                            ? repository.findByStatusIgnoreCaseOrderByLastUpdateDateDesc("y")
+                            ? repository.findByStatusIgnoreCaseOrderByAcuityNameAsc("y")
                             : repository.findAllByOrderByLastUpdateDateDesc();
 
             List<MasPatientAcuityResponse> response = list.stream()

@@ -9,4 +9,8 @@ public interface MasDistrictRepository extends JpaRepository<MasDistrict, Long> 
     List<MasDistrict> findByStateIdAndStatusIgnoreCase(Long stateId, String status);
     List<MasDistrict> findByStatusIgnoreCase(String status);
     List<MasDistrict> findByStatusInIgnoreCase(List<String> statuses);
+
+    List<MasDistrict> findByStatusIgnoreCaseOrderByDistrictNameAsc(String y);
+
+    List<MasDistrict> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
 }

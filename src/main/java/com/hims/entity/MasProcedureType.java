@@ -28,7 +28,7 @@ public class MasProcedureType {
     private String status = "Y";
 
     @Column(name = "last_update_date")
-    private LocalDateTime lastUpdateDate = LocalDateTime.now();
+    private LocalDateTime lastUpdateDate;
 
     @Column(name = "created_by", length = 200)
     private String createdBy;

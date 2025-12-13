@@ -143,7 +143,7 @@ public class MasRoomCategoryServiceImpl implements MasRoomCategoryService {
             if (flag == 0) {
                 list = masRoomCategoryRepo.findByStatusIgnoreCaseInOrderByLastUpdatedDateDesc(List.of("y", "n"));
             } else if (flag == 1) {
-                list = masRoomCategoryRepo.findByStatusIgnoreCaseOrderByLastUpdatedDateDesc("y");
+                list = masRoomCategoryRepo.findByStatusIgnoreCaseOrderByRoomCategoryNameAsc("y");
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid Flag Value , Provide flag as 0 or 1", HttpStatus.BAD_REQUEST.value());

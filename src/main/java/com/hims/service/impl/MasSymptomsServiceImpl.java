@@ -146,9 +146,9 @@ public class MasSymptomsServiceImpl implements MasSymptomsService {
     public ApiResponse<List<MasSymptomsResponse>> getAllSymptoms (int flag){
         List<MasSymptoms> masSymptoms;
         if (flag == 1) {
-            masSymptoms = symptomsRepo.findByStatus("y");
+            masSymptoms = symptomsRepo.findByStatusOrderByLastChgDateDesc("y");
         } else if (flag == 0) {
-            masSymptoms = symptomsRepo.findAll();
+            masSymptoms = symptomsRepo.findAllByOrderBySymptomsNameAsc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

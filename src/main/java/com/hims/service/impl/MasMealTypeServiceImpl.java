@@ -37,9 +37,9 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
             List<MasMealType> list;
 
             if (flag == 1) {
-                list = repository.findByStatusIgnoreCase("y");
+                list = repository.findByStatusIgnoreCaseOrderByMealTypeNameAsc("y");
             } else if (flag == 0) {
-                list = repository.findAll();
+                list = repository.findAllByOrderByLastUpdateDateDesc();
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid flag value. Use 0 or 1.", 400);

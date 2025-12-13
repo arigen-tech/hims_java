@@ -77,9 +77,9 @@ public class MasMaritalStatusServiceImpl implements MasMaritalStatusService {
         List<MasMaritalStatus> statuses;
 
         if (flag == 1) {
-            statuses = masMaritalStatusRepository.findByStatusIgnoreCase("Y");
+            statuses = masMaritalStatusRepository.findByStatusIgnoreCaseOrderByNameAsc("Y");
         } else if (flag == 0) {
-            statuses = masMaritalStatusRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            statuses = masMaritalStatusRepository.findByStatusIgnoreCaseInOrderByLastChgDateDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

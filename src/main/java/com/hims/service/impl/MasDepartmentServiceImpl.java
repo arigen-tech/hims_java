@@ -161,9 +161,9 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         List<MasDepartment> departments;
 
         if (flag == 1) {
-            departments = masDepartmentRepository.findByStatusIgnoreCase("Y");
+            departments = masDepartmentRepository.findByStatusIgnoreCaseOrderByDepartmentNameAsc("Y");
         } else if (flag == 0) {
-            departments = masDepartmentRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            departments = masDepartmentRepository.findByStatusIgnoreCaseInOrderByLastChgDateDescLastChgTimeDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

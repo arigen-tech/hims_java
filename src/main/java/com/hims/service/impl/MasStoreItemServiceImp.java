@@ -221,9 +221,9 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
         List<MasStoreItem> masStoreItems;
         if (flag == 1) {
-            masStoreItems = masStoreItemRepository.findByStatusIgnoreCase("y");
+            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseOrderByNomenclatureAsc("y");
         } else if (flag == 0) {
-            masStoreItems = masStoreItemRepository.findByStatusInIgnoreCase(List.of("y", "n"));
+            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseInOrderByLastChgDateDesc(List.of("y", "n"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

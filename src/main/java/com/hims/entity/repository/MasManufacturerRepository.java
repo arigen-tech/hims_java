@@ -7,7 +7,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 @Repository
 public interface MasManufacturerRepository extends JpaRepository<MasManufacturer,Long> {
-    List<MasManufacturer> findByStatusIgnoreCase(String y);
 
-    List<MasManufacturer> findByStatusInIgnoreCase(List<String> y);
+    List<MasManufacturer> findByStatusIgnoreCaseOrderByManufacturerNameAsc(String y);
+
+    List<MasManufacturer> findByStatusIgnoreCaseInOrderByLastUpdatedDtDesc(List<String> y);
 }

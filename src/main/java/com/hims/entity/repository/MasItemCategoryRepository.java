@@ -15,4 +15,6 @@ public interface MasItemCategoryRepository extends JpaRepository<MasItemCategory
     List<MasItemCategory> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> statuses);
 
     List<MasItemCategory> findByMasStoreSectionSectionId(int id);
+
+    List<MasItemCategory> findByStatusIgnoreCaseOrderByItemCategoryNameAsc(String y);
 }
