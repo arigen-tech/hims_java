@@ -159,6 +159,8 @@ public class MasterController {
     private MasAdmissionStatusService masAdmissionStatusService;
     @Autowired
     private MasPatientAcuityService masPatientAcuityService;
+    @Autowired
+    private MasOpdMedicalAdviseService masOpdMedicalAdviseService;
 
 
 
@@ -2265,4 +2267,11 @@ public class MasterController {
         return ResponseEntity.ok( masPatientAcuityService.changeStatus(id, status));
     }
 
+
+    //    =============================== Mas Opd Medical Advise=====================================
+
+    @GetMapping("masOpdMedicalAdvise/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasOpdMedicalAdviseResponse>>> getAllMasOpdMedicalAdvise(@PathVariable int flag) {
+        return ResponseEntity.ok( masOpdMedicalAdviseService.getAll(flag));
+    }
 }
