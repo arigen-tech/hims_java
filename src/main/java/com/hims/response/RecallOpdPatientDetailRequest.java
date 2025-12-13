@@ -33,8 +33,9 @@ public class RecallOpdPatientDetailRequest {
     private List<TreatmentRequest> treatments;
     private String treatmentAdvice;
     private List<InvestigationRequest> investigations;
-
+    private List<ProcedureCare> procedureCare;
     private List<Long>removeIcdIds;
+    private List<Long>removeprocedureCareIds;
     private List<Long> removedTreatmentIds;
     private List<Integer> removedInvestigationIds;
 
@@ -79,5 +80,18 @@ public class RecallOpdPatientDetailRequest {
         private Long id;
         private Long icdId;
         private String icdDiagName;
+    }
+
+    // ============================== Procedure Care DTO=============================
+
+    @Getter
+    @Setter
+    public static class ProcedureCare{
+        private Long id;
+        private Long procedureId;
+        private String procedureName;
+        private Long frequencyId;
+        private Long noOfDays;
+        private String remarks;
     }
 }

@@ -1825,7 +1825,7 @@ public class MasterController {
     }
 
     @GetMapping("masProcedureType/getById/{id}")
-    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> getByIdProcedure(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> getByIdProcedureType(@PathVariable Long id) {
         return ResponseEntity.ok( masProcedureTypeService.findById(id));
     }
 
@@ -1842,7 +1842,7 @@ public class MasterController {
     }
 
     @PutMapping("masProcedureType/status/{id}")
-    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> changeStatusProcedure(
+    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> changeStatusProcedureType(
             @PathVariable Long id, @RequestParam String status) {
 
         return ResponseEntity.ok( masProcedureTypeService.changeStatus(id, status));
@@ -1857,9 +1857,21 @@ public class MasterController {
         return ResponseEntity.ok(masProcedureService.getAllMasProcedure(flag));
     }
 
+    @GetMapping("masProcedureFilter/getAll")
+    public ApiResponse<Page<MasProcedureResponse>> getAllProceduresWIthFilter(
+            @RequestParam int flag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search
+    ) {
+        return masProcedureService.getAllProceduresWIthFilter(flag, page, size, search);
+    }
+
+
+
 
     @GetMapping("masProcedure/getById/{id}")
-    public ResponseEntity<ApiResponse<MasProcedureResponse>> getByIdProcedure(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<MasProcedureResponse>> getByIdProcedure(@PathVariable Long id) {
 
         log.info("Get MasProcedure By Id={}", id);
         return ResponseEntity.ok(masProcedureService.getMasProcedureById(id));
@@ -1877,7 +1889,7 @@ public class MasterController {
 
     @PutMapping("masProcedure/update/{id}")
     public ResponseEntity<ApiResponse<MasProcedureResponse>> updateProcedure(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @RequestBody MasProcedureRequest request) {
 
         log.info("Update MasProcedure id={}, request={}", id, request);
@@ -1887,7 +1899,7 @@ public class MasterController {
 
     @PutMapping("masProcedure/status/{id}")
     public ResponseEntity<ApiResponse<MasProcedureResponse>> changeStatusProcedure(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @RequestParam String status) {
 
         log.info("Change status MasProcedure id={}, status={}", id, status);

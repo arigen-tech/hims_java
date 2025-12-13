@@ -63,6 +63,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     private final ProcedureDetailsRepository procedureDetailsRepository;
 
+    private  final MasProcedureRepository masProcedureRepository;
+
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
 
@@ -293,15 +295,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
 
 
-        // ================================ Procedure Care =====================
-        if (request.getProcedureCare() != null && !request.getProcedureCare().isEmpty()){
-
-        }
-
-        ProcedureHeader produHObj = procedureHeaderRepository.getReferenceById(2L);
-        ProcedureDetails produDObj = procedureDetailsRepository.getReferenceById(3L);
-
-
         // ====================== GENERAL DETAILS ===========================
         opdPatientDetail.setOpdDate(Instant.now());
 
@@ -337,6 +330,68 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 dischargeIcdCodeRepository.save(icdObj);
             }
         }
+
+        // ================================ Procedure Care =====================
+        if (request.getProcedureCare() != null && !request.getProcedureCare().isEmpty()) {
+
+            log.info("Creating Procedure Header & Procedure Details...");
+
+            Patient patObj = patientRepository.findById(request.getPatientId())
+                    .orElseThrow(() -> new RuntimeException("Patient not found"));
+
+            Visit visitObj = visitRepository.findById(request.getVisitId())
+                    .orElseThrow(() -> new RuntimeException("Visit not found"));
+
+            MasHospital hosObj = useObj.getHospital();
+
+            // *************** CREATE HEADER ***************
+            ProcedureHeader header = new ProcedureHeader();
+            header.setStatus("n");
+            header.setLastChangedDate(LocalDate.now());
+            header.setLastChangedTime(LocalTime.now().toString());
+            header.setRequisitionDate(LocalDate.now());
+            header.setProcedureDate(LocalDateTime.now());
+            header.setProcedureTime(LocalTime.now().toString());
+            header.setHinId(Math.toIntExact(patObj.getId()));
+            header.setHospital(hosObj);
+            header.setLastChangedBy(Math.toIntExact(useObj.getUserId()));
+            header.setMedicalOfficerId(Math.toIntExact(useObj.getUserId()));
+            header.setVisitId(Math.toIntExact(visitObj.getId()));
+            header.setOpdPatientDetailsId(Math.toIntExact(saved.getOpdPatientDetailsId()));
+            header.setProcedureType("OPD"); // OPD procedure
+
+            ProcedureHeader savedHeader = procedureHeaderRepository.save(header);
+
+
+            // *************** CREATE MULTIPLE DETAILS ***************
+            for (OpdPatientDetailFinalRequest.ProcedureCare req : request.getProcedureCare()) {
+
+                MasProcedure procEntity = masProcedureRepository.findById(req.getProcedureId())
+                        .orElseThrow(() ->
+                                new RuntimeException("Procedure not found with ID: " + req.getProcedureId()));
+
+                ProcedureDetails details = ProcedureDetails.builder()
+                        .procedureHeader(savedHeader)
+                        .remarks(req.getRemarks())
+                        .procedureName(req.getProcedureName())
+                        .status("n")
+                        .masProcedure(procEntity)
+                        .frequencyId(req.getFrequencyId() != null ? req.getFrequencyId().intValue() : null)
+                        .noOfDays(req.getNoOfDays() != null ? req.getNoOfDays().intValue() : null)
+                        .appointmentDate(LocalDate.now())
+                        .finalProcedureStatus("n")
+                        .nursingRemark(null)
+                        .nextAppointmentDate(null)
+                        .appointmentTime(LocalTime.now().toString())
+                        .procedureDate(LocalDate.now())
+                        .procedureTime(LocalTime.now().toString())
+                        .build();
+
+                procedureDetailsRepository.save(details);
+            }
+        }
+
+
 
         // ======================= UPDATE VISIT STATUS ==========================
         Visit visit = visitRepository.findById(request.getVisitId())
@@ -569,7 +624,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     });
         }
 
-        //  icd
+
 
         //  ICD DIAGNOSIS
         if (request.getIcdObj() != null) {
@@ -603,12 +658,95 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }
         }
 
+
+        // ================================ Procedure Care =====================
+        List<RecallOpdPatientDetailRequest.ProcedureCare> careList = request.getProcedureCare();
+
+        boolean allIdsNull = careList.stream()
+                .allMatch(c -> c.getId() == null);
+
+        ProcedureHeader existingHeader =
+                procedureHeaderRepository.findByVisitId(request.getVisitId())
+                        .orElse(null);
+        if (allIdsNull && existingHeader != null) {
+
+            procedureDetailsRepository.deleteByProcedureHeader(existingHeader);
+
+            procedureHeaderRepository.delete(existingHeader);
+
+            existingHeader = null;
+        }
+
+        ProcedureHeader header = existingHeader;
+
+        if (header == null) {
+            header = new ProcedureHeader();
+            header.setStatus("n");
+            header.setLastChangedDate(LocalDate.now());
+            header.setLastChangedTime(LocalTime.now().toString());
+            header.setRequisitionDate(LocalDate.now());
+            header.setProcedureDate(LocalDateTime.now());
+            header.setProcedureTime(LocalTime.now().toString());
+            header.setHinId(Math.toIntExact(request.getOpdPatientId()));
+            header.setHospital(useObj.getHospital());
+            header.setLastChangedBy(Math.toIntExact(useObj.getUserId()));
+            header.setMedicalOfficerId(Math.toIntExact(useObj.getUserId()));
+            header.setVisitId(Math.toIntExact(request.getVisitId()));
+            header.setOpdPatientDetailsId(Math.toIntExact(saved.getOpdPatientDetailsId()));
+            header.setProcedureType("OPD");
+
+            header = procedureHeaderRepository.save(header);
+        }
+
+        for (RecallOpdPatientDetailRequest.ProcedureCare req : careList) {
+
+            MasProcedure procEntity = masProcedureRepository.findById(req.getProcedureId())
+                    .orElseThrow(() ->
+                            new RuntimeException("Procedure not found with ID: " + req.getProcedureId()));
+
+            if (req.getId() == null) {
+                // ===== CREATE =====
+                ProcedureDetails details = new ProcedureDetails();
+                details.setProcedureHeader(header);
+                details.setMasProcedure(procEntity);
+                details.setProcedureName(req.getProcedureName());
+                details.setRemarks(req.getRemarks());
+                details.setFrequencyId(req.getFrequencyId() != null ? req.getFrequencyId().intValue() : null);
+                details.setNoOfDays(req.getNoOfDays() != null ? req.getNoOfDays().intValue() : null);
+                details.setStatus("n");
+                details.setFinalProcedureStatus("n");
+                details.setAppointmentDate(LocalDate.now());
+                details.setAppointmentTime(LocalTime.now().toString());
+                details.setProcedureDate(LocalDate.now());
+                details.setProcedureTime(LocalTime.now().toString());
+
+                procedureDetailsRepository.save(details);
+
+            } else {
+                // ===== UPDATE =====
+                ProcedureDetails details = procedureDetailsRepository.findById(req.getId())
+                        .orElseThrow(() ->
+                                new RuntimeException("Procedure detail not found: " + req.getId()));
+
+                details.setMasProcedure(procEntity);
+                details.setProcedureName(req.getProcedureName());
+                details.setRemarks(req.getRemarks());
+                details.setFrequencyId(req.getFrequencyId() != null ? req.getFrequencyId().intValue() : null);
+                details.setNoOfDays(req.getNoOfDays() != null ? req.getNoOfDays().intValue() : null);
+
+                procedureDetailsRepository.save(details);
+            }
+        }
+
+
+
         deleteDischargeIcd(request.getRemoveIcdIds());
 
 
         deleteDischargeIcd(request.getRemoveIcdIds());
         deleteOrderDetails(request.getRemovedInvestigationIds());
         deletePrescriptionDetails(request.getRemovedTreatmentIds());
+        deleteProcedureCareDetails(request.getRemoveprocedureCareIds());
 
         return ResponseUtils.createSuccessResponse(saved, new TypeReference<>() {});
     }
@@ -716,6 +854,17 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         dischargeIcdCodeRepository.deleteAllByIdInBatch(removedICDIds);
     }
+
+    @Transactional
+    public void deleteProcedureCareDetails(List<Long> procedureDetailsIds) {
+
+        if (procedureDetailsIds == null || procedureDetailsIds.isEmpty()) {
+            return;
+        }
+
+        procedureDetailsRepository.deleteAllByIdInBatch(procedureDetailsIds);
+    }
+
 
 
     @Override
