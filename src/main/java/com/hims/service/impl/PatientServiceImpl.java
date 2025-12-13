@@ -304,12 +304,19 @@ public class PatientServiceImpl implements PatientService {
 
 
     @Override
+    @Transactional
     public ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq followUpRequest) {
         PatientRegFollowUpResp resp = new PatientRegFollowUpResp();
 
         // 1. Update patient basic details
         PatientRequest request = followUpRequest.getPatientDetails().getPatient();
-        Patient patient = updatePatient(request, true); // This now properly updates existing patient
+
+        // Ensure patient ID exists
+        if (request.getId() == null) {
+            throw new RuntimeException("Patient ID is required for update");
+        }
+
+        Patient patient = updatePatient(request, true);
         resp.setPatient(patient);
 
         if (followUpRequest.isAppointmentFlag()) {
@@ -320,13 +327,42 @@ public class PatientServiceImpl implements PatientService {
 
             if (visitList != null && !visitList.isEmpty()) {
                 for (VisitRequest v : visitList) {
-                    // Use the new update method for existing visits
-                    Visit updatedVisit = updateExistingVisit(v, patient);
+                    Visit updatedVisit;
+
+                    // Check if visit has an ID (means it's an existing visit to update)
+                    if (v.getId() != null) {
+                        // Update existing visit using the ID from request
+                        updatedVisit = updateExistingVisitById(v, patient);
+                    } else {
+                        // Create new visit
+                        // Ensure required fields are set
+                        if (v.getPatientId() == null) {
+                            v.setPatientId(patient.getId());
+                        }
+                        if (v.getHospitalId() == null && patient.getPatientHospital() != null) {
+                            v.setHospitalId(patient.getPatientHospital().getId());
+                        }
+                        if (v.getVisitDate() == null) {
+                            v.setVisitDate(Instant.now());
+                        }
+                        if (v.getVisitType() == null) {
+                            v.setVisitType("F");
+                        }
+                        updatedVisit = createSingleAppointment(v, patient);
+                    }
+
                     updatedVisits.add(updatedVisit);
 
                     if (updatedVisit.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
                         opdDetails = addOpdDetails(updatedVisit, opdReq, patient);
                     }
+                }
+            } else {
+                // If appointment flag is true but no visits provided,
+                // check if patient has existing appointments
+                List<Visit> existingVisits = visitRepository.findByPatientId(patient.getId());
+                if (!existingVisits.isEmpty()) {
+                    updatedVisits.addAll(existingVisits);
                 }
             }
             resp.setVisits(updatedVisits);
@@ -335,6 +371,156 @@ public class PatientServiceImpl implements PatientService {
 
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {});
     }
+
+    private Visit updateExistingVisitById(VisitRequest visit, Patient patient) {
+        // Find existing visit by ID from the request
+        if (visit.getId() == null) {
+            throw new RuntimeException("Visit ID is required for updating existing visit");
+        }
+
+        Visit existingVisit = visitRepository.findById(visit.getId())
+                .orElseThrow(() -> new RuntimeException("Visit not found with id: " + visit.getId()));
+
+        log.info("Updating existing visit ID: {} for patient: {}",
+                existingVisit.getId(), patient.getId());
+
+        // Update fields
+        existingVisit.setLastChgDate(Instant.now());
+        existingVisit.setPriority(visit.getPriority());
+        existingVisit.setVisitType(visit.getVisitType());
+
+        // Update department if provided
+        if (visit.getDepartmentId() != null) {
+            masDepartmentRepository.findById(visit.getDepartmentId())
+                    .ifPresent(existingVisit::setDepartment);
+        }
+
+        // Update doctor information if provided
+        if (visit.getDoctorId() != null) {
+            userRepository.findById(visit.getDoctorId()).ifPresent(doctor -> {
+                existingVisit.setDoctor(doctor);
+                existingVisit.setDoctorName(visit.getDoctorName());
+            });
+        }
+
+        // Update session if provided
+        if (visit.getSessionId() != null) {
+            masOpdSessionRepository.findById(visit.getSessionId())
+                    .ifPresent(existingVisit::setSession);
+        }
+
+        // Update visit date if provided
+        if (visit.getVisitDate() != null) {
+            existingVisit.setVisitDate(visit.getVisitDate());
+        }
+
+        // DO NOT update token, startTime, endTime - keep original allocation
+
+        // Save and return updated visit
+        return visitRepository.save(existingVisit);
+    }
+
+    // Also update the Patient update method to ensure ID is properly handled
+    private Patient updatePatient(PatientRequest request, boolean followUp) {
+        User currentUser = authUtil.getCurrentUser();
+        if (currentUser == null) {
+            log.info("current user not found");
+            throw new RuntimeException("Current user not found");
+        }
+
+        // Check if patient exists
+        Patient patient = patientRepository.findById(request.getId())
+                .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + request.getId()));
+
+        // Update patient fields
+        patient.setUhidNo(request.getUhidNo());
+        patient.setUpdatedOn(Instant.now());
+        patient.setLastChgBy(currentUser.getFirstName() + " " +
+                currentUser.getMiddleName() + " " +
+                currentUser.getLastName());
+        patient.setPatientFn(request.getPatientFn());
+        patient.setPatientMn(request.getPatientMn());
+        patient.setPatientLn(request.getPatientLn());
+        patient.setPatientDob(request.getPatientDob());
+        patient.setPatientAge(request.getPatientAge());
+        patient.setPatientEmailId(request.getPatientEmailId());
+        patient.setPatientMobileNumber(request.getPatientMobileNumber());
+        patient.setPatientImage(request.getPatientImage());
+        patient.setFileName(request.getFileName());
+        patient.setPatientAddress1(request.getPatientAddress1());
+        patient.setPatientAddress2(request.getPatientAddress2());
+        patient.setPatientCity(request.getPatientCity());
+        patient.setPatientPincode(request.getPatientPincode());
+        patient.setPincode(request.getPincode());
+        patient.setEmerFn(request.getEmerFn());
+        patient.setEmerLn(request.getEmerLn());
+        patient.setEmerMobile(request.getEmerMobile());
+        patient.setNokFn(request.getNokFn());
+        patient.setNokLn(request.getNokLn());
+        patient.setNokEmail(request.getNokEmail());
+        patient.setNokMobileNumber(request.getNokMobileNumber());
+        patient.setNokAddress1(request.getNokAddress1());
+        patient.setNokAddress2(request.getNokAddress2());
+        patient.setNokCity(request.getNokCity());
+        patient.setNokPincode(request.getNokPincode());
+        patient.setPatientStatus(request.getPatientStatus());
+        patient.setRegDate(request.getRegDate());
+
+        // Update relationships
+        Optional.ofNullable(request.getPatientGenderId())
+                .flatMap(masGenderRepository::findById)
+                .ifPresent(patient::setPatientGender);
+
+        Optional.ofNullable(request.getPatientRelationId())
+                .flatMap(masRelationRepository::findById)
+                .ifPresent(patient::setPatientRelation);
+
+        Optional.ofNullable(request.getPatientMaritalStatusId())
+                .flatMap(masMaritalStatusRepository::findById)
+                .ifPresent(patient::setPatientMaritalStatus);
+
+        Optional.ofNullable(request.getPatientReligionId())
+                .flatMap(masReligionRepository::findById)
+                .ifPresent(patient::setPatientReligion);
+
+        Optional.ofNullable(request.getPatientDistrictId())
+                .flatMap(masDistrictRepository::findById)
+                .ifPresent(patient::setPatientDistrict);
+
+        Optional.ofNullable(request.getPatientStateId())
+                .flatMap(masStateRepository::findById)
+                .ifPresent(patient::setPatientState);
+
+        Optional.ofNullable(request.getPatientCountryId())
+                .flatMap(masCountryRepository::findById)
+                .ifPresent(patient::setPatientCountry);
+
+        Optional.ofNullable(request.getNokDistrictId())
+                .flatMap(masDistrictRepository::findById)
+                .ifPresent(patient::setNokDistrict);
+
+        Optional.ofNullable(request.getNokStateId())
+                .flatMap(masStateRepository::findById)
+                .ifPresent(patient::setNokState);
+
+        Optional.ofNullable(request.getNokCountryId())
+                .flatMap(masCountryRepository::findById)
+                .ifPresent(patient::setNokCountry);
+
+        Optional.ofNullable(request.getNokRelationId())
+                .flatMap(masRelationRepository::findById)
+                .ifPresent(patient::setNokRelation);
+
+        if (!followUp) {
+            Optional.ofNullable(request.getPatientHospitalId())
+                    .flatMap(masHospitalRepository::findById)
+                    .ifPresent(patient::setPatientHospital);
+        }
+
+        return patientRepository.save(patient);
+    }
+
+
     @Override
     public ApiResponse<String> uploadImage(MultipartFile file) {
         try {
@@ -853,97 +1039,97 @@ public class PatientServiceImpl implements PatientService {
         return visitRepository.save(existingVisit);
     }
 
-    private Patient updatePatient(PatientRequest request, boolean followUp) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
-            log.info("current user not found");
-            throw new RuntimeException("Current user not found");
-        }
-        Patient patient;
-        patient = patientRepository.findById(request.getId())
-                .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + request.getId()));
-        patient.setUhidNo(request.getUhidNo());
-        patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(currentUser.getFirstName() + " " +
-                currentUser.getMiddleName() + " " +
-                currentUser.getLastName());
-        patient.setPatientFn(request.getPatientFn());
-        patient.setPatientMn(request.getPatientMn());
-        patient.setPatientLn(request.getPatientLn());
-        patient.setPatientDob(request.getPatientDob());
-        patient.setPatientAge(request.getPatientAge());
-        patient.setPatientEmailId(request.getPatientEmailId());
-        patient.setPatientMobileNumber(request.getPatientMobileNumber());
-        patient.setPatientImage(request.getPatientImage());
-        patient.setFileName(request.getFileName());
-        patient.setPatientAddress1(request.getPatientAddress1());
-        patient.setPatientAddress2(request.getPatientAddress2());
-        patient.setPatientCity(request.getPatientCity());
-        patient.setPatientPincode(request.getPatientPincode());
-        patient.setPincode(request.getPincode());
-        patient.setEmerFn(request.getEmerFn());
-        patient.setEmerLn(request.getEmerLn());
-        patient.setEmerMobile(request.getEmerMobile());
-        patient.setNokFn(request.getNokFn());
-        patient.setNokLn(request.getNokLn());
-        patient.setNokEmail(request.getNokEmail());
-        patient.setNokMobileNumber(request.getNokMobileNumber());
-        patient.setNokAddress1(request.getNokAddress1());
-        patient.setNokAddress2(request.getNokAddress2());
-        patient.setNokCity(request.getNokCity());
-        patient.setNokPincode(request.getNokPincode());
-        patient.setPatientStatus(request.getPatientStatus());
-        patient.setRegDate(request.getRegDate());
-        Optional.ofNullable(request.getPatientGenderId())
-                .flatMap(masGenderRepository::findById)
-                .ifPresent(patient::setPatientGender);
-
-        Optional.ofNullable(request.getPatientRelationId())
-                .flatMap(masRelationRepository::findById)
-                .ifPresent(patient::setPatientRelation);
-
-        Optional.ofNullable(request.getPatientMaritalStatusId())
-                .flatMap(masMaritalStatusRepository::findById)
-                .ifPresent(patient::setPatientMaritalStatus);
-
-        Optional.ofNullable(request.getPatientReligionId())
-                .flatMap(masReligionRepository::findById)
-                .ifPresent(patient::setPatientReligion);
-
-        Optional.ofNullable(request.getPatientDistrictId())
-                .flatMap(masDistrictRepository::findById)
-                .ifPresent(patient::setPatientDistrict);
-
-        Optional.ofNullable(request.getPatientStateId())
-                .flatMap(masStateRepository::findById)
-                .ifPresent(patient::setPatientState);
-
-        Optional.ofNullable(request.getPatientCountryId())
-                .flatMap(masCountryRepository::findById)
-                .ifPresent(patient::setPatientCountry);
-
-        Optional.ofNullable(request.getNokDistrictId())
-                .flatMap(masDistrictRepository::findById)
-                .ifPresent(patient::setNokDistrict);
-
-        Optional.ofNullable(request.getNokStateId())
-                .flatMap(masStateRepository::findById)
-                .ifPresent(patient::setNokState);
-
-        Optional.ofNullable(request.getNokCountryId())
-                .flatMap(masCountryRepository::findById)
-                .ifPresent(patient::setNokCountry);
-
-        Optional.ofNullable(request.getNokRelationId())
-                .flatMap(masRelationRepository::findById)
-                .ifPresent(patient::setNokRelation);
-        if (!followUp) {
-            Optional.ofNullable(request.getPatientHospitalId())
-                    .flatMap(masHospitalRepository::findById)
-                    .ifPresent(patient::setPatientHospital);
-        }
-
-        return patientRepository.save(patient);
-    }
+//    private Patient updatePatient(PatientRequest request, boolean followUp) {
+//        User currentUser = authUtil.getCurrentUser();
+//        if (currentUser == null) {
+//            log.info("current user not found");
+//            throw new RuntimeException("Current user not found");
+//        }
+//        Patient patient;
+//        patient = patientRepository.findById(request.getId())
+//                .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + request.getId()));
+//        patient.setUhidNo(request.getUhidNo());
+//        patient.setUpdatedOn(Instant.now());
+//        patient.setLastChgBy(currentUser.getFirstName() + " " +
+//                currentUser.getMiddleName() + " " +
+//                currentUser.getLastName());
+//        patient.setPatientFn(request.getPatientFn());
+//        patient.setPatientMn(request.getPatientMn());
+//        patient.setPatientLn(request.getPatientLn());
+//        patient.setPatientDob(request.getPatientDob());
+//        patient.setPatientAge(request.getPatientAge());
+//        patient.setPatientEmailId(request.getPatientEmailId());
+//        patient.setPatientMobileNumber(request.getPatientMobileNumber());
+//        patient.setPatientImage(request.getPatientImage());
+//        patient.setFileName(request.getFileName());
+//        patient.setPatientAddress1(request.getPatientAddress1());
+//        patient.setPatientAddress2(request.getPatientAddress2());
+//        patient.setPatientCity(request.getPatientCity());
+//        patient.setPatientPincode(request.getPatientPincode());
+//        patient.setPincode(request.getPincode());
+//        patient.setEmerFn(request.getEmerFn());
+//        patient.setEmerLn(request.getEmerLn());
+//        patient.setEmerMobile(request.getEmerMobile());
+//        patient.setNokFn(request.getNokFn());
+//        patient.setNokLn(request.getNokLn());
+//        patient.setNokEmail(request.getNokEmail());
+//        patient.setNokMobileNumber(request.getNokMobileNumber());
+//        patient.setNokAddress1(request.getNokAddress1());
+//        patient.setNokAddress2(request.getNokAddress2());
+//        patient.setNokCity(request.getNokCity());
+//        patient.setNokPincode(request.getNokPincode());
+//        patient.setPatientStatus(request.getPatientStatus());
+//        patient.setRegDate(request.getRegDate());
+//        Optional.ofNullable(request.getPatientGenderId())
+//                .flatMap(masGenderRepository::findById)
+//                .ifPresent(patient::setPatientGender);
+//
+//        Optional.ofNullable(request.getPatientRelationId())
+//                .flatMap(masRelationRepository::findById)
+//                .ifPresent(patient::setPatientRelation);
+//
+//        Optional.ofNullable(request.getPatientMaritalStatusId())
+//                .flatMap(masMaritalStatusRepository::findById)
+//                .ifPresent(patient::setPatientMaritalStatus);
+//
+//        Optional.ofNullable(request.getPatientReligionId())
+//                .flatMap(masReligionRepository::findById)
+//                .ifPresent(patient::setPatientReligion);
+//
+//        Optional.ofNullable(request.getPatientDistrictId())
+//                .flatMap(masDistrictRepository::findById)
+//                .ifPresent(patient::setPatientDistrict);
+//
+//        Optional.ofNullable(request.getPatientStateId())
+//                .flatMap(masStateRepository::findById)
+//                .ifPresent(patient::setPatientState);
+//
+//        Optional.ofNullable(request.getPatientCountryId())
+//                .flatMap(masCountryRepository::findById)
+//                .ifPresent(patient::setPatientCountry);
+//
+//        Optional.ofNullable(request.getNokDistrictId())
+//                .flatMap(masDistrictRepository::findById)
+//                .ifPresent(patient::setNokDistrict);
+//
+//        Optional.ofNullable(request.getNokStateId())
+//                .flatMap(masStateRepository::findById)
+//                .ifPresent(patient::setNokState);
+//
+//        Optional.ofNullable(request.getNokCountryId())
+//                .flatMap(masCountryRepository::findById)
+//                .ifPresent(patient::setNokCountry);
+//
+//        Optional.ofNullable(request.getNokRelationId())
+//                .flatMap(masRelationRepository::findById)
+//                .ifPresent(patient::setNokRelation);
+//        if (!followUp) {
+//            Optional.ofNullable(request.getPatientHospitalId())
+//                    .flatMap(masHospitalRepository::findById)
+//                    .ifPresent(patient::setPatientHospital);
+//        }
+//
+//        return patientRepository.save(patient);
+//    }
 
 }

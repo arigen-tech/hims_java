@@ -181,6 +181,12 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Transactional(readOnly = true)
     public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending(Long deptId) {
         try {
+            // Get the current login department for dynamic stock calculation
+            Long loginDeptId = authUtil.getCurrentDepartmentId();
+            if (loginDeptId == null) {
+                throw new RuntimeException("Login department id not found");
+            }
+
             // ✅ use toDeptId instead of fromDeptId
             List<StoreInternalIndentM> indents =
                     indentMRepository.findByToDeptId_IdAndStatus(deptId, "Y");
@@ -190,7 +196,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
             List<StoreInternalIndentResponse> responseList = new ArrayList<>();
             for (StoreInternalIndentM indent : indents) {
-                responseList.add(buildResponse(indent));
+                responseList.add(buildResponseWithLoginDept(indent, loginDeptId)); // Use new method
             }
 
             return ResponseUtils.createSuccessResponse(
@@ -207,7 +213,6 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             );
         }
     }
-
 
     // Common method to process both save and submit
     private ApiResponse<StoreInternalIndentResponse> processIndent(StoreInternalIndentRequest request, String status) {
@@ -449,6 +454,12 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Transactional(readOnly = true)
     public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForApproved(Long deptId) {
         try {
+            // Get current login department for dynamic stock calculation
+            Long loginDeptId = authUtil.getCurrentDepartmentId();
+            if (loginDeptId == null) {
+                throw new RuntimeException("Login department id not found");
+            }
+
             // ✅ use toDeptId instead of fromDeptId
             List<StoreInternalIndentM> indents =
                     indentMRepository.findByToDeptId_IdAndStatus(deptId, "A");
@@ -457,7 +468,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
             List<StoreInternalIndentResponse> responseList = new ArrayList<>();
             for (StoreInternalIndentM indent : indents) {
-                responseList.add(buildResponse(indent));
+                responseList.add(buildResponseWithLoginDept(indent, loginDeptId)); // Use new method
             }
 
             return ResponseUtils.createSuccessResponse(
@@ -474,7 +485,6 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             );
         }
     }
-
     // Submit approved indent for issue - updates status from A to AA
     @Override
     @Transactional
@@ -1064,6 +1074,76 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         long nextId = last.map(m -> m.getIndentMId() + 1).orElse(1L);
         return "IND-" + nextId;
     }
+
+
+    // New method that calculates available stock based on login department
+    private StoreInternalIndentResponse buildResponseWithLoginDept(StoreInternalIndentM m, Long loginDeptId) {
+        StoreInternalIndentResponse res = buildSimpleResponse(m);
+        List<StoreInternalIndentT> details = indentTRepository.findByIndentM(m);
+        List<StoreInternalIndentDetailResponse> dList = new ArrayList<>();
+
+        for (StoreInternalIndentT d : details) {
+            StoreInternalIndentDetailResponse dr = new StoreInternalIndentDetailResponse();
+            dr.setIndentTId(d.getIndentTId());
+            if (d.getItemId() != null) {
+                dr.setItemId(d.getItemId().getItemId());
+                dr.setItemName(d.getItemId().getNomenclature());
+                dr.setPvmsNo(d.getItemId().getPvmsNo());
+                dr.setUnitAuName(d.getItemId().getUnitAU().getUnitName());
+                dr.setUnitAUid(d.getItemId().getUnitAU().getUnitId());
+            }
+            dr.setRequestedQty(d.getRequestedQty());
+            dr.setApprovedQty(d.getApprovedQty());
+            dr.setIssuedQty(d.getIssuedQty());
+            dr.setReceivedQty(d.getReceivedQty());
+
+            // ✅ DYNAMIC CALCULATION: Calculate available stock based on login department
+            if (d.getItemId() != null) {
+                BigDecimal currentStock = calculateCurrentStockForDept(
+                        d.getItemId().getItemId(),
+                        loginDeptId
+                );
+                dr.setAvailableStock(currentStock);
+            } else {
+                dr.setAvailableStock(d.getAvailableStock()); // fallback to stored value
+            }
+
+            dr.setItemCost(d.getItemCost());
+            dr.setTotalCost(d.getTotalCost());
+            dr.setIssueStatus(d.getIssueStatus());
+            dr.setReason(d.getReason());
+
+            dList.add(dr);
+        }
+        res.setItems(dList);
+        return res;
+    }
+
+    // Helper method to calculate current stock for a department
+    private BigDecimal calculateCurrentStockForDept(Long itemId, Long departmentId) {
+        try {
+            LocalDate today = LocalDate.now();
+            List<StoreItemBatchStock> validBatches =
+                    storeItemBatchStockRepository.findNonExpiredBatchesForROL(
+                            itemId,
+                            departmentId,
+                            today
+                    );
+
+            // Sum all batch stocks
+            Long totalStock = validBatches.stream()
+                    .map(batch -> batch.getClosingStock() != null ? batch.getClosingStock() : 0L)
+                    .mapToLong(Long::longValue)
+                    .sum();
+
+            return BigDecimal.valueOf(totalStock);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return BigDecimal.ZERO;
+        }
+    }
+
+
 
     private StoreInternalIndentResponse buildResponse(StoreInternalIndentM m) {
         StoreInternalIndentResponse res = buildSimpleResponse(m);
