@@ -36,6 +36,11 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllDoctors());
     }
 
+    @GetMapping("/doctorsByDepartment")
+    public ApiResponse<List<UserResponse>> getDoctorsByDepartment() {
+        return userService.getDoctorsByDepartment();
+    }
+
 
     @GetMapping("/getAll/{flag}")
     @Operation(summary = "Get all users", description = "Get all users with filter by status (0: all users, 1: active users only)")

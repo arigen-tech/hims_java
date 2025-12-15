@@ -10,6 +10,8 @@ public interface UserService {
 
     ApiResponse<List<UserResponse>> getAllDoctors();
 
+    ApiResponse<List<UserResponse>> getDoctorsByDepartment();
+
     ApiResponse<List<UserResponse>> getAllUsers(int flag);
 
     ApiResponse<UserResponse> findByUser(String user);
