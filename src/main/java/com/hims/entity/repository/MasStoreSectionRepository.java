@@ -13,9 +13,12 @@ public interface MasStoreSectionRepository extends JpaRepository<MasStoreSection
 //
 //    List<MasStoreSection> findByStatusInIgnoreCase(List<String> y);
 
-    List<MasStoreSection> findByMasItemTypeId(int id);
+  //  List<MasStoreSection> findByMasItemTypeId(int id);
 
     List<MasStoreSection> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
 
     List<MasStoreSection> findByStatusIgnoreCaseOrderBySectionNameAsc(String y);
+
+
+    List<MasStoreSection> findByMasItemTypeIdOrderBySectionNameAsc(int id);
 }

@@ -10,11 +10,13 @@ import java.util.List;
 public interface MasItemCategoryRepository extends JpaRepository<MasItemCategory,Integer> {
 
 
-    List<MasItemCategory> findByStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(String status);
+  //  List<MasItemCategory> findByStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(String status);
 
     List<MasItemCategory> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> statuses);
 
-    List<MasItemCategory> findByMasStoreSectionSectionId(int id);
+   // List<MasItemCategory> findByMasStoreSectionSectionId(int id);
 
     List<MasItemCategory> findByStatusIgnoreCaseOrderByItemCategoryNameAsc(String y);
+
+    List<MasItemCategory> findByMasStoreSectionSectionIdOrderByItemCategoryNameAsc(int id);
 }

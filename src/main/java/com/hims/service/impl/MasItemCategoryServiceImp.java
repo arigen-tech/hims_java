@@ -179,10 +179,7 @@ private MasItemCategoryRepository masItemCategoryRepository;
 
     @Override
     public ApiResponse<List<MasItemCategoryResponse>> findByMasItemCategoryBbySectionId(int id) {
-        List<MasItemCategory> masItemCategory=masItemCategoryRepository.findByMasStoreSectionSectionId(id);
-
-
-
+        List<MasItemCategory> masItemCategory=masItemCategoryRepository.findByMasStoreSectionSectionIdOrderByItemCategoryNameAsc(id);
         List<MasItemCategoryResponse> responses = masItemCategory.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());

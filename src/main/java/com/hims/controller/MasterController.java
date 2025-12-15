@@ -161,6 +161,11 @@ public class MasterController {
     private MasPatientAcuityService masPatientAcuityService;
     @Autowired
     private MasOpdMedicalAdviseService masOpdMedicalAdviseService;
+    @Autowired
+    private MasSpecialtyCenterService masSpecialtyCenterService;
+    @Autowired
+    private MasDesignationService masDesignationService;
+
 
 
 
@@ -2273,5 +2278,76 @@ public class MasterController {
     @GetMapping("masOpdMedicalAdvise/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasOpdMedicalAdviseResponse>>> getAllMasOpdMedicalAdvise(@PathVariable int flag) {
         return ResponseEntity.ok( masOpdMedicalAdviseService.getAll(flag));
+    }
+
+    //    ===============================Mas Specialty Center=====================================
+
+    @GetMapping("masSpecialty/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasSpecialtyCenterResponse>>> getAllSpecialty(
+            @PathVariable int flag) {
+        return ResponseEntity.ok( masSpecialtyCenterService.getAll(flag));
+    }
+
+    @GetMapping("masSpecialty/getById/{id}")
+    public ResponseEntity<ApiResponse<MasSpecialtyCenterResponse>> getByIdSpecialty(
+            @PathVariable Long id) {
+        return ResponseEntity.ok( masSpecialtyCenterService.getById(id));
+    }
+
+    @PostMapping("masSpecialty/create")
+    public ResponseEntity<ApiResponse<MasSpecialtyCenterResponse>> createSpecialty(
+            @RequestBody MasSpecialtyCenterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body( masSpecialtyCenterService.create(request));
+    }
+
+    @PutMapping("masSpecialty/update/{id}")
+    public ResponseEntity<ApiResponse<MasSpecialtyCenterResponse>> updateSpecialty(
+            @PathVariable Long id,
+            @RequestBody MasSpecialtyCenterRequest request) {
+        return ResponseEntity.ok( masSpecialtyCenterService.update(id, request));
+    }
+
+    @PutMapping("masSpecialty/status/{id}")
+    public ResponseEntity<ApiResponse<MasSpecialtyCenterResponse>> changeStatusSpecialty(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok( masSpecialtyCenterService.changeStatus(id, status));
+    }
+
+    //    ===============================Mas Designation=====================================
+
+
+    @GetMapping("masDesignation/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasDesignationResponse>>> getAllMasDesignation(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masDesignationService.getAll(flag));
+    }
+
+    @GetMapping("masDesignation/getById/{id}")
+    public ResponseEntity<ApiResponse<MasDesignationResponse>> getByIdMasDesignation(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masDesignationService.getById(id));
+    }
+
+    @PostMapping("masDesignation/create")
+    public ResponseEntity<ApiResponse<MasDesignationResponse>> createMasDesignation(
+            @RequestBody MasDesignationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masDesignationService.create(request));
+    }
+
+    @PutMapping("masDesignation/update/{id}")
+    public ResponseEntity<ApiResponse<MasDesignationResponse>> updateMasDesignation(
+            @PathVariable Long id,
+            @RequestBody MasDesignationRequest request) {
+        return ResponseEntity.ok(masDesignationService.update(id, request));
+    }
+
+    @PutMapping("masDesignation/status/{id}")
+    public ResponseEntity<ApiResponse<MasDesignationResponse>> changeStatusMasDesignation(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masDesignationService.changeStatus(id, status));
     }
 }

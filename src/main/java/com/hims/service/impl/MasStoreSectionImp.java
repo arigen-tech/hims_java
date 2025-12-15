@@ -179,9 +179,7 @@ public class MasStoreSectionImp implements MasStoreSectionService {
 
     @Override
     public ApiResponse<List<MasStoreSectionResponse>> findStoreSectionByItemType(int id) {
-        List<MasStoreSection> masStoreSections=masStoreSectionRepository.findByMasItemTypeId(id);
-
-
+        List<MasStoreSection> masStoreSections=masStoreSectionRepository.findByMasItemTypeIdOrderBySectionNameAsc(id);
 
         List<MasStoreSectionResponse> responses = masStoreSections.stream()
                 .map(this::mapToResponse)

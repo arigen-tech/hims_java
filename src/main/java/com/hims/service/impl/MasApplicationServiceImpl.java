@@ -385,9 +385,9 @@ public class MasApplicationServiceImpl implements MasApplicationService {
 
         // First get applications based on status flag
         if (flag == 1) {
-            applications = masApplicationRepository.findByStatusIgnoreCase("Y");
+            applications = masApplicationRepository.findByStatusIgnoreCaseOrderByNameAsc("Y");
         } else if (flag == 0) {
-            applications = masApplicationRepository.findAll();
+            applications = masApplicationRepository.findAllByOrderByLastChgDateDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
