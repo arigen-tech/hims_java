@@ -160,4 +160,7 @@ WHERE v.visit_status = 'n'
             Long sessionId
     );
 
+    @Query("SELECT v FROM Visit v WHERE v.patient.id = :patientId AND DATE(v.visitDate) = DATE(CURRENT_TIMESTAMP)")
+    List<Visit> findTodayVisitsByPatientId(@Param("patientId") Long patientId);
+
 }
