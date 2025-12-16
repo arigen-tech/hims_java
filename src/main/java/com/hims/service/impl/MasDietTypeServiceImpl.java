@@ -145,9 +145,9 @@ public class MasDietTypeServiceImpl implements MasDietTypeService {
                 type.getDietTypeName(),
                 type.getDescription(),
                 type.getStatus(),
-                type.getLastUpdateDate(),
-                type.getCreatedBy(),
-                type.getLastUpdatedBy()
+                type.getLastUpdateDate()
+//                ,type.getCreatedBy(),
+//                type.getLastUpdatedBy()
         );
     }
 

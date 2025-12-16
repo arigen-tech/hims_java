@@ -138,9 +138,9 @@ public class MasDietScheduleStatusServiceImpl implements MasDietScheduleStatusSe
                 m.getStatusName(),
                 m.getDescription(),
                 m.getStatus(),
-                m.getLastUpdateDate(),
-                m.getCreatedBy(),
-                m.getLastUpdatedBy()
+                m.getLastUpdateDate()
+//               , m.getCreatedBy(),
+//                m.getLastUpdatedBy()
         );
     }
 

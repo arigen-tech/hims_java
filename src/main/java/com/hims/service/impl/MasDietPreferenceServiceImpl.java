@@ -115,9 +115,9 @@ public class MasDietPreferenceServiceImpl implements MasDietPreferenceService {
                 m.getPreferenceName(),
                 m.getDescription(),
                 m.getStatus(),
-                m.getLastUpdateDate(),
-                m.getCreatedBy(),
-                m.getLastUpdatedBy()
+                m.getLastUpdateDate()
+//                ,m.getCreatedBy(),
+//                m.getLastUpdatedBy()
         );
     }
 
