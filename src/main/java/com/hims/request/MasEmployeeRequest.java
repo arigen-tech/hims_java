@@ -33,6 +33,7 @@ public class MasEmployeeRequest {
     private Long identificationType;
     private Long employmentTypeId;
     private Long employeeTypeId;
+    private Long employeeDesignationId;
     private Long roleId;
     private Instant fromDate;
 

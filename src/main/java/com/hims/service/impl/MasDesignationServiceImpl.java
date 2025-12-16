@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MasDesignationServiceImpl  implements MasDesignationService {
@@ -54,17 +55,20 @@ public class MasDesignationServiceImpl  implements MasDesignationService {
     }
 
     @Override
-    public ApiResponse<MasDesignationResponse> getById(Long id) {
+    public ApiResponse<List<MasDesignationResponse>> getById(Long id) {
         try {
-            MasDesignation designation =
-                    designationRepo.findById(id).orElse(null);
+            List<MasDesignation> designations = designationRepo.findByUserTypeIdUserTypeIdAndStatus(id, "y");
 
-            if (designation == null)
+            if (designations.isEmpty())
                 return ResponseUtils.createNotFoundResponse(
-                        "Designation not found", 404);
+                        "No designations found for this user type", 404);
+
+            List<MasDesignationResponse> responseList = designations.stream()
+                    .map(this::toResponse)
+                    .collect(Collectors.toList());
 
             return ResponseUtils.createSuccessResponse(
-                    toResponse(designation), new TypeReference<>() {});
+                    responseList, new TypeReference<>() {});
         } catch (Exception e) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},

@@ -9,7 +9,7 @@ import java.util.List;
 public interface MasDesignationService {
     ApiResponse<List<MasDesignationResponse>> getAll(int flag);
 
-    ApiResponse<MasDesignationResponse> getById(Long id);
+    ApiResponse<List<MasDesignationResponse>> getById(Long id);
 
     ApiResponse<MasDesignationResponse> create(MasDesignationRequest request);
 

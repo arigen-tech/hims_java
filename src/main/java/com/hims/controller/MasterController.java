@@ -2325,7 +2325,7 @@ public class MasterController {
     }
 
     @GetMapping("masDesignation/getById/{id}")
-    public ResponseEntity<ApiResponse<MasDesignationResponse>> getByIdMasDesignation(
+    public ResponseEntity<ApiResponse<List<MasDesignationResponse>>> getByIdMasDesignation(
             @PathVariable Long id) {
         return ResponseEntity.ok(masDesignationService.getById(id));
     }

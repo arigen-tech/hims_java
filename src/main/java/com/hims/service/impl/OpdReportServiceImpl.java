@@ -71,7 +71,7 @@ public class OpdReportServiceImpl implements OpdReportService {
                     .toString());
 
             Connection conn = dataSource.getConnection();
-            byte[] data = reportDeclare("opd_billing_maxx", parameters, conn);
+            byte[] data = reportDeclare("opd_biling_maxx", parameters, conn);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
