@@ -6,6 +6,7 @@ import com.hims.entity.repository.BillingHeaderRepository;
 import com.hims.entity.repository.VisitRepository;
 import com.hims.service.OpdReportService;
 import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.util.JRLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,15 +35,13 @@ public class OpdReportServiceImpl implements OpdReportService {
     @Autowired
     private VisitRepository visitRepo;
 
-    private String path = "src/main/resources/Assets/arigen_health.png";
-
     @Override
     public byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception {
-        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jrxml");
+        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jasper");
         if (reportStream == null) {
             throw new FileNotFoundException("Report file not found: " + reportName);
         }
-        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(reportStream);
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }
@@ -67,7 +66,9 @@ public class OpdReportServiceImpl implements OpdReportService {
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("visit_id", billingHeader.getVisit().getId());
-            parameters.put("path", path);
+            parameters.put("path", getClass()
+                    .getResource("/Assets/arigen_health.png")
+                    .toString());
 
             Connection conn = dataSource.getConnection();
             byte[] data = reportDeclare("opd_billing_maxx", parameters, conn);

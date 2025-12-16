@@ -49,6 +49,9 @@ public class ReportController {
     @Autowired
     private LabInvestigationResultReportService resultReportService;
 
+    @Autowired
+    private OpdCaseSheetService opdCaseSheetService;
+
     @GetMapping(value = "/labReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateLabReportPdf(
             @RequestParam String billNo,
@@ -138,5 +141,11 @@ public class ReportController {
     public ResponseEntity<byte[]> generateLabInvestigationReport(
             @RequestParam Integer orderhd_id ) {
         return resultReportService.generateLabInvestigationResultReport(orderhd_id);
+    }
+
+    @GetMapping(value = "/opdCaseSheetReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> generateOpdCaseSheetReport (
+            @RequestParam Long visitId ) {
+        return opdCaseSheetService.generateOpdCaseSheetReport(visitId);
     }
 }
