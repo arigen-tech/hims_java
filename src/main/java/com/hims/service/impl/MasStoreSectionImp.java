@@ -83,7 +83,7 @@ public class MasStoreSectionImp implements MasStoreSectionService {
         if (flag == 1) {
             masStoreSections = masStoreSectionRepository.findByStatusIgnoreCaseOrderBySectionNameAsc("Y");
         } else if (flag == 0) {
-            masStoreSections = masStoreSectionRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("Y", "N"));
+            masStoreSections = masStoreSectionRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

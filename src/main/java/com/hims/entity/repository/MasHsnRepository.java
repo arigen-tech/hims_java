@@ -12,4 +12,6 @@ public interface MasHsnRepository extends JpaRepository<MasHSN,String> {
     List<MasHSN> findByStatusInIgnoreCase(List<String> y);
 
     Optional<MasHSN> findByHsnCode(MasHSN hsnCode);
+
+    List<MasHSN> findAllByOrderByStatusDescLastUpdatedDtDesc();
 }

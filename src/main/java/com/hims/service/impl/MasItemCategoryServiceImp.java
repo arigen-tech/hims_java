@@ -85,7 +85,7 @@ private MasItemCategoryRepository masItemCategoryRepository;
         if (flag == 1) {
             masItemCategory = masItemCategoryRepository.findByStatusIgnoreCaseOrderByItemCategoryNameAsc("y");
         } else if (flag == 0) {
-            masItemCategory = masItemCategoryRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("y", "n"));
+            masItemCategory = masItemCategoryRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

@@ -17,5 +17,7 @@ public interface MasBloodGroupRepository extends JpaRepository<MasBloodGroup, Lo
 
 
 
-    List<MasBloodGroup> findByStatusIgnoreCaseInOrderByLastChangedDateDescLastChangedTimeDesc(List<String> y);
+   // List<MasBloodGroup> findByStatusIgnoreCaseInOrderByLastChangedDateDescLastChangedTimeDesc(List<String> y);
+
+    List<MasBloodGroup> findAllByOrderByStatusDescLastChangedDateDescLastChangedTimeDesc();
 }

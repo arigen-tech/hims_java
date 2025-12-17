@@ -37,7 +37,7 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
             List<MasTreatmentAdvise> list;
 
             if (flag == 0) {
-                list = masTreatmentAdviseRepository.findAllByOrderByLastUpdateDateDesc();
+                list = masTreatmentAdviseRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
             } else if (flag == 1) {
                 list = masTreatmentAdviseRepository.findByStatusIgnoreCaseOrderByTreatmentAdviceAsc("y");
             } else {

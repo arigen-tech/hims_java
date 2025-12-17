@@ -16,4 +16,6 @@ public interface MasEmploymentTypeRepository extends JpaRepository<MasEmployment
     List<MasEmploymentType> findByStatusIgnoreCaseOrderByEmploymentTypeAsc(String y);
 
     List<MasEmploymentType> findByStatusInIgnoreCaseOrderByLastChangedDateDesc(List<String> y);
+
+    List<MasEmploymentType> findAllByOrderByStatusDescLastChangedDateDesc();
 }

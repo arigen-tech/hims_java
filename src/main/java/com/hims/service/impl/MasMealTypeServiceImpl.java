@@ -39,7 +39,7 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
             if (flag == 1) {
                 list = repository.findByStatusIgnoreCaseOrderByMealTypeNameAsc("y");
             } else if (flag == 0) {
-                list = repository.findAllByOrderByLastUpdateDateDesc();
+                list = repository.findAllByOrderByStatusDescLastUpdateDateDesc();
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid flag value. Use 0 or 1.", 400);

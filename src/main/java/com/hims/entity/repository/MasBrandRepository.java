@@ -14,5 +14,7 @@ public interface MasBrandRepository extends JpaRepository<MasBrand,Long> {
 
     List<MasBrand> findByStatusIgnoreCaseOrderByBrandNameAsc(String y);
 
-    List<MasBrand> findByStatusIgnoreCaseInOrderByLastUpdatedDtDesc(List<String> y);
+ //   List<MasBrand> findByStatusIgnoreCaseInOrderByLastUpdatedDtDesc(List<String> y);
+
+    List<MasBrand> findAllByOrderByStatusDescLastUpdatedDtDesc();
 }

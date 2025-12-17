@@ -8,7 +8,7 @@ import java.util.List;
 public interface MasSymptomsRepository extends JpaRepository<MasSymptoms, Long> {
     // List<MasSymptoms> findByStatus(String y);
 
-    List<MasSymptoms> findByStatusOrderByLastChgDateDesc(String y);
+    List<MasSymptoms> findByStatusOrderBySymptomsNameAsc(String y);
 
-    List<MasSymptoms> findAllByOrderBySymptomsNameAsc();
+    List<MasSymptoms> findAllByOrderByStatusDescLastChgDateDesc();
 }

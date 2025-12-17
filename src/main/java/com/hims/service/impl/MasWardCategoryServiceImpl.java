@@ -43,9 +43,9 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
             log.info("Mas Ward Category get List Start");
             List<MasWardCategory> masWardCategories;
             if (flag == 1) {
-                masWardCategories = masWardCategoryRepository.findByStatusOrderByLastUpdateDateDesc("y");
+                masWardCategories = masWardCategoryRepository.findByStatusOrderByCategoryNameAsc("y");
             } else if (flag == 0) {
-                masWardCategories = masWardCategoryRepository.findAllByOrderByCategoryNameAsc();
+                masWardCategories = masWardCategoryRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {

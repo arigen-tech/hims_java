@@ -13,4 +13,6 @@ public interface MasProcedureTypeRepository extends JpaRepository<MasProcedureTy
     List<MasProcedureType> findByStatusIgnoreCaseOrderByProcedureTypeNameAsc(String y);
 
     List<MasProcedureType> findAllByOrderByLastUpdateDateDesc();
+
+    List<MasProcedureType> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

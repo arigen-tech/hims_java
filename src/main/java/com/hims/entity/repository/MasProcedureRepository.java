@@ -55,4 +55,6 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
     Page<MasProcedure> findByStatusIgnoreCase(String status, Pageable pageable);
 
     Page<MasProcedure> findByStatusInIgnoreCase(List<String> statusList, Pageable pageable);
+
+    List<MasProcedure> findAllByOrderByStatusDescLastChangedDateDesc();
 }

@@ -39,7 +39,7 @@ public class MasDietTypeServiceImpl implements MasDietTypeService {
             if (flag == 1) {
                 list = repository.findByStatusIgnoreCaseOrderByDietTypeNameAsc("y");
             } else if (flag == 0) {
-                list = repository.findAllByOrderByLastUpdateDateDesc();
+                list = repository.findAllByOrderByStatusDescLastUpdateDateDesc();
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid flag value. Use 0 or 1.", 400);

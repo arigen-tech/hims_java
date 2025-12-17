@@ -9,5 +9,7 @@ import java.util.List;
 @Repository
 public interface MasInvestigationCategoryRepository extends JpaRepository<MasInvestigationCategory,Long> {
 
-    List<MasInvestigationCategory> findAllByOrderByLastChgDateDesc();
+  //  List<MasInvestigationCategory> findAllByOrderByLastChgDateDesc();
+
+    List<MasInvestigationCategory> findAllByOrderByCategoryNameAsc();
 }

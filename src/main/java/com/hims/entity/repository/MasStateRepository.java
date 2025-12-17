@@ -12,7 +12,9 @@ public interface MasStateRepository extends JpaRepository<MasState, Long> {
 
 
 
-    List<MasState> findByStatusIgnoreCaseInOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+
 
     List<MasState> findByStatusIgnoreCaseOrderByStateNameAsc(String y);
+
+    List<MasState> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
 }

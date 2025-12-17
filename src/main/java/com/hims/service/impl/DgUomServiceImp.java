@@ -81,7 +81,7 @@ public class DgUomServiceImp implements DgUomService {
         if(flag==1){
             dpUom=dgUomRepository.findByStatusOrderByNameAsc("y");
         }else if(flag==0){
-            dpUom=dgUomRepository.findAllByOrderByLastChgDateDescLastChgTimeDesc();
+            dpUom=dgUomRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
 
         }else{
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);

@@ -31,7 +31,7 @@ public class MasAdmissionStatusServiceImpl implements MasAdmissionStatusService 
             List<MasAdmissionStatus> list =
                     (flag == 1)
                             ? repository.findByStatusIgnoreCaseOrderByStatusCodeAsc("y")
-                            : repository.findAllByOrderByLastUpdateDateDesc();
+                            : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List<MasAdmissionStatusResponse> res =
                     list.stream().map(this::toResponse).collect(Collectors.toList());

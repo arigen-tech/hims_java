@@ -15,4 +15,6 @@ public interface MasDietPreferenceRepository extends JpaRepository<MasDietPrefer
    // List<MasDietPreference> findAllOrderByLastUpdateDateDesc();
 
     List<MasDietPreference> findAllByOrderByLastUpdateDateDesc();
+
+    List<MasDietPreference> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

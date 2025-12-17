@@ -141,7 +141,7 @@ public class MasRoomCategoryServiceImpl implements MasRoomCategoryService {
             List<MasRoomCategory> list;
 
             if (flag == 0) {
-                list = masRoomCategoryRepo.findByStatusIgnoreCaseInOrderByLastUpdatedDateDesc(List.of("y", "n"));
+                list = masRoomCategoryRepo.findAllByOrderByStatusDescLastUpdatedDateDesc();
             } else if (flag == 1) {
                 list = masRoomCategoryRepo.findByStatusIgnoreCaseOrderByRoomCategoryNameAsc("y");
             } else {

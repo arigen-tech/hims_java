@@ -48,7 +48,7 @@ public class MasBrandServiceImp implements MasBrandService {
             if (flag == 1) {
                 brands = masBrandRepository.findByStatusIgnoreCaseOrderByBrandNameAsc("y");
             } else if (flag == 0) {
-                brands = masBrandRepository.findByStatusIgnoreCaseInOrderByLastUpdatedDtDesc(List.of("y", "n"));
+                brands = masBrandRepository.findAllByOrderByStatusDescLastUpdatedDtDesc();
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                 }, "Invalid flag", 400);

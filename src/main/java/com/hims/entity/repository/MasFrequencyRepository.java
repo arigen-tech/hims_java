@@ -21,5 +21,7 @@ public interface MasFrequencyRepository extends JpaRepository<MasFrequency,Long>
     List<MasFrequency> findByStatusIgnoreCaseOrderByFrequencyNameAsc(String y);
 
     List<MasFrequency> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+
+    List<MasFrequency> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
 }
 

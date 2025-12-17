@@ -10,7 +10,9 @@ import java.util.List;
 public interface DgMasSampleRepository extends JpaRepository<DgMasSample,Long> {
 
  //   List<DgMasSample> findByStatusOrderByLastChgDateDesc(String status);
-    List<DgMasSample> findByStatusInOrderByLastChgDateDesc(List<String> statues);
+  //  List<DgMasSample> findByStatusInOrderByLastChgDateDesc(List<String> statues);
 
     List<DgMasSample> findByStatusOrderBySampleCodeAsc(String y);
+
+    List<DgMasSample> findAllByOrderByStatusDescLastChgDateDesc();
 }

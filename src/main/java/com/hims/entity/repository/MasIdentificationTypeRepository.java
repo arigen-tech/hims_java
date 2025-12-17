@@ -13,5 +13,7 @@ public interface MasIdentificationTypeRepository extends JpaRepository<MasIdenti
 
     List<MasIdentificationType> findByStatusIgnoreCaseOrderByIdentificationNameAsc(String y);
 
-    List<MasIdentificationType> findByStatusInIgnoreCaseOrderByLastChangedDateDesc(List<String> y);
+   // List<MasIdentificationType> findByStatusInIgnoreCaseOrderByLastChangedDateDesc(List<String> y);
+
+    List<MasIdentificationType> findAllByOrderByStatusDescLastChangedDateDesc();
 }

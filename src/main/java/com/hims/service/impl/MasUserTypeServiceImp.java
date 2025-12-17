@@ -26,7 +26,7 @@ public class MasUserTypeServiceImp implements MasUserTypeService {
         if (flag == 1) {
             masUserTypes= masUserTypeRepository.findByStatusIgnoreCaseOrderByUserTypeNameAsc("Y");
         } else if (flag == 0) {
-            masUserTypes = masUserTypeRepository.findByStatusInIgnoreCaseOrderByLastChgDateDesc(List.of("Y", "N"));
+            masUserTypes = masUserTypeRepository.findAllByOrderByStatusDescLastChgDateDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

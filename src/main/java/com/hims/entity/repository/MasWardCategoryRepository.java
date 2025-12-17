@@ -13,5 +13,11 @@ public interface MasWardCategoryRepository extends JpaRepository<MasWardCategory
 
     List<MasWardCategory> findByStatusOrderByLastUpdateDateDesc(String y);
 
-    List<MasWardCategory> findAllByOrderByCategoryNameAsc();
+//    List<MasWardCategory> findAllByOrderByCategoryNameAsc();
+//
+//    List<MasWardCategory> findAllByOrderByStatusDescCategoryNameAsc();
+
+    List<MasWardCategory> findByStatusOrderByCategoryNameAsc(String y);
+
+    List<MasWardCategory> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

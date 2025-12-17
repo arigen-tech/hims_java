@@ -15,4 +15,6 @@ public interface MasUserTypeRepository extends JpaRepository<MasUserType, Long> 
     List<MasUserType> findByStatusIgnoreCaseOrderByUserTypeNameAsc(String y);
 
     List<MasUserType> findByStatusInIgnoreCaseOrderByLastChgDateDesc(List<String> y);
+
+    List<MasUserType> findAllByOrderByStatusDescLastChgDateDesc();
 }

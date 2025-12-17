@@ -12,5 +12,7 @@ public interface MasReligionRepository extends JpaRepository<MasReligion, Long> 
     List<MasReligion> findByStatusIgnoreCaseOrderByNameAsc(String y);
 
 
-    List<MasReligion> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
+   // List<MasReligion> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
+
+    List<MasReligion> findAllByOrderByStatusDescLastChgDateDesc();
 }

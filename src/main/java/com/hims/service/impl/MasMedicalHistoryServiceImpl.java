@@ -32,7 +32,7 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
         try {
             List<MasMedicalHistory> masWards;
             if(flag==0){
-                masWards= masMedicalHistoryRepository.findAllByOrderByLastUpdateDateDesc();
+                masWards= masMedicalHistoryRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
             } else if (flag==1) {
                 masWards= masMedicalHistoryRepository.findByStatusIgnoreCaseOrderByMedicalHistoryNameAsc("y");
             }else{

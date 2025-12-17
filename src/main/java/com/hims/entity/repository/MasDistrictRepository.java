@@ -18,4 +18,8 @@ public interface MasDistrictRepository extends JpaRepository<MasDistrict, Long> 
   //  Http2Connection findByStateIdAndStatusIgnoreCaseOrderByDistrictName(Long stateId, String y);
   List<MasDistrict> findByStateIdAndStatusIgnoreCaseOrderByDistrictName(
           Long stateId, String status);
+
+  List<MasDistrict> findByStateIdAndStatusIgnoreCaseOrderByDistrictNameAsc(Long stateId, String y);
+
+    List<MasDistrict> findAllByOrderByStatusDescLastChgDateDesc();
 }

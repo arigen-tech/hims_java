@@ -84,7 +84,7 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
             if(flag==1){
                 dpUom=dgMasSampleRepository.findByStatusOrderBySampleCodeAsc("y");
             }else if(flag==0){
-                dpUom=dgMasSampleRepository.findByStatusInOrderByLastChgDateDesc(List.of("y","n"));
+                dpUom=dgMasSampleRepository.findAllByOrderByStatusDescLastChgDateDesc();
             }else{
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
             }

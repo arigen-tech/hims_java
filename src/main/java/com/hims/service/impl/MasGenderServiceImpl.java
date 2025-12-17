@@ -44,7 +44,7 @@ public class MasGenderServiceImpl implements MasGenderService {
         if (flag == 1) {
             genders = masGenderRepository.findByStatusIgnoreCaseOrderByGenderNameAsc("Y");
         } else if (flag == 0) {
-            genders = masGenderRepository.findByStatusIgnoreCaseInOrderByLastChgDtDesc(List.of("Y", "N"));
+            genders = masGenderRepository.findAllByOrderByStatusDescLastChgDtDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

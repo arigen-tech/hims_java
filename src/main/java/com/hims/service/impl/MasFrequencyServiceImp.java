@@ -156,7 +156,7 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
         if (flag == 1) {
             masFrequency= masFrequencyRepository.findByStatusIgnoreCaseOrderByFrequencyNameAsc("Y");
         } else if (flag == 0) {
-            masFrequency= masFrequencyRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("Y", "N"));
+            masFrequency= masFrequencyRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

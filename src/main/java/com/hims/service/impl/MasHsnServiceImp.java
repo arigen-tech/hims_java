@@ -51,7 +51,7 @@ public class MasHsnServiceImp implements MasHsnService {
         if (flag == 1) {
             masHSN = masHsnRepository.findByStatusIgnoreCase("y");
         } else if (flag == 0) {
-            masHSN = masHsnRepository.findByStatusInIgnoreCase(List.of("y", "n"));
+            masHSN = masHsnRepository.findAllByOrderByStatusDescLastUpdatedDtDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

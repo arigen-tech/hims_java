@@ -10,5 +10,7 @@ public interface MasManufacturerRepository extends JpaRepository<MasManufacturer
 
     List<MasManufacturer> findByStatusIgnoreCaseOrderByManufacturerNameAsc(String y);
 
-    List<MasManufacturer> findByStatusIgnoreCaseInOrderByLastUpdatedDtDesc(List<String> y);
+  //  List<MasManufacturer> findByStatusIgnoreCaseInOrderByLastUpdatedDtDesc(List<String> y);
+
+    List<MasManufacturer> findAllByOrderByStatusDescLastUpdatedDtDesc();
 }

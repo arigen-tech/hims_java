@@ -11,5 +11,7 @@ public interface MasDepartmentTypeRepository extends JpaRepository<MasDepartment
 
     List<MasDepartmentType> findByStatusIgnoreCaseOrderByDepartmentTypeNameAsc(String y);
 
-    List<MasDepartmentType> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
+  //  List<MasDepartmentType> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
+
+    List<MasDepartmentType> findAllByOrderByStatusDescLastChgDateDesc();
 }

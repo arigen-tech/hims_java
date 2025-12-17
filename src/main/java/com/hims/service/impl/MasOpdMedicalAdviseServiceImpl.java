@@ -25,7 +25,7 @@ public class MasOpdMedicalAdviseServiceImpl implements MasOpdMedicalAdviseServic
             List<MasOpdMedicalAdvise> list =
                     (flag == 1)
                             ? masOpdMedicalAdviseRepository.findByStatusIgnoreCaseOrderByMedicalAdviseNameAsc("y")
-                            : masOpdMedicalAdviseRepository.findAllByOrderByLastUpdateDateDesc();
+                            : masOpdMedicalAdviseRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List< MasOpdMedicalAdviseResponse> response =
                     list.stream().map(this::toResponse).collect(Collectors.toList());

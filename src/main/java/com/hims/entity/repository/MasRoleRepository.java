@@ -11,4 +11,6 @@ public interface MasRoleRepository extends JpaRepository<MasRole, Long> {
     Optional<MasRole> findByRoleDesc(String doctor);
     List<MasRole> findByStatusIgnoreCase(String status);
     List<MasRole> findByStatusInIgnoreCase(List<String> statuses);
+
+    List<MasRole> findAllByOrderByStatusDescUpdatedOnDesc();
 }

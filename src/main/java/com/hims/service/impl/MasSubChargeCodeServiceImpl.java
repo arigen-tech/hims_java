@@ -186,7 +186,7 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
         if (flag == 1) {
             subCode = subRepo.findByStatusOrderBySubNameAsc("y");
         } else if (flag == 0) {
-            subCode = subRepo.findAllByOrderByLastChgDateDescLastChgTimeDesc();
+            subCode = subRepo.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

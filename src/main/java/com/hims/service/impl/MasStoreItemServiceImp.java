@@ -223,7 +223,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         if (flag == 1) {
             masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseOrderByNomenclatureAsc("y");
         } else if (flag == 0) {
-            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseInOrderByLastChgDateDesc(List.of("y", "n"));
+            masStoreItems = masStoreItemRepository.findAllByOrderByStatusDescLastChgDateDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

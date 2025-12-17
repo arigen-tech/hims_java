@@ -23,7 +23,13 @@ public interface MasApplicationRepository extends JpaRepository<MasApplication, 
 
     List<MasApplication> findByStatusIgnoreCaseOrderByNameAsc(String y);
 
-    List<MasApplication> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
+   // List<MasApplication> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
 
     List<MasApplication> findAllByOrderByLastChgDateDesc();
+
+
+
+
+
+    List<MasApplication> findAllByOrderByStatusDescLastChgDateDesc();
 }

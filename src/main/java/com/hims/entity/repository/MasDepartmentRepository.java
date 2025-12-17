@@ -16,7 +16,7 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
 
     List<MasDepartment> findByStatusIgnoreCaseOrderByDepartmentNameAsc(String y);
 
-    List<MasDepartment> findByStatusIgnoreCaseInOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+
 
     @Query("""
         SELECT m
@@ -29,4 +29,6 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
             @Param("departmentTypeId") Long departmentTypeId,
             @Param("wardCategoryId") Long wardCategoryId
     );
+
+    List<MasDepartment> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
 }

@@ -83,7 +83,7 @@ public class MasItemClassServiceImp implements MasItemClassService {
         if (flag == 1) {
             masItemClass = masItemClassRepository.findByStatusIgnoreCaseOrderByItemClassNameAsc("y");
         } else if (flag == 0) {
-            masItemClass = masItemClassRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("y", "n"));
+            masItemClass = masItemClassRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

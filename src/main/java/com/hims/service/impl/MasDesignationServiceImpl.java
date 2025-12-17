@@ -40,7 +40,7 @@ public class MasDesignationServiceImpl  implements MasDesignationService {
                             ? designationRepo
                             .findByStatusIgnoreCaseOrderByDesignationNameAsc("y")
                             : designationRepo
-                            .findAllByOrderByLastUpdateDateDesc();
+                            .findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List<MasDesignationResponse> response =
                     list.stream().map(this::toResponse).toList();

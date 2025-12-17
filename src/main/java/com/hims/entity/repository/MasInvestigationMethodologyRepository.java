@@ -10,4 +10,6 @@ import java.util.List;
 public interface MasInvestigationMethodologyRepository extends JpaRepository<MasInvestigationMethodology,Long> {
 
     List<MasInvestigationMethodology> findAllByOrderByLastChgDateDesc();
+
+    List<MasInvestigationMethodology> findAllByOrderByMethodNameAsc();
 }

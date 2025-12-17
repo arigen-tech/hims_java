@@ -18,4 +18,6 @@ public interface MasGenderRepository extends JpaRepository<MasGender, Long> {
     List<MasGender> findByStatusIgnoreCaseOrderByGenderNameAsc(String y);
 
     List<MasGender> findByStatusIgnoreCaseInOrderByLastChgDtDesc(List<String> y);
+
+    List<MasGender> findAllByOrderByStatusDescLastChgDtDesc();
 }
