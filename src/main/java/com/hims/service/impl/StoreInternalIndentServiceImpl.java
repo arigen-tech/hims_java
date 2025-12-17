@@ -853,7 +853,6 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Override
     @Transactional
     public ApiResponse<StoreInternalIndentResponse> issueIndent(StoreInternalIssueRequest request) {
-
         try {
             // === Validate ===
             if (request.getIndentMId() == null) {
@@ -882,7 +881,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             issueM.setIssueDate(LocalDateTime.now());
             issueM.setIssuedDate(LocalDateTime.now());
             issueM.setToDeptId(indentM.getToDeptId());
-            issueM.setFromStoreId(indentM.getFromDeptId());  // MasDepartment
+            issueM.setFromStoreId(indentM.getFromDeptId());
             issueM.setHospitalId(indentM.getToDeptId().getHospital());
             issueM.setIndentMId(indentM);
             issueM.setIssuedBy(userName);
@@ -890,11 +889,13 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
             issueM = storeIssueMRepository.save(issueM);
 
+            // Track issued items
+            boolean anyItemIssued = false;
+
             // ============================================================
             // === PROCESS EACH ITEM =====================================
             // ============================================================
             for (StoreInternalIssueDetailRequest itemReq : request.getItems()) {
-
                 StoreInternalIndentT indentT = indentTRepository.findById(itemReq.getIndentTId())
                         .orElseThrow(() -> new RuntimeException("Indent detail not found: " + itemReq.getIndentTId()));
 
@@ -905,11 +906,48 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 BigDecimal approved = nvl(indentT.getApprovedQty());
                 BigDecimal prevIssued = nvl(indentT.getIssuedQty());
                 BigDecimal newIssue = nvl(itemReq.getIssuedQty());
-                BigDecimal availableStock = nvl(itemReq.getAvailablestock());
 
-                if (newIssue.compareTo(BigDecimal.ZERO) <= 0) continue;
+                // === FIX: Calculate available stock from database (NOT from frontend) ===
+                List<StoreItemBatchStock> allBatches =
+                        batchStockRepository.findByDepartmentIdAndItemId(indentM.getToDeptId(), indentT.getItemId());
 
+                BigDecimal actualAvailableStock = BigDecimal.ZERO;
+                if (allBatches != null && !allBatches.isEmpty()) {
+                    actualAvailableStock = allBatches.stream()
+                            .map(b -> nvl(BigDecimal.valueOf(b.getClosingStock())))
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                }
+
+                // === ITEMS NOT ISSUED (qtyIssued = 0) ===
+                if (newIssue.compareTo(BigDecimal.ZERO) <= 0) {
+                    // Item not issued - update with actual available stock
+                    indentT.setAvailableStock(actualAvailableStock);
+                    indentT.setIssueStatus("N"); // Not issued
+                    indentTRepository.save(indentT);
+                    continue; // Skip to next item
+                }
+
+                // === ITEMS TO BE ISSUED (qtyIssued > 0) ===
                 BigDecimal remainingApproved = approved.subtract(prevIssued);
+
+                // Rule 1: Must issue full remaining quantity if issuing
+                if (newIssue.compareTo(remainingApproved) != 0) {
+                    throw new RuntimeException("Must issue full remaining quantity for item " +
+                            indentT.getItemId().getNomenclature() + ". Remaining: " + remainingApproved +
+                            ", Trying to issue: " + newIssue);
+                }
+
+                // Rule 2: Check stock availability for full issue (using actual stock)
+                if (actualAvailableStock.compareTo(remainingApproved) < 0) {
+                    // Insufficient stock for full issue - don't issue this item
+                    // But still update available stock
+                    indentT.setAvailableStock(actualAvailableStock);
+                    indentT.setIssueStatus("N");
+                    indentTRepository.save(indentT);
+                    continue;
+                }
+
+                // Rule 3: Should not exceed approved
                 if (newIssue.compareTo(remainingApproved) > 0) {
                     throw new RuntimeException("Issuing more than approved quantity");
                 }
@@ -928,10 +966,9 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 long remainingQty = requiredQty;
 
                 // ============================================================
-                // === ISSUE STOCK FIFO + CREATE ISSUE_T ======================
+                // === ISSUE STOCK FEFO + CREATE ISSUE_T ======================
                 // ============================================================
                 for (StoreItemBatchStock batch : batchList) {
-
                     if (remainingQty <= 0) break;
 
                     long closing = batch.getClosingStock() == null ? 0L : batch.getClosingStock();
@@ -955,11 +992,11 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     issueT.setIssuedQty(BigDecimal.valueOf(qtyToIssue));
                     issueT.setBatchNo(batch.getBatchNo());
                     issueT.setExpiryDate(batch.getExpiryDate());
+                    issueT.setDom(batch.getManufactureDate());
+                    issueT.setManufacturername(batch.getManufacturerId().getManufacturerName());
+                    issueT.setBrandname(batch.getBrandId().getBrandName());
                     issueT.setStatus("I");
-
-                    // === Default UnitPrice & MRP (FIXED) ===
-                    issueT.setUnitPrice(nvl(batch.getMrpPerUnit()));  // default 0
-//                    issueT.setMrp(nvl(batch.getMrp()));              // default 0
+                    issueT.setUnitPrice(nvl(batch.getMrpPerUnit()));
 
                     storeIssueTRepository.save(issueT);
 
@@ -975,49 +1012,38 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 }
 
                 if (remainingQty > 0) {
-                    throw new RuntimeException("Insufficient stock. Required: " + requiredQty);
+                    throw new RuntimeException("Insufficient stock for item " +
+                            indentT.getItemId().getNomenclature() + ". Required: " + requiredQty);
                 }
 
                 // === Update issued qty ===
                 BigDecimal newTotalIssued = prevIssued.add(newIssue);
                 indentT.setIssuedQty(newTotalIssued);
-                indentT.setAvailableStock(availableStock);
 
-                // === Set issue status ===
-                if (approved.compareTo(BigDecimal.ZERO) == 0) indentT.setIssueStatus("N");
-                else if (newTotalIssued.compareTo(approved) == 0) indentT.setIssueStatus("Y");
-                else if (newTotalIssued.compareTo(BigDecimal.ZERO) > 0) indentT.setIssueStatus("P");
-                else indentT.setIssueStatus("N");
+                // === FIX: Calculate NEW available stock after issuance ===
+                BigDecimal newAvailableStock = actualAvailableStock.subtract(newIssue);
+                indentT.setAvailableStock(newAvailableStock);
+
+                // === Set item issue status ===
+                if (approved.compareTo(BigDecimal.ZERO) == 0) {
+                    indentT.setIssueStatus("N"); // Not applicable
+                } else {
+                    indentT.setIssueStatus("Y"); // Yes, fully issued
+                }
 
                 indentTRepository.save(indentT);
+                anyItemIssued = true;
+            }
+
+            if (!anyItemIssued) {
+                throw new RuntimeException("No items were issued");
             }
 
             // ============================================================
             // === UPDATE MASTER STATUS ===================================
             // ============================================================
-            boolean fullyIssued = true;
-            boolean partiallyIssued = false;
-            boolean nothingIssued = true;
-
-            for (StoreInternalIndentT t : indentTRepository.findByIndentM(indentM)) {
-                BigDecimal approved = nvl(t.getApprovedQty());
-                BigDecimal issued = nvl(t.getIssuedQty());
-
-                if (issued.compareTo(BigDecimal.ZERO) > 0) nothingIssued = false;
-
-                if (approved.compareTo(BigDecimal.ZERO) > 0) {
-                    if (issued.compareTo(approved) < 0) {
-                        fullyIssued = false;
-                        if (issued.compareTo(BigDecimal.ZERO) > 0) partiallyIssued = true;
-                    }
-                } else {
-                    fullyIssued = false;
-                }
-            }
-
-            if (fullyIssued) indentM.setStatus("FI");
-            else if (partiallyIssued) indentM.setStatus("PI");
-            else indentM.setStatus("AA");
+            // ALWAYS set to "FI" if any items were issued
+            indentM.setStatus("FI"); // Fully Issued
 
             indentM.setIssuedBy(userName);
             indentM.setIssuedDate(LocalDateTime.now());
@@ -1041,9 +1067,11 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         }
     }
 
-    private BigDecimal nvl(BigDecimal v) {
-        return v == null ? BigDecimal.ZERO : v;
+    // Helper method
+    private BigDecimal nvl(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
+
 
 
 

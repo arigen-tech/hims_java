@@ -56,6 +56,15 @@ public class StoreIssueT {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
+    @Column(name = "dom")
+    private LocalDate dom;
+
+    @Column(name = "manufacturer_name")
+    private String manufacturername;
+
+    @Column(name = "brand_name")
+    private String brandname;
+
     @Column(name = "status", length = 2)
     private String status;
 }
