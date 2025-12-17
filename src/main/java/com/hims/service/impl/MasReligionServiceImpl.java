@@ -49,9 +49,9 @@ public class MasReligionServiceImpl implements MasReligionService {
         List<MasReligion> religions;
 
         if (flag == 1) {
-            religions = masReligionRepository.findByStatusIgnoreCase("Y");
+            religions = masReligionRepository.findByStatusIgnoreCaseOrderByNameAsc("Y");
         } else if (flag == 0) {
-            religions = masReligionRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            religions = masReligionRepository.findByStatusIgnoreCaseInOrderByLastChgDateDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

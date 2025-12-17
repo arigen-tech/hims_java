@@ -48,10 +48,10 @@ public class MasRelationServiceImpl implements MasRelationService {
 
         if (flag == 1) {
             // Fetch only records with status 'Y'
-            relations = masRelationRepository.findByStatusIgnoreCase("Y");
+            relations = masRelationRepository.findByStatusIgnoreCaseOrderByRelationNameAsc("Y");
         } else if (flag == 0) {
             // Fetch all records with status 'Y' or 'N'
-            relations = masRelationRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            relations = masRelationRepository.findByStatusInIgnoreCaseOrderByLastChgDateDesc(List.of("Y", "N"));
         } else {
             // Handle invalid flag values
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);

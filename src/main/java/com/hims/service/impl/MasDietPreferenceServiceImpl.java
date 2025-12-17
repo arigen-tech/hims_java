@@ -29,7 +29,7 @@ public class MasDietPreferenceServiceImpl implements MasDietPreferenceService {
     @Override
     public ApiResponse<List<MasDietPreferenceResponse>> getAll(int flag) {
         List<MasDietPreference> list =
-                (flag == 1) ? repository.findByStatusIgnoreCase("Y") : repository.findAll();
+                (flag == 1) ? repository.findByStatusIgnoreCaseOrderByPreferenceNameAsc("Y") : repository.findAllByOrderByLastUpdateDateDesc();
 
         List<MasDietPreferenceResponse> response =
                 list.stream().map(this::toResponse).collect(Collectors.toList());
@@ -115,9 +115,9 @@ public class MasDietPreferenceServiceImpl implements MasDietPreferenceService {
                 m.getPreferenceName(),
                 m.getDescription(),
                 m.getStatus(),
-                m.getLastUpdateDate(),
-                m.getCreatedBy(),
-                m.getLastUpdatedBy()
+                m.getLastUpdateDate()
+//                ,m.getCreatedBy(),
+//                m.getLastUpdatedBy()
         );
     }
 

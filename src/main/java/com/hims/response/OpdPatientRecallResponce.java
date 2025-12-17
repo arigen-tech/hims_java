@@ -1,7 +1,6 @@
 package com.hims.response;
 
 
-import com.hims.entity.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -67,6 +66,34 @@ public class OpdPatientRecallResponce {
     private NewDPatientPrescriptionHd patientPrescriptionHd;
     private List<NewDPatientPrescriptionDt> patientPrescriptionDts;
 
+
+    // ============================== final medicine advice =============================
+    private String doctorRemarks;
+
+    // ========================= Admission Advice =====================================
+    private String admissionFlag;
+    private Instant admissionAdvisedDate;
+    private String admissionRemarks;
+    private Long admissionCareLevel;
+    private Long admissionWardCategory;
+    private Long admissionWard;
+    private String admissionCareLevelName;
+    private String admissionWardCategoryName;
+    private String admissionWardName;
+    private String admissionPriority;
+    private Integer vacantBed;
+    private Integer occupiedBed;
+
+    //  =========================== referral ==============================
+    private String referralFlag;
+
+
+    // =================== follow up =========
+
+    private String followUpFlag;
+    private Instant followUpDate;
+    private Long followUpDays;
+
     //=========================== DgOrderHd =====================
     @Getter
     @Setter
@@ -105,6 +132,8 @@ public class OpdPatientRecallResponce {
         private String status;
         private LocalDateTime prescriptionDate;
     }
+
+    private String treatmentAdvice;
     //========================== PatientPrescriptionDt ===========================
     @Getter
     @Setter
@@ -114,7 +143,7 @@ public class OpdPatientRecallResponce {
         private String status;
         private String dosage;
         private String frequency;
-        private Long frequencyId;
+        private String frequencyId;
         private String depUnit;
         private Integer days;
         private BigDecimal total;

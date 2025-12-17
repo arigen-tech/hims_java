@@ -8,4 +8,7 @@ public interface MasTemplateRepository extends JpaRepository<MasTemplate, Long> 
     List<MasTemplate> findByStatusIgnoreCase(String status);
     List<MasTemplate> findByStatusInIgnoreCase(List<String> statuses);
 
+    List<MasTemplate> findByStatusIgnoreCaseOrderByTemplateNameAsc(String y);
+
+    List<MasTemplate> findByStatusInIgnoreCaseOrderByLastChgDateDesc(List<String> y);
 }

@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface DischargeIcdCodeRepository extends JpaRepository<DischargeIcdCode, Long> {
     List<DischargeIcdCode> findByOpdPatientDetailsIdAndVisitId(Long patientId,Long visitId);
+
+    void deleteByOpdPatientDetailsId(Long opdPatientDetailsId);
 }

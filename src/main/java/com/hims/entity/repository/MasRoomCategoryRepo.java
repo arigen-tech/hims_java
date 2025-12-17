@@ -10,4 +10,6 @@ public interface MasRoomCategoryRepo extends JpaRepository<MasRoomCategory,Long>
     List<MasRoomCategory> findByStatusIgnoreCaseOrderByLastUpdatedDateDesc(String status);
 
     List<MasRoomCategory> findByStatusIgnoreCaseInOrderByLastUpdatedDateDesc(List<String> statuses);
+
+    List<MasRoomCategory> findByStatusIgnoreCaseOrderByRoomCategoryNameAsc(String y);
 }

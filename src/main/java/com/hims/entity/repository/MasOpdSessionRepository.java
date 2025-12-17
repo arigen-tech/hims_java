@@ -9,4 +9,7 @@ public interface MasOpdSessionRepository extends JpaRepository<MasOpdSession, Lo
     List<MasOpdSession> findByStatusIgnoreCase(String status);
     List<MasOpdSession> findByStatusInIgnoreCase(List<String> statuses);
 
+    List<MasOpdSession> findByStatusIgnoreCaseOrderBySessionNameAsc(String y);
+
+    List<MasOpdSession> findByStatusInIgnoreCaseOrderByLastChgDtDesc(List<String> y);
 }

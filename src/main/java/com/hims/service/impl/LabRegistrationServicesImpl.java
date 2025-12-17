@@ -635,8 +635,10 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
 
         // Fetch only records matching both filters in DB
+//        List<DgOrderHd> orderHdList = labHdRepository
+//                .findPendingOrdersByDateRange(paymentStatuses, orderStatusFilter,startDate,endDate);
         List<DgOrderHd> orderHdList = labHdRepository
-                .findPendingOrdersByDateRange(paymentStatuses, orderStatusFilter,startDate,endDate);
+                .findPendingOrdersByDateRange(paymentStatuses, orderStatusFilter, startDate, endDate);
 
         List<PendingSampleResponse> responseList = new ArrayList<>();
 

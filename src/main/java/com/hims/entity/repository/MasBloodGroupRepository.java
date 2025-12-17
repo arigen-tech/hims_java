@@ -11,4 +11,11 @@ public interface MasBloodGroupRepository extends JpaRepository<MasBloodGroup, Lo
 
     List<MasBloodGroup> findByStatusInIgnoreCase(List<String> statuses);
 
+    List<MasBloodGroup> findByStatusIgnoreCaseOrderByBloodGroupNameAsc(String y);
+
+   // List<MasBloodGroup> findByStatusIgnoreCaseInOrderByLastChangedDateDesc(List<String> y);
+
+
+
+    List<MasBloodGroup> findByStatusIgnoreCaseInOrderByLastChangedDateDescLastChangedTimeDesc(List<String> y);
 }

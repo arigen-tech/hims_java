@@ -17,14 +17,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -224,13 +221,52 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
         List<MasStoreItem> masStoreItems;
         if (flag == 1) {
-            masStoreItems = masStoreItemRepository.findByStatusIgnoreCase("y");
+            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseOrderByNomenclatureAsc("y");
         } else if (flag == 0) {
-            masStoreItems = masStoreItemRepository.findByStatusInIgnoreCase(List.of("y", "n"));
+            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseInOrderByLastChgDateDesc(List.of("y", "n"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);
         }
+
+        // ✅ Fetch all stocks in one query
+        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemIds(masStoreItems);
+
+        // Group stocks by itemId
+        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
+                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
+
+        long convertStart = System.currentTimeMillis();
+
+        List<MasStoreItemResponse> responses = masStoreItems.stream()
+                .map(item -> convertToResponsewithAllStock(item, stockMap))
+                .collect(Collectors.toList());
+
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
+        });
+    }
+
+
+    @Override
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithotStock(int flag) {
+
+        List<MasStoreItem> masStoreItems;
+        if (flag == 1) {
+            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc("y");
+        } else if (flag == 0) {
+            masStoreItems = masStoreItemRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("y", "n"));
+        } else {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        // ✅ Fetch all stocks in one query
+        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemIds(masStoreItems);
+
+        // Group stocks by itemId
+        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
+                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
 
         List<MasStoreItemResponse> responses = masStoreItems.stream()
                 .map(this::convertToResponse)
@@ -239,6 +275,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
         });
     }
+
 
     @Override
     public ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request) {
@@ -548,6 +585,56 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
         response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
         response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
+
+        return response;
+    }
+
+    private MasStoreItemResponse convertToResponsewithAllStock(MasStoreItem item, Map<Long, List<StoreItemBatchStock>> stockMap) {
+        MasStoreItemResponse response = new MasStoreItemResponse();
+        response.setItemId(item.getItemId());
+        response.setNomenclature(item.getNomenclature());
+        response.setPvmsNo(item.getPvmsNo());
+        response.setStatus(item.getStatus());
+        response.setReOrderLevelStore(item.getReOrderLevelStore());
+        response.setReOrderLevelDispensary(item.getReOrderLevelDispensary());
+        response.setLastChgDate(item.getLastChgDate());
+        response.setLastChgBy(item.getLastChgBy());
+        response.setLastChgTime(item.getLastChgTime());
+        response.setAdispQty(item.getAdispQty());
+
+        response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
+        response.setGroupName(item.getGroupId() != null ? item.getGroupId().getGroupName() : null);
+
+
+        response.setItemClassId(item.getItemClassId() != null ? item.getItemClassId().getItemClassId() : null);
+        response.setItemClassName(item.getItemClassId() != null ? item.getItemClassId().getItemClassName() : null);
+
+
+        response.setItemTypeId(item.getItemTypeId() != null ? item.getItemTypeId().getId() : null);
+        response.setItemTypeName(item.getItemTypeId() != null ? item.getItemTypeId().getName() : null);
+
+        response.setSectionId(item.getSectionId() != null ? item.getSectionId().getSectionId() : null);
+        response.setSectionName(item.getSectionId() != null ? item.getSectionId().getSectionName() : null);
+
+        response.setDispUnit(item.getDispUnit() != null ? item.getDispUnit().getUnitId() : null);
+        response.setDispUnitName(item.getDispUnit() != null ? item.getDispUnit().getUnitName() : null);
+
+        response.setUnitAU(item.getUnitAU() != null ? item.getUnitAU().getUnitId() : null);
+        response.setUnitAuName(item.getUnitAU() != null ? item.getUnitAU().getUnitName() : null);
+
+        response.setHsnCode(item.getHsnCode() != null ? item.getHsnCode().getHsnCode() : null);
+        response.setHsnGstPercent(item.getHsnCode() != null ? item.getHsnCode().getGstRate() : null);
+
+        response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
+        response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
+
+
+        Long avlableStokes = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), deptIdStore, item.getItemId(), hospDefinedstoreDays);
+        response.setStorestocks(avlableStokes);
+        Long dispstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), dispdeptId, item.getItemId(), hospDefineddispDays);
+        response.setDispstocks(dispstocks);
+        Long wardstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), warddeptId, item.getItemId(), hospDefinedwardDays);
+        response.setWardstocks(wardstocks );
 
         return response;
     }

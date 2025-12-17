@@ -9,4 +9,10 @@ import java.util.List;
 @Repository
 public interface MasMealTypeRepository extends JpaRepository<MasMealType,Long> {
     List<MasMealType> findByStatusIgnoreCase(String y);
+
+    List<MasMealType> findByStatusIgnoreCaseOrderByMealTypeNameAsc(String y);
+
+   // List<MasMealType> findAllOrderByLastUpdateDateDesc();
+
+    List<MasMealType> findAllByOrderByLastUpdateDateDesc();
 }

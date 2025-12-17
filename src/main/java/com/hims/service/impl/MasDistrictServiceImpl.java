@@ -151,9 +151,9 @@ public class MasDistrictServiceImpl implements MasDistrictService {
         List<MasDistrict> districts;
 
         if (flag == 1) {
-            districts = masDistrictRepository.findByStatusIgnoreCase("Y");
+            districts = masDistrictRepository.findByStatusIgnoreCaseOrderByDistrictNameAsc("Y");
         } else if (flag == 0) {
-            districts = masDistrictRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            districts = masDistrictRepository.findByStatusIgnoreCaseInOrderByLastChgDateDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
@@ -167,7 +167,7 @@ public class MasDistrictServiceImpl implements MasDistrictService {
 
     @Override
     public ApiResponse<List<MasDistrictResponse>> getDistrictsByStateId(Long stateId) {
-        List<MasDistrictResponse> districts = masDistrictRepository.findByStateIdAndStatusIgnoreCase(stateId, "y").stream()
+        List<MasDistrictResponse> districts = masDistrictRepository.findByStateIdAndStatusIgnoreCaseOrderByDistrictName(stateId, "y").stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
         return ResponseUtils.createSuccessResponse(districts, new TypeReference<>() {});

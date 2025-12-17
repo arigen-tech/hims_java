@@ -145,9 +145,9 @@ public class MasDepartmentTypeServiceImpl implements MasDepartmentTypeService {
         List<MasDepartmentType> departmentTypes;
 
         if (flag == 1) {
-            departmentTypes = masDepartmentTypeRepository.findByStatusIgnoreCase("Y");
+            departmentTypes = masDepartmentTypeRepository.findByStatusIgnoreCaseOrderByDepartmentTypeNameAsc("Y");
         } else if (flag == 0) {
-            departmentTypes = masDepartmentTypeRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            departmentTypes = masDepartmentTypeRepository.findByStatusIgnoreCaseInOrderByLastChgDateDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

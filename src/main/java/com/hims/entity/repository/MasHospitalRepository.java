@@ -6,6 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface MasHospitalRepository extends JpaRepository<MasHospital, Long> {
-    List<MasHospital> findByStatusIgnoreCase(String status);
-    List<MasHospital> findByStatusInIgnoreCase(List<String> statuses);
+//    List<MasHospital> findByStatusIgnoreCase(String status);
+//    List<MasHospital> findByStatusInIgnoreCase(List<String> statuses);
+
+    List<MasHospital> findByStatusIgnoreCaseOrderByHospitalNameAsc(String y);
+
+    List<MasHospital> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
 }

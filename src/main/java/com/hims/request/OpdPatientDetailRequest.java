@@ -4,11 +4,15 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor  // ADD THIS
+@AllArgsConstructor
 public class OpdPatientDetailRequest {
 
     @Size(max = 40)

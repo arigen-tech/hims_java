@@ -26,10 +26,22 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
     List<DgOrderHd> findAllByVisitId(Visit visit);
 
 
+//    @Query("SELECT h FROM DgOrderHd h " +
+//            "WHERE h.paymentStatus IN :paymentStatuses " +
+//            "AND h.orderStatus IN :orderStatusFilter " +
+//            "AND h.appointmentDate BETWEEN :startDate AND :endDate")
+//    List<DgOrderHd> findPendingOrdersByDateRange(
+//            List<String> paymentStatuses,
+//            List<String> orderStatusFilter,
+//            LocalDate startDate,
+//            LocalDate endDate
+//    );
+
     @Query("SELECT h FROM DgOrderHd h " +
             "WHERE h.paymentStatus IN :paymentStatuses " +
             "AND h.orderStatus IN :orderStatusFilter " +
-            "AND h.appointmentDate BETWEEN :startDate AND :endDate")
+            "AND h.appointmentDate BETWEEN :startDate AND :endDate " +
+            "ORDER BY h.lastChgDate DESC, h.lastChgTime DESC")
     List<DgOrderHd> findPendingOrdersByDateRange(
             List<String> paymentStatuses,
             List<String> orderStatusFilter,

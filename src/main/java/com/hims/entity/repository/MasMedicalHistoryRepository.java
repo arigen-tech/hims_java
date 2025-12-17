@@ -8,7 +8,11 @@ import java.util.List;
 
 @Repository
 public interface MasMedicalHistoryRepository extends JpaRepository<MasMedicalHistory, Long> {
-    List<MasMedicalHistory> findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List<String> y);
+ //   List<MasMedicalHistory> findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List<String> y);
 
-    List<MasMedicalHistory> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
+  //  List<MasMedicalHistory> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
+
+    List<MasMedicalHistory> findByStatusIgnoreCaseOrderByMedicalHistoryNameAsc(String y);
+
+    List<MasMedicalHistory> findAllByOrderByLastUpdateDateDesc();
 }

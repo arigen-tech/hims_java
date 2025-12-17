@@ -90,4 +90,15 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
     @Query("SELECT s FROM StoreItemBatchStock s WHERE s.itemId IN :items")
     List<StoreItemBatchStock> findByItemIds(@Param("items") List<MasStoreItem> items);
 
+
+
+        // Find all batch stocks for a specific department and item
+        List<StoreItemBatchStock> findByDepartmentIdAndItemId(
+                MasDepartment departmentId,
+                MasStoreItem itemId
+        );
+
+
+
+    List<StoreItemBatchStock> findByItemIdItemId(Long itemId);
 }

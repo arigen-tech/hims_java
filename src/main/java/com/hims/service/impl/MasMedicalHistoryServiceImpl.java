@@ -32,9 +32,9 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
         try {
             List<MasMedicalHistory> masWards;
             if(flag==0){
-                masWards= masMedicalHistoryRepository.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y","n"));
+                masWards= masMedicalHistoryRepository.findAllByOrderByLastUpdateDateDesc();
             } else if (flag==1) {
-                masWards= masMedicalHistoryRepository.findByStatusIgnoreCaseOrderByLastUpdateDateDesc("y");
+                masWards= masMedicalHistoryRepository.findByStatusIgnoreCaseOrderByMedicalHistoryNameAsc("y");
             }else{
                 return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Flag Value , Provide flag as 0 or 1", HttpStatus.BAD_REQUEST.value());
             }

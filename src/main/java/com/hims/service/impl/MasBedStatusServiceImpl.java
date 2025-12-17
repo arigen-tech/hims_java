@@ -151,7 +151,7 @@ public class MasBedStatusServiceImpl implements MasBedStatusService {
             if (flag == 0) {
                 list = masBedStatusRepo.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y", "n"));
             } else if (flag == 1) {
-                list = masBedStatusRepo.findByStatusIgnoreCaseOrderByLastUpdateDateDesc("y");
+                list = masBedStatusRepo.findByStatusIgnoreCaseOrderByBedStatusNameAsc("y");
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid Flag Value , Provide flag as 0 or 1", HttpStatus.BAD_REQUEST.value());

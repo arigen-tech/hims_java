@@ -1,5 +1,8 @@
 package com.hims.request;
 
+import com.hims.entity.MasCareLevel;
+import com.hims.entity.MasDepartment;
+import com.hims.entity.MasWardCategory;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -72,6 +75,33 @@ public class OpdPatientDetailFinalRequest {
 
     private String treatmentAdvice;
 
+
+    // ============================== Procedure Care =============================
+//    private List<ProcedureCare> procedureCare;
+
+
+    // ============================== final medicine advice =============================
+    private String doctorRemarks;
+
+    // ========================= Admission Advice =====================================
+    private String admissionFlag;
+    private Instant admissionAdvisedDate;
+    private String admissionRemarks;
+    private Long admissionCareLevel;
+    private Long admissionWardCategory;
+    private Long admissionWard;
+    private String admissionPriority;
+
+    //  =========================== referral ==============================
+    private String referralFlag;
+
+
+    // =================== follow up =========
+
+    private String followUpFlag;
+    private Instant followUpDate;
+    private Long followUpDays;
+
     // ======================== Mapping IDs ======================
     private Long patientId;
     private Long visitId;
@@ -107,5 +137,15 @@ public class OpdPatientDetailFinalRequest {
         private BigDecimal total;
         private String instraction;
 
+    }
+
+    @Getter
+    @Setter
+    public static class ProcedureCare{
+        private Long procedureId;
+        private String procedureName;
+        private Long frequencyId;
+        private Long noOfDays;
+        private String remarks;
     }
 }

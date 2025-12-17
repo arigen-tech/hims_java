@@ -45,9 +45,9 @@ public class MasTemplateServiceImpl implements MasTemplateService {
             List<MasTemplate> templates;
 
             if (flag == 1) {
-                templates = masTemplateRepository.findByStatusIgnoreCase("Y");
+                templates = masTemplateRepository.findByStatusIgnoreCaseOrderByTemplateNameAsc("Y");
             } else if (flag == 0) {
-                templates = masTemplateRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+                templates = masTemplateRepository.findByStatusInIgnoreCaseOrderByLastChgDateDesc(List.of("Y", "N"));
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
             }

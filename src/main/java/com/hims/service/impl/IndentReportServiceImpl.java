@@ -4,6 +4,7 @@ import com.hims.entity.StoreInternalIndentM;
 import com.hims.entity.repository.StoreInternalIndentMRepository;
 import com.hims.service.IndentReportService;
 import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.util.JRLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,15 +30,13 @@ public class IndentReportServiceImpl implements IndentReportService {
     @Autowired
     private StoreInternalIndentMRepository indentRepo;
 
-    private String path = "src/main/resources/Assets/arigen_health.png";
-
     @Override
     public byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception {
-        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jrxml");
+        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jasper");
         if (reportStream == null) {
             throw new FileNotFoundException("Report file not found: " + reportName);
         }
-        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(reportStream);
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }
@@ -59,7 +58,9 @@ public class IndentReportServiceImpl implements IndentReportService {
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("indent_m_id", indentM.get().getIndentMId());
-            parameters.put("path", path);
+            parameters.put("path", getClass()
+                    .getResource("/Assets/arigen_health.png")
+                    .toString());
 
             Connection conn = dataSource.getConnection();
             byte[] data = reportDeclare("Indent_report", parameters, conn);

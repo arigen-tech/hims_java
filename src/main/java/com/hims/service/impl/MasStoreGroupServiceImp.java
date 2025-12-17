@@ -106,9 +106,9 @@ public class MasStoreGroupServiceImp implements MasStoreGroupService {
     public ApiResponse<List<MasStoreGroupResponse>> getMasStoreGroupAllId(int flag) {
         List<MasStoreGroup> masStoreGroups;
         if (flag == 1) {
-            masStoreGroups = masStoreGroupRepository.findByStatusIgnoreCase("Y");
+            masStoreGroups = masStoreGroupRepository.findByStatusIgnoreCaseOrderByGroupNameAsc("Y");
         } else if (flag == 0) {
-            masStoreGroups = masStoreGroupRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            masStoreGroups = masStoreGroupRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

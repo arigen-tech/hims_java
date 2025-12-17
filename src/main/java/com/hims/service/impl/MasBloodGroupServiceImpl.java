@@ -57,10 +57,10 @@ public class MasBloodGroupServiceImpl implements MasBloodGroupService {
 
         if (flag == 1) {
             // Fetch only records with status 'Y'
-            bloodGroups = masBloodGroupRepository.findByStatusIgnoreCase("Y");
+            bloodGroups = masBloodGroupRepository.findByStatusIgnoreCaseOrderByBloodGroupNameAsc("Y");
         } else if (flag == 0) {
             // Fetch all records with status 'Y' or 'N'
-            bloodGroups = masBloodGroupRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            bloodGroups = masBloodGroupRepository.findByStatusIgnoreCaseInOrderByLastChangedDateDescLastChangedTimeDesc(List.of("Y", "N"));
         } else {
             // Handle invalid flag values
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);

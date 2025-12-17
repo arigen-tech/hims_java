@@ -128,10 +128,11 @@ public class MasItemTypeServiceImp implements MasItemTypeService
     @Override
     public ApiResponse<List<MasItemTypeResponse>> getAllMasItemTypeStatus(int flag) {
         List<MasItemType> masItemTypes;
+
         if (flag == 1) {
-            masItemTypes= masItemTypeRepository.findByStatusIgnoreCase("Y");
+            masItemTypes = masItemTypeRepository.findByStatusIgnoreCaseOrderByNameAsc("Y");
         } else if (flag == 0) {
-            masItemTypes = masItemTypeRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            masItemTypes = masItemTypeRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
@@ -141,8 +142,8 @@ public class MasItemTypeServiceImp implements MasItemTypeService
                 .collect(Collectors.toList());
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
-
     }
+
 
     @Override
     public ApiResponse<List<MasItemTypeResponse>> findItemType(Long id) {
@@ -166,6 +167,7 @@ public class MasItemTypeServiceImp implements MasItemTypeService
         masItemTypeResponse.setLastChgTime(masItemType.getLastChgTime());
         masItemTypeResponse.setStatus(masItemType.getStatus());
         masItemTypeResponse.setMasStoreGroupId(masItemType.getMasStoreGroupId().getId());
+        masItemTypeResponse.setMasStoreGroupName(masItemType.getMasStoreGroupId().getGroupName());
 
             return masItemTypeResponse;
         }

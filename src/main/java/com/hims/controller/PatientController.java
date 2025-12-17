@@ -216,4 +216,15 @@ public class PatientController {
         return new ResponseEntity<>(patientService.paymentStatusReq(request), HttpStatus.OK);
     }
 
+    @GetMapping("/getFullDetails/{patientId}")
+    public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientFullDetails(
+            @PathVariable Long patientId) {
+
+        ApiResponse<FollowUpPatientResponseDetails> response =
+                patientService.getAllFollowUpDetails(patientId);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
 }

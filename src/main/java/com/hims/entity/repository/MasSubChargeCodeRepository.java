@@ -7,4 +7,8 @@ import java.util.List;
 
 public interface MasSubChargeCodeRepository extends JpaRepository<MasSubChargeCode, Long> {
     List<MasSubChargeCode> findByStatus(String status);
+
+    List<MasSubChargeCode> findByStatusOrderBySubNameAsc(String y);
+
+    List<MasSubChargeCode> findAllByOrderByLastChgDateDescLastChgTimeDesc();
 }

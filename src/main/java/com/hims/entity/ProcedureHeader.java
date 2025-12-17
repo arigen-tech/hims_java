@@ -15,8 +15,9 @@ import java.time.LocalDateTime;
 public class ProcedureHeader {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "procedure_header_id")
-    private Integer procedureHeaderId;  // No identity → manually assigned
+    private Long procedureHeaderId;
 
     @Column(name = "status", length = 1)
     private String status;

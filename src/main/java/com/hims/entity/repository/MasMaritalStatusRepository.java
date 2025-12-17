@@ -8,4 +8,10 @@ import java.util.List;
 public interface MasMaritalStatusRepository extends JpaRepository<MasMaritalStatus, Long> {
     List<MasMaritalStatus> findByStatusIgnoreCase(String status);
     List<MasMaritalStatus> findByStatusInIgnoreCase(List<String> statuses);
+
+    List<MasMaritalStatus> findByStatusIgnoreCaseOrderByNameAsc(String y);
+
+
+
+    List<MasMaritalStatus> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
 }

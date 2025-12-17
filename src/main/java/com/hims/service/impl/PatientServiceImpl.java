@@ -100,7 +100,6 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<PatientRegFollowUpResp> registerPatientWithOpd(PatientRequest request, OpdPatientDetailRequest opdPatientDetailRequest, List<VisitRequest> visit) {
-        //try {
         PatientRegFollowUpResp resp=new PatientRegFollowUpResp();
         Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(
                 request.getPatientFn(),
@@ -110,7 +109,6 @@ public class PatientServiceImpl implements PatientService {
                 request.getPatientAge(),
                 request.getPatientMobileNumber(),
                 (masRelationRepository.findById(request.getPatientRelationId())).get());
-
         if (existingPatient.isPresent()) {
             resp.setPatient(existingPatient.get());
             return ResponseUtils.createFailureResponse(resp, new TypeReference<>() {
@@ -120,14 +118,10 @@ public class PatientServiceImpl implements PatientService {
         Patient patient = savePatient(request,false);
         resp.setPatient(patient);
         OpdPatientDetail newOpd=new OpdPatientDetail();
-//        if(opdPatientDetailRequest!=null&&visit==null){
-//            newOpd = addOpdDetaials(null, opdPatientDetailRequest, patient);
-//        }
         if(visit!=null){
             List<Visit> savedVisits = new ArrayList<>();
             if (visit != null && !visit.isEmpty()) {
                 for (VisitRequest v : visit) {
-
                     Instant today = v.getVisitDate();
                     String visitType = getVisitTypeForToday(patient.getId(), today);
 
@@ -136,7 +130,7 @@ public class PatientServiceImpl implements PatientService {
                     savedVisits.add(saved);
 
                     if (saved.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-                        newOpd = addOpdDetaials(saved, opdPatientDetailRequest, patient);
+                        newOpd = addOpdDetails(saved, opdPatientDetailRequest, patient);
                     }
                 }
             }
@@ -149,10 +143,9 @@ public class PatientServiceImpl implements PatientService {
 
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {
         });
-//        } catch (Exception ex) {
-//            throw new RuntimeException("Billing failed. Transaction rolled back.", ex);
-//        }
     }
+
+
     private String getVisitTypeForToday(Long patientId, Instant visitDate) {
         int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
         return count > 0 ? "F" : "N";
@@ -181,7 +174,16 @@ public class PatientServiceImpl implements PatientService {
 
             // fetch billing detail safely
             List<BillingDetail> bDetails = billingDetailRepository.findByBillingHd(billingHeader);
-            BillingDetail billingDetail = (bDetails != null && !bDetails.isEmpty()) ? bDetails.get(0) : null;
+            BillingDetail billingDetail=null;
+            for(BillingDetail bdt : bDetails){
+               if(bdt.getServiceCategory().getServiceCatName().equalsIgnoreCase("Registration Service")) {
+                   response.setRegistrationCost(bdt.getServiceCategory().getRegistrationCost());
+                }else{
+                   billingDetail = bdt;
+               }
+            }
+
+
 
             AppointmentBlock appointmentBlock = new AppointmentBlock();
             appointmentBlock.setBillingHdId(billingHeader.getId());
@@ -225,8 +227,8 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public ApiResponse paymentStatusReq(PaymentUpdateRequest request) {
         PaymentResponse res = new PaymentResponse();
+        BillingHeader header = new BillingHeader();
         try{
-
                 List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
                 if (opdPayments == null || opdPayments.isEmpty()) {
                     throw new RuntimeException("OPD payment items missing in request.");
@@ -238,15 +240,24 @@ public class PatientServiceImpl implements PatientService {
                     Integer billHeaderId = opd.getBillHeaderId();
                     BigDecimal netAmount = opd.getNetAmount();
 
-                    BillingHeader header = billingHeaderRepository.findById(billHeaderId)
-                            .orElseThrow(() -> new RuntimeException("OPD Bill Header not found: " + billHeaderId));
-
+                    Optional<BillingHeader> headerOpt = billingHeaderRepository.findById(billHeaderId);
+                    if (headerOpt.isPresent()) {
+                        header = headerOpt.get();
+                    } else {
+                        throw new Exception("BillingHeader not found with id: " + billHeaderId);
+                    }
+                    List<BillingDetail> details = billingDetailRepository.findByBillHdId(Long.valueOf(billHeaderId));
+                    if (details.size()>0) {
+                        for(BillingDetail bdt: details){
+                            bdt.setChargeCost(bdt.getNetAmount());
+                            bdt.setPaymentStatus("y");
+                        }
+                    }
                     Visit visit = header.getVisit();
                     if (visit == null) {
                         throw new RuntimeException("Visit not linked with OPD Bill Header " + billHeaderId);
                     }
 
-                    // create payment detail per appointment
                     PaymentDetail paymentDetail = new PaymentDetail();
                     paymentDetail.setPaymentMode(request.getMode());
                     paymentDetail.setPaymentStatus("y");
@@ -259,18 +270,15 @@ public class PatientServiceImpl implements PatientService {
                     paymentDetail.setBillingHd(header);
                     paymentDetailRepository.save(paymentDetail);
 
-                    // update billing header totals/status
                     BigDecimal oldPaid = header.getTotalPaid() == null ? BigDecimal.ZERO : header.getTotalPaid();
                     header.setTotalPaid(oldPaid.add(netAmount));
                     header.setPaymentStatus("y");
                     billingHeaderRepository.save(header);
 
-                    // update visit
                     visit.setBillingStatus("y");
                     visit.setBillingHd(header);
                     visitRepository.save(visit);
 
-                    // prepare response item
                     OpdPaymentItem item = new OpdPaymentItem();
                     item.setBillHeaderId(billHeaderId);
                     item.setVisitId(visit.getId());
@@ -280,7 +288,6 @@ public class PatientServiceImpl implements PatientService {
                     item.setDoctorName(visit.getDoctorName());
                     paymentItemList.add(item);
                 }
-
                 res.setMsg("Success");
                 res.setPaymentStatus("y");
                 res.setBillPayments(paymentItemList);
@@ -297,32 +304,202 @@ public class PatientServiceImpl implements PatientService {
 
 
     @Override
+    @Transactional
     public ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq followUpRequest) {
-
         PatientRegFollowUpResp resp = new PatientRegFollowUpResp();
 
-        // 1. Update patient basic details
         PatientRequest request = followUpRequest.getPatientDetails().getPatient();
-        Patient patient = savePatient(request, true);
+
+        if (request.getId() == null) {
+            throw new RuntimeException("Patient ID is required for update");
+        }
+
+        Patient patient = updatePatient(request, true);
         resp.setPatient(patient);
+
         if (followUpRequest.isAppointmentFlag()) {
             List<VisitRequest> visitList = followUpRequest.getPatientDetails().getVisits();
             OpdPatientDetailRequest opdReq = followUpRequest.getPatientDetails().getOpdPatientDetail();
-            List<Visit> savedVisits = new ArrayList<>();
+            List<Visit> updatedVisits = new ArrayList<>();
             OpdPatientDetail opdDetails = new OpdPatientDetail();
+
             if (visitList != null && !visitList.isEmpty()) {
                 for (VisitRequest v : visitList) {
-                    Visit saved = createSingleAppointment(v, patient);
-                    savedVisits.add(saved);
-                    if (saved.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-                        opdDetails = addOpdDetaials(saved, opdReq, patient);
+                    Visit updatedVisit;
+                    if (v.getId() != null) {
+                        updatedVisit = updateExistingVisitById(v, patient);
+                    } else {
+                        if (v.getPatientId() == null) {
+                            v.setPatientId(patient.getId());
+                        }
+                        if (v.getHospitalId() == null && patient.getPatientHospital() != null) {
+                            v.setHospitalId(patient.getPatientHospital().getId());
+                        }
+                        if (v.getVisitDate() == null) {
+                            v.setVisitDate(Instant.now());
+                        }
+                        if (v.getVisitType() == null) {
+                            v.setVisitType("F");
+                        }
+                        updatedVisit = createSingleAppointment(v, patient);
+                    }
+
+                    updatedVisits.add(updatedVisit);
+
+                    if (updatedVisit.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
+                        opdDetails = addOpdDetails(updatedVisit, opdReq, patient);
                     }
                 }
+            } else {
+                List<Visit> existingVisits = visitRepository.findByPatientId(patient.getId());
+                if (!existingVisits.isEmpty()) {
+                    updatedVisits.addAll(existingVisits);
+                }
             }
-            resp.setVisits(savedVisits);
+            resp.setVisits(updatedVisits);
             resp.setOpdPatientDetail(opdDetails);
         }
+
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {});
+    }
+
+    private Visit updateExistingVisitById(VisitRequest visit, Patient patient) {
+        if (visit.getId() == null) {
+            throw new RuntimeException("Visit ID is required for updating existing visit");
+        }
+
+        Visit existingVisit = visitRepository.findById(visit.getId())
+                .orElseThrow(() -> new RuntimeException("Visit not found with id: " + visit.getId()));
+
+        log.info("Updating existing visit ID: {} for patient: {}",
+                existingVisit.getId(), patient.getId());
+
+        existingVisit.setLastChgDate(Instant.now());
+        existingVisit.setPriority(visit.getPriority());
+        existingVisit.setVisitType(visit.getVisitType());
+
+        if (visit.getDepartmentId() != null) {
+            masDepartmentRepository.findById(visit.getDepartmentId())
+                    .ifPresent(existingVisit::setDepartment);
+        }
+
+        if (visit.getDoctorId() != null) {
+            userRepository.findById(visit.getDoctorId()).ifPresent(doctor -> {
+                existingVisit.setDoctor(doctor);
+                existingVisit.setDoctorName(visit.getDoctorName());
+            });
+        }
+
+        if (visit.getSessionId() != null) {
+            masOpdSessionRepository.findById(visit.getSessionId())
+                    .ifPresent(existingVisit::setSession);
+        }
+
+        if (visit.getVisitDate() != null) {
+            existingVisit.setVisitDate(visit.getVisitDate());
+        }
+
+        return visitRepository.save(existingVisit);
+    }
+
+    // Also update the Patient update method to ensure ID is properly handled
+    private Patient updatePatient(PatientRequest request, boolean followUp) {
+        User currentUser = authUtil.getCurrentUser();
+        if (currentUser == null) {
+            log.info("current user not found");
+            throw new RuntimeException("Current user not found");
+        }
+
+        // Check if patient exists
+        Patient patient = patientRepository.findById(request.getId())
+                .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + request.getId()));
+
+        // Update patient fields
+        patient.setUhidNo(request.getUhidNo());
+        patient.setUpdatedOn(Instant.now());
+        patient.setLastChgBy(currentUser.getFirstName() + " " +
+                currentUser.getMiddleName() + " " +
+                currentUser.getLastName());
+        patient.setPatientFn(request.getPatientFn());
+        patient.setPatientMn(request.getPatientMn());
+        patient.setPatientLn(request.getPatientLn());
+        patient.setPatientDob(request.getPatientDob());
+        patient.setPatientAge(request.getPatientAge());
+        patient.setPatientEmailId(request.getPatientEmailId());
+        patient.setPatientMobileNumber(request.getPatientMobileNumber());
+        patient.setPatientImage(request.getPatientImage());
+        patient.setFileName(request.getFileName());
+        patient.setPatientAddress1(request.getPatientAddress1());
+        patient.setPatientAddress2(request.getPatientAddress2());
+        patient.setPatientCity(request.getPatientCity());
+        patient.setPatientPincode(request.getPatientPincode());
+        patient.setPincode(request.getPincode());
+        patient.setEmerFn(request.getEmerFn());
+        patient.setEmerLn(request.getEmerLn());
+        patient.setEmerMobile(request.getEmerMobile());
+        patient.setNokFn(request.getNokFn());
+        patient.setNokLn(request.getNokLn());
+        patient.setNokEmail(request.getNokEmail());
+        patient.setNokMobileNumber(request.getNokMobileNumber());
+        patient.setNokAddress1(request.getNokAddress1());
+        patient.setNokAddress2(request.getNokAddress2());
+        patient.setNokCity(request.getNokCity());
+        patient.setNokPincode(request.getNokPincode());
+        patient.setPatientStatus(request.getPatientStatus());
+        patient.setRegDate(request.getRegDate());
+
+        // Update relationships
+        Optional.ofNullable(request.getPatientGenderId())
+                .flatMap(masGenderRepository::findById)
+                .ifPresent(patient::setPatientGender);
+
+        Optional.ofNullable(request.getPatientRelationId())
+                .flatMap(masRelationRepository::findById)
+                .ifPresent(patient::setPatientRelation);
+
+        Optional.ofNullable(request.getPatientMaritalStatusId())
+                .flatMap(masMaritalStatusRepository::findById)
+                .ifPresent(patient::setPatientMaritalStatus);
+
+        Optional.ofNullable(request.getPatientReligionId())
+                .flatMap(masReligionRepository::findById)
+                .ifPresent(patient::setPatientReligion);
+
+        Optional.ofNullable(request.getPatientDistrictId())
+                .flatMap(masDistrictRepository::findById)
+                .ifPresent(patient::setPatientDistrict);
+
+        Optional.ofNullable(request.getPatientStateId())
+                .flatMap(masStateRepository::findById)
+                .ifPresent(patient::setPatientState);
+
+        Optional.ofNullable(request.getPatientCountryId())
+                .flatMap(masCountryRepository::findById)
+                .ifPresent(patient::setPatientCountry);
+
+        Optional.ofNullable(request.getNokDistrictId())
+                .flatMap(masDistrictRepository::findById)
+                .ifPresent(patient::setNokDistrict);
+
+        Optional.ofNullable(request.getNokStateId())
+                .flatMap(masStateRepository::findById)
+                .ifPresent(patient::setNokState);
+
+        Optional.ofNullable(request.getNokCountryId())
+                .flatMap(masCountryRepository::findById)
+                .ifPresent(patient::setNokCountry);
+
+        Optional.ofNullable(request.getNokRelationId())
+                .flatMap(masRelationRepository::findById)
+                .ifPresent(patient::setNokRelation);
+
+        if (!followUp) {
+            Optional.ofNullable(request.getPatientHospitalId())
+                    .flatMap(masHospitalRepository::findById)
+                    .ifPresent(patient::setPatientHospital);
+        }
+
+        return patientRepository.save(patient);
     }
 
 
@@ -399,7 +576,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public ApiResponse<String> saveVitalDetails(OpdPatientDetailRequest request) {
-        OpdPatientDetail savedDetails=addOpdDetaials(null,request,null);
+        OpdPatientDetail savedDetails=addOpdDetails(null,request,null);
         Visit visit=visitRepository.findById(request.getVisitId()).get();
         visit.setPreConsultation("y");
         visitRepository.save(visit);
@@ -515,7 +692,7 @@ public class PatientServiceImpl implements PatientService {
         return patient;
     }
 
-    private OpdPatientDetail addOpdDetaials(Visit savedVisit, OpdPatientDetailRequest opdPatientDetailRequest, Patient patient) {
+    private OpdPatientDetail addOpdDetails(Visit savedVisit, OpdPatientDetailRequest opdPatientDetailRequest, Patient patient) {
         OpdPatientDetail opdPatientDetail = new OpdPatientDetail();
         opdPatientDetail.setHeight(opdPatientDetailRequest.getHeight());
         opdPatientDetail.setIdealWeight(opdPatientDetailRequest.getIdealWeight());
@@ -646,7 +823,7 @@ public class PatientServiceImpl implements PatientService {
         //create billing header and detail
         MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
         MasDiscount discount=new MasDiscount();
-        // no need to generate bill if appCost is NO
+        // we DONT need to generate bill only if appCost is YES
         if(newVisit.getBillingStatus().equalsIgnoreCase("n")){
             ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
             Visit v = visitRepository.getReferenceById(newVisit.getId());
@@ -709,5 +886,97 @@ public class PatientServiceImpl implements PatientService {
     }
 
 
+    @Override
+    public ApiResponse<FollowUpPatientResponseDetails> getAllFollowUpDetails(Long patientId) {
+
+        FollowUpPatientResponseDetails resp = new FollowUpPatientResponseDetails();
+
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("Patient not found: " + patientId));
+
+        FollowUpPatientResponseDetails.PersonalDetails personal = new FollowUpPatientResponseDetails.PersonalDetails();
+        personal.setFirstName(patient.getPatientFn());
+        personal.setMiddleName(patient.getPatientMn());
+        personal.setLastName(patient.getPatientLn());
+        personal.setMobileNo(patient.getPatientMobileNumber());
+        personal.setEmail(patient.getPatientEmailId());
+        personal.setDob(patient.getPatientDob());
+        personal.setAge(patient.getPatientAge());
+        personal.setGender(patient.getPatientGender() != null ? patient.getPatientGender().getId() : null);
+        personal.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getId() : null);
+
+        resp.setPersonal(personal);
+        FollowUpPatientResponseDetails.AddressDetails address = new FollowUpPatientResponseDetails.AddressDetails();
+        address.setAddress1(patient.getPatientAddress1());
+        address.setAddress2(patient.getPatientAddress2());
+        address.setCity(patient.getPatientCity());
+        address.setPinCode(patient.getPatientPincode());
+        address.setCountry(patient.getPatientCountry() != null ? patient.getPatientCountry().getId() : null);
+        address.setState(patient.getPatientState() != null ? patient.getPatientState().getId() : null);
+        address.setDistrict(patient.getPatientDistrict() != null ? patient.getPatientDistrict().getId() : null);
+
+        resp.setAddress(address);
+        FollowUpPatientResponseDetails.NokDetails nok = new FollowUpPatientResponseDetails.NokDetails();
+        nok.setFirstName(patient.getNokFn());
+        nok.setLastName(patient.getNokLn());
+        nok.setEmail(patient.getNokEmail());
+        nok.setMobileNo(patient.getNokMobileNumber());
+        nok.setAddress1(patient.getNokAddress1());
+        nok.setAddress2(patient.getNokAddress2());
+        nok.setCity(patient.getNokCity());
+        nok.setPinCode(patient.getNokPincode());
+        //nok.setRelation(patient.getNokRelation() != null ? patient.getNokRelation().getId() : null);
+        nok.setState(patient.getNokState() != null ? patient.getNokState().getId() : null);
+        nok.setDistrict(patient.getNokDistrict() != null ? patient.getNokDistrict().getId() : null);
+        nok.setCountry(patient.getNokCountry() != null ? patient.getNokCountry().getId() : null);
+
+        resp.setNok(nok);
+        FollowUpPatientResponseDetails.EmergencyDetails emergency = new FollowUpPatientResponseDetails.EmergencyDetails();
+        emergency.setFirstName(patient.getEmerFn());
+        emergency.setLastName(patient.getEmerLn());
+        emergency.setMobileNo(patient.getEmerMobile());
+
+        resp.setEmergency(emergency);
+        OpdPatientDetail opd = opdPatientDetailRepository.findTopByPatientOrderByOpdPatientDetailsIdDesc(patient);
+
+        if (opd != null) {
+            FollowUpPatientResponseDetails.VitalDetails vitals = new FollowUpPatientResponseDetails.VitalDetails();
+            vitals.setHeight(opd.getHeight());
+            vitals.setWeight(opd.getWeight());
+            vitals.setTemperature(opd.getTemperature());
+            vitals.setBpSys(opd.getBpSystolic());
+            vitals.setBpDia(opd.getBpDiastolic());
+            vitals.setPulse(opd.getPulse());
+            vitals.setRr(opd.getRr());
+            vitals.setSpo2(opd.getSpo2());
+            vitals.setBmi(opd.getBmi());
+
+            resp.setVitals(vitals);
+        }
+        List<Visit> visits = visitRepository.findTodayVisitsByPatientId(patientId);
+        List<FollowUpPatientResponseDetails.AppointmentDetailResponse> appointmentList = new ArrayList<>();
+
+        for (Visit v : visits) {
+
+            FollowUpPatientResponseDetails.AppointmentDetailResponse appt = new FollowUpPatientResponseDetails.AppointmentDetailResponse();
+
+            appt.setAppointmentId(v.getId());
+            appt.setSpecialityId(v.getDepartment() != null ? v.getDepartment().getId() : null);
+            appt.setSpecialityName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
+            appt.setDoctorId(v.getDoctor() != null ? v.getDoctor().getUserId() : null);
+            appt.setDoctorName(v.getDoctorName());
+            appt.setSessionId(v.getSession() != null ? v.getSession().getId() : null);
+            appt.setSessionName(v.getSession() != null ? v.getSession().getSessionName() : null);
+            appt.setVisitDate(v.getVisitDate());
+            appt.setVisitType(v.getVisitType());
+            appt.setTokenNo(v.getTokenNo());
+
+            appointmentList.add(appt);
+        }
+
+        resp.setAppointments(appointmentList);
+        resp.setPhotoUrl(patient.getPatientImage());
+        return ResponseUtils.createSuccessResponse(resp, new TypeReference<FollowUpPatientResponseDetails>() {});
+    }
 
 }

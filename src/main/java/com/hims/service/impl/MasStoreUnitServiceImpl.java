@@ -32,9 +32,9 @@ public class MasStoreUnitServiceImpl implements MasStoreUnitService {
         List<MasStoreUnit> units;
 
         if (flag == 1) {
-            units = masUnitRepository.findByStatusIgnoreCase("Y");
+            units = masUnitRepository.findByStatusIgnoreCaseOrderByUnitNameAsc("Y");
         } else if (flag == 0) {
-            units = masUnitRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            units = masUnitRepository.findByStatusInIgnoreCaseOrderByLastChgDateDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse
                     (null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);

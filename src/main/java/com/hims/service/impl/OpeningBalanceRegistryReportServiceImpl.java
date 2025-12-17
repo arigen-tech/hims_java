@@ -6,6 +6,7 @@ import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasHospitalRepository;
 import com.hims.service.OpeningBalanceRegistryReportService;
 import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.util.JRLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,11 +39,11 @@ public class OpeningBalanceRegistryReportServiceImpl implements OpeningBalanceRe
 
     @Override
     public byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception {
-        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jrxml");
+        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jasper");
         if (reportStream == null) {
             throw new FileNotFoundException("Report file not found: " + reportName);
         }
-        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(reportStream);
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }
@@ -61,7 +62,9 @@ public class OpeningBalanceRegistryReportServiceImpl implements OpeningBalanceRe
             parameters.put("department_id", safeDepartmentId);
             parameters.put("FromDate", fromDate);
             parameters.put("ToDate", toDate);
-            parameters.put("path", path);
+            parameters.put("path", getClass()
+                    .getResource("/Assets/arigen_health.png")
+                    .toString());
 
             Connection conn = dataSource.getConnection();
             byte[] data = reportDeclare("Opening_Balance_Register_report", parameters, conn);

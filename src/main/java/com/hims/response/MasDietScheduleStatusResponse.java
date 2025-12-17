@@ -14,7 +14,7 @@ public class MasDietScheduleStatusResponse {
     private String description;
     private String status;
     private LocalDateTime lastUpdateDate;
-    private String createdBy;
-    private String lastUpdatedBy;
+//    private String createdBy;
+//    private String lastUpdatedBy;
 
 }

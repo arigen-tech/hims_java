@@ -83,9 +83,9 @@ private MasItemCategoryRepository masItemCategoryRepository;
         List<MasItemCategory> masItemCategory;
 
         if (flag == 1) {
-            masItemCategory = masItemCategoryRepository.findByStatusIgnoreCase("y");
+            masItemCategory = masItemCategoryRepository.findByStatusIgnoreCaseOrderByItemCategoryNameAsc("y");
         } else if (flag == 0) {
-            masItemCategory= masItemCategoryRepository.findByStatusInIgnoreCase(List.of("y", "n"));
+            masItemCategory = masItemCategoryRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("y", "n"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);
@@ -179,10 +179,7 @@ private MasItemCategoryRepository masItemCategoryRepository;
 
     @Override
     public ApiResponse<List<MasItemCategoryResponse>> findByMasItemCategoryBbySectionId(int id) {
-        List<MasItemCategory> masItemCategory=masItemCategoryRepository.findByMasStoreSectionSectionId(id);
-
-
-
+        List<MasItemCategory> masItemCategory=masItemCategoryRepository.findByMasStoreSectionSectionIdOrderByItemCategoryNameAsc(id);
         List<MasItemCategoryResponse> responses = masItemCategory.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());

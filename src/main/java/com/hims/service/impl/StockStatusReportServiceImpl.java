@@ -4,6 +4,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.service.StockStatusReportService;
 import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.util.JRLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,15 +41,13 @@ public class StockStatusReportServiceImpl implements StockStatusReportService {
     @Autowired
     private MasStoreItemRepository storeItemRepo;
 
-    private String path = "src/main/resources/Assets/arigen_health.png";
-
     @Override
     public byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception {
-        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jrxml");
+        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jasper");
         if (reportStream == null) {
             throw new FileNotFoundException("Report file not found: " + reportName);
         }
-        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(reportStream);
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }
@@ -75,7 +74,9 @@ public class StockStatusReportServiceImpl implements StockStatusReportService {
            parameters.put("SECTION_ID", safeSectionId);
            parameters.put("ITEM_ID", safeItemId);
            parameters.put("CurrentDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
-           parameters.put("path", path);
+           parameters.put("path", getClass()
+                   .getResource("/Assets/arigen_health.png")
+                   .toString());
 
            Connection conn = dataSource.getConnection();
            byte[] data = reportDeclare("Stock_Status_Summary", parameters, conn);
@@ -120,7 +121,9 @@ public class StockStatusReportServiceImpl implements StockStatusReportService {
             parameters.put("SECTION_ID", safeSectionId);
             parameters.put("ITEM_ID", safeItemId);
             parameters.put("CurrentDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
-            parameters.put("path", path);
+            parameters.put("path", getClass()
+                    .getResource("/Assets/arigen_health.png")
+                    .toString());
 
             Connection conn = dataSource.getConnection();
             byte[] data = reportDeclare("Stock_Status_Detail", parameters, conn);

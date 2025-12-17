@@ -42,10 +42,10 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
 
             if (flag == 1) {
                 log.info("Fetching only active records...");
-                list = repository.findByStatusIgnoreCase("y");
+                list = repository.findByStatusIgnoreCaseOrderByProcedureTypeNameAsc("y");
             } else if (flag == 0) {
                 log.info("Fetching all records...");
-                list = repository.findAll();
+                list = repository.findAllByOrderByLastUpdateDateDesc();
             } else {
                 log.warn("Invalid flag received: {}", flag);
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},

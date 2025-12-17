@@ -10,6 +10,7 @@ import com.hims.utils.AuthUtil;
 import com.hims.utils.DepartmentConfig;
 import com.hims.utils.ResponseUtils;
 import com.hims.utils.StockFound;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,10 +37,18 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     AuthUtil authUtil;
     @Autowired
     DepartmentConfig departmentConfig;
+    @Autowired
+    StoreStockLedgerRepository storeStockLedgerRepository;
+    @Autowired
+    StoreIssueMRepository storeIssueMRepository;
+    @Autowired
+    StoreIssueTRepository storeIssueTRepository;
 
     @Autowired
     StockFound stockFound;
 
+    @Autowired
+    private StoreItemBatchStockRepository batchStockRepository;
 
     @Value("${fixed.departments}")
     private String fixedDepartmentsConfig;
@@ -171,6 +181,12 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Transactional(readOnly = true)
     public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForPending(Long deptId) {
         try {
+            // Get the current login department for dynamic stock calculation
+            Long loginDeptId = authUtil.getCurrentDepartmentId();
+            if (loginDeptId == null) {
+                throw new RuntimeException("Login department id not found");
+            }
+
             // ✅ use toDeptId instead of fromDeptId
             List<StoreInternalIndentM> indents =
                     indentMRepository.findByToDeptId_IdAndStatus(deptId, "Y");
@@ -180,7 +196,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
             List<StoreInternalIndentResponse> responseList = new ArrayList<>();
             for (StoreInternalIndentM indent : indents) {
-                responseList.add(buildResponse(indent));
+                responseList.add(buildResponseWithLoginDept(indent, loginDeptId)); // Use new method
             }
 
             return ResponseUtils.createSuccessResponse(
@@ -197,7 +213,6 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             );
         }
     }
-
 
     // Common method to process both save and submit
     private ApiResponse<StoreInternalIndentResponse> processIndent(StoreInternalIndentRequest request, String status) {
@@ -439,6 +454,12 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Transactional(readOnly = true)
     public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForApproved(Long deptId) {
         try {
+            // Get current login department for dynamic stock calculation
+            Long loginDeptId = authUtil.getCurrentDepartmentId();
+            if (loginDeptId == null) {
+                throw new RuntimeException("Login department id not found");
+            }
+
             // ✅ use toDeptId instead of fromDeptId
             List<StoreInternalIndentM> indents =
                     indentMRepository.findByToDeptId_IdAndStatus(deptId, "A");
@@ -447,7 +468,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
             List<StoreInternalIndentResponse> responseList = new ArrayList<>();
             for (StoreInternalIndentM indent : indents) {
-                responseList.add(buildResponse(indent));
+                responseList.add(buildResponseWithLoginDept(indent, loginDeptId)); // Use new method
             }
 
             return ResponseUtils.createSuccessResponse(
@@ -464,7 +485,6 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             );
         }
     }
-
     // Submit approved indent for issue - updates status from A to AA
     @Override
     @Transactional
@@ -518,13 +538,13 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             if ("approved".equals(action)) {
                 // Submitted for issue
                 indentM.setStatus("AA");                 // Approved and submitted for issue
-                indentM.setIssuedBy(currentUserName);
-                indentM.setIssuedDate(LocalDateTime.now());
+                indentM.setStoreApprovedBy(currentUserName);
+                indentM.setStoreApprovedDate(LocalDateTime.now());
             } else if ("rejected".equals(action)) {
                 // Rejected after approval
                 indentM.setStatus("RR");                 // Rejected after approval
-                indentM.setApprovedBy(currentUserName);  // who rejected
-                indentM.setApprovedDate(LocalDateTime.now());
+                indentM.setStoreApprovedBy(currentUserName);
+                indentM.setStoreApprovedDate(LocalDateTime.now());
             } else {
                 throw new RuntimeException(
                         "Invalid action. Must be 'approved' or 'rejected'. Provided: " + request.getAction());
@@ -568,11 +588,11 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         }
     }
 
+    // ============ CHANGE IN getAllIndentsForIssueDepartment METHOD ============
+// Location: StoreInternalIndentServiceImpl.java - Replace the batch mapping section
 
-
-
-
-
+    // ============ CHANGE IN getAllIndentsForIssueDepartment METHOD ============
+// Location: StoreInternalIndentServiceImpl.java - Replace the batch mapping section
 
     @Override
     @Transactional(readOnly = true)
@@ -585,7 +605,10 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
             // Fetch only "AA" status indents for issue dept
             List<StoreInternalIndentM> indents =
-                    indentMRepository.findByToDeptId_IdAndStatus(deptId, "AA");
+                    indentMRepository.findByToDeptId_IdAndStatusIn(
+                            deptId,
+                            Arrays.asList("AA", "PI")
+                    );
 
             // Sort DESC (latest indent first)
             indents.sort(Comparator.comparing(StoreInternalIndentM::getIndentMId).reversed());
@@ -623,65 +646,82 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     d.setIssueStatus(detail.getIssueStatus());
                     d.setReason(detail.getReason());
 
-
                     // ========================= BATCH STOCK =========================
+                    // CHANGE 1: Get the department object first (for current issuing dept)
+                    MasDepartment issuingDept = masDepartmentRepository.findById(deptId)
+                            .orElse(null);
 
+                    if (issuingDept == null) {
+                        System.out.println("Department not found for ID: " + deptId);
+                        d.setBatches(new ArrayList<>());
+                        detailResponseList.add(d);
+                        continue;
+                    }
+
+                    Long hospitalId = authUtil.getCurrentUser().getHospital().getId();
+                    Integer deptIdAsInt = deptId.intValue();
+                    Long itemId = detail.getItemId().getItemId();
+
+                    // CHANGE 2: Filter batches for CURRENT DEPARTMENT ONLY
+                    // Using MasDepartment object instead of Long
                     List<StoreItemBatchStock> batchStocks =
-                            storeItemBatchStockRepository.findByItemId_ItemId(
-                                    detail.getItemId().getItemId()
+                            storeItemBatchStockRepository.findByDepartmentIdAndItemId(
+                                    issuingDept,  // Pass MasDepartment object, not Long
+                                    detail.getItemId()
                             );
 
-                    Long itemId = detail.getItemId().getItemId();
-                    Long hospitalId = authUtil.getCurrentUser().getHospital().getId();
+                    // CHANGE 3: Sort by expiry date (FEFO - First Expiry First Out)
+                    if (batchStocks != null && !batchStocks.isEmpty()) {
+                        batchStocks.sort(Comparator.comparing(StoreItemBatchStock::getExpiryDate));
+                    }
 
-                    // Map batches (preserve original behavior except batchstock)
-                    List<BatchResponse> batchResponseList = batchStocks.stream().map(batch -> {
-                        BatchResponse br = new BatchResponse();
-                        br.setBatchNo(batch.getBatchNo());
-                        br.setManufactureDate(batch.getManufactureDate());
-                        br.setExpiryDate(batch.getExpiryDate());
+                    // Map batches with current department stock
+                    List<BatchResponse> batchResponseList = new ArrayList<>();
 
-                        // ===== UPDATED: show stock for the current department (deptId) =====
-                        // convert Long deptId -> Integer for stockFound API
-                        Integer deptIdAsInt = deptId.intValue();
-                        Long currentDeptStock = stockFound.getAvailableStocks(
-                                hospitalId,
-                                deptIdAsInt,
-                                itemId,
-                                hospDefinedstoreDays
-                        );
-                        br.setBatchstock(currentDeptStock);
+                    if (batchStocks != null && !batchStocks.isEmpty()) {
+                        for (StoreItemBatchStock batch : batchStocks) {
+                            BatchResponse br = new BatchResponse();
+                            br.setBatchNo(batch.getBatchNo());
+                            br.setManufactureDate(batch.getManufactureDate());
+                            br.setExpiryDate(batch.getExpiryDate());
 
-                        // ===== keep other department stocks as before =====
-                        Long avlableStokes = stockFound.getAvailableStocks(
-                                hospitalId,
-                                deptIdStore,
-                                itemId,
-                                hospDefinedstoreDays
-                        );
-                        br.setStorestocks(avlableStokes);
+                            // ===== CHANGE 4: Show ONLY current department stock =====
+                            Long closingStock = batch.getClosingStock() != null ? batch.getClosingStock() : 0L;
+                            br.setBatchstock(closingStock);  // This is the stock from current department
 
-                        Long dispstocks = stockFound.getAvailableStocks(
-                                hospitalId,
-                                dispdeptId,
-                                itemId,
-                                hospDefineddispDays
-                        );
-                        br.setDispstocks(dispstocks);
+                            // Keep other department stocks for reference (optional)
+                            Long avlableStokes = stockFound.getAvailableStocks(
+                                    hospitalId,
+                                    deptIdStore,
+                                    itemId,
+                                    hospDefinedstoreDays
+                            );
+                            br.setStorestocks(avlableStokes);
 
-                        Long wardstocks = stockFound.getAvailableStocks(
-                                hospitalId,
-                                warddeptId,
-                                itemId,
-                                hospDefinedwardDays
-                        );
-                        br.setWardstocks(wardstocks);
+                            Long dispstocks = stockFound.getAvailableStocks(
+                                    hospitalId,
+                                    dispdeptId,
+                                    itemId,
+                                    hospDefineddispDays
+                            );
+                            br.setDispstocks(dispstocks);
 
-                        return br;
-                    }).collect(Collectors.toList());
+                            Long wardstocks = stockFound.getAvailableStocks(
+                                    hospitalId,
+                                    warddeptId,
+                                    itemId,
+                                    hospDefinedwardDays
+                            );
+                            br.setWardstocks(wardstocks);
+
+                            batchResponseList.add(br);
+                        }
+                    } else {
+                        // No batches found for current department
+                        System.out.println("No batches found for item: " + itemId + " in department: " + deptId);
+                    }
 
                     d.setBatches(batchResponseList);
-
                     detailResponseList.add(d);
                 }
 
@@ -708,6 +748,349 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
 
 
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<PreviousIssueResponse>> getPreviousIssues(Long itemId, Long currentIndentMId) {
+        try {
+            if (itemId == null) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<List<PreviousIssueResponse>>() {},
+                        "Item ID is required",
+                        400
+                );
+            }
+
+            System.out.println("=== Fetching Previous Issues ===");
+            System.out.println("Item ID: " + itemId);
+
+            List<Map<String, Object>> resultMaps =
+                    indentTRepository.findPreviousIssuesForItemAsMap(itemId);
+
+            List<PreviousIssueResponse> previousIssues = resultMaps.stream().map(map -> {
+                PreviousIssueResponse response = new PreviousIssueResponse();
+
+                // Issue Date
+                Object issueDateObj = map.get("issueDate");
+                if (issueDateObj instanceof java.sql.Date)
+                    response.setIssueDate(((java.sql.Date) issueDateObj).toLocalDate());
+                else if (issueDateObj instanceof java.sql.Timestamp)
+                    response.setIssueDate(((java.sql.Timestamp) issueDateObj).toLocalDateTime().toLocalDate());
+                else if (issueDateObj instanceof LocalDateTime)
+                    response.setIssueDate(((LocalDateTime) issueDateObj).toLocalDate());
+                else if (issueDateObj instanceof LocalDate)
+                    response.setIssueDate((LocalDate) issueDateObj);
+
+                response.setIndentNo((String) map.get("indentNo"));
+                response.setBatchNo((String) map.get("batchNo"));
+                response.setIssueNo((String) map.get("issueNo"));
+
+                // Qty Issued
+                Object qtyObj = map.get("qtyIssued");
+                if (qtyObj instanceof BigDecimal)
+                    response.setQtyIssued((BigDecimal) qtyObj);
+                else if (qtyObj instanceof Number)
+                    response.setQtyIssued(BigDecimal.valueOf(((Number) qtyObj).doubleValue()));
+
+                // Expiry Date
+                Object exp = map.get("expiryDate");
+                if (exp instanceof java.sql.Date)
+                    response.setExpiryDate(((java.sql.Date) exp).toLocalDate());
+                else if (exp instanceof LocalDate)
+                    response.setExpiryDate((LocalDate) exp);
+
+                return response;
+            }).collect(Collectors.toList());
+
+            System.out.println("Total records found: " + previousIssues.size());
+
+            // If nothing found → show current batch stock
+            if (previousIssues.isEmpty()) {
+                List<StoreItemBatchStock> batches =
+                        batchStockRepository.findByItemIdItemId(itemId);
+
+                if (!batches.isEmpty()) {
+                    PreviousIssueResponse curr = new PreviousIssueResponse();
+                    curr.setIndentNo("Current Stock Info");
+                    curr.setIssueDate(LocalDate.now());
+                    curr.setIssueNo("Current");
+                    curr.setQtyIssued(BigDecimal.ZERO);
+
+                    StringBuilder batchInfo = new StringBuilder();
+                    for (StoreItemBatchStock b : batches) {
+                        if (batchInfo.length() > 0) batchInfo.append(", ");
+                        batchInfo.append(b.getBatchNo())
+                                .append("(")
+                                .append(b.getClosingStock() != null ? b.getClosingStock() : 0)
+                                .append(")");
+                    }
+
+                    curr.setBatchNo(batchInfo.toString());
+                    previousIssues.add(curr);
+                }
+            }
+
+            return ResponseUtils.createSuccessResponse(
+                    previousIssues,
+                    new TypeReference<List<PreviousIssueResponse>>() {}
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<List<PreviousIssueResponse>>() {},
+                    "Error fetching previous issues: " + e.getMessage(),
+                    500
+            );
+        }
+    }
+
+
+
+//=============================================== fully and partial================================
+
+    @Override
+    @Transactional
+    public ApiResponse<StoreInternalIndentResponse> issueIndent(StoreInternalIssueRequest request) {
+        try {
+            // === Validate ===
+            if (request.getIndentMId() == null) {
+                throw new RuntimeException("Indent Master ID is required");
+            }
+
+            if (request.getItems() == null || request.getItems().isEmpty()) {
+                throw new RuntimeException("At least one item must be issued");
+            }
+
+            // === Load Master ===
+            StoreInternalIndentM indentM = indentMRepository.findById(request.getIndentMId())
+                    .orElseThrow(() -> new RuntimeException("Indent not found"));
+
+            // === Generate Issue No ===
+            String issueNo = generateIssueNumber();
+
+            // === Current User ===
+            String userName = authUtil.getCurrentUser().getFirstName();
+
+            // ============================================================
+            // === CREATE STORE_ISSUE_M ===================================
+            // ============================================================
+            StoreIssueM issueM = new StoreIssueM();
+            issueM.setIssueNo(issueNo);
+            issueM.setIssueDate(LocalDateTime.now());
+            issueM.setIssuedDate(LocalDateTime.now());
+            issueM.setToDeptId(indentM.getToDeptId());
+            issueM.setFromStoreId(indentM.getFromDeptId());
+            issueM.setHospitalId(indentM.getToDeptId().getHospital());
+            issueM.setIndentMId(indentM);
+            issueM.setIssuedBy(userName);
+            issueM.setStatus("I"); // Issued
+
+            issueM = storeIssueMRepository.save(issueM);
+
+            // Track issued items
+            boolean anyItemIssued = false;
+
+            // ============================================================
+            // === PROCESS EACH ITEM =====================================
+            // ============================================================
+            for (StoreInternalIssueDetailRequest itemReq : request.getItems()) {
+                StoreInternalIndentT indentT = indentTRepository.findById(itemReq.getIndentTId())
+                        .orElseThrow(() -> new RuntimeException("Indent detail not found: " + itemReq.getIndentTId()));
+
+                if (!indentT.getIndentM().getIndentMId().equals(indentM.getIndentMId())) {
+                    throw new RuntimeException("Indent detail does not belong to indent master");
+                }
+
+                BigDecimal approved = nvl(indentT.getApprovedQty());
+                BigDecimal prevIssued = nvl(indentT.getIssuedQty());
+                BigDecimal newIssue = nvl(itemReq.getIssuedQty());
+
+                // === FIX: Calculate available stock from database (NOT from frontend) ===
+                List<StoreItemBatchStock> allBatches =
+                        batchStockRepository.findByDepartmentIdAndItemId(indentM.getToDeptId(), indentT.getItemId());
+
+                BigDecimal actualAvailableStock = BigDecimal.ZERO;
+                if (allBatches != null && !allBatches.isEmpty()) {
+                    actualAvailableStock = allBatches.stream()
+                            .map(b -> nvl(BigDecimal.valueOf(b.getClosingStock())))
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                }
+
+                // === ITEMS NOT ISSUED (qtyIssued = 0) ===
+                if (newIssue.compareTo(BigDecimal.ZERO) <= 0) {
+                    // Item not issued - update with actual available stock
+                    indentT.setAvailableStock(actualAvailableStock);
+                    indentT.setIssueStatus("N"); // Not issued
+                    indentTRepository.save(indentT);
+                    continue; // Skip to next item
+                }
+
+                // === ITEMS TO BE ISSUED (qtyIssued > 0) ===
+                BigDecimal remainingApproved = approved.subtract(prevIssued);
+
+                // Rule 1: Must issue full remaining quantity if issuing
+                if (newIssue.compareTo(remainingApproved) != 0) {
+                    throw new RuntimeException("Must issue full remaining quantity for item " +
+                            indentT.getItemId().getNomenclature() + ". Remaining: " + remainingApproved +
+                            ", Trying to issue: " + newIssue);
+                }
+
+                // Rule 2: Check stock availability for full issue (using actual stock)
+                if (actualAvailableStock.compareTo(remainingApproved) < 0) {
+                    // Insufficient stock for full issue - don't issue this item
+                    // But still update available stock
+                    indentT.setAvailableStock(actualAvailableStock);
+                    indentT.setIssueStatus("N");
+                    indentTRepository.save(indentT);
+                    continue;
+                }
+
+                // Rule 3: Should not exceed approved
+                if (newIssue.compareTo(remainingApproved) > 0) {
+                    throw new RuntimeException("Issuing more than approved quantity");
+                }
+
+                // === Get batch stock (FEFO) ===
+                List<StoreItemBatchStock> batchList =
+                        batchStockRepository.findByDepartmentIdAndItemId(indentM.getToDeptId(), indentT.getItemId());
+
+                if (batchList == null || batchList.isEmpty()) {
+                    throw new RuntimeException("Stock not available for item " + indentT.getItemId().getNomenclature());
+                }
+
+                batchList.sort(Comparator.comparing(StoreItemBatchStock::getExpiryDate)); // FEFO
+
+                long requiredQty = newIssue.longValue();
+                long remainingQty = requiredQty;
+
+                // ============================================================
+                // === ISSUE STOCK FEFO + CREATE ISSUE_T ======================
+                // ============================================================
+                for (StoreItemBatchStock batch : batchList) {
+                    if (remainingQty <= 0) break;
+
+                    long closing = batch.getClosingStock() == null ? 0L : batch.getClosingStock();
+                    if (closing <= 0) continue;
+
+                    long qtyToIssue = Math.min(closing, remainingQty);
+
+                    // --- Update batch stock ---
+                    batch.setClosingStock(closing - qtyToIssue);
+                    batch.setIndentIssueQty((batch.getIndentIssueQty() == null ? 0 : batch.getIndentIssueQty()) + qtyToIssue);
+                    batch.setLastChgBy(userName);
+                    batch.setLastChgDate(LocalDateTime.now());
+                    batchStockRepository.save(batch);
+
+                    // === STORE_ISSUE_T ENTRY ===
+                    StoreIssueT issueT = new StoreIssueT();
+                    issueT.setStoreIssueMId(issueM);
+                    issueT.setItemId(indentT.getItemId());
+                    issueT.setIndentTId(indentT);
+                    issueT.setStockId(batch);
+                    issueT.setIssuedQty(BigDecimal.valueOf(qtyToIssue));
+                    issueT.setBatchNo(batch.getBatchNo());
+                    issueT.setExpiryDate(batch.getExpiryDate());
+                    issueT.setDom(batch.getManufactureDate());
+                    issueT.setManufacturername(batch.getManufacturerId().getManufacturerName());
+                    issueT.setBrandname(batch.getBrandId().getBrandName());
+                    issueT.setStatus("I");
+                    issueT.setUnitPrice(nvl(batch.getMrpPerUnit()));
+
+                    storeIssueTRepository.save(issueT);
+
+                    // === Ledger ===
+                    transferOutLedger(
+                            qtyToIssue,
+                            indentT.getIndentTId(),
+                            batch.getStockId(),
+                            "ISSUE AGAINST INDENT NO: " + indentM.getIndentNo()
+                    );
+
+                    remainingQty -= qtyToIssue;
+                }
+
+                if (remainingQty > 0) {
+                    throw new RuntimeException("Insufficient stock for item " +
+                            indentT.getItemId().getNomenclature() + ". Required: " + requiredQty);
+                }
+
+                // === Update issued qty ===
+                BigDecimal newTotalIssued = prevIssued.add(newIssue);
+                indentT.setIssuedQty(newTotalIssued);
+
+                // === FIX: Calculate NEW available stock after issuance ===
+                BigDecimal newAvailableStock = actualAvailableStock.subtract(newIssue);
+                indentT.setAvailableStock(newAvailableStock);
+
+                // === Set item issue status ===
+                if (approved.compareTo(BigDecimal.ZERO) == 0) {
+                    indentT.setIssueStatus("N"); // Not applicable
+                } else {
+                    indentT.setIssueStatus("Y"); // Yes, fully issued
+                }
+
+                indentTRepository.save(indentT);
+                anyItemIssued = true;
+            }
+
+            if (!anyItemIssued) {
+                throw new RuntimeException("No items were issued");
+            }
+
+            // ============================================================
+            // === UPDATE MASTER STATUS ===================================
+            // ============================================================
+            // ALWAYS set to "FI" if any items were issued
+            indentM.setStatus("FI"); // Fully Issued
+
+            indentM.setIssuedBy(userName);
+            indentM.setIssuedDate(LocalDateTime.now());
+            indentM.setIssueNo(issueNo);
+            indentMRepository.save(indentM);
+
+            StoreInternalIndentResponse resp = buildResponse(indentM);
+
+            return ResponseUtils.createSuccessResponse(
+                    resp,
+                    new TypeReference<StoreInternalIndentResponse>() {}
+            );
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<StoreInternalIndentResponse>() {},
+                    e.getMessage(),
+                    400
+            );
+        }
+    }
+
+    // Helper method
+    private BigDecimal nvl(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+
+
+
+
+
+    // === Helper method to generate issue number ===
+    private String generateIssueNumber() {
+        // Option 1: Simple timestamp-based
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        return "ISS-" + timestamp;
+
+        // Option 2: Sequential number (you'd need to query the last issue number)
+        // Long lastIssueNumber = issueRepository.findMaxIssueNumber();
+        // return "ISS-" + String.format("%06d", (lastIssueNumber == null ? 1 : lastIssueNumber + 1));
+
+        // Option 3: UUID
+        // return "ISS-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+
 
 
 
@@ -719,6 +1102,76 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         long nextId = last.map(m -> m.getIndentMId() + 1).orElse(1L);
         return "IND-" + nextId;
     }
+
+
+    // New method that calculates available stock based on login department
+    private StoreInternalIndentResponse buildResponseWithLoginDept(StoreInternalIndentM m, Long loginDeptId) {
+        StoreInternalIndentResponse res = buildSimpleResponse(m);
+        List<StoreInternalIndentT> details = indentTRepository.findByIndentM(m);
+        List<StoreInternalIndentDetailResponse> dList = new ArrayList<>();
+
+        for (StoreInternalIndentT d : details) {
+            StoreInternalIndentDetailResponse dr = new StoreInternalIndentDetailResponse();
+            dr.setIndentTId(d.getIndentTId());
+            if (d.getItemId() != null) {
+                dr.setItemId(d.getItemId().getItemId());
+                dr.setItemName(d.getItemId().getNomenclature());
+                dr.setPvmsNo(d.getItemId().getPvmsNo());
+                dr.setUnitAuName(d.getItemId().getUnitAU().getUnitName());
+                dr.setUnitAUid(d.getItemId().getUnitAU().getUnitId());
+            }
+            dr.setRequestedQty(d.getRequestedQty());
+            dr.setApprovedQty(d.getApprovedQty());
+            dr.setIssuedQty(d.getIssuedQty());
+            dr.setReceivedQty(d.getReceivedQty());
+
+            // ✅ DYNAMIC CALCULATION: Calculate available stock based on login department
+            if (d.getItemId() != null) {
+                BigDecimal currentStock = calculateCurrentStockForDept(
+                        d.getItemId().getItemId(),
+                        loginDeptId
+                );
+                dr.setAvailableStock(currentStock);
+            } else {
+                dr.setAvailableStock(d.getAvailableStock()); // fallback to stored value
+            }
+
+            dr.setItemCost(d.getItemCost());
+            dr.setTotalCost(d.getTotalCost());
+            dr.setIssueStatus(d.getIssueStatus());
+            dr.setReason(d.getReason());
+
+            dList.add(dr);
+        }
+        res.setItems(dList);
+        return res;
+    }
+
+    // Helper method to calculate current stock for a department
+    private BigDecimal calculateCurrentStockForDept(Long itemId, Long departmentId) {
+        try {
+            LocalDate today = LocalDate.now();
+            List<StoreItemBatchStock> validBatches =
+                    storeItemBatchStockRepository.findNonExpiredBatchesForROL(
+                            itemId,
+                            departmentId,
+                            today
+                    );
+
+            // Sum all batch stocks
+            Long totalStock = validBatches.stream()
+                    .map(batch -> batch.getClosingStock() != null ? batch.getClosingStock() : 0L)
+                    .mapToLong(Long::longValue)
+                    .sum();
+
+            return BigDecimal.valueOf(totalStock);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return BigDecimal.ZERO;
+        }
+    }
+
+
 
     private StoreInternalIndentResponse buildResponse(StoreInternalIndentM m) {
         StoreInternalIndentResponse res = buildSimpleResponse(m);
@@ -1011,4 +1464,46 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 ? item.getStoreROL().intValue()
                 : (item.getWardROL() != null ? item.getWardROL().intValue() : null);
     }
+
+
+
+
+//=============================================ledger Entry================================
+
+
+    private String transferOutLedger(long qty, Long indentTId, Long stockId, String remarks) {
+
+        StoreItemBatchStock stock = storeItemBatchStockRepository.findById(stockId)
+                .orElseThrow(() -> new EntityNotFoundException("Stock with ID " + stockId + " not found."));
+
+        StoreStockLedger ledger = new StoreStockLedger();
+        ledger.setCreatedDt(LocalDateTime.now());
+
+        User currentUser = authUtil.getCurrentUser();
+        String fName = currentUser.getFirstName()
+                + (currentUser.getMiddleName() != null ? " " + currentUser.getMiddleName() : "")
+                + (currentUser.getLastName() != null ? " " + currentUser.getLastName() : "");
+
+        ledger.setCreatedBy(fName.trim());
+        ledger.setTxnDate(LocalDate.now());
+
+        ledger.setQtyOut(BigDecimal.valueOf(qty));
+        ledger.setQtyIn(null);
+
+        ledger.setStockId(stock);
+        ledger.setTxnType("ISSUE");                 // you can use config if available
+        ledger.setRemarks(remarks);
+        ledger.setTxnReferenceId(indentTId);
+
+        storeStockLedgerRepository.save(ledger);
+
+        return "success";
+    }
+
+
+
+
+
+
+
 }

@@ -24,7 +24,7 @@ public class StoreIssueM {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "from_store_id")
-    private MasStoreItem fromStoreId;
+    private MasDepartment fromStoreId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "to_dept_id")

@@ -17,7 +17,7 @@ public class PaymentUpdateRequest {
     private String mode;
     private String paymentReferenceNo;
     List<InvestigationandPackegBillStatus> investigationandPackegBillStatus;
-
+    private BigDecimal registrationCost;
     private List<OpdBillPayment> opdBillPayments;
 
     @Getter

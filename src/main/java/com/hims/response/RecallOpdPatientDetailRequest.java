@@ -1,9 +1,11 @@
 package com.hims.response;
 
+
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -31,11 +33,28 @@ public class RecallOpdPatientDetailRequest {
 
     private List<IcdDiagnosis> icdObj;
     private List<TreatmentRequest> treatments;
+    private String treatmentAdvice;
     private List<InvestigationRequest> investigations;
-
+//    private List<ProcedureCare> procedureCare;
+    private String doctorRemarks;
     private List<Long>removeIcdIds;
+    private List<Long>removeprocedureCareIds;
     private List<Long> removedTreatmentIds;
     private List<Integer> removedInvestigationIds;
+
+
+    private String admissionFlag;
+    private Instant admissionAdvisedDate;
+    private String admissionRemarks;
+    private Long admissionCareLevel;
+    private Long admissionWardCategory;
+    private Long admissionWard;
+    private String admissionPriority;
+    private String referralFlag;
+    private String followUpFlag;
+    private Instant followUpDate;
+    private Long followUpDays;
+
 
     private Long opdPatientId;
     private Long patientId;
@@ -54,7 +73,7 @@ public class RecallOpdPatientDetailRequest {
         private String drugName;
         private String dispUnit;
         private String dosage;
-        private Integer frequency;
+        private String frequency;
         private Integer days;
         private Integer total;
         private String instruction;
@@ -78,5 +97,18 @@ public class RecallOpdPatientDetailRequest {
         private Long id;
         private Long icdId;
         private String icdDiagName;
+    }
+
+    // ============================== Procedure Care DTO=============================
+
+    @Getter
+    @Setter
+    public static class ProcedureCare{
+        private Long id;
+        private Long procedureId;
+        private String procedureName;
+        private Long frequencyId;
+        private Long noOfDays;
+        private String remarks;
     }
 }

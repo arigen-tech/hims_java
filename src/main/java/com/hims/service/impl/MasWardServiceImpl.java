@@ -40,9 +40,9 @@ public class MasWardServiceImpl implements MasWardService {
 
             List<MasWard> masWards;
             if(flag==0){
-                masWards=masWardRepository.findByStatusIgnoreCaseIn(List.of("y","n"));
+                masWards=masWardRepository.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y","n"));
             } else if (flag==1) {
-                masWards=masWardRepository.findByStatusIgnoreCase("y");
+                masWards=masWardRepository.findByStatusIgnoreCaseOrderByWardNameAsc("y");
             }else{
                 return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Flag Value , Provide flag as 0 or 1",HttpStatus.BAD_REQUEST.value());
             }

@@ -52,9 +52,9 @@ public class MasOpdSessionServiceImpl implements MasOpdSessionService {
         List<MasOpdSession> sessions;
 
         if (flag == 1) {
-            sessions = masOpdSessionRepository.findByStatusIgnoreCase("Y");
+            sessions = masOpdSessionRepository.findByStatusIgnoreCaseOrderBySessionNameAsc("Y");
         } else if (flag == 0) {
-            sessions = masOpdSessionRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            sessions = masOpdSessionRepository.findByStatusInIgnoreCaseOrderByLastChgDtDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

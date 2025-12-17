@@ -10,4 +10,8 @@ import java.util.List;
 public interface MasWardCategoryRepository extends JpaRepository<MasWardCategory,Long> {
 
     List<MasWardCategory> findByStatus(String y);
+
+    List<MasWardCategory> findByStatusOrderByLastUpdateDateDesc(String y);
+
+    List<MasWardCategory> findAllByOrderByCategoryNameAsc();
 }

@@ -184,9 +184,9 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
     public ApiResponse<List<MasSubChargeCodeDTO>> getAllSubCharge(int flag){
         List<MasSubChargeCode> subCode;
         if (flag == 1) {
-            subCode = subRepo.findByStatus("y");
+            subCode = subRepo.findByStatusOrderBySubNameAsc("y");
         } else if (flag == 0) {
-            subCode = subRepo.findAll();
+            subCode = subRepo.findAllByOrderByLastChgDateDescLastChgTimeDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

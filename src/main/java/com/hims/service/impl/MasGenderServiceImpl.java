@@ -42,9 +42,9 @@ public class MasGenderServiceImpl implements MasGenderService {
         List<MasGender> genders;
 
         if (flag == 1) {
-            genders = masGenderRepository.findByStatusIgnoreCase("Y");
+            genders = masGenderRepository.findByStatusIgnoreCaseOrderByGenderNameAsc("Y");
         } else if (flag == 0) {
-            genders = masGenderRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            genders = masGenderRepository.findByStatusIgnoreCaseInOrderByLastChgDtDesc(List.of("Y", "N"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

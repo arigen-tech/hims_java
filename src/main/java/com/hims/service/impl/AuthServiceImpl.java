@@ -251,6 +251,7 @@ public class AuthServiceImpl implements AuthService {
                     .roleId(user.getRoleId())
                     .hospitalId(user.getHospital().getId())
                     .departmentId(departmentId)
+                    .departmentName(userDepartmentId.getDepartment().getDepartmentName())
                     .build();
 
 

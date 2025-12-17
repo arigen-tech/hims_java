@@ -4,6 +4,7 @@ import com.hims.entity.BillingHeader;
 import com.hims.entity.repository.BillingHeaderRepository;
 import com.hims.service.LabReportService;
 import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.util.JRLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -33,11 +34,11 @@ public class LabReportServiceImpl implements LabReportService {
 
     @Override
     public byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception {
-        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jrxml");
+        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jasper");
         if (reportStream == null) {
             throw new FileNotFoundException("Report file not found: " + reportName);
         }
-        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(reportStream);
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }

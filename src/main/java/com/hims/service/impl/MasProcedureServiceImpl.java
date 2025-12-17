@@ -17,6 +17,9 @@ import com.hims.utils.ResponseUtils;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -52,10 +55,10 @@ public class MasProcedureServiceImpl implements MasProcedureService {
 
             if (flag == 1) {
                 log.info("Fetching active procedures only");
-                list = repository.findByStatusIgnoreCaseOrderByLastChangedDateDesc("y");
+                list = repository.findByStatusIgnoreCaseOrderByProcedureNameAsc("y");
             } else if (flag == 0) {
                 log.info("Fetching all procedures");
-                list = repository.findByStatusInOrderByLastChangedDateDesc(List.of("y","n"));
+                list = repository.findAllByOrderByLastChangedDateDesc();
             } else {
                 log.warn("Invalid flag: {}", flag);
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
@@ -75,8 +78,48 @@ public class MasProcedureServiceImpl implements MasProcedureService {
                     "Unexpected error: " + e.getMessage(), 500);
         }
     }
+
+
     @Override
-    public ApiResponse<MasProcedureResponse> getMasProcedureById(Integer id) {
+    public ApiResponse<Page<MasProcedureResponse>> getAllProceduresWIthFilter(
+            int flag, int page, int size, String search) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<MasProcedure> procedurePage;
+
+        boolean hasSearch = (search != null && !search.trim().isEmpty());
+        String searchPattern = "%" + search.toLowerCase() + "%";
+
+        if (hasSearch) {
+
+            // 🔹 If flag = 1 → Only status = 'Y'
+            if (flag == 1) {
+                procedurePage = repository.searchProcedure(
+                        "Y", searchPattern, pageable
+                );
+            }
+            // 🔹 Flag != 1 → status IN (Y, N)
+            else {
+                procedurePage = repository.searchProcedureIn(
+                        List.of("Y", "N"), searchPattern, pageable
+                );
+            }
+        }
+        else if (flag == 1) {
+            procedurePage = repository.findByStatusIgnoreCase("Y", pageable);
+        } else {
+            procedurePage = repository.findByStatusInIgnoreCase(List.of("Y", "N"), pageable);
+        }
+
+        Page<MasProcedureResponse> responsePage = procedurePage.map(this::toResponse);
+
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+    }
+
+
+
+    @Override
+    public ApiResponse<MasProcedureResponse> getMasProcedureById(Long id) {
         log.info("MasProcedure: Find By ID | id={}", id);
 
         Optional<MasProcedure> procedure = repository.findById(id);
@@ -129,7 +172,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
     }
 
     @Override
-    public ApiResponse<MasProcedureResponse> updateMasProcedure(Integer id, MasProcedureRequest req) {
+    public ApiResponse<MasProcedureResponse> updateMasProcedure(Long id, MasProcedureRequest req) {
         log.info("MasProcedure: Update Start | id={} | data={}", id, req);
 
         User user = authUtil.getCurrentUser();
@@ -168,7 +211,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         return ResponseUtils.createSuccessResponse(toResponse(saved), new TypeReference<>() {});
     }
     @Override
-    public ApiResponse<MasProcedureResponse>changeStatus(Integer id, String status) {
+    public ApiResponse<MasProcedureResponse>changeStatus(Long id, String status) {
         log.info("MasProcedure: Change Status | id={} | status={}", id, status);
 
         User user = authUtil.getCurrentUser();

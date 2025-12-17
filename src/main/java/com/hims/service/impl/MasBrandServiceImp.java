@@ -46,9 +46,9 @@ public class MasBrandServiceImp implements MasBrandService {
     public ApiResponse<List<MasBrandResponse>> getAllMasBrand(int flag) {
             List<MasBrand> brands;
             if (flag == 1) {
-                brands = masBrandRepository.findByStatusIgnoreCase("y");
+                brands = masBrandRepository.findByStatusIgnoreCaseOrderByBrandNameAsc("y");
             } else if (flag == 0) {
-                brands = masBrandRepository.findByStatusInIgnoreCase(List.of("y", "n"));
+                brands = masBrandRepository.findByStatusIgnoreCaseInOrderByLastUpdatedDtDesc(List.of("y", "n"));
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                 }, "Invalid flag", 400);

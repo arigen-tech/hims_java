@@ -47,9 +47,9 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
     public ApiResponse<List<MasManufacturer>> getAllMasManufacturer(int flag) {
         List<MasManufacturer> masManufacturers;
         if (flag == 1) {
-            masManufacturers = masManufacturerRepository.findByStatusIgnoreCase("y");
+            masManufacturers = masManufacturerRepository.findByStatusIgnoreCaseOrderByManufacturerNameAsc("y");
         } else if (flag == 0) {
-            masManufacturers = masManufacturerRepository.findByStatusInIgnoreCase(List.of("y", "n"));
+            masManufacturers = masManufacturerRepository.findByStatusIgnoreCaseInOrderByLastUpdatedDtDesc(List.of("y", "n"));
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

@@ -64,10 +64,10 @@ public class MasHospitalServiceImpl implements MasHospitalService {
 
         if (flag == 1) {
             // Fetch only records with status 'Y'
-            hospitals = masHospitalRepository.findByStatusIgnoreCase("Y");
+            hospitals = masHospitalRepository.findByStatusIgnoreCaseOrderByHospitalNameAsc("Y");
         } else if (flag == 0) {
             // Fetch all records with status 'Y' or 'N'
-            hospitals = masHospitalRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            hospitals = masHospitalRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("Y", "N"));
         } else {
             // Handle invalid flag values
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
