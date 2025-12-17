@@ -164,9 +164,9 @@ public class MasIntakeItemServiceImpl implements MasIntakeItemService {
                 i.getIntakeType().getIntakeTypeName(),
                 i.getIntakeItemName(),
                 i.getStatus(),
-                i.getLastUpdateDate(),
-                i.getCreatedBy(),
-                i.getLastUpdatedBy()
+                i.getLastUpdateDate()
+//                ,i.getCreatedBy(),
+//                i.getLastUpdatedBy()
         );
     }
 
