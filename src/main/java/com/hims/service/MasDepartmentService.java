@@ -21,4 +21,6 @@ public interface MasDepartmentService {
     ApiResponse<List<MasUserDepartmentResponse>> getMasUserDepartmentsByDepartmentId(Long departmentId);
 
     ApiResponse<List<MasUserDepartmentResponse>> getMasUserDepartmentsByUserId(Long userId);
+
+    ApiResponse<List<MasDepartmentResponse>> getAllWardDepartmentByWardCategory(Long wardCategory);
 }

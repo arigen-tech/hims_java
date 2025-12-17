@@ -2,6 +2,8 @@ package com.hims.entity.repository;
 
 import com.hims.entity.MasDepartment;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -15,4 +17,16 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
     List<MasDepartment> findByStatusIgnoreCaseOrderByDepartmentNameAsc(String y);
 
     List<MasDepartment> findByStatusIgnoreCaseInOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+
+    @Query("""
+        SELECT m
+        FROM MasDepartment m
+        WHERE m.departmentType.id = :departmentTypeId
+          AND m.wardCategory.id = :wardCategoryId
+          AND LOWER(m.status) = 'y'
+    """)
+    List<MasDepartment> findActiveWardDepartments(
+            @Param("departmentTypeId") Long departmentTypeId,
+            @Param("wardCategoryId") Long wardCategoryId
+    );
 }
