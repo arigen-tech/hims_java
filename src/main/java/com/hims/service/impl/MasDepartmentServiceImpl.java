@@ -220,5 +220,24 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         return ResponseUtils.createSuccessResponse(departmentResponses, new TypeReference<>() {});
     }
 
+    @Override
+    public ApiResponse<List<MasDepartmentResponse>> getAllWardDepartmentByWardCategory(Long wardCategory) {
+
+        Long departmentTypeId = WARD_ID;
+
+        List<MasDepartment> departments =
+                masDepartmentRepository.findActiveWardDepartments(
+                        departmentTypeId,
+                        wardCategory
+                );
+
+        List<MasDepartmentResponse> responses = departments.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+    }
+
+
 
 }

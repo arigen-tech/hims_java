@@ -93,6 +93,9 @@ public class OpdPatientDetail {
     @Column(name = "clinical_examination", length = Integer.MAX_VALUE)
     private String clinicalExamination;
 
+    @Column(name = "final_medical_advice", length = Integer.MAX_VALUE)
+    private String finalMedicalAdvice;
+
     @Column(name = "treatment_advice", length = Integer.MAX_VALUE)
     private String treatmentAdvice;
 
@@ -162,6 +165,36 @@ public class OpdPatientDetail {
     @Size(max = 200)
     @Column(name = "last_chg_by", length = 200)
     private String lastChgBy;
+
+    @Size(max = 1)
+    @Column(name = "admission_flag", length = 1)
+    private String admissionFlag;
+
+    @Column(name = "admission_advised_date")
+    private Instant admissionAdvisedDate;
+
+    @Size(max = 500)
+    @Column(name = "admission_remarks", length = 500)
+    private String admissionRemarks;
+
+    @ManyToOne
+    @JoinColumn(name = "admission_care_level_id")
+    private MasCareLevel admissionCareLevel;
+
+    @ManyToOne
+    @JoinColumn(name = "admission_ward_category_id")
+    private MasWardCategory admissionWardCategory;
+
+    @ManyToOne
+    @JoinColumn(name = "admission_ward_id")
+    private MasDepartment admissionWard;
+
+    @Size(max = 20)
+    @Column(name = "admission_priority", length = 20)
+    private String admissionPriority;
+
+    @Column(name = "follow_up_date")
+    private Instant followUpDate;
 
 
 
