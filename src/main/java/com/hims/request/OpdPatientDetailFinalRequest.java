@@ -94,7 +94,8 @@ public class OpdPatientDetailFinalRequest {
 
     //  =========================== referral ==============================
     private String referralFlag;
-
+    private String referralRemarks;
+    private Instant referralDate;
 
     // =================== follow up =========
 

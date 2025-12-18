@@ -1,6 +1,7 @@
 package com.hims.response;
 
 
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,6 +36,8 @@ public class RecallOpdPatientDetailRequest {
     private List<TreatmentRequest> treatments;
     private String treatmentAdvice;
     private List<InvestigationRequest> investigations;
+    private String labFlag;
+    private String radioFlag;
 //    private List<ProcedureCare> procedureCare;
     private String doctorRemarks;
     private List<Long>removeIcdIds;
@@ -51,6 +54,8 @@ public class RecallOpdPatientDetailRequest {
     private Long admissionWard;
     private String admissionPriority;
     private String referralFlag;
+    private String referralRemarks;
+    private Instant referralDate;
     private String followUpFlag;
     private Instant followUpDate;
     private Long followUpDays;

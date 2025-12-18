@@ -196,6 +196,11 @@ public class OpdPatientDetail {
     @Column(name = "follow_up_date")
     private Instant followUpDate;
 
+    @Column(name = "referral_date")
+    private Instant referralDate;
 
+    @Size(max = 500)
+    @Column(name = "referral_remark", length = 500)
+    private String referralRemarks;
 
 }

@@ -384,6 +384,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         opdPatientDetail.setReferralFlag(
                 isYes(request.getReferralFlag()) ? "y" : "n"
         );
+        opdPatientDetail.setReferralRemarks(request.getReferralRemarks());
+        opdPatientDetail.setReferralDate(request.getReferralDate());
 
 
         // ====================== SAVE OPD ============================
@@ -561,11 +563,17 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             opdObj.setFollowUpFlag("n");
         }
 
+        // ===================== Rrferral =====================
+
         opdObj.setReferralFlag(isYes(request.getReferralFlag()) ? "y" : "n");
+        opdObj.setReferralRemarks(request.getReferralRemarks());
+        opdObj.setReferralDate(request.getReferralDate());
 
         OpdPatientDetail saved = opdPatientDetailRepository.save(opdObj);
 
         // ===================== INVESTIGATIONS =====================
+        opdObj.setLabFlag(request.getLabFlag());
+        opdObj.setRadioFlag(request.getRadioFlag());
         List<RecallOpdPatientDetailRequest.InvestigationRequest> invList = request.getInvestigations();
 
         if (invList != null && !invList.isEmpty()) {
@@ -1259,6 +1267,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 newDt.setInstraction(dt.getInstruction());
                 newDt.setItemId(dt.getItemId());
 
+                MasStoreItem itemObjCurr = masStoreItemRepository.findById(dt.getItemId()).get();
+
+                newDt.setDispUnit(itemObjCurr.getDispUnit().getUnitName());
+                newDt.setItemClassId(itemObjCurr.getItemClassId().getItemClassId());
+                newDt.setAdispQty(itemObjCurr.getAdispQty());
+
                 // SAFE: Frequency
                 MasFrequency freq = masFrequencyRepository.findByFrequencyName(dt.getFrequency());
                 newDt.setFrequencyId(dt.getFrequency());
@@ -1291,6 +1305,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             // --------------- refferal -----------------------
             response.setReferralFlag(opdPatientObj.getReferralFlag());
+            response.setReferralRemarks(opdPatientObj.getReferralRemarks());
+            response.setReferralDate(opdPatientObj.getReferralDate());
 
             // ----------------- admission advice ----------------------
             response.setAdmissionFlag(opdPatientObj.getAdmissionFlag());
@@ -1404,14 +1420,19 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 d.setId(dis.getDischargeIcdCodeId());
                 d.setIcdId(dis.getIcdId());
 
-                String icdName = masIcdRepository.findById(dis.getIcdId())
-                        .map(MasIcd::getIcdName)
-                        .orElse(null);
+                MasIcd masIcd = masIcdRepository.findById(dis.getIcdId()).orElse(null);
 
-                d.setIcdDiagName(icdName);
+                if (masIcd != null) {
+                    String icdDiagnosis =
+                            masIcd.getIcdCode() + " - " + masIcd.getIcdName();
+                    d.setIcdDiagName(icdDiagnosis);
+                } else {
+                    d.setIcdDiagName(null);
+                }
 
                 newList.add(d);
             }
+
 
             response.setIcdDiag(newList);
         }
