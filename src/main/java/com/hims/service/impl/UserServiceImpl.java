@@ -188,10 +188,10 @@ public class UserServiceImpl implements UserService {
 
         if (flag == 1) {
             // Active users only (status = 'Y')
-            users = userRepository.findByStatusIgnoreCase("Y");
+            users = userRepository.findByStatusIgnoreCaseOrderByUserNameAsc("Y");
         } else if (flag == 0) {
             // All users (active and inactive)
-            users = userRepository.findByStatusInIgnoreCase(List.of("Y", "N"));
+            users = userRepository.findAllByOrderByStatusDescLastChangeDateDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Invalid flag value. Use 0 or 1.", 400);

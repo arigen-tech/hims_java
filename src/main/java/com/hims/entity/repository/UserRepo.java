@@ -28,4 +28,8 @@ public interface UserRepo extends JpaRepository<User, Long> {
     List<User> findByStatusIgnoreCase(String y);
 
     List<User> findByStatusInIgnoreCase(List<String> y);
+
+    List<User> findByStatusIgnoreCaseOrderByUserNameAsc(String y);
+
+    List<User> findAllByOrderByStatusDescLastChangeDateDesc();
 }
