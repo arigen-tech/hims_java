@@ -12,4 +12,10 @@ public class ApiResponse<T> {
     private String salt;
     private boolean isProduction;
     private String key;
+
+    public ApiResponse(String message) {
+       // this.status = status;
+        this.message = message;
+      //  this.data = data;
+    }
 }
