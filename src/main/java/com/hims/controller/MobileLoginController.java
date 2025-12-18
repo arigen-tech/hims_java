@@ -63,7 +63,7 @@ public class MobileLoginController {
         }
     }
     private ResponseEntity<ApiResponse> createErrorResponse(String message) {
-        return ResponseEntity.badRequest().body(new ApiResponse( message));
+        return ResponseEntity.badRequest().body(new ApiResponse("error", message, null));
     }
 
 
