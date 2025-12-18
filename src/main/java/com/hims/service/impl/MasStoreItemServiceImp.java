@@ -219,32 +219,43 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     @Override
     public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag) {
 
+
+        log.info("getAllMasStoreItem started with flag: {}", flag);
+
         List<MasStoreItem> masStoreItems;
+
         if (flag == 1) {
-            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseOrderByNomenclatureAsc("y");
+            masStoreItems = masStoreItemRepository
+                    .findByStatusIgnoreCaseOrderByNomenclatureAsc("y");
         } else if (flag == 0) {
-            masStoreItems = masStoreItemRepository.findAllByOrderByStatusDescLastChgDateDesc();
+            masStoreItems = masStoreItemRepository
+                    .findAllOrderByStatusDesc(List.of("y", "n"));
         } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "Invalid flag value. Use 0 or 1.", 400);
+            log.warn("Invalid flag received: {}", flag);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {},
+                    "Invalid flag value. Use 0 or 1.", 400);
         }
 
-        // ✅ Fetch all stocks in one query
-        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemIds(masStoreItems);
+        log.info("Items fetched count: {}", masStoreItems.size());
 
-        // Group stocks by itemId
+        // Fetch all stocks in one query
+        long stockStart = System.currentTimeMillis();
+        List<StoreItemBatchStock> allStocks =
+                storeItemBatchStockRepository.findByItemIds(masStoreItems);
+        log.info("Stock fetch time: {} ms",
+                System.currentTimeMillis() - stockStart);
+
+        //  Group stocks by itemId
         Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
                 .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
 
-        long convertStart = System.currentTimeMillis();
 
         List<MasStoreItemResponse> responses = masStoreItems.stream()
                 .map(item -> convertToResponsewithAllStock(item, stockMap))
                 .collect(Collectors.toList());
 
-
-        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
-        });
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
 

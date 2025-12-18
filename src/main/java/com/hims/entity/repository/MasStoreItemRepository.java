@@ -3,6 +3,8 @@ package com.hims.entity.repository;
 import com.hims.entity.MasItemCategory;
 import com.hims.entity.MasStoreItem;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -43,4 +45,16 @@ public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long>
   //  List<MasStoreItem> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
 
     List<MasStoreItem> findAllByOrderByStatusDescLastChgDateDesc();
+
+    List<MasStoreItem> findByStatusInIgnoreCaseOrderByStatusDescLastChgDateDescLastChgTimeDesc(List<String> y);
+    @Query("""
+       SELECT m FROM MasStoreItem m
+       WHERE LOWER(m.status) IN :status
+       ORDER BY m.status DESC,
+                m.lastChgDate DESC,
+                m.lastChgTime DESC
+       """)
+    List<MasStoreItem> findAllOrderByStatusDesc(
+            @Param("status") List<String> status
+    );
 }
