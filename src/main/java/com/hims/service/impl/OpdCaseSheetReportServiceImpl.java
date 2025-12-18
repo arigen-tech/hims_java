@@ -38,7 +38,7 @@ public class OpdCaseSheetReportServiceImpl implements OpdCaseSheetService {
 
     @Override
     public byte[] reportDeclare(String reportName, Map<String, Object> parameters, Connection conn) throws Exception {
-        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/opdCaseSheetReport/" + reportName + ".jasper");
+        InputStream reportStream = getClass().getResourceAsStream("/jasperReport/" + reportName + ".jasper");
         if (reportStream == null) {
             throw new FileNotFoundException("Report file not found: " + reportName);
         }
@@ -116,24 +116,6 @@ public class OpdCaseSheetReportServiceImpl implements OpdCaseSheetService {
                             params,
                             conn
                     );
-
-            // for dihhbugging purposes only
-            String dir =
-                    System.getProperty("user.home")
-                            + File.separator
-                            + "Downloads"
-                            + File.separator
-                            + "hims-reports"
-                            + File.separator;
-
-            Files.createDirectories(Paths.get(dir));
-
-            String pdfPath = dir + "opd-case-sheet.pdf";
-
-            JasperExportManager.exportReportToPdfFile(
-                    jasperPrint,
-                    pdfPath
-            );
 
             return jasperPrint;
         }

@@ -1,13 +1,17 @@
 package com.hims.controller;
 
-import com.hims.service.OpdCaseSheetService;
+import com.hims.service.impl.ReportPrintFacade;
 import com.hims.utils.JasperPrintUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.SneakyThrows;
-import net.sf.jasperreports.engine.JasperPrint;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @Tag(name = "JasperPrintController", description = "Controller for printing all reports")
@@ -15,17 +19,47 @@ import org.springframework.web.bind.annotation.*;
 public class JasperPrintController {
 
     @Autowired
-    private OpdCaseSheetService opdCaseSheetService;
+    private DataSource dataSource;
 
     @Autowired
     private JasperPrintUtil printUtil;
 
-    @SneakyThrows
+    @Autowired
+    private ReportPrintFacade reportPrint;
+
     @PostMapping("/opd-casesheet")
     public ResponseEntity<String> printOpdCaseSheet(
             @RequestParam Long visitId) {
-        JasperPrint jasperPrint = opdCaseSheetService.printOpdCaseSheetReport(visitId);
-        printUtil.print(jasperPrint);
-        return ResponseEntity.ok("Printed successfully");
+        Map<String, Object> params = new HashMap<>();
+        params.put("visit_id", visitId);
+        params.put("SUBREPORT_DIR", getClass()
+                .getResource("/jasperReport/opdCaseSheetReport/")
+                .toString() );
+        params.put("path", getClass()
+                .getResource("/Assets/arigen_health.png")
+                .toString() );
+        try (Connection conn = dataSource.getConnection()) {
+            reportPrint.printJasperReport("opd_casesheet_new_report_1.jasper", params, conn);
+            return ResponseEntity.ok("OPD Case Sheet Printed");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Printing failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("lab-investigation")
+    public ResponseEntity<String> printLabReport(
+            @RequestParam Integer orderhd_id ) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("orderhd_id", orderhd_id);
+        try (Connection conn = dataSource.getConnection()) {
+            reportPrint.printJasperReport("Lab_investigation_report.jasper", params, conn);
+            return ResponseEntity.ok("Lab investigation report Printed");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Printing failed: " + e.getMessage());
+        }
     }
 }
