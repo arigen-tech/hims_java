@@ -7,6 +7,7 @@ import com.hims.exception.SDDException;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
+import com.hims.service.PatientLoginService;
 import com.hims.service.PatientService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
@@ -95,6 +96,9 @@ public class PatientServiceImpl implements PatientService {
     @Value("${serviceCategoryRegistration}")
     private String serviceCategoryRegistration;
 
+    @Autowired
+    private PatientLoginService patientLoginService;
+
 
 
     @Override
@@ -116,6 +120,7 @@ public class PatientServiceImpl implements PatientService {
                     "Patient already Registered", 500);
         }
         Patient patient = savePatient(request,false);
+        PatientLogin patientLogin = patientLoginService.savePatientLogin(patient);
         resp.setPatient(patient);
         OpdPatientDetail newOpd=new OpdPatientDetail();
         if(visit!=null){
@@ -134,8 +139,9 @@ public class PatientServiceImpl implements PatientService {
                     }
                 }
             }
-
+            if(savedVisits.get(0).getBillingStatus().equalsIgnoreCase("n")){
             resp.setVisits(savedVisits);
+            }
             OPDBillingPatientResponse finalResponse =  buildFinalResponse(patient,savedVisits);
             resp.setOpdBillingPatientResponse(finalResponse);
         }
@@ -692,6 +698,8 @@ public class PatientServiceImpl implements PatientService {
         return patient;
     }
 
+
+
     private OpdPatientDetail addOpdDetails(Visit savedVisit, OpdPatientDetailRequest opdPatientDetailRequest, Patient patient) {
         OpdPatientDetail opdPatientDetail = new OpdPatientDetail();
         opdPatientDetail.setHeight(opdPatientDetailRequest.getHeight());
@@ -823,19 +831,10 @@ public class PatientServiceImpl implements PatientService {
         //create billing header and detail
         MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
         MasDiscount discount=new MasDiscount();
-        // we DONT need to generate bill only if appCost is YES
-        if(newVisit.getBillingStatus().equalsIgnoreCase("n")){
-            ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
-            Visit v = visitRepository.getReferenceById(newVisit.getId());
-            newVisit.setBillingHd(resp.getResponse().getHeader());
-            visitRepository.save(newVisit);
-        }
-        // Save visit
-
-
-
-
-
+        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
+        Visit v = visitRepository.getReferenceById(newVisit.getId());
+        newVisit.setBillingHd(resp.getResponse().getHeader());
+        visitRepository.save(newVisit);
         return savedVisit;
     }
     public static Instant[] calculateTokenTimeAsInstant(
