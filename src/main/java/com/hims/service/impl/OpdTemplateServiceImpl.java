@@ -589,6 +589,9 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             tr.setInstruction(t.getInstruction());
             tr.setFrequencyId(t.getFrequency() != null ? t.getFrequency().getFrequency_id() : null);
             tr.setItemId(t.getItem() != null ? t.getItem().getItemId() : null);
+            tr.setDispUnit(t.getItem() != null ? t.getItem().getDispUnit().getUnitName() : null);
+            tr.setAdispQty(t.getItem() != null ? t.getItem().getAdispQty() : null);
+            tr.setItemClassId(t.getItem() != null ? t.getItem().getItemClassId().getItemClassId() : null);
             tr.setDispU(t.getItem() != null ? t.getItem().getDispUnit().getUnitName() : null);
             tr.setItemName(t.getItem() != null ? t.getItem().getNomenclature() : null);
             if (t.getItem() == null) {

@@ -1,7 +1,10 @@
 package com.hims.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.response.ApiResponse;
 import com.hims.service.impl.ReportPrintFacade;
 import com.hims.utils.JasperPrintUtil;
+import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -49,13 +52,14 @@ public class JasperPrintController {
     }
 
     @PostMapping("lab-investigation")
-    public ResponseEntity<String> printLabReport(
+    public ResponseEntity<?> printLabReport(
             @RequestParam Integer orderhd_id ) {
         Map<String, Object> params = new HashMap<>();
         params.put("orderhd_id", orderhd_id);
         try (Connection conn = dataSource.getConnection()) {
             reportPrint.printJasperReport("Lab_investigation_report.jasper", params, conn);
-            return ResponseEntity.ok("Lab investigation report Printed");
+            return ResponseEntity.ok(
+                    ResponseUtils.createSuccessResponse("Lab Report printed successfully", new TypeReference<>() {}));
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)

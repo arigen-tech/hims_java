@@ -13,6 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -522,6 +526,61 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+
+
+    @Override
+    public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(
+            int flag,
+            String search,
+            int page,
+            int size) {
+
+        long apiStart = System.currentTimeMillis();
+        System.out.println("⏳ API START: getMasStoreItemDynamic");
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("nomenclature").ascending());
+        Page<MasStoreItem> masStoreItems;
+
+        // 🔹 Dynamic filtering
+        if ((search != null && !search.isBlank()) || sectionId != null) {
+            masStoreItems = masStoreItemRepository.dynamicSearch(flag, Long.valueOf(sectionId), search.toLowerCase(), pageable);
+        } else {
+            if (flag == 1) {
+                masStoreItems = masStoreItemRepository.findByStatusIgnoreCase("y", pageable);
+            } else if (flag == 0) {
+                masStoreItems = masStoreItemRepository.findByStatusInIgnoreCase(List.of("y","n"), pageable);
+            } else {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Invalid flag value. Use 0 or 1.", 400);
+            }
+        }
+
+        // No data
+        if (masStoreItems.isEmpty()) {
+            return ResponseUtils.createSuccessResponse(Page.empty(pageable), new TypeReference<>() {});
+        }
+
+        // Preload stocks efficiently
+        List<Long> itemIds = masStoreItems.getContent().stream()
+                .map(MasStoreItem::getItemId)
+                .toList();
+
+        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemId(itemIds);
+
+        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
+                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
+
+        // Map to response
+        Page<MasStoreItemResponseWithStock> responsePage = masStoreItems.map(item ->
+                convertToResponsefast(item, stockMap)
+        );
+
+        long apiEnd = System.currentTimeMillis();
+        System.out.println("✅ TOTAL API TIME: " + (apiEnd - apiStart) + " ms");
+
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+    }
+
 
 
     private MasStoreItemResponseWithStock convertToResponsefast(MasStoreItem item,

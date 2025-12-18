@@ -1,6 +1,8 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.DgMasInvestigation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -43,5 +45,61 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
     List<DgMasInvestigation> findByStatusInIgnoreCaseOrderByLastChgDateDesc(List<String> statuses);
 
     DgMasInvestigation findByinvestigationId(Long investigationId);
+
+    Page<DgMasInvestigation> findByStatusIgnoreCase(String status, Pageable pageable);
+
+    Page<DgMasInvestigation> findByStatusInIgnoreCase(List<String> status, Pageable pageable);
+
+    @Query("""
+    SELECT m FROM DgMasInvestigation m
+    WHERE
+    (
+      (:flag = 0 AND LOWER(m.status) IN ('y','n'))
+      OR
+      (:flag = 1 AND LOWER(m.status) = 'y')
+    )
+    AND (:mainChargeCodeId IS NULL
+         OR m.mainChargeCodeId.chargecodeId = :mainChargeCodeId)
+    AND (
+        LOWER(m.investigationName) LIKE %:search%
+        OR LOWER(m.mainChargeCodeId.chargecodeName) LIKE %:search%
+    )
+    """)
+    Page<DgMasInvestigation> searchInvestigations(
+            @Param("flag") int flag,
+            @Param("search") String search,
+            @Param("mainChargeCodeId") Long mainChargeCodeId,
+            Pageable pageable
+    );
+
+
+
+    @Query("""
+    SELECT m FROM DgMasInvestigation m
+    WHERE
+    (
+      (:flag = 0 AND LOWER(m.status) IN ('y','n'))
+      OR
+      (:flag = 1 AND LOWER(m.status) = 'y')
+    )
+    AND (:mainChargeCodeId IS NULL
+         OR m.mainChargeCodeId.chargecodeId = :mainChargeCodeId)
+    """)
+    Page<DgMasInvestigation> findAllWithFilter(
+            @Param("flag") int flag,
+            @Param("mainChargeCodeId") Long mainChargeCodeId,
+            Pageable pageable
+    );
+
+
+    @Query("""
+        SELECT DISTINCT 
+            m.chargecodeId AS id,
+            m.chargecodeName AS name
+        FROM DgMasInvestigation d
+        JOIN d.mainChargeCodeId m
+        WHERE m.status = 'y'
+        """)
+    List<InvestigationTypeProjection> findUniqueInvestigationTypes();
 
 }

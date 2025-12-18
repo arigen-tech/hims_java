@@ -1265,6 +1265,17 @@ public class MasterController {
         return masStoreItemService.getAllMasStoreItemBySectionOnly(flag);
     }
 
+    @GetMapping("/masStoreItem/getAllBySectionOnlyDynamic")
+    public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(
+            @RequestParam int flag,
+            @RequestParam(required = false, defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        return masStoreItemService.getMasStoreItemDynamic(flag, search, page, size);
+    }
+
+
 
     //    ================================Mas HSN  Controller================================//
 
