@@ -17,5 +17,7 @@ public interface MasStoreGroupRepository extends JpaRepository <MasStoreGroup, I
     List<MasStoreGroup> findByStatusIgnoreCaseOrderByGroupNameAsc(String y);
 
     List<MasStoreGroup> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+
+    List<MasStoreGroup> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
 }
 

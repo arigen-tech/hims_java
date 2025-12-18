@@ -120,9 +120,9 @@ public class MasBedTypeServiceImpl implements MasBedTypeService {
             log.info("Mas Bed Type get List Start");
             List<MasBedType> masBedTypes;
             if (flag == 1) {
-                masBedTypes = masBedTypeRepository.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y", "n"));
-            } else if (flag == 0) {
                 masBedTypes = masBedTypeRepository.findByStatusIgnoreCaseOrderByBedTypeNameAsc("y");
+            } else if (flag == 0) {
+                masBedTypes = masBedTypeRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {

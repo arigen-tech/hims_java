@@ -197,7 +197,7 @@ public class MasBedServiceImpl implements MasBedService {
             List<MasBed> masBeds;
 
             if (flag == 0) {
-                masBeds = masBedRepository.findByStatusIgnoreCaseIn(List.of("y", "n"));
+                masBeds = masBedRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
             } else if (flag == 1) {
                 masBeds = masBedRepository.findByStatusIgnoreCase("y");
             } else {

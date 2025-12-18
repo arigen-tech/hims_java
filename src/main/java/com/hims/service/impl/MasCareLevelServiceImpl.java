@@ -142,7 +142,7 @@ public class MasCareLevelServiceImpl implements MasCareLevelService {
             }
             List<MasCareLevel> masCareLevels;
             if(flag==0){
-                masCareLevels=masCareLevelRepo.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y","n"));
+                masCareLevels=masCareLevelRepo.findAllByOrderByStatusDescLastUpdateDateDesc();
             } else if (flag==1) {
                 masCareLevels=masCareLevelRepo.findByStatusIgnoreCaseOrderByCareLevelNameAsc("y");
             }else{

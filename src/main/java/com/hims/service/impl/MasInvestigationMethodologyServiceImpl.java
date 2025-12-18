@@ -74,7 +74,7 @@ public class MasInvestigationMethodologyServiceImpl implements MasInvestigationM
     public ApiResponse<List<MasInvestigationMethodologyResponse>> get() {
         try {
             List<MasInvestigationMethodology> masInvestigationCategories =
-                    masInvestigationMethodologyRepository.findAllByOrderByLastChgDateDesc();
+                    masInvestigationMethodologyRepository.findAllByOrderByMethodNameAsc();
             return ResponseUtils.createSuccessResponse(
                     convertList(masInvestigationCategories),
                     new TypeReference<>() {

@@ -31,7 +31,7 @@ public class MasIntakeTypeServiceImpl  implements MasIntakeTypeService {
             List<MasIntakeType> list =
                     (flag == 1)
                             ? repository.findByStatusIgnoreCaseOrderByIntakeTypeNameAsc("y")
-                            : repository.findAllByOrderByLastUpdateDateDesc();
+                            : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List<MasIntakeTypeResponse> response =
                     list.stream().map(this::toResponse).collect(Collectors.toList());

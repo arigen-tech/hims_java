@@ -143,7 +143,7 @@ public class MasIdentificationTypeServiceImpl implements MasIdentificationTypeSe
         if (flag == 1) {
             types = masIdentificationTypeRepository.findByStatusIgnoreCaseOrderByIdentificationNameAsc("Y");
         } else if (flag == 0) {
-            types = masIdentificationTypeRepository.findByStatusInIgnoreCaseOrderByLastChangedDateDesc(List.of("Y", "N"));
+            types = masIdentificationTypeRepository.findAllByOrderByStatusDescLastChangedDateDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

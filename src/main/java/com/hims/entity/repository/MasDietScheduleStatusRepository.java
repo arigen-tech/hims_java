@@ -15,4 +15,6 @@ public interface MasDietScheduleStatusRepository extends JpaRepository<MasDietSc
     List<MasDietScheduleStatus> findAllByOrderByLastUpdateDateDesc();
 
     List<MasDietScheduleStatus> findByStatusIgnoreCaseOrderByStatusNameAsc(String y);
+
+    List<MasDietScheduleStatus> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

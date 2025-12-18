@@ -118,9 +118,9 @@ public class DgMasCollectionServiceImpl implements DgMasCollectionService {
     public ApiResponse<List<DgMasCollectionResponse>> getDgMasCollection(int flag) {
         List<DgMasCollection> dgMasCollections;
         if (flag == 1) {
-            dgMasCollections = dgMasCollectionRepository.findByStatusOrderByLastChgDateDesc("y");
+            dgMasCollections = dgMasCollectionRepository.findByStatusOrderByCollectionNameAsc("y");
         } else if (flag == 0) {
-            dgMasCollections = dgMasCollectionRepository.findAllByOrderByCollectionNameAsc();
+            dgMasCollections = dgMasCollectionRepository.findAllByOrderByStatusDescLastChgTimeDescLastChgDateDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

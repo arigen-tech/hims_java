@@ -162,7 +162,7 @@ public class MasRoomServiceImpl implements MasRoomService {
             List<MasRoom> list;
 
             if (flag == 0) {
-                list = masRoomRepo.findByStatusIgnoreCaseInOrderByLastUpdatedDateDesc(List.of("y", "n"));
+                list = masRoomRepo.findAllByOrderByStatusDescLastUpdatedDateDesc();
             } else if (flag == 1) {
                 list = masRoomRepo.findByStatusIgnoreCaseOrderByRoomNameAsc("y");
             } else {

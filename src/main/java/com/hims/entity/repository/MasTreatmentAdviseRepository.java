@@ -18,6 +18,8 @@ public interface MasTreatmentAdviseRepository extends JpaRepository<MasTreatment
 
     List<MasTreatmentAdvise> findAllByOrderByLastUpdateDateDesc();
 
+    List<MasTreatmentAdvise> findAllByOrderByStatusDescLastUpdateDateDesc();
+
     // Optional: find all treatment advice by department
     // List<TreatmentAdvise> findByDepartment_DepartmentId(Long departmentId);
 }

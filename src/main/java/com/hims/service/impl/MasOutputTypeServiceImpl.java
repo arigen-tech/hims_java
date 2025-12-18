@@ -32,7 +32,7 @@ public class MasOutputTypeServiceImpl implements MasOutputTypeService {
             List<MasOutputType> list =
                     (flag == 1)
                             ? repository.findByStatusIgnoreCaseOrderByOutputTypeNameAsc("y")
-                            : repository.findAllByOrderByLastUpdateDateDesc();
+                            : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List<MasOutputTypeResponse> response =
                     list.stream().map(this::toResponse).collect(Collectors.toList());

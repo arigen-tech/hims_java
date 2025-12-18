@@ -15,4 +15,6 @@ public interface MasMealTypeRepository extends JpaRepository<MasMealType,Long> {
    // List<MasMealType> findAllOrderByLastUpdateDateDesc();
 
     List<MasMealType> findAllByOrderByLastUpdateDateDesc();
+
+    List<MasMealType> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

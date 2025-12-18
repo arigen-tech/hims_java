@@ -11,5 +11,7 @@ public interface MasHospitalRepository extends JpaRepository<MasHospital, Long> 
 
     List<MasHospital> findByStatusIgnoreCaseOrderByHospitalNameAsc(String y);
 
-    List<MasHospital> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+  //  List<MasHospital> findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+
+    List<MasHospital> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
 }

@@ -10,7 +10,7 @@ import java.util.List;
 public interface MasOutputTypeRepository extends JpaRepository<MasOutputType, Long> {
  //   List<MasOutputType> findByStatusIgnoreCaseOrderByLastUpdateDateDesc(String y);
 
-    List<MasOutputType> findAllByOrderByLastUpdateDateDesc();
+    List<MasOutputType> findAllByOrderByStatusDescLastUpdateDateDesc();
 
     List<MasOutputType> findByStatusIgnoreCaseOrderByOutputTypeNameAsc(String y);
 }

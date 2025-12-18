@@ -8,13 +8,16 @@ import com.hims.response.DgMasInvestigationResponse;
 import com.hims.response.DgMasInvestigationSingleResponse;
 import com.hims.service.DgMasInvestigationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/DgMasInvestigation")
@@ -34,6 +37,30 @@ public class DgMasInvestigationController {
     public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(@PathVariable int flag) {
         return dgMasInvestigationService.getAllInvestigations(flag);
     }
+
+    @GetMapping("/dynamic/all")
+    public ApiResponse<Page<DgMasInvestigationResponse>> getAllInvestigationsDynamic(
+            @RequestParam int flag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long mainChargeCodeId
+    ) {
+        return dgMasInvestigationService
+                .getAllInvestigationsDynamic(flag, page, size, search, mainChargeCodeId);
+    }
+
+
+    @GetMapping("/uniqueInvestigation/types")
+    public ResponseEntity<?> getInvestigationTypes() {
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "SUCCESS");
+        response.put("response", dgMasInvestigationService.getInvestigationTypes());
+
+        return ResponseEntity.ok(response);
+    }
+
 
     @PutMapping("/change-status/{id}")
     public ResponseEntity<?> changeInvestigationStatus(@PathVariable Long id,@RequestParam String status){

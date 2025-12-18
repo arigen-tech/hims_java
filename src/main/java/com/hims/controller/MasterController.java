@@ -165,6 +165,8 @@ public class MasterController {
     private MasSpecialtyCenterService masSpecialtyCenterService;
     @Autowired
     private MasDesignationService masDesignationService;
+    @Autowired
+    private BillingPolicyService billingPolicyService;
 
 
 
@@ -1263,6 +1265,17 @@ public class MasterController {
         return masStoreItemService.getAllMasStoreItemBySectionOnly(flag);
     }
 
+    @GetMapping("/masStoreItem/getAllBySectionOnlyDynamic")
+    public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(
+            @RequestParam int flag,
+            @RequestParam(required = false, defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        return masStoreItemService.getMasStoreItemDynamic(flag, search, page, size);
+    }
+
+
 
     //    ================================Mas HSN  Controller================================//
 
@@ -2350,4 +2363,37 @@ public class MasterController {
             @RequestParam String status) {
         return ResponseEntity.ok(masDesignationService.changeStatus(id, status));
     }
+    //    ===============================Billing Policy=====================================
+
+    @GetMapping("billingPolicy/getAll")
+    public ResponseEntity<ApiResponse<List<BillingPolicyResponse>>> getAllPolicy() {
+        return ResponseEntity.ok(billingPolicyService.getAll());
+    }
+
+    @GetMapping("billingPolicy/getById/{id}")
+    public ResponseEntity<ApiResponse<BillingPolicyResponse>> getByIdPolicy(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(billingPolicyService.getById(id));
+    }
+
+    @PostMapping("billingPolicy/create")
+    public ResponseEntity<ApiResponse<BillingPolicyResponse>> createPolicy(
+            @RequestBody BillingPolicyRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(billingPolicyService.create(request));
+    }
+
+    @PutMapping("billingPolicy/update/{id}")
+    public ResponseEntity<ApiResponse<BillingPolicyResponse>> updatePolicy(
+            @PathVariable Long id,
+            @RequestBody BillingPolicyRequest request) {
+        return ResponseEntity.ok(billingPolicyService.update(id, request));
+    }
+
+//    @PutMapping("billingPolicy/status/{id}")
+//    public ResponseEntity<ApiResponse<BillingPolicyResponse>> changeStatusPolicy(
+//            @PathVariable Long id,
+//            @RequestParam String status) {
+//        return ResponseEntity.ok(billingPolicyService.changeStatus(id, status));
+//    }
 }

@@ -10,5 +10,7 @@ public interface MasSubChargeCodeRepository extends JpaRepository<MasSubChargeCo
 
     List<MasSubChargeCode> findByStatusOrderBySubNameAsc(String y);
 
-    List<MasSubChargeCode> findAllByOrderByLastChgDateDescLastChgTimeDesc();
+ //   List<MasSubChargeCode> findAllByOrderByLastChgDateDescLastChgTimeDesc();
+
+    List<MasSubChargeCode> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
 }

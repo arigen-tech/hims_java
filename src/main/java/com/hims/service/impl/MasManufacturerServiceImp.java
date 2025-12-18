@@ -49,7 +49,7 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
         if (flag == 1) {
             masManufacturers = masManufacturerRepository.findByStatusIgnoreCaseOrderByManufacturerNameAsc("y");
         } else if (flag == 0) {
-            masManufacturers = masManufacturerRepository.findByStatusIgnoreCaseInOrderByLastUpdatedDtDesc(List.of("y", "n"));
+            masManufacturers = masManufacturerRepository.findAllByOrderByStatusDescLastUpdatedDtDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);

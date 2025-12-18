@@ -15,4 +15,6 @@ public interface MasRouteRepository extends JpaRepository<MasRoute, Long> {
     List<MasRoute> findAllByOrderByLastUpdateDateDesc();
 
     List<MasRoute> findByStatusIgnoreCaseOrderByRouteNameAsc(String y);
+
+    List<MasRoute> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

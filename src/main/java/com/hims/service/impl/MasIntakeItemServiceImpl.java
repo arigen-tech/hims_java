@@ -39,7 +39,7 @@ public class MasIntakeItemServiceImpl implements MasIntakeItemService {
             List<MasIntakeItem> list =
                     (flag == 1)
                             ? repository.findByStatusIgnoreCaseOrderByIntakeItemNameAsc("y")
-                            : repository.findAllByOrderByLastUpdateDateDesc();
+                            : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List<MasIntakeItemResponse> response = list.stream()
                     .map(this::toResponse)

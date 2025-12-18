@@ -15,4 +15,6 @@ public interface MasMedicalHistoryRepository extends JpaRepository<MasMedicalHis
     List<MasMedicalHistory> findByStatusIgnoreCaseOrderByMedicalHistoryNameAsc(String y);
 
     List<MasMedicalHistory> findAllByOrderByLastUpdateDateDesc();
+
+    List<MasMedicalHistory> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

@@ -149,7 +149,7 @@ public class MasBedStatusServiceImpl implements MasBedStatusService {
             List<MasBedStatus> list;
 
             if (flag == 0) {
-                list = masBedStatusRepo.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y", "n"));
+                list = masBedStatusRepo.findAllByOrderByStatusDescLastUpdateDateDesc();
             } else if (flag == 1) {
                 list = masBedStatusRepo.findByStatusIgnoreCaseOrderByBedStatusNameAsc("y");
             } else {

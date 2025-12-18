@@ -2,6 +2,8 @@ package com.hims.response;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public  class TreatmentResponse {
     private Long treatmentTemp;
@@ -14,5 +16,8 @@ public  class TreatmentResponse {
     private String itemName;
     private String dispU;
     private Long stocks;
+    private String dispUnit;
+    private Integer itemClassId;
+    private BigDecimal adispQty;
 }
 

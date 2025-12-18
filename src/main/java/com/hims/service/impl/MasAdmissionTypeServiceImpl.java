@@ -29,7 +29,7 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
     public ApiResponse<List<MasAdmissionTypeResponse>> getAll(int flag) {
         try {
             List<MasAdmissionType> list =
-                    (flag == 1) ? repository.findByStatusIgnoreCaseOrderByAdmissionTypeNameAsc("y") : repository.findAllByOrderByLastUpdateDateDesc();
+                    (flag == 1) ? repository.findByStatusIgnoreCaseOrderByAdmissionTypeNameAsc("y") : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List<MasAdmissionTypeResponse> response =
                     list.stream().map(this::toResponse).collect(Collectors.toList());

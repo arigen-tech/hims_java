@@ -165,7 +165,7 @@ public class MasStateServiceImpl implements MasStateService {
         if (flag == 1) {
             states = masStateRepository.findByStatusIgnoreCaseOrderByStateNameAsc("Y");
         } else if (flag == 0) {
-            states = masStateRepository.findByStatusIgnoreCaseInOrderByLastChgDateDescLastChgTimeDesc(List.of("Y", "N"));
+            states = masStateRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

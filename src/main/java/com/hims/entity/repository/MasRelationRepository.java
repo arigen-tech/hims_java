@@ -14,4 +14,6 @@ public interface MasRelationRepository extends JpaRepository<MasRelation, Long> 
     List<MasRelation> findByStatusIgnoreCaseOrderByRelationNameAsc(String y);
 
     List<MasRelation> findByStatusInIgnoreCaseOrderByLastChgDateDesc(List<String> y);
+
+    List<MasRelation> findAllByOrderByStatusDescLastChgDateDesc();
 }

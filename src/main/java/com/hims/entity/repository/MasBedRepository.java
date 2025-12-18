@@ -11,4 +11,6 @@ public interface MasBedRepository extends JpaRepository<MasBed,Long> {
     List<MasBed> findByStatusIgnoreCaseIn(List<String> y);
 
     List<MasBed> findByStatusIgnoreCase(String y);
+
+    List<MasBed> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

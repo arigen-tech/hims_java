@@ -13,5 +13,7 @@ public interface MasMaritalStatusRepository extends JpaRepository<MasMaritalStat
 
 
 
-    List<MasMaritalStatus> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
+    //List<MasMaritalStatus> findByStatusIgnoreCaseInOrderByLastChgDateDesc(List<String> y);
+
+    List<MasMaritalStatus> findAllByOrderByStatusDescLastChgDateDesc();
 }

@@ -34,7 +34,7 @@ public class MasSpecialtyCenterServiceImpl implements MasSpecialtyCenterService 
                             ? repository
                             .findByStatusIgnoreCaseOrderByCenterNameAsc("y")
                             : repository
-                            .findAllByOrderByLastUpdateDateDesc();
+                            .findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List<MasSpecialtyCenterResponse> response =
                     list.stream().map(this::toResponse).toList();

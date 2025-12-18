@@ -11,4 +11,6 @@ public interface MasSpecialtyCenterRepository extends JpaRepository<MasSpecialty
     List<MasSpecialtyCenter> findByStatusIgnoreCaseOrderByCenterNameAsc(String y);
 
     List<MasSpecialtyCenter> findAllByOrderByLastUpdateDateDesc();
+
+    List<MasSpecialtyCenter> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

@@ -15,4 +15,6 @@ public interface MasAdmissionTypeRepository extends JpaRepository<MasAdmissionTy
     List<MasAdmissionType> findAllByOrderByLastUpdateDateDesc();
 
     List<MasAdmissionType> findByStatusIgnoreCaseOrderByAdmissionTypeNameAsc(String y);
+
+    List<MasAdmissionType> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

@@ -15,4 +15,6 @@ public interface MasPatientAcuityRepository extends JpaRepository<MasPatientAcui
 
 
     List<MasPatientAcuity> findByStatusIgnoreCaseOrderByAcuityNameAsc(String y);
+
+    List<MasPatientAcuity> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

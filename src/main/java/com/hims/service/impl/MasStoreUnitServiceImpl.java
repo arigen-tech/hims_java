@@ -34,7 +34,7 @@ public class MasStoreUnitServiceImpl implements MasStoreUnitService {
         if (flag == 1) {
             units = masUnitRepository.findByStatusIgnoreCaseOrderByUnitNameAsc("Y");
         } else if (flag == 0) {
-            units = masUnitRepository.findByStatusInIgnoreCaseOrderByLastChgDateDesc(List.of("Y", "N"));
+            units = masUnitRepository.findAllByOrderByStatusDescLastChgDateDesc();
         } else {
             return ResponseUtils.createFailureResponse
                     (null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);

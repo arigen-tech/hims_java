@@ -12,4 +12,6 @@ public interface MasStoreUnitRepository extends JpaRepository<MasStoreUnit, Long
     List<MasStoreUnit> findByStatusIgnoreCaseOrderByUnitNameAsc(String y);
 
     List<MasStoreUnit> findByStatusInIgnoreCaseOrderByLastChgDateDesc(List<String> y);
+
+    List<MasStoreUnit> findAllByOrderByStatusDescLastChgDateDesc();
 }

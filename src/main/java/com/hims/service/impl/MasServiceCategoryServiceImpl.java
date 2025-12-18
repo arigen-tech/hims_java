@@ -46,7 +46,7 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
         if (flag == 1) {
             response = masServiceCategoryRepository.findAllByStatusOrderByServiceCatNameAsc("y");
         } else {
-            response = masServiceCategoryRepository.findAllByOrderByLastChgDtDesc();
+            response = masServiceCategoryRepository.findAllByOrderByStatusDescLastChgDtDesc();
         }
 
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});

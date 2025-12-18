@@ -69,7 +69,7 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
         if (flag == 1) {
             charge = masMainChargeCodeRepository.findByStatusOrderByChargecodeNameAsc("y");
         } else if (flag == 0) {
-            charge = masMainChargeCodeRepository.findAllByOrderByLastChgDateDescLastChgTimeDesc();
+            charge = masMainChargeCodeRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

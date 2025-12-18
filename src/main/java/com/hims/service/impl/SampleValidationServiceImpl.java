@@ -335,185 +335,122 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
     @Override
     public ApiResponse<List<ResultResponse>> getValidatedResultEntries() {
         try {
+            log.info("Fetching current user");
+
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
+                log.warn("Unauthorized access attempt: current user not found");
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
 
-            // Fetch details using your query
-            List<DgSampleCollectionDetails> detailsList = detailsRepo.findAllByHeaderResultEntryAndValidationStatusLogic();
+            log.info("Fetching sample collection details for result validation");
 
-            // 🟢 Group by Sample Collection Header (not patient + subChargeCode)
+            List<DgSampleCollectionDetails> detailsList =
+                    detailsRepo.findAllByHeaderResultEntryAndValidationStatusLogic();
+
+            log.debug("Total sample collection details found: {}", detailsList.size());
+
             Map<String, ResultResponse> responseMap = new LinkedHashMap<>();
 
             for (DgSampleCollectionDetails detail : detailsList) {
 
                 DgSampleCollectionHeader header = detail.getSampleCollectionHeader();
                 Long headerId = header.getSampleCollectionHeaderId();
-                String key = String.valueOf(headerId); // Grouping by header ID
+                String key = String.valueOf(headerId);
 
-                // Group by Header
-                ResultResponse response = responseMap.computeIfAbsent(
-                        key,
-                        k -> {
-                            ResultResponse r = new ResultResponse();
-                            var patient = header.getPatientId();
+                log.debug("Processing SampleCollectionHeaderId: {}", headerId);
 
-                            String fullName = Stream.of(
-                                            patient.getPatientFn(),
-                                            patient.getPatientMn(),
-                                            patient.getPatientLn()
-                                    )
-                                    .filter(Objects::nonNull)
-                                    .filter(s -> !s.isBlank())
-                                    .collect(Collectors.joining(" "));
+                ResultResponse response = responseMap.computeIfAbsent(key, k -> {
+                    ResultResponse r = new ResultResponse();
 
-                            r.setPatientId(patient.getId());
-                            r.setPatientName(fullName);
-                            r.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null);
-                            r.setRelationId(patient.getPatientRelation() != null ? patient.getPatientRelation().getId() : null);
-                            r.setPatientGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
-                            r.setPatientAge(patient.getPatientAge());
-                            r.setPatientPhoneNo(patient.getPatientMobileNumber());
+                    var patient = header.getPatientId();
+                    log.debug("Preparing response for PatientId: {}", patient.getId());
 
-                            DgOrderHd dgOrderHd = labHdRepository.findByVisitId(header.getVisitId());
-                            r.setOrderDate(String.valueOf(dgOrderHd.getOrderDate()));
-                            r.setOrderTime(getCurrentTimeFormatted(dgOrderHd.getOrderTime()));
-                            r.setCollectedBy(header.getCollection_by());
-                            r.setValidatedBy(header.getValidatedBy());
-                            r.setValidatedDate(header.getValidation_date());
-                            r.setValidatedTime(header.getValidationTime()!=null?getCurrentTimeFormatted(header.getValidationTime()):null);
-                            r.setCollectedDate(header.getCollection_time());
-                            r.setCollectedTime(header.getCollection_time() != null ? header.getCollection_time().toLocalTime() : null);
-                            r.setOrderNo(patient.getUhidNo());
-                            r.setDepartment(header.getDepartmentId() != null ? header.getDepartmentId().getDepartmentName() : null);
+                    String fullName = Stream.of(
+                                    patient.getPatientFn(),
+                                    patient.getPatientMn(),
+                                    patient.getPatientLn()
+                            ).filter(Objects::nonNull)
+                            .filter(s -> !s.isBlank())
+                            .collect(Collectors.joining(" "));
 
-                            MasSubChargeCode masSubChargeCode =
-                                    subChargeCodeRepository.findById(header.getSubChargeCode().getSubId()).orElseThrow();
-                            r.setMainChargeCodeId(masSubChargeCode.getMainChargeId().getChargecodeId());
-                            r.setDoctorName(header.getHospitalId() != null ? header.getHospitalId().getHospitalName() : null);
-                            r.setVisitId(header.getVisitId() != null ? header.getVisitId().getId() : null);
-                            r.setSampleCollectionHeaderId(headerId);
-                            r.setSubChargeCodeId(header.getSubChargeCode().getSubId());
-                            r.setSubChargeCodeName(header.getSubChargeCode().getSubName());
-                            r.setResultInvestigationResponseList(new ArrayList<>());
-                            return r;
-                        }
-                );
+                    r.setPatientId(patient.getId());
+                    r.setPatientName(fullName);
+                    r.setPatientGender(patient.getPatientGender() != null
+                            ? patient.getPatientGender().getGenderName() : null);
+                    r.setPatientAge(patient.getPatientAge());
+                    r.setPatientPhoneNo(patient.getPatientMobileNumber());
 
-                // 🧩 Group by Investigation
-                ResultInvestigationResponse investigation = response.getResultInvestigationResponseList().stream()
-                        .filter(i -> i.getInvestigationId().equals(detail.getInvestigationId().getInvestigationId()))
-                        .findFirst()
-                        .orElseGet(() -> {
-                            DgMasInvestigation invObj = detail.getInvestigationId();
+                    DgOrderHd dgOrderHd = labHdRepository.findByVisitId(header.getVisitId());
+                    r.setOrderDate(String.valueOf(dgOrderHd.getOrderDate()));
+                    r.setOrderTime(getCurrentTimeFormatted(dgOrderHd.getOrderTime()));
 
-                            ResultInvestigationResponse inv = new ResultInvestigationResponse();
-                            inv.setInvestigationId(invObj.getInvestigationId());
-                            inv.setInvestigationName(invObj.getInvestigationName());
-                            inv.setSampleCollectionDetailsId(detail.getSampleCollectionDetailsId());
-                            inv.setResultType(invObj.getInvestigationType());
+                    r.setCollectedBy(header.getCollection_by());
+                    r.setValidatedBy(header.getValidatedBy());
+                    r.setValidatedDate(header.getValidation_date());
+                    r.setValidatedTime(header.getValidationTime() != null
+                            ? getCurrentTimeFormatted(header.getValidationTime()) : null);
 
-                            // --- Sample details
-                            if (invObj.getSampleId() != null) {
-                                inv.setSampleId(invObj.getSampleId().getId());
-                                inv.setSampleName(invObj.getSampleId().getSampleDescription());
-                            }
+                    r.setSampleCollectionHeaderId(headerId);
+                    r.setSubChargeCodeId(header.getSubChargeCode().getSubId());
+                    r.setSubChargeCodeName(header.getSubChargeCode().getSubName());
+                    r.setResultInvestigationResponseList(new ArrayList<>());
 
-                            // --- Unit details
-                            if (invObj.getUomId() != null) {
-                                inv.setUnitId(invObj.getUomId().getId());
-                                inv.setUnitName(invObj.getUomId().getName());
-                            }
+                    return r;
+                });
 
-                            String normalRange = null;
-                            if (invObj.getNormalValue() != null && !invObj.getNormalValue().isBlank()) {
-                                normalRange = invObj.getNormalValue();
-                            } else if (invObj.getMinNormalValue() != null && invObj.getMaxNormalValue() != null) {
-                                normalRange = invObj.getMinNormalValue() + " - " + invObj.getMaxNormalValue();
-                            }
+                ResultInvestigationResponse investigation =
+                        response.getResultInvestigationResponseList().stream()
+                                .filter(i -> i.getInvestigationId()
+                                        .equals(detail.getInvestigationId().getInvestigationId()))
+                                .findFirst()
+                                .orElseGet(() -> {
+                                    DgMasInvestigation invObj = detail.getInvestigationId();
+                                    log.debug("Creating investigation response for InvestigationId: {}",
+                                            invObj.getInvestigationId());
 
-                            inv.setNormalValue(normalRange);
+                                    ResultInvestigationResponse inv = new ResultInvestigationResponse();
+                                    inv.setInvestigationId(invObj.getInvestigationId());
+                                    inv.setInvestigationName(invObj.getInvestigationName());
+                                    inv.setResultType(invObj.getInvestigationType());
+                                    inv.setResultSubInvestigationResponseList(new ArrayList<>());
 
-                            inv.setResultSubInvestigationResponseList(new ArrayList<>());
-                            response.getResultInvestigationResponseList().add(inv);
-                            return inv;
-                        });
+                                    response.getResultInvestigationResponseList().add(inv);
+                                    return inv;
+                                });
 
-                // 🧪 Fetch Sub-Investigations
+                log.debug("Fetching sub-investigations for InvestigationId: {}",
+                        detail.getInvestigationId().getInvestigationId());
+
                 List<DgSubMasInvestigation> subList =
-                        dgSubMasInvestigationRepository.findByInvestigationId(detail.getInvestigationId().getInvestigationId());
+                        dgSubMasInvestigationRepository
+                                .findByInvestigationId(detail.getInvestigationId().getInvestigationId());
 
                 for (DgSubMasInvestigation subInvest : subList) {
                     ResultSubInvestigationResponse sub = new ResultSubInvestigationResponse();
                     sub.setSubInvestigationId(subInvest.getSubInvestigationId());
                     sub.setSubInvestigationName(subInvest.getSubInvestigationName());
-                    sub.setSampleId(subInvest.getSampleId() != null ? subInvest.getSampleId().getId() : null);
-                    sub.setSampleName(subInvest.getSampleId() != null ? subInvest.getSampleId().getSampleDescription() : null);
-                    sub.setUnit(subInvest.getUomId() != null ? subInvest.getUomId().getName() : null);
-                    sub.setComparisonType(subInvest.getComparisonType());
-                    sub.setResultType(subInvest.getResultType());
-
-                    // --- Patient info for Normal Range
-                    var patient = header.getPatientId();
-                    String gender = patient.getPatientGender() != null ? patient.getPatientGender().getGenderCode() : null;
-                    String ageStr = patient.getPatientAge(); // e.g. "24Y 8M 9D"
-
-                    Long ageInYears = null;
-                    if (ageStr != null && ageStr.matches("\\d+Y.*")) {
-                        try {
-                            ageInYears = Long.parseLong(ageStr.substring(0, ageStr.indexOf("Y")).trim());
-                        } catch (Exception ignored) {}
-                    }
-
-                    // --- Fetch Normal Value
-                    DgNormalValue dgNormalValue = null;
-                    if (ageInYears != null && gender != null) {
-                        dgNormalValue = dgNormalValueRepository
-                                .findFirstBySubInvestigationIdAndSexAndFromAgeLessThanEqualAndToAgeGreaterThanEqual(
-                                        subInvest, gender.substring(0, 1).toUpperCase(), ageInYears, ageInYears);
-                    } else {
-                        dgNormalValue = dgNormalValueRepository.findBySubInvestigationId(subInvest);
-                    }
-
-                    if (dgNormalValue != null) {
-                        String normalRange = null;
-                        if (dgNormalValue.getNormalValue() != null && !dgNormalValue.getNormalValue().isBlank()) {
-                            normalRange = dgNormalValue.getNormalValue();
-                        } else if (dgNormalValue.getMinNormalValue() != null && dgNormalValue.getMaxNormalValue() != null) {
-                            normalRange = dgNormalValue.getMinNormalValue() + " - " + dgNormalValue.getMaxNormalValue();
-                        }
-
-                        sub.setNormalValue(normalRange);
-                        sub.setNormalId(dgNormalValue.getNormalId());
-                    }
-
-                    // --- Fetch Fixed Values
-                    List<DgFixedValue> dgFixedValue = dgFixedValueRepository.findBySubInvestigationId(subInvest);
-                    List<DgFixedValueResponse> dgFixedValueResponses = new ArrayList<>();
-                    for (DgFixedValue dgFixedValue1 : dgFixedValue) {
-                        DgFixedValueResponse dgFixedValueResponse = new DgFixedValueResponse();
-                        dgFixedValueResponse.setFixedId(dgFixedValue1.getFixedId());
-                        dgFixedValueResponse.setFixedValue(dgFixedValue1.getFixedValue());
-                        dgFixedValueResponse.setSubInvestigationId(subInvest.getSubInvestigationId());
-                        dgFixedValueResponses.add(dgFixedValueResponse);
-                    }
-                    sub.setDgFixedValueResponseList(dgFixedValueResponses);
-                    sub.setFixedValueExpectedResult(subInvest.getFixedValueExpectedValue());
 
                     investigation.getResultSubInvestigationResponseList().add(sub);
                 }
             }
 
-            //  Return success response
-            return ResponseUtils.createSuccessResponse(new ArrayList<>(responseMap.values()), new TypeReference<>() {});
+            log.info("Result investigation data prepared successfully");
+            return ResponseUtils.createSuccessResponse(
+                    new ArrayList<>(responseMap.values()),
+                    new TypeReference<>() {}
+            );
 
         } catch (Exception e) {
-            log.error("Investigation status Error :: ", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Internal Server Error", HttpStatus.BAD_REQUEST.value());
+            log.error("Error while fetching investigation status", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Internal Server Error",
+                    HttpStatus.BAD_REQUEST.value()
+            );
         }
     }
 

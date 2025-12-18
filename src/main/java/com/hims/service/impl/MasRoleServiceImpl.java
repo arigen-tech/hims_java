@@ -93,7 +93,7 @@ public class MasRoleServiceImpl implements MasRoleService {
         if (flag == 1) {
             roles = masRoleRepository.findByStatusIgnoreCase("y");
         } else if (flag == 0) {
-            roles = masRoleRepository.findByStatusInIgnoreCase(List.of("y", "n"));
+            roles = masRoleRepository.findAllByOrderByStatusDescUpdatedOnDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

@@ -11,4 +11,6 @@ public interface MasOpdMedicalAdviseRepository extends JpaRepository<MasOpdMedic
     List<MasOpdMedicalAdvise> findByStatusIgnoreCaseOrderByMedicalAdviseNameAsc(String y);
 
     List<MasOpdMedicalAdvise> findAllByOrderByLastUpdateDateDesc();
+
+    List<MasOpdMedicalAdvise> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

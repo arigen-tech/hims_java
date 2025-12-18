@@ -79,7 +79,7 @@ public class MasMaritalStatusServiceImpl implements MasMaritalStatusService {
         if (flag == 1) {
             statuses = masMaritalStatusRepository.findByStatusIgnoreCaseOrderByNameAsc("Y");
         } else if (flag == 0) {
-            statuses = masMaritalStatusRepository.findByStatusIgnoreCaseInOrderByLastChgDateDesc(List.of("Y", "N"));
+            statuses = masMaritalStatusRepository.findAllByOrderByStatusDescLastChgDateDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

@@ -86,7 +86,8 @@ public class OpdPatientRecallResponce {
 
     //  =========================== referral ==============================
     private String referralFlag;
-
+    private String referralRemarks;
+    private Instant referralDate;
 
     // =================== follow up =========
 
@@ -151,6 +152,9 @@ public class OpdPatientRecallResponce {
         private Long itemId;
         private String itemName;
         private Long stocks;
+        private String dispUnit;
+        private Integer itemClassId;
+        private BigDecimal adispQty;
     }
 
     @Getter

@@ -5,10 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface MasCountryRepository extends JpaRepository<MasCountry, Long> {
-//    List<MasCountry> findByStatusIgnoreCase(String status);
-//    List<MasCountry> findByStatusInIgnoreCase(List<String> statuses);
 
     List<MasCountry> findByStatusIgnoreCaseOrderByCountryNameAsc(String y);
 
-    List<MasCountry> findByStatusIgnoreCaseInOrderByLastChgDateDescLastChgTimeDesc(List<String> y);
+    List<MasCountry> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
 }

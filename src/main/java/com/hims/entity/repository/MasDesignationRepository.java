@@ -13,4 +13,6 @@ public interface MasDesignationRepository extends JpaRepository<MasDesignation,L
     List<MasDesignation> findAllByOrderByLastUpdateDateDesc();
 
     List<MasDesignation> findByUserTypeIdUserTypeIdAndStatus(Long id, String y);
+
+    List<MasDesignation> findAllByOrderByStatusDescLastUpdateDateDesc();
 }

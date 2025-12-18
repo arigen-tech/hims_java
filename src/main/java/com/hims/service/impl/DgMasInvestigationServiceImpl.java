@@ -12,6 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -164,6 +168,148 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             );
         }
     }
+
+
+
+    public ApiResponse<Page<DgMasInvestigationResponse>> getAllInvestigationsDynamic(
+            int flag,
+            int page,
+            int size,
+            String search,
+            Long mainChargeCodeId) {
+
+        try {
+            Pageable pageable =
+                    PageRequest.of(page, size, Sort.by("lastChgDate").descending());
+
+            Page<DgMasInvestigation> investigationPage;
+
+            /* -------------------------------------------------
+               🔥 CORE DECISION LOGIC (VERY IMPORTANT)
+               ------------------------------------------------- */
+            if (search != null && !search.trim().isEmpty()) {
+
+                investigationPage =
+                        dgMasInvestigationRepo.searchInvestigations(
+                                flag,
+                                search.toLowerCase(),   // ❌ no %
+                                mainChargeCodeId,
+                                pageable
+                        );
+
+            } else if (mainChargeCodeId != null) {
+
+                investigationPage =
+                        dgMasInvestigationRepo.findAllWithFilter(
+                                flag,
+                                mainChargeCodeId,
+                                pageable
+                        );
+
+            } else if (flag == 1) {
+
+                investigationPage =
+                        dgMasInvestigationRepo
+                                .findByStatusIgnoreCase("Y", pageable);
+
+            } else if (flag == 0) {
+
+                investigationPage =
+                        dgMasInvestigationRepo
+                                .findByStatusInIgnoreCase(List.of("Y", "N"), pageable);
+
+            } else {
+
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Invalid flag value. Use 0 or 1",
+                        400
+                );
+            }
+
+            /* -------------------------------------------------
+               NO DATA FOUND
+               ------------------------------------------------- */
+            if (investigationPage.isEmpty()) {
+                return ResponseUtils.createSuccessResponse(
+                        Page.empty(pageable),
+                        new TypeReference<>() {}
+                );
+            }
+
+            /* -------------------------------------------------
+               FETCH CHILD DATA (PAGE-SCOPED)
+               ------------------------------------------------- */
+            List<Long> investigationIds =
+                    investigationPage.getContent()
+                            .stream()
+                            .map(DgMasInvestigation::getInvestigationId)
+                            .toList();
+
+            Map<Long, List<DgSubMasInvestigation>> subMap =
+                    subInvestigationRepo
+                            .findByInvestigationId_InvestigationIdIn(investigationIds)
+                            .stream()
+                            .collect(Collectors.groupingBy(
+                                    s -> s.getInvestigationId().getInvestigationId()
+                            ));
+
+            Map<Long, List<DgFixedValue>> fixedMap =
+                    fixedRepo
+                            .findBySubInvestigationId_InvestigationId_InvestigationIdIn(investigationIds)
+                            .stream()
+                            .collect(Collectors.groupingBy(
+                                    f -> f.getSubInvestigationId()
+                                            .getInvestigationId()
+                                            .getInvestigationId()
+                            ));
+
+            Map<Long, List<DgNormalValue>> normalMap =
+                    normalRepo
+                            .findBySubInvestigationId_InvestigationId_InvestigationIdIn(investigationIds)
+                            .stream()
+                            .collect(Collectors.groupingBy(
+                                    n -> n.getSubInvestigationId()
+                                            .getInvestigationId()
+                                            .getInvestigationId()
+                            ));
+
+            /* -------------------------------------------------
+               MAP TO RESPONSE DTO
+               ------------------------------------------------- */
+            Page<DgMasInvestigationResponse> responsePage =
+                    investigationPage.map(mas ->
+                            mapToResponseMulti(
+                                    mas,
+                                    subMap.getOrDefault(
+                                            mas.getInvestigationId(), List.of()
+                                    ),
+                                    fixedMap.getOrDefault(
+                                            mas.getInvestigationId(), List.of()
+                                    ),
+                                    normalMap.getOrDefault(
+                                            mas.getInvestigationId(), List.of()
+                                    )
+                            )
+                    );
+
+            return ResponseUtils.createSuccessResponse(
+                    responsePage,
+                    new TypeReference<>() {}
+            );
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Error retrieving investigations: " + e.getMessage(),
+                    500
+            );
+        }
+    }
+
+
 
     @Override
     public ApiResponse<String> changeInvestigationStatus(Long investigationId, String status) {
@@ -809,4 +955,23 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         return dto;
     }
 
+
+
+    @Override
+    public List<Map<String, Object>> getInvestigationTypes() {
+
+        return dgMasInvestigationRepo.findUniqueInvestigationTypes()
+                .stream()
+                .map(p -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", p.getId());
+                    map.put("name", p.getName());
+                    map.put(
+                            "value",
+                            p.getName().toLowerCase().replace(" ", "-")
+                    );
+                    return map;
+                })
+                .toList();
+    }
 }

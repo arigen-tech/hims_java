@@ -244,7 +244,7 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
 
     @Override
     public ApiResponse<List<UserDepartmentResponse>> getAllUserDepartmentsByUserUserName(String userName) {
-        List<UserDepartment> userDepartments = userDepartmentRepository.findByUser_UserNameAndUser_StatusAndStatus(userName, "y","y");
+        List<UserDepartment> userDepartments = userDepartmentRepository.findByUser_UserNameAndUser_StatusAndStatusOrderByDepartment_DepartmentNameAsc(userName, "y","y");
 
         List<UserDepartmentResponse> responses = userDepartments.stream()
                 .map(this::convertToResponse)

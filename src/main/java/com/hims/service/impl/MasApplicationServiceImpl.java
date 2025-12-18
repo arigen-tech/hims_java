@@ -53,9 +53,9 @@ public class MasApplicationServiceImpl implements MasApplicationService {
         List<MasApplication> applications;
 
         if (flag == 1) {
-            applications = masApplicationRepository.findByStatusIgnoreCaseOrderByNameAsc("Y");
+            applications = masApplicationRepository.findByStatusIgnoreCaseOrderByNameAsc("y");
         } else if (flag == 0) {
-            applications = masApplicationRepository.findByStatusIgnoreCaseInOrderByLastChgDateDesc(List.of("Y", "N"));
+            applications = masApplicationRepository.findAllByOrderByStatusDescLastChgDateDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<List<MasApplicationResponse>>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
@@ -387,7 +387,7 @@ public class MasApplicationServiceImpl implements MasApplicationService {
         if (flag == 1) {
             applications = masApplicationRepository.findByStatusIgnoreCaseOrderByNameAsc("Y");
         } else if (flag == 0) {
-            applications = masApplicationRepository.findAllByOrderByLastChgDateDesc();
+            applications = masApplicationRepository.findAllByOrderByStatusDescLastChgDateDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

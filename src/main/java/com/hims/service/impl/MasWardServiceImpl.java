@@ -40,7 +40,7 @@ public class MasWardServiceImpl implements MasWardService {
 
             List<MasWard> masWards;
             if(flag==0){
-                masWards=masWardRepository.findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List.of("y","n"));
+                masWards=masWardRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
             } else if (flag==1) {
                 masWards=masWardRepository.findByStatusIgnoreCaseOrderByWardNameAsc("y");
             }else{

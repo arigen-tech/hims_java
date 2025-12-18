@@ -54,7 +54,7 @@ public class MasOpdSessionServiceImpl implements MasOpdSessionService {
         if (flag == 1) {
             sessions = masOpdSessionRepository.findByStatusIgnoreCaseOrderBySessionNameAsc("Y");
         } else if (flag == 0) {
-            sessions = masOpdSessionRepository.findByStatusInIgnoreCaseOrderByLastChgDtDesc(List.of("Y", "N"));
+            sessions = masOpdSessionRepository.findAllByOrderByStatusDescLastChgDtDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }

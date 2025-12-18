@@ -30,7 +30,7 @@ public class MasRouteServiceImpl implements MasRouteService {
     public ApiResponse<List<MasRouteResponse>> getAll(int flag) {
         try {
             List<MasRoute> list =
-                    (flag == 1) ? repository.findByStatusIgnoreCaseOrderByRouteNameAsc("y") : repository.findAllByOrderByLastUpdateDateDesc();
+                    (flag == 1) ? repository.findByStatusIgnoreCaseOrderByRouteNameAsc("y") : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List<MasRouteResponse> response =
                     list.stream().map(this::toResponse).collect(Collectors.toList());
