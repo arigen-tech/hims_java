@@ -533,41 +533,67 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         // ===================== ADMISSION =====================
         if (isYes(request.getAdmissionFlag())) {
 
+            opdObj.setAdmissionFlag("y");
+
             if (request.getAdmissionCareLevel() != null) {
                 masCareLevelRepository.findById(request.getAdmissionCareLevel())
                         .ifPresent(opdObj::setAdmissionCareLevel);
             }
+
             if (request.getAdmissionWardCategory() != null) {
                 masWardCategoryRepository.findById(request.getAdmissionWardCategory())
                         .ifPresent(opdObj::setAdmissionWardCategory);
             }
+
             if (request.getAdmissionWard() != null) {
                 masDepartmentRepository.findById(request.getAdmissionWard())
                         .ifPresent(opdObj::setAdmissionWard);
             }
 
-            opdObj.setAdmissionFlag("y");
             opdObj.setAdmissionAdvisedDate(request.getAdmissionAdvisedDate());
             opdObj.setAdmissionRemarks(request.getAdmissionRemarks());
             opdObj.setAdmissionPriority(request.getAdmissionPriority());
+
         } else {
             opdObj.setAdmissionFlag("n");
+
+            opdObj.setAdmissionCareLevel(null);
+            opdObj.setAdmissionWardCategory(null);
+            opdObj.setAdmissionWard(null);
+            opdObj.setAdmissionAdvisedDate(null);
+            opdObj.setAdmissionRemarks(null);
+            opdObj.setAdmissionPriority(null);
         }
+
 
         // ===================== FOLLOW UP =====================
         if (isYes(request.getFollowUpFlag())) {
+
             opdObj.setFollowUpFlag("y");
             opdObj.setFollowUpDays(request.getFollowUpDays());
             opdObj.setFollowUpDate(request.getFollowUpDate());
+
         } else {
             opdObj.setFollowUpFlag("n");
+            opdObj.setFollowUpDays(null);
+            opdObj.setFollowUpDate(null);
         }
+
 
         // ===================== Rrferral =====================
 
-        opdObj.setReferralFlag(isYes(request.getReferralFlag()) ? "y" : "n");
-        opdObj.setReferralRemarks(request.getReferralRemarks());
-        opdObj.setReferralDate(request.getReferralDate());
+        if (isYes(request.getReferralFlag())) {
+
+            opdObj.setReferralFlag("y");
+            opdObj.setReferralRemarks(request.getReferralRemarks());
+            opdObj.setReferralDate(request.getReferralDate());
+
+        } else {
+            opdObj.setReferralFlag("n");
+            opdObj.setReferralRemarks(null);
+            opdObj.setReferralDate(null);
+        }
+
 
         OpdPatientDetail saved = opdPatientDetailRepository.save(opdObj);
 
@@ -1148,7 +1174,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 //    Recall Api
 
     @Override
-    public ApiResponse<List<OpdPatientRecallResponce>> getRecallVisit(String name, String mobile, LocalDate visitDate) {
+    public ApiResponse<List<OpdPatientRecallResponce>> getRecallVisit(
+            String name, String mobile, LocalDate visitDate) {
 
         if (visitDate == null && isEmpty(mobile) && isEmpty(name)) {
             visitDate = LocalDate.now();
@@ -1157,13 +1184,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         mobile = safeString(mobile);
         name = safeString(name);
 
-        // ---------------- FETCH VISITS ----------------
-        List<Visit> recallVisit = visitRepository.searchRecallVisits(visitDate, mobile, name);
+        List<Visit> recallVisit =
+                safeList(visitRepository.searchRecallVisits(visitDate, mobile, name));
+
         List<OpdPatientRecallResponce> responseList = new ArrayList<>();
 
         for (Visit visitObj : recallVisit) {
 
-            if (visitObj == null || visitObj.getPatient() == null) continue;
+            if (visitObj == null || visitObj.getPatient() == null) {
+                continue;
+            }
 
             Patient patientObj = visitObj.getPatient();
             User docObj = visitObj.getDoctor();
@@ -1171,29 +1201,31 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             MasGender genderObj = patientObj.getPatientGender();
             MasRelation relationObj = patientObj.getPatientRelation();
 
-            OpdPatientDetail opdPatientObj = opdPatientDetailRepository
-                    .findByVisitId(visitObj.getId());
+            OpdPatientDetail opdPatientObj =
+                    opdPatientDetailRepository.findByVisitId(visitObj.getId());
 
-            List<DgOrderHd> dgOrderHdList = safeList(dgOrderHdRepo.findAllByVisitId(visitObj));
+            List<DgOrderHd> dgOrderHdList =
+                    safeList(dgOrderHdRepo.findAllByVisitId(visitObj));
 
-            PatientPrescriptionHd patientPrescHdObj =
+            PatientPrescriptionHd prescHdObj =
                     patientPrescriptionHdRepository.findByPatientId(patientObj.getId());
 
             List<PatientPrescriptionDt> prescDtList =
-                    patientPrescHdObj != null
+                    prescHdObj != null
                             ? safeList(patientPrescriptionDtRepository
-                            .findByPrescriptionHdId(patientPrescHdObj.getPrescriptionHdId()))
+                            .findByPrescriptionHdId(prescHdObj.getPrescriptionHdId()))
                             : Collections.emptyList();
 
             OpdPatientRecallResponce response = new OpdPatientRecallResponce();
 
-            // ---------------- BASIC PATIENT INFO ----------------
+            // ---------------- BASIC INFO ----------------
+            response.setPatientId(patientObj.getId());
+            response.setVisitId(visitObj.getId());
             response.setPatientName(buildFullName(
                     patientObj.getPatientFn(),
                     patientObj.getPatientMn(),
                     patientObj.getPatientLn()
             ));
-
             response.setMobileNo(patientObj.getPatientMobileNumber());
             response.setGender(genderObj != null ? genderObj.getGenderName() : null);
             response.setRelation(relationObj != null ? relationObj.getRelationName() : null);
@@ -1203,16 +1235,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             response.setDeptName(deptObj != null ? deptObj.getDepartmentName() : null);
             response.setDocterId(docObj != null ? docObj.getUserId() : null);
 
-
-
-
-            response.setHospitalId(
-                    patientObj.getPatientHospital() != null
-                            ? patientObj.getPatientHospital().getId()
-                            : null
-            );
-
-            // Doctor name
             if (docObj != null) {
                 response.setDocterName(buildFullName(
                         docObj.getFirstName(),
@@ -1221,38 +1243,46 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 ));
             }
 
-            response.setVisitId(visitObj.getId());
-            response.setPatientId(patientObj.getId());
-
-            // ------------------- OPD DETAILS --------------------
-            if (opdPatientObj != null) {
-                mapOpdDetails(response, opdPatientObj);
-            }
-
-            // ------------------- DG ORDER HD --------------------
-            response.setDgOrderHdList(
-                    buildDgOrderHdList(dgOrderHdList)
+            response.setHospitalId(
+                    patientObj.getPatientHospital() != null
+                            ? patientObj.getPatientHospital().getId()
+                            : null
             );
 
-            // ------------------- PRESCRIPTION HD --------------------
-            if (patientPrescHdObj != null) {
-                OpdPatientRecallResponce.NewDPatientPrescriptionHd newHd =
-                        new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
-
-                newHd.setPrescriptionHdId(patientPrescHdObj.getPrescriptionHdId());
-                newHd.setStatus(patientPrescHdObj.getStatus());
-                newHd.setPrescriptionDate(patientPrescHdObj.getPrescriptionDate());
-
-                response.setPatientPrescriptionHd(newHd);
+            // ---------------- OPD DETAILS ----------------
+            if (opdPatientObj != null) {
+                mapOpdDetails(response, opdPatientObj);
+                response.setTreatmentAdvice(opdPatientObj.getTreatmentAdvice());
             }
 
-            response.setTreatmentAdvice(opdPatientObj.getTreatmentAdvice());
+            // ---------------- DG ORDER ----------------
+            response.setDgOrderHdList(buildDgOrderHdList(dgOrderHdList));
 
-            // ------------------- PRESCRIPTION DT --------------------
-            List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newPrescList =
+            // ---------------- PRESCRIPTION HD ----------------
+            if (prescHdObj != null) {
+                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd =
+                        new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
+
+                hd.setPrescriptionHdId(prescHdObj.getPrescriptionHdId());
+                hd.setStatus(prescHdObj.getStatus());
+                hd.setPrescriptionDate(prescHdObj.getPrescriptionDate());
+
+                response.setPatientPrescriptionHd(hd);
+            }
+
+            // ---------------- PRESCRIPTION DT ----------------
+            List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newDtList =
                     new ArrayList<>();
 
+            Long hospitalId =
+                    authUtil.getCurrentUser() != null &&
+                            authUtil.getCurrentUser().getHospital() != null
+                            ? authUtil.getCurrentUser().getHospital().getId()
+                            : null;
+
             for (PatientPrescriptionDt dt : prescDtList) {
+
+                if (dt == null) continue;
 
                 OpdPatientRecallResponce.NewDPatientPrescriptionDt newDt =
                         new OpdPatientRecallResponce.NewDPatientPrescriptionDt();
@@ -1266,69 +1296,100 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 newDt.setTotal(dt.getTotal());
                 newDt.setInstraction(dt.getInstruction());
                 newDt.setItemId(dt.getItemId());
-
-                MasStoreItem itemObjCurr = masStoreItemRepository.findById(dt.getItemId()).get();
-
-                newDt.setDispUnit(itemObjCurr.getDispUnit().getUnitName());
-                newDt.setItemClassId(itemObjCurr.getItemClassId().getItemClassId());
-                newDt.setAdispQty(itemObjCurr.getAdispQty());
-
-                // SAFE: Frequency
-                MasFrequency freq = masFrequencyRepository.findByFrequencyName(dt.getFrequency());
                 newDt.setFrequencyId(dt.getFrequency());
 
-                // SAFE: Item
-                masStoreItemRepository.findById(dt.getItemId()).ifPresent(item -> {
-                    newDt.setDepUnit(item.getDispUnit() != null
-                            ? item.getDispUnit().getUnitName() : null);
+                Optional<MasStoreItem> itemOpt =
+                        masStoreItemRepository.findById(dt.getItemId());
+
+                itemOpt.ifPresent(item -> {
                     newDt.setItemName(item.getNomenclature());
+                    newDt.setAdispQty(item.getAdispQty());
+
+                    if (item.getDispUnit() != null) {
+                        newDt.setDispUnit(item.getDispUnit().getUnitName());
+                        newDt.setDepUnit(item.getDispUnit().getUnitName());
+                    }
+
+                    if (item.getItemClassId() != null) {
+                        newDt.setItemClassId(item.getItemClassId().getItemClassId());
+                    }
                 });
 
-                // SAFE STOCK
-                Long stocks = stockFound.getAvailableStocks(
-                        authUtil.getCurrentUser().getHospital().getId(),
-                        deptIdStore,
-                        dt.getItemId(),
-                        hospDefinedDays
-                );
+                Long stocks = 0L;
+
+                if (hospitalId != null && dt.getItemId() != null) {
+                    Long stockVal = stockFound.getAvailableStocks(
+                            hospitalId,
+                            deptIdStore,
+                            dt.getItemId(),
+                            hospDefinedDays
+                    );
+                    stocks = stockVal != null ? stockVal : 0L;
+                }
+
                 newDt.setStocks(stocks);
 
-                newPrescList.add(newDt);
+                newDtList.add(newDt);
             }
 
+            response.setPatientPrescriptionDts(newDtList);
 
+            // ---------------- FOLLOW UP / REFERRAL / ADMISSION ----------------
+            if (opdPatientObj != null) {
 
-            // ----------- follow up ------------------------------
-            response.setFollowUpFlag(opdPatientObj.getFollowUpFlag());
-            response.setFollowUpDays(opdPatientObj.getFollowUpDays());
-            response.setFollowUpDate(opdPatientObj.getFollowUpDate());
+                // Follow up
+                response.setFollowUpFlag(opdPatientObj.getFollowUpFlag());
+                if (isYes(opdPatientObj.getFollowUpFlag())) {
+                    response.setFollowUpDays(opdPatientObj.getFollowUpDays());
+                    response.setFollowUpDate(opdPatientObj.getFollowUpDate());
+                }
 
-            // --------------- refferal -----------------------
-            response.setReferralFlag(opdPatientObj.getReferralFlag());
-            response.setReferralRemarks(opdPatientObj.getReferralRemarks());
-            response.setReferralDate(opdPatientObj.getReferralDate());
+                // Referral
+                response.setReferralFlag(opdPatientObj.getReferralFlag());
+                if (isYes(opdPatientObj.getReferralFlag())) {
+                    response.setReferralRemarks(opdPatientObj.getReferralRemarks());
+                    response.setReferralDate(opdPatientObj.getReferralDate());
+                }
 
-            // ----------------- admission advice ----------------------
-            response.setAdmissionFlag(opdPatientObj.getAdmissionFlag());
-            response.setAdmissionRemarks(opdPatientObj.getAdmissionRemarks());
-            response.setAdmissionAdvisedDate(opdPatientObj.getAdmissionAdvisedDate());
-            response.setAdmissionCareLevel(opdPatientObj.getAdmissionCareLevel().getCareId());
-            response.setAdmissionCareLevelName(opdPatientObj.getAdmissionCareLevel().getCareLevelName());
-            response.setAdmissionWardCategory(opdPatientObj.getAdmissionWardCategory().getId());
-            response.setAdmissionWardCategoryName(opdPatientObj.getAdmissionWardCategory().getCategoryName());
-            response.setAdmissionWard(opdPatientObj.getAdmissionWard().getId());
-            response.setAdmissionWardName(opdPatientObj.getAdmissionWard().getDepartmentName());
-            response.setAdmissionPriority(opdPatientObj.getAdmissionPriority());
-            response.setVacantBed(0);
-            response.setOccupiedBed(0);
+                // Admission
+                response.setAdmissionFlag(opdPatientObj.getAdmissionFlag());
+                if (isYes(opdPatientObj.getAdmissionFlag())) {
 
+                    response.setAdmissionRemarks(opdPatientObj.getAdmissionRemarks());
+                    response.setAdmissionAdvisedDate(opdPatientObj.getAdmissionAdvisedDate());
+                    response.setAdmissionPriority(opdPatientObj.getAdmissionPriority());
 
-            response.setPatientPrescriptionDts(newPrescList);
+                    if (opdPatientObj.getAdmissionCareLevel() != null) {
+                        response.setAdmissionCareLevel(
+                                opdPatientObj.getAdmissionCareLevel().getCareId());
+                        response.setAdmissionCareLevelName(
+                                opdPatientObj.getAdmissionCareLevel().getCareLevelName());
+                    }
+
+                    if (opdPatientObj.getAdmissionWardCategory() != null) {
+                        response.setAdmissionWardCategory(
+                                opdPatientObj.getAdmissionWardCategory().getId());
+                        response.setAdmissionWardCategoryName(
+                                opdPatientObj.getAdmissionWardCategory().getCategoryName());
+                    }
+
+                    if (opdPatientObj.getAdmissionWard() != null) {
+                        response.setAdmissionWard(
+                                opdPatientObj.getAdmissionWard().getId());
+                        response.setAdmissionWardName(
+                                opdPatientObj.getAdmissionWard().getDepartmentName());
+                    }
+
+                    response.setVacantBed(0);
+                    response.setOccupiedBed(0);
+                }
+            }
 
             responseList.add(response);
         }
 
-        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(
+                responseList, new TypeReference<>() {});
     }
 
 
@@ -1344,8 +1405,14 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return list != null ? list : Collections.emptyList();
     }
 
-    private void mapOpdDetails(OpdPatientRecallResponce response, OpdPatientDetail opd) {
+    private void mapOpdDetails(OpdPatientRecallResponce response,
+                               OpdPatientDetail opd) {
 
+        if (response == null || opd == null) {
+            return;
+        }
+
+        // ---------------- BASIC OPD ----------------
         response.setOpdPatientId(opd.getOpdPatientDetailsId());
         response.setOpdDate(opd.getOpdDate());
         response.setPastMedicalHistory(opd.getPastMedicalHistory());
@@ -1365,54 +1432,69 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         response.setMlcFlag(opd.getMlcFlag());
         response.setWorkingDiag(opd.getWorkingDiag());
 
-        // ================= FINAL MEDICAL ADVICE =================
+        // ---------------- FINAL MEDICAL ADVICE ----------------
         response.setDoctorRemarks(opd.getFinalMedicalAdvice());
 
-        // ================= ADMISSION =================
+        // ---------------- ADMISSION ----------------
         response.setAdmissionFlag(opd.getAdmissionFlag());
-        response.setAdmissionAdvisedDate(opd.getAdmissionAdvisedDate());
-        response.setAdmissionRemarks(opd.getAdmissionRemarks());
-        response.setAdmissionPriority(opd.getAdmissionPriority());
 
-        if (opd.getAdmissionCareLevel() != null) {
-            response.setAdmissionCareLevel(opd.getAdmissionCareLevel().getCareId());
-            response.setAdmissionCareLevelName(
-                    opd.getAdmissionCareLevel().getCareLevelName());
+        if (isYes(opd.getAdmissionFlag())) {
+
+            response.setAdmissionAdvisedDate(opd.getAdmissionAdvisedDate());
+            response.setAdmissionRemarks(opd.getAdmissionRemarks());
+            response.setAdmissionPriority(opd.getAdmissionPriority());
+
+            if (opd.getAdmissionCareLevel() != null) {
+                response.setAdmissionCareLevel(
+                        opd.getAdmissionCareLevel().getCareId());
+                response.setAdmissionCareLevelName(
+                        opd.getAdmissionCareLevel().getCareLevelName());
+            }
+
+            if (opd.getAdmissionWardCategory() != null) {
+                response.setAdmissionWardCategory(
+                        opd.getAdmissionWardCategory().getId());
+                response.setAdmissionWardCategoryName(
+                        opd.getAdmissionWardCategory().getCategoryName());
+            }
+
+            if (opd.getAdmissionWard() != null) {
+                response.setAdmissionWard(
+                        opd.getAdmissionWard().getId());
+                response.setAdmissionWardName(
+                        opd.getAdmissionWard().getDepartmentName());
+            }
         }
 
-        if (opd.getAdmissionWardCategory() != null) {
-            response.setAdmissionWardCategory(opd.getAdmissionWardCategory().getId());
-            response.setAdmissionWardCategoryName(
-                    opd.getAdmissionWardCategory().getCategoryName());
-        }
-
-        if (opd.getAdmissionWard() != null) {
-            response.setAdmissionWard(opd.getAdmissionWard().getId());
-            response.setAdmissionWardName(
-                    opd.getAdmissionWard().getDepartmentName());
-        }
-
-        // ================= FOLLOW UP =================
+        // ---------------- FOLLOW UP ----------------
         response.setFollowUpFlag(opd.getFollowUpFlag());
-        response.setFollowUpDate(opd.getFollowUpDate());
-        response.setFollowUpDays(opd.getFollowUpDays());
 
-        // ================= REFERRAL =================
+        if (isYes(opd.getFollowUpFlag())) {
+            response.setFollowUpDate(opd.getFollowUpDate());
+            response.setFollowUpDays(opd.getFollowUpDays());
+        }
+
+        // ---------------- REFERRAL ----------------
         response.setReferralFlag(opd.getReferralFlag());
 
+        // ---------------- ICD DIAGNOSIS ----------------
+        if (opd.getIcdDiag() != null
+                && !opd.getIcdDiag().isEmpty()
+                && opd.getVisit() != null) {
 
-        // ICD LIST
-        if (opd.getIcdDiag() != null && !opd.getIcdDiag().isEmpty()) {
+            List<DischargeIcdCode> icdList =
+                    safeList(dischargeIcdCodeRepository
+                            .findByOpdPatientDetailsIdAndVisitId(
+                                    opd.getOpdPatientDetailsId(),
+                                    opd.getVisit().getId()
+                            ));
 
-            List<DischargeIcdCode> icdList = dischargeIcdCodeRepository
-                    .findByOpdPatientDetailsIdAndVisitId(
-                            opd.getOpdPatientDetailsId(),
-                            opd.getVisit().getId()
-                    );
-
-            List<OpdPatientRecallResponce.IcdDiagnosis> newList = new ArrayList<>();
+            List<OpdPatientRecallResponce.IcdDiagnosis> newList =
+                    new ArrayList<>();
 
             for (DischargeIcdCode dis : icdList) {
+
+                if (dis == null) continue;
 
                 OpdPatientRecallResponce.IcdDiagnosis d =
                         new OpdPatientRecallResponce.IcdDiagnosis();
@@ -1420,32 +1502,35 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 d.setId(dis.getDischargeIcdCodeId());
                 d.setIcdId(dis.getIcdId());
 
-                MasIcd masIcd = masIcdRepository.findById(dis.getIcdId()).orElse(null);
-
-                if (masIcd != null) {
-                    String icdDiagnosis =
-                            masIcd.getIcdCode() + " - " + masIcd.getIcdName();
-                    d.setIcdDiagName(icdDiagnosis);
-                } else {
-                    d.setIcdDiagName(null);
+                if (dis.getIcdId() != null) {
+                    masIcdRepository.findById(dis.getIcdId())
+                            .ifPresent(masIcd ->
+                                    d.setIcdDiagName(
+                                            masIcd.getIcdCode() + " - " +
+                                                    masIcd.getIcdName()
+                                    ));
                 }
 
                 newList.add(d);
             }
 
-
             response.setIcdDiag(newList);
         }
 
+        // ---------------- FLAGS ----------------
         response.setLabFlag(opd.getLabFlag());
         response.setRadioFlag(opd.getRadioFlag());
     }
 
-    private List<OpdPatientRecallResponce.NewDgOrderHd> buildDgOrderHdList(List<DgOrderHd> hdList) {
+    private List<OpdPatientRecallResponce.NewDgOrderHd>
+    buildDgOrderHdList(List<DgOrderHd> hdList) {
 
-        List<OpdPatientRecallResponce.NewDgOrderHd> newHdList = new ArrayList<>();
+        List<OpdPatientRecallResponce.NewDgOrderHd> newHdList =
+                new ArrayList<>();
 
         for (DgOrderHd hdObj : safeList(hdList)) {
+
+            if (hdObj == null) continue;
 
             OpdPatientRecallResponce.NewDgOrderHd hd =
                     new OpdPatientRecallResponce.NewDgOrderHd();
@@ -1458,10 +1543,15 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             hd.setPaymentStatus(hdObj.getPaymentStatus());
             hd.setAppointmentDate(hdObj.getAppointmentDate());
 
-            List<DgOrderDt> dtList = safeList(dgOrderDtRepo.findByOrderhdId(hdObj));
-            List<OpdPatientRecallResponce.NewDgOrderDt> newDtList = new ArrayList<>();
+            List<DgOrderDt> dtList =
+                    safeList(dgOrderDtRepo.findByOrderhdId(hdObj));
+
+            List<OpdPatientRecallResponce.NewDgOrderDt> newDtList =
+                    new ArrayList<>();
 
             for (DgOrderDt dt : dtList) {
+
+                if (dt == null) continue;
 
                 OpdPatientRecallResponce.NewDgOrderDt nd =
                         new OpdPatientRecallResponce.NewDgOrderDt();
@@ -1474,19 +1564,25 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                 // Investigation
                 if (dt.getInvestigationId() != null) {
-                    nd.setInvestigationId(dt.getInvestigationId().getInvestigationId());
-                    nd.setInvestigationName(dt.getInvestigationId().getInvestigationName());
+                    nd.setInvestigationId(
+                            dt.getInvestigationId().getInvestigationId());
+                    nd.setInvestigationName(
+                            dt.getInvestigationId().getInvestigationName());
                 }
 
                 // Package
-                nd.setPackageId(dt.getPackageId() != null
-                        ? dt.getPackageId().getPackId()
-                        : null);
+                nd.setPackageId(
+                        dt.getPackageId() != null
+                                ? dt.getPackageId().getPackId()
+                                : null
+                );
 
                 // Billing
-                nd.setBillingHd(dt.getBillingHd() != null
-                        ? dt.getBillingHd().getBillingHdId()
-                        : null);
+                nd.setBillingHd(
+                        dt.getBillingHd() != null
+                                ? dt.getBillingHd().getBillingHdId()
+                                : null
+                );
 
                 newDtList.add(nd);
             }
@@ -1497,7 +1593,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         return newHdList;
     }
-
 
 
 
