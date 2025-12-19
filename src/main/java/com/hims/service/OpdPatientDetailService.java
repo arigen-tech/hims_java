@@ -15,6 +15,7 @@ import java.util.List;
 public interface OpdPatientDetailService {
     ApiResponse<OpdPatientVitalResponce> getOpdPatientByVisit(Long visitId);
 
+    @Transactional
     ApiResponse<OpdPatientDetail> createOpdPatientDetail(OpdPatientDetailFinalRequest request);
 
     @Transactional

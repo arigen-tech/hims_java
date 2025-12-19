@@ -29,6 +29,7 @@ public class DgResultEntryValidationResponse {
     private String validatedBy;
     private String resultEnteredBy;
     private Long orderHdId;
+    private String orderNo;
     private List<ResultEntryInvestigationResponse> resultEntryInvestigationResponses;
 
 }

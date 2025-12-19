@@ -389,6 +389,11 @@ public class MasterController {
         return ResponseEntity.ok(masDepartmentService.getMasUserDepartmentsByUserId(userId));
     }
 
+    @GetMapping("/ward-department/getAllBy/{wardCategory}")
+    public ResponseEntity<ApiResponse<List<MasDepartmentResponse>>> getAllWardDepartmentByWardCategory(@PathVariable Long wardCategory) {
+        return ResponseEntity.ok(masDepartmentService.getAllWardDepartmentByWardCategory(wardCategory));
+    }
+
 
     //    ================================Mas DepartmentType Controller================================//
 

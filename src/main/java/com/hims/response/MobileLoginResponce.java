@@ -4,6 +4,9 @@ import lombok.Data;
 
 @Data
 public class MobileLoginResponce {
-    String otp;
+
     String message;
+    String mobileNo;
+    String sessionId;
+    Long patientId;
 }
