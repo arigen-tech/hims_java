@@ -17,7 +17,7 @@ public class TestDetailsDTO {
     private String testName;
     private Long sampleId;
     private String sampleName;
-    private BigDecimal quantity;
+    private String quantity;
     private String empanelledLab;
     private LocalDateTime dateTime;
     private String reason;

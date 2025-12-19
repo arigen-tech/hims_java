@@ -294,7 +294,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                                         d.getInvestigationId() != null ? d.getInvestigationId().getInvestigationName() : null,
                                         d.getSampleId() != null ? d.getSampleId().getId() : null,
                                         d.getSampleId() != null ? d.getSampleId().getSampleDescription() : null,
-                                        d.getQuantity(),
+                                        d.getInvestigationId() != null?d.getInvestigationId().getQuantity():null,
                                         d.getEmpanelledStatus(),
                                         d.getSampleCollDatetime(),
                                         d.getRejected_reason(),
