@@ -1,12 +1,18 @@
 package com.hims.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-@Data
 @Entity
-@Table(name = "mas_opd_medical_advise", schema = "public")
+@Table(name = "mas_opd_medical_advise")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class MasOpdMedicalAdvise {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

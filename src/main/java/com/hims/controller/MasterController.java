@@ -168,6 +168,11 @@ public class MasterController {
     @Autowired
     private BillingPolicyService billingPolicyService;
 
+    @Autowired
+    private MasNursingTypeService masNursingTypeService;
+    @Autowired
+    private MasToothMasterService masToothMasterService;
+
 
 
 
@@ -2297,6 +2302,26 @@ public class MasterController {
     public ResponseEntity<ApiResponse<List<MasOpdMedicalAdviseResponse>>> getAllMasOpdMedicalAdvise(@PathVariable int flag) {
         return ResponseEntity.ok( masOpdMedicalAdviseService.getAll(flag));
     }
+    @PostMapping("masOpdMedicalAdvise/create")
+    public ResponseEntity<ApiResponse<MasOpdMedicalAdviseResponse>>
+    createOpdMedicalAdvise(@RequestBody MasOpdMedicalAdviseRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masOpdMedicalAdviseService.create(request));
+    }
+
+    @PutMapping("masOpdMedicalAdvise/update/{id}")
+    public ResponseEntity<ApiResponse<MasOpdMedicalAdviseResponse>>
+    updateOpdMedicalAdvise(@PathVariable Long id,
+           @RequestBody MasOpdMedicalAdviseRequest request) {
+        return ResponseEntity.ok(masOpdMedicalAdviseService.update(id, request));
+    }
+
+    @PutMapping("masOpdMedicalAdvise/status/{id}")
+    public ResponseEntity<ApiResponse<MasOpdMedicalAdviseResponse>>
+    changeStatusOpdMedicalAdvise(@PathVariable Long id,
+                 @RequestParam String status) {
+        return ResponseEntity.ok(masOpdMedicalAdviseService.changeStatus(id, status));
+    }
 
     //    ===============================Mas Specialty Center=====================================
 
@@ -2401,4 +2426,65 @@ public class MasterController {
 //            @RequestParam String status) {
 //        return ResponseEntity.ok(billingPolicyService.changeStatus(id, status));
 //    }
+
+    //    ===============================Mas Nursing Type=====================================
+    @GetMapping("masNursingType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasNursingTypeResponse>>> getAllNursingType(@PathVariable int flag) {
+        return ResponseEntity.ok(masNursingTypeService.getAll(flag));
+    }
+
+    @GetMapping("masNursingType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> getByIdNursingType(@PathVariable Long id) {
+        return ResponseEntity.ok(masNursingTypeService.getById(id));
+    }
+
+    @PostMapping("masNursingType/create")
+    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> createNursingType(@RequestBody MasNursingTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masNursingTypeService.create(request));
+    }
+
+    @PutMapping("masNursingType/update/{id}")
+    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> updateNursingType(@PathVariable Long id,
+           @RequestBody MasNursingTypeRequest request) {
+        return ResponseEntity.ok(masNursingTypeService.update(id, request));
+    }
+
+    @PutMapping("masNursingType/status/{id}")
+    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> changeStatusNursingType(@PathVariable Long id,
+                 @RequestParam String status) {
+        return ResponseEntity.ok(masNursingTypeService.changeStatus(id, status));
+    }
+    //    ===============================Mas Tooth=====================================
+
+    @GetMapping("masTooth/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasToothMasterResponse>>> getAllTooth(@PathVariable int flag) {
+        return ResponseEntity.ok(masToothMasterService.getAll(flag));
+    }
+
+    @GetMapping("masTooth/getById/{id}")
+    public ResponseEntity<ApiResponse<MasToothMasterResponse>> getByIdTooth(@PathVariable Long id) {
+        return ResponseEntity.ok(masToothMasterService.getById(id));
+    }
+
+    @PostMapping("masTooth/create")
+    public ResponseEntity<ApiResponse<MasToothMasterResponse>> createTooth(@RequestBody MasToothMasterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masToothMasterService.create(request));
+    }
+
+    @PutMapping("masTooth/update/{id}")
+    public ResponseEntity<ApiResponse<MasToothMasterResponse>> updateTooth(@PathVariable Long id,
+           @RequestBody MasToothMasterRequest request) {
+        return ResponseEntity.ok(masToothMasterService.update(id, request));
+    }
+
+    @PutMapping("masTooth/status/{id}")
+    public ResponseEntity<ApiResponse<MasToothMasterResponse>> changeStatusTooth(@PathVariable Long id,
+                 @RequestParam String status) {
+        return ResponseEntity.ok(masToothMasterService.changeStatus(id, status));
+    }
+
+
+
 }
