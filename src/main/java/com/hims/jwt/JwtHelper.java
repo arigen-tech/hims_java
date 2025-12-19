@@ -43,7 +43,7 @@ public class JwtHelper {
     private MasEmployeeRepository masEmployeeRepository;
 
 //     private final String secret = "afafasfafafasfasfasfafacasdasfasxASFACASDFACASDFASFASFDAFASFASDAADSCSDFADCVSGCFVADXCcadwavfsfarvf";
-   private final String secret = "1KCrT4BFo9EMUNJjQ0y8VswrKFSJmIHp1jZJVP1IU5999EOqb3E1gmNpf5FzYXIZrwpPDHLhRcORigN84ftPfuOt2Q2IKTmRfJP5RRhRCfJJ2wJ4vlMK70fWFeIT5QBE"; //128 char
+private static final  String secret = "1KCrT4BFo9EMUNJjQ0y8VswrKFSJmIHp1jZJVP1IU5999EOqb3E1gmNpf5FzYXIZrwpPDHLhRcORigN84ftPfuOt2Q2IKTmRfJP5RRhRCfJJ2wJ4vlMK70fWFeIT5QBE"; //128 char
 
     // Retrieve Users Object from JWT token
 // Retrieve Users Object from JWT token
@@ -213,6 +213,32 @@ public class JwtHelper {
         return new TokenWithExpiry(token, currentTimeMillis + REFRESH_TOKEN_VALIDITY * 1000);
     }
 
-
+//for mobile scection to generate token.......
+    // 🔹 Generate Token for mobile
+    public static String mobileGenerateToken(String mobileNo, Long patientId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("mobileNo", mobileNo);
+        claims.put("patientId", patientId);
+        return mobiledoGenerateToken(claims,"mobile", JWT_TOKEN_VALIDITY);
+    }
+    private static String mobiledoGenerateToken(Map<String, Object> claims, String mobile, long validity) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(mobile)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + validity * 1000))
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
+    }
+    // Generate refresh token for user
+    public String mobileGenerateRefreshToken(String mobileNo, Long patientId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("mobileNo", mobileNo);
+        claims.put("patientId", patientId);
+        return mobiledoGenerateToken(claims, "mobile", REFRESH_TOKEN_VALIDITY);
+    }
 
 }
+
+
+
