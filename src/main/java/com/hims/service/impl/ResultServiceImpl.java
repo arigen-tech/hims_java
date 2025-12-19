@@ -294,6 +294,7 @@ public class ResultServiceImpl implements ResultService {
                 headerDto.setMainChargeCodeName(header.getMainChargecodeId() != null ? header.getMainChargecodeId().getChargecodeCode().toUpperCase() : null);
                 headerDto.setResultEnteredBy(header.getResultEnteredBy());
                 headerDto.setOrderHdId((long) header.getOrderHd().getId());
+                headerDto.setOrderNo(header.getOrderHd().getOrderNo());
 
                 // ===== Detail-level mapping =====
                 List<DgResultEntryDetail> detailList = detailRepo.findByResultEntryIdAndValidated(header, "n");
