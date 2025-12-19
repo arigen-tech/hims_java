@@ -33,41 +33,67 @@ public class MobileLoginServiceimpl implements MobileLoginService {
     @Transactional
     public ApiResponse loginRequest(LoginRequest request) {
         MobileLoginResponce res = new MobileLoginResponce();
+
         try {
-            PatientLogin patientLogin = patientLoginRepository.findTopByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo());
-
+            PatientLogin patientLogin =
+                    patientLoginRepository.findTopByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo());
             if (patientLogin == null) {
-                return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Mobile number not registered",
-                        HttpStatus.NOT_FOUND.value());
-            }else{
-                Long mobile = Long.valueOf(request.getMobileNo()); // Make sure this field exists in your Employee entity
-                try {
-                    String uri = "https://2factor.in/API/V1/999a2629-21e1-11ec-a13b-0200cd936042/SMS/"
-                            + mobile + "/AUTOGEN/DMSLOGIN";
-                    HttpResponse<String> response = Unirest.post(uri).asString();
-                    JSONObject jsonObject = new JSONObject(response.getBody());
-
-                    if (!jsonObject.getString("Status").equalsIgnoreCase("Success")) {
-                        return ResponseUtils.createSuccessResponse(res, new TypeReference<MobileLoginResponce>() {});
-                    }
-                    String sessionId = jsonObject.getString("Details");
-                    res.setOtp("send to mobile");
-                    res.setMessage(sessionId);
-                    return ResponseUtils.createSuccessResponse(res, new TypeReference<MobileLoginResponce>() {});
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
-                            "Unable to send OTP.", 500);
-                }
+                        HttpStatus.NOT_FOUND.value()
+                );
             }
+
+            //  Mobile number registered  Send OTP
+            Long mobile = Long.valueOf(request.getMobileNo());
+
+            try {
+                String uri = "https://2factor.in/API/V1/999a2629-21e1-11ec-a13b-0200cd936042/SMS/"
+                        + mobile + "/AUTOGEN/DMSLOGIN";
+
+                HttpResponse<String> response = Unirest.post(uri).asString();
+                JSONObject jsonObject = new JSONObject(response.getBody());
+
+                if (!"Success".equalsIgnoreCase(jsonObject.getString("Status"))) {
+                    res.setMessage("Failed to send OTP");
+                    return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
+                            },
+                            "Failed to send OTP",
+                            HttpStatus.INTERNAL_SERVER_ERROR.value()
+                    );
+                }
+
+                String sessionId = jsonObject.getString("Details");
+
+                res.setPatientId(patientLogin.getPatientId());
+                res.setSessionId(sessionId);
+                res.setMobileNo(request.getMobileNo());
+                res.setMessage("OTP sent successfully");
+
+                return ResponseUtils.createSuccessResponse(res, new TypeReference<MobileLoginResponce>() {
+                        }
+                );
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
+                        },
+                        "Unable to send OTP",
+                        500
+                );
+            }
+
         } catch (SDDException e) {
-            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
+                    }, e.getMessage(), e.getStatus()
+            );
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
-                    "Internal Server Error", 500);
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
+                    },
+                    "Internal Server Error",
+                    500
+            );
         }
-}
 
-}
+    }}

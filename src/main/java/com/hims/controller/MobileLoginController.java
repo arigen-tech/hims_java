@@ -4,6 +4,7 @@ import com.hims.jwt.JwtHelper;
 import com.hims.request.LoginRequest;
 import com.hims.request.OtpRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.AuthResponse;
 import com.hims.response.MobileLoginResponce;
 import com.hims.service.MobileLoginService;
 import com.hims.utils.ResponseUtils;
@@ -35,33 +36,50 @@ public class MobileLoginController {
     MobileLoginService mobileLoginService;
     @Autowired
     private JwtHelper jwtUtil;
-    @PostMapping("/mlogin")
+    @PostMapping("/mLogin")
     public ResponseEntity<ApiResponse>  loginResponse(@RequestBody LoginRequest request) {
         return new ResponseEntity<>(mobileLoginService.loginRequest(request), HttpStatus.OK);
     }
     @PostMapping("/verifyOtp")
-    public ResponseEntity<?> verifyOtp(@RequestBody @Valid OtpRequest otpRequest) {
+    public ApiResponse<?>  verifyOtp(@RequestBody @Valid OtpRequest otpRequest) {
         try {
             String otp = otpRequest.getOtp();
             String sessionId = otpRequest.getSessionId();
+
             String uri = "https://2factor.in/API/V1/999a2629-21e1-11ec-a13b-0200cd936042/SMS/VERIFY/"
                     + sessionId + "/" + otp;
+
             HttpResponse<String> response = Unirest.post(uri)
-                    .header("content-type", "application/x-www-form-urlencoded").asString();
+                    .header("content-type", "application/x-www-form-urlencoded")
+                    .asString();
+
             JSONObject json = new JSONObject(response.getBody());
             String status = json.getString("Status");
 
-            if (!status.equalsIgnoreCase("Success")) {
-                return createErrorResponse("Invalid OTP.");
+            //  Invalid OTP
+            if (!"Success".equalsIgnoreCase(status)) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Invalid OTP", 400);
             }
-           // String token = jwtUtil.doGenerateToken(employee.getEmail(), roles, employee.getName(), employee.getId());
-          //  return ResponseEntity.ok(new AuthResponse(token, "OTP verified successfully.");
-            return createErrorResponse("OTP verified successfully.");
+
+            // OTP verified generate JWT
+            String token = jwtUtil.mobileGenerateToken(
+                    otpRequest.getMobileNo(),
+                    otpRequest.getPatientId()
+            );
+
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setToken(token);
+            authResponse.setMessage("OTP verified successfully");
+            return ResponseUtils.createSuccessResponse( authResponse, new TypeReference<>() {});
+
         } catch (Exception e) {
             e.printStackTrace();
-            return createErrorResponse("Unable to verify OTP. Please try again.");
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Unable to verify OTP Please try again.",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
         }
-    }
+  }
     private ResponseEntity<ApiResponse> createErrorResponse(String message) {
         return ResponseEntity.badRequest().body(new ApiResponse("error", message, null));
     }
