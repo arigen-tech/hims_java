@@ -115,4 +115,15 @@ public class MasEmployee {
 
     @Column(name = "last_chg_dt", columnDefinition = "timestamp DEFAULT CURRENT_TIMESTAMP")
     private Instant lastChangedDate;
+
+    @Column(name = "year_of_exp")
+    private Integer yearOfExperience;
+
+    @OneToOne
+    @JoinColumn(name = "designation_id", referencedColumnName = "designation_id")
+    private MasDesignation masDesignationId;
+
+    @Lob
+    @Column(name = "profile_description", columnDefinition = "TEXT")
+    private String profileDescription;
 }

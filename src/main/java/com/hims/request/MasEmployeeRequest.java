@@ -6,7 +6,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -33,14 +32,20 @@ public class MasEmployeeRequest {
     private Long identificationType;
     private Long employmentTypeId;
     private Long employeeTypeId;
-    private Long employeeDesignationId;
     private Long roleId;
     private Instant fromDate;
+    private Integer yearOfExperience;
+    private Long masDesignationId;
+    private String profileDescription;
 
     private MultipartFile idDocumentName;
     private MultipartFile  profilePicName;
 
-
     private List<EmployeeQualificationReq> qualification;
+    private List<EmployeeSpecialtyCenterRequest> specialtyCenter;
+    private List<EmployeeWorkExperienceRequest> workExperiences;
+    private List<EmployeeMembershipRequest> employeeMemberships;
+    private List<EmployeeSpecialtyInterestRequest> employeeSpecialtyInterests;
+    private List<EmployeeAwardRequest> employeeAwards;
     private List<EmployeeDocumentReq> document;
 }
