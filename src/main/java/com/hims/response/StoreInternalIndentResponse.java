@@ -36,6 +36,11 @@ public class StoreInternalIndentResponse {
     private String receivedBy;
     private LocalDateTime receivedDate;
 
+    private String receivingStatus;
+    private BigDecimal totalReceivedQty;
+    private BigDecimal totalIssuedQty;
+
+
 
     private String issueNo;
 

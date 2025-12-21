@@ -1,15 +1,10 @@
 package com.hims.service;
 
 import com.hims.entity.MasDepartment;
-import com.hims.request.IssueInternalIndentApprovalRequest;
-import com.hims.request.StoreInternalIndentApprovalRequest;
-import com.hims.request.StoreInternalIndentRequest;
-import com.hims.request.StoreInternalIssueRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.PreviousIssueResponse;
-import com.hims.response.ROLItemResponse;
-import com.hims.response.StoreInternalIndentResponse;
+import com.hims.request.*;
+import com.hims.response.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface StoreInternalIndentService {
@@ -45,4 +40,8 @@ public interface StoreInternalIndentService {
 
     public ApiResponse<List<PreviousIssueResponse>> getPreviousIssues(Long itemId, Long currentIndentMId);
 
-}
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForReceiving(Long fromDeptId, LocalDate fromDate, LocalDate toDate);
+
+    public ApiResponse<StoreIndentReceiveResponse> saveReceiving(StoreIndentReceiveRequest request) ;
+
+    }

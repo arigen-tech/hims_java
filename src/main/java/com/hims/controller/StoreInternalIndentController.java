@@ -2,19 +2,16 @@ package com.hims.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasDepartment;
-import com.hims.request.IssueInternalIndentApprovalRequest;
-import com.hims.request.StoreInternalIndentApprovalRequest;
-import com.hims.request.StoreInternalIndentRequest;
-import com.hims.request.StoreInternalIssueRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.PreviousIssueResponse;
-import com.hims.response.ROLItemResponse;
-import com.hims.response.StoreInternalIndentResponse;
+import com.hims.request.*;
+import com.hims.response.*;
 import com.hims.service.StoreInternalIndentService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -136,6 +133,28 @@ public class StoreInternalIndentController {
             @RequestParam(required = false) Long indentMId) {
 
         return indentService.getPreviousIssues(itemId, indentMId);
+    }
+
+
+    @GetMapping("/receiving/list")
+    public ResponseEntity<ApiResponse<List<StoreInternalIndentResponse>>> getIndentsForReceiving(
+            @RequestParam(required = false) Long fromDeptId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+
+        ApiResponse<List<StoreInternalIndentResponse>> response =
+                indentService.getAllIndentsForReceiving(fromDeptId, fromDate, toDate);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PostMapping("/receive/save")
+    public ResponseEntity<ApiResponse<StoreIndentReceiveResponse>> saveReceiving(
+            @RequestBody StoreIndentReceiveRequest request) {
+        ApiResponse<StoreIndentReceiveResponse> response =
+                indentService.saveReceiving(request);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
 
