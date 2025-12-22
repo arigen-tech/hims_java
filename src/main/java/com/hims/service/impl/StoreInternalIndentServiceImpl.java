@@ -1113,6 +1113,31 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             MasDepartment storeDept = indentM.getToDeptId();
 
             // ==============================================
+            // VALIDATION: received + rejected = issued for each item
+            // ==============================================
+            for (StoreIndentReceiveItemRequest itemReq : request.getItems()) {
+                BigDecimal qtyIssued = nvl(itemReq.getQtyIssued());
+                BigDecimal qtyReceived = nvl(itemReq.getQtyReceived());
+                BigDecimal qtyRejected = nvl(itemReq.getQtyRejected());
+                BigDecimal total = qtyReceived.add(qtyRejected);
+
+                // Check if total equals issued
+                if (total.compareTo(qtyIssued) != 0) {
+                    StoreInternalIndentT indentT = indentTRepository.findById(itemReq.getIndentTId())
+                            .orElse(null);
+                    String itemName = indentT != null ? indentT.getItemId().getNomenclature() : "Unknown Item";
+                    String batchNo = itemReq.getBatchNo() != null ? itemReq.getBatchNo() : "N/A";
+
+                    throw new RuntimeException(
+                            String.format(
+                                    "For Item: %s, Batch: %s\n\nReceived (%s) + Rejected (%s) = %s\nBut Issued Quantity is %s\n\nThey must be equal to proceed.",
+                                    itemName, batchNo, qtyReceived, qtyRejected, total, qtyIssued
+                            )
+                    );
+                }
+            }
+
+            // ==============================================
             // 1. Create Store Indent Receive Master
             // ==============================================
             StoreIndentReceiveM receiveM = new StoreIndentReceiveM();
@@ -1127,7 +1152,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             receiveM.setCreatedBy(currentUserName);
             receiveM.setLastUpdateDate(LocalDateTime.now());
 
-            // Check if any rejection exists to determine is_return
+            // Check if any rejection exists
             boolean hasRejections = request.getItems().stream()
                     .anyMatch(item -> item.getQtyRejected() != null &&
                             item.getQtyRejected().compareTo(BigDecimal.ZERO) > 0);
@@ -1156,25 +1181,18 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 BigDecimal qtyReceived = nvl(itemReq.getQtyReceived());
                 BigDecimal qtyRejected = nvl(itemReq.getQtyRejected());
 
-                // Validate quantities
-                if (qtyReceived.compareTo(BigDecimal.ZERO) < 0 || qtyRejected.compareTo(BigDecimal.ZERO) < 0) {
-                    throw new RuntimeException("Quantities cannot be negative");
-                }
-
-                BigDecimal totalReceived = qtyReceived.add(qtyRejected);
-                if (totalReceived.compareTo(qtyIssued) > 0) {
-                    throw new RuntimeException("Total received + rejected cannot exceed issued quantity for item: " +
-                            indentT.getItemId().getNomenclature());
-                }
-
                 // Get the corresponding issue transaction
-                List<StoreIssueT> issueTs = storeIssueTRepository.findByIndentTId(indentT);
+                List<StoreIssueT> issueTs = storeIssueTRepository.findByIndentTIdAndBatchNo(
+                        indentT,
+                        itemReq.getBatchNo()
+                );
+
                 if (issueTs.isEmpty()) {
                     throw new RuntimeException("No issue transaction found for item: " +
-                            indentT.getItemId().getNomenclature());
+                            indentT.getItemId().getNomenclature() + ", Batch: " + itemReq.getBatchNo());
                 }
 
-                // For simplicity, assume first issue transaction
+                // Get the specific batch issue transaction
                 StoreIssueT issueT = issueTs.get(0);
 
                 // ==============================================
@@ -1193,10 +1211,9 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 receiveT.setIssuedQty(qtyIssued);
                 receiveT.setReceivedQty(qtyReceived);
                 receiveT.setRejectedQty(qtyRejected);
-//                receiveT.setRejectionReason(itemReq.getRejectionReason());
                 receiveT.setCreatedBy(currentUserName);
                 receiveT.setLastUpdateDate(LocalDateTime.now());
-                receiveTRepository.save(receiveT);
+                StoreIndentReceiveT savedReceiveT = receiveTRepository.save(receiveT);
 
                 // ==============================================
                 // 4. Update indent detail with received quantity
@@ -1219,12 +1236,11 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 if (qtyRejected.compareTo(BigDecimal.ZERO) > 0) {
                     createReturn = true;
                     returnItems.add(new StoreReturnItemDetail(
-                            receiveT,
+                            savedReceiveT,
                             issueT,
                             indentT.getItemId(),
                             issueT.getStockId(),
                             qtyRejected
-//                            itemReq.getRejectionReason()
                     ));
                 }
 
@@ -1236,7 +1252,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                             qtyReceived,
                             indentT.getIndentTId(),
                             issueT.getStockId().getStockId(),
-                            "RECEIVED AGAINST ISSUE NO: " + indentM.getIssueNo(),
+                            "RECEIVED AGAINST ISSUE NO: " + indentM.getIssueNo() + " BATCH: " + issueT.getBatchNo(),
                             currentUserName
                     );
                 }
@@ -1247,9 +1263,6 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             // ==============================================
             indentM.setReceivedBy(currentUserName);
             indentM.setReceivedDate(LocalDateTime.now());
-//            boolean hasRejections = request.getItems().stream()
-//                    .anyMatch(item -> item.getQtyRejected() != null &&
-//                            item.getQtyRejected().compareTo(BigDecimal.ZERO) > 0);
             indentM.setIsReturn(hasRejections ? "N" : "Y");
 
             indentMRepository.save(indentM);
@@ -1294,6 +1307,40 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             );
         }
     }
+
+// Add this method to find issue by batch number
+// Add to StoreIssueTRepository interface:
+// List<StoreIssueT> findByIndentTIdAndBatchNo(StoreInternalIndentT indentT, String batchNo);
+
+    // Helper method to get previous received qty per batch
+    private BigDecimal getPreviousReceivedQtyForBatch(StoreInternalIndentT indentT, String batchNo) {
+        List<StoreIndentReceiveT> previousReceipts = receiveTRepository
+                .findByStoreInternalIndentTAndBatchNo(indentT, batchNo);
+
+        return previousReceipts.stream()
+                .map(r -> nvl(r.getReceivedQty()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // Update this method in getAllIndentsForReceiving to include batch-wise previous received qty
+// In the batch response building section:
+    private void buildBatchResponseWithPreviousQty(BatchResponse br, StoreIssueT issueT,
+                                                   StoreInternalIndentT indentT, String batchNo) {
+        br.setBatchNo(issueT.getBatchNo());
+        br.setManufactureDate(issueT.getDom());
+        br.setExpiryDate(issueT.getExpiryDate());
+        br.setBrandName(issueT.getBrandname());
+        br.setManufacturerName(issueT.getManufacturername());
+        br.setBatchIssuedQty(issueT.getIssuedQty());
+
+        // Get previous received qty for this specific batch
+        BigDecimal previousReceivedQty = getPreviousReceivedQtyForBatch(indentT, batchNo);
+        br.setBatchReceivedQty(previousReceivedQty);
+
+    }
+
+
+
 
     // Helper class for return items
     private static class StoreReturnItemDetail {

@@ -15,4 +15,6 @@ public interface StoreIssueTRepository extends JpaRepository<StoreIssueT,Long>{
     List<StoreIssueT> findByStoreIssueMId(StoreIssueM issueM);
 
     List<StoreIssueT> findByIndentTId(StoreInternalIndentT indentT);
+
+    List<StoreIssueT> findByIndentTIdAndBatchNo(StoreInternalIndentT indentT, String batchNo);
 }
