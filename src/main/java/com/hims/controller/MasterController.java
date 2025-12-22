@@ -168,6 +168,22 @@ public class MasterController {
     @Autowired
     private BillingPolicyService billingPolicyService;
 
+    @Autowired
+    private MasNursingTypeService masNursingTypeService;
+    @Autowired
+    private MasToothMasterService masToothMasterService;
+    @Autowired
+    private MasToothConditionService masToothConditionService;
+    @Autowired
+    private OpthMasDistanceVisionService opthMasDistanceVisionService;
+    @Autowired
+    private OphthMasNearVisionService ophthMasNearVisionService;
+    @Autowired
+    private  OpthMasColorVisionService opthMasColorVisionService;
+    @Autowired
+    private  OpthMasSpectacleUseService masSpectacleUseService;
+
+
 
 
 
@@ -2297,6 +2313,26 @@ public class MasterController {
     public ResponseEntity<ApiResponse<List<MasOpdMedicalAdviseResponse>>> getAllMasOpdMedicalAdvise(@PathVariable int flag) {
         return ResponseEntity.ok( masOpdMedicalAdviseService.getAll(flag));
     }
+    @PostMapping("masOpdMedicalAdvise/create")
+    public ResponseEntity<ApiResponse<MasOpdMedicalAdviseResponse>>
+    createOpdMedicalAdvise(@RequestBody MasOpdMedicalAdviseRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masOpdMedicalAdviseService.create(request));
+    }
+
+    @PutMapping("masOpdMedicalAdvise/update/{id}")
+    public ResponseEntity<ApiResponse<MasOpdMedicalAdviseResponse>>
+    updateOpdMedicalAdvise(@PathVariable Long id,
+           @RequestBody MasOpdMedicalAdviseRequest request) {
+        return ResponseEntity.ok(masOpdMedicalAdviseService.update(id, request));
+    }
+
+    @PutMapping("masOpdMedicalAdvise/status/{id}")
+    public ResponseEntity<ApiResponse<MasOpdMedicalAdviseResponse>>
+    changeStatusOpdMedicalAdvise(@PathVariable Long id,
+                 @RequestParam String status) {
+        return ResponseEntity.ok(masOpdMedicalAdviseService.changeStatus(id, status));
+    }
 
     //    ===============================Mas Specialty Center=====================================
 
@@ -2401,4 +2437,244 @@ public class MasterController {
 //            @RequestParam String status) {
 //        return ResponseEntity.ok(billingPolicyService.changeStatus(id, status));
 //    }
+
+    //    ===============================Mas Nursing Type=====================================
+    @GetMapping("masNursingType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasNursingTypeResponse>>> getAllNursingType(@PathVariable int flag) {
+        return ResponseEntity.ok(masNursingTypeService.getAll(flag));
+    }
+
+    @GetMapping("masNursingType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> getByIdNursingType(@PathVariable Long id) {
+        return ResponseEntity.ok(masNursingTypeService.getById(id));
+    }
+
+    @PostMapping("masNursingType/create")
+    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> createNursingType(@RequestBody MasNursingTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masNursingTypeService.create(request));
+    }
+
+    @PutMapping("masNursingType/update/{id}")
+    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> updateNursingType(@PathVariable Long id,
+           @RequestBody MasNursingTypeRequest request) {
+        return ResponseEntity.ok(masNursingTypeService.update(id, request));
+    }
+
+    @PutMapping("masNursingType/status/{id}")
+    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> changeStatusNursingType(@PathVariable Long id,
+                 @RequestParam String status) {
+        return ResponseEntity.ok(masNursingTypeService.changeStatus(id, status));
+    }
+    //    ===============================Mas Tooth=====================================
+
+    @GetMapping("masTooth/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasToothMasterResponse>>> getAllTooth(@PathVariable int flag) {
+        return ResponseEntity.ok(masToothMasterService.getAll(flag));
+    }
+
+    @GetMapping("masTooth/getById/{id}")
+    public ResponseEntity<ApiResponse<MasToothMasterResponse>> getByIdTooth(@PathVariable Long id) {
+        return ResponseEntity.ok(masToothMasterService.getById(id));
+    }
+
+    @PostMapping("masTooth/create")
+    public ResponseEntity<ApiResponse<MasToothMasterResponse>> createTooth(@RequestBody MasToothMasterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masToothMasterService.create(request));
+    }
+
+    @PutMapping("masTooth/update/{id}")
+    public ResponseEntity<ApiResponse<MasToothMasterResponse>> updateTooth(@PathVariable Long id,
+           @RequestBody MasToothMasterRequest request) {
+        return ResponseEntity.ok(masToothMasterService.update(id, request));
+    }
+
+    @PutMapping("masTooth/status/{id}")
+    public ResponseEntity<ApiResponse<MasToothMasterResponse>> changeStatusTooth(@PathVariable Long id,
+                 @RequestParam String status) {
+        return ResponseEntity.ok(masToothMasterService.changeStatus(id, status));
+    }
+
+    //    ===============================Mas Tooth Condition=====================================
+
+    @GetMapping("masToothCondition/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasToothConditionResponse>>> getAllToothCondition(@PathVariable int flag) {
+        return ResponseEntity.ok(masToothConditionService.getAll(flag));
+    }
+
+    @GetMapping("masToothCondition/getById/{id}")
+    public ResponseEntity<ApiResponse<MasToothConditionResponse>> getByIdToothCondition(@PathVariable Long id) {
+        return ResponseEntity.ok(masToothConditionService.getById(id));
+    }
+
+    @PostMapping("masToothCondition/create")
+    public ResponseEntity<ApiResponse<MasToothConditionResponse>> createToothCondition(@RequestBody MasToothConditionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masToothConditionService.create(request));
+    }
+
+    @PutMapping("masToothCondition/update/{id}")
+    public ResponseEntity<ApiResponse<MasToothConditionResponse>> updateToothCondition(@PathVariable Long id,
+           @RequestBody MasToothConditionRequest request) {
+        return ResponseEntity.ok(masToothConditionService.update(id, request));
+    }
+
+    @PutMapping("masToothCondition/status/{id}")
+    public ResponseEntity<ApiResponse<MasToothConditionResponse>> changeStatusToothCondition(@PathVariable Long id,
+                 @RequestParam String status) {
+        return ResponseEntity.ok(masToothConditionService.changeStatus(id, status));
+    }
+
+    //    ===============================Opth Mas Distance Vision=====================================
+
+    @GetMapping("opthMasDistanceVision/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<OpthMasDistanceVisionResponse>>> getAllOpthDistance(@PathVariable int flag) {
+        return ResponseEntity.ok(opthMasDistanceVisionService.getAll(flag));
+    }
+
+    @GetMapping("opthMasDistanceVision/getById/{id}")
+    public ResponseEntity<ApiResponse<OpthMasDistanceVisionResponse>> getByIdOpthDistance(@PathVariable Long id) {
+        return ResponseEntity.ok(opthMasDistanceVisionService.getById(id));
+    }
+
+    @PostMapping("opthMasDistanceVision/create")
+    public ResponseEntity<ApiResponse<OpthMasDistanceVisionResponse>> createOpthDistance(@RequestBody OpthMasDistanceVisionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(opthMasDistanceVisionService.create(request));
+    }
+
+    @PutMapping("opthMasDistanceVision/update/{id}")
+    public ResponseEntity<ApiResponse<OpthMasDistanceVisionResponse>> updateOpthDistance(@PathVariable Long id,
+           @RequestBody OpthMasDistanceVisionRequest request) {
+        return ResponseEntity.ok(opthMasDistanceVisionService.update(id, request));
+    }
+
+    @PutMapping("opthMasDistanceVision/status/{id}")
+    public ResponseEntity<ApiResponse<OpthMasDistanceVisionResponse>> changeStatusOpthDistance(@PathVariable Long id,
+                 @RequestParam String status) {
+        return ResponseEntity.ok(opthMasDistanceVisionService.changeStatus(id, status));
+    }
+
+    //    ===============================Opth Mas Near Vision=====================================
+
+
+    @GetMapping("opthMasNearVision/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<OphthMasNearVisionResponse>>> getAllOpthNear(
+            @PathVariable int flag) {
+
+        return ResponseEntity.ok( ophthMasNearVisionService.getAll(flag));
+    }
+
+    @GetMapping("opthMasNearVision/getById/{id}")
+    public ResponseEntity<ApiResponse<OphthMasNearVisionResponse>> getByIdOpthNear(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok( ophthMasNearVisionService.getById(id));
+    }
+
+    @PostMapping("opthMasNearVision/create")
+    public ResponseEntity<ApiResponse<OphthMasNearVisionResponse>> createOpthNear(
+            @RequestBody OphthMasNearVisionRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body( ophthMasNearVisionService.create(request));
+    }
+
+    @PutMapping("opthMasNearVision/update/{id}")
+    public ResponseEntity<ApiResponse<OphthMasNearVisionResponse>> updateOpthNear(
+            @PathVariable Long id,
+            @RequestBody OphthMasNearVisionRequest request) {
+
+        return ResponseEntity.ok(
+                ophthMasNearVisionService.update(id, request)
+        );
+    }
+
+    @PutMapping("opthMasNearVision/status/{id}")
+    public ResponseEntity<ApiResponse<OphthMasNearVisionResponse>> changeStatusOpthNear(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(
+                ophthMasNearVisionService.changeStatus(id, status)
+        );
+    }
+
+    //    ===============================Opth Mas Color Vision=====================================
+
+    @GetMapping("opthMasColorVision/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<OpthMasColorVisionResponse>>> getAllColorVision(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(opthMasColorVisionService.getAll(flag));
+    }
+
+    @GetMapping("opthMasColorVision/getById/{id}")
+    public ResponseEntity<ApiResponse<OpthMasColorVisionResponse>> getByIdColorVision(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(opthMasColorVisionService.getById(id));
+    }
+
+    @PostMapping("opthMasColorVision/create")
+    public ResponseEntity<ApiResponse<OpthMasColorVisionResponse>> createColorVision(
+            @RequestBody OpthMasColorVisionRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(opthMasColorVisionService.create(request));
+    }
+
+    @PutMapping("opthMasColorVision/update/{id}")
+    public ResponseEntity<ApiResponse<OpthMasColorVisionResponse>> updateColorVision(
+            @PathVariable Long id,
+            @RequestBody OpthMasColorVisionRequest request) {
+
+        return ResponseEntity.ok(opthMasColorVisionService.update(id, request));
+    }
+
+    @PutMapping("opthMasColorVision/status/{id}")
+    public ResponseEntity<ApiResponse<OpthMasColorVisionResponse>> changeStatusColorVision(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(opthMasColorVisionService.changeStatus(id, status));
+    }
+
+    //    ===============================Opth Mas Spectacle Use =====================================
+
+    @GetMapping("opthMasSpectacleUse/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<OpthMasSpectacleUseResponse>>> getAllSpectacleUse(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masSpectacleUseService.getAll(flag));
+    }
+
+    @GetMapping("opthMasSpectacleUse/getById/{id}")
+    public ResponseEntity<ApiResponse<OpthMasSpectacleUseResponse>> getByIdSpectacleUse(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masSpectacleUseService.getById(id));
+    }
+
+    @PostMapping("opthMasSpectacleUse/create")
+    public ResponseEntity<ApiResponse<OpthMasSpectacleUseResponse>> creatSpectacleUsee(
+            @RequestBody OpthMasSpectacleUseRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masSpectacleUseService.create(request));
+    }
+
+    @PutMapping("opthMasSpectacleUse/update/{id}")
+    public ResponseEntity<ApiResponse<OpthMasSpectacleUseResponse>> updateSpectacleUse(
+            @PathVariable Long id,
+            @RequestBody OpthMasSpectacleUseRequest request) {
+
+        return ResponseEntity.ok(masSpectacleUseService.update(id, request));
+    }
+
+    @PutMapping("opthMasSpectacleUse/status/{id}")
+    public ResponseEntity<ApiResponse<OpthMasSpectacleUseResponse>> changeStatusSpectacleUse(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(masSpectacleUseService.changeStatus(id, status));
+    }
+
 }

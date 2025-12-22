@@ -10,8 +10,7 @@ public class MasOpdMedicalAdviseResponse {
     private String status;
     private Long departmentId;
     private String departmentName;
-    private String createdBy;
-    private String lastUpdatedBy;
+
     private LocalDateTime lastUpdateDate;
 
 }

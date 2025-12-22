@@ -122,6 +122,11 @@ public class BillingServiceImpl implements BillingService {
                 throw new BillingException("MasServiceOPD or Tariff is not defined yet");
             }
             header.setDiscountAmount(totalDiscount);
+            if(visit.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
+                header.setPaymentStatus("y");
+            }else{
+                header.setPaymentStatus("n");
+            }
             header.setPaymentStatus("n");
             header.setCreatedBy(currentUser.getFirstName());
             header.setUpdatedDt(Instant.now());
@@ -146,7 +151,11 @@ public class BillingServiceImpl implements BillingService {
                     detail.setServiceCategory(masServiceCategory);
                     detail.setServiceId(0L);
                     detail.setItemName("");
-                    detail.setPaymentStatus("n");
+                    if(visit.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
+                        detail.setPaymentStatus("y");
+                    }else{
+                        detail.setPaymentStatus("n");
+                    }
                     detail.setInvestigation(null);
                     detail.setChargeCost(masServiceCategory.getRegistrationCost());
                     detail.setBasePrice(masServiceCategory.getRegistrationCost());
@@ -173,7 +182,11 @@ public class BillingServiceImpl implements BillingService {
                 detail.setServiceCategory(serviceCategory);
                 detail.setServiceId(0L);
                 detail.setItemName("");
-                detail.setPaymentStatus("n");
+                if(visit.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
+                    detail.setPaymentStatus("y");
+                }else{
+                    detail.setPaymentStatus("n");
+                }
 
                 if (serviceOpd.isPresent()) {
                     detail.setOpdService(serviceOpd.get());

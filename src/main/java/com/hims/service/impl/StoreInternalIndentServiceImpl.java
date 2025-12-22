@@ -44,6 +44,23 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Autowired
     StoreIssueTRepository storeIssueTRepository;
 
+    // Add these repository injections to your StoreInternalIndentServiceImpl
+    @Autowired
+    private StoreIndentReceiveMRepository receiveMRepository;
+
+    @Autowired
+    private StoreIndentReceiveTRepository receiveTRepository;
+
+    @Autowired
+    private StoreReturnMRepository returnMRepository;
+
+    @Autowired
+    private StoreReturnTRepository returnTRepository;
+
+    @Autowired
+    private StoreItemDamagedStockRepository damagedStockRepository;
+
+
     @Autowired
     StockFound stockFound;
 
@@ -687,7 +704,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
                             // ===== CHANGE 4: Show ONLY current department stock =====
                             Long closingStock = batch.getClosingStock() != null ? batch.getClosingStock() : 0L;
-                            br.setBatchstock(closingStock);  // This is the stock from current department
+                            br.setBatchStock(closingStock);  // This is the stock from current department
 
                             // Keep other department stocks for reference (optional)
                             Long avlableStokes = stockFound.getAvailableStocks(
@@ -696,7 +713,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                                     itemId,
                                     hospDefinedstoreDays
                             );
-                            br.setStorestocks(avlableStokes);
+                            br.setStoreStocks(avlableStokes);
 
                             Long dispstocks = stockFound.getAvailableStocks(
                                     hospitalId,
@@ -704,7 +721,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                                     itemId,
                                     hospDefineddispDays
                             );
-                            br.setDispstocks(dispstocks);
+                            br.setDispStocks(dispstocks);
 
                             Long wardstocks = stockFound.getAvailableStocks(
                                     hospitalId,
@@ -712,7 +729,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                                     itemId,
                                     hospDefinedwardDays
                             );
-                            br.setWardstocks(wardstocks);
+                            br.setWardStocks(wardstocks);
 
                             batchResponseList.add(br);
                         }
@@ -845,6 +862,646 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             );
         }
     }
+
+
+
+
+    //=============================================================indentreceving================================================
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<StoreInternalIndentResponse>> getAllIndentsForReceiving(
+            Long fromDeptId,
+            LocalDate fromDate,
+            LocalDate toDate) {
+
+        try {
+
+            List<StoreInternalIndentM> indents;
+
+            if (fromDeptId != null && fromDate != null && toDate != null) {
+
+                LocalDateTime start = fromDate.atStartOfDay();
+                LocalDateTime end = toDate.atTime(23, 59, 59);
+
+                indents = indentMRepository
+                        .findByFromDeptId_IdAndStatusAndIssuedDateBetween(
+                                fromDeptId, "FI", start, end
+                        );
+
+            } else if (fromDeptId != null) {
+
+                indents = indentMRepository
+                        .findByFromDeptId_IdAndStatus(fromDeptId, "FI");
+
+            } else {
+
+                indents = indentMRepository.findByStatus("FI");
+            }
+
+            indents.sort(Comparator.comparing(
+                    StoreInternalIndentM::getIssuedDate,
+                    Comparator.nullsLast(Comparator.reverseOrder())
+            ));
+
+            List<StoreInternalIndentResponse> responseList = new ArrayList<>();
+
+            for (StoreInternalIndentM indent : indents) {
+
+                StoreInternalIndentResponse response =
+                        buildSimpleResponse(indent);
+
+                // 🔹 Get issue master for this indent
+                List<StoreIssueM> issueMasters =
+                        storeIssueMRepository.findByIndentMId(indent);
+
+                Map<Long, List<StoreIssueT>> issueItemMap =
+                        new HashMap<>();
+
+                for (StoreIssueM issueM : issueMasters) {
+
+                    List<StoreIssueT> issueTs =
+                            storeIssueTRepository.findByStoreIssueMId(issueM);
+
+                    for (StoreIssueT issueT : issueTs) {
+
+                        Long indentTId =
+                                issueT.getIndentTId().getIndentTId();
+
+                        issueItemMap
+                                .computeIfAbsent(indentTId, k -> new ArrayList<>())
+                                .add(issueT);
+                    }
+                }
+
+                List<StoreInternalIndentDetailResponse> itemResponses =
+                        new ArrayList<>();
+
+                for (StoreInternalIndentT indentT :
+                        indentTRepository.findByIndentM(indent)) {
+
+                    StoreInternalIndentDetailResponse dr =
+                            new StoreInternalIndentDetailResponse();
+
+                    dr.setIndentTId(indentT.getIndentTId());
+                    dr.setItemId(indentT.getItemId().getItemId());
+                    dr.setItemName(indentT.getItemId().getNomenclature());
+                    dr.setPvmsNo(indentT.getItemId().getPvmsNo());
+                    dr.setUnitAuName(indentT.getItemId().getUnitAU().getUnitName());
+                    dr.setUnitAUid(indentT.getItemId().getUnitAU().getUnitId());
+
+                    dr.setRequestedQty(indentT.getRequestedQty());
+                    dr.setApprovedQty(indentT.getApprovedQty());
+                    dr.setIssuedQty(indentT.getIssuedQty());
+                    dr.setReceivedQty(indentT.getReceivedQty());
+                    dr.setIssueStatus(indentT.getIssueStatus());
+                    dr.setReason(indentT.getReason());
+
+                    // 🔹 BATCHES FROM ISSUE TABLE
+                    List<BatchResponse> batchResponses =
+                            new ArrayList<>();
+
+                    List<StoreIssueT> issuedBatches =
+                            issueItemMap.get(indentT.getIndentTId());
+
+                    if (issuedBatches != null) {
+
+                        for (StoreIssueT issueT : issuedBatches) {
+
+                            BatchResponse br = new BatchResponse();
+                            br.setBatchNo(issueT.getBatchNo());
+                            br.setManufactureDate(issueT.getDom());
+                            br.setExpiryDate(issueT.getExpiryDate());
+                            br.setBrandName(issueT.getBrandname());
+
+                            br.setManufacturerName(issueT.getManufacturername());
+                            br.setBatchIssuedQty(issueT.getIssuedQty());
+//                            br.setBatchReceivedQty();
+
+                            // Issued qty is the max receivable qty
+////                            br.setBatchstock(
+////                                    issueT.getIssuedQty() != null
+////                                            ? issueT.getIssuedQty().longValue()
+////                                            : 0L
+//                            );
+
+                            batchResponses.add(br);
+                        }
+                    }
+
+                    dr.setBatches(batchResponses);
+                    itemResponses.add(dr);
+                }
+
+                response.setItems(itemResponses);
+                response.setReceivingStatus(determineReceivingStatus(indent));
+                response.setTotalIssuedQty(calculateTotalIssuedQty(indent));
+                response.setTotalReceivedQty(calculateTotalReceivedQty(indent));
+
+                responseList.add(response);
+            }
+
+            return ResponseUtils.createSuccessResponse(
+                    responseList,
+                    new TypeReference<List<StoreInternalIndentResponse>>() {}
+            );
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<List<StoreInternalIndentResponse>>() {},
+                    "Error fetching indents for receiving: " + e.getMessage(),
+                    500
+            );
+        }
+    }
+
+
+
+
+    private String determineReceivingStatus(StoreInternalIndentM indent) {
+        List<StoreInternalIndentT> details = indentTRepository.findByIndentM(indent);
+
+        if (details.isEmpty()) {
+            return "NOT_STARTED";
+        }
+
+        boolean allReceived = true;
+        boolean noneReceived = true;
+
+        for (StoreInternalIndentT detail : details) {
+            BigDecimal issued = nvl(detail.getIssuedQty());
+            BigDecimal received = nvl(detail.getReceivedQty());
+
+            if (received.compareTo(BigDecimal.ZERO) > 0) {
+                noneReceived = false;
+            }
+
+            if (issued.compareTo(BigDecimal.ZERO) > 0 && received.compareTo(issued) < 0) {
+                allReceived = false;
+            }
+        }
+
+        if (allReceived && !noneReceived) {
+            return "FULLY_RECEIVED";
+        } else if (!noneReceived && !allReceived) {
+            return "PARTIALLY_RECEIVED";
+        } else {
+            return "NOT_STARTED";
+        }
+    }
+
+    // Helper to calculate total received quantity
+    private BigDecimal calculateTotalReceivedQty(StoreInternalIndentM indent) {
+        List<StoreInternalIndentT> details = indentTRepository.findByIndentM(indent);
+        return details.stream()
+                .map(d -> nvl(d.getReceivedQty()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // Helper to calculate total issued quantity
+    private BigDecimal calculateTotalIssuedQty(StoreInternalIndentM indent) {
+        List<StoreInternalIndentT> details = indentTRepository.findByIndentM(indent);
+        return details.stream()
+                .map(d -> nvl(d.getIssuedQty()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+
+
+
+
+
+
+    // Add this method to StoreInternalIndentServiceImpl
+    @Override
+    @Transactional
+    public ApiResponse<StoreIndentReceiveResponse> saveReceiving(StoreIndentReceiveRequest request) {
+        try {
+            // Validate input
+            if (request.getIndentMId() == null) {
+                throw new RuntimeException("Indent Master ID is required");
+            }
+
+            if (request.getItems() == null || request.getItems().isEmpty()) {
+                throw new RuntimeException("At least one item must be received");
+            }
+
+            // Load indent master
+            StoreInternalIndentM indentM = indentMRepository.findById(request.getIndentMId())
+                    .orElseThrow(() -> new RuntimeException("Indent not found with ID: " + request.getIndentMId()));
+
+            // Check if already received
+            if (receiveMRepository.existsByStoreInternalIndent(indentM)) {
+                throw new RuntimeException("This indent has already been received");
+            }
+
+            // Get current user
+            User currentUser = authUtil.getCurrentUser();
+            String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
+
+            // Get current department (receiving department)
+            Long receivingDeptId = authUtil.getCurrentDepartmentId();
+            MasDepartment receivingDept = masDepartmentRepository.findById(receivingDeptId)
+                    .orElseThrow(() -> new RuntimeException("Receiving department not found"));
+
+            // Get store department (issuing department)
+            MasDepartment storeDept = indentM.getToDeptId();
+
+            // ==============================================
+            // VALIDATION: received + rejected = issued for each item
+            // ==============================================
+            for (StoreIndentReceiveItemRequest itemReq : request.getItems()) {
+                BigDecimal qtyIssued = nvl(itemReq.getQtyIssued());
+                BigDecimal qtyReceived = nvl(itemReq.getQtyReceived());
+                BigDecimal qtyRejected = nvl(itemReq.getQtyRejected());
+                BigDecimal total = qtyReceived.add(qtyRejected);
+
+                // Check if total equals issued
+                if (total.compareTo(qtyIssued) != 0) {
+                    StoreInternalIndentT indentT = indentTRepository.findById(itemReq.getIndentTId())
+                            .orElse(null);
+                    String itemName = indentT != null ? indentT.getItemId().getNomenclature() : "Unknown Item";
+                    String batchNo = itemReq.getBatchNo() != null ? itemReq.getBatchNo() : "N/A";
+
+                    throw new RuntimeException(
+                            String.format(
+                                    "For Item: %s, Batch: %s\n\nReceived (%s) + Rejected (%s) = %s\nBut Issued Quantity is %s\n\nThey must be equal to proceed.",
+                                    itemName, batchNo, qtyReceived, qtyRejected, total, qtyIssued
+                            )
+                    );
+                }
+            }
+
+            // ==============================================
+            // 1. Create Store Indent Receive Master
+            // ==============================================
+            StoreIndentReceiveM receiveM = new StoreIndentReceiveM();
+            receiveM.setStoreInternalIndent(indentM);
+            receiveM.setReceivedDate(request.getReceivingDate() != null ?
+                    request.getReceivingDate() : LocalDateTime.now());
+            receiveM.setReceivedBy(currentUserName);
+            receiveM.setRemarks(request.getRemarks());
+            receiveM.setStatus("R");
+            receiveM.setReceivedDepartment(receivingDept);
+            receiveM.setStoreDepartment(storeDept);
+            receiveM.setCreatedBy(currentUserName);
+            receiveM.setLastUpdateDate(LocalDateTime.now());
+
+            // Check if any rejection exists
+            boolean hasRejections = request.getItems().stream()
+                    .anyMatch(item -> item.getQtyRejected() != null &&
+                            item.getQtyRejected().compareTo(BigDecimal.ZERO) > 0);
+            receiveM.setIsReturn(hasRejections ? "N" : "Y");
+
+            receiveM = receiveMRepository.save(receiveM);
+
+            // Track if we need to create returns
+            boolean createReturn = false;
+            List<StoreReturnItemDetail> returnItems = new ArrayList<>();
+
+            // ==============================================
+            // 2. Process each item for receiving
+            // ==============================================
+            for (StoreIndentReceiveItemRequest itemReq : request.getItems()) {
+                // Load indent detail
+                StoreInternalIndentT indentT = indentTRepository.findById(itemReq.getIndentTId())
+                        .orElseThrow(() -> new RuntimeException("Indent detail not found: " + itemReq.getIndentTId()));
+
+                // Validate indent belongs to the master
+                if (!indentT.getIndentM().getIndentMId().equals(indentM.getIndentMId())) {
+                    throw new RuntimeException("Indent detail does not belong to this indent master");
+                }
+
+                BigDecimal qtyIssued = nvl(itemReq.getQtyIssued());
+                BigDecimal qtyReceived = nvl(itemReq.getQtyReceived());
+                BigDecimal qtyRejected = nvl(itemReq.getQtyRejected());
+
+                // Get the corresponding issue transaction
+                List<StoreIssueT> issueTs = storeIssueTRepository.findByIndentTIdAndBatchNo(
+                        indentT,
+                        itemReq.getBatchNo()
+                );
+
+                if (issueTs.isEmpty()) {
+                    throw new RuntimeException("No issue transaction found for item: " +
+                            indentT.getItemId().getNomenclature() + ", Batch: " + itemReq.getBatchNo());
+                }
+
+                // Get the specific batch issue transaction
+                StoreIssueT issueT = issueTs.get(0);
+
+                // ==============================================
+                // 3. Create Store Indent Receive Transaction
+                // ==============================================
+                StoreIndentReceiveT receiveT = new StoreIndentReceiveT();
+                receiveT.setStoreIndentReceiveM(receiveM);
+                receiveT.setStoreInternalIndentT(indentT);
+                receiveT.setStoreIssueT(issueT);
+                receiveT.setItem(indentT.getItemId());
+
+                receiveT.setBatchNo(issueT.getBatchNo());
+                receiveT.setExpiryDate(issueT.getExpiryDate());
+                receiveT.setBrandName(issueT.getBrandname());
+                receiveT.setManufacturerName(issueT.getManufacturername());
+                receiveT.setIssuedQty(qtyIssued);
+                receiveT.setReceivedQty(qtyReceived);
+                receiveT.setRejectedQty(qtyRejected);
+                receiveT.setCreatedBy(currentUserName);
+                receiveT.setLastUpdateDate(LocalDateTime.now());
+                StoreIndentReceiveT savedReceiveT = receiveTRepository.save(receiveT);
+
+                // ==============================================
+                // 4. Update indent detail with received quantity
+                // ==============================================
+                BigDecimal previousReceived = nvl(indentT.getReceivedQty());
+                BigDecimal newTotalReceived = previousReceived.add(qtyReceived);
+                indentT.setReceivedQty(newTotalReceived);
+                indentTRepository.save(indentT);
+
+                // ==============================================
+                // 5. Update batch stock if received quantity > 0
+                // ==============================================
+                if (qtyReceived.compareTo(BigDecimal.ZERO) > 0) {
+                    updateBatchStockForReceiving(indentT, issueT, qtyReceived, currentUserName);
+                }
+
+                // ==============================================
+                // 6. Handle rejected items (prepare for return)
+                // ==============================================
+                if (qtyRejected.compareTo(BigDecimal.ZERO) > 0) {
+                    createReturn = true;
+                    returnItems.add(new StoreReturnItemDetail(
+                            savedReceiveT,
+                            issueT,
+                            indentT.getItemId(),
+                            issueT.getStockId(),
+                            qtyRejected
+                    ));
+                }
+
+                // ==============================================
+                // 7. Create ledger entry for received quantity
+                // ==============================================
+                if (qtyReceived.compareTo(BigDecimal.ZERO) > 0) {
+                    createReceivingLedgerEntry(
+                            qtyReceived,
+                            indentT.getIndentTId(),
+                            issueT.getStockId().getStockId(),
+                            "RECEIVED AGAINST ISSUE NO: " + indentM.getIssueNo() + " BATCH: " + issueT.getBatchNo(),
+                            currentUserName
+                    );
+                }
+            }
+
+            // ==============================================
+            // 8. Update indent master status and receiving info
+            // ==============================================
+            indentM.setReceivedBy(currentUserName);
+            indentM.setReceivedDate(LocalDateTime.now());
+            indentM.setIsReturn(hasRejections ? "N" : "Y");
+
+            indentMRepository.save(indentM);
+
+            // ==============================================
+            // 9. Create returns if needed
+            // ==============================================
+            if (createReturn && !returnItems.isEmpty()) {
+                createStoreReturn(receiveM, returnItems, currentUserName);
+            }
+
+            // ==============================================
+            // 10. Build response
+            // ==============================================
+            StoreIndentReceiveResponse response = new StoreIndentReceiveResponse();
+            response.setReceiveMId(receiveM.getReceiveMId());
+            response.setIndentNo(indentM.getIndentNo());
+            response.setIssueNo(indentM.getIssueNo());
+            response.setReceivedDate(receiveM.getReceivedDate());
+            response.setReceivedBy(receiveM.getReceivedBy());
+            response.setStatus(receiveM.getStatus());
+            response.setIsReturn(receiveM.getIsReturn());
+            response.setMessage("Receiving saved successfully!");
+
+            if (createReturn) {
+                response.setReturnCreated(true);
+                response.setReturnMessage("Return created for rejected items");
+            }
+
+            return ResponseUtils.createSuccessResponse(
+                    response,
+                    new TypeReference<StoreIndentReceiveResponse>() {}
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<StoreIndentReceiveResponse>() {},
+                    "Error saving receiving: " + e.getMessage(),
+                    400
+            );
+        }
+    }
+
+// Add this method to find issue by batch number
+// Add to StoreIssueTRepository interface:
+// List<StoreIssueT> findByIndentTIdAndBatchNo(StoreInternalIndentT indentT, String batchNo);
+
+    // Helper method to get previous received qty per batch
+    private BigDecimal getPreviousReceivedQtyForBatch(StoreInternalIndentT indentT, String batchNo) {
+        List<StoreIndentReceiveT> previousReceipts = receiveTRepository
+                .findByStoreInternalIndentTAndBatchNo(indentT, batchNo);
+
+        return previousReceipts.stream()
+                .map(r -> nvl(r.getReceivedQty()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // Update this method in getAllIndentsForReceiving to include batch-wise previous received qty
+// In the batch response building section:
+    private void buildBatchResponseWithPreviousQty(BatchResponse br, StoreIssueT issueT,
+                                                   StoreInternalIndentT indentT, String batchNo) {
+        br.setBatchNo(issueT.getBatchNo());
+        br.setManufactureDate(issueT.getDom());
+        br.setExpiryDate(issueT.getExpiryDate());
+        br.setBrandName(issueT.getBrandname());
+        br.setManufacturerName(issueT.getManufacturername());
+        br.setBatchIssuedQty(issueT.getIssuedQty());
+
+        // Get previous received qty for this specific batch
+        BigDecimal previousReceivedQty = getPreviousReceivedQtyForBatch(indentT, batchNo);
+        br.setBatchReceivedQty(previousReceivedQty);
+
+    }
+
+
+
+
+    // Helper class for return items
+    private static class StoreReturnItemDetail {
+        StoreIndentReceiveT receiveT;
+        StoreIssueT issueT;
+        MasStoreItem item;
+        StoreItemBatchStock stock;
+        BigDecimal rejectedQty;
+        String rejectionReason;
+
+        public StoreReturnItemDetail(StoreIndentReceiveT receiveT, StoreIssueT issueT,
+                                     MasStoreItem item, StoreItemBatchStock stock,
+                                     BigDecimal rejectedQty) {
+            this.receiveT = receiveT;
+            this.issueT = issueT;
+            this.item = item;
+            this.stock = stock;
+            this.rejectedQty = rejectedQty;
+//            this.rejectionReason = rejectionReason;
+        }
+    }
+
+    // Update batch stock for received quantity
+    private void updateBatchStockForReceiving(StoreInternalIndentT indentT,
+                                              StoreIssueT issueT, BigDecimal qtyReceived, String userName) {
+
+        StoreItemBatchStock stock = issueT.getStockId();
+        if (stock == null) {
+            // If no specific stock record, find the batch in receiving department
+            Long receivingDeptId = authUtil.getCurrentDepartmentId();
+            MasDepartment receivingDept = masDepartmentRepository.findById(receivingDeptId).orElse(null);
+
+            if (receivingDept == null) return;
+
+            List<StoreItemBatchStock> stocks = batchStockRepository.findByDepartmentIdAndItemId(
+                    receivingDept,
+                    indentT.getItemId()
+            );
+
+            if (!stocks.isEmpty()) {
+                stock = stocks.get(0); // Use first batch
+            }
+        }
+
+        if (stock != null) {
+            Long currentStock = stock.getClosingStock() != null ? stock.getClosingStock() : 0L;
+            Long newStock = currentStock + qtyReceived.longValue();
+            stock.setClosingStock(newStock);
+            stock.setIndentReceivedQty((stock.getIndentReceivedQty() != null ? stock.getIndentReceivedQty() : 0L) +
+                    qtyReceived.longValue());
+            stock.setLastChgBy(userName);
+            stock.setLastChgDate(LocalDateTime.now());
+            batchStockRepository.save(stock);
+        }
+    }
+
+    // Create ledger entry for receiving
+    private void createReceivingLedgerEntry(BigDecimal qty, Long indentTId, Long stockId,
+                                            String remarks, String userName) {
+
+        StoreItemBatchStock stock = batchStockRepository.findById(stockId)
+                .orElseThrow(() -> new EntityNotFoundException("Stock with ID " + stockId + " not found."));
+
+        StoreStockLedger ledger = new StoreStockLedger();
+        ledger.setCreatedDt(LocalDateTime.now());
+        ledger.setCreatedBy(userName);
+        ledger.setTxnDate(LocalDate.now());
+        ledger.setQtyIn(qty);
+        ledger.setQtyOut(null);
+        ledger.setStockId(stock);
+        ledger.setTxnType("RECEIVED");
+        ledger.setRemarks(remarks);
+        ledger.setTxnReferenceId(indentTId);
+
+        storeStockLedgerRepository.save(ledger);
+    }
+
+    // Check if all items are fully received
+    private boolean checkAllItemsFullyReceived(StoreInternalIndentM indentM) {
+        List<StoreInternalIndentT> items = indentTRepository.findByIndentM(indentM);
+
+        for (StoreInternalIndentT item : items) {
+            BigDecimal issued = nvl(item.getIssuedQty());
+            BigDecimal received = nvl(item.getReceivedQty());
+
+            if (issued.compareTo(BigDecimal.ZERO) > 0 && received.compareTo(issued) < 0) {
+                return false; // Not fully received
+            }
+        }
+        return true;
+    }
+
+    // Create store return for rejected items
+    private void createStoreReturn(StoreIndentReceiveM receiveM,
+                                   List<StoreReturnItemDetail> returnItems, String userName) {
+
+        // ==============================================
+        // 1. Create Store Return Master
+        // ==============================================
+        StoreReturnM returnM = new StoreReturnM();
+        returnM.setStoreIndentReceiveM(receiveM);
+        returnM.setStoreDepartment(receiveM.getStoreDepartment());
+        returnM.setReturnDate(LocalDateTime.now());
+        returnM.setReturnedBy(userName);
+        returnM.setLastUpdatedBy(userName);
+        returnM.setReceivedBy(null); // Will be set when store accepts return
+        returnM.setRemarks(receiveM.getRemarks());
+
+        returnM.setStatus("N");
+        returnM.setCreatedBy(userName);
+        returnM.setLastUpdateDate(LocalDateTime.now());
+        returnM = returnMRepository.save(returnM);
+
+        // ==============================================
+        // 2. Create Store Return Transactions
+        // ==============================================
+        for (StoreReturnItemDetail itemDetail : returnItems) {
+            StoreReturnT returnT = new StoreReturnT();
+
+            returnT.setStoreReturnM(returnM);
+            returnT.setStoreIssueT(itemDetail.issueT);
+            returnT.setStoreIndentReceiveT(itemDetail.receiveT);
+            returnT.setStoreItemBatchStock(itemDetail.stock);
+            returnT.setMasStoreItem(itemDetail.item);
+            returnT.setBatchNo(itemDetail.issueT.getBatchNo());
+            returnT.setExpiryDate(itemDetail.issueT.getExpiryDate());
+            returnT.setDom(itemDetail.issueT.getDom());
+            returnT.setBrandName(itemDetail.issueT.getBrandname());
+            returnT.setManufacturerName(itemDetail.issueT.getManufacturername());
+
+
+
+            returnT.setRejectedQty(
+                    itemDetail.rejectedQty != null ? itemDetail.rejectedQty : BigDecimal.ZERO
+            );
+//            returnT.setRejectionReason(itemDetail.rejectionReason);
+            returnT.setCreatedBy(userName);
+            returnT.setLastUpdateDate(LocalDateTime.now());
+
+            returnTRepository.save(returnT);
+        }
+
+        // ==============================================
+        // 3. Update receive master to indicate return exists
+        // ==============================================
+        receiveM.setIsReturn("N");
+        receiveMRepository.save(receiveM);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1044,6 +1701,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             // ============================================================
             // ALWAYS set to "FI" if any items were issued
             indentM.setStatus("FI"); // Fully Issued
+            indentM.setStoreIssueMId(issueM);
 
             indentM.setIssuedBy(userName);
             indentM.setIssuedDate(LocalDateTime.now());

@@ -4,9 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.helperUtil.HelperUtils;
-import com.hims.request.EmployeeDocumentReq;
-import com.hims.request.EmployeeQualificationReq;
-import com.hims.request.MasEmployeeRequest;
+import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.EmployeeDocumentDTO;
 import com.hims.response.EmployeeQualificationDTO;
@@ -33,6 +31,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -106,6 +105,24 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private MasDesignationRepository masDesignationRepository;
+
+    @Autowired
+    private EmployeeSpecialtyCenterRepository employeeSpecialtyCenterRepository;
+
+    @Autowired
+    private EmployeeWorkExperienceRepository employeeWorkExperienceRepository;
+
+    @Autowired
+    private EmployeeMembershipRepository employeeMembershipRepository;
+
+    @Autowired
+    private EmployeeAwardRepository employeeAwardRepository;
+
+    @Autowired
+    private EmployeeSpecialtyInterestRepository employeeSpecialtyInterestRepository;
 
 
     @Override
@@ -684,6 +701,41 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                 }
 
                 try {
+                    processSpecialtyCenter(masEmployeeRequest.getSpecialtyCenter(), savedEmployee, currentUser);
+                } catch (SpecialtyCenterProcessingException e) {
+                    log.error("Failed to process Specialty Center: {}", e.getMessage(), e);
+                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
+                }
+
+                try {
+                    processWorkExperiences(masEmployeeRequest.getWorkExperiences(), savedEmployee, currentUser);
+                } catch (WorkExperienceProcessingException e) {
+                    log.error("Failed to process Work Experiences: {}", e.getMessage(), e);
+                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
+                }
+
+                try {
+                    processMemberships(masEmployeeRequest.getEmployeeMemberships(), savedEmployee, currentUser);
+                } catch (MembershipProcessingException e) {
+                    log.error("Failed to process Membership: {}", e.getMessage(), e);
+                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
+                }
+
+                try {
+                    processSpecialtyInterest(masEmployeeRequest.getEmployeeSpecialtyInterests(), savedEmployee, currentUser);
+                } catch (SpecialtyInterestProcessingException e) {
+                    log.error("Failed to process Employee Specialty Interest: {}", e.getMessage(), e);
+                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
+                }
+
+                try {
+                    processAwards(masEmployeeRequest.getEmployeeAwards(), savedEmployee, currentUser);
+                } catch (AwardProcessingException e) {
+                    log.error("Failed to process Awards: {}", e.getMessage(), e);
+                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
+                }
+
+                try {
                     processDocuments(masEmployeeRequest.getDocument(), savedEmployee, currentUser);
                 } catch (DocumentProcessingException e) {
                     log.error("Failed to process documents: {}", e.getMessage(), e);
@@ -742,8 +794,9 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         validateField(errors, request.getIdentificationType(), "employeeTypeId", "Employee type cannot be blank");
         validateField(errors, request.getEmploymentTypeId(), "employmentTypeId", "Employment type cannot be blank");
         validateField(errors, request.getRoleId(), "roleId", "Role cannot be blank");
-
+        validateField(errors, request.getYearOfExperience(), "yearOfExperience", "Experience cannot be blank");
         validateField(errors, request.getFromDate(), "fromDate", "From date cannot be blank");
+        validateField(errors, request.getMasDesignationId(),"designation","designation cannot be blank");
 
         if (request.getIdDocumentName() == null || request.getIdDocumentName().isEmpty()) {
             errors.put("idDocumentName", "ID document cannot be blank");
@@ -816,6 +869,9 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         MasRole roleObj = masRoleRepository.findById(request.getRoleId())
                 .orElseThrow(() -> new EntityNotFoundException("Role not found with ID: " + request.getIdentificationType()));
 
+        MasDesignation masDesignation = masDesignationRepository.findById(request.getMasDesignationId())
+                .orElseThrow(() -> new EntityNotFoundException("Designation not found with ID: " + request.getIdentificationType()));
+
 
         String fileUploadDir = createUploadDirectory();
 
@@ -847,7 +903,9 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         employee.setLastChangedDate(OffsetDateTime.now().toInstant());
         employee.setLastChangedBy(currentUser.getUsername());
         employee.setStatus("S");
-
+        employee.setProfileDescription(request.getProfileDescription());
+        employee.setMasDesignationId(masDesignation);
+        employee.setYearOfExperience(request.getYearOfExperience());
         return employee;
     }
 
@@ -980,6 +1038,97 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
+    private void processSpecialtyCenter(List<EmployeeSpecialtyCenterRequest> specialtyCenters, MasEmployee savedEmployee, User currentUser) throws SpecialtyCenterProcessingException{
+        if (specialtyCenters == null || specialtyCenters.isEmpty()) {
+            return;
+        }
+        for (EmployeeSpecialtyCenterRequest request : specialtyCenters) {
+            try {
+                MasEmployeeCenterMapping masEmployeeCenterMapping = new MasEmployeeCenterMapping();
+                masEmployeeCenterMapping.setEmpId(savedEmployee.getEmployeeId());
+                masEmployeeCenterMapping.setCenterId(request.getCenterId());
+                masEmployeeCenterMapping.setIsPrimary(false);
+                masEmployeeCenterMapping.setLastUpdateDate(Instant.now());
+                employeeSpecialtyCenterRepository.save(masEmployeeCenterMapping);
+            } catch (Exception e) {
+                throw new SpecialtyCenterProcessingException(
+                        "Failed to process specialty center: " + request, e);
+            }
+        }
+    }
+    private void processWorkExperiences(List<EmployeeWorkExperienceRequest> workExperiences, MasEmployee savedEmployee, User currentUser) throws WorkExperienceProcessingException{
+        if (workExperiences == null || workExperiences.isEmpty()) {
+            return;
+        }
+        for (EmployeeWorkExperienceRequest request : workExperiences) {
+            try {
+                EmployeeWorkExperience workExperience = new EmployeeWorkExperience();
+                workExperience.setMasEmployee(savedEmployee);
+                workExperience.setExperienceSummary(request.getExperienceSummary());
+                workExperience.setOrderLevel(1);
+                workExperience.setLastUpdateDate(Instant.now());
+                employeeWorkExperienceRepository.save(workExperience);
+            } catch (Exception e) {
+                throw new WorkExperienceProcessingException(
+                        "Failed to process work experience: " + request, e);
+            }
+        }
+    }
+
+    private void processMemberships(List<EmployeeMembershipRequest> memberships, MasEmployee savedEmployee, User currentUser) throws MembershipProcessingException{
+        if (memberships == null || memberships.isEmpty()) {
+            return;
+        }
+        for (EmployeeMembershipRequest request : memberships) {
+            try {
+                EmployeeMembership membership = new EmployeeMembership();
+                membership.setMasEmployee(savedEmployee);
+                membership.setMembershipSummary(request.getMembershipSummary());
+                membership.setLastUpdateDate(Instant.now());
+                membership.setOrderLevel(1);
+                employeeMembershipRepository.save(membership);
+            } catch (Exception e) {
+                throw new MembershipProcessingException(
+                        "Failed to process membership: " + request.getMembershipSummary(), e);
+            }
+        }
+    }
+
+    private void processSpecialtyInterest(List<EmployeeSpecialtyInterestRequest> specialtyInterests, MasEmployee savedEmployee, User currentUser) throws SpecialtyInterestProcessingException{
+        if (specialtyInterests == null || specialtyInterests.isEmpty()) {
+            return;
+        }
+        for (EmployeeSpecialtyInterestRequest request : specialtyInterests) {
+            try {
+                EmployeeSpecialtyInterest specialtyInterest = new EmployeeSpecialtyInterest();
+                specialtyInterest.setMasEmployee(savedEmployee);
+                specialtyInterest.setInterestSummary(request.getInterestSummary());
+                specialtyInterest.setLastUpdateDate(Instant.now());
+                employeeSpecialtyInterestRepository.save(specialtyInterest);
+            } catch (Exception e) {
+                throw new SpecialtyInterestProcessingException(
+                        "Failed to process specialty interest: " + request, e);
+            }
+        }
+    }
+
+    private void processAwards(List<EmployeeAwardRequest> awards, MasEmployee savedEmployee, User currentUser) throws AwardProcessingException{
+        if (awards == null || awards.isEmpty()) {
+            return;
+        }
+        for (EmployeeAwardRequest request : awards) {
+            try {
+                EmployeeAward award = new EmployeeAward();
+                award.setMasEmployee(savedEmployee);
+                award.setAwardSummary(request.getAwardSummary());
+                award.setLastUpdateDate(Instant.now());
+                employeeAwardRepository.save(award);
+            } catch (Exception e) {
+                throw new AwardProcessingException(
+                        "Failed to process award: " + request, e);
+            }
+        }
+    }
 
 
     private void processDocuments(List<EmployeeDocumentReq> documents, MasEmployee employee, User currentUser)
@@ -1048,6 +1197,34 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     public static class QualificationProcessingException extends Exception {
         public QualificationProcessingException(String message) {
             super(message);
+        }
+    }
+
+    public static class WorkExperienceProcessingException extends Exception {
+        public WorkExperienceProcessingException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    public static class MembershipProcessingException extends Exception {
+        public MembershipProcessingException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+    public static class SpecialtyInterestProcessingException extends Exception {
+        public SpecialtyInterestProcessingException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+    public static class AwardProcessingException extends Exception {
+        public AwardProcessingException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    public static class SpecialtyCenterProcessingException extends Exception {
+        public SpecialtyCenterProcessingException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 

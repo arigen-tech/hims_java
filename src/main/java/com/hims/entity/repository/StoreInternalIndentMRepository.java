@@ -4,6 +4,7 @@ import com.hims.entity.StoreInternalIndentM;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,5 +36,13 @@ public interface StoreInternalIndentMRepository extends JpaRepository<StoreInter
 
 
     List<StoreInternalIndentM> findByToDeptId_IdAndStatusIn(Long deptId, List<String> statuses);
+
+    List<StoreInternalIndentM> findByFromDeptId_IdAndStatusAndIssuedDateBetween(
+            Long fromDeptId,
+            String status,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    );
+
 
 }

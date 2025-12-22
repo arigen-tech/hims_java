@@ -76,4 +76,9 @@ public class StoreInternalIndentM {
     @Column(name = "remarks", length = 200)
     private String remarks;
 
+
+    @Column(name = "is_return", length = 2)
+    private String isReturn;
+
+
 }
