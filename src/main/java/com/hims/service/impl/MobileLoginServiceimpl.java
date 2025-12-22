@@ -50,8 +50,7 @@ public class MobileLoginServiceimpl implements MobileLoginService {
             Long mobile = Long.valueOf(request.getMobileNo());
 
             try {
-                String uri = "https://2factor.in/API/V1/999a2629-21e1-11ec-a13b-0200cd936042/SMS/"
-                        + mobile + "/AUTOGEN/DMSLOGIN";
+                String uri = "https://2factor.in/API/V1/999a2629-21e1-11ec-a13b-0200cd936042/SMS/"+ mobile +"/AUTOGEN/ARIHLT_LOGINOTP";
 
                 HttpResponse<String> response = Unirest.post(uri).asString();
                 JSONObject jsonObject = new JSONObject(response.getBody());
