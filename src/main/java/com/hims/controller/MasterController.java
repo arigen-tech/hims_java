@@ -7,6 +7,7 @@ import com.hims.response.*;
 import com.hims.service.*;
 import com.hims.service.impl.UserDepartmentServiceImpl;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -182,6 +183,23 @@ public class MasterController {
     private  OpthMasColorVisionService opthMasColorVisionService;
     @Autowired
     private  OpthMasSpectacleUseService masSpectacleUseService;
+    @Autowired
+    private OpthMasLensTypeService lensTypeService;
+    @Autowired
+    private ObMasConceptionService obMasConceptionService;
+    @Autowired
+    private  ObMasConsanguinityService obMasConsanguinityService;
+    @Autowired
+    private ObMasBookedStatusService obMasBookedStatusService;
+@Autowired
+   private ObMasImmunisedStatusService obMasImmunisedStatusService;
+@Autowired
+private  ObMasTrimesterService obMasTrimesterService;
+@Autowired
+    private  ObMasPresentationService obMasPresentationService;
+@Autowired
+private  ObMasPvMembraneService obMasPvMembraneService;
+
 
 
 
@@ -2676,5 +2694,319 @@ public class MasterController {
 
         return ResponseEntity.ok(masSpectacleUseService.changeStatus(id, status));
     }
+    //    ===============================Opth Mas Lens Type =====================================
+
+    @GetMapping("opthMasLensType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<OpthMasLensTypeResponse>>> getAllLensType(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(lensTypeService.getAll(flag));
+    }
+
+    @GetMapping("opthMasLensType/getById/{id}")
+    public ResponseEntity<ApiResponse<OpthMasLensTypeResponse>> getByIdLensType(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(lensTypeService.getById(id));
+    }
+
+    @PostMapping("opthMasLensType/create")
+    public ResponseEntity<ApiResponse<OpthMasLensTypeResponse>> createLensType(
+            @RequestBody OpthMasLensTypeRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(lensTypeService.create(request));
+    }
+
+    @PutMapping("opthMasLensType/update/{id}")
+    public ResponseEntity<ApiResponse<OpthMasLensTypeResponse>> updateLensType(
+            @PathVariable Long id,
+            @RequestBody OpthMasLensTypeRequest request) {
+
+        return ResponseEntity.ok(
+                lensTypeService.update(id, request));
+    }
+
+    @PutMapping("opthMasLensType/status/{id}")
+    public ResponseEntity<ApiResponse<OpthMasLensTypeResponse>> changeStatusLensType(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(
+                lensTypeService.changeStatus(id, status));
+    }
+
+    //    ===============================Ob Mas Conception=====================================
+
+
+
+    @GetMapping("obMasConception/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasConceptionResponse>>> getAllMasConception(
+            @PathVariable int flag) {
+
+        return ResponseEntity.ok(obMasConceptionService.getAll(flag));
+    }
+
+    @GetMapping("obMasConception/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasConceptionResponse>> getByIdMasConception(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(obMasConceptionService.getById(id));
+    }
+
+    @PostMapping("obMasConception/create")
+    public ResponseEntity<ApiResponse<ObMasConceptionResponse>> createMasConception(
+            @RequestBody ObMasConceptionRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasConceptionService.create(request));
+    }
+
+    @PutMapping("obMasConception/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasConceptionResponse>> updateMasConception(
+            @PathVariable Long id,
+            @RequestBody ObMasConceptionRequest request) {
+
+        return ResponseEntity.ok(obMasConceptionService.update(id, request));
+    }
+
+    @PutMapping("obMasConception/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasConceptionResponse>> changeStatusMasConception(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(obMasConceptionService.changeStatus(id, status));
+    }
+
+    //    ===============================Ob Mas Consanguinity=====================================
+
+    @GetMapping("obMasConsanguinity/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasConsanguinityResponse>>> getAllMasConsanguinity(
+            @PathVariable int flag) {
+
+        return ResponseEntity.ok(obMasConsanguinityService.getAll(flag));
+    }
+
+    @GetMapping("obMasConsanguinity/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasConsanguinityResponse>> getByIdMasConsanguinity(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(obMasConsanguinityService.getById(id));
+    }
+
+    @PostMapping("obMasConsanguinity/create")
+    public ResponseEntity<ApiResponse<ObMasConsanguinityResponse>> createMasConsanguinity(
+            @RequestBody ObMasConsanguinityRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasConsanguinityService.create(request));
+    }
+
+    @PutMapping("obMasConsanguinity/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasConsanguinityResponse>> updateMasConsanguinity(
+            @PathVariable Long id,
+            @RequestBody ObMasConsanguinityRequest request) {
+
+        return ResponseEntity.ok(obMasConsanguinityService.update(id, request));
+    }
+
+    @PutMapping("obMasConsanguinity/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasConsanguinityResponse>> changeStatusMasConsanguinity(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(obMasConsanguinityService.changeStatus(id, status));
+    }
+
+    //    ===============================Ob Mas Booked Status=====================================
+
+    @GetMapping("obMasBookedStatus/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasBookedStatusResponse>>> getAllMasBookedStatus(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(obMasBookedStatusService.getAll(flag));
+    }
+
+    @GetMapping("obMasBookedStatus/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasBookedStatusResponse>> getByIdMasBookedStatus(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(obMasBookedStatusService.getById(id));
+    }
+
+    @PostMapping("obMasBookedStatus/create")
+    public ResponseEntity<ApiResponse<ObMasBookedStatusResponse>> createMasBookedStatus(
+            @RequestBody ObMasBookedStatusRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasBookedStatusService.create(request));
+    }
+
+    @PutMapping("obMasBookedStatus/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasBookedStatusResponse>> updateMasBookedStatus(
+            @PathVariable Long id,
+            @RequestBody ObMasBookedStatusRequest request) {
+
+        return ResponseEntity.ok(obMasBookedStatusService.update(id, request));
+    }
+
+    @PutMapping("obMasBookedStatus/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasBookedStatusResponse>> changeStatusMasBookedStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(obMasBookedStatusService.changeStatus(id, status));
+    }
+    //    ===============================Ob Mas Immunised Status=====================================
+
+    @GetMapping("obMasImmunisedStatus/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasImmunisedStatusResponse>>> getAllMasImmunisedStatus(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(obMasImmunisedStatusService.getAll(flag));
+    }
+
+    @GetMapping("obMasImmunisedStatus/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasImmunisedStatusResponse>> getByIdMasImmunisedStatus(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(obMasImmunisedStatusService.getById(id));
+    }
+
+    @PostMapping("obMasImmunisedStatus/create")
+    public ResponseEntity<ApiResponse<ObMasImmunisedStatusResponse>> createMasImmunisedStatus(
+            @RequestBody ObMasImmunisedStatusRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasImmunisedStatusService.create(request));
+    }
+
+    @PutMapping("obMasImmunisedStatus/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasImmunisedStatusResponse>> updateMasImmunisedStatus(
+            @PathVariable Long id,
+            @RequestBody ObMasImmunisedStatusRequest request) {
+
+        return ResponseEntity.ok(obMasImmunisedStatusService.update(id, request));
+    }
+
+    @PutMapping("obMasImmunisedStatus/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasImmunisedStatusResponse>> changeStatusMasImmunisedStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(obMasImmunisedStatusService.changeStatus(id, status));
+    }
+
+    //    ===============================Ob Mas Trimester=====================================
+
+
+    @GetMapping("obMasTrimester/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasTrimesterResponse>>> getAllMasTrimester(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(obMasTrimesterService.getAll(flag));
+    }
+
+    @GetMapping("obMasTrimester/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasTrimesterResponse>> getByIdMasTrimester(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(obMasTrimesterService.getById(id));
+    }
+
+    @PostMapping("obMasTrimester/create")
+    public ResponseEntity<ApiResponse<ObMasTrimesterResponse>> createMasTrimester(
+            @RequestBody ObMasTrimesterRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasTrimesterService.create(request));
+    }
+
+    @PutMapping("obMasTrimester/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasTrimesterResponse>> updateMasTrimester(
+            @PathVariable Long id,
+            @RequestBody ObMasTrimesterRequest request) {
+
+        return ResponseEntity.ok(obMasTrimesterService.update(id, request));
+    }
+
+    @PutMapping("obMasTrimester/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasTrimesterResponse>> changeStatusMasTrimester(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(obMasTrimesterService.changeStatus(id, status));
+    }
+
+    //    ===============================Ob Mas Presentation=====================================
+
+
+    @GetMapping("obMasPresentation/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasPresentationResponse>>> getAllMasPresentation(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(obMasPresentationService.getAll(flag));
+    }
+
+    @GetMapping("obMasPresentation/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasPresentationResponse>> getByIdMasPresentation(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(obMasPresentationService.getById(id));
+    }
+
+    @PostMapping("obMasPresentation/create")
+    public ResponseEntity<ApiResponse<ObMasPresentationResponse>> createMasPresentation(
+            @RequestBody ObMasPresentationRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasPresentationService.create(request));
+    }
+
+    @PutMapping("obMasPresentation/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasPresentationResponse>> updateMasPresentation(
+            @PathVariable Long id,
+            @RequestBody ObMasPresentationRequest request) {
+
+        return ResponseEntity.ok(obMasPresentationService.update(id, request));
+    }
+
+    @PutMapping("obMasPresentation/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasPresentationResponse>> changeStatusMasPresentation(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(obMasPresentationService.changeStatus(id, status));
+    }
+//    ===============================Ob Mas PvMembrane=====================================
+
+
+
+    @GetMapping("ObMasPvMembrane/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasPvMembraneResponse>>> getAllObMasPvMembrane(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(obMasPvMembraneService.getAll(flag));
+    }
+
+    @GetMapping("ObMasPvMembrane/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasPvMembraneResponse>> getByIdObMasPvMembrane(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(obMasPvMembraneService.getById(id));
+    }
+
+    @PostMapping("ObMasPvMembrane/create")
+    public ResponseEntity<ApiResponse<ObMasPvMembraneResponse>> createObMasPvMembrane(
+            @RequestBody @Valid ObMasPvMembraneRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasPvMembraneService.create(request));
+    }
+
+    @PutMapping("ObMasPvMembrane/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasPvMembraneResponse>> updateObMasPvMembrane(
+            @PathVariable Long id,
+            @RequestBody @Valid ObMasPvMembraneRequest request) {
+
+        return ResponseEntity.ok(obMasPvMembraneService.update(id, request));
+    }
+
+    @PutMapping("ObMasPvMembrane/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasPvMembraneResponse>> changeStatusObMasPvMembrane(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(obMasPvMembraneService.changeStatus(id, status));
+    }
+
 
 }
