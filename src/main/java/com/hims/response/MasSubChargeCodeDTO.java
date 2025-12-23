@@ -15,4 +15,6 @@ public class MasSubChargeCodeDTO {
     private LocalDate lastChgDate;
     private String lastChgTime;
     private Long mainChargeId;
+    private String  mainChargeCodeName;
+
 }
