@@ -199,7 +199,26 @@ private  ObMasTrimesterService obMasTrimesterService;
     private  ObMasPresentationService obMasPresentationService;
 @Autowired
 private  ObMasPvMembraneService obMasPvMembraneService;
-
+@Autowired
+private  ObMasPvLiquorService obMasPvLiquorService;
+@Autowired
+private ObMasCervixConsistencyService obMasCervixConsistencyService;
+@Autowired
+private ObMasCervixPositionService obMasCervixPositionService;
+@Autowired
+private ObMasStationPresentingService obMasStationPresentingService;
+@Autowired
+private ObMasPelvisTypeService obMasPelvisTypeService;
+@Autowired
+private GynMasFlowService gynMasFlowService;
+@Autowired
+private GynMasMenarcheAgeService gynMasMenarcheAgeService;
+@Autowired
+private GynMasMenstrualPatternService gynMasMenstrualPatternService;
+@Autowired
+private  GynMasSterilisationService gynMasSterilisationService;
+@Autowired
+private GynMasPapSmearService gynMasPapSmearService;
 
 
 
@@ -3008,5 +3027,361 @@ private  ObMasPvMembraneService obMasPvMembraneService;
         return ResponseEntity.ok(obMasPvMembraneService.changeStatus(id, status));
     }
 
+//    ===============================Ob Mas PvLiquor=====================================
 
+
+    @GetMapping("ObMasPvLiquor/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasPvLiquorResponse>>> getAllPvLiquor(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(obMasPvLiquorService.getAll(flag));
+    }
+
+    @GetMapping("ObMasPvLiquor/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasPvLiquorResponse>> getByIdPvLiquor(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(obMasPvLiquorService.getById(id));
+    }
+
+    @PostMapping("ObMasPvLiquor/create")
+    public ResponseEntity<ApiResponse<ObMasPvLiquorResponse>> createPvLiquor(
+            @RequestBody @Valid ObMasPvLiquorRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasPvLiquorService.create(request));
+    }
+
+    @PutMapping("ObMasPvLiquor/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasPvLiquorResponse>> updatePvLiquor(
+            @PathVariable Long id,
+            @RequestBody @Valid ObMasPvLiquorRequest request) {
+        return ResponseEntity.ok(obMasPvLiquorService.update(id, request));
+    }
+
+    @PutMapping("ObMasPvLiquor/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasPvLiquorResponse>> changeStatusPvLiquor(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(obMasPvLiquorService.changeStatus(id, status));
+    }
+//    ===============================Ob Mas Cervix Consistency=================================
+
+    @GetMapping("ObMasCervixConsistency/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasCervixConsistencyResponse>>> getAllConsistency(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(obMasCervixConsistencyService.getAll(flag));
+    }
+
+    @GetMapping("ObMasCervixConsistency/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasCervixConsistencyResponse>> getByIdConsistency(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(obMasCervixConsistencyService.getById(id));
+    }
+
+    @PostMapping("ObMasCervixConsistency/create")
+    public ResponseEntity<ApiResponse<ObMasCervixConsistencyResponse>> createConsistency(
+            @RequestBody @Valid ObMasCervixConsistencyRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasCervixConsistencyService.create(request));
+    }
+
+    @PutMapping("ObMasCervixConsistency/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasCervixConsistencyResponse>> updateConsistency(
+            @PathVariable Long id,
+            @RequestBody @Valid ObMasCervixConsistencyRequest request) {
+
+        return ResponseEntity.ok(obMasCervixConsistencyService.update(id, request));
+    }
+
+    @PutMapping("ObMasCervixConsistency/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasCervixConsistencyResponse>> changeStatusConsistency(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(obMasCervixConsistencyService.changeStatus(id, status));
+    }
+
+//    ===============================Ob Mas Cervix Position=================================
+
+    @GetMapping("ObMasCervixPosition/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasCervixPositionResponse>>> getAllCervixPosition(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(obMasCervixPositionService.getAll(flag));
+    }
+
+    @GetMapping("ObMasCervixPosition/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasCervixPositionResponse>> getByIdCervixPosition(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(obMasCervixPositionService.getById(id));
+    }
+
+    @PostMapping("ObMasCervixPosition/create")
+    public ResponseEntity<ApiResponse<ObMasCervixPositionResponse>> createCervixPosition(
+            @RequestBody @Valid ObMasCervixPositionRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasCervixPositionService.create(request));
+    }
+
+    @PutMapping("ObMasCervixPosition/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasCervixPositionResponse>> updateCervixPosition(
+            @PathVariable Long id,
+            @RequestBody @Valid ObMasCervixPositionRequest request) {
+
+        return ResponseEntity.ok(obMasCervixPositionService.update(id, request));
+    }
+
+    @PutMapping("ObMasCervixPosition/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasCervixPositionResponse>> changeStatusCervixPosition(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(obMasCervixPositionService.changeStatus(id, status));
+    }
+
+
+//    ===============================Ob Mas Station Presenting ====================
+
+
+    @GetMapping("/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasStationPresentingResponse>>> getAllPresenting(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(obMasStationPresentingService.getAll(flag));
+    }
+
+    @GetMapping("/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasStationPresentingResponse>> getByIdPresenting(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(obMasStationPresentingService.getById(id));
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<ApiResponse<ObMasStationPresentingResponse>> createPresenting(
+            @RequestBody @Valid ObMasStationPresentingRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasStationPresentingService.create(request));
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasStationPresentingResponse>> updatePresenting(
+            @PathVariable Long id,
+            @RequestBody @Valid ObMasStationPresentingRequest request) {
+        return ResponseEntity.ok(obMasStationPresentingService.update(id, request));
+    }
+
+    @PutMapping("/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasStationPresentingResponse>> changeStatusPresenting(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(obMasStationPresentingService.changeStatus(id, status));
+    }
+
+//    ===============================Ob Mas Pelvis Type====================
+
+
+    @GetMapping("obMasPelvisType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<ObMasPelvisTypeResponse>>> getAllMasPelvisType(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(obMasPelvisTypeService.getAll(flag));
+    }
+
+    @GetMapping("obMasPelvisType/getById/{id}")
+    public ResponseEntity<ApiResponse<ObMasPelvisTypeResponse>> getByIdMasPelvisType(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(obMasPelvisTypeService.getById(id));
+    }
+
+    @PostMapping("obMasPelvisType/create")
+    public ResponseEntity<ApiResponse<ObMasPelvisTypeResponse>> createMasPelvisType(
+            @RequestBody @Valid ObMasPelvisTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(obMasPelvisTypeService.create(request));
+    }
+
+    @PutMapping("obMasPelvisType/update/{id}")
+    public ResponseEntity<ApiResponse<ObMasPelvisTypeResponse>> updateMasPelvisType(
+            @PathVariable Long id,
+            @RequestBody @Valid ObMasPelvisTypeRequest request) {
+        return ResponseEntity.ok(obMasPelvisTypeService.update(id, request));
+    }
+
+    @PutMapping("obMasPelvisType/status/{id}")
+    public ResponseEntity<ApiResponse<ObMasPelvisTypeResponse>> changeStatusMasPelvisType(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(obMasPelvisTypeService.changeStatus(id, status));
+    }
+//    ===============================Gyn Mas Flow====================
+
+    @GetMapping("gynMasFlow/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<GynMasFlowResponse>>> getAllFlow(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(gynMasFlowService.getAll(flag));
+    }
+
+    @GetMapping("gynMasFlow/getById/{id}")
+    public ResponseEntity<ApiResponse<GynMasFlowResponse>> getByIdFlow(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(gynMasFlowService.getById(id));
+    }
+
+    @PostMapping("gynMasFlow/create")
+    public ResponseEntity<ApiResponse<GynMasFlowResponse>> createFlow(
+            @RequestBody @Valid GynMasFlowRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(gynMasFlowService.create(request));
+    }
+
+    @PutMapping("gynMasFlow/update/{id}")
+    public ResponseEntity<ApiResponse<GynMasFlowResponse>> updateFlow(
+            @PathVariable Long id,
+            @RequestBody @Valid GynMasFlowRequest request) {
+        return ResponseEntity.ok(gynMasFlowService.update(id, request));
+    }
+
+    @PutMapping("gynMasFlow/status/{id}")
+    public ResponseEntity<ApiResponse<GynMasFlowResponse>> changeStatusFlow(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(gynMasFlowService.changeStatus(id, status));
+    }
+
+//    ===============================Gyn Mas Menarche Age====================
+
+    @GetMapping("gynMasMenarcheAge/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<GynMasMenarcheAgeResponse>>> getAllMasMenarcheAge(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(gynMasMenarcheAgeService.getAll(flag));
+    }
+
+    @GetMapping("gynMasMenarcheAge/getById/{id}")
+    public ResponseEntity<ApiResponse<GynMasMenarcheAgeResponse>> getByIdMasMenarcheAge(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(gynMasMenarcheAgeService.getById(id));
+    }
+
+    @PostMapping("gynMasMenarcheAge/create")
+    public ResponseEntity<ApiResponse<GynMasMenarcheAgeResponse>> createMasMenarcheAge(
+            @RequestBody @Valid GynMasMenarcheAgeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(gynMasMenarcheAgeService.create(request));
+    }
+
+    @PutMapping("gynMasMenarcheAge/update/{id}")
+    public ResponseEntity<ApiResponse<GynMasMenarcheAgeResponse>> updateMasMenarcheAge(
+            @PathVariable Long id,
+            @RequestBody @Valid GynMasMenarcheAgeRequest request) {
+        return ResponseEntity.ok(gynMasMenarcheAgeService.update(id, request));
+    }
+
+    @PutMapping("gynMasMenarcheAge/status/{id}")
+    public ResponseEntity<ApiResponse<GynMasMenarcheAgeResponse>> changeStatusMasMenarcheAge(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(gynMasMenarcheAgeService.changeStatus(id, status));
+    }
+
+//    ===============================Gyn Mas Menstrual Pattern ====================
+
+    @GetMapping("gynMasMenstrualPattern/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<GynMasMenstrualPatternResponse>>> getAllMasMenstrualPattern(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(gynMasMenstrualPatternService.getAll(flag));
+    }
+
+    @GetMapping("gynMasMenstrualPattern/getById/{id}")
+    public ResponseEntity<ApiResponse<GynMasMenstrualPatternResponse>> getByIdMasMenstrualPattern(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(gynMasMenstrualPatternService.getById(id));
+    }
+
+    @PostMapping("gynMasMenstrualPattern/create")
+    public ResponseEntity<ApiResponse<GynMasMenstrualPatternResponse>> createMasMenstrualPattern(
+            @RequestBody @Valid GynMasMenstrualPatternRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(gynMasMenstrualPatternService.create(request));
+    }
+
+    @PutMapping("gynMasMenstrualPattern/update/{id}")
+    public ResponseEntity<ApiResponse<GynMasMenstrualPatternResponse>> updateMasMenstrualPattern(
+            @PathVariable Long id,
+            @RequestBody @Valid GynMasMenstrualPatternRequest request) {
+        return ResponseEntity.ok(gynMasMenstrualPatternService.update(id, request));
+    }
+
+    @PutMapping("gynMasMenstrualPattern/status/{id}")
+    public ResponseEntity<ApiResponse<GynMasMenstrualPatternResponse>> changeStatusMasMenstrualPattern(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(gynMasMenstrualPatternService.changeStatus(id, status));
+    }
+//    ===============================Gyn Mas Sterilisation ====================
+
+    @GetMapping("gynMasSterilisation/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<GynMasSterilisationResponse>>> getAllSterilisation(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(gynMasSterilisationService.getAll(flag));
+    }
+
+    @GetMapping("gynMasSterilisation/getById/{id}")
+    public ResponseEntity<ApiResponse<GynMasSterilisationResponse>> getByIdSterilisation(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(gynMasSterilisationService.getById(id));
+    }
+
+    @PostMapping("gynMasSterilisation/create")
+    public ResponseEntity<ApiResponse<GynMasSterilisationResponse>> createSterilisation(
+            @RequestBody @Valid GynMasSterilisationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(gynMasSterilisationService.create(request));
+    }
+
+    @PutMapping("gynMasSterilisation/update/{id}")
+    public ResponseEntity<ApiResponse<GynMasSterilisationResponse>> updateSterilisation(
+            @PathVariable Long id,
+            @RequestBody @Valid GynMasSterilisationRequest request) {
+        return ResponseEntity.ok(gynMasSterilisationService.update(id, request));
+    }
+
+    @PutMapping("gynMasSterilisation/status/{id}")
+    public ResponseEntity<ApiResponse<GynMasSterilisationResponse>> changeStatusSterilisation(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(gynMasSterilisationService.changeStatus(id, status));
+    }
+
+
+//    ===============================Gyn Mas Pap Smear ====================
+
+    @GetMapping("gynMasPapSmear/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<GynMasPapSmearResponse>>> getAllMasPapSmear(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(gynMasPapSmearService.getAll(flag));
+    }
+
+    @GetMapping("gynMasPapSmear/getById/{id}")
+    public ResponseEntity<ApiResponse<GynMasPapSmearResponse>> getByIdMasPapSmear(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(gynMasPapSmearService.getById(id));
+    }
+
+    @PostMapping("gynMasPapSmear/create")
+    public ResponseEntity<ApiResponse<GynMasPapSmearResponse>> createMasPapSmear(
+            @RequestBody @Valid GynMasPapSmearRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(gynMasPapSmearService.create(request));
+    }
+
+    @PutMapping("gynMasPapSmear/update/{id}")
+    public ResponseEntity<ApiResponse<GynMasPapSmearResponse>> updateMasPapSmear(
+            @PathVariable Long id,
+            @RequestBody @Valid GynMasPapSmearRequest request) {
+        return ResponseEntity.ok(gynMasPapSmearService.update(id, request));
+    }
+
+    @PutMapping("gynMasPapSmear/status/{id}")
+    public ResponseEntity<ApiResponse<GynMasPapSmearResponse>> changeStatusMasPapSmear(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(gynMasPapSmearService.changeStatus(id, status));
+    }
 }
