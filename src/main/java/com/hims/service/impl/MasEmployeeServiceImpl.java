@@ -5,10 +5,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.request.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.EmployeeDocumentDTO;
-import com.hims.response.EmployeeQualificationDTO;
-import com.hims.response.MasEmployeeDTO;
+import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityExistsException;
@@ -124,6 +121,9 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     @Autowired
     private EmployeeSpecialtyInterestRepository employeeSpecialtyInterestRepository;
 
+    @Autowired
+    private MasSpecialtyCenterRepository masSpecialtyCenterRepository;
+
 
     @Override
     public ApiResponse<List<MasEmployeeDTO>> getAllEmployees() {
@@ -144,6 +144,35 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .stream()
                     .map(EmployeeQualificationDTO::fromEntity)
                     .toList();
+            List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters = employeeSpecialtyCenterRepository
+                    .findByEmpId(employee.getEmployeeId())
+                    .stream()
+                    .map(EmployeeSpecialtyCenterMappingDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeWorkExperienceDTO> workExperiences = employeeWorkExperienceRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeWorkExperienceDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeMembershipDTO> memberships = employeeMembershipRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeMembershipDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeSpecialtyInterestDTO> specialtyInterests = employeeSpecialtyInterestRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeSpecialtyInterestDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeAwardDTO> awards = employeeAwardRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeAwardDTO::fromEntity)
+                    .toList();
 
             List<EmployeeDocumentDTO> documents = employeeDocumentRepository
                     .findByEmployee(employee)
@@ -151,7 +180,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .map(EmployeeDocumentDTO::fromEntity)
                     .toList();
 
-            return MasEmployeeDTO.fromEntity(employee, qualifications, documents);
+            return MasEmployeeDTO.fromEntity(employee, qualifications, documents,specialtyCenters,workExperiences,memberships,specialtyInterests,awards);
         }).toList();
 
         return ResponseUtils.createSuccessResponse(employeeDTOs, new TypeReference<>() {});
@@ -177,13 +206,43 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .map(EmployeeQualificationDTO::fromEntity)
                     .toList();
 
+            List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters = employeeSpecialtyCenterRepository
+                    .findByEmpId(employee.getEmployeeId())
+                    .stream()
+                    .map(EmployeeSpecialtyCenterMappingDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeWorkExperienceDTO> workExperiences = employeeWorkExperienceRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeWorkExperienceDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeMembershipDTO> memberships = employeeMembershipRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeMembershipDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeSpecialtyInterestDTO> specialtyInterests = employeeSpecialtyInterestRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeSpecialtyInterestDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeAwardDTO> awards = employeeAwardRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeAwardDTO::fromEntity)
+                    .toList();
+
             List<EmployeeDocumentDTO> documents = employeeDocumentRepository
                     .findByEmployee(employee)
                     .stream()
                     .map(EmployeeDocumentDTO::fromEntity)
                     .toList();
 
-            return MasEmployeeDTO.fromEntity(employee, qualifications, documents);
+            return MasEmployeeDTO.fromEntity(employee, qualifications, documents ,specialtyCenters,workExperiences,memberships,specialtyInterests,awards);
         }).toList();
 
         return ResponseUtils.createSuccessResponse(employeeDTOs, new TypeReference<>() {});
@@ -201,13 +260,48 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                 .map(EmployeeQualificationDTO::fromEntity)
                 .toList();
 
+        List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters = employeeSpecialtyCenterRepository
+                .findByEmpId(employee.getEmployeeId())
+                .stream()
+                .map(EmployeeSpecialtyCenterMappingDTO::fromEntity)
+                .toList();
+
+        List<EmployeeWorkExperienceDTO> workExperiences = employeeWorkExperienceRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeWorkExperienceDTO::fromEntity)
+                .toList();
+
+        List<EmployeeMembershipDTO> memberships = employeeMembershipRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeMembershipDTO::fromEntity)
+                .toList();
+
+        List<EmployeeSpecialtyInterestDTO> specialtyInterests = employeeSpecialtyInterestRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeSpecialtyInterestDTO::fromEntity)
+                .toList();
+
+        List<EmployeeAwardDTO> awards = employeeAwardRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeAwardDTO::fromEntity)
+                .toList();
+
         List<EmployeeDocumentDTO> documents = employeeDocumentRepository
                 .findByEmployee(employee)
                 .stream()
                 .map(EmployeeDocumentDTO::fromEntity)
                 .toList();
 
-        MasEmployeeDTO employeeDTO = MasEmployeeDTO.fromEntity(employee, qualifications, documents);
+        MasEmployeeDTO employeeDTO = MasEmployeeDTO.fromEntity(employee, qualifications, documents,
+                specialtyCenters,
+                workExperiences,
+                memberships,
+                specialtyInterests,
+                awards);
 
         return ResponseUtils.createSuccessResponse(employeeDTO, new TypeReference<>() {});
     }
@@ -320,6 +414,27 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             if (masEmployeeRequest.getPincode() != null && !masEmployeeRequest.getPincode().isEmpty()) {
                 existingEmployee.setPincode(masEmployeeRequest.getPincode());
             }
+            if (masEmployeeRequest.getYearOfExperience() != null) {
+                existingEmployee.setYearOfExperience(
+                        masEmployeeRequest.getYearOfExperience()
+                );
+            }
+
+            if (masEmployeeRequest.getProfileDescription() != null) {
+                existingEmployee.setProfileDescription(
+                        masEmployeeRequest.getProfileDescription()
+                );
+            }
+
+            if (masEmployeeRequest.getMasDesignationId() != null) {
+                MasDesignation designation = masDesignationRepository
+                        .findById(masEmployeeRequest.getMasDesignationId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("Designation not found"));
+
+                existingEmployee.setMasDesignationId(designation);
+            }
+
 
             String fileUploadDir = uploadDir + "MAS_EMPLOYEE/";
             File directory = new File(fileUploadDir);
@@ -349,6 +464,121 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                 }
             }
 
+// ========== UPDATE SPECIALTY CENTERS ==========
+            if (masEmployeeRequest.getSpecialtyCenter() != null && !masEmployeeRequest.getSpecialtyCenter().isEmpty()) {
+                // Add new specialty centers
+                MasEmployeeCenterMapping masEmployeeCenterMapping = new MasEmployeeCenterMapping();
+                for (EmployeeSpecialtyCenterRequest centerReq : masEmployeeRequest.getSpecialtyCenter()) {
+                    if (centerReq.getCenterId() != null) {
+                         MasSpecialtyCenter masSpecialtyCenter = masSpecialtyCenterRepository.findById(centerReq.getCenterId())
+                                .orElseThrow(() -> new IllegalArgumentException("Specialty Center not found with ID: " + centerReq.getCenterId()));
+
+                        List<MasEmployeeCenterMapping> existingMapping = employeeSpecialtyCenterRepository.findByEmpId(existingEmployee.getEmployeeId());
+                        for(MasEmployeeCenterMapping employeeCenterMapping:existingMapping){
+
+                            if (employeeCenterMapping.getCenterId().equals(centerReq.getCenterId())){
+                               continue;
+                            } else {
+
+                                masEmployeeCenterMapping.setEmpId(existingEmployee.getEmployeeId());
+                                masEmployeeCenterMapping.setCenterId(centerReq.getCenterId());
+                            }
+                        }
+
+                        masEmployeeCenterMapping.setIsPrimary(centerReq.getIsPrimary() != null ? centerReq.getIsPrimary() : false);
+                        masEmployeeCenterMapping.setLastUpdateDate(Instant.now());
+
+                        employeeSpecialtyCenterRepository.save(masEmployeeCenterMapping);
+                    }
+                }
+            }
+            // ========== UPDATE WORK EXPERIENCES ==========
+            if (masEmployeeRequest.getWorkExperiences() != null && !masEmployeeRequest.getWorkExperiences().isEmpty()) {
+                // Remove existing work experiences
+                List<EmployeeWorkExperience> existingExperiences = employeeWorkExperienceRepository.findByEmployee(existingEmployee);
+                if (existingExperiences != null && !existingExperiences.isEmpty()) {
+                    employeeWorkExperienceRepository.deleteAll(existingExperiences);
+                }
+
+                for (EmployeeWorkExperienceRequest expReq : masEmployeeRequest.getWorkExperiences()) {
+                    if (expReq.getExperienceSummary() != null && !expReq.getExperienceSummary().isEmpty()) {
+                        EmployeeWorkExperience workExperience = new EmployeeWorkExperience();
+                        workExperience.setEmployee(existingEmployee);
+                        workExperience.setExperienceSummary(expReq.getExperienceSummary());
+                        workExperience.setLastUpdateDate(Instant.now());
+
+                        employeeWorkExperienceRepository.save(workExperience);
+                    }
+                }
+            }
+            // ========== UPDATE MEMBERSHIPS ==========
+            if (masEmployeeRequest.getEmployeeMemberships() != null && !masEmployeeRequest.getEmployeeMemberships().isEmpty()) {
+                // Remove existing memberships
+                List<EmployeeMembership> existingMemberships = employeeMembershipRepository.findByEmployee(existingEmployee);
+                if (existingMemberships != null && !existingMemberships.isEmpty()) {
+                    employeeMembershipRepository.deleteAll(existingMemberships);
+                }
+
+                // Add new memberships
+                for (EmployeeMembershipRequest membershipReq : masEmployeeRequest.getEmployeeMemberships()) {
+                    if (membershipReq.getMembershipSummary() != null && !membershipReq.getMembershipSummary().isEmpty()) {
+                        EmployeeMembership membership = new EmployeeMembership();
+                        membership.setEmployee(existingEmployee);
+                        membership.setMembershipSummary(membershipReq.getMembershipSummary());
+                        membership.setLastUpdateDate(Instant.now());
+
+                        employeeMembershipRepository.save(membership);
+                    }
+                }
+            }
+
+            // ========== UPDATE SPECIALTY INTERESTS ==========
+            if (masEmployeeRequest.getEmployeeSpecialtyInterests() != null && !masEmployeeRequest.getEmployeeSpecialtyInterests().isEmpty()) {
+                // Remove existing interests
+                List<EmployeeSpecialtyInterest> existingInterests = employeeSpecialtyInterestRepository.findByEmployee(existingEmployee);
+                if (existingInterests != null && !existingInterests.isEmpty()) {
+                    employeeSpecialtyInterestRepository.deleteAll(existingInterests);
+                }
+
+                // Add new interests
+                for (EmployeeSpecialtyInterestRequest interestReq : masEmployeeRequest.getEmployeeSpecialtyInterests()) {
+                    if (interestReq.getInterestSummary() != null && !interestReq.getInterestSummary().isEmpty()) {
+                        EmployeeSpecialtyInterest specialtyInterest = new EmployeeSpecialtyInterest();
+                        specialtyInterest.setEmployee(existingEmployee);
+                        specialtyInterest.setInterestSummary(interestReq.getInterestSummary());
+                        specialtyInterest.setLastUpdateDate(Instant.now());
+
+                        employeeSpecialtyInterestRepository.save(specialtyInterest);
+                    }
+                }
+            }
+
+            // ========== UPDATE AWARDS ==========
+            if (masEmployeeRequest.getEmployeeAwards() != null && !masEmployeeRequest.getEmployeeAwards().isEmpty()) {
+                // Remove existing awards
+                List<EmployeeAward> existingAwards = employeeAwardRepository.findByEmployee(existingEmployee);
+                if (existingAwards != null && !existingAwards.isEmpty()) {
+                    employeeAwardRepository.deleteAll(existingAwards);
+                }
+
+                for (EmployeeAwardRequest awardReq : masEmployeeRequest.getEmployeeAwards()) {
+                    if (awardReq.getAwardSummary() != null && !awardReq.getAwardSummary().isEmpty()) {
+                        EmployeeAward award = new EmployeeAward();
+                        award.setEmployee(existingEmployee);
+                        award.setAwardSummary(awardReq.getAwardSummary());
+                        award.setLastUpdateDate(Instant.now());
+
+                        employeeAwardRepository.save(award);
+                    }
+                }
+            }
+
+            existingEmployee.setLastChangedDate(OffsetDateTime.now().toInstant());
+            existingEmployee.setLastChangedBy(obj.getUserId().toString());
+
+            MasEmployee savedEmp = masEmployeeRepository.save(existingEmployee);
+
+
             if (masEmployeeRequest.getProfilePicName() != null && !masEmployeeRequest.getProfilePicName().isEmpty()) {
                 try {
                     String profileImageExtension = getFileExtension(masEmployeeRequest.getProfilePicName().getOriginalFilename());
@@ -370,11 +600,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload profile image.", 400);
                 }
             }
-
-            existingEmployee.setLastChangedDate(OffsetDateTime.now().toInstant());
-            existingEmployee.setLastChangedBy(obj.getUserId().toString());
-
-            MasEmployee savedEmp = masEmployeeRepository.save(existingEmployee);
 
             if (masEmployeeRequest.getQualification() != null && !masEmployeeRequest.getQualification().isEmpty()) {
                 for (EmployeeQualificationReq objQualification : masEmployeeRequest.getQualification()) {
@@ -1063,7 +1288,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         for (EmployeeWorkExperienceRequest request : workExperiences) {
             try {
                 EmployeeWorkExperience workExperience = new EmployeeWorkExperience();
-                workExperience.setMasEmployee(savedEmployee);
+                workExperience.setEmployee(savedEmployee);
                 workExperience.setExperienceSummary(request.getExperienceSummary());
                 workExperience.setOrderLevel(1);
                 workExperience.setLastUpdateDate(Instant.now());
@@ -1082,7 +1307,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         for (EmployeeMembershipRequest request : memberships) {
             try {
                 EmployeeMembership membership = new EmployeeMembership();
-                membership.setMasEmployee(savedEmployee);
+                membership.setEmployee(savedEmployee);
                 membership.setMembershipSummary(request.getMembershipSummary());
                 membership.setLastUpdateDate(Instant.now());
                 membership.setOrderLevel(1);
@@ -1101,7 +1326,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         for (EmployeeSpecialtyInterestRequest request : specialtyInterests) {
             try {
                 EmployeeSpecialtyInterest specialtyInterest = new EmployeeSpecialtyInterest();
-                specialtyInterest.setMasEmployee(savedEmployee);
+                specialtyInterest.setEmployee(savedEmployee);
                 specialtyInterest.setInterestSummary(request.getInterestSummary());
                 specialtyInterest.setLastUpdateDate(Instant.now());
                 employeeSpecialtyInterestRepository.save(specialtyInterest);
@@ -1119,7 +1344,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         for (EmployeeAwardRequest request : awards) {
             try {
                 EmployeeAward award = new EmployeeAward();
-                award.setMasEmployee(savedEmployee);
+                award.setEmployee(savedEmployee);
                 award.setAwardSummary(request.getAwardSummary());
                 award.setLastUpdateDate(Instant.now());
                 employeeAwardRepository.save(award);

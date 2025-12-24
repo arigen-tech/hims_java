@@ -27,7 +27,7 @@ public record MasEmployeeDTO(
         String pincode,
         String mobileNo,
         String registrationNo,
-        Long identificationTypeId,//
+        Long identificationTypeId,
         String identificationType,
         Long employmentTypeId,
         String employmentType,
@@ -40,13 +40,26 @@ public record MasEmployeeDTO(
         String idDocumentName,
         String email,
         String status,
+        Integer yearOfExperience,
+        String profileDescription,
+        Long designationId,
         List<EmployeeQualificationDTO> qualifications,
-        List<EmployeeDocumentDTO> documents
+        List<EmployeeDocumentDTO> documents,
+        List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters,
+        List<EmployeeWorkExperienceDTO> workExperiences,
+        List<EmployeeMembershipDTO> memberships,
+        List<EmployeeSpecialtyInterestDTO> specialtyInterests,
+        List<EmployeeAwardDTO> awards
 ) {
     public static MasEmployeeDTO fromEntity(
             MasEmployee employee,
             List<EmployeeQualificationDTO> qualifications,
-            List<EmployeeDocumentDTO> documents
+            List<EmployeeDocumentDTO> documents,
+            List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters,
+            List<EmployeeWorkExperienceDTO> workExperiences,
+            List<EmployeeMembershipDTO> memberships,
+            List<EmployeeSpecialtyInterestDTO> specialtyInterests,
+            List<EmployeeAwardDTO> awards
     ) {
         return MasEmployeeDTO.builder()
                 .employeeId(employee.getEmployeeId())
@@ -67,12 +80,28 @@ public record MasEmployeeDTO(
                 .pincode(employee.getPincode())
                 .mobileNo(employee.getMobileNo())
                 .registrationNo(employee.getRegistrationNo())
-                .identificationTypeId(employee.getIdentificationType() != null ? employee.getIdentificationType().getIdentificationTypeId() : null)
-                .identificationType(employee.getIdentificationType() != null ? employee.getIdentificationType().getIdentificationName() : null)
-                .employmentTypeId(employee.getEmploymentTypeId() != null ? employee.getEmploymentTypeId().getId() : null)
-                .employmentType(employee.getEmploymentTypeId() != null ? employee.getEmploymentTypeId().getEmploymentType() : null)
-                .employeeTypeId(employee.getEmployeeTypeId() != null ? employee.getEmployeeTypeId().getUserTypeId() : null)
-                .employeeType(employee.getEmployeeTypeId() != null ? employee.getEmployeeTypeId().getUserTypeName() : null)
+
+                .identificationTypeId(employee.getIdentificationType() != null
+                        ? employee.getIdentificationType().getIdentificationTypeId()
+                        : null)
+                .identificationType(employee.getIdentificationType() != null
+                        ? employee.getIdentificationType().getIdentificationName()
+                        : null)
+
+                .employmentTypeId(employee.getEmploymentTypeId() != null
+                        ? employee.getEmploymentTypeId().getId()
+                        : null)
+                .employmentType(employee.getEmploymentTypeId() != null
+                        ? employee.getEmploymentTypeId().getEmploymentType()
+                        : null)
+
+                .employeeTypeId(employee.getEmployeeTypeId() != null
+                        ? employee.getEmployeeTypeId().getUserTypeId()
+                        : null)
+                .employeeType(employee.getEmployeeTypeId() != null
+                        ? employee.getEmployeeTypeId().getUserTypeName()
+                        : null)
+
                 .roleId(employee.getRoleId() != null ? employee.getRoleId().getId() : null)
                 .role(employee.getRoleId() != null ? employee.getRoleId().getRoleDesc() : null)
                 .fromDate(employee.getFromDate())
@@ -82,6 +111,14 @@ public record MasEmployeeDTO(
                 .status(employee.getStatus())
                 .qualifications(qualifications)
                 .documents(documents)
+                .specialtyCenters(specialtyCenters)
+                .workExperiences(workExperiences)
+                .memberships(memberships)
+                .specialtyInterests(specialtyInterests)
+                .awards(awards)
+                .yearOfExperience(employee.getYearOfExperience())
+                .profileDescription(employee.getProfileDescription())
+                .designationId(employee.getDesignationId())
                 .build();
     }
 }
