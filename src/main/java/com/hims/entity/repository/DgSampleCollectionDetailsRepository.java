@@ -105,4 +105,15 @@ List<DgSampleCollectionDetails> findBySampleCollectionHeader_SampleCollectionHea
     @Query("SELECT d.validated FROM DgSampleCollectionDetails d WHERE d.sampleCollectionHeader.sampleCollectionHeaderId = :headerId")
     List<String> getValidationStatusOfHeader(Long headerId);
 
+
+    //Create this sequence first
+//    CREATE SEQUENCE sample_id_seq
+//    START WITH 1
+//    INCREMENT BY 1
+//    NO CYCLE;
+    @Query(value = "SELECT nextval('sample_id_seq')", nativeQuery = true)
+    Long getNextSequenceValue();
+
+    DgSampleCollectionDetails findBySampleCollectionDetailsIdAndInvestigationId_InvestigationId(Long sampleCollectionDetailsId,Long investigationId);
+
 }

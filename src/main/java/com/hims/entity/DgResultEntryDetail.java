@@ -90,5 +90,8 @@ public class DgResultEntryDetail {
     @Column(name = "fixed_value")
     private String FixedValue;
 
+    @Column(name = "generated_sample_id",length = 100)
+    private String generatedSampleId;
+
 
 }

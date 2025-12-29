@@ -10,6 +10,7 @@ public class ResultSubInvestigationResponse {
     private Long subInvestigationId;
     private String subInvestigationName;
     private Long sampleId;
+    private String generatedSampleId;
     private String sampleName;
     private String unit;
     private String normalValue;

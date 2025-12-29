@@ -9,6 +9,7 @@ public class ResultEntryUpdateInvestigationResponse {
     private Long investigationId;
     private String investigationName;
     private String diagNo;
+    private String generatedSampleId;
     private String unit;
     private String sampleName;
     private String remarks;

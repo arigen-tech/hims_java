@@ -273,6 +273,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
                         var patient = header.getPatientId();
                         var subCharge = header.getSubChargeCode();
+                        DgOrderHd orderHd = labHdRepository.findByPatientId_IdAndVisitId_Id(patient.getId(),header.getVisitId().getId());
 
                         String fullName = Stream.of(
                                         patient.getPatientFn(),
@@ -288,14 +289,14 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                                 .map(d -> new TestDetailsDTO(
                                         d.getSampleCollectionDetailsId(),
                                         d.getInvestigationId() != null ? d.getInvestigationId().getInvestigationId() : null,
-                                        d.getInvestigationId() != null && d.getInvestigationId().getSampleId() != null
-                                                ? d.getInvestigationId().getSampleId().getSampleCode()
-                                                : null,
+                                        d.getSampleGeneratedId() != null ? d.getSampleGeneratedId(): null,
                                         d.getInvestigationId() != null ? d.getInvestigationId().getInvestigationName() : null,
                                         d.getSampleId() != null ? d.getSampleId().getId() : null,
                                         d.getSampleId() != null ? d.getSampleId().getSampleDescription() : null,
                                         d.getInvestigationId() != null?d.getInvestigationId().getQuantity():null,
-                                        d.getEmpanelledStatus(),
+
+                                        d.getInvestigationId() != null ? d.getInvestigationId().getCollectionId().getCollectionId():null,
+                                        d.getInvestigationId() != null ? d.getInvestigationId().getCollectionId().getCollectionName():null,                                        d.getEmpanelledStatus(),
                                         d.getSampleCollDatetime(),
                                         d.getRejected_reason(),
                                         d.getRemarks()
@@ -311,7 +312,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                                 patient.getPatientMobileNumber(),
                                 subCharge != null ? subCharge.getSubId() : null,
                                 subCharge != null ? subCharge.getSubName() : null,
-                                patient.getUhidNo(),
+                                orderHd.getOrderNo(),
                                 header.getLastChgDate() != null ? header.getLastChgDate().toLocalDate() : null,
                                 header.getCollection_time(),
                                 header.getCollection_by(),
@@ -387,7 +388,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                             r.setValidatedTime(header.getValidationTime()!=null?getCurrentTimeFormatted(header.getValidationTime()):null);
                             r.setCollectedDate(header.getCollection_time());
                             r.setCollectedTime(header.getCollection_time() != null ? header.getCollection_time().toLocalTime() : null);
-                            r.setOrderNo(patient.getUhidNo());
+                            r.setOrderNo(dgOrderHd.getOrderNo());
                             r.setDepartment(header.getDepartmentId() != null ? header.getDepartmentId().getDepartmentName() : null);
 
                             MasSubChargeCode masSubChargeCode =
@@ -415,6 +416,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                             inv.setInvestigationName(invObj.getInvestigationName());
                             inv.setSampleCollectionDetailsId(detail.getSampleCollectionDetailsId());
                             inv.setResultType(invObj.getInvestigationType());
+                            inv.setGeneratedSampleId(detail.getSampleGeneratedId());
 
                             // --- Sample details
                             if (invObj.getSampleId() != null) {
@@ -455,6 +457,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                     sub.setUnit(subInvest.getUomId() != null ? subInvest.getUomId().getName() : null);
                     sub.setComparisonType(subInvest.getComparisonType());
                     sub.setResultType(subInvest.getResultType());
+                    sub.setGeneratedSampleId(detail.getSampleGeneratedId());
 
                     // --- Patient info for Normal Range
                     var patient = header.getPatientId();

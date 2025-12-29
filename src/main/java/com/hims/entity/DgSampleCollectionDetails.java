@@ -58,4 +58,7 @@ public class DgSampleCollectionDetails {
     private String empanelledStatus;
     @Column(name="old_sample_collection_hd_id_for_reject")
     private Long  oldSampleCollectionHdIdForReject ;
+
+    @Column(name = "sample_generated_id",length = 100)
+    private String sampleGeneratedId;
 }
