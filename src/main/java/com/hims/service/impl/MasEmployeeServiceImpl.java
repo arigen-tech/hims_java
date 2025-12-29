@@ -380,6 +380,11 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                         .orElseThrow(() -> new IllegalArgumentException("State not found with ID: " + masEmployeeRequest.getStateId()));
                 existingEmployee.setStateId(stateObj);
             }
+            if (masEmployeeRequest.getCountryId() != null) {
+                MasCountry countryObj = masCountryRepository.findById(masEmployeeRequest.getCountryId().longValue())
+                        .orElseThrow(() -> new IllegalArgumentException("Country not found with ID: " + masEmployeeRequest.getCountryId()));
+                existingEmployee.setCountryId(countryObj);
+            }
 
             if (masEmployeeRequest.getDistrictId() != null) {
                 MasDistrict districtObj = masDistrictRepository.findById(masEmployeeRequest.getDistrictId().longValue())
@@ -444,55 +449,70 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
             if (masEmployeeRequest.getIdDocumentName() != null && !masEmployeeRequest.getIdDocumentName().isEmpty()) {
                 try {
+                    String uploadedFilename = masEmployeeRequest.getIdDocumentName().getOriginalFilename();
+
                     String documentExtension = getFileExtension(masEmployeeRequest.getIdDocumentName().getOriginalFilename());
                     if (!isValidDocExtension(documentExtension)) {
                         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                                 "Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
                     }
 
-                    String timestamp = String.valueOf(System.currentTimeMillis());
-                    String newFilename = timestamp + "_" + masEmployeeRequest.getIdDocumentName().getOriginalFilename();
+                    // Check if existing document already has timestamp
+                    boolean shouldUpdate = true;
+                    if (masEmployeeRequest.getIdDocumentName() != null && !masEmployeeRequest.getIdDocumentName().isEmpty()) {
+                        if (hasTimestamp(masEmployeeRequest.getIdDocumentName().getOriginalFilename())) {
+                            // Existing document already has timestamp, don't update
+                            shouldUpdate = false;
+                            log.info("ID document already has timestamp, skipping update to avoid timestamp chaining");
+                        } else {
+                            // Delete old file if it doesn't have timestamp
+                            try {
+                                Path oldFilePath = Paths.get(existingEmployee.getIdDocumentName());
+                                Files.deleteIfExists(oldFilePath);
+                            } catch (IOException e) {
+                                log.warn("Could not delete old ID document: {}", existingEmployee.getIdDocumentName(), e);
+                            }
+                        }
+                    }
 
-                    String documentPath = Paths.get(fileUploadDir, newFilename)
-                            .toString()
-                            .replace("\\", "/");
-                    Files.write(Paths.get(documentPath), masEmployeeRequest.getIdDocumentName().getBytes());
+                    if (shouldUpdate) {
+                        String timestamp = String.valueOf(System.currentTimeMillis());
+                        String newFilename = timestamp + "_" + masEmployeeRequest.getIdDocumentName().getOriginalFilename();
 
-                    existingEmployee.setIdDocumentName(documentPath);
+                        String documentPath = Paths.get(fileUploadDir, newFilename)
+                                .toString()
+                                .replace("\\", "/");
+                        Files.write(Paths.get(documentPath), masEmployeeRequest.getIdDocumentName().getBytes());
+
+                        existingEmployee.setIdDocumentName(documentPath);
+                    }
                 } catch (IOException e) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload document.", 400);
                 }
             }
-
-// ========== UPDATE SPECIALTY CENTERS ==========
-            if (masEmployeeRequest.getSpecialtyCenter() != null && !masEmployeeRequest.getSpecialtyCenter().isEmpty()) {
-                // Add new specialty centers
-                MasEmployeeCenterMapping masEmployeeCenterMapping = new MasEmployeeCenterMapping();
-                for (EmployeeSpecialtyCenterRequest centerReq : masEmployeeRequest.getSpecialtyCenter()) {
-                    if (centerReq.getCenterId() != null) {
-                         MasSpecialtyCenter masSpecialtyCenter = masSpecialtyCenterRepository.findById(centerReq.getCenterId())
-                                .orElseThrow(() -> new IllegalArgumentException("Specialty Center not found with ID: " + centerReq.getCenterId()));
-
-                        List<MasEmployeeCenterMapping> existingMapping = employeeSpecialtyCenterRepository.findByEmpId(existingEmployee.getEmployeeId());
-                        for(MasEmployeeCenterMapping employeeCenterMapping:existingMapping){
-
-                            if (employeeCenterMapping.getCenterId().equals(centerReq.getCenterId())){
-                               continue;
-                            } else {
-
-                                masEmployeeCenterMapping.setEmpId(existingEmployee.getEmployeeId());
-                                masEmployeeCenterMapping.setCenterId(centerReq.getCenterId());
-                            }
-                        }
-
-                        masEmployeeCenterMapping.setIsPrimary(centerReq.getIsPrimary() != null ? centerReq.getIsPrimary() : false);
-                        masEmployeeCenterMapping.setLastUpdateDate(Instant.now());
-
-                        employeeSpecialtyCenterRepository.save(masEmployeeCenterMapping);
-                    }
-                }
+            // ========== UPDATE SPECIALTY CENTERS ==========
+            // Remove all existing mappings first
+            List<MasEmployeeCenterMapping> existingMappings = employeeSpecialtyCenterRepository.findByEmpId(existingEmployee.getEmployeeId());
+            if (!existingMappings.isEmpty()) {
+                employeeSpecialtyCenterRepository.deleteAll(existingMappings);
             }
-            // ========== UPDATE WORK EXPERIENCES ==========
+
+            // Add all new mappings
+            for (EmployeeSpecialtyCenterRequest centerReq : masEmployeeRequest.getSpecialtyCenter()) {
+                if (centerReq.getCenterId() != null) {
+                    // Verify center exists
+                    masSpecialtyCenterRepository.findById(centerReq.getCenterId())
+                            .orElseThrow(() -> new IllegalArgumentException("Specialty Center not found with ID: " + centerReq.getCenterId()));
+
+                    MasEmployeeCenterMapping mapping = new MasEmployeeCenterMapping();
+                    mapping.setEmpId(existingEmployee.getEmployeeId());
+                    mapping.setCenterId(centerReq.getCenterId());
+                    mapping.setIsPrimary(centerReq.getIsPrimary() != null ? centerReq.getIsPrimary() : false);
+                    mapping.setLastUpdateDate(Instant.now());
+
+                    employeeSpecialtyCenterRepository.save(mapping);
+                }
+            }           // ========== UPDATE WORK EXPERIENCES ==========
             if (masEmployeeRequest.getWorkExperiences() != null && !masEmployeeRequest.getWorkExperiences().isEmpty()) {
                 // Remove existing work experiences
                 List<EmployeeWorkExperience> existingExperiences = employeeWorkExperienceRepository.findByEmployee(existingEmployee);
@@ -573,12 +593,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                 }
             }
 
-            existingEmployee.setLastChangedDate(OffsetDateTime.now().toInstant());
-            existingEmployee.setLastChangedBy(obj.getUserId().toString());
-
-            MasEmployee savedEmp = masEmployeeRepository.save(existingEmployee);
-
-
             if (masEmployeeRequest.getProfilePicName() != null && !masEmployeeRequest.getProfilePicName().isEmpty()) {
                 try {
                     String profileImageExtension = getFileExtension(masEmployeeRequest.getProfilePicName().getOriginalFilename());
@@ -587,6 +601,23 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                                 "Thumb Image Invalid file type. Only JPG, JPEG and PNG are allowed.", 400);
                     }
 
+                    boolean shouldUpdate = true;
+                    if (masEmployeeRequest.getProfilePicName() != null && !masEmployeeRequest.getProfilePicName().isEmpty()) {
+                        if (hasTimestamp(masEmployeeRequest.getProfilePicName().getOriginalFilename())) {
+                            // Existing document already has timestamp, don't update
+                            shouldUpdate = false;
+                            log.info("profile pic already has timestamp, skipping update to avoid timestamp chaining");
+                        } else {
+                            // Delete old file if it doesn't have timestamp
+                            try {
+                                Path oldFilePath = Paths.get(existingEmployee.getProfilePicName());
+                                Files.deleteIfExists(oldFilePath);
+                            } catch (IOException e) {
+                                log.warn("Could not delete old ID document: {}", existingEmployee.getProfilePicName(), e);
+                            }
+                        }
+                    }
+                    if(shouldUpdate){
                     String timestamp = String.valueOf(System.currentTimeMillis());
                     String newFilename = timestamp + "_" + masEmployeeRequest.getProfilePicName().getOriginalFilename();
 
@@ -594,12 +625,18 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                             .toString()
                             .replace("\\", "/");
                     Files.write(Paths.get(profileImagePath), masEmployeeRequest.getProfilePicName().getBytes());
-
-                    existingEmployee.setProfilePicName(profileImagePath);
+                        existingEmployee.setProfilePicName(profileImagePath);
+                    }
                 } catch (IOException e) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload profile image.", 400);
                 }
             }
+
+            existingEmployee.setLastChangedDate(OffsetDateTime.now().toInstant());
+            existingEmployee.setLastChangedBy(obj.getUserId().toString());
+
+            MasEmployee savedEmp = masEmployeeRepository.save(existingEmployee);
+
 
             if (masEmployeeRequest.getQualification() != null && !masEmployeeRequest.getQualification().isEmpty()) {
                 for (EmployeeQualificationReq objQualification : masEmployeeRequest.getQualification()) {
@@ -632,15 +669,33 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                                             "Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
                                 }
 
-                                String timestamp = String.valueOf(System.currentTimeMillis());
-                                String newFilename = timestamp + "_" + originalFilename;
+                                boolean shouldUpdate = true;
+                                if (objQualification.getFilePath() != null && !objQualification.getFilePath().isEmpty()) {
+                                    if (hasTimestamp(objQualification.getFilePath().getOriginalFilename())) {
+                                        // Existing document already has timestamp, don't update
+                                        shouldUpdate = false;
+                                        log.info("Employee document already has timestamp, skipping update");
+                                    } else {
+                                        // Delete old file if it doesn't have timestamp
+                                        try {
+                                            Path oldFilePath = Paths.get(existingQualification.getFilePath());
+                                            Files.deleteIfExists(oldFilePath);
+                                        } catch (IOException e) {
+                                            log.warn("Could not delete old employee document: {}", existingQualification.getFilePath(), e);
+                                        }
+                                    }
+                                }
+                                if(shouldUpdate) {
+                                    String timestamp = String.valueOf(System.currentTimeMillis());
+                                    String newFilename = timestamp + "_" + originalFilename;
 
-                                String imagePath = Paths.get(fileUploadDir, newFilename)
-                                        .toString()
-                                        .replace("\\", "/");
+                                    String imagePath = Paths.get(fileUploadDir, newFilename)
+                                            .toString()
+                                            .replace("\\", "/");
 
-                                Files.write(Paths.get(imagePath), objQualification.getFilePath().getBytes());
-                                existingQualification.setFilePath(imagePath);
+                                    Files.write(Paths.get(imagePath), objQualification.getFilePath().getBytes());
+                                    existingQualification.setFilePath(imagePath);
+                                }
                             } catch (IOException e) {
                                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload qualification document.", 400);
                             }
@@ -701,7 +756,23 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                 }
             }
 
+            Set<Long> requestQualificationIds = masEmployeeRequest.getQualification().stream()
+                    .filter(q -> q.getEmployeeQualificationId() != null)
+                    .map(EmployeeQualificationReq::getEmployeeQualificationId)
+                    .collect(Collectors.toSet());
+
+            // Find and delete qualifications not in the request
+            List<EmployeeQualification> existingQualifications = employeeQualificationRepository.findByEmployee(existingEmployee);
+            for (EmployeeQualification existingQual : existingQualifications) {
+                if (!requestQualificationIds.contains(existingQual.getEmployeeQualificationId())) {
+                    employeeQualificationRepository.delete(existingQual);
+                }
+            }
+
             if (masEmployeeRequest.getDocument() != null && !masEmployeeRequest.getDocument().isEmpty()) {
+
+                List<EmployeeDocument> existingDocuments = employeeDocumentRepository.findByEmployee(savedEmp);
+
                 for (EmployeeDocumentReq objDocument : masEmployeeRequest.getDocument()) {
                     if (objDocument.getEmployeeDocumentId() != null) {
                         EmployeeDocument existingDocument = employeeDocumentRepository.findById(objDocument.getEmployeeDocumentId())
@@ -718,16 +789,36 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                                             "Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
                                 }
+                                // Check if we should update based on EXISTING file in database
+                                boolean shouldUpdate = true;
+                                if (objDocument.getFilePath() != null && !objDocument.getFilePath().isEmpty()) {
+                                    if (hasTimestamp(objDocument.getFilePath().getOriginalFilename())) {
+                                        // Existing document in database already has timestamp, don't update
+                                        shouldUpdate = false;
+                                        log.info("Employee document already has timestamp, skipping update");
+                                    } else {
+                                        // Delete old file from storage if it doesn't have timestamp
+                                        try {
+                                            Path oldFilePath = Paths.get(existingDocument.getFilePath());
+                                            Files.deleteIfExists(oldFilePath);
+                                        } catch (IOException e) {
+                                            log.warn("Could not delete old employee document: {}", existingDocument.getFilePath(), e);
+                                        }
+                                    }
+                                }
 
-                                String timestamp = String.valueOf(System.currentTimeMillis());
-                                String newFilename = timestamp + "_" + objDocument.getFilePath().getOriginalFilename();
+                                // Only update if shouldUpdate is true
+                                if (shouldUpdate) {
+                                    String timestamp = String.valueOf(System.currentTimeMillis());
+                                    String newFilename = timestamp + "_" + objDocument.getFilePath().getOriginalFilename();
 
-                                String imagePath = Paths.get(fileUploadDir, newFilename)
-                                        .toString()
-                                        .replace("\\", "/");
-                                Files.write(Paths.get(imagePath), objDocument.getFilePath().getBytes());
+                                    String imagePath = Paths.get(fileUploadDir, newFilename)
+                                            .toString()
+                                            .replace("\\", "/");
+                                    Files.write(Paths.get(imagePath), objDocument.getFilePath().getBytes());
 
-                                existingDocument.setFilePath(imagePath);
+                                    existingDocument.setFilePath(imagePath);
+                                }
                             } catch (IOException e) {
                                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload document.", 400);
                             }
@@ -776,9 +867,27 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             return ResponseUtils.createSuccessResponse(savedEmp, new TypeReference<>() {});
 
         } catch (ConstraintViolationException e) {
+
             return ResponseUtils.createFailureResponse(null, new TypeReference<MasEmployee>() {},
                     "Validation failed for required fields: " + e.getMessage(), HttpStatus.BAD_REQUEST.value());
+        } catch (Exception e) {
+            log.error("Unexpected error :: ",e);
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+    private boolean hasTimestamp(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            return false;
+        }
+
+        // Extract just the filename from the full path
+        String justFilename = filename.contains("/")
+                ? filename.substring(filename.lastIndexOf("/") + 1)
+                : filename;
+
+        // Check if filename starts with digits followed by underscore
+        return justFilename.matches("^\\d+_.*");
     }
 
     @Transactional(rollbackFor = {Exception.class})
@@ -914,88 +1023,36 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
 
-            try {
-                MasEmployee employee = buildEmployeeFromRequest(masEmployeeRequest, currentUser);
-                MasEmployee savedEmployee = masEmployeeRepository.save(employee);
+            MasEmployee employee = buildEmployeeFromRequest(masEmployeeRequest, currentUser);
+            MasEmployee savedEmployee = masEmployeeRepository.save(employee);
+            processQualifications(masEmployeeRequest.getQualification(), savedEmployee, currentUser);
+            processSpecialtyCenter(masEmployeeRequest.getSpecialtyCenter(), savedEmployee, currentUser);
+            processWorkExperiences(masEmployeeRequest.getWorkExperiences(), savedEmployee, currentUser);
+            processMemberships(masEmployeeRequest.getEmployeeMemberships(), savedEmployee, currentUser);
+            processSpecialtyInterest(masEmployeeRequest.getEmployeeSpecialtyInterests(), savedEmployee, currentUser);
+            processAwards(masEmployeeRequest.getEmployeeAwards(), savedEmployee, currentUser);
+            processDocuments(masEmployeeRequest.getDocument(), savedEmployee, currentUser);
 
-                try {
-                    processQualifications(masEmployeeRequest.getQualification(), savedEmployee, currentUser);
-                } catch (QualificationProcessingException e) {
-                    log.error("Failed to process qualifications: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
+            log.info("Successfully created employee with ID: {}", savedEmployee.getEmployeeId());
+            return ResponseUtils.createSuccessResponse(savedEmployee, new TypeReference<>() {});
 
-                try {
-                    processSpecialtyCenter(masEmployeeRequest.getSpecialtyCenter(), savedEmployee, currentUser);
-                } catch (SpecialtyCenterProcessingException e) {
-                    log.error("Failed to process Specialty Center: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
+        } catch (EntityExistsException e) {
+            // Catch mobile number duplicate error
+            log.error("Entity exists error: {}", e.getMessage());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    e.getMessage(), HttpStatus.CONFLICT.value()); // Use 409 Conflict status
 
-                try {
-                    processWorkExperiences(masEmployeeRequest.getWorkExperiences(), savedEmployee, currentUser);
-                } catch (WorkExperienceProcessingException e) {
-                    log.error("Failed to process Work Experiences: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
+        } catch (EntityNotFoundException e) {
+            log.error("Entity not found: {}", e.getMessage());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    e.getMessage(), HttpStatus.NOT_FOUND.value());
 
-                try {
-                    processMemberships(masEmployeeRequest.getEmployeeMemberships(), savedEmployee, currentUser);
-                } catch (MembershipProcessingException e) {
-                    log.error("Failed to process Membership: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
-
-                try {
-                    processSpecialtyInterest(masEmployeeRequest.getEmployeeSpecialtyInterests(), savedEmployee, currentUser);
-                } catch (SpecialtyInterestProcessingException e) {
-                    log.error("Failed to process Employee Specialty Interest: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
-
-                try {
-                    processAwards(masEmployeeRequest.getEmployeeAwards(), savedEmployee, currentUser);
-                } catch (AwardProcessingException e) {
-                    log.error("Failed to process Awards: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
-
-                try {
-                    processDocuments(masEmployeeRequest.getDocument(), savedEmployee, currentUser);
-                } catch (DocumentProcessingException e) {
-                    log.error("Failed to process documents: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process documents: " + e.getMessage(), e);
-                }
-
-                log.info("Successfully created employee with ID: {}", savedEmployee.getEmployeeId());
-                return ResponseUtils.createSuccessResponse(savedEmployee, new TypeReference<>() {});
-
-            } catch (EntityNotFoundException e) {
-                log.error("Entity not found: {}", e.getMessage());
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        e.getMessage(), HttpStatus.NOT_FOUND.value());
-            } catch (FileProcessingException e) {
-                log.error("File processing error: {}", e.getMessage(), e);
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        e.getMessage(), HttpStatus.BAD_REQUEST.value());
-            } catch (EmployeeCreationException e) {
-                log.error("Employee creation error: {}", e.getMessage(), e);
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
-            }
-        } catch (ConstraintViolationException e) {
-            log.error("Constraint violation: {}", e.getMessage(), e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<MasEmployee>() {},
-                    "Validation failed for required fields: " + e.getMessage(),
-                    HttpStatus.BAD_REQUEST.value());
         } catch (Exception e) {
-            log.error("Unexpected error creating employee: {}", e.getMessage(), e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<MasEmployee>() {},
-                    "An unexpected error occurred: " + e.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+            log.error("Error creating employee: {}", e.getMessage(), e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Internal server error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-
     private Map<String, String> validateEmployeeRequest(MasEmployeeRequest request) {
         Map<String, String> errors = new HashMap<>();
 
@@ -1200,8 +1257,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         }
     }
 
-    private void processQualifications(List<EmployeeQualificationReq> qualifications, MasEmployee employee, User currentUser)
-            throws QualificationProcessingException {
+    private void processQualifications(List<EmployeeQualificationReq> qualifications, MasEmployee employee, User currentUser) throws QualificationProcessingException {
 
         if (qualifications == null || qualifications.isEmpty()) {
             throw new QualificationProcessingException("Qualifications cannot be empty");
@@ -1299,7 +1355,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
-
     private void processMemberships(List<EmployeeMembershipRequest> memberships, MasEmployee savedEmployee, User currentUser) throws MembershipProcessingException{
         if (memberships == null || memberships.isEmpty()) {
             return;
@@ -1318,7 +1373,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
-
     private void processSpecialtyInterest(List<EmployeeSpecialtyInterestRequest> specialtyInterests, MasEmployee savedEmployee, User currentUser) throws SpecialtyInterestProcessingException{
         if (specialtyInterests == null || specialtyInterests.isEmpty()) {
             return;
@@ -1336,7 +1390,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
-
     private void processAwards(List<EmployeeAwardRequest> awards, MasEmployee savedEmployee, User currentUser) throws AwardProcessingException{
         if (awards == null || awards.isEmpty()) {
             return;
@@ -1354,10 +1407,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
-
-
-    private void processDocuments(List<EmployeeDocumentReq> documents, MasEmployee employee, User currentUser)
-            throws DocumentProcessingException {
+    private void processDocuments(List<EmployeeDocumentReq> documents, MasEmployee employee, User currentUser) throws DocumentProcessingException {
 
         if (documents == null || documents.isEmpty()) {
             throw new DocumentProcessingException("Documents cannot be empty");
@@ -1407,30 +1457,28 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         }
     }
 
-    public static class FileProcessingException extends Exception {
+
+    public static class FileProcessingException extends RuntimeException {
         public FileProcessingException(String message) {
             super(message);
         }
-    }
-
-    public static class EmployeeCreationException extends Exception {
-        public EmployeeCreationException(String message, Throwable cause) {
+        public FileProcessingException(String message, Throwable cause) {
             super(message, cause);
         }
     }
-
     public static class QualificationProcessingException extends Exception {
         public QualificationProcessingException(String message) {
             super(message);
         }
+        public QualificationProcessingException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
-
     public static class WorkExperienceProcessingException extends Exception {
         public WorkExperienceProcessingException(String message, Throwable cause) {
             super(message, cause);
         }
     }
-
     public static class MembershipProcessingException extends Exception {
         public MembershipProcessingException(String message, Throwable cause) {
             super(message, cause);
@@ -1446,13 +1494,11 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             super(message, cause);
         }
     }
-
     public static class SpecialtyCenterProcessingException extends Exception {
         public SpecialtyCenterProcessingException(String message, Throwable cause) {
             super(message, cause);
         }
     }
-
     public static class DocumentProcessingException extends Exception {
         public DocumentProcessingException(String message) {
             super(message);

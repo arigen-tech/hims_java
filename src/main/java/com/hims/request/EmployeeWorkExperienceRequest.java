@@ -12,5 +12,6 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmployeeWorkExperienceRequest {
+    private String experienceId;
     private String experienceSummary;
 }

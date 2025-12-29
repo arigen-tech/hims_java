@@ -77,7 +77,7 @@ public class MasEmployeeController {
     }
 
     @PostMapping(value = "/create-and-approve", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<MasEmployee>> createEmpAndUser(@ModelAttribute MasEmployeeRequest masEmployeeRequest) {
+    public ResponseEntity<ApiResponse<MasEmployee>> createEmpAndUser(@RequestBody MasEmployeeRequest masEmployeeRequest) {
         logger.info("Received request to create and approve a new Employee: {}", masEmployeeRequest);
         return ResponseEntity.ok(masEmployeeService.createAndApproveEmployee(masEmployeeRequest));
     }

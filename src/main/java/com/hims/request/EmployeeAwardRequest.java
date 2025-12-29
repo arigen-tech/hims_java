@@ -13,5 +13,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @Builder
 public class EmployeeAwardRequest {
+
+    private String awardId;
     private String awardSummary;
 }
