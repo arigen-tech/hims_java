@@ -3,6 +3,7 @@ package com.hims.exception;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.response.ApiResponse;
 import com.hims.utils.ResponseUtils;
+import jakarta.persistence.EntityExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -42,4 +43,31 @@ public class GlobalExceptionHandler {
                         500
                 ));
     }
+
+    @ExceptionHandler(EntityExistsException.class)
+    public ResponseEntity<ApiResponse<Object>> handleEntityExists(EntityExistsException ex) {
+
+        return ResponseEntity.badRequest().body(
+                ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value()
+                )
+        );
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Object>> handleRuntime(RuntimeException ex) {
+
+        return ResponseEntity.badRequest().body(
+                ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value()
+                )
+        );
+    }
+
 }
