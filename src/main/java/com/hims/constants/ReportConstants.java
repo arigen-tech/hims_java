@@ -47,9 +47,9 @@ public final class ReportConstants {
     public static final String STOCK_SUMMARY_REPORT="StockStatusSummary";
 
     public static final String OPD_JASPER = "opd_biling_maxx";
-    public static final String OPD_REPORT = "OpdBilling";
+    public static final String OPD_REPORT = "OpdInvoice";
 
     public static final String LAB_JASPER = "Lab_report";
-    public static final String LAB_REPORT = "LabReport";
+    public static final String LAB_REPORT = "LabInvoice";
 
 }

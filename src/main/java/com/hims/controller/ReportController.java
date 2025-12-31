@@ -44,7 +44,7 @@ public class ReportController {
         try{
             if ("D".equalsIgnoreCase(flag)) {
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_JASPER, params, getConnection());
-                return buildPdfResponse(viewPdf, ReportConstants.OPD_REPORT);
+                return buildPdfResponse(viewPdf, ReportConstants.LAB_REPORT);
             } else if ("P".equalsIgnoreCase(flag)) {
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
