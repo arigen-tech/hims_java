@@ -62,6 +62,12 @@ public class ResultServiceImpl implements ResultService {
     @Autowired
     private VisitRepository visitRepository;
 
+    @Autowired
+    private MasLabResultAmendmentTypeRepository masLabResultAmendmentTypeRepository;
+
+    @Autowired
+    private LabResultAmendAuditRepository labResultAmendAuditRepository;
+
 
     @Autowired
     AuthUtil authUtil;
@@ -808,6 +814,24 @@ public class ResultServiceImpl implements ResultService {
                 if (!Objects.equals(detail.getResultEntryId().getResultEntryId(), header.getResultEntryId())) {
                     continue; // Skip if detail not under this header
                 }
+
+                //Update lab_result_amend_audit detail
+                LabResultAmendAudit labResultAmendAudit= new LabResultAmendAudit();
+                MasLabResultAmendmentType masLabResultAmendmentType = masLabResultAmendmentTypeRepository.findById(detailReq.getAmendmentTypeId()).orElseThrow(() -> new RuntimeException("Invalid Lab Result Amendment Type Id"));
+
+                labResultAmendAudit.setPatient(header.getHinId());
+                labResultAmendAudit.setAmendmentType(masLabResultAmendmentType);
+                labResultAmendAudit.setAmendedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                labResultAmendAudit.setNewResult(detailReq.getResult());
+                labResultAmendAudit.setOldResult(detailReq.getOldResult());
+                labResultAmendAudit.setAmendedDatetime(LocalDateTime.now());
+                labResultAmendAudit.setInvestigation(detail.getInvestigationId());
+                labResultAmendAudit.setReasonForChange(masLabResultAmendmentType.getAmendmentTypeName());
+                labResultAmendAudit.setGeneratedSampleId(detail.getGeneratedSampleId());
+                labResultAmendAudit.setRemarks(detailReq.getRemarks());
+
+                labResultAmendAuditRepository.save(labResultAmendAudit);
+
                 // Update result and remarks per detail
                 detail.setResult(detailReq.getResult());
                 detail.setRemarks(detailReq.getRemarks());

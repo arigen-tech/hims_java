@@ -242,6 +242,12 @@ private MasQuestionHeadingService masQuestionHeadingService;
 @Autowired
 private  MasQuestionService questionService;
 
+@Autowired
+private MasLabResultAmendmentTypeService labResultAmendmentTypeService;
+
+@Autowired
+private MasPatientPreparationService masPatientPreparationService;
+
 
 
 
@@ -3797,5 +3803,61 @@ private  MasQuestionService questionService;
             @PathVariable Long id,
             @RequestParam String status) {
         return ResponseEntity.ok(questionService.changeStatus(id, status));
+    }
+
+
+    //-------------------------------------------Mas Lab Amendment Type ------------------------------------------
+
+    @PostMapping("/lab-amendment-type/create")
+    public ResponseEntity<?> create(@Valid @RequestBody MasLabResultAmendmentTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(labResultAmendmentTypeService.create(request));
+    }
+
+    @PutMapping("/lab-amendment-type/update/{id}")
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody MasLabResultAmendmentTypeRequest request) {
+        return ResponseEntity.ok(labResultAmendmentTypeService.update(id, request));
+    }
+
+    @PutMapping("/lab-amendment-type/{id}/status/{status}")
+    public ResponseEntity<?> changeActiveStatus(@PathVariable Long id, @PathVariable String status) {
+        return ResponseEntity.ok(labResultAmendmentTypeService.changeActiveStatus(id, status));
+    }
+
+    @GetMapping("/lab-amendment-type/{id}")
+    public ResponseEntity<?> getAmendmentTypeById(@PathVariable Long id) {
+        return ResponseEntity.ok(labResultAmendmentTypeService.getById(id));
+    }
+
+    @GetMapping("/lab-amendment-type/all")
+    public ResponseEntity<?> getAllAmendmentType(@RequestParam int flag) {
+        return ResponseEntity.ok(labResultAmendmentTypeService.getAll(flag));
+    }
+
+
+    //-------------------------------------------Mas Patient Preparation------------------------------------------
+
+    @PostMapping("/patient-preparation/create")
+    public ResponseEntity<?> create(@Valid @RequestBody MasPatientPreparationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masPatientPreparationService.create(request));
+    }
+
+    @PutMapping("/patient-preparation/update/{id}")
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody MasPatientPreparationRequest request) {
+        return ResponseEntity.ok(masPatientPreparationService.update(id, request));
+    }
+
+    @PutMapping("/patient-preparation/{id}/status/{status}")
+    public ResponseEntity<?> changeMasPatientPrepActiveStatus(@PathVariable Long id, @PathVariable String status) {
+        return ResponseEntity.ok(masPatientPreparationService.changeActiveStatus(id, status));
+    }
+
+    @GetMapping("/patient-preparation/{id}")
+    public ResponseEntity<?> getMasPatientPrepById(@PathVariable Long id) {
+        return ResponseEntity.ok(masPatientPreparationService.getById(id));
+    }
+
+    @GetMapping("/patient-preparation/all")
+    public ResponseEntity<?> getAllMasPatientPrep(@RequestParam int flag) {
+        return ResponseEntity.ok(masPatientPreparationService.getAll(flag));
     }
 }

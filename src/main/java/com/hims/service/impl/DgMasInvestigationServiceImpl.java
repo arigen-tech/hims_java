@@ -384,6 +384,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             Optional<MasInvestigationMethodology> mim = mimRepo.findById(investigationRequest.getMethodId());
             masInvestigation.setMethodId(mim.get());
             masInvestigation.setInterpretation(investigationRequest.getInterpretation());
+            masInvestigation.setPreparationText(investigationRequest.getPreparationRequired());
+            masInvestigation.setTatHours(investigationRequest.getTatHours());
+            masInvestigation.setEstimatedDays(investigationRequest.getEstimatedDays());
 //            masInvestigation.setMultipleResults(investigationRequest.getMultipleResults());
 //            masInvestigation.setQuantity(investigationRequest.getQuantity());
 //            masInvestigation.setNormalValue(investigationRequest.getNormalValue());
@@ -485,6 +488,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                     }
                 }
                 dmi.setInterpretation(investigationRequest.getInterpretation());
+                dmi.setEstimatedDays(investigationRequest.getEstimatedDays());
+                dmi.setPreparationText(investigationRequest.getPreparationRequired());
+                dmi.setTatHours(investigationRequest.getTatHours());
 //                dmi.setAppearInDischargeSummary(investigationRequest.getAppearInDischargeSummary());
 //                dmi.setMultipleResults(investigationRequest.getMultipleResults());
 //                dmi.setQuantity(investigationRequest.getQuantity());
@@ -587,6 +593,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 return ResponseUtils.createNotFoundResponse("methodId not found", 404);
             }
         }
+        masInvestigation.setTatHours(multiRequest.getTatHours());
+        masInvestigation.setPreparationText(multiRequest.getPreparationRequired());
+        masInvestigation.setEstimatedDays(multiRequest.getEstimatedDays());
         dgMasInvestigationRepo.save(masInvestigation);
 
         if(masInvestigation != null){
@@ -842,6 +851,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dmir.setCollectionName(masInvest.getCollectionId() != null ? masInvest.getCollectionId().getCollectionName() : null);
         dmir.setInterpretation(masInvest.getInterpretation() != null ? masInvest.getInterpretation(): null);
         dmir.setGenderApplicable(masInvest.getGenderApplicable());
+        dmir.setPreparationText(masInvest.getPreparationText());
+        dmir.setTatHours(masInvest.getTatHours());
+        dmir.setEstimatedDays(masInvest.getEstimatedDays());
 
         // --- Group fixed values by subInvestigationId ---
         Map<Long, List<DgFixedValueResponse>> fixedBySub = fixedValList.stream()
