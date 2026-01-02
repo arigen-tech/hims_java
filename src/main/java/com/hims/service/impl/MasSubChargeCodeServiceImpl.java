@@ -64,6 +64,8 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
         dto.setLastChgDate(code.getLastChgDate());
         dto.setLastChgTime(code.getLastChgTime());
         dto.setMainChargeId(code.getMainChargeId().getChargecodeId());
+        dto.setMainChargeCodeName(code.getMainChargeId().getChargecodeName());
+
 
         return dto;
     }
@@ -83,7 +85,7 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
                                 },
                                 "Current user not found", HttpStatus.UNAUTHORIZED.value());
                     }
-                    subCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                    subCode.setLastChgBy(String.valueOf(currentUser.getFirstName()));
                     subCode.setLastChgDate(LocalDate.now());
                     subCode.setLastChgTime(getCurrentTimeFormatted());
                     subCode.setMainChargeId(mainChargeCode.get());

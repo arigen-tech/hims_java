@@ -20,4 +20,7 @@ public class DgMasInvestigationSingleReqest {
     private Long categoryId;
     private Long methodId;
     private String interpretation;
+    private String preparationRequired;
+    private Integer tatHours;
+    private Integer estimatedDays;
 }

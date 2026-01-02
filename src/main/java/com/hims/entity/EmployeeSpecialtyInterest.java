@@ -19,7 +19,7 @@ public class EmployeeSpecialtyInterest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emp_id", nullable = false)
-    private MasEmployee masEmployee;
+    private MasEmployee employee;
 
     @Column(name = "interest_summary", length = 300, nullable = false)
     private String interestSummary;

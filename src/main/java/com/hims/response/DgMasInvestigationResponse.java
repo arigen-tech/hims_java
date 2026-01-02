@@ -56,6 +56,9 @@ public class DgMasInvestigationResponse {
     private String discount;
     private Double price;
     private String interpretation;
+    private String preparationText;
+    private Integer tatHours;
+    private Integer estimatedDays;
     private List<DgSubMasInvestigationResponse> subInvestigationResponseList;
     private List<DgFixedValueResponse> fixedValueResponseList;
     private List<DgNormalValueResponse> normalValueResponseList;

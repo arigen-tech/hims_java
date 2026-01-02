@@ -93,4 +93,13 @@ public class DgMasInvestigation {
 
     @Column(name = "interpretation",length = 500)
     private String interpretation;
+
+    @Column(name = "preparation_text",columnDefinition = "text")
+    private String preparationText;
+
+    @Column(name = "tat_hours")
+    private Integer tatHours;
+
+    @Column(name = "estimated_days")
+    private Integer estimatedDays;
 }

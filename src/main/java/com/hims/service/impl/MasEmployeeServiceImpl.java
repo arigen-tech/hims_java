@@ -5,10 +5,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.request.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.EmployeeDocumentDTO;
-import com.hims.response.EmployeeQualificationDTO;
-import com.hims.response.MasEmployeeDTO;
+import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityExistsException;
@@ -17,6 +14,7 @@ import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -124,6 +122,9 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     @Autowired
     private EmployeeSpecialtyInterestRepository employeeSpecialtyInterestRepository;
 
+    @Autowired
+    private MasSpecialtyCenterRepository masSpecialtyCenterRepository;
+
 
     @Override
     public ApiResponse<List<MasEmployeeDTO>> getAllEmployees() {
@@ -144,6 +145,35 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .stream()
                     .map(EmployeeQualificationDTO::fromEntity)
                     .toList();
+            List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters = employeeSpecialtyCenterRepository
+                    .findByEmpId(employee.getEmployeeId())
+                    .stream()
+                    .map(EmployeeSpecialtyCenterMappingDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeWorkExperienceDTO> workExperiences = employeeWorkExperienceRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeWorkExperienceDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeMembershipDTO> memberships = employeeMembershipRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeMembershipDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeSpecialtyInterestDTO> specialtyInterests = employeeSpecialtyInterestRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeSpecialtyInterestDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeAwardDTO> awards = employeeAwardRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeAwardDTO::fromEntity)
+                    .toList();
 
             List<EmployeeDocumentDTO> documents = employeeDocumentRepository
                     .findByEmployee(employee)
@@ -151,7 +181,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .map(EmployeeDocumentDTO::fromEntity)
                     .toList();
 
-            return MasEmployeeDTO.fromEntity(employee, qualifications, documents);
+            return MasEmployeeDTO.fromEntity(employee, qualifications, documents,specialtyCenters,workExperiences,memberships,specialtyInterests,awards);
         }).toList();
 
         return ResponseUtils.createSuccessResponse(employeeDTOs, new TypeReference<>() {});
@@ -177,13 +207,43 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .map(EmployeeQualificationDTO::fromEntity)
                     .toList();
 
+            List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters = employeeSpecialtyCenterRepository
+                    .findByEmpId(employee.getEmployeeId())
+                    .stream()
+                    .map(EmployeeSpecialtyCenterMappingDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeWorkExperienceDTO> workExperiences = employeeWorkExperienceRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeWorkExperienceDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeMembershipDTO> memberships = employeeMembershipRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeMembershipDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeSpecialtyInterestDTO> specialtyInterests = employeeSpecialtyInterestRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeSpecialtyInterestDTO::fromEntity)
+                    .toList();
+
+            List<EmployeeAwardDTO> awards = employeeAwardRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeAwardDTO::fromEntity)
+                    .toList();
+
             List<EmployeeDocumentDTO> documents = employeeDocumentRepository
                     .findByEmployee(employee)
                     .stream()
                     .map(EmployeeDocumentDTO::fromEntity)
                     .toList();
 
-            return MasEmployeeDTO.fromEntity(employee, qualifications, documents);
+            return MasEmployeeDTO.fromEntity(employee, qualifications, documents ,specialtyCenters,workExperiences,memberships,specialtyInterests,awards);
         }).toList();
 
         return ResponseUtils.createSuccessResponse(employeeDTOs, new TypeReference<>() {});
@@ -201,359 +261,919 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                 .map(EmployeeQualificationDTO::fromEntity)
                 .toList();
 
+        List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters = employeeSpecialtyCenterRepository
+                .findByEmpId(employee.getEmployeeId())
+                .stream()
+                .map(EmployeeSpecialtyCenterMappingDTO::fromEntity)
+                .toList();
+
+        List<EmployeeWorkExperienceDTO> workExperiences = employeeWorkExperienceRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeWorkExperienceDTO::fromEntity)
+                .toList();
+
+        List<EmployeeMembershipDTO> memberships = employeeMembershipRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeMembershipDTO::fromEntity)
+                .toList();
+
+        List<EmployeeSpecialtyInterestDTO> specialtyInterests = employeeSpecialtyInterestRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeSpecialtyInterestDTO::fromEntity)
+                .toList();
+
+        List<EmployeeAwardDTO> awards = employeeAwardRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeAwardDTO::fromEntity)
+                .toList();
+
         List<EmployeeDocumentDTO> documents = employeeDocumentRepository
                 .findByEmployee(employee)
                 .stream()
                 .map(EmployeeDocumentDTO::fromEntity)
                 .toList();
 
-        MasEmployeeDTO employeeDTO = MasEmployeeDTO.fromEntity(employee, qualifications, documents);
+        MasEmployeeDTO employeeDTO = MasEmployeeDTO.fromEntity(employee, qualifications, documents,
+                specialtyCenters,
+                workExperiences,
+                memberships,
+                specialtyInterests,
+                awards);
 
         return ResponseUtils.createSuccessResponse(employeeDTO, new TypeReference<>() {});
     }
 
-    @Transactional(rollbackFor = {Exception.class})
+    @Transactional(rollbackFor = Exception.class)
     @Override
-    public ApiResponse<MasEmployee> updateEmployee(Long id, MasEmployeeRequest masEmployeeRequest) {
-        log.debug("Updating Employee with ID: {}", id);
-        try {
-            if (id == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ID cannot be null.", 400);
-            }
-
-            MasEmployee existingEmployee = masEmployeeRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
-
-            User obj = userRepo.findByUserName(SecurityContextHolder.getContext().getAuthentication().getName());
-            if (obj == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "CURRENT USER NOT FOUND", 400);
-            }
-
-            if (masEmployeeRequest.getFirstName() != null && !masEmployeeRequest.getFirstName().isEmpty()) {
-                existingEmployee.setFirstName(masEmployeeRequest.getFirstName());
-            }
-
-            if (masEmployeeRequest.getMiddleName() != null) {
-                existingEmployee.setMiddleName(masEmployeeRequest.getMiddleName());
-            }
-
-            if (masEmployeeRequest.getLastName() != null) {
-                existingEmployee.setLastName(masEmployeeRequest.getLastName());
-            }
-
-            if (masEmployeeRequest.getGenderId() != null) {
-                MasGender genderObj = masGenderRepository.findById(masEmployeeRequest.getGenderId().longValue())
-                        .orElseThrow(() -> new IllegalArgumentException("Gender not found with ID: " + masEmployeeRequest.getGenderId()));
-                existingEmployee.setGenderId(genderObj);
-            }
-
-            if (masEmployeeRequest.getDob() != null) {
-                existingEmployee.setDob(masEmployeeRequest.getDob());
-            }
-
-            if (masEmployeeRequest.getAddress1() != null && !masEmployeeRequest.getAddress1().isEmpty()) {
-                existingEmployee.setAddress1(masEmployeeRequest.getAddress1());
-            }
-
-            if (masEmployeeRequest.getCity() != null && !masEmployeeRequest.getCity().isEmpty()) {
-                existingEmployee.setCity(masEmployeeRequest.getCity());
-            }
-
-            if (masEmployeeRequest.getMobileNo() != null && !masEmployeeRequest.getMobileNo().isEmpty()) {
-                existingEmployee.setMobileNo(masEmployeeRequest.getMobileNo());
-            }
-
-            if (masEmployeeRequest.getRegistrationNo() != null && !masEmployeeRequest.getRegistrationNo().isEmpty()) {
-                existingEmployee.setRegistrationNo(masEmployeeRequest.getRegistrationNo());
-            }
-
-            if (masEmployeeRequest.getFromDate() != null) {
-                existingEmployee.setFromDate(masEmployeeRequest.getFromDate());
-            }
-
-            if (masEmployeeRequest.getMobileNo() != null && !masEmployeeRequest.getMobileNo().isEmpty()) {
-                Optional<MasEmployee> existingWithSameMobile = masEmployeeRepository.findByMobileNo(masEmployeeRequest.getMobileNo());
-
-                if (existingWithSameMobile.isPresent() && !existingWithSameMobile.get().getEmployeeId().equals(existingEmployee.getEmployeeId())) {
-                    throw new IllegalArgumentException("Mobile number already exists: " + masEmployeeRequest.getMobileNo());
-                }
-
-                existingEmployee.setMobileNo(masEmployeeRequest.getMobileNo());
-            }
-
-            if (masEmployeeRequest.getStateId() != null) {
-                MasState stateObj = masStateRepository.findById(masEmployeeRequest.getStateId().longValue())
-                        .orElseThrow(() -> new IllegalArgumentException("State not found with ID: " + masEmployeeRequest.getStateId()));
-                existingEmployee.setStateId(stateObj);
-            }
-
-            if (masEmployeeRequest.getDistrictId() != null) {
-                MasDistrict districtObj = masDistrictRepository.findById(masEmployeeRequest.getDistrictId().longValue())
-                        .orElseThrow(() -> new IllegalArgumentException("District not found with ID: " + masEmployeeRequest.getDistrictId()));
-                existingEmployee.setDistrictId(districtObj);
-            }
-
-            if (masEmployeeRequest.getIdentificationType() != null) {
-                MasIdentificationType idTypeObj = masIdentificationTypeRepository.findById(masEmployeeRequest.getIdentificationType().longValue())
-                        .orElseThrow(() -> new IllegalArgumentException("ID Type not found with ID: " + masEmployeeRequest.getIdentificationType()));
-                existingEmployee.setIdentificationType(idTypeObj);
-            }
-
-            if (masEmployeeRequest.getEmployeeTypeId() != null) {
-                MasUserType empTypeObj = masUserTypeRepository.findById(masEmployeeRequest.getEmployeeTypeId().longValue())
-                        .orElseThrow(() -> new IllegalArgumentException("Employee Type not found with ID: " + masEmployeeRequest.getEmployeeTypeId()));
-                existingEmployee.setEmployeeTypeId(empTypeObj);
-            }
-
-            if (masEmployeeRequest.getEmploymentTypeId() != null) {
-                MasEmploymentType employmentTypeObj = masEmploymentTypeRepository.findById(masEmployeeRequest.getEmploymentTypeId().longValue())
-                        .orElseThrow(() -> new IllegalArgumentException("Employment Type not found with ID: " + masEmployeeRequest.getEmploymentTypeId()));
-                existingEmployee.setEmploymentTypeId(employmentTypeObj);
-            }
-
-            if (masEmployeeRequest.getRoleId() != null) {
-                MasRole roleObj = masRoleRepository.findById(masEmployeeRequest.getRoleId().longValue())
-                        .orElseThrow(() -> new IllegalArgumentException("Role not found with ID: " + masEmployeeRequest.getRoleId()));
-                existingEmployee.setRoleId(roleObj);
-            }
-
-            if (masEmployeeRequest.getPincode() != null && !masEmployeeRequest.getPincode().isEmpty()) {
-                existingEmployee.setPincode(masEmployeeRequest.getPincode());
-            }
-
-            String fileUploadDir = uploadDir + "MAS_EMPLOYEE/";
-            File directory = new File(fileUploadDir);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-
-            if (masEmployeeRequest.getIdDocumentName() != null && !masEmployeeRequest.getIdDocumentName().isEmpty()) {
-                try {
-                    String documentExtension = getFileExtension(masEmployeeRequest.getIdDocumentName().getOriginalFilename());
-                    if (!isValidDocExtension(documentExtension)) {
-                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                                "Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
-                    }
-
-                    String timestamp = String.valueOf(System.currentTimeMillis());
-                    String newFilename = timestamp + "_" + masEmployeeRequest.getIdDocumentName().getOriginalFilename();
-
-                    String documentPath = Paths.get(fileUploadDir, newFilename)
-                            .toString()
-                            .replace("\\", "/");
-                    Files.write(Paths.get(documentPath), masEmployeeRequest.getIdDocumentName().getBytes());
-
-                    existingEmployee.setIdDocumentName(documentPath);
-                } catch (IOException e) {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload document.", 400);
-                }
-            }
-
-            if (masEmployeeRequest.getProfilePicName() != null && !masEmployeeRequest.getProfilePicName().isEmpty()) {
-                try {
-                    String profileImageExtension = getFileExtension(masEmployeeRequest.getProfilePicName().getOriginalFilename());
-                    if (!isValidPicExtension(profileImageExtension)) {
-                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                                "Thumb Image Invalid file type. Only JPG, JPEG and PNG are allowed.", 400);
-                    }
-
-                    String timestamp = String.valueOf(System.currentTimeMillis());
-                    String newFilename = timestamp + "_" + masEmployeeRequest.getProfilePicName().getOriginalFilename();
-
-                    String profileImagePath = Paths.get(fileUploadDir, newFilename)
-                            .toString()
-                            .replace("\\", "/");
-                    Files.write(Paths.get(profileImagePath), masEmployeeRequest.getProfilePicName().getBytes());
-
-                    existingEmployee.setProfilePicName(profileImagePath);
-                } catch (IOException e) {
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload profile image.", 400);
-                }
-            }
-
-            existingEmployee.setLastChangedDate(OffsetDateTime.now().toInstant());
-            existingEmployee.setLastChangedBy(obj.getUserId().toString());
-
-            MasEmployee savedEmp = masEmployeeRepository.save(existingEmployee);
-
-            if (masEmployeeRequest.getQualification() != null && !masEmployeeRequest.getQualification().isEmpty()) {
-                for (EmployeeQualificationReq objQualification : masEmployeeRequest.getQualification()) {
-                    if (objQualification.getEmployeeQualificationId() != null) {
-                        EmployeeQualification existingQualification = employeeQualificationRepository.findById(objQualification.getEmployeeQualificationId())
-                                .orElseThrow(() -> new RuntimeException("Employee Qualification not found with id: " + objQualification.getEmployeeQualificationId()));
-
-                        if (objQualification.getQualificationName() != null) {
-                            existingQualification.setQualificationName(objQualification.getQualificationName());
-                        }
-
-                        if (objQualification.getCompletionYear() != null) {
-                            existingQualification.setCompletionYear(objQualification.getCompletionYear());
-                        }
-
-                        if (objQualification.getInstitutionName() != null) {
-                            existingQualification.setInstitutionName(objQualification.getInstitutionName());
-                        }
-
-                        if (objQualification.getFilePath() != null && !objQualification.getFilePath().isEmpty()) {
-                            try {
-                                String originalFilename = objQualification.getFilePath().getOriginalFilename();
-                                if (originalFilename == null || originalFilename.isBlank()) {
-                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid file name.", 400);
-                                }
-
-                                String imageExtension = getFileExtension(originalFilename);
-                                if (!isValidDocExtension(imageExtension)) {
-                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                                            "Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
-                                }
-
-                                String timestamp = String.valueOf(System.currentTimeMillis());
-                                String newFilename = timestamp + "_" + originalFilename;
-
-                                String imagePath = Paths.get(fileUploadDir, newFilename)
-                                        .toString()
-                                        .replace("\\", "/");
-
-                                Files.write(Paths.get(imagePath), objQualification.getFilePath().getBytes());
-                                existingQualification.setFilePath(imagePath);
-                            } catch (IOException e) {
-                                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload qualification document.", 400);
-                            }
-                        }
-
-                        existingQualification.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
-                        existingQualification.setLastChangedBy(obj.getUserId().toString());
-
-                        employeeQualificationRepository.save(existingQualification);
-                    } else {
-                        String imagePath = "";
-                        try {
-                            if (objQualification.getFilePath() != null && !objQualification.getFilePath().isEmpty()) {
-                                String originalFilename = objQualification.getFilePath().getOriginalFilename();
-                                if (originalFilename == null || originalFilename.isBlank()) {
-                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid file name.", 400);
-                                }
-
-                                String imageExtension = getFileExtension(originalFilename);
-                                if (!isValidDocExtension(imageExtension)) {
-                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                                            "Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
-                                }
-
-                                Path uploadDir = Paths.get(fileUploadDir);
-                                if (!Files.exists(uploadDir)) {
-                                    Files.createDirectories(uploadDir);
-                                }
-
-                                String timestamp = String.valueOf(System.currentTimeMillis());
-                                String newFilename = timestamp + "_" + originalFilename;
-
-                                imagePath = Paths.get(fileUploadDir, newFilename)
-                                        .toString()
-                                        .replace("\\", "/");
-
-                                Files.write(Paths.get(imagePath), objQualification.getFilePath().getBytes());
-                            } else {
-                                log.warn("Qualification document file is missing or empty.");
-                                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Qualification document cannot be empty.", 400);
-                            }
-                        } catch (IOException e) {
-                            log.error("Error while uploading qualification document: {}", e.getMessage());
-                            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload qualification document.", 400);
-                        }
-
-                        EmployeeQualification qualificationObj = new EmployeeQualification();
-                        qualificationObj.setEmployee(savedEmp);
-                        qualificationObj.setCompletionYear(objQualification.getCompletionYear());
-                        qualificationObj.setQualificationName(objQualification.getQualificationName());
-                        qualificationObj.setFilePath(imagePath);
-                        qualificationObj.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
-                        qualificationObj.setLastChangedBy(obj.getUserId().toString());
-                        qualificationObj.setInstitutionName(objQualification.getInstitutionName());
-
-                        employeeQualificationRepository.save(qualificationObj);
-                    }
-                }
-            }
-
-            if (masEmployeeRequest.getDocument() != null && !masEmployeeRequest.getDocument().isEmpty()) {
-                for (EmployeeDocumentReq objDocument : masEmployeeRequest.getDocument()) {
-                    if (objDocument.getEmployeeDocumentId() != null) {
-                        EmployeeDocument existingDocument = employeeDocumentRepository.findById(objDocument.getEmployeeDocumentId())
-                                .orElseThrow(() -> new RuntimeException("Employee Document not found with id: " + objDocument.getEmployeeDocumentId()));
-
-                        if (objDocument.getDocumentName() != null) {
-                            existingDocument.setDocumentName(objDocument.getDocumentName());
-                        }
-
-                        if (objDocument.getFilePath() != null && !objDocument.getFilePath().isEmpty()) {
-                            try {
-                                String imageExtension = getFileExtension(objDocument.getFilePath().getOriginalFilename());
-                                if (!isValidDocExtension(imageExtension)) {
-                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                                            "Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
-                                }
-
-                                String timestamp = String.valueOf(System.currentTimeMillis());
-                                String newFilename = timestamp + "_" + objDocument.getFilePath().getOriginalFilename();
-
-                                String imagePath = Paths.get(fileUploadDir, newFilename)
-                                        .toString()
-                                        .replace("\\", "/");
-                                Files.write(Paths.get(imagePath), objDocument.getFilePath().getBytes());
-
-                                existingDocument.setFilePath(imagePath);
-                            } catch (IOException e) {
-                                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload document.", 400);
-                            }
-                        }
-
-                        existingDocument.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
-                        existingDocument.setLastChangedBy(obj.getUserId().toString());
-
-                        employeeDocumentRepository.save(existingDocument);
-                    } else {
-                        String imagePath = "";
-                        try {
-                            if (objDocument.getFilePath() != null && !objDocument.getFilePath().isEmpty()) {
-                                String imageExtension = getFileExtension(objDocument.getFilePath().getOriginalFilename());
-                                if (!isValidDocExtension(imageExtension)) {
-                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                                            "Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
-                                }
-
-                                String timestamp = String.valueOf(System.currentTimeMillis());
-                                String newFilename = timestamp + "_" + objDocument.getFilePath().getOriginalFilename();
-
-                                imagePath = Paths.get(fileUploadDir, newFilename)
-                                        .toString()
-                                        .replace("\\", "/");
-                                Files.write(Paths.get(imagePath), objDocument.getFilePath().getBytes());
-                            } else {
-                                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Document file cannot be empty.", 400);
-                            }
-                        } catch (IOException e) {
-                            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload document.", 400);
-                        }
-
-                        EmployeeDocument documentObj = new EmployeeDocument();
-                        documentObj.setEmployee(savedEmp);
-                        documentObj.setDocumentName(objDocument.getDocumentName());
-                        documentObj.setFilePath(imagePath);
-                        documentObj.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
-                        documentObj.setLastChangedBy(obj.getUserId().toString());
-
-                        employeeDocumentRepository.save(documentObj);
-                    }
-                }
-            }
-
-            return ResponseUtils.createSuccessResponse(savedEmp, new TypeReference<>() {});
-
-        } catch (ConstraintViolationException e) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<MasEmployee>() {},
-                    "Validation failed for required fields: " + e.getMessage(), HttpStatus.BAD_REQUEST.value());
+    public ApiResponse<MasEmployee> updateEmployee(Long id, MasEmployeeRequest req) {
+        if (id == null) {
+            throw new RuntimeException("Employee ID cannot be null");
         }
+        MasEmployee employee = masEmployeeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
+        User currentUser = userRepo.findByUserName(
+                SecurityContextHolder.getContext().getAuthentication().getName()
+        );
+        if (currentUser == null) {
+            throw new RuntimeException("Current user not found");
+        }
+        updateBasicFields(employee, req);
+        updateMasterReferences(employee, req);
+        updateEmploymentFields(employee, req);
+        handleIdDocument(employee, req);
+        handleProfileImage(employee, req);
+        updateSpecialtyCenters(employee, req);
+        updateWorkExperiences(employee, req);
+        updateMemberships(employee, req);
+        updateSpecialtyInterests(employee, req);
+        updateAwards(employee, req);
+        MasEmployee savedEmployee = masEmployeeRepository.save(employee);
+        updateQualifications(savedEmployee, req, currentUser);
+        updateDocuments(savedEmployee, req, currentUser);
+        audit(employee, currentUser);
+
+        return ResponseUtils.createSuccessResponse(savedEmployee, new TypeReference<>() {});
+    }
+
+    private void updateBasicFields(MasEmployee emp, MasEmployeeRequest req) {
+        if (req.getFirstName() != null) emp.setFirstName(req.getFirstName());
+        if (req.getMiddleName() != null) emp.setMiddleName(req.getMiddleName());
+        if (req.getLastName() != null) emp.setLastName(req.getLastName());
+        if (req.getDob() != null) emp.setDob(req.getDob());
+        if (req.getAddress1() != null) emp.setAddress1(req.getAddress1());
+        if (req.getCity() != null) emp.setCity(req.getCity());
+        if (req.getPincode() != null) emp.setPincode(req.getPincode());
+        if (req.getRegistrationNo() != null) emp.setRegistrationNo(req.getRegistrationNo());
+        if (req.getProfileDescription() != null) emp.setProfileDescription(req.getProfileDescription());
+    }
+    private void updateMasterReferences(MasEmployee emp, MasEmployeeRequest req) {
+        if (req.getGenderId() != null) {
+            emp.setGenderId(
+                    masGenderRepository.findById(req.getGenderId())
+                            .orElseThrow(() -> new RuntimeException("Gender not found"))
+            );
+        }
+        if (req.getCountryId() != null) {
+            emp.setCountryId(
+                    masCountryRepository.findById(req.getCountryId())
+                            .orElseThrow(() -> new RuntimeException("Country not found"))
+            );
+        }
+        if (req.getStateId() != null) {
+            emp.setStateId(
+                    masStateRepository.findById(req.getStateId())
+                            .orElseThrow(() -> new RuntimeException("State not found"))
+            );
+        }
+        if (req.getDistrictId() != null) {
+            emp.setDistrictId(
+                    masDistrictRepository.findById(req.getDistrictId())
+                            .orElseThrow(() -> new RuntimeException("District not found"))
+            );
+        }
+        if (req.getIdentificationType() != null) {
+            emp.setIdentificationType(
+                    masIdentificationTypeRepository.findById(req.getIdentificationType())
+                            .orElseThrow(() -> new RuntimeException("Identification type not found"))
+            );
+        }
+        if (req.getMasDesignationId() != null) {
+            emp.setMasDesignationId(
+                    masDesignationRepository.findById(req.getMasDesignationId())
+                            .orElseThrow(() -> new RuntimeException("Designation not found"))
+            );
+        }
+    }
+    private void updateEmploymentFields(MasEmployee emp, MasEmployeeRequest req) {
+        if (req.getMobileNo() != null) {
+            masEmployeeRepository.findByMobileNo(req.getMobileNo())
+                    .filter(e -> !e.getEmployeeId().equals(emp.getEmployeeId()))
+                    .ifPresent(e -> {
+                        throw new RuntimeException("Mobile number already exists");
+                    });
+            emp.setMobileNo(req.getMobileNo());
+        }
+        if (req.getEmployeeTypeId() != null) {
+            emp.setEmployeeTypeId(
+                    masUserTypeRepository.findById(req.getEmployeeTypeId())
+                            .orElseThrow(() -> new RuntimeException("Employee type not found"))
+            );
+        }
+        if (req.getEmploymentTypeId() != null) {
+            emp.setEmploymentTypeId(
+                    masEmploymentTypeRepository.findById(req.getEmploymentTypeId())
+                            .orElseThrow(() -> new RuntimeException("Employment type not found"))
+            );
+        }
+        if (req.getRoleId() != null) {
+            emp.setRoleId(
+                    masRoleRepository.findById(req.getRoleId())
+                            .orElseThrow(() -> new RuntimeException("Role not found"))
+            );
+        }
+        if (req.getFromDate() != null) emp.setFromDate(req.getFromDate());
+        if (req.getYearOfExperience() != null) emp.setYearOfExperience(req.getYearOfExperience());
+    }
+    private void handleIdDocument(MasEmployee emp, MasEmployeeRequest req) {
+        MultipartFile file = req.getIdDocumentName();
+        if (file == null || file.isEmpty()) return;
+        validateDocExtension(file);
+        deleteFile(emp.getIdDocumentName());
+        emp.setIdDocumentName(saveFile(file));
+    }
+    private void handleProfileImage(MasEmployee emp, MasEmployeeRequest req) {
+        MultipartFile file = req.getProfilePicName();
+        if (file == null || file.isEmpty()) return;
+        validatePicExtension(file);
+        deleteFile(emp.getProfilePicName());
+        emp.setProfilePicName(saveFile(file));
+    }
+    private void audit(MasEmployee emp, User user) {
+        emp.setLastChangedDate(Instant.now());
+        emp.setLastChangedBy(user.getUserId().toString());
+    }
+    private void updateSpecialtyCenters(MasEmployee emp, MasEmployeeRequest req) {
+        if (req.getSpecialtyCenter() == null) return;
+        employeeSpecialtyCenterRepository.deleteAll(
+                employeeSpecialtyCenterRepository.findByEmpId(emp.getEmployeeId())
+        );
+        for (EmployeeSpecialtyCenterRequest sc : req.getSpecialtyCenter()) {
+            if (sc.getCenterId() == null) continue;
+
+            masSpecialtyCenterRepository.findById(sc.getCenterId())
+                    .orElseThrow(() -> new RuntimeException("Invalid specialty center"));
+            MasEmployeeCenterMapping m = new MasEmployeeCenterMapping();
+            m.setEmpId(emp.getEmployeeId());
+            m.setCenterId(sc.getCenterId());
+            m.setIsPrimary(Boolean.TRUE.equals(sc.getIsPrimary()));
+            m.setLastUpdateDate(Instant.now());
+            employeeSpecialtyCenterRepository.save(m);
+        }
+    }
+    private void updateWorkExperiences(MasEmployee emp, MasEmployeeRequest req) {
+        if (req.getWorkExperiences() == null) return;
+        employeeWorkExperienceRepository.deleteAll(
+                employeeWorkExperienceRepository.findByEmployee(emp)
+        );
+        for (EmployeeWorkExperienceRequest w : req.getWorkExperiences()) {
+            if (w.getExperienceSummary() == null) continue;
+            EmployeeWorkExperience we = new EmployeeWorkExperience();
+            we.setEmployee(emp);
+            we.setExperienceSummary(w.getExperienceSummary());
+            we.setLastUpdateDate(Instant.now());
+            employeeWorkExperienceRepository.save(we);
+        }
+    }
+    private void updateMemberships(MasEmployee emp, MasEmployeeRequest req) {
+        if (req.getEmployeeMemberships() == null) return;
+        employeeMembershipRepository.deleteAll(
+                employeeMembershipRepository.findByEmployee(emp)
+        );
+        for (EmployeeMembershipRequest m : req.getEmployeeMemberships()) {
+            if (m.getMembershipSummary() == null) continue;
+            EmployeeMembership em = new EmployeeMembership();
+            em.setEmployee(emp);
+            em.setMembershipSummary(m.getMembershipSummary());
+            em.setLastUpdateDate(Instant.now());
+            employeeMembershipRepository.save(em);
+        }
+    }
+    private void updateSpecialtyInterests(MasEmployee emp, MasEmployeeRequest req) {
+        if (req.getEmployeeSpecialtyInterests() == null) return;
+        employeeSpecialtyInterestRepository.deleteAll(
+                employeeSpecialtyInterestRepository.findByEmployee(emp)
+        );
+        for (EmployeeSpecialtyInterestRequest i : req.getEmployeeSpecialtyInterests()) {
+            if (i.getInterestSummary() == null) continue;
+            EmployeeSpecialtyInterest si = new EmployeeSpecialtyInterest();
+            si.setEmployee(emp);
+            si.setInterestSummary(i.getInterestSummary());
+            si.setLastUpdateDate(Instant.now());
+            employeeSpecialtyInterestRepository.save(si);
+        }
+    }
+    private void updateAwards(MasEmployee emp, MasEmployeeRequest req) {
+        if (req.getEmployeeAwards() == null) return;
+        employeeAwardRepository.deleteAll(
+                employeeAwardRepository.findByEmployee(emp)
+        );
+        for (EmployeeAwardRequest a : req.getEmployeeAwards()) {
+            if (a.getAwardSummary() == null) continue;
+            EmployeeAward aw = new EmployeeAward();
+            aw.setEmployee(emp);
+            aw.setAwardSummary(a.getAwardSummary());
+            aw.setLastUpdateDate(Instant.now());
+            employeeAwardRepository.save(aw);
+        }
+    }
+    private void updateQualifications(MasEmployee emp, MasEmployeeRequest req, User user) {
+        if (req.getQualification() == null) return;
+        employeeQualificationRepository.deleteAll(
+                employeeQualificationRepository.findByEmployee(emp)
+        );
+        for (EmployeeQualificationReq q : req.getQualification()) {
+            String filePath = saveFile(q.getFilePath());
+            EmployeeQualification eq = new EmployeeQualification();
+            eq.setEmployee(emp);
+            eq.setQualificationName(q.getQualificationName());
+            eq.setCompletionYear(q.getCompletionYear());
+            eq.setInstitutionName(q.getInstitutionName());
+            eq.setFilePath(filePath);
+            eq.setLastChangedBy(user.getUserId().toString());
+            eq.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
+            employeeQualificationRepository.save(eq);
+        }
+    }
+    private void updateDocuments(MasEmployee emp, MasEmployeeRequest req, User user) {
+        if (req.getDocument() == null) return;
+        employeeDocumentRepository.deleteAll(
+                employeeDocumentRepository.findByEmployee(emp)
+        );
+        for (EmployeeDocumentReq d : req.getDocument()) {
+            String filePath = saveFile(d.getFilePath());
+            EmployeeDocument doc = new EmployeeDocument();
+            doc.setEmployee(emp);
+            doc.setDocumentName(d.getDocumentName());
+            doc.setFilePath(filePath);
+            doc.setLastChangedBy(user.getUserId().toString());
+            doc.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
+            employeeDocumentRepository.save(doc);
+        }
+    }
+    private String saveFile(MultipartFile file) {
+        try {
+            String original = file.getOriginalFilename();
+            String clean = original.trim().replaceAll("\\s+", "_");
+            if (!clean.matches("^\\d+_.*")) {
+                clean = System.currentTimeMillis() + "_" + clean;
+            }
+            Path path = Paths.get(uploadDir + "MAS_EMPLOYEE/", clean);
+            Files.createDirectories(path.getParent());
+            Files.write(path, file.getBytes());
+            return path.toString().replace("\\", "/");
+
+        } catch (IOException e) {
+            throw new RuntimeException("File upload failed");
+        }
+    }
+    private void deleteFile(String path) {
+        if (path == null) return;
+        try {
+            Files.deleteIfExists(Paths.get(path));
+        } catch (IOException ignored) {}
+    }
+    private void validateDocExtension(MultipartFile file) {
+        String filename = file.getOriginalFilename();
+        if (filename == null || filename.isBlank()) {
+            throw new RuntimeException("Invalid document file name");
+        }
+        String extension = getFileExtension(filename);
+        if (!isValidDocExtension(extension)) {
+            throw new RuntimeException(
+                    "Document invalid file type. Only PDF, JPG, JPEG and PNG are allowed"
+            );
+        }
+    }
+    private void validatePicExtension(MultipartFile file) {
+        String filename = file.getOriginalFilename();
+        if (filename == null || filename.isBlank()) {
+            throw new RuntimeException("Invalid image file name");
+        }
+        String extension = getFileExtension(filename);
+        if (!isValidPicExtension(extension)) {
+            throw new RuntimeException(
+                    "Profile image invalid file type. Only JPG, JPEG and PNG are allowed"
+            );
+        }
+    }
+
+
+//    @Transactional(rollbackFor = {Exception.class})
+//    @Override
+//    public ApiResponse<MasEmployee> updateEmployee(Long id, MasEmployeeRequest masEmployeeRequest) {
+//        log.debug("Updating Employee with ID: {}", id);
+//        try {
+//            if (id == null) {
+//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ID cannot be null.", 400);
+//            }
+//
+//            MasEmployee existingEmployee = masEmployeeRepository.findById(id)
+//                    .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
+//
+//            User obj = userRepo.findByUserName(SecurityContextHolder.getContext().getAuthentication().getName());
+//            if (obj == null) {
+//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "CURRENT USER NOT FOUND", 400);
+//            }
+//
+//            if (masEmployeeRequest.getFirstName() != null && !masEmployeeRequest.getFirstName().isEmpty()) {
+//                existingEmployee.setFirstName(masEmployeeRequest.getFirstName());
+//            }
+//
+//            if (masEmployeeRequest.getMiddleName() != null) {
+//                existingEmployee.setMiddleName(masEmployeeRequest.getMiddleName());
+//            }
+//
+//            if (masEmployeeRequest.getLastName() != null) {
+//                existingEmployee.setLastName(masEmployeeRequest.getLastName());
+//            }
+//
+//            if (masEmployeeRequest.getGenderId() != null) {
+//                MasGender genderObj = masGenderRepository.findById(masEmployeeRequest.getGenderId().longValue())
+//                        .orElseThrow(() -> new IllegalArgumentException("Gender not found with ID: " + masEmployeeRequest.getGenderId()));
+//                existingEmployee.setGenderId(genderObj);
+//            }
+//
+//            if (masEmployeeRequest.getDob() != null) {
+//                existingEmployee.setDob(masEmployeeRequest.getDob());
+//            }
+//
+//            if (masEmployeeRequest.getAddress1() != null && !masEmployeeRequest.getAddress1().isEmpty()) {
+//                existingEmployee.setAddress1(masEmployeeRequest.getAddress1());
+//            }
+//
+//            if (masEmployeeRequest.getCity() != null && !masEmployeeRequest.getCity().isEmpty()) {
+//                existingEmployee.setCity(masEmployeeRequest.getCity());
+//            }
+//
+//            if (masEmployeeRequest.getMobileNo() != null && !masEmployeeRequest.getMobileNo().isEmpty()) {
+//                existingEmployee.setMobileNo(masEmployeeRequest.getMobileNo());
+//            }
+//
+//            if (masEmployeeRequest.getRegistrationNo() != null && !masEmployeeRequest.getRegistrationNo().isEmpty()) {
+//                existingEmployee.setRegistrationNo(masEmployeeRequest.getRegistrationNo());
+//            }
+//
+//            if (masEmployeeRequest.getFromDate() != null) {
+//                existingEmployee.setFromDate(masEmployeeRequest.getFromDate());
+//            }
+//
+//            if (masEmployeeRequest.getMobileNo() != null && !masEmployeeRequest.getMobileNo().isEmpty()) {
+//                Optional<MasEmployee> existingWithSameMobile = masEmployeeRepository.findByMobileNo(masEmployeeRequest.getMobileNo());
+//
+//                if (existingWithSameMobile.isPresent() && !existingWithSameMobile.get().getEmployeeId().equals(existingEmployee.getEmployeeId())) {
+//                    throw new IllegalArgumentException("Mobile number already exists: " + masEmployeeRequest.getMobileNo());
+//                }
+//
+//                existingEmployee.setMobileNo(masEmployeeRequest.getMobileNo());
+//            }
+//
+//            if (masEmployeeRequest.getStateId() != null) {
+//                MasState stateObj = masStateRepository.findById(masEmployeeRequest.getStateId().longValue())
+//                        .orElseThrow(() -> new IllegalArgumentException("State not found with ID: " + masEmployeeRequest.getStateId()));
+//                existingEmployee.setStateId(stateObj);
+//            }
+//            if (masEmployeeRequest.getCountryId() != null) {
+//                MasCountry countryObj = masCountryRepository.findById(masEmployeeRequest.getCountryId().longValue())
+//                        .orElseThrow(() -> new IllegalArgumentException("Country not found with ID: " + masEmployeeRequest.getCountryId()));
+//                existingEmployee.setCountryId(countryObj);
+//            }
+//
+//            if (masEmployeeRequest.getDistrictId() != null) {
+//                MasDistrict districtObj = masDistrictRepository.findById(masEmployeeRequest.getDistrictId().longValue())
+//                        .orElseThrow(() -> new IllegalArgumentException("District not found with ID: " + masEmployeeRequest.getDistrictId()));
+//                existingEmployee.setDistrictId(districtObj);
+//            }
+//
+//            if (masEmployeeRequest.getIdentificationType() != null) {
+//                MasIdentificationType idTypeObj = masIdentificationTypeRepository.findById(masEmployeeRequest.getIdentificationType().longValue())
+//                        .orElseThrow(() -> new IllegalArgumentException("ID Type not found with ID: " + masEmployeeRequest.getIdentificationType()));
+//                existingEmployee.setIdentificationType(idTypeObj);
+//            }
+//
+//            if (masEmployeeRequest.getEmployeeTypeId() != null) {
+//                MasUserType empTypeObj = masUserTypeRepository.findById(masEmployeeRequest.getEmployeeTypeId().longValue())
+//                        .orElseThrow(() -> new IllegalArgumentException("Employee Type not found with ID: " + masEmployeeRequest.getEmployeeTypeId()));
+//                existingEmployee.setEmployeeTypeId(empTypeObj);
+//            }
+//
+//            if (masEmployeeRequest.getEmploymentTypeId() != null) {
+//                MasEmploymentType employmentTypeObj = masEmploymentTypeRepository.findById(masEmployeeRequest.getEmploymentTypeId().longValue())
+//                        .orElseThrow(() -> new IllegalArgumentException("Employment Type not found with ID: " + masEmployeeRequest.getEmploymentTypeId()));
+//                existingEmployee.setEmploymentTypeId(employmentTypeObj);
+//            }
+//
+//            if (masEmployeeRequest.getRoleId() != null) {
+//                MasRole roleObj = masRoleRepository.findById(masEmployeeRequest.getRoleId().longValue())
+//                        .orElseThrow(() -> new IllegalArgumentException("Role not found with ID: " + masEmployeeRequest.getRoleId()));
+//                existingEmployee.setRoleId(roleObj);
+//            }
+//
+//            if (masEmployeeRequest.getPincode() != null && !masEmployeeRequest.getPincode().isEmpty()) {
+//                existingEmployee.setPincode(masEmployeeRequest.getPincode());
+//            }
+//            if (masEmployeeRequest.getYearOfExperience() != null) {
+//                existingEmployee.setYearOfExperience(
+//                        masEmployeeRequest.getYearOfExperience()
+//                );
+//            }
+//
+//            if (masEmployeeRequest.getProfileDescription() != null) {
+//                existingEmployee.setProfileDescription(
+//                        masEmployeeRequest.getProfileDescription()
+//                );
+//            }
+//
+//            if (masEmployeeRequest.getMasDesignationId() != null) {
+//                MasDesignation designation = masDesignationRepository
+//                        .findById(masEmployeeRequest.getMasDesignationId())
+//                        .orElseThrow(() ->
+//                                new IllegalArgumentException("Designation not found"));
+//
+//                existingEmployee.setMasDesignationId(designation);
+//            }
+//
+//
+//            String fileUploadDir = uploadDir + "MAS_EMPLOYEE/";
+//            File directory = new File(fileUploadDir);
+//            if (!directory.exists()) {
+//                directory.mkdirs();
+//            }
+//
+//            if (masEmployeeRequest.getIdDocumentName() != null && !masEmployeeRequest.getIdDocumentName().isEmpty()) {
+//                try {
+//                    String uploadedFilename = masEmployeeRequest.getIdDocumentName().getOriginalFilename();
+//
+//                    String documentExtension = getFileExtension(masEmployeeRequest.getIdDocumentName().getOriginalFilename());
+//                    if (!isValidDocExtension(documentExtension)) {
+//                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+//                                "Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
+//                    }
+//
+//                    // Check if existing document already has timestamp
+//                    boolean shouldUpdate = true;
+//                    if (masEmployeeRequest.getIdDocumentName() != null && !masEmployeeRequest.getIdDocumentName().isEmpty()) {
+//                        if (hasTimestamp(masEmployeeRequest.getIdDocumentName().getOriginalFilename())) {
+//                            // Existing document already has timestamp, don't update
+//                            shouldUpdate = false;
+//                            log.info("ID document already has timestamp, skipping update to avoid timestamp chaining");
+//                        } else {
+//                            // Delete old file if it doesn't have timestamp
+//                            try {
+//                                Path oldFilePath = Paths.get(existingEmployee.getIdDocumentName());
+//                                Files.deleteIfExists(oldFilePath);
+//                            } catch (IOException e) {
+//                                log.warn("Could not delete old ID document: {}", existingEmployee.getIdDocumentName(), e);
+//                            }
+//                        }
+//                    }
+//
+//                    if (shouldUpdate) {
+//                        String timestamp = String.valueOf(System.currentTimeMillis());
+//                        String newFilename = timestamp + "_" + masEmployeeRequest.getIdDocumentName().getOriginalFilename();
+//
+//                        String documentPath = Paths.get(fileUploadDir, newFilename)
+//                                .toString()
+//                                .replace("\\", "/");
+//                        Files.write(Paths.get(documentPath), masEmployeeRequest.getIdDocumentName().getBytes());
+//
+//                        existingEmployee.setIdDocumentName(documentPath);
+//                    }
+//                } catch (IOException e) {
+//                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload document.", 400);
+//                }
+//            }
+//            // ========== UPDATE SPECIALTY CENTERS ==========
+//            // Remove all existing mappings first
+//            List<MasEmployeeCenterMapping> existingMappings = employeeSpecialtyCenterRepository.findByEmpId(existingEmployee.getEmployeeId());
+//            if (!existingMappings.isEmpty()) {
+//                employeeSpecialtyCenterRepository.deleteAll(existingMappings);
+//            }
+//
+//            // Add all new mappings
+//            for (EmployeeSpecialtyCenterRequest centerReq : masEmployeeRequest.getSpecialtyCenter()) {
+//                if (centerReq.getCenterId() != null) {
+//                    // Verify center exists
+//                    masSpecialtyCenterRepository.findById(centerReq.getCenterId())
+//                            .orElseThrow(() -> new IllegalArgumentException("Specialty Center not found with ID: " + centerReq.getCenterId()));
+//
+//                    MasEmployeeCenterMapping mapping = new MasEmployeeCenterMapping();
+//                    mapping.setEmpId(existingEmployee.getEmployeeId());
+//                    mapping.setCenterId(centerReq.getCenterId());
+//                    mapping.setIsPrimary(centerReq.getIsPrimary() != null ? centerReq.getIsPrimary() : false);
+//                    mapping.setLastUpdateDate(Instant.now());
+//
+//                    employeeSpecialtyCenterRepository.save(mapping);
+//                }
+//            }           // ========== UPDATE WORK EXPERIENCES ==========
+//            if (masEmployeeRequest.getWorkExperiences() != null && !masEmployeeRequest.getWorkExperiences().isEmpty()) {
+//                // Remove existing work experiences
+//                List<EmployeeWorkExperience> existingExperiences = employeeWorkExperienceRepository.findByEmployee(existingEmployee);
+//                if (existingExperiences != null && !existingExperiences.isEmpty()) {
+//                    employeeWorkExperienceRepository.deleteAll(existingExperiences);
+//                }
+//
+//                for (EmployeeWorkExperienceRequest expReq : masEmployeeRequest.getWorkExperiences()) {
+//                    if (expReq.getExperienceSummary() != null && !expReq.getExperienceSummary().isEmpty()) {
+//                        EmployeeWorkExperience workExperience = new EmployeeWorkExperience();
+//                        workExperience.setEmployee(existingEmployee);
+//                        workExperience.setExperienceSummary(expReq.getExperienceSummary());
+//                        workExperience.setLastUpdateDate(Instant.now());
+//
+//                        employeeWorkExperienceRepository.save(workExperience);
+//                    }
+//                }
+//            }
+//            // ========== UPDATE MEMBERSHIPS ==========
+//            if (masEmployeeRequest.getEmployeeMemberships() != null && !masEmployeeRequest.getEmployeeMemberships().isEmpty()) {
+//                // Remove existing memberships
+//                List<EmployeeMembership> existingMemberships = employeeMembershipRepository.findByEmployee(existingEmployee);
+//                if (existingMemberships != null && !existingMemberships.isEmpty()) {
+//                    employeeMembershipRepository.deleteAll(existingMemberships);
+//                }
+//
+//                // Add new memberships
+//                for (EmployeeMembershipRequest membershipReq : masEmployeeRequest.getEmployeeMemberships()) {
+//                    if (membershipReq.getMembershipSummary() != null && !membershipReq.getMembershipSummary().isEmpty()) {
+//                        EmployeeMembership membership = new EmployeeMembership();
+//                        membership.setEmployee(existingEmployee);
+//                        membership.setMembershipSummary(membershipReq.getMembershipSummary());
+//                        membership.setLastUpdateDate(Instant.now());
+//
+//                        employeeMembershipRepository.save(membership);
+//                    }
+//                }
+//            }
+//
+//            // ========== UPDATE SPECIALTY INTERESTS ==========
+//            if (masEmployeeRequest.getEmployeeSpecialtyInterests() != null && !masEmployeeRequest.getEmployeeSpecialtyInterests().isEmpty()) {
+//                // Remove existing interests
+//                List<EmployeeSpecialtyInterest> existingInterests = employeeSpecialtyInterestRepository.findByEmployee(existingEmployee);
+//                if (existingInterests != null && !existingInterests.isEmpty()) {
+//                    employeeSpecialtyInterestRepository.deleteAll(existingInterests);
+//                }
+//
+//                // Add new interests
+//                for (EmployeeSpecialtyInterestRequest interestReq : masEmployeeRequest.getEmployeeSpecialtyInterests()) {
+//                    if (interestReq.getInterestSummary() != null && !interestReq.getInterestSummary().isEmpty()) {
+//                        EmployeeSpecialtyInterest specialtyInterest = new EmployeeSpecialtyInterest();
+//                        specialtyInterest.setEmployee(existingEmployee);
+//                        specialtyInterest.setInterestSummary(interestReq.getInterestSummary());
+//                        specialtyInterest.setLastUpdateDate(Instant.now());
+//
+//                        employeeSpecialtyInterestRepository.save(specialtyInterest);
+//                    }
+//                }
+//            }
+//
+//            // ========== UPDATE AWARDS ==========
+//            if (masEmployeeRequest.getEmployeeAwards() != null && !masEmployeeRequest.getEmployeeAwards().isEmpty()) {
+//                // Remove existing awards
+//                List<EmployeeAward> existingAwards = employeeAwardRepository.findByEmployee(existingEmployee);
+//                if (existingAwards != null && !existingAwards.isEmpty()) {
+//                    employeeAwardRepository.deleteAll(existingAwards);
+//                }
+//
+//                for (EmployeeAwardRequest awardReq : masEmployeeRequest.getEmployeeAwards()) {
+//                    if (awardReq.getAwardSummary() != null && !awardReq.getAwardSummary().isEmpty()) {
+//                        EmployeeAward award = new EmployeeAward();
+//                        award.setEmployee(existingEmployee);
+//                        award.setAwardSummary(awardReq.getAwardSummary());
+//                        award.setLastUpdateDate(Instant.now());
+//
+//                        employeeAwardRepository.save(award);
+//                    }
+//                }
+//            }
+//
+//            if (masEmployeeRequest.getProfilePicName() != null && !masEmployeeRequest.getProfilePicName().isEmpty()) {
+//                try {
+//                    String profileImageExtension = getFileExtension(masEmployeeRequest.getProfilePicName().getOriginalFilename());
+//                    if (!isValidPicExtension(profileImageExtension)) {
+//                        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+//                                "Thumb Image Invalid file type. Only JPG, JPEG and PNG are allowed.", 400);
+//                    }
+//
+//                    boolean shouldUpdate = true;
+//                    if (masEmployeeRequest.getProfilePicName() != null && !masEmployeeRequest.getProfilePicName().isEmpty()) {
+//                        if (hasTimestamp(masEmployeeRequest.getProfilePicName().getOriginalFilename())) {
+//                            // Existing document already has timestamp, don't update
+//                            shouldUpdate = false;
+//                            log.info("profile pic already has timestamp, skipping update to avoid timestamp chaining");
+//                        } else {
+//                            // Delete old file if it doesn't have timestamp
+//                            try {
+//                                Path oldFilePath = Paths.get(existingEmployee.getProfilePicName());
+//                                Files.deleteIfExists(oldFilePath);
+//                            } catch (IOException e) {
+//                                log.warn("Could not delete old ID document: {}", existingEmployee.getProfilePicName(), e);
+//                            }
+//                        }
+//                    }
+//                    if(shouldUpdate){
+//                    String timestamp = String.valueOf(System.currentTimeMillis());
+//                    String newFilename = timestamp + "_" + masEmployeeRequest.getProfilePicName().getOriginalFilename();
+//
+//                    String profileImagePath = Paths.get(fileUploadDir, newFilename)
+//                            .toString()
+//                            .replace("\\", "/");
+//                    Files.write(Paths.get(profileImagePath), masEmployeeRequest.getProfilePicName().getBytes());
+//                        existingEmployee.setProfilePicName(profileImagePath);
+//                    }
+//                } catch (IOException e) {
+//                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload profile image.", 400);
+//                }
+//            }
+//
+//            existingEmployee.setLastChangedDate(OffsetDateTime.now().toInstant());
+//            existingEmployee.setLastChangedBy(obj.getUserId().toString());
+//
+//            MasEmployee savedEmp = masEmployeeRepository.save(existingEmployee);
+//
+//
+//            if (masEmployeeRequest.getQualification() != null && !masEmployeeRequest.getQualification().isEmpty()) {
+//                for (EmployeeQualificationReq objQualification : masEmployeeRequest.getQualification()) {
+//                    if (objQualification.getEmployeeQualificationId() != null) {
+//                        EmployeeQualification existingQualification = employeeQualificationRepository.findById(objQualification.getEmployeeQualificationId())
+//                                .orElseThrow(() -> new RuntimeException("Employee Qualification not found with id: " + objQualification.getEmployeeQualificationId()));
+//
+//                        if (objQualification.getQualificationName() != null) {
+//                            existingQualification.setQualificationName(objQualification.getQualificationName());
+//                        }
+//
+//                        if (objQualification.getCompletionYear() != null) {
+//                            existingQualification.setCompletionYear(objQualification.getCompletionYear());
+//                        }
+//
+//                        if (objQualification.getInstitutionName() != null) {
+//                            existingQualification.setInstitutionName(objQualification.getInstitutionName());
+//                        }
+//
+//                        if (objQualification.getFilePath() != null && !objQualification.getFilePath().isEmpty()) {
+//                            try {
+//                                String originalFilename = objQualification.getFilePath().getOriginalFilename();
+//                                if (originalFilename == null || originalFilename.isBlank()) {
+//                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid file name.", 400);
+//                                }
+//
+//                                String imageExtension = getFileExtension(originalFilename);
+//                                if (!isValidDocExtension(imageExtension)) {
+//                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+//                                            "Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
+//                                }
+//
+//                                boolean shouldUpdate = true;
+//                                if (objQualification.getFilePath() != null && !objQualification.getFilePath().isEmpty()) {
+//                                    if (hasTimestamp(objQualification.getFilePath().getOriginalFilename())) {
+//                                        // Existing document already has timestamp, don't update
+//                                        shouldUpdate = false;
+//                                        log.info("Employee document already has timestamp, skipping update");
+//                                    } else {
+//                                        // Delete old file if it doesn't have timestamp
+//                                        try {
+//                                            Path oldFilePath = Paths.get(existingQualification.getFilePath());
+//                                            Files.deleteIfExists(oldFilePath);
+//                                        } catch (IOException e) {
+//                                            log.warn("Could not delete old employee document: {}", existingQualification.getFilePath(), e);
+//                                        }
+//                                    }
+//                                }
+//                                if(shouldUpdate) {
+//                                    String timestamp = String.valueOf(System.currentTimeMillis());
+//                                    String newFilename = timestamp + "_" + originalFilename;
+//
+//                                    String imagePath = Paths.get(fileUploadDir, newFilename)
+//                                            .toString()
+//                                            .replace("\\", "/");
+//
+//                                    Files.write(Paths.get(imagePath), objQualification.getFilePath().getBytes());
+//                                    existingQualification.setFilePath(imagePath);
+//                                }
+//                            } catch (IOException e) {
+//                                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload qualification document.", 400);
+//                            }
+//                        }
+//
+//                        existingQualification.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
+//                        existingQualification.setLastChangedBy(obj.getUserId().toString());
+//
+//                        employeeQualificationRepository.save(existingQualification);
+//                    } else {
+//                        String imagePath = "";
+//                        try {
+//                            if (objQualification.getFilePath() != null && !objQualification.getFilePath().isEmpty()) {
+//                                String originalFilename = objQualification.getFilePath().getOriginalFilename();
+//                                if (originalFilename == null || originalFilename.isBlank()) {
+//                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid file name.", 400);
+//                                }
+//
+//                                String imageExtension = getFileExtension(originalFilename);
+//                                if (!isValidDocExtension(imageExtension)) {
+//                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+//                                            "Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
+//                                }
+//
+//                                Path uploadDir = Paths.get(fileUploadDir);
+//                                if (!Files.exists(uploadDir)) {
+//                                    Files.createDirectories(uploadDir);
+//                                }
+//
+//                                String timestamp = String.valueOf(System.currentTimeMillis());
+//                                String newFilename = timestamp + "_" + originalFilename;
+//
+//                                imagePath = Paths.get(fileUploadDir, newFilename)
+//                                        .toString()
+//                                        .replace("\\", "/");
+//
+//                                Files.write(Paths.get(imagePath), objQualification.getFilePath().getBytes());
+//                            } else {
+//                                log.warn("Qualification document file is missing or empty.");
+//                                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Qualification document cannot be empty.", 400);
+//                            }
+//                        } catch (IOException e) {
+//                            log.error("Error while uploading qualification document: {}", e.getMessage());
+//                            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload qualification document.", 400);
+//                        }
+//
+//                        EmployeeQualification qualificationObj = new EmployeeQualification();
+//                        qualificationObj.setEmployee(savedEmp);
+//                        qualificationObj.setCompletionYear(objQualification.getCompletionYear());
+//                        qualificationObj.setQualificationName(objQualification.getQualificationName());
+//                        qualificationObj.setFilePath(imagePath);
+//                        qualificationObj.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
+//                        qualificationObj.setLastChangedBy(obj.getUserId().toString());
+//                        qualificationObj.setInstitutionName(objQualification.getInstitutionName());
+//
+//                        employeeQualificationRepository.save(qualificationObj);
+//                    }
+//                }
+//            }
+//
+//            Set<Long> requestQualificationIds = masEmployeeRequest.getQualification().stream()
+//                    .filter(q -> q.getEmployeeQualificationId() != null)
+//                    .map(EmployeeQualificationReq::getEmployeeQualificationId)
+//                    .collect(Collectors.toSet());
+//
+//            // Find and delete qualifications not in the request
+//            List<EmployeeQualification> existingQualifications = employeeQualificationRepository.findByEmployee(existingEmployee);
+//            for (EmployeeQualification existingQual : existingQualifications) {
+//                if (!requestQualificationIds.contains(existingQual.getEmployeeQualificationId())) {
+//                    employeeQualificationRepository.delete(existingQual);
+//                }
+//            }
+//
+//            if (masEmployeeRequest.getDocument() != null && !masEmployeeRequest.getDocument().isEmpty()) {
+//
+//                List<EmployeeDocument> existingDocuments = employeeDocumentRepository.findByEmployee(savedEmp);
+//
+//                for (EmployeeDocumentReq objDocument : masEmployeeRequest.getDocument()) {
+//                    if (objDocument.getEmployeeDocumentId() != null) {
+//                        EmployeeDocument existingDocument = employeeDocumentRepository.findById(objDocument.getEmployeeDocumentId())
+//                                .orElseThrow(() -> new RuntimeException("Employee Document not found with id: " + objDocument.getEmployeeDocumentId()));
+//
+//                        if (objDocument.getDocumentName() != null) {
+//                            existingDocument.setDocumentName(objDocument.getDocumentName());
+//                        }
+//
+//                        if (objDocument.getFilePath() != null && !objDocument.getFilePath().isEmpty()) {
+//                            try {
+//                                String imageExtension = getFileExtension(objDocument.getFilePath().getOriginalFilename());
+//                                if (!isValidDocExtension(imageExtension)) {
+//                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+//                                            "Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
+//                                }
+//                                // Check if we should update based on EXISTING file in database
+//                                boolean shouldUpdate = true;
+//                                if (objDocument.getFilePath() != null && !objDocument.getFilePath().isEmpty()) {
+//                                    if (hasTimestamp(objDocument.getFilePath().getOriginalFilename())) {
+//                                        // Existing document in database already has timestamp, don't update
+//                                        shouldUpdate = false;
+//                                        log.info("Employee document already has timestamp, skipping update");
+//                                    } else {
+//                                        // Delete old file from storage if it doesn't have timestamp
+//                                        try {
+//                                            Path oldFilePath = Paths.get(existingDocument.getFilePath());
+//                                            Files.deleteIfExists(oldFilePath);
+//                                        } catch (IOException e) {
+//                                            log.warn("Could not delete old employee document: {}", existingDocument.getFilePath(), e);
+//                                        }
+//                                    }
+//                                }
+//
+//                                // Only update if shouldUpdate is true
+//                                if (shouldUpdate) {
+//                                    String timestamp = String.valueOf(System.currentTimeMillis());
+//                                    String newFilename = timestamp + "_" + objDocument.getFilePath().getOriginalFilename();
+//
+//                                    String imagePath = Paths.get(fileUploadDir, newFilename)
+//                                            .toString()
+//                                            .replace("\\", "/");
+//                                    Files.write(Paths.get(imagePath), objDocument.getFilePath().getBytes());
+//
+//                                    existingDocument.setFilePath(imagePath);
+//                                }
+//                            } catch (IOException e) {
+//                                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload document.", 400);
+//                            }
+//                        }
+//
+//                        existingDocument.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
+//                        existingDocument.setLastChangedBy(obj.getUserId().toString());
+//
+//                        employeeDocumentRepository.save(existingDocument);
+//                    } else {
+//                        String imagePath = "";
+//                        try {
+//                            if (objDocument.getFilePath() != null && !objDocument.getFilePath().isEmpty()) {
+//                                String imageExtension = getFileExtension(objDocument.getFilePath().getOriginalFilename());
+//                                if (!isValidDocExtension(imageExtension)) {
+//                                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+//                                            "Document Invalid file type. Only PDF, JPG, JPEG and PNG are allowed.", 400);
+//                                }
+//
+//                                String timestamp = String.valueOf(System.currentTimeMillis());
+//                                String newFilename = timestamp + "_" + objDocument.getFilePath().getOriginalFilename();
+//
+//                                imagePath = Paths.get(fileUploadDir, newFilename)
+//                                        .toString()
+//                                        .replace("\\", "/");
+//                                Files.write(Paths.get(imagePath), objDocument.getFilePath().getBytes());
+//                            } else {
+//                                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Document file cannot be empty.", 400);
+//                            }
+//                        } catch (IOException e) {
+//                            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to upload document.", 400);
+//                        }
+//
+//                        EmployeeDocument documentObj = new EmployeeDocument();
+//                        documentObj.setEmployee(savedEmp);
+//                        documentObj.setDocumentName(objDocument.getDocumentName());
+//                        documentObj.setFilePath(imagePath);
+//                        documentObj.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
+//                        documentObj.setLastChangedBy(obj.getUserId().toString());
+//
+//                        employeeDocumentRepository.save(documentObj);
+//                    }
+//                }
+//            }
+//
+//            return ResponseUtils.createSuccessResponse(savedEmp, new TypeReference<>() {});
+//
+//        } catch (ConstraintViolationException e) {
+//
+//            return ResponseUtils.createFailureResponse(null, new TypeReference<MasEmployee>() {},
+//                    "Validation failed for required fields: " + e.getMessage(), HttpStatus.BAD_REQUEST.value());
+//        } catch (Exception e) {
+//            log.error("Unexpected error :: ",e);
+//            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
+//        }
+//    }
+
+    private boolean hasTimestamp(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            return false;
+        }
+
+        // Extract just the filename from the full path
+        String justFilename = filename.contains("/")
+                ? filename.substring(filename.lastIndexOf("/") + 1)
+                : filename;
+
+        // Check if filename starts with digits followed by underscore
+        return justFilename.matches("^\\d+_.*");
     }
 
     @Transactional(rollbackFor = {Exception.class})
@@ -670,108 +1290,34 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         return updateEmployeeApprovalStatus(createdEmployee.getEmployeeId(), masEmployeeRequest.getDepartmentId());
     }
 
-    @Transactional(rollbackFor = {Exception.class})
+    @Transactional(rollbackFor = Exception.class)
     @Override
-    public ApiResponse<MasEmployee> createEmployee(MasEmployeeRequest masEmployeeRequest) {
-        log.debug("Creating new Employee: {}", masEmployeeRequest);
-        try {
-            Map<String, String> validationErrors = validateEmployeeRequest(masEmployeeRequest);
-            if (!validationErrors.isEmpty()) {
-                String firstError = validationErrors.values().iterator().next();
-                log.warn("Validation failed: {}", validationErrors);
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        firstError, HttpStatus.BAD_REQUEST.value());
-            }
-
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
-            }
-
-            try {
-                MasEmployee employee = buildEmployeeFromRequest(masEmployeeRequest, currentUser);
-                MasEmployee savedEmployee = masEmployeeRepository.save(employee);
-
-                try {
-                    processQualifications(masEmployeeRequest.getQualification(), savedEmployee, currentUser);
-                } catch (QualificationProcessingException e) {
-                    log.error("Failed to process qualifications: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
-
-                try {
-                    processSpecialtyCenter(masEmployeeRequest.getSpecialtyCenter(), savedEmployee, currentUser);
-                } catch (SpecialtyCenterProcessingException e) {
-                    log.error("Failed to process Specialty Center: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
-
-                try {
-                    processWorkExperiences(masEmployeeRequest.getWorkExperiences(), savedEmployee, currentUser);
-                } catch (WorkExperienceProcessingException e) {
-                    log.error("Failed to process Work Experiences: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
-
-                try {
-                    processMemberships(masEmployeeRequest.getEmployeeMemberships(), savedEmployee, currentUser);
-                } catch (MembershipProcessingException e) {
-                    log.error("Failed to process Membership: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
-
-                try {
-                    processSpecialtyInterest(masEmployeeRequest.getEmployeeSpecialtyInterests(), savedEmployee, currentUser);
-                } catch (SpecialtyInterestProcessingException e) {
-                    log.error("Failed to process Employee Specialty Interest: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
-
-                try {
-                    processAwards(masEmployeeRequest.getEmployeeAwards(), savedEmployee, currentUser);
-                } catch (AwardProcessingException e) {
-                    log.error("Failed to process Awards: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process qualifications: " + e.getMessage(), e);
-                }
-
-                try {
-                    processDocuments(masEmployeeRequest.getDocument(), savedEmployee, currentUser);
-                } catch (DocumentProcessingException e) {
-                    log.error("Failed to process documents: {}", e.getMessage(), e);
-                    throw new EmployeeCreationException("Failed to process documents: " + e.getMessage(), e);
-                }
-
-                log.info("Successfully created employee with ID: {}", savedEmployee.getEmployeeId());
-                return ResponseUtils.createSuccessResponse(savedEmployee, new TypeReference<>() {});
-
-            } catch (EntityNotFoundException e) {
-                log.error("Entity not found: {}", e.getMessage());
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        e.getMessage(), HttpStatus.NOT_FOUND.value());
-            } catch (FileProcessingException e) {
-                log.error("File processing error: {}", e.getMessage(), e);
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        e.getMessage(), HttpStatus.BAD_REQUEST.value());
-            } catch (EmployeeCreationException e) {
-                log.error("Employee creation error: {}", e.getMessage(), e);
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
-            }
-        } catch (ConstraintViolationException e) {
-            log.error("Constraint violation: {}", e.getMessage(), e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<MasEmployee>() {},
-                    "Validation failed for required fields: " + e.getMessage(),
-                    HttpStatus.BAD_REQUEST.value());
-        } catch (Exception e) {
-            log.error("Unexpected error creating employee: {}", e.getMessage(), e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<MasEmployee>() {},
-                    "An unexpected error occurred: " + e.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+    public ApiResponse<MasEmployee> createEmployee(MasEmployeeRequest req) {
+        log.debug("Creating new Employee");
+        Map<String, String> errors = validateEmployeeRequest(req);
+        if (!errors.isEmpty()) {
+            throw new RuntimeException(errors.values().iterator().next());
         }
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            throw new RuntimeException("Current user not found");
+        }
+        MasEmployee employee = buildEmployeeFromRequest(req, currentUser);
+        MasEmployee savedEmployee = masEmployeeRepository.save(employee);
+        processQualifications(req.getQualification(), savedEmployee, currentUser);
+        processSpecialtyCenter(req.getSpecialtyCenter(), savedEmployee, currentUser);
+        processWorkExperiences(req.getWorkExperiences(), savedEmployee, currentUser);
+        processMemberships(req.getEmployeeMemberships(), savedEmployee, currentUser);
+        processSpecialtyInterest(req.getEmployeeSpecialtyInterests(), savedEmployee, currentUser);
+        processAwards(req.getEmployeeAwards(), savedEmployee, currentUser);
+        processDocuments(req.getDocument(), savedEmployee, currentUser);
+
+        log.info("Employee created with ID {}", savedEmployee.getEmployeeId());
+
+        return ResponseUtils.createSuccessResponse(savedEmployee, new TypeReference<>() {});
     }
 
-    private Map<String, String> validateEmployeeRequest(MasEmployeeRequest request) {
+    private Map<String, String> validateEmployeeRequest(MasEmployeeRequest request) throws RuntimeException {
         Map<String, String> errors = new HashMap<>();
 
         if (request == null) {
@@ -791,7 +1337,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         validateField(errors, request.getRegistrationNo(), "registrationNo", "ID number cannot be blank");
         validateField(errors, request.getDob(), "dob", "Date of birth cannot be blank");
         validateField(errors, request.getIdentificationType(), "identificationType", "Identification type cannot be blank");
-        validateField(errors, request.getIdentificationType(), "employeeTypeId", "Employee type cannot be blank");
+        validateField(errors, request.getEmployeeTypeId(), "employeeTypeId", "Employee type cannot be blank");
         validateField(errors, request.getEmploymentTypeId(), "employmentTypeId", "Employment type cannot be blank");
         validateField(errors, request.getRoleId(), "roleId", "Role cannot be blank");
         validateField(errors, request.getYearOfExperience(), "yearOfExperience", "Experience cannot be blank");
@@ -836,8 +1382,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         return user;
     }
 
-    private MasEmployee buildEmployeeFromRequest(MasEmployeeRequest request, User currentUser)
-            throws EntityNotFoundException, FileProcessingException {
+    private MasEmployee buildEmployeeFromRequest(MasEmployeeRequest request, User currentUser){
 
         Optional<MasEmployee> existingEmp = masEmployeeRepository.findByMobileNo(request.getMobileNo());
         if (existingEmp.isPresent()) {
@@ -947,8 +1492,6 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             throw new FileProcessingException("Failed to upload ID document: " + e.getMessage());
         }
     }
-
-
     private String processProfileImage(MultipartFile profileImage, String fileUploadDir) throws FileProcessingException {
         if (profileImage == null || profileImage.isEmpty()) {
             throw new FileProcessingException("Profile image is missing or empty");
@@ -974,71 +1517,62 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             throw new FileProcessingException("Failed to upload profile picture: " + e.getMessage());
         }
     }
-
-    private void processQualifications(List<EmployeeQualificationReq> qualifications, MasEmployee employee, User currentUser)
-            throws QualificationProcessingException {
+    private void processQualifications(List<EmployeeQualificationReq> qualifications, MasEmployee employee, User currentUser) {
 
         if (qualifications == null || qualifications.isEmpty()) {
             throw new QualificationProcessingException("Qualifications cannot be empty");
         }
 
-        String fileUploadDir = this.uploadDir + "MAS_EMPLOYEE/";
+        Path uploadDirPath = Paths.get(uploadDir, "MAS_EMPLOYEE");
+        try {
+            Files.createDirectories(uploadDirPath);
+        } catch (IOException e) {
+            throw new QualificationProcessingException("Unable to create upload directory");
+        }
 
-        for (EmployeeQualificationReq qualificationReq : qualifications) {
-            String qualificationFilePath = "";
+        for (EmployeeQualificationReq q : qualifications) {
             try {
-                log.info("Processing qualification document...");
-
-                if (qualificationReq.getFilePath() == null || qualificationReq.getFilePath().isEmpty()) {
-                    throw new QualificationProcessingException("Qualification file is missing or empty");
+                if (q.getFilePath() == null || q.getFilePath().isEmpty()) {
+                    throw new QualificationProcessingException("Qualification file is missing");
                 }
 
-                String originalFilename = qualificationReq.getFilePath().getOriginalFilename();
-                if (originalFilename == null || originalFilename.isBlank()) {
+                String original = q.getFilePath().getOriginalFilename();
+                if (original == null || original.isBlank()) {
                     throw new QualificationProcessingException("Invalid qualification file name");
                 }
 
-                String fileExtension = getFileExtension(originalFilename);
-                if (!isValidDocExtension(fileExtension)) {
-                    throw new QualificationProcessingException("Invalid qualification file type. Only PDF, JPG, JPEG and PNG are allowed.");
+                String ext = getFileExtension(original);
+                if (!isValidDocExtension(ext)) {
+                    throw new QualificationProcessingException(
+                            "Invalid qualification file type. Only PDF, JPG, JPEG and PNG are allowed"
+                    );
                 }
 
-                Path uploadPath = Paths.get(fileUploadDir);
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
+                String cleanName = original.trim().replaceAll("\\s+", "_");
+                if (!cleanName.matches("^\\d+_.*")) {
+                    cleanName = System.currentTimeMillis() + "_" + cleanName;
                 }
 
-                String timestamp = String.valueOf(System.currentTimeMillis());
-                String newFilename = timestamp + "_" + originalFilename;
+                Path filePath = uploadDirPath.resolve(cleanName);
+                Files.write(filePath, q.getFilePath().getBytes());
 
-                qualificationFilePath = Paths.get(fileUploadDir, newFilename)
-                        .toString()
-                        .replace("\\", "/");
+                EmployeeQualification eq = new EmployeeQualification();
+                eq.setEmployee(employee);
+                eq.setQualificationName(q.getQualificationName());
+                eq.setCompletionYear(q.getCompletionYear());
+                eq.setInstitutionName(q.getInstitutionName());
+                eq.setFilePath(filePath.toString().replace("\\", "/"));
+                eq.setLastChangedBy(currentUser.getUserId().toString());
+                eq.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
 
-                Files.write(Paths.get(qualificationFilePath), qualificationReq.getFilePath().getBytes());
-                log.info("Qualification file uploaded successfully to: {}", qualificationFilePath);
-
-                EmployeeQualification imageObj = new EmployeeQualification();
-                imageObj.setEmployee(employee);
-                imageObj.setCompletionYear(qualificationReq.getCompletionYear());
-                imageObj.setQualificationName(qualificationReq.getQualificationName());
-                imageObj.setFilePath(qualificationFilePath);
-                imageObj.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
-                imageObj.setLastChangedBy(currentUser.getUserId().toString());
-                imageObj.setInstitutionName(qualificationReq.getInstitutionName());
-
-                employeeQualificationRepository.save(imageObj);
+                employeeQualificationRepository.save(eq);
 
             } catch (IOException e) {
-                log.error("Error while uploading qualification file: {}", e.getMessage(), e);
-                throw new QualificationProcessingException("Failed to upload qualification file: " + e.getMessage());
-            } catch (Exception e) {
-                log.error("Error while processing qualification: {}", e.getMessage(), e);
-                throw new QualificationProcessingException("Failed to process qualification: " + e.getMessage());
+                throw new QualificationProcessingException("Failed to upload qualification file");
             }
         }
     }
-    private void processSpecialtyCenter(List<EmployeeSpecialtyCenterRequest> specialtyCenters, MasEmployee savedEmployee, User currentUser) throws SpecialtyCenterProcessingException{
+    private void processSpecialtyCenter(List<EmployeeSpecialtyCenterRequest> specialtyCenters, MasEmployee savedEmployee, User currentUser){
         if (specialtyCenters == null || specialtyCenters.isEmpty()) {
             return;
         }
@@ -1056,14 +1590,14 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
-    private void processWorkExperiences(List<EmployeeWorkExperienceRequest> workExperiences, MasEmployee savedEmployee, User currentUser) throws WorkExperienceProcessingException{
+    private void processWorkExperiences(List<EmployeeWorkExperienceRequest> workExperiences, MasEmployee savedEmployee, User currentUser){
         if (workExperiences == null || workExperiences.isEmpty()) {
             return;
         }
         for (EmployeeWorkExperienceRequest request : workExperiences) {
             try {
                 EmployeeWorkExperience workExperience = new EmployeeWorkExperience();
-                workExperience.setMasEmployee(savedEmployee);
+                workExperience.setEmployee(savedEmployee);
                 workExperience.setExperienceSummary(request.getExperienceSummary());
                 workExperience.setOrderLevel(1);
                 workExperience.setLastUpdateDate(Instant.now());
@@ -1074,15 +1608,14 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
-
-    private void processMemberships(List<EmployeeMembershipRequest> memberships, MasEmployee savedEmployee, User currentUser) throws MembershipProcessingException{
+    private void processMemberships(List<EmployeeMembershipRequest> memberships, MasEmployee savedEmployee, User currentUser){
         if (memberships == null || memberships.isEmpty()) {
             return;
         }
         for (EmployeeMembershipRequest request : memberships) {
             try {
                 EmployeeMembership membership = new EmployeeMembership();
-                membership.setMasEmployee(savedEmployee);
+                membership.setEmployee(savedEmployee);
                 membership.setMembershipSummary(request.getMembershipSummary());
                 membership.setLastUpdateDate(Instant.now());
                 membership.setOrderLevel(1);
@@ -1093,15 +1626,14 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
-
-    private void processSpecialtyInterest(List<EmployeeSpecialtyInterestRequest> specialtyInterests, MasEmployee savedEmployee, User currentUser) throws SpecialtyInterestProcessingException{
+    private void processSpecialtyInterest(List<EmployeeSpecialtyInterestRequest> specialtyInterests, MasEmployee savedEmployee, User currentUser){
         if (specialtyInterests == null || specialtyInterests.isEmpty()) {
             return;
         }
         for (EmployeeSpecialtyInterestRequest request : specialtyInterests) {
             try {
                 EmployeeSpecialtyInterest specialtyInterest = new EmployeeSpecialtyInterest();
-                specialtyInterest.setMasEmployee(savedEmployee);
+                specialtyInterest.setEmployee(savedEmployee);
                 specialtyInterest.setInterestSummary(request.getInterestSummary());
                 specialtyInterest.setLastUpdateDate(Instant.now());
                 employeeSpecialtyInterestRepository.save(specialtyInterest);
@@ -1111,15 +1643,14 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
-
-    private void processAwards(List<EmployeeAwardRequest> awards, MasEmployee savedEmployee, User currentUser) throws AwardProcessingException{
+    private void processAwards(List<EmployeeAwardRequest> awards, MasEmployee savedEmployee, User currentUser){
         if (awards == null || awards.isEmpty()) {
             return;
         }
         for (EmployeeAwardRequest request : awards) {
             try {
                 EmployeeAward award = new EmployeeAward();
-                award.setMasEmployee(savedEmployee);
+                award.setEmployee(savedEmployee);
                 award.setAwardSummary(request.getAwardSummary());
                 award.setLastUpdateDate(Instant.now());
                 employeeAwardRepository.save(award);
@@ -1129,106 +1660,99 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             }
         }
     }
-
-
-    private void processDocuments(List<EmployeeDocumentReq> documents, MasEmployee employee, User currentUser)
-            throws DocumentProcessingException {
-
+    private void processDocuments(List<EmployeeDocumentReq> documents, MasEmployee employee, User currentUser) {
         if (documents == null || documents.isEmpty()) {
             throw new DocumentProcessingException("Documents cannot be empty");
         }
-
-        String fileUploadDir = this.uploadDir + "MAS_EMPLOYEE/";
-
-        for (EmployeeDocumentReq objContent : documents) {
-            String imagePath = "";
+        Path uploadDirPath = Paths.get(uploadDir, "MAS_EMPLOYEE");
+        try {
+            Files.createDirectories(uploadDirPath);
+        } catch (IOException e) {
+            throw new DocumentProcessingException("Unable to create upload directory");
+        }
+        for (EmployeeDocumentReq d : documents) {
             try {
-                log.debug("Processing employee document...");
-
-                if (objContent.getFilePath() == null || objContent.getFilePath().isEmpty()) {
-                    throw new DocumentProcessingException("Document file is missing or empty");
+                if (d.getFilePath() == null || d.getFilePath().isEmpty()) {
+                    throw new DocumentProcessingException("Document file is missing");
+                }
+                String original = d.getFilePath().getOriginalFilename();
+                if (original == null || original.isBlank()) {
+                    throw new DocumentProcessingException("Invalid document file name");
                 }
 
-                String imageExtension = getFileExtension(objContent.getFilePath().getOriginalFilename());
-                if (!isValidDocExtension(imageExtension)) {
-                    throw new DocumentProcessingException("Employee document invalid file type. Only PDF, JPG, JPEG and PNG are allowed.");
+                String ext = getFileExtension(original);
+                if (!isValidDocExtension(ext)) {
+                    throw new DocumentProcessingException(
+                            "Employee document invalid file type. Only PDF, JPG, JPEG and PNG are allowed"
+                    );
                 }
 
-                String timestamp = String.valueOf(System.currentTimeMillis());
-                String newFilename = timestamp + "_" + objContent.getFilePath().getOriginalFilename();
+                String cleanName = original.trim().replaceAll("\\s+", "_");
+                if (!cleanName.matches("^\\d+_.*")) {
+                    cleanName = System.currentTimeMillis() + "_" + cleanName;
+                }
 
-                imagePath = Paths.get(fileUploadDir, newFilename)
-                        .toString()
-                        .replace("\\", "/");
+                Path filePath = uploadDirPath.resolve(cleanName);
+                Files.write(filePath, d.getFilePath().getBytes());
 
-                Files.write(Paths.get(imagePath), objContent.getFilePath().getBytes());
+                EmployeeDocument doc = new EmployeeDocument();
+                doc.setEmployee(employee);
+                doc.setDocumentName(d.getDocumentName());
+                doc.setFilePath(filePath.toString().replace("\\", "/"));
+                doc.setLastChangedBy(currentUser.getUserId().toString());
+                doc.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
 
-                EmployeeDocument contentObj = new EmployeeDocument();
-                contentObj.setEmployee(employee);
-                contentObj.setDocumentName(objContent.getDocumentName());
-                contentObj.setFilePath(imagePath);
-                contentObj.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
-                contentObj.setLastChangedBy(currentUser.getUserId().toString());
-
-                employeeDocumentRepository.save(contentObj);
+                employeeDocumentRepository.save(doc);
 
             } catch (IOException e) {
-                log.error("Error while uploading document file: {}", e.getMessage(), e);
-                throw new DocumentProcessingException("Failed to upload document file: " + e.getMessage());
-            } catch (Exception e) {
-                log.error("Error while processing document: {}", e.getMessage(), e);
-                throw new DocumentProcessingException("Failed to process document: " + e.getMessage());
+                throw new DocumentProcessingException("Failed to upload document file");
             }
         }
     }
 
-    public static class FileProcessingException extends Exception {
+
+    public static class FileProcessingException extends RuntimeException {
         public FileProcessingException(String message) {
             super(message);
         }
-    }
-
-    public static class EmployeeCreationException extends Exception {
-        public EmployeeCreationException(String message, Throwable cause) {
+        public FileProcessingException(String message, Throwable cause) {
             super(message, cause);
         }
     }
-
-    public static class QualificationProcessingException extends Exception {
+    public static class QualificationProcessingException extends RuntimeException {
         public QualificationProcessingException(String message) {
             super(message);
         }
+        public QualificationProcessingException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
-
-    public static class WorkExperienceProcessingException extends Exception {
+    public static class WorkExperienceProcessingException extends RuntimeException {
         public WorkExperienceProcessingException(String message, Throwable cause) {
             super(message, cause);
         }
     }
-
-    public static class MembershipProcessingException extends Exception {
+    public static class MembershipProcessingException extends RuntimeException {
         public MembershipProcessingException(String message, Throwable cause) {
             super(message, cause);
         }
     }
-    public static class SpecialtyInterestProcessingException extends Exception {
+    public static class SpecialtyInterestProcessingException extends RuntimeException {
         public SpecialtyInterestProcessingException(String message, Throwable cause) {
             super(message, cause);
         }
     }
-    public static class AwardProcessingException extends Exception {
+    public static class AwardProcessingException extends RuntimeException {
         public AwardProcessingException(String message, Throwable cause) {
             super(message, cause);
         }
     }
-
-    public static class SpecialtyCenterProcessingException extends Exception {
+    public static class SpecialtyCenterProcessingException extends RuntimeException {
         public SpecialtyCenterProcessingException(String message, Throwable cause) {
             super(message, cause);
         }
     }
-
-    public static class DocumentProcessingException extends Exception {
+    public static class DocumentProcessingException extends RuntimeException {
         public DocumentProcessingException(String message) {
             super(message);
         }

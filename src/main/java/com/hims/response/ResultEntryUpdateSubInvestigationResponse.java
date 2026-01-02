@@ -13,6 +13,7 @@ public class ResultEntryUpdateSubInvestigationResponse {
     private String normalValue;
     private String result;
     private String remarks;
+    private String generatedSampleId;
     private String comparisonType;
     private Long fixedId;
     private Boolean inRange;

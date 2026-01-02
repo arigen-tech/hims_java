@@ -13,5 +13,6 @@ import java.time.Instant;
 @AllArgsConstructor
 @Builder
 public class EmployeeMembershipRequest {
+    private Long membershipId;
     private String membershipSummary;
 }

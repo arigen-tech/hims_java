@@ -28,7 +28,7 @@ public class BillingPolicyServiceImpl implements BillingPolicyService {
     @Override
     public ApiResponse<List<BillingPolicyResponse>> getAll() {
         try {
-            List<BillingPolicyMaster> list =repo.findAllByOrderByPolicyCodeAsc();
+            List<BillingPolicyMaster> list =repo.findAllByOrderByLastUpdateDateDesc();
 
 
             List<BillingPolicyResponse> response =

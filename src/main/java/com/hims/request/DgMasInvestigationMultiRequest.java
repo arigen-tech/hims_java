@@ -21,6 +21,9 @@ public class DgMasInvestigationMultiRequest {
     private Long categoryId;
     private Long methodId;
     private String interpretation;
+    private  String preparationRequired;
+    private Integer tatHours;
+    private Integer estimatedDays;
     private List<DgSubMasInvestigationRequest> masInvestReq;
     private List<Long> subInvestigationIdsToDelete;
 }

@@ -13,5 +13,6 @@ import java.time.Instant;
 @Builder
 public class EmployeeSpecialtyInterestRequest {
 
+    private String interestId;
     private String interestSummary;
 }

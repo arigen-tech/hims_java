@@ -1,0 +1,16 @@
+package com.hims.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@AllArgsConstructor
+@Data
+public class EntMasPinnaResponse {
+
+    private Long id;
+    private String pinnaStatus;
+    private String status;
+    private LocalDateTime lastUpdateDate;
+}

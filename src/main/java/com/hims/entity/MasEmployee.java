@@ -123,7 +123,10 @@ public class MasEmployee {
     @JoinColumn(name = "designation_id", referencedColumnName = "designation_id")
     private MasDesignation masDesignationId;
 
-    @Lob
+    public Long getDesignationId() {
+        return masDesignationId != null ? masDesignationId.getDesignationId() : null;
+    }
+
     @Column(name = "profile_description", columnDefinition = "TEXT")
     private String profileDescription;
 }

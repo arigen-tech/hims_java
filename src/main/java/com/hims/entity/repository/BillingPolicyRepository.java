@@ -12,5 +12,5 @@ public interface BillingPolicyRepository  extends JpaRepository<BillingPolicyMas
 
 
 
-    List<BillingPolicyMaster> findAllByOrderByPolicyCodeAsc();
+    List<BillingPolicyMaster> findAllByOrderByLastUpdateDateDesc();
 }

@@ -20,7 +20,7 @@ public class EmployeeAward {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emp_id", nullable = false)
-    private MasEmployee masEmployee;
+    private MasEmployee employee;
 
     @Column(name = "award_summary", length = 500, nullable = false)
     private String awardSummary;

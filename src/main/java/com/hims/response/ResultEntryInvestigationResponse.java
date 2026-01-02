@@ -16,6 +16,7 @@ public class ResultEntryInvestigationResponse {
     private String result;
     private String normalValue;
     private Boolean inRange;
+    private String generatedSampleId;
     List<ResultEntrySubInvestigationRes> resultEntrySubInvestigationRes;
 
 }

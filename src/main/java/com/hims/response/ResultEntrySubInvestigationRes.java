@@ -17,5 +17,6 @@ public class ResultEntrySubInvestigationRes {
     private String comparisonType;
     private Long fixedId;
     private Boolean inRange;
+    private String  generatedSampleId;
     private List<DgFixedValueResponse> fixedDropdownValues;
 }

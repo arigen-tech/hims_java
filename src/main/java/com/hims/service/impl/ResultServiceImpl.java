@@ -62,6 +62,12 @@ public class ResultServiceImpl implements ResultService {
     @Autowired
     private VisitRepository visitRepository;
 
+    @Autowired
+    private MasLabResultAmendmentTypeRepository masLabResultAmendmentTypeRepository;
+
+    @Autowired
+    private LabResultAmendAuditRepository labResultAmendAuditRepository;
+
 
     @Autowired
     AuthUtil authUtil;
@@ -219,6 +225,7 @@ public class ResultServiceImpl implements ResultService {
 
                         }
                         detail.setResultDetailStatus("n");
+                        detail.setGeneratedSampleId(dgSampleCollectionDetails.getSampleGeneratedId());
                     }
                     LabTurnAroundTime labTurnAroundTime=labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(dgOrderH.getId(),investigation.getInvestigationId(),patientId.getId(),false);
                     labTurnAroundTime.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
@@ -323,6 +330,7 @@ public class ResultServiceImpl implements ResultService {
                     invDto.setNormalValue(firstDetail.getNormalRange());
                     invDto.setUnit(firstDetail.getUomId() != null ? firstDetail.getUomId().getName() : null);
                     invDto.setInRange(isResultWithinRange(firstDetail.getResult(), firstDetail.getNormalRange()));
+                    invDto.setGeneratedSampleId(firstDetail.getGeneratedSampleId());
 
                     // ===== Sub-Investigation info (if present) =====
                     List<ResultEntrySubInvestigationRes> subList = new ArrayList<>();
@@ -346,6 +354,7 @@ public class ResultServiceImpl implements ResultService {
                             List<DgFixedValue> fixedDropdownValues = dgFixedValueRepository.findBySubInvestigationId(sub.getSubInvestigationId());
                             subDto.setFixedDropdownValues(fixedDropdownValues.stream().map(this::mapToDgFixedValueResponse).toList());
                             subDto.setInRange(isResultWithinRange(sub.getResult(), sub.getNormalRange()));
+                            subDto.setGeneratedSampleId(sub.getGeneratedSampleId());
                             subList.add(subDto);
                         }
                     }
@@ -724,7 +733,7 @@ public class ResultServiceImpl implements ResultService {
                         invDto.setNormalValue(firstDetail.getNormalRange());
                         invDto.setUnit(firstDetail.getUomId() != null ? firstDetail.getUomId().getName() : null);
                         invDto.setInRange(isResultWithinRange(firstDetail.getResult(), firstDetail.getNormalRange()));
-
+                        invDto.setGeneratedSampleId(firstDetail.getGeneratedSampleId());
                         // Step 7: Sub Investigations
                         List<ResultEntryUpdateSubInvestigationResponse> subList = new ArrayList<>();
                         for (DgResultEntryDetail sub : invDetails) {
@@ -739,7 +748,7 @@ public class ResultServiceImpl implements ResultService {
                                 subDto.setResult(sub.getResult());
                                 subDto.setRemarks(sub.getRemarks());
                                 subDto.setInRange(isResultWithinRange(sub.getResult(), sub.getNormalRange()));
-
+                                subDto.setGeneratedSampleId(sub.getGeneratedSampleId());
                                 String comparisonType = sub.getSubInvestigationId().getComparisonType();
                                 if ("f".equalsIgnoreCase(comparisonType)) {
                                     subDto.setComparisonType(comparisonType);
@@ -805,6 +814,24 @@ public class ResultServiceImpl implements ResultService {
                 if (!Objects.equals(detail.getResultEntryId().getResultEntryId(), header.getResultEntryId())) {
                     continue; // Skip if detail not under this header
                 }
+
+                //Update lab_result_amend_audit detail
+                LabResultAmendAudit labResultAmendAudit= new LabResultAmendAudit();
+                MasLabResultAmendmentType masLabResultAmendmentType = masLabResultAmendmentTypeRepository.findById(detailReq.getAmendmentTypeId()).orElseThrow(() -> new RuntimeException("Invalid Lab Result Amendment Type Id"));
+
+                labResultAmendAudit.setPatient(header.getHinId());
+                labResultAmendAudit.setAmendmentType(masLabResultAmendmentType);
+                labResultAmendAudit.setAmendedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                labResultAmendAudit.setNewResult(detailReq.getResult());
+                labResultAmendAudit.setOldResult(detailReq.getOldResult());
+                labResultAmendAudit.setAmendedDatetime(LocalDateTime.now());
+                labResultAmendAudit.setInvestigation(detail.getInvestigationId());
+                labResultAmendAudit.setReasonForChange(masLabResultAmendmentType.getAmendmentTypeName());
+                labResultAmendAudit.setGeneratedSampleId(detail.getGeneratedSampleId());
+                labResultAmendAudit.setRemarks(detailReq.getRemarks());
+
+                labResultAmendAuditRepository.save(labResultAmendAudit);
+
                 // Update result and remarks per detail
                 detail.setResult(detailReq.getResult());
                 detail.setRemarks(detailReq.getRemarks());

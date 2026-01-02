@@ -18,6 +18,8 @@ public class TestDetailsDTO {
     private Long sampleId;
     private String sampleName;
     private String quantity;
+    private Long containerId;
+    private String containerName;
     private String empanelledLab;
     private LocalDateTime dateTime;
     private String reason;
