@@ -52,4 +52,11 @@ public final class ReportConstants {
     public static final String LAB_JASPER = "Lab_report";
     public static final String LAB_REPORT = "LabInvoice";
 
+    public static final String INDENT_MEDICINE_ISSUE_REGISTER_SUBREPORT_DIR = "IndentMedicineIssueRegisterReport/";
+    public static final String INDENT_MEDICINE_ISSUE_REGISTER_JASPER = "Medicine_issue_register";
+    public static final String INDENT_MEDICINE_ISSUE_REGISTER_REPORT = "IndentMedicineIssueRegisterReport";
+
+    public static final String INDENT_ISSUE_JASPER = "Medical_Store_Indent_Issue_report_1";
+    public static final String INDENT_ISSUE_REPORT = "IndentIssueReport";
+
 }

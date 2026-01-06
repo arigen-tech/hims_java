@@ -342,6 +342,9 @@ public class ReportController {
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("indent_m_id", indentMId);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO
+                .toString()));
         try{
             if ("D".equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_JASPER, params, getConnection());
@@ -444,6 +447,72 @@ public class ReportController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to generate OPD case sheet: " + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/indentMedicineIssueRegister", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintMedicineIssueRegisterReport(
+            @RequestParam Long itemId,
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate,
+            @RequestParam String flag ) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("drug_id", itemId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("SUBREPORT_DIR", getClass()
+                .getResource(ReportConstants.JASPER_BASE_PATH_STORE + ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_SUBREPORT_DIR)
+                .toString());
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO
+                .toString()));
+
+        try{
+            if ("D".equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Failed to generate : " + e.getMessage());
+            }
+    }
+
+    @GetMapping(value = "/indentIssue", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadIndentIssue(
+            @RequestParam Long indentMId,
+            @RequestParam String flag ) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("indent_m_id", indentMId);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO
+                .toString()));
+        try{
+            if ("D".equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_ISSUE_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.INDENT_ISSUE_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_ISSUE_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate Indent issue report: " + e.getMessage());
         }
     }
 
