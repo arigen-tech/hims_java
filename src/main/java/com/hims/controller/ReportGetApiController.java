@@ -51,4 +51,16 @@ public class ReportGetApiController {
 
         return  ResponseEntity.ok( labReportService.getSummaryTatReports(investigationId, subchargeCodeId, fromDate, toDate));
     }
+
+    @GetMapping("/lab-amend-audit")
+    public ResponseEntity<?> getAmendAuditReports(
+            @RequestParam(required = false) String phnNum,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) Long investigationId,
+            @RequestParam(required = false) Long subChargeCodeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+    ) {
+        return ResponseEntity.ok(labReportService.getAmendAuditReports(phnNum, patientName, investigationId, subChargeCodeId, fromDate, toDate));
+    }
 }

@@ -3,12 +3,10 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.DgResultEntryDetailRepository;
+import com.hims.entity.repository.LabResultAmendAuditRepository;
 import com.hims.entity.repository.LabTurnAroundTimeRepository;
 import com.hims.entity.repository.UserRepo;
-import com.hims.response.AllLabReportResponse;
-import com.hims.response.ApiResponse;
-import com.hims.response.LabDetailedTATReportResponse;
-import com.hims.response.LabSummaryTATReportResponse;
+import com.hims.response.*;
 import com.hims.service.LabReportService;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.criteria.*;
@@ -20,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +35,8 @@ public class LabReportServiceImpl implements LabReportService {
     private final UserRepo userRepo;
 
     private final LabTurnAroundTimeRepository labTurnAroundTimeRepository;
+
+    private final LabResultAmendAuditRepository amendAuditRepository;
 
 
     @Override
@@ -171,6 +172,36 @@ public class LabReportServiceImpl implements LabReportService {
                     "Internal Server Error",
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
+        }
+    }
+
+    @Override
+    public ApiResponse<List<LabAmenedAuditReportResponse>> getAmendAuditReports(
+            String phnNum,
+            String patientName,
+            Long investigationId,
+            Long subChargeCodeId,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        try {
+            Specification<LabResultAmendAudit> spec = filterLabAmendAuditReport(
+                    phnNum,
+                    patientName,
+                    investigationId,
+                    subChargeCodeId,
+                    fromDate,
+                    toDate
+            );
+
+            List<LabResultAmendAudit> results =
+                    amendAuditRepository.findAll(spec);
+
+            return ResponseUtils.createSuccessResponse(results.stream().map(this::mapToLabAmendAuditResponse).toList(), new TypeReference<List<LabAmenedAuditReportResponse>>() {});
+        }catch (Exception e){
+            log.error("getAmendAuditReports() error :: ",e);
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
@@ -310,6 +341,107 @@ public class LabReportServiceImpl implements LabReportService {
         };
     }
 
+    public static Specification<LabResultAmendAudit> filterLabAmendAuditReport(
+            String phnNum,
+            String patientName,
+            Long investigationId,
+            Long subChargeCodeId,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        return (root, query, cb) -> {
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            /* ---------------------------
+             * Mandatory date filter
+             * --------------------------- */
+            LocalDateTime fromDateTime = fromDate.atStartOfDay();
+            LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
+
+            predicates.add(
+                    cb.between(
+                            root.get("amendedDatetime"),
+                            fromDateTime,
+                            toDateTime
+                    )
+            );
+
+            /* ---------------------------
+             * JOIN patient
+             * --------------------------- */
+            Join<LabResultAmendAudit, Patient> patientJoin =
+                    root.join("patient", JoinType.LEFT);
+
+            if (phnNum != null && !phnNum.isBlank()) {
+                predicates.add(
+                        cb.like(
+                                patientJoin.get("patientMobileNumber"),
+                                "%" + phnNum.trim() + "%"
+                        )
+                );
+            }
+
+            /* ---------------------------
+             * Patient full name search
+             * fn + ' ' + (mn or '') + ' ' + ln
+             * BUT collapse double spaces
+             * --------------------------- */
+            if (patientName != null && !patientName.isBlank()) {
+
+                Expression<String> fullNameExpr = cb.trim(
+                        cb.concat(
+                                cb.concat(
+                                        cb.concat(
+                                                patientJoin.get("patientFn"),
+                                                " "
+                                        ),
+                                        cb.coalesce(patientJoin.get("patientMn"), "")
+                                ),
+                                cb.concat(" ", patientJoin.get("patientLn"))
+                        )
+                );
+
+                predicates.add(
+                        cb.like(
+                                cb.lower(fullNameExpr),
+                                "%" + patientName.trim().toLowerCase() + "%"
+                        )
+                );
+            }
+
+            /* ---------------------------
+             * JOIN investigation
+             * --------------------------- */
+            Join<LabResultAmendAudit, DgMasInvestigation> invJoin =
+                    root.join("investigation", JoinType.LEFT);
+
+            if (investigationId != null) {
+                predicates.add(
+                        cb.equal(
+                                invJoin.get("investigationId"),
+                                investigationId
+                        )
+                );
+            }
+
+            /* ---------------------------
+             * JOIN sub charge code (modality)
+             * --------------------------- */
+            if (subChargeCodeId != null) {
+                predicates.add(
+                        cb.equal(
+                                invJoin.get("subChargeCodeId").get("subId"),
+                                subChargeCodeId
+                        )
+                );
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
 
     private AllLabReportResponse mapToResponse(DgResultEntryDetail entity){
         User resultVerifiedBy = userRepo.findById(Long.valueOf(entity.getResultEntryId().getResultVerifiedBy())).orElseThrow(() -> new RuntimeException("User Not Found"));
@@ -351,6 +483,22 @@ public class LabReportServiceImpl implements LabReportService {
         response.setTatStatus(delay>0?"Breached":"Within");
         response.setTechnicianName(entity.getResultValidatedBy());
         return  response;
+    }
+
+    private LabAmenedAuditReportResponse mapToLabAmendAuditResponse(LabResultAmendAudit entity){
+        LabAmenedAuditReportResponse response= new LabAmenedAuditReportResponse();
+        Patient patient = entity.getPatient();
+        response.setAmendId(entity.getAmendmentId());
+        response.setSampleId(entity.getGeneratedSampleId());
+        response.setInvestigationName(entity.getInvestigation().getInvestigationName());
+        response.setPatientName((patient.getPatientMn().trim().isBlank())?patient.getPatientFn()+" "+patient.getPatientLn() : patient.getPatientFn()+" "+patient.getPatientMn()+" "+patient.getPatientLn());
+        response.setUnitName(entity.getInvestigation().getUomId().getName());
+        response.setOldResult(entity.getOldResult());
+        response.setNewResult(entity.getNewResult());
+        response.setAuthorizedBy(entity.getAmendedBy());
+        response.setReasonForChange(entity.getReasonForChange());
+        response.setDateTime(entity.getAmendedDatetime());
+        return response;
     }
 
 }
