@@ -4,6 +4,7 @@ import com.hims.request.DgMasInvestigationMultiRequest;
 import com.hims.request.DgMasInvestigationRequest;
 import com.hims.request.DgMasInvestigationSingleReqest;
 import com.hims.response.ApiResponse;
+import com.hims.response.DgMasInvestigationRes;
 import com.hims.response.DgMasInvestigationResponse;
 import com.hims.response.DgMasInvestigationSingleResponse;
 import com.hims.service.DgMasInvestigationService;
@@ -83,6 +84,11 @@ public class DgMasInvestigationController {
     public ResponseEntity<ApiResponse<String>> updateMultiInvestigation(
             @RequestBody DgMasInvestigationMultiRequest dmiMultiReq ) {
         return new ResponseEntity<>(dgMasInvestigationService.updateMultipleInvestigation(dmiMultiReq), HttpStatus.OK);
+    }
+
+    @GetMapping("/mas-investigation/all")
+    public  ResponseEntity<?> getAll(){
+        return  ResponseEntity.ok(dgMasInvestigationService.getAllInvestigations());
     }
 
 }

@@ -1254,7 +1254,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                     ).filter(Objects::nonNull)
                     .collect(Collectors.joining(" "));
 
-            // 1️⃣ GROUP BY MODALITY (SubChargeCodeId)
+            //GROUP BY MODALITY (SubChargeCodeId)
             Map<Integer, List<SampleCollectionInvestigationReq>> groupedData =
                     sampleReq.getSampleCollectionReq()
                             .stream()
@@ -1267,7 +1267,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                 Integer subChargeCodeId = entry.getKey();
                 List<SampleCollectionInvestigationReq> detailsList = entry.getValue();
 
-                // 2️⃣ FIND OR CREATE HEADER (UNCHANGED)
+                //FIND OR CREATE HEADER
                 Optional<DgSampleCollectionHeader> existingHeaderOpt =
                         dgSampleCollectionHeaderRepository
                                 .findByVisitIdAndSubChargeCodeAndValidateStatusN(
@@ -1311,7 +1311,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                     dgSampleCollectionHeaderRepository.save(header);
                 }
 
-                // 3️⃣ GROUP DETAILS BY PHYSICAL CONTAINER (sampleId)
+                // GROUP DETAILS BY PHYSICAL CONTAINER (sampleId)
                 Map<Integer, List<SampleCollectionInvestigationReq>> 
                         
                         containerWiseMap =
@@ -1323,7 +1323,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                 int dailySequence = dgSampleCollectionDetailsRepository.getNextSequenceValue().intValue();
 
 
-                // 4️⃣ GENERATE ONE SAMPLE ID PER CONTAINER
+                //GENERATE ONE SAMPLE ID PER CONTAINER
                 for (Map.Entry<Integer, List<SampleCollectionInvestigationReq>> containerEntry
                         : containerWiseMap.entrySet()) {
 
@@ -1369,7 +1369,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
 
                         dgSampleCollectionDetailsRepository.save(detail);
 
-                        // 5️⃣ TURN AROUND TIME (UNCHANGED)
+                        //TURN AROUND TIME
                         LabTurnAroundTime tat = new LabTurnAroundTime();
                         tat.setInvestigation(investigation);
                         tat.setOrderHd(
@@ -1380,6 +1380,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                         tat.setPatient(visit.getPatient());
                         tat.setSampleCollectionDateTime(now);
                         tat.setSampleCollectedBy(fullName);
+                        tat.setGeneratedSampleId(sampleId);
 
                         labTurnAroundTimeRepository.save(tat);
                     }

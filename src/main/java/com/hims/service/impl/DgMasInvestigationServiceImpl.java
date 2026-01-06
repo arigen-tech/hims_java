@@ -986,4 +986,21 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 })
                 .toList();
     }
+
+    @Override
+    public ApiResponse<List<DgMasInvestigationRes>> getAllInvestigations() {
+       try {
+           List<DgMasInvestigation> investigations=dgMasInvestigationRepo.findByStatusIgnoreCaseOrderByLastChgDateDesc("y");
+           return ResponseUtils.createSuccessResponse(investigations.stream().map(this::mapToRes).toList(), new TypeReference<>() {});
+       } catch (Exception e) {
+           log.error("getAllInvestigations() Unexpected error::",e);
+           return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
+       }
+    }
+    private DgMasInvestigationRes mapToRes(DgMasInvestigation entity){
+        DgMasInvestigationRes response= new DgMasInvestigationRes();
+        response.setInvestigationId(entity.getInvestigationId());
+        response.setInvestigationName(entity.getInvestigationName());
+        return  response;
+    }
 }
