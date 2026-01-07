@@ -3628,7 +3628,8 @@ private MasPatientPreparationService masPatientPreparationService;
     }
 
 
-    //    ===============================Ent Mas Wucosa ====================
+    //    ===============================Ent Mas Septum ====================
+
 
     @GetMapping("entMasSeptum/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<EntMasSeptumResponse>>> getAllEntMasSeptum(
@@ -3663,7 +3664,7 @@ private MasPatientPreparationService masPatientPreparationService;
         return ResponseEntity.ok(entMasSeptumService.changeStatus(id, status));
     }
 
-    //    ===============================Ent Mas Wucosa ====================
+    //    ===============================Ent Mas Tonsil Grade ====================
 
     @GetMapping("entMasTonsilGrade/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<EntMasTonsilGradeResponse>>> getAllEntMasTonsilGrade(
@@ -3771,7 +3772,6 @@ private MasPatientPreparationService masPatientPreparationService;
 
     //    ===============================Mas Question====================
 
-
     @GetMapping("masQuestion/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasQuestionResponse>>> getAllMasQuestion(
             @PathVariable int flag) {
@@ -3805,7 +3805,6 @@ private MasPatientPreparationService masPatientPreparationService;
         return ResponseEntity.ok(questionService.changeStatus(id, status));
     }
 
-
     //-------------------------------------------Mas Lab Amendment Type ------------------------------------------
 
     @PostMapping("/lab-amendment-type/create")
@@ -3833,7 +3832,6 @@ private MasPatientPreparationService masPatientPreparationService;
         return ResponseEntity.ok(labResultAmendmentTypeService.getAll(flag));
     }
 
-
     //-------------------------------------------Mas Patient Preparation------------------------------------------
 
     @PostMapping("/patient-preparation/create")
@@ -3860,4 +3858,6 @@ private MasPatientPreparationService masPatientPreparationService;
     public ResponseEntity<?> getAllMasPatientPrep(@RequestParam int flag) {
         return ResponseEntity.ok(masPatientPreparationService.getAll(flag));
     }
+
+
 }

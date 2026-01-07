@@ -13,4 +13,18 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
     List<BillingHeader> findByPaymentStatusIn(List<String> paymentStatuses);
     BillingHeader findByBillNoAndPaymentStatus(String billNo, String paymentStatus);
     BillingHeader findByVisit(Visit visit);
+
+
+
+    @Query("""
+    SELECT bh
+    FROM BillingHeader bh
+    WHERE bh.paymentStatus IN ('y','p')
+    ORDER BY bh.createdDt DESC
+""")
+    List<BillingHeader> findHeaderWithPaidDetails();
+
+
+
+
 }

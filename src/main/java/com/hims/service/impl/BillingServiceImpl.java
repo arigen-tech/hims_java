@@ -9,6 +9,7 @@ import com.hims.service.BillingService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import static com.hims.helperUtil.ConverterUtils.ageCalculator;
 
 @Service
 @Transactional
+@Slf4j
 public class BillingServiceImpl implements BillingService {
 
     @Autowired
@@ -271,6 +273,74 @@ public class BillingServiceImpl implements BillingService {
                     "Error fetching pending billing data", 500);
         }
     }
+
+    @Override
+    public ApiResponse<List<BillingHeaderResponse>> getBillingStatus() {
+
+        log.info("Fetching billing status data started");
+
+        try {
+            List<BillingHeader> headers =
+                    billingHeaderRepository.findHeaderWithPaidDetails();
+
+
+            List<BillingHeaderResponse> responseList = new ArrayList<>();
+
+            for (BillingHeader header : headers) {
+
+                //  Map Header
+                BillingHeaderResponse headerResponse = new BillingHeaderResponse();
+                headerResponse.setHeaderId(header.getId());
+                headerResponse.setVisitId(header.getVisit().getId());
+                headerResponse.setBillNo(header.getBillNo());
+                headerResponse.setPatientName(header.getPatientDisplayName());
+                headerResponse.setPhoneNo(
+                        header.getPatient().getPatientMobileNumber()
+                );
+                headerResponse.setAge(header.getPatientAge());
+                headerResponse.setSex(header.getPatientGender());
+                headerResponse.setRelation(
+                        header.getPatient()
+                                .getPatientRelation()
+                                .getRelationName()
+                );
+
+                headerResponse.setBillDate(
+                        header.getBillDate() != null
+                                ? header.getBillDate().toString()
+                                : null
+                );
+                headerResponse.setNetAmount(header.getNetAmount());
+                headerResponse.setServiceCategoryId(header.getServiceCategory().getId());
+                headerResponse.setServiceCategoryName(header.getServiceCategory().getServiceCatName());
+                headerResponse.setPaymentStatus(header.getPaymentStatus());
+                headerResponse.setDepartment(header.getVisit().getDepartment().getDepartmentName());
+
+                responseList.add(headerResponse);
+            }
+
+            log.info("Billing status data fetched successfully. Total records: {}",
+                    responseList.size());
+
+            return ResponseUtils.createSuccessResponse(
+                    responseList,
+                    new TypeReference<>() {}
+            );
+
+        } catch (Exception ex) {
+
+            log.error("Error occurred while fetching billing status data",
+                    ex);
+
+
+        return ResponseUtils.createFailureResponse(new ArrayList<>(),
+                new TypeReference<>() {},
+                "Failed to fetch billing status data", 500);
+    }
+    }
+
+
+
 
     // Your existing mapToResponse method (for BillingHeader)
     private PendingBillingResponse mapToResponse(BillingHeader header) {

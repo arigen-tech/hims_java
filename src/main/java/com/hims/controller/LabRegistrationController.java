@@ -114,6 +114,10 @@ public class LabRegistrationController {
         return labRegistrationServices.labRegForExistingOrder(labReq);
     }
 
+    @GetMapping("/billingStatus")
+    public ApiResponse<List<BillingHeaderResponse>> getBillingStatus() {
+        return  billingService.getBillingStatus();
+    }
 
 
 }
