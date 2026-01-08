@@ -65,6 +65,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         department.setLastChgBy(request.getLastChgBy());
         department.setLastChgTime(getCurrentTimeFormatted());
         department.setLastChgDate(Instant.now());
+        department.setIndentApplicable(request.getIndentApplicable());
         if (request.getWardCategoryId() != null) {
             department.setWardCategory( masWardCategoryRepository.findById(request.getWardCategoryId()).orElse(null));
         }
@@ -110,6 +111,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
             department.setLastChgBy(request.getLastChgBy());
             department.setLastChgTime(getCurrentTimeFormatted());
             department.setLastChgDate(Instant.now());
+            department.setIndentApplicable(request.getIndentApplicable());
 
 
             if (request.getDepartmentTypeId() != null) {
@@ -185,6 +187,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         response.setLastChgBy(department.getLastChgBy());
         response.setLastChgDate(department.getLastChgDate());
         response.setLastChgTime(department.getLastChgTime());
+        response.setIndentApplicable(department.getIndentApplicable());
         if(department.getWardCategory()!=null){
             response.setWardCategoryId(department.getWardCategory().getId());
             response.setWardCategoryName(department.getWardCategory().getCategoryName());
