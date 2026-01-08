@@ -729,7 +729,7 @@ public class ResultServiceImpl implements ResultService {
                         DgResultEntryDetail firstDetail = invDetails.get(0);
                         invDto.setResultEntryDetailsId(firstDetail.getResultEntryDetailId());
                         invDto.setResult(firstDetail.getResult());
-                        invDto.setRemarks(firstDetail.getRemarks());
+//                        invDto.setRemarks(firstDetail.getRemarks());
                         invDto.setNormalValue(firstDetail.getNormalRange());
                         invDto.setUnit(firstDetail.getUomId() != null ? firstDetail.getUomId().getName() : null);
                         invDto.setInRange(isResultWithinRange(firstDetail.getResult(), firstDetail.getNormalRange()));
@@ -834,7 +834,7 @@ public class ResultServiceImpl implements ResultService {
 
                 // Update result and remarks per detail
                 detail.setResult(detailReq.getResult());
-                detail.setRemarks(detailReq.getRemarks());
+//                detail.setRemarks(detailReq.getRemarks());
                 if("f".equalsIgnoreCase(detailReq.getComparisonType())){
                     detail.setFixedId(dgFixedValueRepository.findById(detailReq.getFixedId()).orElse(null));
                 }
