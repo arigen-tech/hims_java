@@ -19,12 +19,10 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
     @Query("""
     SELECT bh
     FROM BillingHeader bh
-    WHERE bh.paymentStatus IN ('y','p')
+    WHERE bh.paymentStatus IN ('y')
+      AND bh.netAmount > 0
     ORDER BY bh.createdDt DESC
 """)
     List<BillingHeader> findHeaderWithPaidDetails();
-
-
-
 
 }
