@@ -10,11 +10,9 @@ import com.hims.service.MasEmployeeService;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -29,16 +27,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+
 public class MasEmployeeServiceImpl implements MasEmployeeService {
 
     private static final Logger log = LoggerFactory.getLogger(MasEmployeeServiceImpl.class);
@@ -124,6 +120,14 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
     @Autowired
     private MasSpecialtyCenterRepository masSpecialtyCenterRepository;
+
+
+    @Value("${app.opd}")
+    private Long opdId;
+
+    @Value("${app.role.doctor}")
+    private Long roleId;
+
 
 
     @Override
@@ -1289,6 +1293,199 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
         return updateEmployeeApprovalStatus(createdEmployee.getEmployeeId(), masEmployeeRequest.getDepartmentId());
     }
+
+@Override
+public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(String search) {
+    try {
+        log.info("Fetching OPD departments and doctors list with search: {}", search);
+        if (search == null || search.isBlank()) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Search text is required", HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        String keyword = search.trim();
+
+        // Departments
+        List<MasDepartment> departments = masDepartmentRepository.findByDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(opdId, keyword);
+
+        List<SpecialitiesResponse> deptResponseList =
+                departments.stream().map(dept -> {
+                    SpecialitiesResponse dto = new SpecialitiesResponse();
+                    dto.setSpecialityId(dept.getId());
+                    dto.setSpecialityName(dept.getDepartmentName());
+                    return dto;
+                }).toList();
+
+        // Doctors
+        List<MasEmployee> doctors = masEmployeeRepository.findByRoleIdIdAndFirstNameContainingIgnoreCaseOrderByFirstNameAsc(roleId, keyword);
+
+        List<DoctorResponse> doctorResponseList =
+                doctors.stream().map(emp -> {
+                    DoctorResponse dto = new DoctorResponse();
+                    dto.setDoctorId(emp.getEmployeeId());
+                    dto.setDoctorName(emp.getFirstName() + " " + emp.getLastName());
+                    return dto;
+                }).toList();
+
+        if (deptResponseList.isEmpty() && doctorResponseList.isEmpty()) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "No department or doctor found",
+                    HttpStatus.NOT_FOUND.value()
+            );
+        }
+
+        SpecialitiesAndDoctorResponse response = new SpecialitiesAndDoctorResponse();
+        response.setSpecialitiesResponseList(deptResponseList);
+        response.setDoctorResponseList(doctorResponseList);
+        return ResponseUtils.createSuccessResponse(Collections.singletonList(response), new TypeReference<>() {}
+        );
+
+    } catch (Exception ex) {
+        log.error("Error while fetching Department and Doctor data", ex);
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()
+        );
+    }
+
+
+
+
+
+
+
+}
+
+    @Override
+    public ApiResponse<List<SpecialityResponse>> getSpecialityAndDoctor(Long specialityId) {
+
+        log.info("Fetching OPD Speciality and Doctor list, specialityId={}", specialityId);
+        try {
+            //  OPD Departments
+            List<MasDepartment> opdDepartments =
+                    masDepartmentRepository.findByDepartmentTypeId(5);
+
+            if (opdDepartments == null || opdDepartments.isEmpty()) {
+                log.info("No OPD departments found for departmentTypeId = 5");
+                return ResponseUtils.createSuccessResponse(
+                        Collections.emptyList(),
+                        new TypeReference<>() {}
+                );
+            }
+
+            // Filter by specialityId (if provided)
+            if (specialityId != null) {
+                opdDepartments = opdDepartments.stream().filter(d -> d.getId().equals(specialityId)).toList();
+                log.debug("Filtered OPD departments by specialityId={}", specialityId);
+            }
+
+            if (opdDepartments.isEmpty()) {
+                log.info("No department found for specialityId={}", specialityId);
+                return ResponseUtils.createSuccessResponse(
+                        Collections.emptyList(),
+                        new TypeReference<>() {}
+                );
+            }
+
+            List<Long> deptIds = opdDepartments.stream()
+                    .map(MasDepartment::getId)
+                    .toList();
+
+            //  UserDepartment → User → Employee
+            List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartmentIds(deptIds);
+
+            //  Grouping Response
+            Map<Long, SpecialityResponse> responseMap = new LinkedHashMap<>();
+
+            for (UserDepartment ud : userDepartments) {
+                MasDepartment dept = ud.getDepartment();
+                MasEmployee emp = ud.getUser().getEmployee();
+
+                // Speciality
+                SpecialityResponse speciality =
+                        responseMap.computeIfAbsent(dept.getId(), k -> {
+                            SpecialityResponse s = new SpecialityResponse();
+                            s.setSpecialityId(dept.getId());
+                            s.setSpecialityName(dept.getDepartmentName());
+                            s.setDoctorResponseListList(new ArrayList<>());
+                            return s;
+                        });
+
+                // Doctor
+                DoctorResponseList doctor = new DoctorResponseList();
+                doctor.setDoctorId(emp.getEmployeeId());
+                doctor.setDoctorName(emp.getFirstName() + " " + (emp.getMiddleName() != null ? emp.getMiddleName() + " " : "") + emp.getLastName());
+                doctor.setSpecialityName(dept.getDepartmentName());
+                doctor.setGender(emp.getGenderId() != null ? emp.getGenderId().getGenderName() : null);
+                doctor.setPhoneNo(emp.getMobileNo());
+                doctor.setAge(emp.getAge() != null ? emp.getAge().toString() : null);
+                doctor.setYearsOfExperience(emp.getYearOfExperience());
+                speciality.getDoctorResponseListList().add(doctor);
+            }
+
+            List<SpecialityResponse> response = new ArrayList<>(responseMap.values());
+
+            log.info("Successfully fetched {} specialities", response.size());
+            return ResponseUtils.createSuccessResponse(
+                    response,
+                    new TypeReference<>() {}
+            );
+
+        } catch (Exception ex) {
+            log.error("Error while fetching OPD Speciality and Doctor list", ex);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<DoctorDetailResponse> getDoctor(Long doctorId) {
+
+        log.info("Fetching doctor details for doctorId={}", doctorId);
+        try {
+            //Employee
+            MasEmployee emp = masEmployeeRepository.findById(doctorId).orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+            // User using employeeId
+            Optional<User> optionalUser = userRepo.findByEmployeeEmployeeId(emp.getEmployeeId());
+
+            List<SpecialitiesResponse> specialitiesList = new ArrayList<>();
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                // UserDepartment using userId
+                List<UserDepartment> userDepartments = userDepartmentRepository.findByUserUserId(user.getUserId());
+                for (UserDepartment ud : userDepartments) {
+                    MasDepartment dept = ud.getDepartment();
+                    SpecialitiesResponse sr = new SpecialitiesResponse();
+                    sr.setSpecialityId(dept.getId());
+                    sr.setSpecialityName(dept.getDepartmentName());
+                    specialitiesList.add(sr);
+                }
+            }
+
+            // Response
+            DoctorDetailResponse doctor = new DoctorDetailResponse();
+            doctor.setDoctorId(emp.getEmployeeId());
+            doctor.setDoctorName(emp.getFirstName() + " " + (emp.getMiddleName() != null ? emp.getMiddleName() + " " : "") + emp.getLastName());
+            doctor.setGender(emp.getGenderId() != null ? emp.getGenderId().getGenderName() : null);
+            doctor.setPhoneNo(emp.getMobileNo());
+            doctor.setAge(emp.getAge() != null ? emp.getAge().toString() : null);
+            doctor.setYearsOfExperience(emp.getYearOfExperience());
+            doctor.setSpecialitiesResponseList(specialitiesList);
+            return ResponseUtils.createSuccessResponse(doctor, new TypeReference<>() {}
+            );
+
+        } catch (Exception ex) {
+            log.error("Error while fetching doctor details for doctorId={}", doctorId, ex);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+
+
+    }
+
+
 
     @Transactional(rollbackFor = Exception.class)
     @Override

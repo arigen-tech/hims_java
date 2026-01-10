@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.MasDepartment;
+import com.hims.response.SpecialitiesResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,8 +17,6 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
 
     List<MasDepartment> findByStatusIgnoreCaseOrderByDepartmentNameAsc(String y);
 
-
-
     @Query("""
         SELECT m
         FROM MasDepartment m
@@ -31,4 +30,10 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
     );
 
     List<MasDepartment> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
+
+    List<MasDepartment> findByDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(Long opdId, String keyword);
+
+    List<MasDepartment> findByDepartmentTypeId(int i);
+
+
 }

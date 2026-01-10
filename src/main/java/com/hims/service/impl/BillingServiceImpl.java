@@ -276,9 +276,7 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     public ApiResponse<List<BillingHeaderResponse>> getBillingStatus() {
-
         log.info("Fetching billing status data started");
-
         try {
             List<BillingHeader> headers =
                     billingHeaderRepository.findHeaderWithPaidDetails();
