@@ -122,10 +122,10 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     private MasSpecialtyCenterRepository masSpecialtyCenterRepository;
 
 
-    @Value("${app.opd}")
+   // @Value("${app.opd}")
     private Long opdId;
 
-    @Value("${app.role.doctor}")
+  //  @Value("${app.role.doctor}")
     private Long roleId;
 
 

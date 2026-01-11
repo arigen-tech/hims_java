@@ -3,10 +3,7 @@ package com.hims.service;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.request.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.FollowUpPatientResponseDetails;
-import com.hims.response.PatientRegFollowUpResp;
-import com.hims.response.PaymentResponse;
+import com.hims.response.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
@@ -28,8 +25,6 @@ public interface PatientService {
 
     ApiResponse<FollowUpPatientResponseDetails> getAllFollowUpDetails(Long patient);
 
-
-
     ApiResponse<PaymentResponse> paymentStatusReq(PaymentUpdateRequest opdreq);
 
-    }
+}

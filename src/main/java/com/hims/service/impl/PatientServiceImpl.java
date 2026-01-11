@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.helperUtil.HelperUtils;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
@@ -98,7 +99,8 @@ public class PatientServiceImpl implements PatientService {
 
     @Autowired
     private PatientLoginService patientLoginService;
-
+    @Autowired
+    private HelperUtils helperUtils;
 
 
     @Override
@@ -120,24 +122,30 @@ public class PatientServiceImpl implements PatientService {
                     "Patient already Registered", 500);
         }
         Patient patient = savePatient(request,false);
+
+        // { For online login, as per Deewan Sir’s instructions.
         PatientLogin patientLogin = patientLoginService.savePatientLogin(patient);
+        // }
         resp.setPatient(patient);
         OpdPatientDetail newOpd=new OpdPatientDetail();
         if(visit!=null){
             List<Visit> savedVisits = new ArrayList<>();
             if (visit != null && !visit.isEmpty()) {
                 for (VisitRequest v : visit) {
-                    Instant today = v.getVisitDate();
-                    String visitType = getVisitTypeForToday(patient.getId(), today);
+                    Instant visitDate =  LocalDateTime.of(
+                            LocalDate.parse(v.getVisitDate()),
+                            LocalTime.parse(v.getTokenEndTime())).toInstant(ZoneOffset.UTC);
 
+                    Instant today = visitDate;
+                    String visitType = getVisitTypeForToday(patient.getId(), today);
                     v.setVisitType(visitType);
                     Visit saved = createSingleAppointment(v, patient);
                     savedVisits.add(saved);
 
                     if (saved.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
                         newOpd = addOpdDetails(saved, opdPatientDetailRequest, patient);
+                        }
                     }
-                }
             }
             if(savedVisits.get(0).getBillingStatus().equalsIgnoreCase("n")){
             resp.setVisits(savedVisits);
@@ -146,7 +154,6 @@ public class PatientServiceImpl implements PatientService {
             resp.setOpdBillingPatientResponse(finalResponse);
         }
         resp.setOpdPatientDetail(newOpd);
-
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {
         });
     }
@@ -332,6 +339,7 @@ public class PatientServiceImpl implements PatientService {
             if (visitList != null && !visitList.isEmpty()) {
                 for (VisitRequest v : visitList) {
                     Visit updatedVisit;
+
                     if (v.getId() != null) {
                         updatedVisit = updateExistingVisitById(v, patient);
                     } else {
@@ -342,7 +350,7 @@ public class PatientServiceImpl implements PatientService {
                             v.setHospitalId(patient.getPatientHospital().getId());
                         }
                         if (v.getVisitDate() == null) {
-                            v.setVisitDate(Instant.now());
+                            v.setVisitDate(Instant.now().toString());
                         }
                         if (v.getVisitType() == null) {
                             v.setVisitType("F");
@@ -377,6 +385,10 @@ public class PatientServiceImpl implements PatientService {
         Visit existingVisit = visitRepository.findById(visit.getId())
                 .orElseThrow(() -> new RuntimeException("Visit not found with id: " + visit.getId()));
 
+        Instant visitDate =  LocalDateTime.of(
+                LocalDate.parse(visit.getVisitDate()),
+                LocalTime.parse(visit.getTokenEndTime())).toInstant(ZoneOffset.UTC);
+
         log.info("Updating existing visit ID: {} for patient: {}",
                 existingVisit.getId(), patient.getId());
 
@@ -402,7 +414,7 @@ public class PatientServiceImpl implements PatientService {
         }
 
         if (visit.getVisitDate() != null) {
-            existingVisit.setVisitDate(visit.getVisitDate());
+            existingVisit.setVisitDate(visitDate);
         }
 
         return visitRepository.save(existingVisit);
@@ -760,8 +772,6 @@ public class PatientServiceImpl implements PatientService {
                 .toLowerCase();
         List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(
                 visit.getDoctorId(), visit.getDepartmentId(), visit.getSessionId(), todayDayName);
-
-
         if (optionalSetup.isEmpty()) {
             throw new IllegalStateException("AppSetup not configured for today’s session.");
         }
@@ -770,31 +780,35 @@ public class PatientServiceImpl implements PatientService {
                 .filter(s -> s.getSession().getId().equals(visit.getSessionId()))
                 .findFirst()
                 .orElse(null);
+        // FOR NEW IMPLIMENTATION OF TOKENS
+//        int startToken = setup.getStartToken() != null ? setup.getStartToken() : 1;
+//        int maxToken = setup.getTotalToken() != null ? setup.getTotalToken() : Integer.MAX_VALUE;
+//        Long visitCount = visitRepository.countByPatientId(visit.getPatientId());
+//        List<Long> existingTokens = visitRepository
+//                .findAllTokensForSessionToday(visit.getDoctorId(), visit.getHospitalId(), visit.getSessionId());
+//        Long nextToken = getNextAvailableToken(existingTokens, startToken, maxToken);
+//        Instant[] tokenTimes = calculateTokenTimeAsInstant(
+//                setup.getStartTime(), // e.g., "08:00"
+//                setup.getTimeTaken(), // e.g., 10
+//                nextToken,LocalDate.now());
 
-        int startToken = setup.getStartToken() != null ? setup.getStartToken() : 1;
-        int maxToken = setup.getTotalToken() != null ? setup.getTotalToken() : Integer.MAX_VALUE;
+        Instant visitDate =  LocalDateTime.of(
+                LocalDate.parse(visit.getVisitDate()),
+                LocalTime.parse(visit.getTokenEndTime())).toInstant(ZoneOffset.UTC);
 
-        Long visitCount = visitRepository.countByPatientId(visit.getPatientId());
-
-        List<Long> existingTokens = visitRepository
-                .findAllTokensForSessionToday(visit.getDoctorId(), visit.getHospitalId(), visit.getSessionId());
-
-        Long nextToken = getNextAvailableToken(existingTokens, startToken, maxToken);
-        Instant[] tokenTimes = calculateTokenTimeAsInstant(
-                setup.getStartTime(), // e.g., "08:00"
-                setup.getTimeTaken(), // e.g., 10
-
-                nextToken,LocalDate.now());
-        newVisit.setStartTime(tokenTimes[0]);
-        newVisit.setEndTime(tokenTimes[1]);
-        newVisit.setTokenNo(nextToken);
-        newVisit.setVisitDate(visit.getVisitDate());
+        Instant tokenStartTime = combineDateTimeToInstant(visit.getVisitDate().toString(), visit.getTokenStartTime());
+        Instant tokenEndTime = combineDateTimeToInstant(visit.getVisitDate().toString(), visit.getTokenEndTime());
+        newVisit.setStartTime(tokenStartTime);
+        newVisit.setEndTime(tokenEndTime);
+        newVisit.setTokenNo(visit.getTokenNo());
+        newVisit.setVisitDate(visitDate);
         newVisit.setLastChgDate(Instant.now());
         newVisit.setVisitStatus("n");
         newVisit.setDisplayPatientStatus("wp");
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.findById(visit.getDepartmentId()).get());
         newVisit.setDoctorName(visit.getDoctorName());
+        assert setup != null;
         if(setup.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
             newVisit.setBillingStatus("y");
         }else{
@@ -820,6 +834,7 @@ public class PatientServiceImpl implements PatientService {
         }
 
         if (visit.getIniDoctorId() != null) {
+            assert visit.getDoctorId() != null;
             userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setIniDoctor);
         }
 
@@ -837,34 +852,50 @@ public class PatientServiceImpl implements PatientService {
         visitRepository.save(newVisit);
         return savedVisit;
     }
-    public static Instant[] calculateTokenTimeAsInstant(
-            String startTimeStr,
-            int timeTakenMinutes,
-            Long tokenNo,
-            LocalDate visitDate
-    ) {
-        if (startTimeStr == null || timeTakenMinutes <= 0 || tokenNo <= 0 || visitDate == null) {
-            throw new IllegalArgumentException("Invalid input parameters.");
+
+    public static Instant combineDateTimeToInstant(String dateStr, String timeStr) {
+        if (dateStr == null || dateStr.isEmpty() || timeStr == null || timeStr.isEmpty()) {
+            return null;
         }
-
-        // Parse start time and calculate token offset
-        LocalTime baseTime = LocalTime.parse(startTimeStr); // e.g., "10:00"
-        long minutesToAdd = (tokenNo - 1) * timeTakenMinutes;
-
-        // Apply token offset
-        LocalTime tokenStartTime = baseTime.plusMinutes(minutesToAdd);
-        LocalTime tokenEndTime = tokenStartTime.plusMinutes(timeTakenMinutes);
-
-        // Combine with visit date
-        LocalDateTime startDateTime = LocalDateTime.of(visitDate, tokenStartTime);
-        LocalDateTime endDateTime = LocalDateTime.of(visitDate, tokenEndTime);
-
-        // Treat time as UTC without converting via system/default zone
-        return new Instant[] {
-                startDateTime.toInstant(ZoneOffset.UTC),
-                endDateTime.toInstant(ZoneOffset.UTC)
-        };
+        try {
+            LocalDate date = LocalDate.parse(dateStr);
+            LocalTime time = LocalTime.parse(timeStr);
+            LocalDateTime dateTime = LocalDateTime.of(date, time);
+            return dateTime.toInstant(ZoneOffset.UTC);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                    "Invalid date/time format. Date: " + dateStr + ", Time: " + timeStr, e
+            );
+        }
     }
+//    public static Instant[] calculateTokenTimeAsInstant(
+//            String startTimeStr,
+//            int timeTakenMinutes,
+//            Long tokenNo,
+//            LocalDate visitDate
+//    ) {
+//        if (startTimeStr == null || timeTakenMinutes <= 0 || tokenNo <= 0 || visitDate == null) {
+//            throw new IllegalArgumentException("Invalid input parameters.");
+//        }
+//
+//        // Parse start time and calculate token offset
+//        LocalTime baseTime = LocalTime.parse(startTimeStr); // e.g., "10:00"
+//        long minutesToAdd = (tokenNo - 1) * timeTakenMinutes;
+//
+//        // Apply token offset
+//        LocalTime tokenStartTime = baseTime.plusMinutes(minutesToAdd);
+//        LocalTime tokenEndTime = tokenStartTime.plusMinutes(timeTakenMinutes);
+//
+//        // Combine with visit date
+//        LocalDateTime startDateTime = LocalDateTime.of(visitDate, tokenStartTime);
+//        LocalDateTime endDateTime = LocalDateTime.of(visitDate, tokenEndTime);
+//
+//        // Treat time as UTC without converting via system/default zone
+//        return new Instant[] {
+//                startDateTime.toInstant(ZoneOffset.UTC),
+//                endDateTime.toInstant(ZoneOffset.UTC)
+//        };
+//    }
 
     private String generateUhid(Patient patient) {
         List<Patient> existing = patientRepository.findByPatientMobileNumberAndPatientRelation(patient.getPatientMobileNumber(), patient.getPatientRelation());
@@ -887,9 +918,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public ApiResponse<FollowUpPatientResponseDetails> getAllFollowUpDetails(Long patientId) {
-
         FollowUpPatientResponseDetails resp = new FollowUpPatientResponseDetails();
-
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new RuntimeException("Patient not found: " + patientId));
 
@@ -952,13 +981,11 @@ public class PatientServiceImpl implements PatientService {
 
             resp.setVitals(vitals);
         }
-        List<Visit> visits = visitRepository.findTodayVisitsByPatientId(patientId);
+        List<Visit> visits = visitRepository.findRelevantVisitsByPatientId(patientId);
         List<FollowUpPatientResponseDetails.AppointmentDetailResponse> appointmentList = new ArrayList<>();
 
         for (Visit v : visits) {
-
             FollowUpPatientResponseDetails.AppointmentDetailResponse appt = new FollowUpPatientResponseDetails.AppointmentDetailResponse();
-
             appt.setAppointmentId(v.getId());
             appt.setSpecialityId(v.getDepartment() != null ? v.getDepartment().getId() : null);
             appt.setSpecialityName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
@@ -969,7 +996,14 @@ public class PatientServiceImpl implements PatientService {
             appt.setVisitDate(v.getVisitDate());
             appt.setVisitType(v.getVisitType());
             appt.setTokenNo(v.getTokenNo());
-
+            appt.setVisitStatus(v.getVisitStatus());
+            if ("Y".equalsIgnoreCase(v.getVisitStatus())) {
+                appt.setVisitStatus("Completed");
+            } else if ("N".equalsIgnoreCase(v.getVisitStatus())) {
+                appt.setVisitStatus("Pending");
+            }
+            appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
+            appt.setTokenEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
             appointmentList.add(appt);
         }
 

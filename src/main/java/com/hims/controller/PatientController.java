@@ -219,7 +219,6 @@ public class PatientController {
     @GetMapping("/getFullDetails/{patientId}")
     public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientFullDetails(
             @PathVariable Long patientId) {
-
         ApiResponse<FollowUpPatientResponseDetails> response =
                 patientService.getAllFollowUpDetails(patientId);
 

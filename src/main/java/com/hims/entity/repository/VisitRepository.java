@@ -163,4 +163,24 @@ WHERE v.visit_status = 'n'
     @Query("SELECT v FROM Visit v WHERE v.patient.id = :patientId AND DATE(v.visitDate) = DATE(CURRENT_TIMESTAMP)")
     List<Visit> findTodayVisitsByPatientId(@Param("patientId") Long patientId);
 
+
+    @Query("SELECT v.tokenNo FROM Visit v WHERE " +
+            "v.department.id = :departmentId AND " +
+            "v.doctor.id = :doctorId AND " +
+            "v.session.id = :sessionId AND " +
+            "v.visitDate >= :startOfDay AND v.visitDate < :endOfDay")
+    List<Long> findOccupiedTokens(
+            @Param("departmentId") Long departmentId,
+            @Param("doctorId") Long doctorId,
+            @Param("sessionId") Long sessionId,
+            @Param("startOfDay") Instant startOfDay,
+            @Param("endOfDay") Instant endOfDay
+    );
+
+    @Query(value = "SELECT v.* FROM visit v WHERE v.patient_id = :patientId " +
+            "AND ((DATE(v.visit_date) >= CURRENT_DATE AND v.visit_status = 'n') " +
+            "OR (DATE(v.visit_date) = CURRENT_DATE AND v.visit_status = 'y')) " +
+            "ORDER BY v.visit_date ASC, v.visit_status DESC",
+            nativeQuery = true)
+    List<Visit> findRelevantVisitsByPatientId(@Param("patientId") Long patientId);
 }

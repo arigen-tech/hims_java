@@ -8,6 +8,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 @Service
 public class HelperUtils {
@@ -61,5 +64,11 @@ public class HelperUtils {
         return String.valueOf(otp); // Convert to string for OTP usage
     }
 
+    public static String extractTimeFromInstant(Instant instant) {
+        return instant
+                .atZone(ZoneId.systemDefault())
+                .toLocalTime()
+                .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+    }
 
 }

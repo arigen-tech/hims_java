@@ -2,8 +2,11 @@ package com.hims.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.response.ApiResponse;
+import com.hims.response.AvailableTokenSlotResponse;
 import lombok.experimental.UtilityClass;
 import org.springframework.http.HttpStatus;
+
+import java.util.List;
 
 @UtilityClass
 

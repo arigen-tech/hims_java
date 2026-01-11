@@ -11,8 +11,9 @@ import java.time.Instant;
 public class VisitRequest {
     private Long id;
     private Long tokenNo;
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "UTC")
-    private Instant visitDate;
+    private String tokenStartTime;
+    private String tokenEndTime;
+    private String visitDate;
 //    private String visitStatus;
     private Long priority;
     private Long departmentId;

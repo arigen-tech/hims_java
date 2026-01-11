@@ -95,6 +95,9 @@ public class FollowUpPatientResponseDetails {
         private Instant visitDate;
         private String visitType;
         private Long tokenNo;
+        private String visitStatus;
+        private String tokenStartTime;
+        private String tokenEndTime;
     }
 
     @Data

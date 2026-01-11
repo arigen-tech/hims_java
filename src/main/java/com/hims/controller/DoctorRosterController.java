@@ -62,6 +62,22 @@ public class DoctorRosterController {
         return ResponseEntity.ok(apiResponse);
     }
 
+    @GetMapping("/checkAllAvailableTokens")
+    public ResponseEntity<ApiResponse<List<AvailableTokenSlotResponse>>> getAllOnlineTokens(
+            @RequestParam Long deptId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam String appointmentDate,
+            @RequestParam(required = false) Long sessionId
+    ) {
+        ApiResponse<List<AvailableTokenSlotResponse>> response =
+                doctorRosterServices.getAvailableToken(
+                        deptId, doctorId, appointmentDate, sessionId
+                );
+        return ResponseEntity.ok(response);
+    }
+
+
+
 
 
 }
