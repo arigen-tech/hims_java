@@ -132,11 +132,9 @@ public class PatientServiceImpl implements PatientService {
             List<Visit> savedVisits = new ArrayList<>();
             if (visit != null && !visit.isEmpty()) {
                 for (VisitRequest v : visit) {
-                    Instant visitDate =  LocalDateTime.of(
-                            LocalDate.parse(v.getVisitDate()),
-                            LocalTime.parse(v.getTokenEndTime())).toInstant(ZoneOffset.UTC);
 
-                    Instant today = visitDate;
+
+                    Instant today = v.getVisitDate();
                     String visitType = getVisitTypeForToday(patient.getId(), today);
                     v.setVisitType(visitType);
                     Visit saved = createSingleAppointment(v, patient);
@@ -350,7 +348,7 @@ public class PatientServiceImpl implements PatientService {
                             v.setHospitalId(patient.getPatientHospital().getId());
                         }
                         if (v.getVisitDate() == null) {
-                            v.setVisitDate(Instant.now().toString());
+                            v.setVisitDate(Instant.now());
                         }
                         if (v.getVisitType() == null) {
                             v.setVisitType("F");
@@ -385,9 +383,6 @@ public class PatientServiceImpl implements PatientService {
         Visit existingVisit = visitRepository.findById(visit.getId())
                 .orElseThrow(() -> new RuntimeException("Visit not found with id: " + visit.getId()));
 
-        Instant visitDate =  LocalDateTime.of(
-                LocalDate.parse(visit.getVisitDate()),
-                LocalTime.parse(visit.getTokenEndTime())).toInstant(ZoneOffset.UTC);
 
         log.info("Updating existing visit ID: {} for patient: {}",
                 existingVisit.getId(), patient.getId());
@@ -414,7 +409,7 @@ public class PatientServiceImpl implements PatientService {
         }
 
         if (visit.getVisitDate() != null) {
-            existingVisit.setVisitDate(visitDate);
+            existingVisit.setVisitDate(visit.getVisitDate());
         }
 
         return visitRepository.save(existingVisit);
@@ -792,16 +787,12 @@ public class PatientServiceImpl implements PatientService {
 //                setup.getTimeTaken(), // e.g., 10
 //                nextToken,LocalDate.now());
 
-        Instant visitDate =  LocalDateTime.of(
-                LocalDate.parse(visit.getVisitDate()),
-                LocalTime.parse(visit.getTokenEndTime())).toInstant(ZoneOffset.UTC);
 
-        Instant tokenStartTime = combineDateTimeToInstant(visit.getVisitDate().toString(), visit.getTokenStartTime());
-        Instant tokenEndTime = combineDateTimeToInstant(visit.getVisitDate().toString(), visit.getTokenEndTime());
-        newVisit.setStartTime(tokenStartTime);
-        newVisit.setEndTime(tokenEndTime);
+
+        newVisit.setStartTime(visit.getTokenStartTime());
+        newVisit.setEndTime(visit.getTokenEndTime());
         newVisit.setTokenNo(visit.getTokenNo());
-        newVisit.setVisitDate(visitDate);
+        newVisit.setVisitDate(visit.getVisitDate());
         newVisit.setLastChgDate(Instant.now());
         newVisit.setVisitStatus("n");
         newVisit.setDisplayPatientStatus("wp");
@@ -853,21 +844,6 @@ public class PatientServiceImpl implements PatientService {
         return savedVisit;
     }
 
-    public static Instant combineDateTimeToInstant(String dateStr, String timeStr) {
-        if (dateStr == null || dateStr.isEmpty() || timeStr == null || timeStr.isEmpty()) {
-            return null;
-        }
-        try {
-            LocalDate date = LocalDate.parse(dateStr);
-            LocalTime time = LocalTime.parse(timeStr);
-            LocalDateTime dateTime = LocalDateTime.of(date, time);
-            return dateTime.toInstant(ZoneOffset.UTC);
-        } catch (Exception e) {
-            throw new IllegalArgumentException(
-                    "Invalid date/time format. Date: " + dateStr + ", Time: " + timeStr, e
-            );
-        }
-    }
 //    public static Instant[] calculateTokenTimeAsInstant(
 //            String startTimeStr,
 //            int timeTakenMinutes,

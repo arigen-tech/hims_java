@@ -11,9 +11,9 @@ import java.time.Instant;
 public class VisitRequest {
     private Long id;
     private Long tokenNo;
-    private String tokenStartTime;
-    private String tokenEndTime;
-    private String visitDate;
+    private Instant tokenStartTime;
+    private Instant tokenEndTime;
+    private Instant visitDate;
 //    private String visitStatus;
     private Long priority;
     private Long departmentId;

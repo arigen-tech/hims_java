@@ -66,7 +66,7 @@ public class HelperUtils {
 
     public static String extractTimeFromInstant(Instant instant) {
         return instant
-                .atZone(ZoneId.systemDefault())
+                .atZone(ZoneId.of("UTC"))
                 .toLocalTime()
                 .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
     }
