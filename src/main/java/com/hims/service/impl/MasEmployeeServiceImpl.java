@@ -27,9 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.*;
 
 @Service
@@ -120,6 +118,8 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
     @Autowired
     private MasSpecialtyCenterRepository masSpecialtyCenterRepository;
+    @Autowired
+    private VisitRepository visitRepository;
 
 
     @Value("${app.opd}")
@@ -1484,6 +1484,49 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
 
     }
+
+    @Override
+    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>>  appointmentHistory() {
+        try {
+            Instant startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
+
+            // Fetch visits with status 'n'
+            List<Visit> visits = visitRepository.findByVisitStatusIgnoreCase("n");
+
+            // Filter, sort, and map to DTO
+            List<AppointmentBookingHistoryResponseDetails> response = visits.stream()
+                    .filter(v -> v.getVisitDate() != null && !v.getVisitDate().isBefore(startOfToday))
+                    .sorted(Comparator.comparing(Visit::getVisitDate))
+                    .map(this::mapToDto)
+                    .toList();
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+
+    }
+
+    private AppointmentBookingHistoryResponseDetails mapToDto(Visit v) {
+        AppointmentBookingHistoryResponseDetails dto = new AppointmentBookingHistoryResponseDetails();
+        dto.setVisitId(v.getId());
+        dto.setPatientId(v.getPatient()!= null?v.getPatient().getId():null);
+        dto.setPatientName(v.getPatient().getPatientFn());
+        dto.setMobileNumber(v.getPatient().getPatientMobileNumber());
+        dto.setPatientAge(v.getPatient().getPatientAge());
+        dto.setDoctorName(v.getDoctorName());
+        dto.setDepartmentName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
+        dto.setAppointmentDate(v.getVisitDate());
+        dto.setAppointmentTime(v.getStartTime());
+        dto.setStatus(v.getVisitStatus());
+        dto.setReason(v.getReason()!=null? v.getReason().getReasonName():null);
+        return dto;
+    }
+
 
 
 

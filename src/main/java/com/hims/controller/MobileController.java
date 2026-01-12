@@ -37,6 +37,7 @@ public class MobileController {
     private MasEmployeeService masEmployeeService;
 
 
+
     @PostMapping("/mLogin")
     public ResponseEntity<ApiResponse> loginResponse(@RequestBody LoginRequest request) {
         return new ResponseEntity<>(mobileLoginService.loginRequest(request), HttpStatus.OK);
@@ -105,6 +106,11 @@ public class MobileController {
     public ApiResponse<DoctorDetailResponse> getByDoctor(
             @RequestParam(required = false) Long doctorId) {
        return masEmployeeService.getDoctor(doctorId);
+    }
+
+    @GetMapping("/getAppointmentHistory")
+    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistory() {
+        return masEmployeeService.appointmentHistory();
     }
 
 

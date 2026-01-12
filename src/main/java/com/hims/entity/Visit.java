@@ -98,4 +98,8 @@ public class Visit {
     @Column(name = "display_patient_status", length = 2)
     private String displayPatientStatus;
 
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cancelled_reason_id")
+    private MasAppointmentChangeReason reason;
 }

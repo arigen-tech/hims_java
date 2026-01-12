@@ -183,4 +183,6 @@ WHERE v.visit_status = 'n'
             "ORDER BY v.visit_date ASC, v.visit_status DESC",
             nativeQuery = true)
     List<Visit> findRelevantVisitsByPatientId(@Param("patientId") Long patientId);
+
+    List<Visit> findByVisitStatusIgnoreCase(String n);
 }
