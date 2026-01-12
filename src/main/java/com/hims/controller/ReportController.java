@@ -41,6 +41,9 @@ public class ReportController {
         Map<String, Object> params = new HashMap<>();
         params.put("Bill_no", billNo);
         params.put("Pay_status", paymentStatus);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
         try{
             if ("D".equalsIgnoreCase(flag)) {
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_JASPER, params, getConnection());
@@ -397,6 +400,10 @@ public class ReportController {
             @RequestParam String flag){
         Map<String , Object> params = new HashMap<>();
         params.put("orderhd_id", orderhd_id);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
+
         try{
             if ("D".equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB,ReportConstants.LAB_INVESTIGATION_JASPER, params, getConnection());
