@@ -1490,10 +1490,8 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         try {
             Instant startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-            // Fetch visits with status 'n'
             List<Visit> visits = visitRepository.findByVisitStatusIgnoreCase("n");
 
-            // Filter, sort, and map to DTO
             List<AppointmentBookingHistoryResponseDetails> response = visits.stream()
                     .filter(v -> v.getVisitDate() != null && !v.getVisitDate().isBefore(startOfToday))
                     .sorted(Comparator.comparing(Visit::getVisitDate))
@@ -1513,6 +1511,8 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
     private AppointmentBookingHistoryResponseDetails mapToDto(Visit v) {
         AppointmentBookingHistoryResponseDetails dto = new AppointmentBookingHistoryResponseDetails();
+
+
         dto.setVisitId(v.getId());
         dto.setPatientId(v.getPatient()!= null?v.getPatient().getId():null);
         dto.setPatientName(v.getPatient().getPatientFn());
@@ -1521,7 +1521,8 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setDoctorName(v.getDoctorName());
         dto.setDepartmentName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
         dto.setAppointmentDate(v.getVisitDate());
-        dto.setAppointmentTime(v.getStartTime());
+        dto.setAppointmentStartTime(v.getStartTime());
+        dto.setAppointmentEndTime(v.getEndTime());
         dto.setStatus(v.getVisitStatus());
         dto.setReason(v.getReason()!=null? v.getReason().getReasonName():null);
         return dto;

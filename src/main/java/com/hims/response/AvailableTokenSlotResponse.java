@@ -28,4 +28,5 @@ public class AvailableTokenSlotResponse {
                 startTime.format(fmt),
                 endTime.format(fmt));
     }
+
 }

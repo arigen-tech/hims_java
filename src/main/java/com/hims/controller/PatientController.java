@@ -2,12 +2,14 @@ package com.hims.controller;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.MasAppointmentChangeReason;
 import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.request.*;
 import com.hims.response.*;
+import com.hims.service.MasAppointmentChangeReasonService;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.service.PatientService;
 import com.hims.utils.ResponseUtils;
@@ -224,6 +226,5 @@ public class PatientController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
 
 }

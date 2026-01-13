@@ -416,10 +416,14 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
                 continue;
             }
             boolean isAvailable = !occupiedTokenNumbers.contains((long) tokenNum);
+
+            LocalTime formattedStart = LocalTime.of(slotStart.getHour(), slotStart.getMinute());
+            LocalTime formattedEnd = LocalTime.of(slotEnd.getHour(), slotEnd.getMinute());
+
             offlineSlots.add(new AvailableTokenSlotResponse(
                     tokenNum,
-                    slotStart,
-                    slotEnd,
+                    formattedStart,
+                    formattedEnd,
                     isAvailable
             ));
             offlineCount++;

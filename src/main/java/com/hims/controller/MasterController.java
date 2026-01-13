@@ -248,6 +248,8 @@ private MasLabResultAmendmentTypeService labResultAmendmentTypeService;
 @Autowired
 private MasPatientPreparationService masPatientPreparationService;
 
+@Autowired
+private MasAppointmentChangeReasonService masAppointmentReasonService;
 
 
 
@@ -3857,6 +3859,11 @@ private MasPatientPreparationService masPatientPreparationService;
     @GetMapping("/patient-preparation/all")
     public ResponseEntity<?> getAllMasPatientPrep(@RequestParam int flag) {
         return ResponseEntity.ok(masPatientPreparationService.getAll(flag));
+    }
+
+    @GetMapping("/cancel-payment-reason/{flag}")
+    public ResponseEntity<?> getAllReasons(@PathVariable int flag) {
+        return ResponseEntity.ok(masAppointmentReasonService.getAllReasons(flag));
     }
 
 
