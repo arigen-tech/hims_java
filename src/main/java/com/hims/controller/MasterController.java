@@ -3172,33 +3172,33 @@ private MasAppointmentChangeReasonService masAppointmentReasonService;
 //    ===============================Ob Mas Station Presenting ====================
 
 
-    @GetMapping("/getAll/{flag}")
+    @GetMapping("obMasStationPresenting/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<ObMasStationPresentingResponse>>> getAllPresenting(
             @PathVariable int flag) {
         return ResponseEntity.ok(obMasStationPresentingService.getAll(flag));
     }
 
-    @GetMapping("/getById/{id}")
+    @GetMapping("obMasStationPresenting/getById/{id}")
     public ResponseEntity<ApiResponse<ObMasStationPresentingResponse>> getByIdPresenting(
             @PathVariable Long id) {
         return ResponseEntity.ok(obMasStationPresentingService.getById(id));
     }
 
-    @PostMapping("/create")
+    @PostMapping("obMasStationPresenting/create")
     public ResponseEntity<ApiResponse<ObMasStationPresentingResponse>> createPresenting(
             @RequestBody @Valid ObMasStationPresentingRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(obMasStationPresentingService.create(request));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("obMasStationPresenting/update/{id}")
     public ResponseEntity<ApiResponse<ObMasStationPresentingResponse>> updatePresenting(
             @PathVariable Long id,
             @RequestBody @Valid ObMasStationPresentingRequest request) {
         return ResponseEntity.ok(obMasStationPresentingService.update(id, request));
     }
 
-    @PutMapping("/status/{id}")
+    @PutMapping("obMasStationPresenting/status/{id}")
     public ResponseEntity<ApiResponse<ObMasStationPresentingResponse>> changeStatusPresenting(
             @PathVariable Long id,
             @RequestParam String status) {
