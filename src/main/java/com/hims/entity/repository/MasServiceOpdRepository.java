@@ -34,4 +34,8 @@ public interface MasServiceOpdRepository extends JpaRepository<MasServiceOpd, Lo
             @Param("serviceCat") MasServiceCategory serviceCat,
             @Param("currentDateTime") Instant currentDateTime);
 
+
+
+
+    Optional<MasServiceOpd> findByDoctorId_UserId(Long userId);
 }

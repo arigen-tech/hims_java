@@ -127,6 +127,8 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
     @Value("${app.role.doctor}")
     private Long roleId;
+    @Autowired
+    private MasServiceOpdRepository masServiceOpdRepository;
 
 
 
@@ -1314,6 +1316,9 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     SpecialitiesResponse dto = new SpecialitiesResponse();
                     dto.setSpecialityId(dept.getId());
                     dto.setSpecialityName(dept.getDepartmentName());
+                    dto.setHospitalId(dept.getHospital()!=null?dept.getHospital().getId():null);
+                    dto.setHospitalName(dept.getHospital()!=null?dept.getHospital().getHospitalName():null);
+
                     return dto;
                 }).toList();
 
@@ -1457,8 +1462,8 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 for (UserDepartment ud : userDepartments) {
                     MasDepartment dept = ud.getDepartment();
                     SpecialitiesResponse sr = new SpecialitiesResponse();
-                    sr.setSpecialityId(dept.getId());
-                    sr.setSpecialityName(dept.getDepartmentName());
+                    sr.setSpecialityId(dept!=null?dept.getId():null);
+                    sr.setSpecialityName(dept!=null?dept.getDepartmentName():null);
                     specialitiesList.add(sr);
                 }
             }
@@ -1471,6 +1476,12 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             doctor.setPhoneNo(emp.getMobileNo());
             doctor.setAge(emp.getAge() != null ? emp.getAge().toString() : null);
             doctor.setYearsOfExperience(emp.getYearOfExperience());
+            doctor.setHospitalName(optionalUser.map(User::getHospital).map(MasHospital::getHospitalName).orElse(null));
+            Optional<EmployeeQualification> employeeQualification=employeeQualificationRepository.findById(emp.getEmployeeId());
+            doctor.setDegree(employeeQualification.map(EmployeeQualification::getQualificationName).orElse(null));
+            doctor.setCollege(employeeQualification.map(EmployeeQualification::getInstitutionName).orElse(null));
+            Optional<MasServiceOpd> masServiceOpd=masServiceOpdRepository.findByDoctorId_UserId(optionalUser.get().getUserId());
+            doctor.setConsultancyFree(masServiceOpd.map(MasServiceOpd::getBaseTariff).orElse(null));
             doctor.setSpecialitiesResponseList(specialitiesList);
             return ResponseUtils.createSuccessResponse(doctor, new TypeReference<>() {}
             );
@@ -1506,13 +1517,44 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
-
     }
+
+    @Override
+    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory(
+            Integer flag, String mobileNo) {
+        try {
+            Instant startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
+            List<Visit> visits;
+            if (flag != null && flag == 1) {
+                // flag=1 → all dates status->y,c,n
+                visits = visitRepository.findByVisitStatusInIgnoreCase(
+                        List.of("y", "c", "n")
+                );
+            } else {
+                // flag=0 → today & future only and status->n
+                visits = visitRepository.findNVisitsFromToday(startOfToday);
+            }
+            List<AppointmentBookingHistoryResponseDetails> response = visits.stream()
+                    .filter(v -> mobileNo == null
+                            || mobileNo.isBlank()
+                            || (v.getPatient() != null
+                            && mobileNo.equals(v.getPatient().getPatientMobileNumber())))
+                    .sorted(Comparator.comparing(Visit::getVisitDate))
+                    .map(this::mapToDto)
+                    .toList();
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
 
     private AppointmentBookingHistoryResponseDetails mapToDto(Visit v) {
         AppointmentBookingHistoryResponseDetails dto = new AppointmentBookingHistoryResponseDetails();
-
-
         dto.setVisitId(v.getId());
         dto.setPatientId(v.getPatient()!= null?v.getPatient().getId():null);
         dto.setPatientName(v.getPatient().getPatientFn());

@@ -8,6 +8,8 @@ import lombok.Data;
 public class SpecialitiesResponse {
     private Long specialityId;
     private String specialityName;
+    private Long hospitalId;
+    private String hospitalName;
 
 
 }

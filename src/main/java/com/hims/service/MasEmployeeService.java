@@ -31,4 +31,6 @@ public interface MasEmployeeService {
     ApiResponse<DoctorDetailResponse> getDoctor(Long doctorId);
 
     ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory();
+
+    ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory(Integer flag,String mobileNo);
 }

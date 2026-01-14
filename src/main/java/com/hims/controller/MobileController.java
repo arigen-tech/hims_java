@@ -88,31 +88,22 @@ public class MobileController {
     }
 
 
-
-
     @GetMapping("/searchByDepartmentAndDoctor")
     public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctorList(@RequestParam(required = false) String search) {
         return masEmployeeService.getDepartmentAndDoctor(search);
     }
-
     @GetMapping("/getAllDoctorBySpeciality")
-    public ApiResponse<List<SpecialityResponse>> getDoctorSpecialityBy(
-            @RequestParam(required = false) Long specialityId) {
-
-       return masEmployeeService.getSpecialityAndDoctor(specialityId);
+    public ApiResponse<List<SpecialityResponse>> getDoctorSpecialityBy(@RequestParam(required = false) Long specialityId) {
+        return masEmployeeService.getSpecialityAndDoctor(specialityId);
     }
-
     @GetMapping("/getByDoctor")
-    public ApiResponse<DoctorDetailResponse> getByDoctor(
-            @RequestParam(required = false) Long doctorId) {
+    public ApiResponse<DoctorDetailResponse> getByDoctor(@RequestParam(required = false) Long doctorId) {
        return masEmployeeService.getDoctor(doctorId);
     }
-
     @GetMapping("/getAppointmentHistory")
-    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistory() {
-        return masEmployeeService.appointmentHistory();
+    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistory(@RequestParam Integer flag,
+            @RequestParam(required = false) String mobileNo) {
+        return masEmployeeService.appointmentHistory(flag, mobileNo);
     }
-
-
 
 }

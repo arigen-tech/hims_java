@@ -185,4 +185,14 @@ WHERE v.visit_status = 'n'
     List<Visit> findRelevantVisitsByPatientId(@Param("patientId") Long patientId);
 
     List<Visit> findByVisitStatusIgnoreCase(String n);
+
+    List<Visit> findByVisitStatusInIgnoreCase(List<String> y);
+    @Query("""
+    SELECT v
+    FROM Visit v
+    WHERE LOWER(v.visitStatus) = 'n'
+      AND v.visitDate >= :startDate
+""")
+    List<Visit> findNVisitsFromToday(@Param("startDate") Instant startDate);
+
 }
