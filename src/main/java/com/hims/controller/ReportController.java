@@ -523,6 +523,113 @@ public class ReportController {
         }
     }
 
+    @GetMapping(value = "/indentReceiving", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadIndentReceiving(
+            @RequestParam Long indentMId,
+            @RequestParam String flag ) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("indent_m_id", indentMId);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
+
+        try{
+            if ("D".equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_RECEIVING_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.INDENT_RECEIVING_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_RECEIVING_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate Indent receiving report: " + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/labRegister", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadLabRegister(
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate,
+            @RequestParam Long genderId,
+            @RequestParam Long investigationId,
+            @RequestParam Long fromAge,
+            @RequestParam Long toAge ,
+            @RequestParam String flag) {
+        HashMap<String, Object> params =  new HashMap<>();
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("gender_id", genderId);
+        params.put("investigation_id", investigationId);
+        params.put("from_age", fromAge);
+        params.put("to_age", toAge);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
+        params.put("SUBREPORT_DIR", getClass()
+                .getResource(ReportConstants.JASPER_BASE_PATH_LAB + ReportConstants.LAB_REGISTER_SUB_REPORT_DIR)
+                .toString());
+
+        try{
+            if ("D".equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_REGISTER_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.LAB_REGISTER_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_REGISTER_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate Lab Register report: " + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/itemWiseReceiving", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadItemWiseReceiving(
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
+            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate,
+            @RequestParam Long itemId,
+            @RequestParam String flag) {
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("item_id", itemId);
+
+        try{
+            if ("D".equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RECEIVING_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.ITEM_WISE_RECEIVING_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RECEIVING_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate Item Wise Receiving report: " + e.getMessage());
+        }
+    }
+
     private ResponseEntity<byte[]> buildPdfResponse(
             byte[] pdfData,
             String fileName) {

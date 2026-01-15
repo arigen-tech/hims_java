@@ -59,4 +59,14 @@ public final class ReportConstants {
     public static final String INDENT_ISSUE_JASPER = "Medical_Store_Indent_Issue_report_1";
     public static final String INDENT_ISSUE_REPORT = "IndentIssueReport";
 
+    public static final String INDENT_RECEIVING_JASPER = "indent_receive_report";
+    public static final String INDENT_RECEIVING_REPORT = "IndentReceiveReport";
+
+    public static final String LAB_REGISTER_SUB_REPORT_DIR = "LabRegisterReport/";
+    public static final String LAB_REGISTER_JASPER = "Lab_Main_Report";
+    public static final String LAB_REGISTER_REPORT = "LabRegisterReport";
+
+    public static final String ITEM_WISE_RECEIVING_JASPER = "Item_wise_receiving_report";
+    public static final String ITEM_WISE_RECEIVING_REPORT = "ItemWiseReceivingReport";
+
 }
