@@ -2,16 +2,15 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
-import com.hims.entity.repository.DgResultEntryDetailRepository;
-import com.hims.entity.repository.LabResultAmendAuditRepository;
-import com.hims.entity.repository.LabTurnAroundTimeRepository;
-import com.hims.entity.repository.UserRepo;
+import com.hims.entity.repository.*;
 import com.hims.response.*;
 import com.hims.service.LabReportService;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,10 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -38,6 +34,23 @@ public class LabReportServiceImpl implements LabReportService {
 
     private final LabResultAmendAuditRepository amendAuditRepository;
 
+    private final DgSampleCollectionDetailsRepository dgSampleCollectionDetailsRepository;
+
+    private final LabDtRepository dgOrderDtRepository;
+
+    @Value("${lab.track-order-status-sample.collect}")
+    private Long sampleCollectStatusId;
+
+    @Value("${lab.track-order-status-sample.validate}")
+    private Long sampleValidateStatusId;
+
+    @Value("${lab.track-order-status-sample.reject}")
+    private Long sampleRejectStatusId;
+
+    @Value("${lab.track-order-status-result.entry}")
+    private Long resultEnteredStatusId;
+
+
 
     @Override
     public ApiResponse<List<AllLabReportResponse>> getAllLabReports(String phnNum, String patientName, LocalDate fromDate,LocalDate toDate) {
@@ -46,6 +59,8 @@ public class LabReportServiceImpl implements LabReportService {
             if (fromDate == null || toDate == null) {
                 throw new IllegalArgumentException("From Date and To Date are mandatory");
             }
+
+//            Sort sort=Sort.by(Sort.Direction.DESC,"resultEntryId.resultDate");
             Specification<DgResultEntryDetail> spec =
                     filterLabReports(
                             phnNum,
@@ -205,6 +220,78 @@ public class LabReportServiceImpl implements LabReportService {
         }
     }
 
+    @Override
+    public ApiResponse<List<OrderTrackingReportResponse>> getOrderTrackingReports(
+            String patientName,
+            String phnNum,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+
+        try {
+            log.info("getOrderTrackingReports() method started...");
+            if ((patientName == null || patientName.isBlank()) &&
+                    (phnNum == null || phnNum.isBlank())) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Patient Name or Mobile Number is mandatory",HttpStatus.BAD_REQUEST.value());
+            }
+
+            if (fromDate == null || toDate == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"From Date and To Date are mandatory",HttpStatus.BAD_REQUEST.value());
+            }
+
+            Specification<DgOrderDt> spec = filterOrderTrackReport(patientName, phnNum, fromDate, toDate);
+
+            Sort sort = Sort.by(Sort.Direction.DESC, "orderhdId.orderDate");
+
+            List<DgOrderDt> entities = dgOrderDtRepository.findAll(spec,sort);
+
+            List<OrderTrackingReportResponse> responses =
+                    entities.stream()
+                            .map(this::mapToOrderTrackingResponse)
+                            .toList();
+
+            log.info("getOrderTrackingReports() method ended...");
+
+            return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+
+
+        } catch (Exception e) {
+            log.error("getOrderTrackingReports()  error:: ",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<List<LabIncompleteInvestigationsReportResponse>> getIncompleteInvestigationReports(Long subChargeCodeId,LocalDate fromDate, LocalDate toDate) {
+        try {
+            log.info("getIncompleteInvestigationReports() Started...");
+            List<Long> orderStatues = List.of(sampleCollectStatusId, sampleRejectStatusId, sampleValidateStatusId, resultEnteredStatusId);
+            Specification<DgOrderDt> spec = filterIncompleteInvestigationReports(subChargeCodeId,fromDate, toDate,orderStatues);
+            Sort sort= Sort.by(Sort.Direction.DESC,"orderhdId.orderDate");
+            List<DgOrderDt> all = dgOrderDtRepository.findAll(spec, sort);
+            log.info("getIncompleteInvestigationReports() Ended...");
+            return  ResponseUtils.createSuccessResponse(all.stream().map(this::mapToIncompleteReportResponse).toList(), new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("getIncompleteInvestigationReports() error ::",e);
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<List<SampleRejectionInvestigationReportResponse>> getSampleRejectionReport(Long modalityId, LocalDate fromDate, LocalDate toDate) {
+
+      try {
+          log.info("getSampleRejectionReport() Started...");
+          Specification<DgSampleCollectionDetails> spec = filterRejectInvestigation(modalityId, fromDate, toDate);
+          List<DgSampleCollectionDetails> all = dgSampleCollectionDetailsRepository.findAll(spec);
+          log.info("getSampleRejectionReport() Ended...");
+          return  ResponseUtils.createSuccessResponse(all.stream().map(this::mapToSampleRejectReport).toList(), new TypeReference<>() {});
+      } catch (Exception e) {
+        log.error("getSampleRejectionReport() error ::",e);
+        return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
+       }
+    }
 
 
     public static Specification<DgResultEntryDetail> filterLabReports(
@@ -247,29 +334,39 @@ public class LabReportServiceImpl implements LabReportService {
                 );
             }
 
-            /* ------------------ Optional Patient Name ------------------ */
+            // Name filter (space-based logic)
             if (patientName != null && !patientName.isBlank()) {
 
-                Expression<String> fullNameExpr = cb.concat(
-                        cb.concat(
-                                cb.coalesce(patientJoin.get("patientFn"), ""),
-                                " "
-                        ),
-                        cb.concat(
-                                cb.coalesce(patientJoin.get("patientMn"), ""),
-                                cb.concat(
-                                        " ",
-                                        cb.coalesce(patientJoin.get("patientLn"), "")
-                                )
-                        )
-                );
+                String[] parts = patientName.trim().split("\\s+");
 
-                predicates.add(
-                        cb.like(
-                                cb.lower(fullNameExpr),
-                                "%" + patientName.toLowerCase() + "%"
-                        )
-                );
+                if (parts.length == 1) {
+                    // First name only
+                    predicates.add(
+                            cb.like(
+                                    cb.lower(patientJoin.get("patientFn")),
+                                    "%" + parts[0].toLowerCase() + "%"
+                            )
+                    );
+
+                } else if (parts.length == 2) {
+                    // First + Last
+                    predicates.add(
+                            cb.and(
+                                    cb.like(cb.lower(patientJoin.get("patientFn")), "%" + parts[0].toLowerCase() + "%"),
+                                    cb.like(cb.lower(patientJoin.get("patientLn")), "%" + parts[1].toLowerCase() + "%")
+                            )
+                    );
+
+                } else {
+                    // First + Middle + Last
+                    predicates.add(
+                            cb.and(
+                                    cb.like(cb.lower(patientJoin.get("patientFn")), "%" + parts[0].toLowerCase() + "%"),
+                                    cb.like(cb.lower(patientJoin.get("patientMn")), "%" + parts[1].toLowerCase() + "%"),
+                                    cb.like(cb.lower(patientJoin.get("patientLn")), "%" + parts[2].toLowerCase() + "%")
+                            )
+                    );
+                }
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
@@ -383,32 +480,39 @@ public class LabReportServiceImpl implements LabReportService {
                 );
             }
 
-            /* ---------------------------
-             * Patient full name search
-             * fn + ' ' + (mn or '') + ' ' + ln
-             * BUT collapse double spaces
-             * --------------------------- */
+            // Name filter (space-based logic)
             if (patientName != null && !patientName.isBlank()) {
 
-                Expression<String> fullNameExpr = cb.trim(
-                        cb.concat(
-                                cb.concat(
-                                        cb.concat(
-                                                patientJoin.get("patientFn"),
-                                                " "
-                                        ),
-                                        cb.coalesce(patientJoin.get("patientMn"), "")
-                                ),
-                                cb.concat(" ", patientJoin.get("patientLn"))
-                        )
-                );
+                String[] parts = patientName.trim().split("\\s+");
 
-                predicates.add(
-                        cb.like(
-                                cb.lower(fullNameExpr),
-                                "%" + patientName.trim().toLowerCase() + "%"
-                        )
-                );
+                if (parts.length == 1) {
+                    // First name only
+                    predicates.add(
+                            cb.like(
+                                    cb.lower(patientJoin.get("patientFn")),
+                                    "%" + parts[0].toLowerCase() + "%"
+                            )
+                    );
+
+                } else if (parts.length == 2) {
+                    // First + Last
+                    predicates.add(
+                            cb.and(
+                                    cb.like(cb.lower(patientJoin.get("patientFn")), "%" + parts[0].toLowerCase() + "%"),
+                                    cb.like(cb.lower(patientJoin.get("patientLn")), "%" + parts[1].toLowerCase() + "%")
+                            )
+                    );
+
+                } else {
+                    // First + Middle + Last
+                    predicates.add(
+                            cb.and(
+                                    cb.like(cb.lower(patientJoin.get("patientFn")), "%" + parts[0].toLowerCase() + "%"),
+                                    cb.like(cb.lower(patientJoin.get("patientMn")), "%" + parts[1].toLowerCase() + "%"),
+                                    cb.like(cb.lower(patientJoin.get("patientLn")), "%" + parts[2].toLowerCase() + "%")
+                            )
+                    );
+                }
             }
 
             /* ---------------------------
@@ -438,6 +542,131 @@ public class LabReportServiceImpl implements LabReportService {
                 );
             }
 
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+
+    public static Specification<DgOrderDt> filterOrderTrackReport(
+            String patientName,
+            String mobileNo,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+        return (root, query, cb) -> {
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            Join<DgOrderDt, DgOrderHd> orderHdJoin = root.join("orderhdId", JoinType.INNER);
+            Join<DgOrderHd, Patient> patientJoin = orderHdJoin.join("patientId", JoinType.INNER);
+
+            // Date filter (MANDATORY)
+            predicates.add(
+                    cb.between(
+                            orderHdJoin.get("orderDate"),
+                            fromDate,
+                            toDate
+                    )
+            );
+
+            // Mobile filter
+            if (mobileNo != null && !mobileNo.isBlank()) {
+                predicates.add(
+                        cb.like(
+                                patientJoin.get("patientMobileNumber"),
+                                "%" + mobileNo.trim() + "%"
+                        )
+                );
+            }
+
+            // Name filter (space-based logic)
+            if (patientName != null && !patientName.isBlank()) {
+
+                String[] parts = patientName.trim().split("\\s+");
+
+                if (parts.length == 1) {
+                    // First name only
+                    predicates.add(
+                            cb.like(
+                                    cb.lower(patientJoin.get("patientFn")),
+                                    "%" + parts[0].toLowerCase() + "%"
+                            )
+                    );
+
+                } else if (parts.length == 2) {
+                    // First + Last
+                    predicates.add(
+                            cb.and(
+                                    cb.like(cb.lower(patientJoin.get("patientFn")), "%" + parts[0].toLowerCase() + "%"),
+                                    cb.like(cb.lower(patientJoin.get("patientLn")), "%" + parts[1].toLowerCase() + "%")
+                            )
+                    );
+
+                } else {
+                    // First + Middle + Last
+                    predicates.add(
+                            cb.and(
+                                    cb.like(cb.lower(patientJoin.get("patientFn")), "%" + parts[0].toLowerCase() + "%"),
+                                    cb.like(cb.lower(patientJoin.get("patientMn")), "%" + parts[1].toLowerCase() + "%"),
+                                    cb.like(cb.lower(patientJoin.get("patientLn")), "%" + parts[2].toLowerCase() + "%")
+                            )
+                    );
+                }
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    private static Specification<DgOrderDt> filterIncompleteInvestigationReports(Long subChargeCodeId,LocalDate fromDate,LocalDate toDate,List<Long> statuses){
+
+        return (root,query,cb)->{
+            List<Predicate> predicates= new ArrayList<>();
+            Join<DgOrderDt,DgOrderHd> orderHdJoin=root.join("orderhdId",JoinType.INNER);
+            Join<DgOrderDt,LabOrderTrackingStatus> statusJoin= root.join("orderTrackingStatus",JoinType.INNER);
+            predicates.add(
+                    cb.between(orderHdJoin.get("orderDate"),fromDate,toDate)
+            );
+            if(subChargeCodeId !=null){
+                predicates.add(
+                        cb.equal(
+                                root.get("subChargeid"),subChargeCodeId
+                        )
+                );
+            }
+            if(statuses!=null && !statuses.isEmpty()){
+                predicates.add(
+                        statusJoin.get("orderStatusId").in(statuses)
+                );
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+
+        };
+    }
+
+    private static Specification<DgSampleCollectionDetails> filterRejectInvestigation(Long subChargeCodeId,LocalDate fromDate,LocalDate toDate){
+        return (root,query,cb)->{
+            List<Predicate> predicates=new ArrayList<>();
+            Join<DgSampleCollectionDetails,DgSampleCollectionHeader> sampleCollectionHeaderJoin= root.join("sampleCollectionHeader",JoinType.INNER);
+            Join<DgSampleCollectionHeader,Visit> visitJoin=sampleCollectionHeaderJoin.join("visitId",JoinType.INNER);
+            Join<Visit,BillingHeader> billingHeaderJoin=visitJoin.join("billingHd",JoinType.INNER);
+            Join<BillingHeader,DgOrderHd> orderHdJoin=billingHeaderJoin.join("hdorder",JoinType.INNER);
+            predicates.add(
+                    cb.isNotNull(
+                            root.get("oldSampleCollectionHdIdForReject")
+                    )
+            );
+            Join<DgSampleCollectionHeader,MasSubChargeCode> subChargeCodeJoin=sampleCollectionHeaderJoin.join("subChargeCode",JoinType.INNER);
+
+            predicates.add(
+                    cb.between(orderHdJoin.get("orderDate"),fromDate,toDate)
+            );
+
+            if(subChargeCodeId!=null){
+                predicates.add(
+                        cb.equal(subChargeCodeJoin.get("subId"),subChargeCodeId)
+                );
+            }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
@@ -499,6 +728,82 @@ public class LabReportServiceImpl implements LabReportService {
         response.setReasonForChange(entity.getReasonForChange());
         response.setDateTime(entity.getAmendedDatetime());
         return response;
+    }
+
+    private OrderTrackingReportResponse mapToOrderTrackingResponse(DgOrderDt entity){
+        OrderTrackingReportResponse response= new OrderTrackingReportResponse();
+
+        if(entity.getOrderTrackingStatus()!=null){
+            if(entity.getOrderTrackingStatus().getOrderStatusId()==1){
+                response.setOrderStatusName(entity.getOrderTrackingStatus().getOrderStatusName());
+                response.setGeneratedSampleId("N/A");
+            }else {
+                List<DgSampleCollectionDetails> sampleCollectionDetails = dgSampleCollectionDetailsRepository.findByInvestigationId_InvestigationIdAndSampleCollectionHeader_visitId_Id(entity.getInvestigationId().getInvestigationId(), entity.getOrderhdId().getVisitId().getId());
+                DgSampleCollectionDetails sampleCollectionDetail =
+                        sampleCollectionDetails.stream()
+                                .filter(d -> d.getSampleCollDatetime() != null)
+                                .max(Comparator.comparing(DgSampleCollectionDetails::getSampleCollDatetime))
+                                .orElseThrow();
+                response.setOrderStatusName(entity.getOrderTrackingStatus().getOrderStatusName());
+                response.setOrderStatusId(entity.getOrderTrackingStatus().getOrderStatusId());
+                response.setGeneratedSampleId(sampleCollectionDetail.getSampleGeneratedId());
+            }
+        }
+        Patient patient = entity.getOrderhdId().getPatientId();
+        response.setDgOrderHdId((long) entity.getOrderhdId().getId());
+        response.setOrderNum(entity.getOrderhdId().getOrderNo());
+        response.setAge(patient.getPatientAge());
+        response.setGender(patient.getPatientGender().getGenderName());
+        response.setMobileNum(patient.getPatientMobileNumber());
+        response.setPatientName(patient.getPatientMn().trim().isBlank()?patient.getPatientFn()+" "+patient.getPatientLn():patient.getFullName());
+        response.setInvestigationName(entity.getInvestigationId().getInvestigationName());
+        response.setOrderDate(entity.getOrderhdId().getOrderDate());
+
+        return  response;
+    }
+
+    private LabIncompleteInvestigationsReportResponse mapToIncompleteReportResponse(DgOrderDt entity){
+        LabIncompleteInvestigationsReportResponse response= new LabIncompleteInvestigationsReportResponse();
+        Patient patient = entity.getOrderhdId().getPatientId();
+        List<DgSampleCollectionDetails> sampleCollectionDetails = dgSampleCollectionDetailsRepository.findByInvestigationId_InvestigationIdAndSampleCollectionHeader_visitId_Id(entity.getInvestigationId().getInvestigationId(), entity.getOrderhdId().getVisitId().getId());
+
+        DgSampleCollectionDetails sampleCollectionDetail =
+                sampleCollectionDetails.stream()
+                        .filter(d -> d.getSampleCollDatetime() != null)
+                        .max(Comparator.comparing(DgSampleCollectionDetails::getSampleCollDatetime))
+                        .orElseThrow();
+        response.setSampleId(sampleCollectionDetail.getSampleGeneratedId());
+        response.setOrderNo(entity.getOrderhdId().getOrderNo());
+        response.setOrderDate(entity.getOrderhdId().getOrderDate());
+        response.setAge(patient.getPatientAge());
+        response.setGender(patient.getPatientGender().getGenderName());
+        response.setMobileNum(patient.getPatientMobileNumber());
+        response.setPatientName(patient.getPatientMn().trim().isBlank()?patient.getPatientFn()+" "+patient.getPatientLn():patient.getFullName());
+        response.setInvestigationName(entity.getInvestigationId().getInvestigationName());
+        if(entity.getOrderTrackingStatus()!=null){
+            response.setCurrentStatus(entity.getOrderTrackingStatus().getOrderStatusName());
+        }
+        return  response;
+    }
+
+    private SampleRejectionInvestigationReportResponse mapToSampleRejectReport(DgSampleCollectionDetails entity){
+        SampleRejectionInvestigationReportResponse response=new SampleRejectionInvestigationReportResponse();
+        DgOrderHd dgOrderHd = entity.getSampleCollectionHeader().getVisitId().getBillingHd().getHdorder();
+//        DgOrderDt dgOrderDt = dgOrderDtRepository.findByOrderhdId_IdAndInvestigationId_InvestigationId(dgOrderHd.getId(), entity.getInvestigationId().getInvestigationId());
+        Patient patient = entity.getSampleCollectionHeader().getPatientId();
+        response.setOrderNo(dgOrderHd.getOrderNo());
+        response.setOrderDate(dgOrderHd.getOrderDate());
+        response.setPatientName(patient.getFullName());
+        response.setAge(patient.getPatientAge());
+        response.setGender(patient.getPatientGender().getGenderName());
+        response.setMobileNum(patient.getPatientMobileNumber());
+        response.setInvestigationName(entity.getInvestigationId().getInvestigationName());
+        response.setSampleId(entity.getSampleGeneratedId());
+//        response.setOrderStatus(dgOrderDt.getOrderTrackingStatus()!=null ?dgOrderDt.getOrderTrackingStatus().getOrderStatusName():null);
+        response.setOrderStatus("Rejected");
+        response.setRejectionReason(entity.getRejected_reason());
+        response.setModalityName(entity.getSampleCollectionHeader().getSubChargeCode().getSubName());
+        return  response;
     }
 
 }

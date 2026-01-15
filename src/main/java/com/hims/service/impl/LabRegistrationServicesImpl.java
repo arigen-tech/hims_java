@@ -84,6 +84,15 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     private MasMainChargeCodeRepository masMainChargeCodeRepository;
     @Autowired
     private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
+
+    @Autowired
+    private LabOrderTrackingStatusRepository labOrderTrackingStatusRepository;
+
+    @Value("${lab.track-order-status-reg.ordered}")
+    private Long orderedStatusId;
+
+    @Value("${lab.track-order-status-sample.collect}")
+    private Long collectedStatusId;
     
 
     @Value("${app.pending.days}")
@@ -230,6 +239,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         dt.setMainChargecodeId(invEntity.getMainChargeCodeId().getChargecodeId());
                         dt.setSubChargeid(invEntity.getSubChargeCodeId().getSubId());
                         dt.setAppointmentDate(inv.getAppointmentDate());
+                        dt.setOrderTrackingStatus(labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow());
 
                         dt.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                         dt.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
@@ -1404,6 +1414,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                         "y".equalsIgnoreCase(orderDetail.getBillingStatus())) {
 
                     orderDetail.setOrderStatus("y");
+                    orderDetail.setOrderTrackingStatus(labOrderTrackingStatusRepository.findById(collectedStatusId).orElseThrow());
                     labDtRepository.save(orderDetail);
                 }
             }

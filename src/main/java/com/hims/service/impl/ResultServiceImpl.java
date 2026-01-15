@@ -11,6 +11,7 @@ import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,6 +62,8 @@ public class ResultServiceImpl implements ResultService {
     private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
     @Autowired
     private VisitRepository visitRepository;
+    @Autowired
+    private LabDtRepository dgOrderDtRepository;
 
     @Autowired
     private MasLabResultAmendmentTypeRepository masLabResultAmendmentTypeRepository;
@@ -71,6 +74,15 @@ public class ResultServiceImpl implements ResultService {
 
     @Autowired
     AuthUtil authUtil;
+
+    @Autowired
+    private LabOrderTrackingStatusRepository orderTrackingStatusRepository;
+
+    @Value("${lab.track-order-status-result.entry}")
+    private Long resulEntryStatusId;
+
+    @Value("${lab.track-order-status-result.validate}")
+    private Long resultValidatedStatusId;
 
     private final RandomNumGenerator randomNumGenerator;
 
@@ -227,6 +239,13 @@ public class ResultServiceImpl implements ResultService {
                         detail.setResultDetailStatus("n");
                         detail.setGeneratedSampleId(dgSampleCollectionDetails.getSampleGeneratedId());
                     }
+
+                    DgOrderDt dgOrderDt = dgOrderDtRepository.findByOrderhdId_IdAndInvestigationId_InvestigationId(dgOrderH.getId(), investigation.getInvestigationId());
+                    DgOrderDt byId = dgOrderDtRepository.findById(dgOrderDt.getId()).orElseThrow(() -> new RuntimeException("Invalid Dg Order Dt Id"));
+                    byId.setOrderTrackingStatus(orderTrackingStatusRepository.findById(resulEntryStatusId).orElseThrow());
+                    dgOrderDtRepository.save(byId);
+
+
                     LabTurnAroundTime labTurnAroundTime=labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(dgOrderH.getId(),investigation.getInvestigationId(),patientId.getId(),false);
                     labTurnAroundTime.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
                     labTurnAroundTime.setResultEntryDateTime(LocalDateTime.now());
@@ -422,6 +441,12 @@ public class ResultServiceImpl implements ResultService {
                 if (Boolean.TRUE.equals(validationReq.getValidated())) {
                     detail.setValidated("y");
                 }
+
+                //save order status in dgOrderDt
+                DgOrderDt dgOrderDt = dgOrderDtRepository.findByOrderhdId_IdAndInvestigationId_InvestigationId(header.getOrderHd().getId(), detail.getInvestigationId().getInvestigationId());
+                DgOrderDt byId = dgOrderDtRepository.findById(dgOrderDt.getId()).orElseThrow(() -> new RuntimeException("Invalid Dg Order Dt Id"));
+                byId.setOrderTrackingStatus(orderTrackingStatusRepository.findById(resultValidatedStatusId).orElseThrow());
+                dgOrderDtRepository.save(byId);
 
                 // Save each detail
                 LabTurnAroundTime labTurnAroundTime=labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(header.getOrderHd().getId(),detail.getInvestigationId().getInvestigationId(),header.getHinId().getId(),false);

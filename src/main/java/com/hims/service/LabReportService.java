@@ -11,5 +11,7 @@ public interface LabReportService {
     ApiResponse<List<LabDetailedTATReportResponse>> getDetailedTatReports(Long investigationId, Long subChargeCodeId, LocalDate fromDate, LocalDate toDate);
     ApiResponse<List<LabSummaryTATReportResponse>> getSummaryTatReports(Long investigationId, Long subChargeCodeId, LocalDate fromDate, LocalDate toDate);
     ApiResponse<List<LabAmenedAuditReportResponse>> getAmendAuditReports(String phnNum,String patientName,Long investigationId,Long subChargeCodeId,LocalDate fromDate,LocalDate toDate);
-
+    ApiResponse<List<OrderTrackingReportResponse>> getOrderTrackingReports(String patientName,String phnNum,LocalDate fromDate,LocalDate toDate);
+    ApiResponse<List<LabIncompleteInvestigationsReportResponse>> getIncompleteInvestigationReports(Long subChargeCodeId,LocalDate fromDate,LocalDate toDate);
+    ApiResponse<List<SampleRejectionInvestigationReportResponse>> getSampleRejectionReport(Long modalityId,LocalDate fromDate,LocalDate toDate);
 }

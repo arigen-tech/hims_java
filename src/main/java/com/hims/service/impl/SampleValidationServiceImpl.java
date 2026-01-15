@@ -12,6 +12,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +58,15 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Autowired
+    private LabOrderTrackingStatusRepository labOrderTrackingStatusRepository;
+
+    @Value("${lab.track-order-status-sample.validate}")
+    private Long validatedStatusId;
+
+    @Value("${lab.track-order-status-sample.reject}")
+    private Long rejectedStatusId;
+
 
     private String getCurrentTimeFormatted(Instant instant) {
         LocalTime time = instant
@@ -99,7 +109,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
                 int orderHdId = header.getVisitId().getBillingHd().getHdorder().getId();
 
-                LabTurnAroundTime labTurnAroundTime = labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_Id(orderHdId, investigationId, header.getPatientId().getId());
+                LabTurnAroundTime labTurnAroundTime = labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndGeneratedSampleId(orderHdId, investigationId, header.getPatientId().getId(),details.getSampleGeneratedId());
                 String detailStatus;
                 if(accepted){
                     detailStatus="y";
@@ -155,6 +165,8 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
                         // update entity
                         orderDt.setOrderStatus(orderDtStatus);
+                        LabOrderTrackingStatus status = accepted ? labOrderTrackingStatusRepository.findById(validatedStatusId).orElseThrow() : labOrderTrackingStatusRepository.findById(rejectedStatusId).orElseThrow();
+                        orderDt.setOrderTrackingStatus(status);
                         orderDtRepo.save(orderDt);
 
                         log.info("OrderDt {} -> {}", orderDt.getId(), orderDtStatus);

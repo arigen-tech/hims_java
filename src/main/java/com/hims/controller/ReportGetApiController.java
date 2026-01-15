@@ -63,4 +63,34 @@ public class ReportGetApiController {
     ) {
         return ResponseEntity.ok(labReportService.getAmendAuditReports(phnNum, patientName, investigationId, subChargeCodeId, fromDate, toDate));
     }
+
+    @GetMapping("/order-track-report")
+    public ResponseEntity<?> getOrderTrackingReport(
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+    ) {
+        return ResponseEntity.ok(labReportService.getOrderTrackingReports(patientName, mobileNo, fromDate, toDate));
+    }
+
+    @GetMapping("/incomplete-investigation-report")
+    public ResponseEntity<?> getIncompleteInvestigationsReport(
+            @RequestParam(required = false) Long subChargeCodeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate)
+    {
+       return ResponseEntity.ok(labReportService.getIncompleteInvestigationReports(subChargeCodeId,fromDate,toDate));
+    }
+
+    @GetMapping("/reject-investigation-report")
+    public ResponseEntity<?> getRejectInvestigationReport(
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate)
+    {
+        return ResponseEntity.ok(labReportService.getSampleRejectionReport(subChargeCodeId,fromDate,toDate));
+    }
+
+
 }

@@ -3,13 +3,11 @@ package com.hims.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.request.*;
 import com.hims.response.*;
-import com.hims.service.BillingService;
-import com.hims.service.LabRegistrationServices;
-import com.hims.service.ResultService;
-import com.hims.service.SampleValidationService;
+import com.hims.service.*;
 import com.hims.service.impl.BillingServiceImpl;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +34,9 @@ public class LabRegistrationController {
       // or your service interface
     @Autowired
     BillingService billingService;
+
+    @Autowired
+    private LabOrderTrackingStatusService labOrderTrackingStatusService;
 
 
     @PostMapping("/registration")
@@ -117,6 +118,11 @@ public class LabRegistrationController {
     @GetMapping("/billingStatus")
     public ApiResponse<List<BillingHeaderResponse>> getBillingStatus() {
         return  billingService.getBillingStatus();
+    }
+
+    @PostMapping("/track-order-status/create")
+    public ResponseEntity<?> create(@Valid @RequestBody LabOrderTrackingStatusRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(labOrderTrackingStatusService.create(request));
     }
 
 
