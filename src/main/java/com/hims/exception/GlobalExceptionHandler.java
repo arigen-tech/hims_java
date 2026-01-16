@@ -70,4 +70,18 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(SlotAlreadyBookedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleSlotAlreadyBooked(SlotAlreadyBookedException ex) {
+
+        // Using your ResponseUtils to create the response
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {}, // matches your pattern
+                        ex.getMessage(),           // "Slot already booked"
+                        HttpStatus.CONFLICT.value() // 409
+                )
+        );
+    }
+
 }

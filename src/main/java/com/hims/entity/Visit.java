@@ -14,7 +14,15 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "visit")
+@Table(
+        name = "visit",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_doctor_visit_slot",
+                        columnNames = {"doctor_id", "visit_date", "start_time"}
+                )
+        }
+)
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Visit {
 
