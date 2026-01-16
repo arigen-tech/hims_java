@@ -176,8 +176,8 @@ public class ReportController {
     public  ResponseEntity<?> viewPrintOpeningBalanceRegistryPdf(
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("HOSPITAL_ID", hospitalId);
@@ -242,10 +242,10 @@ public class ReportController {
     public ResponseEntity<?> viewPrintStockTakingRegisterPdf(
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam String flag) {
-        HashMap<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put("HOSPITAL_ID", hospitalId);
         params.put("DEPARTMENT_ID", departmentId);
         params.put("FromDate", fromDate);
@@ -307,8 +307,8 @@ public class ReportController {
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
             @RequestParam Long itemId,
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("HOSPITAL_ID", hospitalId);
@@ -460,8 +460,8 @@ public class ReportController {
     @GetMapping(value = "/indentMedicineIssueRegister", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintMedicineIssueRegisterReport(
             @RequestParam Long itemId,
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam String flag ) {
         Map<String, Object> params = new HashMap<>();
         params.put("drug_id", itemId);
@@ -496,10 +496,10 @@ public class ReportController {
 
     @GetMapping(value = "/indentIssue", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewDownloadIndentIssue(
-            @RequestParam Long indentMId,
+            @RequestParam Long issueMId,
             @RequestParam String flag ) {
         Map<String, Object> params = new HashMap<>();
-        params.put("indent_m_id", indentMId);
+        params.put("issue_m_id", issueMId);
         params.put("path", getClass()
                 .getResource(ReportConstants.ASSET_LOGO
                 .toString()));
@@ -555,20 +555,25 @@ public class ReportController {
 
     @GetMapping(value = "/labRegister", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewDownloadLabRegister(
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam Long genderId,
             @RequestParam Long investigationId,
             @RequestParam Long fromAge,
             @RequestParam Long toAge ,
             @RequestParam String flag) {
-        HashMap<String, Object> params =  new HashMap<>();
+        Long safeGenderId = (genderId == null ? 0L : genderId);
+        Long safeInvestigationId = (investigationId == null ? 0L : investigationId);
+        Long safeFromAge = (fromAge == null ? 0L : fromAge);
+        Long safeToAge = (toAge == null ? 0L : toAge);
+
+        Map<String, Object> params =  new HashMap<>();
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
-        params.put("gender_id", genderId);
-        params.put("investigation_id", investigationId);
-        params.put("from_age", fromAge);
-        params.put("to_age", toAge);
+        params.put("gender_id", safeGenderId);
+        params.put("investigation_id", safeInvestigationId);
+        params.put("from_age", safeFromAge);
+        params.put("to_age", safeToAge);
         params.put("path", getClass()
                 .getResource(ReportConstants.ASSET_LOGO)
                 .toString());
@@ -598,11 +603,11 @@ public class ReportController {
 
     @GetMapping(value = "/itemWiseReceiving", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewDownloadItemWiseReceiving(
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date fromDate,
-            @RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") Date toDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam Long itemId,
             @RequestParam String flag) {
-        HashMap<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put("path", getClass()
                 .getResource(ReportConstants.ASSET_LOGO)
                 .toString());
@@ -627,6 +632,38 @@ public class ReportController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to generate Item Wise Receiving report: " + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/dateWiseReceiving", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadDateWiseReceiving(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+
+        try{
+            if ("D".equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RECEIVING_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.DATE_WISE_RECEIVING_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RECEIVING_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate Date Wise Receiving report: " + e.getMessage());
         }
     }
 

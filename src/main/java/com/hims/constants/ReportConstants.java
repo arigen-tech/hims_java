@@ -56,7 +56,7 @@ public final class ReportConstants {
     public static final String INDENT_MEDICINE_ISSUE_REGISTER_JASPER = "Medicine_issue_register";
     public static final String INDENT_MEDICINE_ISSUE_REGISTER_REPORT = "IndentMedicineIssueRegisterReport";
 
-    public static final String INDENT_ISSUE_JASPER = "Medical_Store_Indent_Issue_report_1";
+    public static final String INDENT_ISSUE_JASPER = "indent_issue_report";
     public static final String INDENT_ISSUE_REPORT = "IndentIssueReport";
 
     public static final String INDENT_RECEIVING_JASPER = "indent_receive_report";
@@ -68,5 +68,8 @@ public final class ReportConstants {
 
     public static final String ITEM_WISE_RECEIVING_JASPER = "Item_wise_receiving_report";
     public static final String ITEM_WISE_RECEIVING_REPORT = "ItemWiseReceivingReport";
+
+    public static final String DATE_WISE_RECEIVING_JASPER = "Date_wise_receiving_report";
+    public static final String DATE_WISE_RECEIVING_REPORT = "DateWiseReceivingReport";
 
 }
