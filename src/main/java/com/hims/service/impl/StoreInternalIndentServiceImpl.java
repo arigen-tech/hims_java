@@ -12,20 +12,24 @@ import com.hims.utils.ResponseUtils;
 import com.hims.utils.StockFound;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StoreInternalIndentServiceImpl implements StoreInternalIndentService {
 
     private final StoreInternalIndentMRepository indentMRepository;
@@ -43,6 +47,8 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     StoreIssueMRepository storeIssueMRepository;
     @Autowired
     StoreIssueTRepository storeIssueTRepository;
+    @Autowired
+    UserRepo userRepo;
 
     // Add these repository injections to your StoreInternalIndentServiceImpl
     @Autowired
@@ -1307,6 +1313,46 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             );
         }
     }
+
+    @Override
+    public ApiResponse<List<StoreIssueMResponse>> getIssuesForReceiving( LocalDate fromDate, LocalDate toDate) {
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            Long deptId = authUtil.getCurrentDepartmentId();
+            MasDepartment depObj = masDepartmentRepository.getById(deptId);
+            LocalDateTime startDateTime = fromDate != null ? fromDate.atStartOfDay() : null;
+            LocalDateTime endDateTime = toDate != null ? toDate.atTime(LocalTime.MAX) : null;
+            List<StoreIssueM> issues = storeIssueMRepository.findIssuesBetweenDates(depObj.getId(), startDateTime, endDateTime
+            );
+            List<StoreIssueMResponse> responseList = issues.stream().map(this::mapToResponse).toList();
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error in getIssuesForReceiving | fromDeptId={}, fromDate={}, toDate={}", fromDate, toDate, e);
+
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Error fetching issue for receiving: " + e.getMessage(),
+                    500
+            );
+        }
+    }
+
+
+    private StoreIssueMResponse mapToResponse(StoreIssueM issue) {
+            StoreIssueMResponse response = new StoreIssueMResponse();
+            response.setStoreIssueMId(issue.getStoreIssueMId());
+            response.setIssueNo(issue.getIssueNo());
+            response.setIssueDate(issue.getIssueDate());
+            response.setIndentMId(issue.getIndentMId()!=null?issue.getIndentMId().getIndentMId():null);
+
+            return response;
+        }
+
 
 // Add this method to find issue by batch number
 // Add to StoreIssueTRepository interface:
