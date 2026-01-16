@@ -1315,19 +1315,19 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     }
 
     @Override
-    public ApiResponse<List<StoreIssueMResponse>> getIssuesForReceiving( LocalDate fromDate, LocalDate toDate) {
+    public ApiResponse<List<StoreIssueMResponse>> getIssuesForReceiving(Long fromDeptId, LocalDate fromDate, LocalDate toDate) {
         try {
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                        },
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
-            }
-            Long deptId = authUtil.getCurrentDepartmentId();
-            MasDepartment depObj = masDepartmentRepository.getById(deptId);
+          //  User currentUser = authUtil.getCurrentUser();
+//            if (currentUser == null) {
+//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+//                        },
+//                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+//            }
+//            Long deptId = authUtil.getCurrentDepartmentId();
+//            MasDepartment depObj = masDepartmentRepository.getById(deptId);
             LocalDateTime startDateTime = fromDate != null ? fromDate.atStartOfDay() : null;
             LocalDateTime endDateTime = toDate != null ? toDate.atTime(LocalTime.MAX) : null;
-            List<StoreIssueM> issues = storeIssueMRepository.findIssuesBetweenDates(depObj.getId(), startDateTime, endDateTime
+            List<StoreIssueM> issues = storeIssueMRepository.findIssuesBetweenDates(fromDeptId, startDateTime, endDateTime
             );
             List<StoreIssueMResponse> responseList = issues.stream().map(this::mapToResponse).toList();
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});

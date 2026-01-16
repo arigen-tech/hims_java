@@ -160,12 +160,16 @@ public class StoreInternalIndentController {
 
     @GetMapping("/storeIssueM/list")
     public ResponseEntity<ApiResponse<List<StoreIssueMResponse>>> getIssuesForReceiving(
+            @RequestParam(required = false) Long fromDeptId,
+            @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-        ApiResponse<List<StoreIssueMResponse>> response = indentService.getIssuesForReceiving(fromDate, toDate);
+
+        ApiResponse<List<StoreIssueMResponse>> response =
+                indentService.getIssuesForReceiving(fromDeptId, fromDate, toDate);
+
         return ResponseEntity.ok(response);
     }
-
 
 }
