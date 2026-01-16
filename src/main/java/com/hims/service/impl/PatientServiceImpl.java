@@ -3,7 +3,6 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.exception.SlotAlreadyBookedException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.request.*;
 import com.hims.response.*;
@@ -18,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -136,15 +134,7 @@ public class PatientServiceImpl implements PatientService {
                     Instant today = v.getVisitDate();
                     String visitType = getVisitTypeForToday(patient.getId(), today);
                     v.setVisitType(visitType);
-                    Visit saved = new Visit();
-                    try {
-                        saved = createSingleAppointment(v, patient);
-                        savedVisits.add(saved);
-                    } catch (SlotAlreadyBookedException ex) {
-                        // This exception will trigger rollback automatically
-                        throw ex;
-                    }
-//                    Visit saved = createSingleAppointment(v, patient);
+                    Visit saved = createSingleAppointment(v, patient);
                     savedVisits.add(saved);
 
                     if (saved.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
@@ -839,11 +829,7 @@ public class PatientServiceImpl implements PatientService {
         Visit v = visitRepository.getReferenceById(newVisit.getId());
         newVisit.setBillingHd(resp.getResponse().getHeader());
         visitRepository.save(newVisit);
-        try {
-            return visitRepository.save(newVisit);
-        } catch (DataIntegrityViolationException ex) {
-            throw new SlotAlreadyBookedException("Slot already booked");
-        }
+        return savedVisit;
     }
 
 //    public static Instant[] calculateTokenTimeAsInstant(
