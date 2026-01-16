@@ -27,4 +27,7 @@ public interface PatientService {
 
     ApiResponse<PaymentResponse> paymentStatusReq(PaymentUpdateRequest opdreq);
 
+    ApiResponse<String> cancelAppointment(CancelAppointmentRequest request);
+
+    ApiResponse<RescheduleAppointmentResponse> rescheduleAppointment(RescheduleAppointmentRequest request);
 }

@@ -1560,7 +1560,9 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setPatientName(v.getPatient().getPatientFn());
         dto.setMobileNumber(v.getPatient().getPatientMobileNumber());
         dto.setPatientAge(v.getPatient().getPatientAge());
+        dto.setDoctorId(v.getDoctor().getUserId());
         dto.setDoctorName(v.getDoctorName());
+        dto.setDepartmentId(v.getDepartment().getId());
         dto.setDepartmentName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
         dto.setAppointmentDate(v.getVisitDate());
         dto.setAppointmentStartTime(v.getStartTime());

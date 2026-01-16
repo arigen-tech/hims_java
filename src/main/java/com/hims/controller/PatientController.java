@@ -219,12 +219,22 @@ public class PatientController {
     }
 
     @GetMapping("/getFullDetails/{patientId}")
-    public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientFullDetails(
-            @PathVariable Long patientId) {
-        ApiResponse<FollowUpPatientResponseDetails> response =
-                patientService.getAllFollowUpDetails(patientId);
+    public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientFullDetails(@PathVariable Long patientId) {
+        ApiResponse<FollowUpPatientResponseDetails> response = patientService.getAllFollowUpDetails(patientId);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/cancel-appointment")
+    public ResponseEntity<?> cancelAppointment(@RequestBody CancelAppointmentRequest request) {
+        ApiResponse<String> response = patientService.cancelAppointment(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/reschedule_Appointment")
+    public ResponseEntity<ApiResponse<RescheduleAppointmentResponse>> rescheduleAppointment(@RequestBody RescheduleAppointmentRequest request){
+        ApiResponse<RescheduleAppointmentResponse> response = patientService.rescheduleAppointment(request);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
 }

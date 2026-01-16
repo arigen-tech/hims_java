@@ -12,7 +12,9 @@ public class AppointmentBookingHistoryResponseDetails {
     private String patientName;
     private String mobileNumber;
     private String patientAge;
+    private Long doctorId;
     private String doctorName;
+    private Long departmentId;
     private String departmentName;
     private Instant appointmentDate;
     private Instant appointmentStartTime;

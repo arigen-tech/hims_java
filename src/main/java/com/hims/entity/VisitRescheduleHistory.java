@@ -1,9 +1,13 @@
 package com.hims.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.Getter;
+
 import java.time.Instant;
 
 @Entity
+@Data
 @Table(name = "visit_reschedule_history")
 public class VisitRescheduleHistory {
 
@@ -23,17 +27,17 @@ public class VisitRescheduleHistory {
     public Instant oldVisitDatetime;
 
     @Column(name = "old_token_no")
-    public Integer oldTokenNo;
+    public Long oldTokenNo;
 
     @Column(name = "new_token_no")
-    public Integer newTokenNo;
+    public Long newTokenNo;
 
     @Column(name = "reschedule_reason", length = 200)
     public String rescheduleReason;
 
-    @Column(name = "reschedule_by", length = 100)
+    @Column(name = "rescheduled_by", length = 100)
     public String rescheduleBy;
 
-    @Column(name = "reschedule_datetime")
+    @Column(name = "rescheduled_datetime")
     public Instant rescheduleDatetime;
 }

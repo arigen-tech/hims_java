@@ -60,15 +60,15 @@ public class HelperUtils {
 
     public  String generateOTP() {
         SecureRandom random = new SecureRandom();
-        int otp = 100000 + random.nextInt(900000); // Generates a 6-digit number
-        return String.valueOf(otp); // Convert to string for OTP usage
+        int otp = 100000 + random.nextInt(900000);
+        return String.valueOf(otp);
     }
 
     public static String extractTimeFromInstant(Instant instant) {
         return instant
-                .atZone(ZoneId.of("UTC"))
+                .atZone(ZoneId.systemDefault())
                 .toLocalTime()
-                .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                .format(DateTimeFormatter.ofPattern("HH:mm"));
     }
 
 }

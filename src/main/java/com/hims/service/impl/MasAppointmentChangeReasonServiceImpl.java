@@ -2,7 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasAppointmentChangeReason;
-import com.hims.entity.repository.AppointmentChangeReasonRepository;
+import com.hims.entity.repository.MasAppointmentChangeReasonRepository;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasAppointmentChangeReasonResponse;
 import com.hims.response.MasOpdSessionResponse;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class MasAppointmentChangeReasonServiceImpl implements MasAppointmentChangeReasonService {
 
-    private final AppointmentChangeReasonRepository reasonRepository;
+    private final MasAppointmentChangeReasonRepository reasonRepository;
 
     @Override
     public ApiResponse<List<MasAppointmentChangeReasonResponse>> getAllReasons(int flag) {
