@@ -667,6 +667,78 @@ public class ReportController {
         }
     }
 
+    @GetMapping(value = "/indentReturn", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadIndentReturn(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
+            @RequestParam Long returnMId,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", departmentId);
+        params.put("return_m_id", returnMId);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
+
+        try{
+            if ("D".equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.INDENT_RETURN_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.INDENT_RETURN_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.INDENT_RETURN_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate item return report: " + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/itemWiseReturn", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadItemWiseReturn(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
+            @RequestParam Long itemId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", departmentId);
+        params.put("item_id", itemId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
+
+        try{
+            if ("D".equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RETURN_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.ITEM_WISE_RETURN_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RETURN_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate Item Wise Return report: " + e.getMessage());
+        }
+    }
+
     private ResponseEntity<byte[]> buildPdfResponse(
             byte[] pdfData,
             String fileName) {
