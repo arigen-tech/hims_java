@@ -739,6 +739,42 @@ public class ReportController {
         }
     }
 
+    @GetMapping(value = "/dateWiseReturn", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadDateWiseReturn(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", departmentId);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
+
+        try{
+            if ("D".equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RETURN_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.DATE_WISE_RETURN_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RETURN_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate Date Wise Return report: " + e.getMessage());
+        }
+    }
+
     private ResponseEntity<byte[]> buildPdfResponse(
             byte[] pdfData,
             String fileName) {
