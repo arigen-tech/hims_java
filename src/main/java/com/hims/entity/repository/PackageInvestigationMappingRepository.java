@@ -15,8 +15,21 @@ public interface PackageInvestigationMappingRepository extends JpaRepository <Pa
 
     List<PackageInvestigationMapping> findByPackageId(DgInvestigationPackage packag);
 
-    @Query("SELECT DISTINCT m.packageId FROM PackageInvestigationMapping m WHERE (:status IS NULL OR m.status = :status)")
-    List<DgInvestigationPackage> findDistinctPackages(@Param("status") String status);
+//    @Query("SELECT DISTINCT m.packageId FROM PackageInvestigationMapping m WHERE (:status IS NULL OR m.status = :status)")
+//    List<DgInvestigationPackage> findDistinctPackages(@Param("status") String status);
+
+    @Query("""
+   SELECT m
+   FROM PackageInvestigationMapping m
+   JOIN FETCH m.packageId p
+   JOIN FETCH m.investId i
+   WHERE (:status IS NULL OR m.status = :status)
+     AND p.status = 'y'
+""")
+    List<PackageInvestigationMapping> findActivePackageMappings(
+            @Param("status") String status
+    );
+
 
     List<PackageInvestigationMapping> findByPackageIdPackIdAndStatus(Long packageId, String y);
 
