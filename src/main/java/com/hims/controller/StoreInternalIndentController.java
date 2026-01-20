@@ -172,4 +172,10 @@ public class StoreInternalIndentController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/receiveItem")
+    public ApiResponse<List<ReceiveItemResponse>> getReceiveItem() {
+
+        return indentService.getReceiveItem();
+    }
+
 }

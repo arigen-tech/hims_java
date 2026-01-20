@@ -1342,6 +1342,31 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         }
     }
 
+    @Override
+    public ApiResponse<List<ReceiveItemResponse>> getReceiveItem() {
+        try {
+            List<StoreIndentReceiveT> receiveList = receiveTRepository.findAll();
+            List<ReceiveItemResponse> responseList = new ArrayList<>(receiveList.size());
+            for (StoreIndentReceiveT receive : receiveList) {
+                ReceiveItemResponse response = new ReceiveItemResponse();
+                response.setItemName(receive.getItem().getNomenclature());
+                response.setItemId(receive.getItem().getItemId());
+                responseList.add(response);
+            }
+
+            return ResponseUtils.createSuccessResponse(responseList,
+                    new TypeReference<>() {}
+            );
+
+        } catch (Exception ex) {
+            log.error("Error while fetching receive items", ex);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Internal server error",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
 
     private StoreIssueMResponse mapToResponse(StoreIssueM issue) {
             StoreIssueMResponse response = new StoreIssueMResponse();
