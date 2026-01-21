@@ -81,4 +81,7 @@ public final class ReportConstants {
     public static final String DATE_WISE_RETURN_JASPER = "Date_wise_return_register";
     public static final String DATE_WISE_RETURN_REPORT = "DateWiseReturnRegister";
 
+    public static final String DETAILED_TAT_JASPER = "Detailed_tat_report";
+    public static final String DETAILED_TAT_REPORT = "DetailedTatReport";
+
 }

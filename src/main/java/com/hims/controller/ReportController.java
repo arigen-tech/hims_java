@@ -557,10 +557,10 @@ public class ReportController {
     public ResponseEntity<?> viewDownloadLabRegister(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
-            @RequestParam Long genderId,
-            @RequestParam Long investigationId,
-            @RequestParam Long fromAge,
-            @RequestParam Long toAge ,
+            @RequestParam(required = false) Long genderId,
+            @RequestParam(required = false) Long investigationId,
+            @RequestParam(required = false) Long fromAge,
+            @RequestParam(required = false) Long toAge ,
             @RequestParam String flag) {
         Long safeGenderId = (genderId == null ? 0L : genderId);
         Long safeInvestigationId = (investigationId == null ? 0L : investigationId);
@@ -772,6 +772,44 @@ public class ReportController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to generate Date Wise Return report: " + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/detailTat", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadDetailedTat(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long investigationId,
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("hospital_id", hospitalId);
+        params.put("investigation_id", investigationId);
+        params.put("sub_chargecode_id", subChargeCodeId);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
+
+        try{
+            if ("D".equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.DETAILED_TAT_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.DETAILED_TAT_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.DETAILED_TAT_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate Detailed TAT report: " + e.getMessage());
         }
     }
 
