@@ -23,8 +23,8 @@ public class ReportGetApiController {
     public ResponseEntity<?> searchLabReports(
             @RequestParam(required = false) String mobileNo,
             @RequestParam(required = false) String patientName,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
     ) {
 
         return ResponseEntity.ok(labReportService.getAllLabReports(mobileNo, patientName, fromDate, toDate));
@@ -58,8 +58,8 @@ public class ReportGetApiController {
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) Long investigationId,
             @RequestParam(required = false) Long subChargeCodeId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
     ) {
         return ResponseEntity.ok(labReportService.getAmendAuditReports(phnNum, patientName, investigationId, subChargeCodeId, fromDate, toDate));
     }
@@ -68,8 +68,8 @@ public class ReportGetApiController {
     public ResponseEntity<?> getOrderTrackingReport(
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) String mobileNo,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
     ) {
         return ResponseEntity.ok(labReportService.getOrderTrackingReports(patientName, mobileNo, fromDate, toDate));
     }

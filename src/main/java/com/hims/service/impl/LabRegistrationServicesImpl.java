@@ -279,6 +279,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                             dt.setOrderQty(1);
                             dt.setCreatedon(Instant.now());
                             dt.setLastChgTime(LocalTime.now().toString());
+                            dt.setOrderTrackingStatus(labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow());
                             DgOrderDt savedDt = labDtRepository.save(dt);
                             //if(flag) {
                                 savedDt.setBillingHd(headerId);

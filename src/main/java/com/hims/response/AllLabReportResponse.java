@@ -23,5 +23,6 @@ public class AllLabReportResponse {
     private String resultEnteredBy;
     private String resultValidatedBy;
     private LocalDate investigationDate;
+    private Boolean inRange;
 
 }

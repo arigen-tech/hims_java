@@ -56,9 +56,9 @@ public class LabReportServiceImpl implements LabReportService {
     public ApiResponse<List<AllLabReportResponse>> getAllLabReports(String phnNum, String patientName, LocalDate fromDate,LocalDate toDate) {
         try {
             log.info("getAllLabReports() Started..." );
-            if (fromDate == null || toDate == null) {
-                throw new IllegalArgumentException("From Date and To Date are mandatory");
-            }
+//            if (fromDate == null || toDate == null) {
+//                throw new IllegalArgumentException("From Date and To Date are mandatory");
+//            }
 
 //            Sort sort=Sort.by(Sort.Direction.DESC,"resultEntryId.resultDate");
             Specification<DgResultEntryDetail> spec =
@@ -231,14 +231,14 @@ public class LabReportServiceImpl implements LabReportService {
 
         try {
             log.info("getOrderTrackingReports() method started...");
-            if ((patientName == null || patientName.isBlank()) &&
-                    (phnNum == null || phnNum.isBlank())) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Patient Name or Mobile Number is mandatory",HttpStatus.BAD_REQUEST.value());
-            }
+//            if ((patientName == null || patientName.isBlank()) &&
+//                    (phnNum == null || phnNum.isBlank())) {
+//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Patient Name or Mobile Number is mandatory",HttpStatus.BAD_REQUEST.value());
+//            }
 
-            if (fromDate == null || toDate == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"From Date and To Date are mandatory",HttpStatus.BAD_REQUEST.value());
-            }
+//            if (fromDate == null || toDate == null) {
+//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"From Date and To Date are mandatory",HttpStatus.BAD_REQUEST.value());
+//            }
 
             Specification<DgOrderDt> spec = filterOrderTrackReport(patientName, phnNum, fromDate, toDate);
 
@@ -315,15 +315,19 @@ public class LabReportServiceImpl implements LabReportService {
 
             List<Predicate> predicates = new ArrayList<>();
 
-            /* ------------------ Mandatory Date Filter ------------------ */
             predicates.add(
-                    cb.between(
-                            headerJoin.get("resultDate"),
-                            fromDate,
-                            toDate
-                    )
+                   cb.equal(root.get("validated"),"y")
             );
 
+            if(fromDate!=null && toDate!=null) {
+                predicates.add(
+                        cb.between(
+                                headerJoin.get("resultDate"),
+                                fromDate,
+                                toDate
+                        )
+                );
+            }
             /* ------------------ Optional Mobile Number ------------------ */
             if (mobileNo != null && !mobileNo.isBlank()) {
                 predicates.add(
@@ -450,26 +454,19 @@ public class LabReportServiceImpl implements LabReportService {
         return (root, query, cb) -> {
 
             List<Predicate> predicates = new ArrayList<>();
+           if(fromDate!=null && toDate!=null) {
+               LocalDateTime fromDateTime = fromDate.atStartOfDay();
+               LocalDateTime toDateTime = toDate.atTime(23, 59, 59);
+               predicates.add(
+                       cb.between(
+                               root.get("amendedDatetime"),
+                               fromDateTime,
+                               toDateTime
+                       )
+               );
+           }
 
-            /* ---------------------------
-             * Mandatory date filter
-             * --------------------------- */
-            LocalDateTime fromDateTime = fromDate.atStartOfDay();
-            LocalDateTime toDateTime   = toDate.atTime(23, 59, 59);
-
-            predicates.add(
-                    cb.between(
-                            root.get("amendedDatetime"),
-                            fromDateTime,
-                            toDateTime
-                    )
-            );
-
-            /* ---------------------------
-             * JOIN patient
-             * --------------------------- */
-            Join<LabResultAmendAudit, Patient> patientJoin =
-                    root.join("patient", JoinType.LEFT);
+            Join<LabResultAmendAudit, Patient> patientJoin = root.join("patient", JoinType.LEFT);
 
             if (phnNum != null && !phnNum.isBlank()) {
                 predicates.add(
@@ -480,22 +477,19 @@ public class LabReportServiceImpl implements LabReportService {
                 );
             }
 
-            // Name filter (space-based logic)
             if (patientName != null && !patientName.isBlank()) {
 
                 String[] parts = patientName.trim().split("\\s+");
 
                 if (parts.length == 1) {
-                    // First name only
+
                     predicates.add(
                             cb.like(
                                     cb.lower(patientJoin.get("patientFn")),
                                     "%" + parts[0].toLowerCase() + "%"
                             )
                     );
-
                 } else if (parts.length == 2) {
-                    // First + Last
                     predicates.add(
                             cb.and(
                                     cb.like(cb.lower(patientJoin.get("patientFn")), "%" + parts[0].toLowerCase() + "%"),
@@ -504,7 +498,6 @@ public class LabReportServiceImpl implements LabReportService {
                     );
 
                 } else {
-                    // First + Middle + Last
                     predicates.add(
                             cb.and(
                                     cb.like(cb.lower(patientJoin.get("patientFn")), "%" + parts[0].toLowerCase() + "%"),
@@ -515,11 +508,7 @@ public class LabReportServiceImpl implements LabReportService {
                 }
             }
 
-            /* ---------------------------
-             * JOIN investigation
-             * --------------------------- */
-            Join<LabResultAmendAudit, DgMasInvestigation> invJoin =
-                    root.join("investigation", JoinType.LEFT);
+            Join<LabResultAmendAudit, DgMasInvestigation> invJoin = root.join("investigation", JoinType.LEFT);
 
             if (investigationId != null) {
                 predicates.add(
@@ -530,9 +519,6 @@ public class LabReportServiceImpl implements LabReportService {
                 );
             }
 
-            /* ---------------------------
-             * JOIN sub charge code (modality)
-             * --------------------------- */
             if (subChargeCodeId != null) {
                 predicates.add(
                         cb.equal(
@@ -560,16 +546,15 @@ public class LabReportServiceImpl implements LabReportService {
             Join<DgOrderDt, DgOrderHd> orderHdJoin = root.join("orderhdId", JoinType.INNER);
             Join<DgOrderHd, Patient> patientJoin = orderHdJoin.join("patientId", JoinType.INNER);
 
-            // Date filter (MANDATORY)
-            predicates.add(
-                    cb.between(
-                            orderHdJoin.get("orderDate"),
-                            fromDate,
-                            toDate
-                    )
-            );
-
-            // Mobile filter
+            if(fromDate!=null && toDate!=null) {
+                predicates.add(
+                        cb.between(
+                                orderHdJoin.get("orderDate"),
+                                fromDate,
+                                toDate
+                        )
+                );
+            }
             if (mobileNo != null && !mobileNo.isBlank()) {
                 predicates.add(
                         cb.like(
@@ -578,8 +563,6 @@ public class LabReportServiceImpl implements LabReportService {
                         )
                 );
             }
-
-            // Name filter (space-based logic)
             if (patientName != null && !patientName.isBlank()) {
 
                 String[] parts = patientName.trim().split("\\s+");
@@ -690,6 +673,7 @@ public class LabReportServiceImpl implements LabReportService {
         response.setUnit(entity.getUomId().getName());
         response.setInvestigationName(entity.getInvestigationId().getInvestigationName());
         response.setResultEnteredBy(entity.getResultEntryId().getResultEnteredBy());
+        response.setInRange(isResultWithinRange(entity.getResult(), entity.getNormalRange()));
         return response;
     }
 
@@ -697,7 +681,7 @@ public class LabReportServiceImpl implements LabReportService {
     private LabDetailedTATReportResponse mapToDetailResponse(LabTurnAroundTime entity){
         LabDetailedTATReportResponse response= new LabDetailedTATReportResponse();
 
-        long actualTatHour= Duration.between(entity.getSampleCollectionDateTime(), entity.getResultValidationTime()).toHours();;
+        long actualTatHour= Duration.between(entity.getSampleCollectionDateTime(), entity.getResultValidationTime()).toHours();
         int expectedTatHour=entity.getInvestigation().getTatHours();
         long delay=actualTatHour-expectedTatHour;
         response.setTatId(entity.getTurnAroundTimeId());
@@ -705,7 +689,7 @@ public class LabReportServiceImpl implements LabReportService {
         response.setInvestigationName(entity.getInvestigation().getInvestigationName());
         response.setGeneratedSampleId(entity.getGeneratedSampleId()!=null?entity.getGeneratedSampleId():null);
         response.setSampleReceivedDate(entity.getSampleCollectionDateTime());
-        response.setReportAuthorizedDate(entity.getSampleValidatedDateTime());
+        response.setReportAuthorizedDate(entity.getResultValidationTime());
         response.setExpectedTatHours(expectedTatHour);
         response.setActualTatHours(actualTatHour);
         response.setDelay(actualTatHour>expectedTatHour?delay:0);
@@ -806,4 +790,65 @@ public class LabReportServiceImpl implements LabReportService {
         return  response;
     }
 
+
+    private Boolean isResultWithinRange(String resultStr, String normalRangeStr) {
+        if (resultStr == null || normalRangeStr == null || resultStr.trim().isBlank() || normalRangeStr.trim().isBlank()) {
+            return null;
+        }
+        resultStr = resultStr.trim();
+        normalRangeStr = normalRangeStr.trim();
+
+        if (normalRangeStr.matches("[-+]?\\d*\\.?\\d+\\s*-\\s*[-+]?\\d*\\.?\\d+")) {
+            return numericRangeCheck(resultStr, normalRangeStr);
+        }
+
+        if (normalRangeStr.matches("(<=|>=|<|>)\\s*[-+]?\\d*\\.?\\d+")) {
+            return inequalityCheck(resultStr, normalRangeStr);
+        }
+        return qualitativeCheck(resultStr, normalRangeStr);
+    }
+
+
+    private Boolean numericRangeCheck(String resultStr, String range) {
+        try {
+            String[] parts = range.split("-");
+            double min = Double.parseDouble(parts[0].trim());
+            double max = Double.parseDouble(parts[1].trim());
+            double result = Double.parseDouble(resultStr);
+
+            return result >= min && result <= max;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Boolean inequalityCheck(String resultStr, String range) {
+        try {
+            double result = Double.parseDouble(resultStr);
+            String operator = range.replaceAll("[0-9.\\s]", "");
+            double limit = Double.parseDouble(range.replaceAll("[^0-9.]", ""));
+
+            return switch (operator) {
+                case "<"  -> result < limit;
+                case "<=" -> result <= limit;
+                case ">"  -> result > limit;
+                case ">=" -> result >= limit;
+                default -> null;
+            };
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Boolean qualitativeCheck(String result, String normal) {
+        result = result.toLowerCase();
+        normal = normal.toLowerCase();
+        if (normal.equals("negative")) {
+            return result.equals("negative") || result.equals("nil");
+        }
+        if (normal.equals("positive")) {
+            return result.equals("positive") || result.contains("+");
+        }
+        return result.equals(normal);
+    }
 }
