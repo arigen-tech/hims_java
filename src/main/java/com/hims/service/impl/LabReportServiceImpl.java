@@ -98,6 +98,7 @@ public class LabReportServiceImpl implements LabReportService {
                    toDate
            );
 
+//           Sort sort = Sort.by("investigation.investigationId");
            List<LabTurnAroundTime> result =
                    labTurnAroundTimeRepository.findAll(spec);
 
@@ -125,15 +126,17 @@ public class LabReportServiceImpl implements LabReportService {
 
             Specification<LabTurnAroundTime> spec =
                     filterTatDetailedReport(investigationId, subChargeCodeId, fromDate, toDate);
-
-            List<LabTurnAroundTime> records = labTurnAroundTimeRepository.findAll(spec);
+            Sort sort = Sort.by("investigation.investigationName");
+            List<LabTurnAroundTime> records = labTurnAroundTimeRepository.findAll(spec,sort);
 
             // Group by Investigation
             Map<DgMasInvestigation, List<LabTurnAroundTime>> grouped =
                     records.stream()
-                            .filter(r -> r.getResultValidationTime() != null
-                                    && r.getSampleCollectionDateTime() != null)
-                            .collect(Collectors.groupingBy(LabTurnAroundTime::getInvestigation));
+                            .collect(Collectors.groupingBy(
+                                    LabTurnAroundTime::getInvestigation,
+                                    LinkedHashMap::new,
+                                    Collectors.toList()
+                            ));
 
             List<LabSummaryTATReportResponse> responseList = new ArrayList<>();
 
@@ -383,7 +386,7 @@ public class LabReportServiceImpl implements LabReportService {
                 CriteriaQuery<?> query,
                 CriteriaBuilder cb) -> {
 
-            query.distinct(true);
+//            query.distinct(true);
 
             List<Predicate> predicates = new ArrayList<>();
 
