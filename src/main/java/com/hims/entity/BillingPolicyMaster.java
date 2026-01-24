@@ -3,6 +3,7 @@ package com.hims.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,7 +33,7 @@ public class BillingPolicyMaster {
     private Integer followupDaysAllowed;
 
     @Column(name = "discount_percentage")
-    private Integer discountPercentage;
+    private BigDecimal discountPercentage;
 
 //    @Column(name = "status", length = 1)
 //    private String status;

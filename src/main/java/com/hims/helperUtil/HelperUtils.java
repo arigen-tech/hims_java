@@ -10,6 +10,7 @@ import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 @Service
@@ -65,8 +66,7 @@ public class HelperUtils {
     }
 
     public static String extractTimeFromInstant(Instant instant) {
-        return instant
-                .atZone(ZoneId.systemDefault())
+        return instant.atZone(ZoneOffset.UTC)
                 .toLocalTime()
                 .format(DateTimeFormatter.ofPattern("HH:mm"));
     }

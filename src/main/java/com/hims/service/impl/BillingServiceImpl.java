@@ -19,6 +19,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,7 +57,6 @@ public class BillingServiceImpl implements BillingService {
     private MasServiceCategoryRepository masServiceCategoryRepository;
 
     @Autowired
-
     private LabHdRepository labHdRepository;
 
     @Autowired
@@ -63,8 +64,18 @@ public class BillingServiceImpl implements BillingService {
     @Autowired
     private MasInvestigationPriceDetailsRepository masInvestigationPriceDetailsRepository;
 
+    @Autowired
+    BillingPolicyRepository billingPolicyRepository;
+
     @Value("${serviceCategoryRegistration}")
     private String serviceCategoryRegistration;
+
+    @Value("${OPDPaid}")
+    private Long opdPaid;
+
+    @Value("${OPDFollowUp}")
+    private Long opdFollowUp;
+
 
     @Override
     @Transactional
@@ -75,8 +86,13 @@ public class BillingServiceImpl implements BillingService {
         User currentUser = authUtil.getCurrentUser();
         BigDecimal tax=BigDecimal.ZERO;
         BigDecimal registrationCost = BigDecimal.ZERO;
-        try {
 
+        Long policyIdToApply = opdPaid;
+        BillingPolicyMaster billingPolicyMaster;
+        String visitTypeToApply = visit.getVisitType();
+        Patient patient = visit.getPatient();
+
+        try {
             BigDecimal totalDiscount = BigDecimal.valueOf(0);
             header.setBillDate(OffsetDateTime.now());
             header.setPatient(visit.getPatient());
@@ -93,6 +109,38 @@ public class BillingServiceImpl implements BillingService {
             header.setGstnBillNo("");
             header.setBillDate(OffsetDateTime.now());
             Instant currentDate = Instant.now();
+
+            //Setting Policies
+            //find Completed visit
+            Optional<Visit> lastVisitOpt = visitRepository.findTopByPatientAndDoctorAndDepartmentAndHospitalAndVisitStatusOrderByVisitDateDesc(
+                    patient.getId(),
+                    visit.getDoctor().getUserId(),
+                    visit.getDepartment().getId(),
+                    visit.getHospital().getId(),
+                    "y"
+            );
+            //check and set policy in Billing Header
+            if (lastVisitOpt.isPresent()) {
+                Visit lastVisit = lastVisitOpt.get();
+                LocalDate lastVisitDate = lastVisit.getVisitDate().atZone(ZoneId.systemDefault()).toLocalDate();
+                LocalDate currentVisitDate = visit.getVisitDate().atZone(ZoneId.systemDefault()).toLocalDate();
+                long daysBetween = ChronoUnit.DAYS.between(lastVisitDate, currentVisitDate);
+
+                Optional<BillingPolicyMaster> followUpPolicy = billingPolicyRepository.findByBillingPolicyId(opdFollowUp);
+
+                if (followUpPolicy.isPresent() && daysBetween <= followUpPolicy.get().getFollowupDaysAllowed() && daysBetween > 0) {
+                    policyIdToApply = opdFollowUp;
+                    header.setBillingPolicy(followUpPolicy.get());
+                }else {
+                    followUpPolicy = billingPolicyRepository.findByBillingPolicyId(opdPaid);
+                }
+            } else {
+                Optional<BillingPolicyMaster> paidPolicy = billingPolicyRepository.findByBillingPolicyId(opdPaid);
+                if(paidPolicy.isPresent()){
+                    header.setBillingPolicy(paidPolicy.get());
+                }
+            }
+
             Optional<MasServiceOpd> serviceOpd = masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatIdAndCurrentDate(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory, currentDate);
             if (serviceOpd.isPresent()) {
                 if (discount != null) {
@@ -103,6 +151,13 @@ public class BillingServiceImpl implements BillingService {
                         }
                     }
                 }
+                //policy Discount
+                if(header.getBillingPolicy()!=null){
+                    BigDecimal policyDiscount = header.getBillingPolicy().getDiscountPercentage();
+                    if (policyDiscount != null) {
+                        totalDiscount = serviceOpd.get().getBaseTariff().multiply(policyDiscount.divide(BigDecimal.valueOf(100)));
+                    }
+                }
 
                 if(visit.getVisitType().equalsIgnoreCase("N")) {
                     MasServiceCategory masServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRegistration);
@@ -111,8 +166,8 @@ public class BillingServiceImpl implements BillingService {
                     }
                 }
 
-                BigDecimal baseprice = serviceOpd.get().getBaseTariff();
-                BigDecimal amountAfterDiscount = baseprice.subtract(totalDiscount);
+                BigDecimal basePrice = serviceOpd.get().getBaseTariff();
+                BigDecimal amountAfterDiscount = basePrice.subtract(totalDiscount);
                 tax = tax.add(BigDecimal.valueOf(serviceCategory.getGstPercent()).multiply(amountAfterDiscount).divide(BigDecimal.valueOf(100)));
                 BigDecimal total = serviceOpd.get().getBaseTariff().subtract(totalDiscount).add(tax);
 
@@ -242,6 +297,15 @@ public class BillingServiceImpl implements BillingService {
         try {
             List<BillingHeader> billingHeaders = billingHeaderRepository.findByPaymentStatusIn(List.of("n", "p"));
 
+            billingHeaders = billingHeaders.stream()
+                    .filter(bh -> {
+                        // Fetch visit or check visit status
+                        Visit visit = visitRepository.findById(bh.getVisit().getId()).orElse(null);
+                        return visit != null && !"c".equalsIgnoreCase(visit.getVisitStatus());
+                    })
+                    .collect(Collectors.toList());
+
+
             List<DgOrderHd> orderHeaders =
                     labHdRepository.findByPaymentStatusInAndSource(
                             List.of("n", "p"),
@@ -348,6 +412,7 @@ public class BillingServiceImpl implements BillingService {
         response.setAddress(header.getPatientAddress());
         response.setVisitId(header.getVisit().getId());
 
+
         if (header.getVisit() != null && header.getVisit().getPatient() != null) {
             response.setPatientid(header.getVisit().getPatient().getId());
             response.setPatientUhid(header.getVisit().getPatient().getUhidNo());
@@ -427,6 +492,9 @@ public class BillingServiceImpl implements BillingService {
                 )
                 .map(this::mapToDetailResponse)
                 .collect(Collectors.toList());
+        if(header.getBillingPolicy()!=null){
+            response.setBillingPolicyId(header.getBillingPolicy().getBillingPolicyId());
+        }
         response.setRegistrationCost(registrationCost);
         response.setDetails(details);
         return response;
@@ -598,6 +666,7 @@ public class BillingServiceImpl implements BillingService {
                         Collections.singletonList(single.getBillinghdid())
                 );
                 AppointmentBlock ab = new AppointmentBlock();
+                ab.setBillingPolicyId(single.getBillingPolicyId());
                 ab.setBillingHdId(single.getBillinghdid());
                 ab.setConsultedDoctor(single.getConsultedDoctor());
                 ab.setDepartment(single.getDepartment());
@@ -643,6 +712,7 @@ public class BillingServiceImpl implements BillingService {
             List<AppointmentBlock> appointmentList = new ArrayList<>();
             for (PendingBillingResponse item : group) {
                 AppointmentBlock ab = new AppointmentBlock();
+                ab.setBillingPolicyId(item.getBillingPolicyId());
                 ab.setBillingHdId(item.getBillinghdid());
                 ab.setConsultedDoctor(item.getConsultedDoctor());
                 ab.setDepartment(item.getDepartment());

@@ -225,7 +225,7 @@ public class PatientController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PostMapping("/cancel-appointment")
+    @PostMapping("/cancel_appointment")
     public ResponseEntity<?> cancelAppointment(@RequestBody CancelAppointmentRequest request) {
         ApiResponse<String> response = patientService.cancelAppointment(request);
         return new ResponseEntity<>(response, HttpStatus.OK);

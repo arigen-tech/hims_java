@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -129,8 +130,6 @@ public class PatientServiceImpl implements PatientService {
             List<Visit> savedVisits = new ArrayList<>();
             if (!visit.isEmpty()) {
                 for (VisitRequest v : visit) {
-
-
                     Instant today = v.getVisitDate();
                     String visitType = getVisitTypeForToday(patient.getId(), today);
                     v.setVisitType(visitType);
@@ -191,10 +190,9 @@ public class PatientServiceImpl implements PatientService {
                }
             }
 
-
-
             AppointmentBlock appointmentBlock = new AppointmentBlock();
             appointmentBlock.setBillingHdId(billingHeader.getId());
+            appointmentBlock.setBillingPolicyId(billingHeader.getBillingPolicy().getBillingPolicyId());
             appointmentBlock.setDepartment(sVisit.getDepartment() != null ? sVisit.getDepartment().getDepartmentName() : null);
             appointmentBlock.setVisitDate(sVisit.getVisitDate());
             appointmentBlock.setVisitId(sVisit.getId());
@@ -729,9 +727,7 @@ public class PatientServiceImpl implements PatientService {
 
         // Fetch related entities using IDs
         opdPatientDetail.setPatient(patient!=null?patient:patientRepository.findById(opdPatientDetailRequest.getPatientId()).get());
-
         opdPatientDetail.setVisit(savedVisit!=null?savedVisit:visitRepository.findById(opdPatientDetailRequest.getVisitId()).get());
-
         MasDepartment department = savedVisit!=null?savedVisit.getDepartment():masDepartmentRepository.findById(opdPatientDetailRequest.getDepartmentId()).get();
         opdPatientDetail.setDepartment(department);
         opdPatientDetail.setHospital(savedVisit!=null?savedVisit.getHospital():masHospitalRepository.findById(opdPatientDetailRequest.getHospitalId()).get());
@@ -741,9 +737,16 @@ public class PatientServiceImpl implements PatientService {
         return opdPatientDetailRepository.save(opdPatientDetail); // Save OPD details
     }
 
-    private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
-        Visit newVisit = new Visit();
 
+    private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
+
+        boolean alreadyExists = visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateAndSession_IdAndTokenNo(
+                visit.getDepartmentId(), visit.getDoctorId(), visit.getVisitDate(), visit.getSessionId(), visit.getTokenNo());
+        if (alreadyExists) {
+            throw new IllegalStateException("This token has just been booked by another user. Please select a different slot.");
+        }
+
+        Visit newVisit = new Visit();
         String todayDayName = LocalDate.now()
                 .getDayOfWeek()
                 .name()
@@ -763,19 +766,6 @@ public class PatientServiceImpl implements PatientService {
                 .filter(s -> s.getSession().getId().equals(visit.getSessionId()))
                 .findFirst()
                 .orElse(null);
-        // FOR NEW IMPLIMENTATION OF TOKENS
-//        int startToken = setup.getStartToken() != null ? setup.getStartToken() : 1;
-//        int maxToken = setup.getTotalToken() != null ? setup.getTotalToken() : Integer.MAX_VALUE;
-//        Long visitCount = visitRepository.countByPatientId(visit.getPatientId());
-//        List<Long> existingTokens = visitRepository
-//                .findAllTokensForSessionToday(visit.getDoctorId(), visit.getHospitalId(), visit.getSessionId());
-//        Long nextToken = getNextAvailableToken(existingTokens, startToken, maxToken);
-//        Instant[] tokenTimes = calculateTokenTimeAsInstant(
-//                setup.getStartTime(), // e.g., "08:00"
-//                setup.getTimeTaken(), // e.g., 10
-//                nextToken,LocalDate.now());
-
-
 
         newVisit.setStartTime(visit.getTokenStartTime());
         newVisit.setEndTime(visit.getTokenEndTime());
@@ -831,35 +821,6 @@ public class PatientServiceImpl implements PatientService {
         visitRepository.save(newVisit);
         return savedVisit;
     }
-
-//    public static Instant[] calculateTokenTimeAsInstant(
-//            String startTimeStr,
-//            int timeTakenMinutes,
-//            Long tokenNo,
-//            LocalDate visitDate
-//    ) {
-//        if (startTimeStr == null || timeTakenMinutes <= 0 || tokenNo <= 0 || visitDate == null) {
-//            throw new IllegalArgumentException("Invalid input parameters.");
-//        }
-//
-//        // Parse start time and calculate token offset
-//        LocalTime baseTime = LocalTime.parse(startTimeStr); // e.g., "10:00"
-//        long minutesToAdd = (tokenNo - 1) * timeTakenMinutes;
-//
-//        // Apply token offset
-//        LocalTime tokenStartTime = baseTime.plusMinutes(minutesToAdd);
-//        LocalTime tokenEndTime = tokenStartTime.plusMinutes(timeTakenMinutes);
-//
-//        // Combine with visit date
-//        LocalDateTime startDateTime = LocalDateTime.of(visitDate, tokenStartTime);
-//        LocalDateTime endDateTime = LocalDateTime.of(visitDate, tokenEndTime);
-//
-//        // Treat time as UTC without converting via system/default zone
-//        return new Instant[] {
-//                startDateTime.toInstant(ZoneOffset.UTC),
-//                endDateTime.toInstant(ZoneOffset.UTC)
-//        };
-//    }
 
     private String generateUhid(Patient patient) {
         List<Patient> existing = patientRepository.findByPatientMobileNumberAndPatientRelation(patient.getPatientMobileNumber(), patient.getPatientRelation());
@@ -981,16 +942,19 @@ public class PatientServiceImpl implements PatientService {
     public ApiResponse<String> cancelAppointment(CancelAppointmentRequest request) {
         try {
             Optional<Visit> optionalVisit = visitRepository.findById(request.getVisitId());
-            if (optionalVisit.isEmpty()) {
+            Visit visit = optionalVisit.get();
+            BillingHeader bill = billingHeaderRepository.findByVisit(visit);
+            if (optionalVisit.isEmpty()||bill==null) {
                 return new ApiResponse<>( HttpStatus.NOT_FOUND, "Appointment not found with ID: " + request.getVisitId());
             }
-            Visit visit = optionalVisit.get();
             visit.setVisitStatus("c");
             visit.setCancelledBy(authUtil.getCurrentUser().getFirstName());
             visit.setCancelledDateTime(Instant.now());
             if (request.getCancelReasonId() != null) {
                 visit.setReason(changeReasonRepository.getReferenceById(request.getCancelReasonId()));
             }
+            bill.setPaymentStatus("y");
+            billingHeaderRepository.save(bill);
             Visit savedVisit = visitRepository.save(visit);
 
             return new ApiResponse<>(HttpStatus.OK, "Appointment cancelled successfully");

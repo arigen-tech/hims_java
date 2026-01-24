@@ -17,5 +17,5 @@ public interface DoctorRosterServices {
 
     ApiResponse<DoctorRosterResponseDTO> getDoctorRostersWithDays(Long deptId, Long doctorId, LocalDate rosterDate, boolean isProduction);
 
-    ApiResponse<List<AvailableTokenSlotResponse>> getAvailableToken(Long deptId, Long doctorId, String appointmentDate, Long sessionId);
+    ApiResponse<List<AvailableTokenSlotResponse>> getAvailableToken(Long deptId, Long doctorId, String appointmentDate, Long sessionId, int flag);
 }

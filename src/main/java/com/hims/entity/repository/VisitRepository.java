@@ -1,8 +1,6 @@
 package com.hims.entity.repository;
 
-import com.hims.entity.BillingHeader;
-import com.hims.entity.MasHospital;
-import com.hims.entity.Visit;
+import com.hims.entity.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -168,7 +166,8 @@ WHERE v.visit_status = 'n'
             "v.department.id = :departmentId AND " +
             "v.doctor.id = :doctorId AND " +
             "v.session.id = :sessionId AND " +
-            "v.visitDate >= :startOfDay AND v.visitDate < :endOfDay")
+            "v.visitDate >= :startOfDay AND v.visitDate < :endOfDay AND " +
+            "v.visitStatus NOT IN ('c')")
     List<Long> findOccupiedTokens(
             @Param("departmentId") Long departmentId,
             @Param("doctorId") Long doctorId,
@@ -179,7 +178,8 @@ WHERE v.visit_status = 'n'
 
     @Query(value = "SELECT v.* FROM visit v WHERE v.patient_id = :patientId " +
             "AND ((DATE(v.visit_date) >= CURRENT_DATE AND v.visit_status = 'n') " +
-            "OR (DATE(v.visit_date) = CURRENT_DATE AND v.visit_status = 'y')) " +
+            "OR (DATE(v.visit_date) = CURRENT_DATE AND v.visit_status = 'y' " +
+            "AND v.start_time > CURRENT_TIMESTAMP)) " +  // TIMESTAMP compare
             "ORDER BY v.visit_date ASC, v.visit_status DESC",
             nativeQuery = true)
     List<Visit> findRelevantVisitsByPatientId(@Param("patientId") Long patientId);
@@ -194,5 +194,30 @@ WHERE v.visit_status = 'n'
       AND v.visitDate >= :startDate
 """)
     List<Visit> findNVisitsFromToday(@Param("startDate") Instant startDate);
+
+    @Query("SELECT v FROM Visit v WHERE " +
+            "v.patient.id = :patientId AND " +
+            "v.doctor.id = :doctorId AND " +
+            "v.department.id = :departmentId AND " +
+            "v.hospital.id = :hospitalId AND " +
+            "v.visitStatus = :visitStatus " +
+            "ORDER BY v.visitDate DESC")
+    Optional<Visit> findTopByPatientAndDoctorAndDepartmentAndHospitalAndVisitStatusOrderByVisitDateDesc(
+            @Param("patientId") Long patientId,
+            @Param("doctorId") Long doctorId,
+            @Param("departmentId") Long departmentId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("visitStatus") String visitStatus);
+
+
+
+    boolean existsByDepartment_IdAndDoctor_UserIdAndVisitDateAndSession_IdAndTokenNo(
+            Long departmentId,
+            Long doctorId,
+            Instant visitDate,
+            Long sessionId,
+            Long tokenNo
+    );
+
 
 }

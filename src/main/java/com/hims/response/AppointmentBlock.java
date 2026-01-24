@@ -14,5 +14,6 @@ public class AppointmentBlock {
     private String consultedDoctor;
     private String sessionName;
     private Instant visitDate;
+    private Long billingPolicyId;
 }
 

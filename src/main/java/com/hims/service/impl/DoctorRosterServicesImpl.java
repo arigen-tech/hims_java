@@ -359,7 +359,7 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
 
 
     public ApiResponse<List<AvailableTokenSlotResponse>> getAvailableToken(
-            Long deptId, Long doctorId, String appointmentDate, Long sessionId) {
+            Long deptId, Long doctorId, String appointmentDate, Long sessionId,int flag) {
 
         LocalDate date = LocalDate.parse(appointmentDate);
         String dayName = date.getDayOfWeek()
@@ -370,7 +370,7 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
 
         AppSetup appSetup = optionalSetup.get(0);
         int startToken = appSetup.getStartToken();
-        int intervalToken = appSetup.getTotalInterval() - 1;
+        int intervalToken = appSetup.getTotalInterval();
         int totalToken = appSetup.getTotalToken();
         int totalOnlineTokens = appSetup.getTotalOnlineToken();
         int timeTakenMin = appSetup.getTimeTaken();
@@ -388,158 +388,92 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
             log.error("Error fetching occupied tokens", e);
         }
 
-        List<AvailableTokenSlotResponse> list = generateOfflineSlotsWithAvailability(
+        List<AvailableTokenSlotResponse> list = generateSlotsWithAvailability(
                 startToken, intervalToken, totalToken,
-                startTime, endTime, timeTakenMin, occupiedTokens);
+                startTime, endTime, timeTakenMin, occupiedTokens,flag);
 
         return ResponseUtils.createSuccessResponse(list, new TypeReference<List<AvailableTokenSlotResponse>>() {});
     }
-    public static List<AvailableTokenSlotResponse> generateOfflineSlotsWithAvailability(int tokenStart, int tokenInterval,int totalTokens, String dayStartTime, String dayEndTime, int timeTakenMin, Set<Long> occupiedTokenNumbers) {
-        List<AvailableTokenSlotResponse> offlineSlots = new ArrayList<>();
-        if (tokenInterval <= 0 || totalTokens <= 0 || timeTakenMin <= 0) {
-            return offlineSlots;
-        }
-        LocalTime start = LocalTime.parse(dayStartTime);
-        LocalTime end = LocalTime.parse(dayEndTime);
-        int slotIndex = 0;
-        int offlineCount = 0;
-        for (int tokenNum = tokenStart; tokenNum <= totalTokens; tokenNum++) {
-            LocalTime slotStart = start.plusMinutes(slotIndex * timeTakenMin);
-            LocalTime slotEnd = slotStart.plusMinutes(timeTakenMin);
-
-            if (!slotStart.isBefore(end) || slotEnd.isAfter(end)) {
-                break;
-            }
-            if (offlineCount == tokenInterval) {
-                offlineCount = 0;
-                slotIndex++;
-                continue;
-            }
-            boolean isAvailable = !occupiedTokenNumbers.contains((long) tokenNum);
-
-            LocalTime formattedStart = LocalTime.of(slotStart.getHour(), slotStart.getMinute());
-            LocalTime formattedEnd = LocalTime.of(slotEnd.getHour(), slotEnd.getMinute());
-
-            offlineSlots.add(new AvailableTokenSlotResponse(
-                    tokenNum,
-                    formattedStart,
-                    formattedEnd,
-                    isAvailable
-            ));
-            offlineCount++;
-            slotIndex++;
-        }
-        return offlineSlots;
-    }
-
-
-//    public static List<AvailableTokenSlotResponse> generateOnlineSlotsWithLimit(int tokenStart,int tokenInterval,int totalTokens,int totalOnlineTokens,String dayStartTime,String dayEndTime,int timeTakenMin) {
-//
-//        List<AvailableTokenSlotResponse> onlineSlots = new ArrayList<>();
-//        if (tokenInterval <= 0 || totalTokens <= 0 || totalOnlineTokens <= 0) {
-//            return onlineSlots;
-//        }
-//
-//        LocalTime start = LocalTime.parse(dayStartTime);
-//        LocalTime end = LocalTime.parse(dayEndTime);
-//
-//        if (!end.isAfter(start)) {
-//            return onlineSlots;
-//        }
-//
-//        int cycle = tokenInterval + 1;
-//        int onlineCount = 0;
-//
-//        for (int tokenNum = tokenStart;
-//             tokenNum <= totalTokens && onlineCount < totalOnlineTokens;
-//             tokenNum++) {
-//
-//            if ((tokenNum - tokenStart) % cycle == tokenInterval) {
-//                int offsetMinutes = (tokenNum - tokenStart) * timeTakenMin;
-//                LocalTime slotStart = start.plusMinutes(offsetMinutes);
-//                LocalTime slotEnd = slotStart.plusMinutes(timeTakenMin);
-//
-//                if (!slotStart.isBefore(end) || slotEnd.isAfter(end)) {
-//                    break;
-//                }
-//
-//               // onlineSlots.add(new AvailableTokenSlotResponse(tokenNum, slotStart, slotEnd));
-//                onlineCount++;
-//            }
-//        }
-//
-//        return onlineSlots;
-//    }
-
-//    public static List<AvailableTokenSlotResponse> generateOfflineSlots(
+//    public static List<AvailableTokenSlotResponse> generateSlotsWithAvailability(
 //            int tokenStart,
 //            int tokenInterval,
 //            int totalTokens,
-//            int totalOnlineTokens,
 //            String dayStartTime,
 //            String dayEndTime,
 //            int timeTakenMin,
-//            Long departmentId,
-//            Long doctorId,
-//            Long sessionId,
-//            LocalDate visitDate,
-//            VisitRepository visitRepository) {
-//
-//        List<AvailableTokenSlotResponse> offlineSlots = new ArrayList<>();
-//
-//        if (tokenInterval <= 0 || totalTokens <= 0) {
-//            return offlineSlots;
+//            Set<Long> occupiedTokenNumbers,
+//            int flag
+//    ) {
+//        List<AvailableTokenSlotResponse> slots = new ArrayList<>();
+//        if (totalTokens <= 0 || timeTakenMin <= 0) {
+//            return slots;
 //        }
-//
 //        LocalTime start = LocalTime.parse(dayStartTime);
 //        LocalTime end = LocalTime.parse(dayEndTime);
-//
-//        if (!end.isAfter(start)) {
-//            return offlineSlots;
-//        }
-//
-//        Set<Integer> occupiedTokenNumbers = visitRepository
-//                .findOccupiedTokens(departmentId, doctorId, sessionId, visitDate)
-//                .stream()
-//                .collect(Collectors.toSet());
-//
-//        Set<Integer> onlineTokenNumbers = new HashSet<>();
-//        int cycle = tokenInterval + 1;
-//        int onlineCount = 0;
-//
-//        for (int tokenNum = tokenStart;
-//             tokenNum <= totalTokens && onlineCount < totalOnlineTokens;
-//             tokenNum++) {
-//            if ((tokenNum - tokenStart) % cycle == tokenInterval) {
-//                onlineTokenNumbers.add(tokenNum);
-//                onlineCount++;
-//            }
-//        }
-//
+//        int slotIndex = 0;
 //        for (int tokenNum = tokenStart; tokenNum <= totalTokens; tokenNum++) {
-//            if (onlineTokenNumbers.contains(tokenNum)) {
-//                continue;
-//            }
-//
-//            boolean isAvailable = !occupiedTokenNumbers.contains(tokenNum);
-//
-//            int offsetMinutes = (tokenNum - tokenStart) * timeTakenMin;
-//            LocalTime slotStart = start.plusMinutes(offsetMinutes);
+//            LocalTime slotStart = start.plusMinutes(slotIndex * timeTakenMin);
 //            LocalTime slotEnd = slotStart.plusMinutes(timeTakenMin);
-//
 //            if (!slotStart.isBefore(end) || slotEnd.isAfter(end)) {
 //                break;
 //            }
-//
-//            offlineSlots.add(new AvailableTokenSlotResponse(
-//                    tokenNum,
-//                    slotStart,
-//                    slotEnd,
-//                    isAvailable
-//            ));
+//            boolean isOnline = tokenInterval > 0 && tokenNum % tokenInterval == 0;
+//            boolean isAvailable = !occupiedTokenNumbers.contains((long) tokenNum);
+//            boolean shouldAdd =
+//                    tokenInterval == 0 ||
+//                            (flag == 0 && !isOnline) ||
+//                            (flag == 1 && isOnline);
+//            if (shouldAdd) {
+//                slots.add(new AvailableTokenSlotResponse(tokenNum, slotStart, slotEnd, isAvailable));
+//            }
+//            slotIndex++;
 //        }
-//
-//        return offlineSlots;
+//        return slots;
 //    }
+
+//    // If you want to show booked tokens with isAvailable = false, use this version:
+public static List<AvailableTokenSlotResponse> generateSlotsWithAvailability(
+        int tokenStart,
+        int tokenInterval, int totalTokens, String dayStartTime, String dayEndTime, int timeTakenMin, Set<Long> occupiedTokenNumbers, int flag) {
+
+    List<AvailableTokenSlotResponse> slots = new ArrayList<>();
+
+    if (totalTokens <= 0 || timeTakenMin <= 0) {
+        return slots;
+    }
+
+    LocalTime start = LocalTime.parse(dayStartTime);
+    LocalTime end = LocalTime.parse(dayEndTime);
+
+    int slotIndex = 0;
+
+    for (int tokenNum = tokenStart; tokenNum <= totalTokens; tokenNum++) {
+
+        LocalTime slotStart = start.plusMinutes(slotIndex * timeTakenMin);
+        LocalTime slotEnd = slotStart.plusMinutes(timeTakenMin);
+
+        if (!slotStart.isBefore(end) || slotEnd.isAfter(end)) {
+            break;
+        }
+
+        boolean isOnline = tokenInterval > 0 && tokenNum % tokenInterval == 0;
+        boolean isAvailable = !occupiedTokenNumbers.contains((long) tokenNum);
+
+        boolean shouldAdd =
+                tokenInterval == 0 || (flag == 0 && !isOnline) || (flag == 1 && isOnline);
+
+        if (shouldAdd) {
+            slots.add(new AvailableTokenSlotResponse(
+                    tokenNum,
+                    slotStart,
+                    slotEnd,
+                    isAvailable
+            ));
+        }
+        slotIndex++;
+    }
+    return slots;
+}
+
 
 }
