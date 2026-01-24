@@ -79,15 +79,17 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
     @Override
     @Transactional
-    public ApiResponse<String> validateInvestigations(
-            List<InvestigationValidationRequest> requests) {
+    public ApiResponse<String> validateInvestigations(List<InvestigationValidationRequest> requests) {
 
         try {
             log.info("Investigation validation process started...");
+            log.debug("Total investigations received for validation={}",
+                    requests != null ? requests.size() : 0);
 
-            // ===================== 0. CURRENT USER =====================
+            // =====================  CURRENT USER =====================
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
+                log.warn("Current user not found during investigation validation");
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -99,13 +101,17 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                     currentUser.getFirstName() + " " +
                             currentUser.getMiddleName() + " " +
                             currentUser.getLastName();
+            log.debug("Validation performed by={}", validatedBy);
+
 
             Long headerId = requests.get(0).getSampleHeaderId();
+            log.info("SampleCollectionHeaderId={}", headerId);
 
             // ===================== 1. FETCH HEADER ONCE =====================
             DgSampleCollectionHeader header =
                     headerRepo.findById(headerId)
                             .orElseThrow(() -> new RuntimeException("Header not found"));
+            log.debug("Header fetched successfully");
 
             // ===================== 2. FETCH ORDER HD ONCE =====================
             DgOrderHd orderHd =
@@ -157,6 +163,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                 tat.setSampleValidatedBy(validatedBy);
                 tat.setSampleValidatedDateTime(LocalDateTime.now());
                 labTurnAroundTimeRepository.save(tat);
+                log.debug("TAT updated for investigationId={}", investigationId);
 
                 // ===================== 6. UPDATE SAMPLE DETAILS =====================
                 detailsRepo.updateValidation(
@@ -250,8 +257,10 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
                 orderHd.setOrderStatus(finalOrderStatus);
                 orderHdRepo.save(orderHd);
+                log.info("OrderHd status updated, orderHdId={}, status={}",
+                        orderHd.getId(), finalOrderStatus);
             }
-
+            log.info("Investigation validation completed successfully");
             // ===================== 10. SUCCESS =====================
             return ResponseUtils.createSuccessResponse(
                     "Investigation validated successfully",
@@ -288,6 +297,8 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                         DgSampleCollectionHeader h = d.getSampleCollectionHeader();
                         return h.getPatientId().getId() + "_" + h.getSampleCollectionHeaderId();
                     }));
+            log.debug("Grouped headers count={}", grouped.size());
+
 
             // Step 3: Convert each group into SampleValidationResponse
             List<SampleValidationResponse> responseList = grouped.entrySet().stream()
@@ -346,7 +357,8 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                     })
                     .toList();
 
-            log.info("Investigation status process ended..");
+            log.info("Investigation status process ended successfully, responseCount={}",
+                    responseList.size());
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
         } catch (Exception e) {
@@ -361,8 +373,10 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
     public ApiResponse<List<ResultResponse>> getValidatedResultEntries() {
 
         try {
+            log.info("Result entry fetch process started");
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
+                log.warn("Current user not found while fetching result status");
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -370,6 +384,8 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
             List<DgSampleCollectionDetails> detailsList =
                     detailsRepo.findAllByHeaderResultEntryAndValidationStatusLogic();
+            log.info("Total sample collection details fetched={}", detailsList.size());
+
 
             // ===================== CACHE MAPS =====================
             Map<Long, DgOrderHd> orderHdCache = new HashMap<>();
@@ -385,9 +401,12 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                 DgSampleCollectionHeader header = detail.getSampleCollectionHeader();
                 Long headerId = header.getSampleCollectionHeaderId();
                 String key = String.valueOf(headerId);
+                log.debug("Processing headerId={}, detailId={}",
+                        headerId, detail.getSampleCollectionDetailsId());
 
                 // ===================== HEADER GROUP =====================
                 ResultResponse response = responseMap.computeIfAbsent(key, k -> {
+                    log.debug("Creating ResultResponse for headerId={}", headerId);
 
                     ResultResponse r = new ResultResponse();
                     var patient = header.getPatientId();
@@ -593,7 +612,8 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                     investigation.getResultSubInvestigationResponseList().add(sub);
                 }
             }
-
+            log.info("Result entry fetch completed successfully, headerCount={}",
+                    responseMap.size());
             return ResponseUtils.createSuccessResponse(
                     new ArrayList<>(responseMap.values()),
                     new TypeReference<>() {}
@@ -601,6 +621,7 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
         } catch (Exception e) {
             log.error("Investigation status Error :: ", e);
+            e.printStackTrace();
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Internal Server Error", HttpStatus.BAD_REQUEST.value());

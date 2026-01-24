@@ -107,6 +107,8 @@ public class ResultServiceImpl implements ResultService {
     @Override
     @Transactional
     public ApiResponse<String>  saveOrUpdateResultEntry(ResultEntryMainRequest request) {
+        log.info("Starting saveOrUpdateResultEntry for patientId={}, visitId={}",
+                request.getPatientId(), request.getVisitId());
         try {
             Long depart = authUtil.getCurrentDepartmentId();
             MasDepartment depObj = masDepartmentRepository.getById(depart);
@@ -116,7 +118,7 @@ public class ResultServiceImpl implements ResultService {
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-
+            log.debug("Current user={}, department={}", currentUser.getUsername(), depObj.getDepartmentName());
             //  Check if header already exists for same Sample + SubChargeCode
             Optional<DgResultEntryHeader> existingHeaderOpt =
                     headerRepo.findBySampleCollectionHeaderId_SampleCollectionHeaderIdAndSubChargeCodeId_SubId(
@@ -128,6 +130,8 @@ public class ResultServiceImpl implements ResultService {
             DgOrderHd dgOrderH=labHdRepository.findByPatientId_IdAndVisitId_Id(request.getPatientId(),request.getVisitId());
             Patient patientId = patientRepository.findById(request.getPatientId()).orElse(null);
             if (existingHeaderOpt.isPresent()) {
+                log.info("Updating existing ResultEntryHeader id={}", existingHeaderOpt.get().getResultEntryId());
+
                 // Update existing header
                 header = existingHeaderOpt.get();
                 header.setRemarks(request.getClinicalNotes());
@@ -136,6 +140,9 @@ public class ResultServiceImpl implements ResultService {
                 header.setResultStatus("n");
                 header.setLastChgdTime(String.valueOf(LocalTime.now()));
             } else {
+                log.info("Creating new ResultEntryHeader for sampleCollectionHeaderId={}",
+                        request.getSampleCollectionHeaderId());
+
                 // Create new header
                 header = new DgResultEntryHeader();
                 header.setRelationId(masRelationRepository.findById(request.getRelationId()).orElse(null));
@@ -169,9 +176,11 @@ public class ResultServiceImpl implements ResultService {
                 header.setMainChargecodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
                 header.setSubChargeCodeId(subChargeRepo.findById(request.getSubChargeCodeId()).orElse(null));
                 header = headerRepo.save(header);
+                log.info("ResultEntryHeader created with id={}", header.getResultEntryId());
             }
             // Save or Update Details
             for (ResultEntryInvestigationRequest invReq : request.getInvestigationList()) {
+                log.debug("Processing investigationId={}", invReq.getInvestigationId());
                 DgMasInvestigation investigation = dgMasInvestigationRepository.findById(invReq.getInvestigationId())
                         .orElseThrow(() -> new RuntimeException("Invalid Investigation ID: " + invReq.getInvestigationId()));
                 DgSampleCollectionDetails dgSampleCollectionDetails =
@@ -184,6 +193,8 @@ public class ResultServiceImpl implements ResultService {
 
                 // If no sub-investigation result entered, skip this investigation entirely
                 if (!anyResultEntered) {
+                    log.debug("Skipping investigationId={} as no results entered",
+                            invReq.getInvestigationId());
                     continue;
                 }
 
@@ -238,6 +249,8 @@ public class ResultServiceImpl implements ResultService {
                         }
                         detail.setResultDetailStatus("n");
                         detail.setGeneratedSampleId(dgSampleCollectionDetails.getSampleGeneratedId());
+                        log.debug("Created new ResultEntryDetail for investigationId={}",
+                                investigation.getInvestigationId());
                     }
 
                     DgOrderDt dgOrderDt = dgOrderDtRepository.findByOrderhdId_IdAndInvestigationId_InvestigationId(dgOrderH.getId(), investigation.getInvestigationId());
@@ -261,11 +274,13 @@ public class ResultServiceImpl implements ResultService {
 
             //After all investigations processed
             updateResultEntryStatusIfComplete(request.getSampleCollectionHeaderId(), request.getSubChargeCodeId());
-
+            log.info("Result entry saved/updated successfully for sampleCollectionHeaderId={}",
+                    request.getSampleCollectionHeaderId());
             return ResponseUtils.createSuccessResponse("Result entry saved/updated successfully!", new TypeReference<>() {}
             );
 
         } catch (Exception e) {
+            log.error("Error while saving result entry", e);
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Error saving result entry: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -273,6 +288,7 @@ public class ResultServiceImpl implements ResultService {
     }
     @Override
     public ApiResponse<List<DgResultEntryValidationResponse>> getUnvalidatedResults() {
+        log.info("Starting getUnvalidatedResults()");
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
@@ -283,10 +299,12 @@ public class ResultServiceImpl implements ResultService {
 
             // Fetch headers with resultStatus = 'n' and details having validated = 'n'
             List<DgResultEntryHeader> headerList = headerRepo.findAllUnvalidatedHeaders();
+            log.info("Found {} unvalidated result headers", headerList.size());
 
             List<DgResultEntryValidationResponse> responseList = new ArrayList<>();
 
             for (DgResultEntryHeader header : headerList) {
+                log.debug("Processing ResultEntryHeader id={}", header.getResultEntryId());
                 DgResultEntryValidationResponse headerDto = new DgResultEntryValidationResponse();
                 String fullName = Stream.of(
                                 header.getHinId().getPatientFn(),
@@ -324,6 +342,8 @@ public class ResultServiceImpl implements ResultService {
 
                 // ===== Detail-level mapping =====
                 List<DgResultEntryDetail> detailList = detailRepo.findByResultEntryIdAndValidated(header, "n");
+                log.debug("Header id={} has {} unvalidated details",
+                        header.getResultEntryId(), detailList.size());
 
                 // Group details by Investigation
                 Map<Long, List<DgResultEntryDetail>> investigationMap = detailList.stream()
@@ -336,6 +356,9 @@ public class ResultServiceImpl implements ResultService {
                     Long investigationId = entry.getKey();
                     List<DgResultEntryDetail> subDetails = entry.getValue();
                     DgMasInvestigation inv = subDetails.get(0).getInvestigationId();
+                    log.debug("Processing investigationId={} with {} records",
+                            investigationId, subDetails.size());
+
                     ResultEntryInvestigationResponse invDto = new ResultEntryInvestigationResponse();
                     invDto.setInvestigationId(investigationId);
                     invDto.setInvestigationName(inv != null ? inv.getInvestigationName() : null);
@@ -387,11 +410,12 @@ public class ResultServiceImpl implements ResultService {
                 headerDto.setResultEntryInvestigationResponses(investigationResponseList);
                 responseList.add(headerDto);
             }
-
+            log.info("Successfully prepared {} unvalidated result records",
+                    responseList.size());
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error occurred while fetching unvalidated results", e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {}, e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -400,9 +424,13 @@ public class ResultServiceImpl implements ResultService {
     @Override
     @Transactional
     public ApiResponse<String> updateResultValidation( ResultValidationUpdateRequest request) {
+        log.info("Starting result validation. HeaderId={}",
+                request.getResultEntryHeaderId());
+
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
+                log.warn("Unauthorized access attempt. User not found");
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -415,16 +443,23 @@ public class ResultServiceImpl implements ResultService {
             // 🔹 Step 1: Fetch header
             Optional<DgResultEntryHeader> optionalHeader = headerRepo.findById(request.getResultEntryHeaderId());
             if (optionalHeader.isEmpty()) {
+                log.warn("Result entry header not found. HeaderId={}",
+                        request.getResultEntryHeaderId());
+
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Result entry header not found", HttpStatus.NOT_FOUND.value());
             }
 
             DgResultEntryHeader header = optionalHeader.get();
+            log.info("Header fetched successfully. HeaderId={}",
+                    header.getResultEntryId());
 //            System.out.println("header = " + header);
 
             // 🔹 Step 2: Loop through validation list and update details
             for (ResultEntryValidationRequest validationReq : request.getValidationList()) {
+                log.debug("Processing detailId={}",
+                        validationReq.getResultEntryDetailsId());
                 Optional<DgResultEntryDetail> optionalDetail = detailRepo.findById(validationReq.getResultEntryDetailsId());
                 if (optionalDetail.isEmpty()) continue;
 
@@ -463,6 +498,7 @@ public class ResultServiceImpl implements ResultService {
 
             // 🔹 Step 4: Update header if all details validated
             if (allValidated) {
+                log.info("All details validated. Updating header status.");
                 header.setResultStatus("y"); // All validated
                 // header.setVerified("y");
                 header.setVerifiedOn(LocalDate.now());
@@ -472,6 +508,8 @@ public class ResultServiceImpl implements ResultService {
                 //  header.setUpdateOn(LocalDateTime.now());
                 headerRepo.save(header);
             }
+            log.info("Result validation completed successfully. HeaderId={}",
+                    request.getResultEntryHeaderId());
 
             return ResponseUtils.createSuccessResponse(
                     "Result entry validation updated successfully",
@@ -479,6 +517,8 @@ public class ResultServiceImpl implements ResultService {
                     });
 
         } catch (Exception e) {
+            log.error("Error while validating result entry. HeaderId={}",
+                    request.getResultEntryHeaderId(), e);
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
@@ -644,20 +684,23 @@ public class ResultServiceImpl implements ResultService {
 //            return ResponseUtils.createFailureResponse(
 //                    null, new TypeReference<>() {}, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
 //        }
+        log.info("Starting getUpdate service");
 
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
+                log.warn("Unauthorized access: current user not found");
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-
+            log.debug("Current user: {}", currentUser.getUsername());
             // Step 1: Fetch all headers
             // List<DgResultEntryHeader> headerList = headerRepo.findAll();
             List<DgResultEntryHeader> headerList = headerRepo.findAllByOrderByLastChgdDateDescLastChgdTimeDesc();
-
+            log.info("Headers fetched from DB: count={}", headerList.size());
             if (headerList.isEmpty()) {
+                log.info("No result entry headers found");
                 return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
             }
 
@@ -665,6 +708,7 @@ public class ResultServiceImpl implements ResultService {
             Map<Long, List<DgResultEntryHeader>> groupedByOrder = headerList.stream()
                     .filter(h -> h.getOrderHd() != null)
                     .collect(Collectors.groupingBy(h -> (long) h.getOrderHd().getId()));
+            log.debug("Grouped headers by order count={}", groupedByOrder.size());
 
             Map<Long, List<DgResultEntryHeader>> sortedGroupedByOrder = groupedByOrder.entrySet().stream()
                     .sorted(Map.Entry.<Long, List<DgResultEntryHeader>>comparingByKey().reversed())
@@ -681,6 +725,9 @@ public class ResultServiceImpl implements ResultService {
             for (Map.Entry<Long, List<DgResultEntryHeader>> orderEntry : sortedGroupedByOrder.entrySet()) {
                 Long orderHdId = orderEntry.getKey();
                 List<DgResultEntryHeader> headersForOrder = orderEntry.getValue();
+                log.info("Processing OrderHdId={}, HeaderCount={}",
+                        orderHdId, headersForOrder.size());
+
 
                 DgOrderHd order = headersForOrder.get(0).getOrderHd();
                 ResultEntryUpdateResponse orderResponse = new ResultEntryUpdateResponse();
@@ -724,6 +771,8 @@ public class ResultServiceImpl implements ResultService {
                             .anyMatch(d -> "y".equalsIgnoreCase(d.getValidated()));
 
                     if (!hasValidatedDetail) {
+                        log.debug("Skipping headerId={} (no validated details)",
+                                header.getResultEntryId());
                         continue; // Skip this header
                     }
 
@@ -805,9 +854,12 @@ public class ResultServiceImpl implements ResultService {
                     responseList.add(orderResponse);
                 }
             }
-
+            log.info("getUpdate service completed successfully. OrderCount={}",
+                    responseList.size());
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
         } catch (Exception e) {
+            log.error("Error while fetching update result entries", e);
+
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {}, e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -816,6 +868,7 @@ public class ResultServiceImpl implements ResultService {
     @Override
     @Transactional
     public ApiResponse<String> updateResult(ResultUpdateRequest request) {
+        log.info("Starting updateResult process for HeaderId={}", request.getResultEntryHeaderId());
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
@@ -823,6 +876,8 @@ public class ResultServiceImpl implements ResultService {
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
+            log.debug("Current user fetched successfully. UserId={}", currentUser.getUserId());
+
             // Fetch header
             Optional<DgResultEntryHeader> optionalHeader = headerRepo.findById(request.getResultEntryHeaderId());
             if (optionalHeader.isEmpty()) {
@@ -831,8 +886,10 @@ public class ResultServiceImpl implements ResultService {
                         "Header not found", HttpStatus.NOT_FOUND.value());
             }
             DgResultEntryHeader header = optionalHeader.get();
+            log.info("Result Entry Header found. EntryId={}", header.getResultEntryId());
             // Update all details
             for (ResultUpdateDetailRequest detailReq : request.getResultUpdateDetailRequests()) {
+                log.debug("Processing DetailId={}", detailReq.getResultEntryDetailsId());
                 Optional<DgResultEntryDetail> optionalDetail = detailRepo.findById(detailReq.getResultEntryDetailsId());
                 if (optionalDetail.isEmpty()) continue;
                 DgResultEntryDetail detail = optionalDetail.get();
@@ -856,6 +913,8 @@ public class ResultServiceImpl implements ResultService {
                 labResultAmendAudit.setRemarks(detailReq.getRemarks());
 
                 labResultAmendAuditRepository.save(labResultAmendAudit);
+                log.info("Audit saved for DetailId={}", detail.getResultEntryDetailId());
+
 
                 // Update result and remarks per detail
                 detail.setResult(detailReq.getResult());
@@ -869,9 +928,14 @@ public class ResultServiceImpl implements ResultService {
             header.setResultUpdatedBy(Math.toIntExact(currentUser.getUserId()));  // Who updated
             header.setUpdateOn(LocalDateTime.now());           // When updated
             headerRepo.save(header);
+            log.info("Result update completed successfully for HeaderId={}",
+                    header.getResultEntryId());
+
             return ResponseUtils.createSuccessResponse(
                     "Result and remarks updated successfully", new TypeReference<>() {});
         } catch (Exception e) {
+            log.error("Exception occurred while updating result. HeaderId={}",
+                    request.getResultEntryHeaderId(), e);
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {}, e.getMessage(),

@@ -57,6 +57,7 @@ public class BillingServiceImpl implements BillingService {
     private MasServiceCategoryRepository masServiceCategoryRepository;
 
     @Autowired
+
     private LabHdRepository labHdRepository;
 
     @Autowired
@@ -93,6 +94,7 @@ public class BillingServiceImpl implements BillingService {
         Patient patient = visit.getPatient();
 
         try {
+
             BigDecimal totalDiscount = BigDecimal.valueOf(0);
             header.setBillDate(OffsetDateTime.now());
             header.setPatient(visit.getPatient());
@@ -166,8 +168,8 @@ public class BillingServiceImpl implements BillingService {
                     }
                 }
 
-                BigDecimal basePrice = serviceOpd.get().getBaseTariff();
-                BigDecimal amountAfterDiscount = basePrice.subtract(totalDiscount);
+                BigDecimal baseprice = serviceOpd.get().getBaseTariff();
+                BigDecimal amountAfterDiscount = baseprice.subtract(totalDiscount);
                 tax = tax.add(BigDecimal.valueOf(serviceCategory.getGstPercent()).multiply(amountAfterDiscount).divide(BigDecimal.valueOf(100)));
                 BigDecimal total = serviceOpd.get().getBaseTariff().subtract(totalDiscount).add(tax);
 
@@ -294,6 +296,7 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
+        log.info("Fetching pending billing records");
         try {
             List<BillingHeader> billingHeaders = billingHeaderRepository.findByPaymentStatusIn(List.of("n", "p"));
 
@@ -306,6 +309,7 @@ public class BillingServiceImpl implements BillingService {
                     .collect(Collectors.toList());
 
 
+            log.debug("BillingHeader pending count={}", billingHeaders.size());
             List<DgOrderHd> orderHeaders =
                     labHdRepository.findByPaymentStatusInAndSource(
                             List.of("n", "p"),
@@ -315,21 +319,33 @@ public class BillingServiceImpl implements BillingService {
             List<PendingBillingResponse> billingResponses = billingHeaders.stream()
                     .map(this::mapToResponse)
                     .collect(Collectors.toList());
+            log.debug("Mapped BillingHeader responses count={}",
+                    billingResponses.size());
 
             List<PendingBillingResponse> orderResponses = orderHeaders.stream()
                     .map(this::mapOrderToResponse)
                     .collect(Collectors.toList());
+            log.debug("Mapped OrderHeader responses count={}",
+                    orderResponses.size());
 
             List<PendingBillingResponse> combinedList = new ArrayList<>();
+
             combinedList.addAll(billingResponses);
             combinedList.addAll(orderResponses);
+            log.debug("Combined pending billing list count={}",
+                    combinedList.size());
+
             combinedList = mergeConsultation(combinedList);
+            log.info("Pending billing records fetched successfully, finalCount={}",
+                    combinedList.size());
 
             return ResponseUtils.createSuccessResponse(
                     combinedList,
                     new TypeReference<List<PendingBillingResponse>>() {}
             );
         } catch (Exception e) {
+            log.error("Error occurred while fetching pending billing data", e);
+
             System.err.println("Error in getPendingBilling: " + e.getMessage());
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(new ArrayList<>(),
