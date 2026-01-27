@@ -250,8 +250,20 @@ private MasPatientPreparationService masPatientPreparationService;
 
 @Autowired
 private MasAppointmentChangeReasonService masAppointmentReasonService;
-
-
+@Autowired
+private MasBloodComponentService masBloodComponentService;
+@Autowired
+private  MasBloodDonationTypeService masBloodDonationTypeService;
+@Autowired
+    private MasBloodDonationStatusService masBloodDonationStatusService;
+@Autowired
+    private  MasBloodBagTypeService masBloodBagTypeService;
+    @Autowired
+    private  MasBloodCollectionTypeService masBloodCollectionTypeService;
+    @Autowired
+    private MasBloodInventoryStatusService masBloodInventoryStatusService;
+    @Autowired
+    private MasBloodUnitStatusService masBloodUnitStatusService;
 
 
 
@@ -3867,4 +3879,250 @@ private MasAppointmentChangeReasonService masAppointmentReasonService;
     }
 
 
+    //-------------------------------------------Mas Blood Component------------------------------------------
+
+    @GetMapping("masBloodComponent/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasBloodComponentResponse>>> getAllBloodComponent(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masBloodComponentService.getAll(flag));
+    }
+
+    @GetMapping("masBloodComponent/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBloodComponentResponse>> getByIdBloodComponent(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masBloodComponentService.getById(id));
+    }
+
+    @PostMapping("masBloodComponent/create")
+    public ResponseEntity<ApiResponse<MasBloodComponentResponse>> createBloodComponent(
+            @RequestBody @Valid MasBloodComponentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masBloodComponentService.create(request));
+    }
+
+    @PutMapping("masBloodComponent/update/{id}")
+    public ResponseEntity<ApiResponse<MasBloodComponentResponse>> updateBloodComponent(
+            @PathVariable Long id,
+            @RequestBody @Valid MasBloodComponentRequest request) {
+        return ResponseEntity.ok(masBloodComponentService.update(id, request));
+    }
+
+    @PutMapping("masBloodComponent/status/{id}")
+    public ResponseEntity<ApiResponse<MasBloodComponentResponse>> changeStatusBloodComponent(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masBloodComponentService.changeStatus(id, status));
+    }
+
+    //------------------------------------------- Mas Blood Donation Type------------------------------------------
+
+    @GetMapping("masBloodDonationType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasBloodDonationTypeResponse>>> getAllBloodDonationType(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masBloodDonationTypeService.getAll(flag));
+    }
+
+    @GetMapping("masBloodDonationType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBloodDonationTypeResponse>> getByIdBloodDonationType(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masBloodDonationTypeService.getById(id));
+    }
+
+    @PostMapping("masBloodDonationType/create")
+    public ResponseEntity<ApiResponse<MasBloodDonationTypeResponse>> createBloodDonationType(
+            @RequestBody @Valid MasBloodDonationTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masBloodDonationTypeService.create(request));
+    }
+
+    @PutMapping("masBloodDonationType/update/{id}")
+    public ResponseEntity<ApiResponse<MasBloodDonationTypeResponse>> updateBloodDonationType(
+            @PathVariable Long id,
+            @RequestBody @Valid MasBloodDonationTypeRequest request) {
+        return ResponseEntity.ok(masBloodDonationTypeService.update(id, request));
+    }
+
+    @PutMapping("masBloodDonationType/status/{id}")
+    public ResponseEntity<ApiResponse<MasBloodDonationTypeResponse>> changeStatusBloodDonationType(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masBloodDonationTypeService.changeStatus(id, status));
+    }
+
+    //------------------------------------------- Mas Blood Donation Status------------------------------------------
+    @GetMapping("masBloodDonationStatus/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasBloodDonationStatusResponse>>> getAllBloodDonationStatus(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masBloodDonationStatusService.getAll(flag));
+    }
+
+    @GetMapping("masBloodDonationStatus/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBloodDonationStatusResponse>> getByIdBloodDonationStatus(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masBloodDonationStatusService.getById(id));
+    }
+
+    @PostMapping("masBloodDonationStatus/create")
+    public ResponseEntity<ApiResponse<MasBloodDonationStatusResponse>> createBloodDonationStatus(
+            @RequestBody @Valid MasBloodDonationStatusRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masBloodDonationStatusService.create(request));
+    }
+
+    @PutMapping("masBloodDonationStatus/update/{id}")
+    public ResponseEntity<ApiResponse<MasBloodDonationStatusResponse>> updateBloodDonationStatus(
+            @PathVariable Long id,
+            @RequestBody @Valid MasBloodDonationStatusRequest request) {
+        return ResponseEntity.ok(masBloodDonationStatusService.update(id, request));
+    }
+
+    @PutMapping("masBloodDonationStatus/status/{id}")
+    public ResponseEntity<ApiResponse<MasBloodDonationStatusResponse>> changeStatusBloodDonationStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masBloodDonationStatusService.changeStatus(id, status));
+    }
+
+    //-------------------------------------------Mas Blood Bag Type---------------------------
+
+    @GetMapping("masBloodBagType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasBloodBagTypeResponse>>> getAllBloodBagType(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masBloodBagTypeService.getAll(flag));
+    }
+
+    @GetMapping("masBloodBagType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBloodBagTypeResponse>> getByIdBloodBagType(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masBloodBagTypeService.getById(id));
+    }
+
+    @PostMapping("masBloodBagType/create")
+    public ResponseEntity<ApiResponse<MasBloodBagTypeResponse>> createBloodBagType(
+            @RequestBody @Valid MasBloodBagTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masBloodBagTypeService.create(request));
+    }
+
+    @PutMapping("masBloodBagType/update/{id}")
+    public ResponseEntity<ApiResponse<MasBloodBagTypeResponse>> updateBloodBagType(
+            @PathVariable Long id,
+            @RequestBody @Valid MasBloodBagTypeRequest request) {
+        return ResponseEntity.ok(masBloodBagTypeService.update(id, request));
+    }
+
+    @PutMapping("masBloodBagType/status/{id}")
+    public ResponseEntity<ApiResponse<MasBloodBagTypeResponse>> changeStatusBloodBagType(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masBloodBagTypeService.changeStatus(id, status));
+    }
+    //-------------------------------------------Mas Blood Collection Type---------------------------
+
+    @GetMapping("masBloodCollectionType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasBloodCollectionTypeResponse>>> getAllBloodCollectionType(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masBloodCollectionTypeService.getAll(flag));
+    }
+
+    @GetMapping("masBloodCollectionType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBloodCollectionTypeResponse>> getByIdBloodCollectionType(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masBloodCollectionTypeService.getById(id));
+    }
+
+    @PostMapping("masBloodCollectionType/create")
+    public ResponseEntity<ApiResponse<MasBloodCollectionTypeResponse>> createBloodCollectionType(
+            @Valid @RequestBody MasBloodCollectionTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masBloodCollectionTypeService.create(request));
+    }
+
+    @PutMapping("masBloodCollectionType/update/{id}")
+    public ResponseEntity<ApiResponse<MasBloodCollectionTypeResponse>> updateBloodCollectionType(
+            @PathVariable Long id,
+            @Valid @RequestBody MasBloodCollectionTypeRequest request) {
+        return ResponseEntity.ok(masBloodCollectionTypeService.update(id, request));
+    }
+
+    @PutMapping("masBloodCollectionType/status/{id}")
+    public ResponseEntity<ApiResponse<MasBloodCollectionTypeResponse>> changeStatusBloodCollectionType(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masBloodCollectionTypeService.changeStatus(id, status));
+    }
+    //-------------------------------------------Mas Blood Inventory Status---------------------------
+
+    @GetMapping("masBloodInventoryStatus/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasBloodInventoryStatusResponse>>> getAllBloodInventoryStatus(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masBloodInventoryStatusService.getAll(flag));
+    }
+
+    @GetMapping("/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBloodInventoryStatusResponse>> getByIdBloodInventoryStatus(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masBloodInventoryStatusService.getById(id));
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<ApiResponse<MasBloodInventoryStatusResponse>> createBloodInventoryStatus(
+            @Valid @RequestBody MasBloodInventoryStatusRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masBloodInventoryStatusService.create(request));
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<ApiResponse<MasBloodInventoryStatusResponse>> updateBloodInventoryStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody MasBloodInventoryStatusRequest request) {
+
+        return ResponseEntity.ok(masBloodInventoryStatusService.update(id, request));
+    }
+
+    @PutMapping("/status/{id}")
+    public ResponseEntity<ApiResponse<MasBloodInventoryStatusResponse>> changeStatusBloodInventoryStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(masBloodInventoryStatusService.changeStatus(id, status));
+    }
+
+    //------------------------------------------- Mas Blood Unit Status---------------------------
+    @GetMapping("masBloodUnitStatus/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasBloodUnitStatusResponse>>> getAllBloodUnitStatus(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masBloodUnitStatusService.getAll(flag));
+    }
+
+    @GetMapping("masBloodUnitStatus/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBloodUnitStatusResponse>> getByIdBloodUnitStatus(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masBloodUnitStatusService.getById(id));
+    }
+
+    @PostMapping("masBloodUnitStatus/create")
+    public ResponseEntity<ApiResponse<MasBloodUnitStatusResponse>> createBloodUnitStatus(
+            @Valid @RequestBody MasBloodUnitStatusRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masBloodUnitStatusService.create(request));
+    }
+
+    @PutMapping("masBloodUnitStatus/update/{id}")
+    public ResponseEntity<ApiResponse<MasBloodUnitStatusResponse>> updateBloodUnitStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody MasBloodUnitStatusRequest request) {
+
+        return ResponseEntity.ok(masBloodUnitStatusService.update(id, request));
+    }
+
+    @PutMapping("masBloodUnitStatus/status/{id}")
+    public ResponseEntity<ApiResponse<MasBloodUnitStatusResponse>> changeStatusBloodUnitStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(masBloodUnitStatusService.changeStatus(id, status));
+    }
 }
