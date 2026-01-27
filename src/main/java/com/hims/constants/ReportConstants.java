@@ -87,4 +87,7 @@ public final class ReportConstants {
     public static final String SUMMARY_TAT_JASPER = "Summary_tat_report";
     public static final String SUMMARY_TAT_REPORT = "SummaryTatReport";
 
+    public static final String RESULT_AMENDMENT_JASPER = "Result_amendment";
+    public static final String RESULT_AMENDMENT_REPORT = "ResultAmendmentReport";
+
 }

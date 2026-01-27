@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -848,6 +849,53 @@ public class ReportController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to generate Summary TAT report: " + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/resultAmendment", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadResultAmendment(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long investigationId,
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam (required = false) String patientName,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) String mobileNumber,
+            @RequestParam String flag) {
+        Long safeInvestigationId = (investigationId == null ? 0L : investigationId);
+        Long safeSubChargeCodeId = (subChargeCodeId == null ? 0L : subChargeCodeId);
+        Timestamp safeFromDate = (fromDate != null) ? new Timestamp(fromDate.getTime()) : null;
+        Timestamp safeToDate = (toDate != null) ? new Timestamp(toDate.getTime()) : null;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("investigation_id", safeInvestigationId);
+        params.put("sub_chargecode_id", safeSubChargeCodeId);
+        params.put("patient_name", patientName);
+        params.put("from_date", safeFromDate);
+        params.put("to_date", safeToDate);
+        params.put("mobile_no", mobileNumber);
+        params.put("path", getClass()
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
+
+        try{
+            if ("D".equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.RESULT_AMENDMENT_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.RESULT_AMENDMENT_REPORT);
+            } else if ("P".equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.RESULT_AMENDMENT_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                "Invalid flag value. Use D or P", 400));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate Result Amendment report: " + e.getMessage());
         }
     }
 
