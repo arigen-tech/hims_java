@@ -264,6 +264,10 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
     private MasBloodInventoryStatusService masBloodInventoryStatusService;
     @Autowired
     private MasBloodUnitStatusService masBloodUnitStatusService;
+    @Autowired
+    private  MasBloodTestService masBloodTestService;
+    @Autowired
+    private MasBloodCompatibilityService masBloodCompatibilityService;
 
 
 
@@ -4124,5 +4128,75 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
             @RequestParam String status) {
 
         return ResponseEntity.ok(masBloodUnitStatusService.changeStatus(id, status));
+    }
+
+
+    //-------------------------------------------Mas Blood Test---------------------------
+    @GetMapping("masBloodTest/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasBloodTestResponse>>> getAllBloodTest(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masBloodTestService.getAll(flag));
+    }
+
+    @GetMapping("masBloodTest/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBloodTestResponse>> getByIdBloodTest(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masBloodTestService.getById(id));
+    }
+
+    @PostMapping("masBloodTest/create")
+    public ResponseEntity<ApiResponse<MasBloodTestResponse>> createBloodTest(
+            @Valid @RequestBody MasBloodTestRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masBloodTestService.create(request));
+    }
+
+    @PutMapping("masBloodTest/update/{id}")
+    public ResponseEntity<ApiResponse<MasBloodTestResponse>> updateBloodTest(
+            @PathVariable Long id,
+            @Valid @RequestBody MasBloodTestRequest request) {
+        return ResponseEntity.ok(masBloodTestService.update(id, request));
+    }
+
+    @PutMapping("masBloodTest/status/{id}")
+    public ResponseEntity<ApiResponse<MasBloodTestResponse>> changeStatusBloodTest(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masBloodTestService.changeStatus(id, status));
+    }
+
+    //-------------------------------------------Mas Blood Compatibility---------------------------
+
+    @GetMapping("masBloodCompatibility/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasBloodCompatibilityResponse>>> getAllMasBloodCompatibility(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masBloodCompatibilityService.getAll(flag));
+    }
+
+    @GetMapping("masBloodCompatibility/getById/{id}")
+    public ResponseEntity<ApiResponse<MasBloodCompatibilityResponse>> getByIdMasBloodCompatibility(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masBloodCompatibilityService.getById(id));
+    }
+
+    @PostMapping("masBloodCompatibility/create")
+    public ResponseEntity<ApiResponse<MasBloodCompatibilityResponse>> createMasBloodCompatibility(
+            @Valid @RequestBody MasBloodCompatibilityRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masBloodCompatibilityService.create(request));
+    }
+
+    @PutMapping("masBloodCompatibility/update/{id}")
+    public ResponseEntity<ApiResponse<MasBloodCompatibilityResponse>> updateMasBloodCompatibility(
+            @PathVariable Long id,
+            @Valid @RequestBody MasBloodCompatibilityRequest request) {
+        return ResponseEntity.ok(masBloodCompatibilityService.update(id, request));
+    }
+
+    @PutMapping("masBloodCompatibility/status/{id}")
+    public ResponseEntity<ApiResponse<MasBloodCompatibilityResponse>> changeStatusMasBloodCompatibility(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masBloodCompatibilityService.changeStatus(id, status));
     }
 }
