@@ -482,34 +482,38 @@ public class LabReportServiceImpl implements LabReportService {
 
             if (patientName != null && !patientName.isBlank()) {
 
-                String[] parts = patientName.trim().split("\\s+");
+                String search = "%" + patientName.trim().toLowerCase() + "%";
 
-                if (parts.length == 1) {
+                Expression<String> firstName = cb.lower(patientJoin.get("patientFn"));
+                Expression<String> middleName = cb.lower(patientJoin.get("patientMn"));
+                Expression<String> lastName = cb.lower(patientJoin.get("patientLn"));
 
-                    predicates.add(
-                            cb.like(
-                                    cb.lower(patientJoin.get("patientFn")),
-                                    "%" + parts[0].toLowerCase() + "%"
-                            )
-                    );
-                } else if (parts.length == 2) {
-                    predicates.add(
-                            cb.and(
-                                    cb.like(cb.lower(patientJoin.get("patientFn")), "%" + parts[0].toLowerCase() + "%"),
-                                    cb.like(cb.lower(patientJoin.get("patientLn")), "%" + parts[1].toLowerCase() + "%")
-                            )
-                    );
+                // Full name combinations
+                Expression<String> fullName1 = cb.lower(
+                        cb.concat(
+                                cb.concat(firstName, " "),
+                                cb.concat(middleName, cb.concat(" ", lastName))
+                        )
+                );
 
-                } else {
-                    predicates.add(
-                            cb.and(
-                                    cb.like(cb.lower(patientJoin.get("patientFn")), "%" + parts[0].toLowerCase() + "%"),
-                                    cb.like(cb.lower(patientJoin.get("patientMn")), "%" + parts[1].toLowerCase() + "%"),
-                                    cb.like(cb.lower(patientJoin.get("patientLn")), "%" + parts[2].toLowerCase() + "%")
-                            )
-                    );
-                }
+                Expression<String> fullName2 = cb.lower(
+                        cb.concat(
+                                cb.concat(firstName, " "),
+                                lastName
+                        )
+                );
+
+                predicates.add(
+                        cb.or(
+                                cb.like(firstName, search),
+                                cb.like(middleName, search),
+                                cb.like(lastName, search),
+                                cb.like(fullName1, search),
+                                cb.like(fullName2, search)
+                        )
+                );
             }
+
 
             Join<LabResultAmendAudit, DgMasInvestigation> invJoin = root.join("investigation", JoinType.LEFT);
 
