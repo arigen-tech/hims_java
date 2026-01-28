@@ -201,7 +201,8 @@ WHERE v.visit_status = 'n'
             "v.department.id = :departmentId AND " +
             "v.hospital.id = :hospitalId AND " +
             "v.visitStatus = :visitStatus " +
-            "ORDER BY v.visitDate DESC")
+            "ORDER BY v.visitDate DESC " +
+            "LIMIT 1")
     Optional<Visit> findTopByPatientAndDoctorAndDepartmentAndHospitalAndVisitStatusOrderByVisitDateDesc(
             @Param("patientId") Long patientId,
             @Param("doctorId") Long doctorId,

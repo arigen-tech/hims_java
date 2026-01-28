@@ -304,7 +304,6 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq followUpRequest) {
         PatientRegFollowUpResp resp = new PatientRegFollowUpResp();
-
         PatientRequest request = followUpRequest.getPatientDetails().getPatient();
 
         if (request.getId() == null) {
@@ -356,6 +355,8 @@ public class PatientServiceImpl implements PatientService {
             }
             resp.setVisits(updatedVisits);
             resp.setOpdPatientDetail(opdDetails);
+            OPDBillingPatientResponse finalResponse =  buildFinalResponse(patient,updatedVisits);
+            resp.setOpdBillingPatientResponse(finalResponse);
         }
 
         return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {});

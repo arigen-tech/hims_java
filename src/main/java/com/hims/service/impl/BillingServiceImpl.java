@@ -124,6 +124,10 @@ public class BillingServiceImpl implements BillingService {
             //check and set policy in Billing Header
             if (lastVisitOpt.isPresent()) {
                 Visit lastVisit = lastVisitOpt.get();
+                if(lastVisit.getBillingHd().getBillingPolicy().getBillingPolicyId()==opdFollowUp){
+                    Optional<BillingPolicyMaster> paidPolicy = billingPolicyRepository.findByBillingPolicyId(opdPaid);
+                    paidPolicy.ifPresent(header::setBillingPolicy);
+                }else{
                 LocalDate lastVisitDate = lastVisit.getVisitDate().atZone(ZoneId.systemDefault()).toLocalDate();
                 LocalDate currentVisitDate = visit.getVisitDate().atZone(ZoneId.systemDefault()).toLocalDate();
                 long daysBetween = ChronoUnit.DAYS.between(lastVisitDate, currentVisitDate);
@@ -135,7 +139,7 @@ public class BillingServiceImpl implements BillingService {
                     header.setBillingPolicy(followUpPolicy.get());
                 }else {
                     followUpPolicy = billingPolicyRepository.findByBillingPolicyId(opdPaid);
-                }
+                }}
             } else {
                 Optional<BillingPolicyMaster> paidPolicy = billingPolicyRepository.findByBillingPolicyId(opdPaid);
                 if(paidPolicy.isPresent()){
@@ -177,7 +181,7 @@ public class BillingServiceImpl implements BillingService {
                 header.setNetAmount(total.add(registrationCost));
                 header.setTaxTotal(tax);
                 header.setTotalPaid(BigDecimal.valueOf(0));
-            }else if (serviceOpd.isEmpty()) {
+            }else {
                 throw new BillingException("MasServiceOPD or Tariff is not defined yet");
             }
             header.setDiscountAmount(totalDiscount);
@@ -288,7 +292,6 @@ public class BillingServiceImpl implements BillingService {
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
         });
     }
-
 
     public String createInvoices() {
         return randomNumGenerator.generateOrderNumber("BILL",true,true);
@@ -670,8 +673,7 @@ public class BillingServiceImpl implements BillingService {
                 continue;
             }
             String key = item.getPatientid() + "|"
-                    + item.getBillingType() + "|"
-                    + item.getVisitDate();
+                    + item.getBillingType();
 
             groups.computeIfAbsent(key, k -> new ArrayList<>()).add(item);
         }
@@ -719,6 +721,7 @@ public class BillingServiceImpl implements BillingService {
             merged.setTokenNo(first.getTokenNo());
             merged.setVisitDate(first.getVisitDate());
             merged.setVisitType(first.getVisitType());
+            merged.setRegistrationCost(first.getRegistrationCost());
             merged.setBillingHeaderIds(
                     group.stream()
                             .map(PendingBillingResponse::getBillinghdid)
