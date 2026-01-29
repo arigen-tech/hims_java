@@ -112,8 +112,7 @@ public class BillingServiceImpl implements BillingService {
             header.setBillDate(OffsetDateTime.now());
             Instant currentDate = Instant.now();
 
-            //Setting Policies
-            //find Completed visit
+
             Optional<Visit> lastVisitOpt = visitRepository.findPreviousVisit(
                     patient.getId(),
                     visit.getDoctor().getUserId(),
@@ -121,31 +120,10 @@ public class BillingServiceImpl implements BillingService {
                     visit.getHospital().getId(),
                     visit.getId()
             );
-            //check and set policy in Billing Header
-            if (lastVisitOpt.isPresent()) {
-                Visit lastVisit = lastVisitOpt.get();
-                if(lastVisit.getBillingHd().getBillingPolicy().getBillingPolicyId()==opdFollowUp){
-                    Optional<BillingPolicyMaster> paidPolicy = billingPolicyRepository.findByBillingPolicyId(opdPaid);
-                    paidPolicy.ifPresent(header::setBillingPolicy);
-                }else{
-                LocalDate lastVisitDate = lastVisit.getVisitDate().atZone(ZoneId.systemDefault()).toLocalDate();
-                LocalDate currentVisitDate = visit.getVisitDate().atZone(ZoneId.systemDefault()).toLocalDate();
-                long daysBetween = ChronoUnit.DAYS.between(lastVisitDate, currentVisitDate);
 
-                Optional<BillingPolicyMaster> followUpPolicy = billingPolicyRepository.findByBillingPolicyId(opdFollowUp);
-
-                if (followUpPolicy.isPresent() && daysBetween <= followUpPolicy.get().getFollowupDaysAllowed() && daysBetween > 0) {
-                    policyIdToApply = opdFollowUp;
-                    header.setBillingPolicy(followUpPolicy.get());
-                }else {
-                    followUpPolicy = billingPolicyRepository.findByBillingPolicyId(opdPaid);
-                }}
-            } else {
-                Optional<BillingPolicyMaster> paidPolicy = billingPolicyRepository.findByBillingPolicyId(opdPaid);
-                if(paidPolicy.isPresent()){
-                    header.setBillingPolicy(paidPolicy.get());
-                }
-            }
+            //finding the policy
+            BillingPolicyMaster policy = FindCorrectBillingPolicy(lastVisitOpt,visit);
+            header.setBillingPolicy(policy);
 
             Optional<MasServiceOpd> serviceOpd = masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatIdAndCurrentDate(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory, currentDate);
             if (serviceOpd.isPresent()) {
@@ -295,6 +273,38 @@ public class BillingServiceImpl implements BillingService {
 
     public String createInvoices() {
         return randomNumGenerator.generateOrderNumber("BILL",true,true);
+    }
+
+    private BillingPolicyMaster FindCorrectBillingPolicy(Optional<Visit> lastVisitOpt, Visit currentVisit) {
+        Optional<BillingPolicyMaster> pdPolicy = billingPolicyRepository.findByBillingPolicyId(opdPaid);
+        Optional<BillingPolicyMaster> flwUpPolicy = billingPolicyRepository.findByBillingPolicyId(opdFollowUp);
+        BillingPolicyMaster paidPolicy = pdPolicy.get();
+        BillingPolicyMaster followUpPolicy = flwUpPolicy.get();
+        if (lastVisitOpt.isEmpty() ||
+                "C".equalsIgnoreCase(lastVisitOpt.get().getVisitStatus()) ||
+                "X".equalsIgnoreCase(lastVisitOpt.get().getVisitStatus())) {
+            return paidPolicy;
+        }
+        Visit lastVisit = lastVisitOpt.get();
+        BillingPolicyMaster lastPolicy = Optional.ofNullable(lastVisit.getBillingHd())
+                .map(BillingHeader::getBillingPolicy)
+                .orElse(null);
+
+        if (lastPolicy != null && followUpPolicy != null &&
+                followUpPolicy.getBillingPolicyId().equals(lastPolicy.getBillingPolicyId())) {
+            return paidPolicy;
+        }
+        if (followUpPolicy != null && followUpPolicy.getFollowupDaysAllowed() > 0) {
+            LocalDate lastVisitDate = lastVisit.getVisitDate().atZone(ZoneId.systemDefault()).toLocalDate();
+            LocalDate currentVisitDate = currentVisit.getVisitDate().atZone(ZoneId.systemDefault()).toLocalDate();
+            long daysBetween = ChronoUnit.DAYS.between(lastVisitDate, currentVisitDate);
+
+            if (daysBetween > 0 && daysBetween <= followUpPolicy.getFollowupDaysAllowed()) {
+                return followUpPolicy;
+            }
+        }
+
+        return paidPolicy;
     }
 
     @Override

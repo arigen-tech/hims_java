@@ -939,30 +939,37 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ApiResponse<String> cancelAppointment(CancelAppointmentRequest request) {
-        try {
-            Optional<Visit> optionalVisit = visitRepository.findById(request.getVisitId());
-            Visit visit = optionalVisit.get();
-            BillingHeader bill = billingHeaderRepository.findByVisit(visit);
-            if (optionalVisit.isEmpty()||bill==null) {
-                return new ApiResponse<>( HttpStatus.NOT_FOUND, "Appointment not found with ID: " + request.getVisitId());
-            }
-            visit.setVisitStatus("c");
-            visit.setCancelledBy(authUtil.getCurrentUser().getFirstName());
-            visit.setCancelledDateTime(Instant.now());
-            if (request.getCancelReasonId() != null) {
-                visit.setReason(changeReasonRepository.getReferenceById(request.getCancelReasonId()));
-            }
-            bill.setPaymentStatus("y");
-            billingHeaderRepository.save(bill);
-            Visit savedVisit = visitRepository.save(visit);
-
-            return new ApiResponse<>(HttpStatus.OK, "Appointment cancelled successfully");
-        } catch (Exception e) {
-            log.error("Error cancelling appointment: ", e);
-            return new ApiResponse<>( HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error: " + e.getMessage());
+        // Check Visit exist
+        Optional<Visit> optionalVisit = visitRepository.findById(request.getVisitId());
+        if (optionalVisit.isEmpty()) {
+            return new ApiResponse<>(HttpStatus.NOT_FOUND, "Appointment not found with ID: " + request.getVisitId());
         }
+        Visit visit = optionalVisit.get();
+        //Check billing Entry
+        BillingHeader bill = billingHeaderRepository.findByVisit(visit);
+        if (bill == null) {
+            return new ApiResponse<>(HttpStatus.NOT_FOUND, "Billing not found for appointment ID: " + request.getVisitId());
+        }
+        // Get current user
+        User currentUser = authUtil.getCurrentUser();
+        if (currentUser == null || currentUser.getFirstName() == null) {
+            throw new RuntimeException("User authentication failed or user has no first name");
+        }
+        // Update visit
+        visit.setVisitStatus("c");
+        visit.setCancelledBy(currentUser.getFirstName());
+        visit.setCancelledDateTime(Instant.now());
+        if (request.getCancelReasonId() != null) {
+            MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId())
+                    .orElseThrow(() -> new RuntimeException("Cancel reason not found with ID: " + request.getCancelReasonId()));
+            visit.setReason(reason);
+        }
+        bill.setPaymentStatus("y");
+        billingHeaderRepository.save(bill);
+        Visit savedVisit = visitRepository.save(visit);
+        return new ApiResponse<>(HttpStatus.OK, "Appointment cancelled successfully");
     }
 
     @Override
