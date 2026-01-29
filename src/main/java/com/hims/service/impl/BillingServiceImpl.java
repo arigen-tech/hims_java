@@ -114,12 +114,12 @@ public class BillingServiceImpl implements BillingService {
 
             //Setting Policies
             //find Completed visit
-            Optional<Visit> lastVisitOpt = visitRepository.findTopByPatientAndDoctorAndDepartmentAndHospitalAndVisitStatusOrderByVisitDateDesc(
+            Optional<Visit> lastVisitOpt = visitRepository.findPreviousVisit(
                     patient.getId(),
                     visit.getDoctor().getUserId(),
                     visit.getDepartment().getId(),
                     visit.getHospital().getId(),
-                    "y"
+                    visit.getId()
             );
             //check and set policy in Billing Header
             if (lastVisitOpt.isPresent()) {

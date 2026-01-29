@@ -195,21 +195,21 @@ WHERE v.visit_status = 'n'
 """)
     List<Visit> findNVisitsFromToday(@Param("startDate") Instant startDate);
 
-    @Query("SELECT v FROM Visit v WHERE " +
-            "v.patient.id = :patientId AND " +
-            "v.doctor.id = :doctorId AND " +
-            "v.department.id = :departmentId AND " +
-            "v.hospital.id = :hospitalId AND " +
-            "v.visitStatus = :visitStatus " +
-            "ORDER BY v.visitDate DESC " +
-            "LIMIT 1")
-    Optional<Visit> findTopByPatientAndDoctorAndDepartmentAndHospitalAndVisitStatusOrderByVisitDateDesc(
+    @Query(value = "SELECT * FROM visit WHERE " +
+            "patient_id = :patientId AND " +
+            "doctor_id = :doctorId AND " +
+            "department_id = :departmentId AND " +
+            "hospital_id = :hospitalId AND " +
+            "visit_id != :currentVisitId " +  // <-- Current visit ko exclude karo
+            "ORDER BY visit_date DESC " +
+            "LIMIT 1",
+            nativeQuery = true)
+    Optional<Visit> findPreviousVisit(
             @Param("patientId") Long patientId,
             @Param("doctorId") Long doctorId,
             @Param("departmentId") Long departmentId,
             @Param("hospitalId") Long hospitalId,
-            @Param("visitStatus") String visitStatus);
-
+            @Param("currentVisitId") Long currentVisitId);
 
 
     boolean existsByDepartment_IdAndDoctor_UserIdAndVisitDateAndSession_IdAndTokenNo(
