@@ -1,6 +1,10 @@
 package com.hims.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.Patient;
+import com.hims.entity.PatientLogin;
+import com.hims.entity.repository.PatientLoginRepository;
+import com.hims.entity.repository.PatientRepository;
 import com.hims.jwt.JwtHelper;
 import com.hims.request.LoginRequest;
 import com.hims.request.OtpRequest;
@@ -21,6 +25,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @Tag(name = "MobileController", description = "This controller is used for any ")
@@ -35,6 +42,10 @@ public class MobileController {
     private JwtHelper jwtUtil;
     @Autowired
     private MasEmployeeService masEmployeeService;
+    @Autowired
+    private PatientLoginRepository patientLoginRepository;
+    @Autowired
+    private PatientRepository patientRepository;
 
 
 
@@ -46,6 +57,9 @@ public class MobileController {
     @PostMapping("/verifyOtp")
     public ApiResponse<?>  verifyOtp(@RequestBody @Valid OtpRequest otpRequest) {
         try {
+            List<PatientLogin> patientLoginList = patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(
+                    otpRequest.getMobileNo()
+            );
             String otp = otpRequest.getOtp();
             String sessionId = otpRequest.getSessionId();
 
@@ -67,11 +81,34 @@ public class MobileController {
 
             // OTP verified generate JWT
             String token = jwtUtil.mobileGenerateToken(
-                    otpRequest.getMobileNo(),
-                    otpRequest.getPatientId()
+                    otpRequest.getMobileNo()
             );
 
             AuthResponse authResponse = new AuthResponse();
+            List<PatientIdResponse> patientIdList = patientLoginList.stream()
+                    .map(pl -> {
+                        Patient patient = patientRepository.findById(pl.getPatientId()).orElse(null);
+                        if (patient == null) return null;
+
+                        PatientIdResponse pid = new PatientIdResponse();
+                        pid.setPatientId(patient.getId());
+                        String fullName = Stream.of(
+                                        patient.getPatientFn(),
+                                        patient.getPatientMn(),
+                                        patient.getPatientLn()
+                                ).filter(Objects::nonNull)
+                                .filter(s -> !s.trim().isEmpty())
+                                .collect(Collectors.joining(" "));
+
+                        pid.setPatientName(fullName.isEmpty() ? null : fullName);
+                        pid.setAge(patient.getPatientAge());
+                        pid.setGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
+                        pid.setPatientPhoneNumber(patient.getPatientMobileNumber());
+                        pid.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null);
+                        return pid;
+                    })
+                    .toList();
+            authResponse.setPatientIdResponseList(patientIdList);
             authResponse.setToken(token);
             authResponse.setMessage("OTP verified successfully");
             return ResponseUtils.createSuccessResponse( authResponse, new TypeReference<>() {});

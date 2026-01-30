@@ -74,31 +74,31 @@ public class MobileLoginServiceimpl implements MobileLoginService {
                 String sessionId = jsonObject.getString("Details");
 
                 //  Convert PatientLogin list  PatientIdResponse list
-                List<PatientIdResponse> patientIdList = patientLoginList.stream()
-                        .map(pl -> {
-                            Patient patient = patientRepository.findById(pl.getPatientId()).orElse(null);
-                            if (patient == null) return null;
-
-                            PatientIdResponse pid = new PatientIdResponse();
-                            pid.setPatientId(patient.getId());
-                            String fullName = Stream.of(
-                                            patient.getPatientFn(),
-                                            patient.getPatientMn(),
-                                            patient.getPatientLn()
-                                    ).filter(Objects::nonNull)
-                                    .filter(s -> !s.trim().isEmpty())
-                                    .collect(Collectors.joining(" "));
-
-                            pid.setPatientName(fullName.isEmpty() ? null : fullName);
-                            pid.setAge(patient.getPatientAge());
-                            pid.setGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
-                            pid.setPatientPhoneNumber(patient.getPatientMobileNumber());
-                            pid.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null);
-                            return pid;
-                        })
-                        .toList();
-
-                res.setPatientIdResponseList(patientIdList);
+//                List<PatientIdResponse> patientIdList = patientLoginList.stream()
+//                        .map(pl -> {
+//                            Patient patient = patientRepository.findById(pl.getPatientId()).orElse(null);
+//                            if (patient == null) return null;
+//
+//                            PatientIdResponse pid = new PatientIdResponse();
+//                            pid.setPatientId(patient.getId());
+//                            String fullName = Stream.of(
+//                                            patient.getPatientFn(),
+//                                            patient.getPatientMn(),
+//                                            patient.getPatientLn()
+//                                    ).filter(Objects::nonNull)
+//                                    .filter(s -> !s.trim().isEmpty())
+//                                    .collect(Collectors.joining(" "));
+//
+//                            pid.setPatientName(fullName.isEmpty() ? null : fullName);
+//                            pid.setAge(patient.getPatientAge());
+//                            pid.setGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
+//                            pid.setPatientPhoneNumber(patient.getPatientMobileNumber());
+//                            pid.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null);
+//                            return pid;
+//                        })
+//                        .toList();
+//
+//                res.setPatientIdResponseList(patientIdList);
                 res.setSessionId(sessionId);
                 res.setMobileNo(request.getMobileNo());
                 res.setMessage("OTP sent successfully");

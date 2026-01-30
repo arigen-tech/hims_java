@@ -215,12 +215,11 @@ private static final  String secret = "1KCrT4BFo9EMUNJjQ0y8VswrKFSJmIHp1jZJVP1IU
 
 //for mobile scection to generate token.......
     // 🔹 Generate Token for mobile
-    public static String mobileGenerateToken(String mobileNo, Long patientId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("mobileNo", mobileNo);
-        claims.put("patientId", patientId);
-        return mobiledoGenerateToken(claims,"mobile", JWT_TOKEN_VALIDITY);
-    }
+public static String mobileGenerateToken(String mobileNo) {
+    Map<String, Object> claims = new HashMap<>();
+    claims.put("mobileNo", mobileNo);
+    return mobiledoGenerateToken(claims, "mobile", JWT_TOKEN_VALIDITY);
+}
     private static String mobiledoGenerateToken(Map<String, Object> claims, String mobile, long validity) {
         return Jwts.builder()
                 .setClaims(claims)
