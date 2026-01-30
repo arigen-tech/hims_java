@@ -1,8 +1,10 @@
 package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.Patient;
 import com.hims.entity.PatientLogin;
 import com.hims.entity.repository.LabHdRepository;
 import com.hims.entity.repository.PatientLoginRepository;
+import com.hims.entity.repository.PatientRepository;
 import com.hims.exception.SDDException;
 import com.hims.request.LoginRequest;
 import com.hims.response.ApiResponse;
@@ -22,6 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 @Service
@@ -31,6 +36,8 @@ public class MobileLoginServiceimpl implements MobileLoginService {
     LabHdRepository labHdRepository;
     @Autowired
     private PatientLoginRepository patientLoginRepository;
+    @Autowired
+    private PatientRepository patientRepository;
     @Override
     @Transactional
     public ApiResponse loginRequest(LoginRequest request) {
@@ -69,8 +76,24 @@ public class MobileLoginServiceimpl implements MobileLoginService {
                 //  Convert PatientLogin list  PatientIdResponse list
                 List<PatientIdResponse> patientIdList = patientLoginList.stream()
                         .map(pl -> {
+                            Patient patient = patientRepository.findById(pl.getPatientId()).orElse(null);
+                            if (patient == null) return null;
+
                             PatientIdResponse pid = new PatientIdResponse();
-                            pid.setPatientId(pl.getPatientId());
+                            pid.setPatientId(patient.getId());
+                            String fullName = Stream.of(
+                                            patient.getPatientFn(),
+                                            patient.getPatientMn(),
+                                            patient.getPatientLn()
+                                    ).filter(Objects::nonNull)
+                                    .filter(s -> !s.trim().isEmpty())
+                                    .collect(Collectors.joining(" "));
+
+                            pid.setPatientName(fullName.isEmpty() ? null : fullName);
+                            pid.setAge(patient.getPatientAge());
+                            pid.setGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
+                            pid.setPatientPhoneNumber(patient.getPatientMobileNumber());
+                            pid.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null);
                             return pid;
                         })
                         .toList();
