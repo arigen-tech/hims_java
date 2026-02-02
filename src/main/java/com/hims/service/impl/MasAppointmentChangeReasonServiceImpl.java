@@ -9,6 +9,7 @@ import com.hims.response.MasOpdSessionResponse;
 import com.hims.service.MasAppointmentChangeReasonService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,20 +19,37 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class MasAppointmentChangeReasonServiceImpl implements MasAppointmentChangeReasonService {
 
     private final MasAppointmentChangeReasonRepository reasonRepository;
 
     @Override
     public ApiResponse<List<MasAppointmentChangeReasonResponse>> getAllReasons(int flag) {
-        List<MasAppointmentChangeReason> masAppointmentChangeReasons = reasonRepository.findAll();
+        log.info("Fetching Appointment Cancel/Change Reasons, flag={}", flag);
+        try {
+            List<MasAppointmentChangeReason> list =
+                    (flag == 1)
+                            ? reasonRepository.findByStatusIgnoreCaseOrderByReasonNameAsc("y")
+                            : reasonRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
-        List<MasAppointmentChangeReasonResponse> responses = masAppointmentChangeReasons.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-
-        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(
+                    list.stream()
+                            .map(this::convertToResponse)
+                            .toList(),
+                    new TypeReference<>() {}
+            );
+        } catch (Exception e) {
+            log.error("Error fetching Appointment Cancel/Change Reasons", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Something went wrong",
+                    500
+            );
+        }
     }
+
 
     private MasAppointmentChangeReasonResponse convertToResponse(MasAppointmentChangeReason masAppointmentChangeReason){
     MasAppointmentChangeReasonResponse masAppointmentReasonResponse = new MasAppointmentChangeReasonResponse();

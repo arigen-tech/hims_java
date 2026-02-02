@@ -163,7 +163,7 @@ public class MasStateServiceImpl implements MasStateService {
         List<MasState> states;
 
         if (flag == 1) {
-            states = masStateRepository.findByStatusIgnoreCaseOrderByStateNameAsc("Y");
+            states = masStateRepository.findByStatusIgnoreCaseOrderByStateNameAsc("y");
         } else if (flag == 0) {
             states = masStateRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {

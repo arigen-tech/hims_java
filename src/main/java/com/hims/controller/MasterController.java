@@ -3878,7 +3878,8 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
     }
 
     @GetMapping("/cancel-payment-reason/{flag}")
-    public ResponseEntity<?> getAllReasons(@PathVariable int flag) {
+    public ResponseEntity<ApiResponse<List<MasAppointmentChangeReasonResponse>>> getAllReasons(
+            @PathVariable int flag) {
         return ResponseEntity.ok(masAppointmentReasonService.getAllReasons(flag));
     }
 

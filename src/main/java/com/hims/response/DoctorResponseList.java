@@ -2,6 +2,8 @@ package com.hims.response;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class DoctorResponseList {
     private Long doctorId;
@@ -11,4 +13,6 @@ public class DoctorResponseList {
     private String phoneNo;
     private String age;
     private Integer  yearsOfExperience;
+    private BigDecimal consultancyFee;
+
 }

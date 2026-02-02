@@ -34,4 +34,6 @@ public interface UserRepo extends JpaRepository<User, Long> {
     List<User> findAllByOrderByStatusDescLastChangeDateDesc();
 
     Optional<User> findByEmployeeEmployeeId(Long employeeId);
+
+    User findByEmployee_EmployeeId(Long employeeId);
 }
