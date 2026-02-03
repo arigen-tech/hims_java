@@ -34,4 +34,8 @@ public class MasHospitalResponse {
     private String appCostApplicable;
     private String preConsultationAvailable;
     private BigDecimal registrationCost;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
+    private String executive1Contact;
+    private String executive2Contact;
 }
