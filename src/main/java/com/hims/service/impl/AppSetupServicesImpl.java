@@ -102,7 +102,7 @@ public class AppSetupServicesImpl implements AppSetupServices {
                 entry.setLastChgBy(currentUser.getUserId().intValue());
                 entry.setLastChgTime(Calender.getCurrentTimeStamp());
                 entry.setHospital(currentUser.getHospital());
-
+                entry.setOpdLocation(key.getOpdLocation());
                 appSetupRepository.save(entry);
             }
 
@@ -203,6 +203,7 @@ public class AppSetupServicesImpl implements AppSetupServices {
             dayDTO.setTotalInterval(appSetup.getTotalInterval());
             dayDTO.setStartToken(appSetup.getStartToken());
             dayDTO.setTotalOnlineToken(appSetup.getTotalOnlineToken());
+            dayDTO.setOpdLocation(appSetup.getOpdLocation());
             daysList.add(dayDTO);
         }
 

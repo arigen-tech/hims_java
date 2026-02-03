@@ -30,6 +30,7 @@ public class AppSetupDTO {
         private Integer totalInterval;
         private Integer startToken;
         private Integer totalOnlineToken;
+        private String opdLocation;
 
     }
 }
