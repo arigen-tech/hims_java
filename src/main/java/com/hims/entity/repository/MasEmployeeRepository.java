@@ -13,6 +13,9 @@ import java.util.Optional;
 public interface MasEmployeeRepository extends JpaRepository<MasEmployee, Long> {
     List<MasEmployee> findByStatus(String status);
     Optional<MasEmployee> findByMobileNo(String mobileNo);
-    List<MasEmployee> findByRoleIdIdAndFirstNameContainingIgnoreCaseOrderByFirstNameAsc(Long roleId, String keyword);
+  //  List<MasEmployee> findByRoleIdIdAndFirstNameContainingIgnoreCaseOrderByFirstNameAsc(Long roleId, String keyword);
 
+    List<MasEmployee> findByRoleIdIdAndStatusIgnoreCaseAndFirstNameContainingIgnoreCaseOrderByFirstNameAsc(Long roleId, String a, String keyword);
+
+    List<MasEmployee> findByEmployeeIdInAndRoleIdIdAndStatusIgnoreCaseAndFirstNameContainingIgnoreCaseOrderByFirstNameAsc(List<Long> employeeIds, Long roleId, String a, String keyword);
 }

@@ -33,7 +33,14 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
 
     List<MasDepartment> findByDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(Long opdId, String keyword);
 
-    List<MasDepartment> findByDepartmentTypeId(int i);
+    
 
 
+    List<MasDepartment> findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(Long hospitalId, Long opdId, String keyword);
+
+    List<MasDepartment> findByHospitalIdAndDepartmentTypeId(Long hospitalId, Long opdId);
+
+    List<MasDepartment> findByDepartmentTypeId(Long opdId);
+    List<MasDepartment> findByDepartmentTypeId(int opdId);
 }
+

@@ -49,6 +49,10 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
 
     List<UserDepartment> findByUserUserId(Long userId);
 
+  //  List<UserDepartment> findByDepartmentId(List<MasDepartment> departments2);
+
+    List<UserDepartment> findByDepartmentIn(List<MasDepartment> departments2);
+
 //    List<SpecialitiesResponse> findSpecialitiesByDoctorId(Long doctorId);
 //
 //   List<UserDepartment> findByDepartmentId(List<Long> deptIds);
