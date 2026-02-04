@@ -10,6 +10,9 @@ import java.util.List;
 public class DoctorDetailResponse {
     private Long doctorId;
     private String hospitalName;
+    private Integer minDay;
+    private Integer maxDay;
+    private Long session;
     private BasicInfo basicInfo;
     private List<SpecialitiesResponse> specialitiesResponseList;
     private List<String> education;

@@ -10,6 +10,7 @@ import com.hims.service.MasEmployeeService;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.websocket.Session;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,6 +121,8 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     private MasSpecialtyCenterRepository masSpecialtyCenterRepository;
     @Autowired
     private VisitRepository visitRepository;
+    @Autowired
+    private AppSetupRepository appSetupRepository;
 
 
     @Value("${app.opd}")
@@ -1389,9 +1392,11 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         List<DoctorResponse> doctorResponseList =
                 doctors.stream().map(emp -> {
                     DoctorResponse dto = new DoctorResponse();
-                    dto.setDoctorId(emp.getEmployeeId());
+                    User user = userRepo.findByEmployee_EmployeeId(emp.getEmployeeId());
+                    dto.setDoctorId( user.getUserId());
+                    //dto.setDoctorId(emp.getEmployeeId());
                     dto.setDoctorName(emp.getFirstName() + (emp.getLastName() != null ? " " + emp.getLastName() : ""));
-                    User user=userRepo.findByEmployee_EmployeeId(emp.getEmployeeId());
+                   // User user=userRepo.findByEmployee_EmployeeId(emp.getEmployeeId());
                     Optional<MasServiceOpd> masServiceOpd=masServiceOpdRepository.findByDoctorId_UserId(user!=null?user.getUserId():null);
                     dto.setConsultancyFee(masServiceOpd.map(MasServiceOpd::getBaseTariff).orElse(null));
 
@@ -1425,7 +1430,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         log.info("Fetching OPD Speciality and Doctor list, specialityId={}", specialityId);
         try {
             //  OPD Departments
-            List<MasDepartment> opdDepartments = masDepartmentRepository.findByDepartmentTypeId(5);
+            List<MasDepartment> opdDepartments = masDepartmentRepository.findByDepartmentTypeId(opdId);
             if (opdDepartments == null || opdDepartments.isEmpty()) {
                 log.info("No OPD departments found for departmentTypeId = 5");
                 return ResponseUtils.createSuccessResponse(
@@ -1459,8 +1464,18 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             Map<Long, SpecialityResponse> responseMap = new LinkedHashMap<>();
 
             for (UserDepartment ud : userDepartments) {
+                User user = ud.getUser();
+
+                if (user == null
+                        || user.getRoleId() == null
+                        || !user.getRoleId().equals("3")) {
+                    continue;
+                }
+
                 MasDepartment dept = ud.getDepartment();
+
                 MasEmployee emp = ud.getUser().getEmployee();
+               // User user=ud.getUser();
 
                 // Speciality
                 SpecialityResponse speciality =
@@ -1477,14 +1492,15 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
                 // Doctor
                 DoctorResponseList doctor = new DoctorResponseList();
-                doctor.setDoctorId(emp.getEmployeeId());
+               // User user=userRepo.findByEmployee_EmployeeId(emp.getEmployeeId());
+                doctor.setDoctorId(user.getUserId());
                 doctor.setDoctorName(emp.getFirstName() + " " + (emp.getMiddleName() != null ? emp.getMiddleName() + " " : "") + emp.getLastName());
                 doctor.setSpecialityName(dept.getDepartmentName());
                 doctor.setGender(emp.getGenderId() != null ? emp.getGenderId().getGenderName() : null);
                 doctor.setPhoneNo(emp.getMobileNo());
                 doctor.setAge(emp.getAge() != null ? emp.getAge().toString() : null);
                 doctor.setYearsOfExperience(emp.getYearOfExperience());
-                User user=userRepo.findByEmployee_EmployeeId(emp.getEmployeeId());
+
                 Optional<MasServiceOpd> masServiceOpd=masServiceOpdRepository.findByDoctorId_UserId(user!=null?user.getUserId():null);
                 doctor.setConsultancyFee(masServiceOpd.map(MasServiceOpd::getBaseTariff).orElse(null));
                 speciality.getDoctorResponseListList().add(doctor);
@@ -1512,10 +1528,11 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         log.info("Fetching doctor details for doctorId={}", doctorId);
         try {
             //Employee
-            MasEmployee emp = masEmployeeRepository.findById(doctorId).orElseThrow(() -> new RuntimeException("Doctor not found"));
+
 
             // User using employeeId
-            Optional<User> optionalUser = userRepo.findByEmployeeEmployeeId(emp.getEmployeeId());
+            Optional<User> optionalUser = userRepo.findById(doctorId);
+           // MasEmployee emp = masEmployeeRepository.findById().orElseThrow(() -> new RuntimeException("Doctor not found"));
 
             List<SpecialitiesResponse> specialitiesList = new ArrayList<>();
             if (optionalUser.isPresent()) {
@@ -1533,21 +1550,35 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
             // Response
             DoctorDetailResponse doctor = new DoctorDetailResponse();
-            doctor.setDoctorId(emp.getEmployeeId());
+            doctor.setDoctorId( optionalUser.get().getUserId());
+            Optional<AppSetup> appSetup=appSetupRepository.findById(optionalUser.get().getUserId());
+            doctor.setMinDay(
+                    appSetup.map(AppSetup::getMinNoOfDays).orElse(null)
+            );
+
+            doctor.setMaxDay(
+                    appSetup.map(AppSetup::getMaxNoOfDays).orElse(null)
+            );
+
+            doctor.setSession(
+                    appSetup.map(AppSetup::getSession)
+                            .map(MasOpdSession::getId)
+                            .orElse(null)
+            );
             BasicInfo basicInfo=new BasicInfo();
-            basicInfo.setDoctorName(emp.getFirstName() + " " + (emp.getMiddleName() != null ? emp.getMiddleName() + " " : "") + emp.getLastName());
-            basicInfo.setGender(emp.getGenderId() != null ? emp.getGenderId().getGenderName() : null);
-            basicInfo.setPhoneNo(emp.getMobileNo());
-            basicInfo.setAge(emp.getAge() != null ? emp.getAge().toString() : null);
-            basicInfo.setYearsOfExperience(emp.getYearOfExperience());
-            basicInfo.setProfileDescription(emp.getProfileDescription());
-            User user=userRepo.findByEmployee_EmployeeId(emp.getEmployeeId());
+            basicInfo.setDoctorName(optionalUser.get().getEmployee().getFirstName()+ " " + (optionalUser.get().getEmployee().getMiddleName() != null ? optionalUser.get().getEmployee().getMiddleName() + " " : "") + optionalUser.get().getEmployee().getLastName());
+            basicInfo.setGender(optionalUser.get().getEmployee().getGenderId() != null ? optionalUser.get().getEmployee().getGenderId().getGenderName() : null);
+            basicInfo.setPhoneNo(optionalUser.get().getEmployee().getMobileNo());
+            basicInfo.setAge(optionalUser.get().getEmployee().getAge() != null ? optionalUser.get().getEmployee().getAge().toString() : null);
+            basicInfo.setYearsOfExperience(optionalUser.get().getEmployee().getYearOfExperience());
+            basicInfo.setProfileDescription(optionalUser.get().getEmployee().getProfileDescription());
+            User user=userRepo.findByEmployee_EmployeeId(optionalUser.get().getEmployee().getEmployeeId());
             Optional<MasServiceOpd> masServiceOpd=masServiceOpdRepository.findByDoctorId_UserId(user.getUserId());
             basicInfo.setConsultancyFee(masServiceOpd.map(MasServiceOpd::getBaseTariff).orElse(null));
             doctor.setBasicInfo( basicInfo);
             doctor.setHospitalName(optionalUser.map(User::getHospital).map(MasHospital::getHospitalName).orElse(null));
             doctor.setEducation(employeeQualificationRepository
-                            .findById(emp.getEmployeeId())
+                            .findById(optionalUser.get().getEmployee().getEmployeeId())
                             .stream()
                             .map(eq -> {
                                 StringBuilder sb = new StringBuilder();
@@ -1566,30 +1597,30 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                             .toList()
             );
             doctor.setWorkExperience(
-                    employeeWorkExperienceRepository.findByEmployee(emp)
+                    employeeWorkExperienceRepository.findByEmployee(optionalUser.get().getEmployee())
                             .stream()
                             .map(EmployeeWorkExperience::getExperienceSummary)
                             .toList()
             );
             doctor.setSpecialtyInterests(
-                    employeeSpecialtyInterestRepository.findByEmployee(emp)
+                    employeeSpecialtyInterestRepository.findByEmployee(optionalUser.get().getEmployee())
                             .stream()
                             .map(EmployeeSpecialtyInterest::getInterestSummary)
                             .toList()
             );
             doctor.setMemberships(
-                    employeeMembershipRepository.findByEmployee(emp)
+                    employeeMembershipRepository.findByEmployee(optionalUser.get().getEmployee())
                             .stream()
                             .map(EmployeeMembership::getMembershipSummary)
                             .toList()
             );
             doctor.setAwardsAndDistinctions(
-                    employeeAwardRepository.findByEmployee(emp)
+                    employeeAwardRepository.findByEmployee(optionalUser.get().getEmployee())
                             .stream()
                             .map(EmployeeAward::getAwardSummary)
                             .toList()
             );
-            List<MasEmployeeLanguageMapping> mappings = (List<MasEmployeeLanguageMapping>) masEmployeeLanguageMappingRepository.findByEmployee(emp);
+            List<MasEmployeeLanguageMapping> mappings = (List<MasEmployeeLanguageMapping>) masEmployeeLanguageMappingRepository.findByEmployee(optionalUser.get().getEmployee());
 
             doctor.setLanguages(
                     mappings.stream()
