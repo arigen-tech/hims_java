@@ -38,4 +38,5 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
             @Param("dayName") String dayName);
 
 
+    List<AppSetup> findByDoctorId_UserId(Long userId);
 }

@@ -1553,20 +1553,26 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             // Response
             DoctorDetailResponse doctor = new DoctorDetailResponse();
             doctor.setDoctorId( optionalUser.get().getUserId());
-            Optional<AppSetup> appSetup=appSetupRepository.findById(optionalUser.get().getUserId());
-            doctor.setMinDay(
-                    appSetup.map(AppSetup::getMinNoOfDays).orElse(null)
-            );
+            List<AppSetup> appSetups =
+                    appSetupRepository.findByDoctorId_UserId(optionalUser.get().getUserId());
 
-            doctor.setMaxDay(
-                    appSetup.map(AppSetup::getMaxNoOfDays).orElse(null)
-            );
+            List<AppSetResponse> appSetResponseList = appSetups.stream()
+                    .map(appSetup -> {
+                        AppSetResponse resp = new AppSetResponse();
+                        resp.setMinDay(appSetup.getMinNoOfDays());
+                        resp.setMaxDay(appSetup.getMaxNoOfDays());
+                        resp.setSession(
+                                appSetup.getSession() != null
+                                        ? appSetup.getSession().getId()
+                                        : null
+                        );
+                        resp.setDay(appSetup.getDays());
+                        return resp;
+                    })
+                    .toList();
 
-            doctor.setSession(
-                    appSetup.map(AppSetup::getSession)
-                            .map(MasOpdSession::getId)
-                            .orElse(null)
-            );
+            doctor.setAppSetResponseList(appSetResponseList);
+
             BasicInfo basicInfo=new BasicInfo();
             basicInfo.setDoctorName(optionalUser.get().getEmployee().getFirstName()+ " " + (optionalUser.get().getEmployee().getMiddleName() != null ? optionalUser.get().getEmployee().getMiddleName() + " " : "") + optionalUser.get().getEmployee().getLastName());
             basicInfo.setGender(optionalUser.get().getEmployee().getGenderId() != null ? optionalUser.get().getEmployee().getGenderId().getGenderName() : null);
