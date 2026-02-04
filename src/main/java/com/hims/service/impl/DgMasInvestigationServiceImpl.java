@@ -140,17 +140,24 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                     .collect(Collectors.groupingBy(n -> n.getSubInvestigationId().getInvestigationId().getInvestigationId()));
 
 
-            List<DgMasInvestigationResponse> responseList = investigationList.stream()
-                    .map(masInvest -> {
-                        Long id = masInvest.getInvestigationId();
-                        return mapToResponseMulti(
-                                masInvest,
-                                subMap.getOrDefault(id, Collections.emptyList()),
-                                fixedMap.getOrDefault(id, Collections.emptyList()),
-                                normalMap.getOrDefault(id, Collections.emptyList())
-                        );
-                    })
-                    .collect(Collectors.toList());
+            List<DgMasInvestigationResponse> responseList =
+                    investigationList.stream()
+                            .map(masInvest -> {
+                                Long id = masInvest.getInvestigationId();
+
+                                DgMasInvestigationResponse res = mapToResponseMulti(
+                                        masInvest,
+                                        subMap.getOrDefault(id, Collections.emptyList()),
+                                        fixedMap.getOrDefault(id, Collections.emptyList()),
+                                        normalMap.getOrDefault(id, Collections.emptyList())
+                                );
+
+                                res.setContrastRequired(masInvest.getContrastRequired());
+
+                                return res;
+                            })
+                            .collect(Collectors.toList());
+
 
 //            long endTime = System.currentTimeMillis();
 //            log.info("getAllInvestigations executed successfully in {} ms", endTime - startTime);
@@ -372,17 +379,64 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             }else{
                 masInvestigation.setUomId(null);
             }
-            Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(investigationRequest.getSubChargeCodeId());
-            masInvestigation.setSubChargeCodeId(mscc.get());
-            Optional<DgMasSample> dms = sampleRepo.findById(investigationRequest.getSampleId());
-            masInvestigation.setSampleId(dms.get());
-            Optional<DgMasCollection> dmc = collectionRepo.findById(investigationRequest.getCollectionId());
-            masInvestigation.setCollectionId(dmc.get());
-            masInvestigation.setGenderApplicable(investigationRequest.getGenderApplicable());
-            Optional<MasInvestigationCategory> mic = micRepo.findById(investigationRequest.getCategoryId());
-            masInvestigation.setCategoryId(mic.get());
-            Optional<MasInvestigationMethodology> mim = mimRepo.findById(investigationRequest.getMethodId());
-            masInvestigation.setMethodId(mim.get());
+//            Optional<MasSubChargeCode> mscc = subChargeCodeRepo.findById(investigationRequest.getSubChargeCodeId());
+//            masInvestigation.setSubChargeCodeId(mscc.get());
+//            Optional<DgMasSample> dms = sampleRepo.findById(investigationRequest.getSampleId());
+//            masInvestigation.setSampleId(dms.get());
+//            Optional<DgMasCollection> dmc = collectionRepo.findById(investigationRequest.getCollectionId());
+//            masInvestigation.setCollectionId(dmc.get());
+//            masInvestigation.setGenderApplicable(investigationRequest.getGenderApplicable());
+//            Optional<MasInvestigationCategory> mic = micRepo.findById(investigationRequest.getCategoryId());
+//            masInvestigation.setCategoryId(mic.get());
+//            Optional<MasInvestigationMethodology> mim = mimRepo.findById(investigationRequest.getMethodId());
+//            masInvestigation.setMethodId(mim.get());
+            masInvestigation.setSubChargeCodeId(
+                    investigationRequest.getSubChargeCodeId() == null
+                            ? null
+                            : subChargeCodeRepo.findById(
+                            investigationRequest.getSubChargeCodeId()
+                    ).orElse(null)
+            );
+
+            masInvestigation.setSampleId(
+                    investigationRequest.getSampleId() == null
+                            ? null
+                            : sampleRepo.findById(
+                            investigationRequest.getSampleId()
+                    ).orElse(null)
+            );
+
+            masInvestigation.setCollectionId(
+                    investigationRequest.getCollectionId() == null
+                            ? null
+                            : collectionRepo.findById(
+                            investigationRequest.getCollectionId()
+                    ).orElse(null)
+            );
+
+            masInvestigation.setCategoryId(
+                    investigationRequest.getCategoryId() == null
+                            ? null
+                            : micRepo.findById(
+                            investigationRequest.getCategoryId()
+                    ).orElse(null)
+            );
+
+            masInvestigation.setMethodId(
+                    investigationRequest.getMethodId() == null
+                            ? null
+                            : mimRepo.findById(
+                            investigationRequest.getMethodId()
+                    ).orElse(null)
+            );
+
+            masInvestigation.setGenderApplicable(
+                    investigationRequest.getGenderApplicable()
+            );
+            masInvestigation.setContrastRequired(
+                    investigationRequest.getContrastRequired()
+            );
+
             masInvestigation.setInterpretation(investigationRequest.getInterpretation());
             masInvestigation.setPreparationText(investigationRequest.getPreparationRequired());
             masInvestigation.setTatHours(investigationRequest.getTatHours());
