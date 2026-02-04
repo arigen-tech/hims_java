@@ -1465,16 +1465,18 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
             for (UserDepartment ud : userDepartments) {
                 User user = ud.getUser();
+                MasEmployee emp = user != null ? user.getEmployee() : null;
 
-                if (user == null
-                        || user.getRoleId() == null
-                        || !user.getRoleId().equals("3")) {
+//               (role_id = 3)
+                if (emp == null
+                        || emp.getRoleId() == null
+                        || !emp.getRoleId().getId().equals(3L)) {
                     continue;
                 }
 
                 MasDepartment dept = ud.getDepartment();
 
-                MasEmployee emp = ud.getUser().getEmployee();
+               // MasEmployee emp = ud.getUser().getEmployee();
                // User user=ud.getUser();
 
                 // Speciality
@@ -1710,7 +1712,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setPatientName(v.getPatient().getPatientFn());
         dto.setMobileNumber(v.getPatient().getPatientMobileNumber());
         dto.setPatientAge(v.getPatient().getPatientAge());
-        dto.setDoctorId(v.getDoctor().getUserId());
+        dto.setDoctorId(v.getDoctor()!=null?v.getDoctor().getUserId():null);
         dto.setDoctorName(v.getDoctorName());
         dto.setDepartmentId(v.getDepartment().getId());
         dto.setDepartmentName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
