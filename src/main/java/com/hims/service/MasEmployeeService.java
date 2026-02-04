@@ -24,7 +24,7 @@ public interface MasEmployeeService {
     @Transactional(rollbackFor = {Exception.class})
     ApiResponse<MasEmployee> createAndApproveEmployee(MasEmployeeRequest masEmployeeRequest);
 
-    ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(String search);
+    ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(String search, Long hospitalId);
 
     ApiResponse<List<SpecialityResponse>> getSpecialityAndDoctor(Long specialityId);
 

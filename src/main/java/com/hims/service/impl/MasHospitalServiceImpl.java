@@ -116,6 +116,10 @@ public class MasHospitalServiceImpl implements MasHospitalService {
         response.setAppCostApplicable(hospital.getAppCostApplicable());
         response.setPreConsultationAvailable(hospital.getPreConsultationAvailable());
         response.setRegistrationCost(hospital.getRegistrationCost());
+        response.setLatitude(hospital.getLatitude());
+        response.setLongitude(hospital.getLongitude());
+        response.setExecutive1Contact(hospital.getExecutive1Contact());
+        response.setExecutive2Contact(hospital.getExecutive2Contact());
 
         return response;
     }
@@ -223,6 +227,10 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 existingHospital.setRegCostApplicable(hospitalRequest.getRegCostApplicable());
                 existingHospital.setAppCostApplicable(hospitalRequest.getAppCostApplicable());
                 existingHospital.setPreConsultationAvailable(hospitalRequest.getPreConsultationAvailable());
+                existingHospital.setLongitude(hospitalRequest.getLongitude());
+                existingHospital.setLatitude(hospitalRequest.getLatitude());
+                existingHospital.setExecutive1Contact(hospitalRequest.getExecutive1Contact());
+                existingHospital.setExecutive2Contact(hospitalRequest.getExecutive2Contact());
                 if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase("y")) {
                     existingHospital.setRegistrationCost(hospitalRequest.getRegistrationCost());
                 }else{

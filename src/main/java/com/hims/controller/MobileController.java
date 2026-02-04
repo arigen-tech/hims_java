@@ -124,10 +124,11 @@ public class MobileController {
         return ResponseEntity.badRequest().body(new ApiResponse("error", message, null));
     }
 
-
     @GetMapping("/searchByDepartmentAndDoctor")
-    public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctorList(@RequestParam(required = false) String search) {
-        return masEmployeeService.getDepartmentAndDoctor(search);
+    public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctorList(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long hospitalId) {
+        return masEmployeeService.getDepartmentAndDoctor(search, hospitalId);
     }
     @GetMapping("/getAllDoctorBySpeciality")
     public ApiResponse<List<SpecialityResponse>> getDoctorSpecialityBy(@RequestParam(required = false) Long specialityId) {
