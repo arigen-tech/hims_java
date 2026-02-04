@@ -295,7 +295,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                     stock.setQty(stock.getQty() + qty);
                     stock.setClosingStock(stock.getClosingStock() + qty);
                     stock.setOpeningBalanceQty(stock.getOpeningBalanceQty() + qty);
-                    transferInLedger(qty, dt.getBalanceTId(), stock.getStockId(), hdObj.getRemarks());
+                    transferInLedger(stock.getQty(),qty, dt.getBalanceTId(), stock.getStockId(), hdObj.getRemarks(),hdObj.getBalanceNo());
                 } else {
                     Optional<StoreItemBatchStock> existingStockOpt = storeItemBatchStockRepository.findMatchingStock(
                             dt.getItemId(),
@@ -310,7 +310,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                         Long qty = dt.getQty();
                         stock.setClosingStock(stock.getClosingStock() + qty);
                         stock.setOpeningBalanceQty(stock.getOpeningBalanceQty() + qty);
-                        transferInLedger(qty, dt.getBalanceTId(), stock.getStockId(), hdObj.getRemarks());
+                        transferInLedger(stock.getClosingStock(),qty, dt.getBalanceTId(), stock.getStockId(), hdObj.getRemarks(), hd.getBalanceNo());
                     } else {
                         Long deptId = authUtil.getCurrentDepartmentId();
                         MasDepartment department = masDepartmentRepository.getById(deptId);
@@ -341,7 +341,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
                         stock = storeItemBatchStockRepository.save(stock);
 
-                        transferInLedger(dt.getQty(), dt.getBalanceTId(), stock.getStockId(), hdObj.getRemarks());
+                        transferInLedger(0,dt.getQty(), dt.getBalanceTId(), stock.getStockId(), hdObj.getRemarks(),hdObj.getBalanceNo());
                     }
 
                     stock.setLastChgDate(LocalDateTime.now());
@@ -621,7 +621,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         dtRepo.deleteById(id);
     }
 
-    private String transferInLedger(long qty, long balanceDtId, long stockId, String remarks) {
+    private String transferInLedger(long qtyBefore,long qty, long balanceDtId, long stockId, String remarks,String referenceNum) {
         Optional<StoreItemBatchStock> stockOpt = storeItemBatchStockRepository.findById(stockId);
         if (stockOpt.isEmpty()) {
             throw new EntityNotFoundException("Stock with ID " + stockId + " not found.");
@@ -638,6 +638,12 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         ledger.setTxnDate(LocalDate.now());
         ledger.setQtyIn(BigDecimal.valueOf(qty));
         ledger.setStockId(stock);
+        ledger.setQtyBefore(BigDecimal.valueOf(stock.getClosingStock()));
+        ledger.setQtyAfter(BigDecimal.valueOf(stock.getClosingStock()+qty));
+        ledger.setReferenceNum(referenceNum);
+        ledger.setHospital(authUtil.getCurrentUser().getHospital());
+        ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Department Not Found")));
+        ledger.setTxnSource(opTxnType);
         ledger.setTxnType(opTxnType);
         ledger.setRemarks(remarks);
         ledger.setTxnReferenceId(balanceDtId);

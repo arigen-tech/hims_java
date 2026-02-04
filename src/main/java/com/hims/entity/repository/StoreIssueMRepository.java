@@ -26,4 +26,6 @@ public interface StoreIssueMRepository extends JpaRepository<StoreIssueM,Long> {
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate
     );
+
+    StoreIssueM findByIndentMId_IndentMId(Long indentMId);
 }

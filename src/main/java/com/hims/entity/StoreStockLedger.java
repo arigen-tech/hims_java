@@ -46,6 +46,9 @@ public class StoreStockLedger {
     @Column(name = "qty_after")
     private BigDecimal qtyAfter;
 
+    @Column(name = "qty_reject")
+    private BigDecimal qtyReject;
+
     @Column(name = "reference_number",length = 150)
     private String referenceNum;
 
