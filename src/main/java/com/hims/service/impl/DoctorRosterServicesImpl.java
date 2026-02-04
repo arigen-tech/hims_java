@@ -360,7 +360,8 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
 
     public ApiResponse<List<AvailableTokenSlotResponse>> getAvailableToken(
             Long deptId, Long doctorId, String appointmentDate, Long sessionId,int flag) {
-
+        int startToken,intervalToken,totalToken,totalOnlineTokens,timeTakenMin=0;
+        String startTime,endTime="";
         LocalDate date = LocalDate.parse(appointmentDate);
         String dayName = date.getDayOfWeek()
                 .getDisplayName(TextStyle.FULL, Locale.ENGLISH);
@@ -368,14 +369,31 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
         List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(
                 doctorId, deptId, sessionId, dayName);
 
+        ApiResponse<List<DoctorRosterDTO>> checkDoctorRoaster = getDoctorRoster(deptId,doctorId,date,sessionId);
+        if(!checkDoctorRoaster.getMessage().equalsIgnoreCase("success")){
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},checkDoctorRoaster.getMessage(),400);
+
+        }
+
+
         AppSetup appSetup = optionalSetup.get(0);
-        int startToken = appSetup.getStartToken();
-        int intervalToken = appSetup.getTotalInterval();
-        int totalToken = appSetup.getTotalToken();
-        int totalOnlineTokens = appSetup.getTotalOnlineToken();
-        int timeTakenMin = appSetup.getTimeTaken();
-        String startTime = appSetup.getStartTime();
-        String endTime = appSetup.getEndTime();
+        if (appSetup == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"App setup not defined for this day",400);
+        }
+
+        if (appSetup.getStartToken() == null ||
+                appSetup.getTotalInterval() == null ||
+                appSetup.getTotalToken() == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"App setup not defined for this day (Missing Token/Interval data)",400);
+        }else {
+            startToken = appSetup.getStartToken();
+            intervalToken = appSetup.getTotalInterval();
+            totalToken = appSetup.getTotalToken();
+            totalOnlineTokens = (appSetup.getTotalOnlineToken() != null) ? appSetup.getTotalOnlineToken() : 0;
+            timeTakenMin = appSetup.getTimeTaken();
+            startTime = appSetup.getStartTime();
+            endTime = appSetup.getEndTime();
+        }
 
         Instant startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
         Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
