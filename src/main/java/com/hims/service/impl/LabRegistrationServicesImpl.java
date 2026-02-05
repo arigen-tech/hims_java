@@ -412,11 +412,13 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 //                      }
 //                 }
 //            }
-        } catch (SDDException e) {
+        }
+        catch (SDDException e) {
             log.error("SDDException occurred", e);
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.error("Unexpected error during lab registration", e);
             e.printStackTrace(); // log exception for debugging
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);

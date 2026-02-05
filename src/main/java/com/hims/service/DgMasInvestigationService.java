@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface DgMasInvestigationService {
-    ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable);
+    ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable,Boolean radioFlag);
 
     ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag);
 

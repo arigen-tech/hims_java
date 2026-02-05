@@ -589,7 +589,7 @@ public class PatientServiceImpl implements PatientService {
         }
     }
 
-    private Patient savePatient(PatientRequest request, boolean followUp) {
+    public Patient savePatient(PatientRequest request, boolean followUp) {
 
 //        User loggedInUser=userRepository.findByUserName(request.getLastChgBy());
         User currentUser = authUtil.getCurrentUser();

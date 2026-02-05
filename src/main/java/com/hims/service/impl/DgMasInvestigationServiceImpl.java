@@ -74,11 +74,17 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 
     @Value("${investigation.mainChargecodeId}")
     private Long mainChargecodeId;
+    @Value("11")
+    private Long radMainChargeCodeId;
 
 
     @Override
-    public ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable) {
-        List<Object[]> results = dgMasInvestigationRepo.findByPriceDetails(genderApplicable, mainChargecodeId);
+    public ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable,Boolean radioFlag) {
+        List<Object[]> results=new ArrayList<>();
+        if(radioFlag)
+             results = dgMasInvestigationRepo.findByPriceDetails(genderApplicable, radMainChargeCodeId);
+        else
+         results = dgMasInvestigationRepo.findByPriceDetails(genderApplicable, mainChargecodeId);
 
         List<DgMasInvestigationResponse> response = results.stream().map(obj -> {
             DgMasInvestigationResponse dto = new DgMasInvestigationResponse();
@@ -472,6 +478,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             Optional<DgMasInvestigation> masInvestigation = dgMasInvestigationRepo.findById(investigationId);
             if (masInvestigation.isPresent()) {
                 DgMasInvestigation dmi = masInvestigation.get();
+                dmi.setContrastRequired(investigationRequest.getContrastRequired());
                 dmi.setInvestigationName(investigationRequest.getInvestigationName());
                 dmi.setConfidential(investigationRequest.getConfidential());
                 dmi.setInvestigationType(investigationRequest.getInvestigationType());

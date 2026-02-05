@@ -29,9 +29,12 @@ public class DgMasInvestigationController {
 
     @GetMapping("/price-details")
     public ApiResponse<List<DgMasInvestigationResponse>> getInvestigationPriceDetails(
-            @RequestParam String genderApplicable
+            @RequestParam String genderApplicable,@RequestParam(required = false) Boolean radioFlag
            // @RequestParam String investigationName
-    ) {return dgMasInvestigationService.getPriceDetails(genderApplicable);
+    ) {
+        if (radioFlag == null)
+            radioFlag=false;
+        return dgMasInvestigationService.getPriceDetails(genderApplicable,radioFlag);
     }
 
     @GetMapping("/getAll/{flag}")
