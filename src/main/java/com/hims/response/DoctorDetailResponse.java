@@ -10,6 +10,8 @@ import java.util.List;
 public class DoctorDetailResponse {
     private Long doctorId;
     private String hospitalName;
+    private List<AppSetResponse> appSetResponseList;
+
     private BasicInfo basicInfo;
     private List<SpecialitiesResponse> specialitiesResponseList;
     private List<String> education;

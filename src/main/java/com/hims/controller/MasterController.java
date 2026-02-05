@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -269,6 +270,11 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
     @Autowired
     private MasBloodCompatibilityService masBloodCompatibilityService;
 
+    @Autowired
+    private MasCommonStatusService masCommonStatusService;
+    @Autowired
+    private MasLanguageService masLanguageService;
+
 
 
 
@@ -493,6 +499,10 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
         return ResponseEntity.ok(masDepartmentService.getAllWardDepartmentByWardCategory(wardCategory));
     }
 
+    @GetMapping("/indent-department/getAll")
+    public ResponseEntity<?> getAllIndentDepartment(@RequestParam String status) {
+        return ResponseEntity.ok(masDepartmentService.getAllIndentApplicableDepartments(status));
+    }
 
     //    ================================Mas DepartmentType Controller================================//
 
@@ -4200,4 +4210,53 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
             @RequestParam String status) {
         return ResponseEntity.ok(masBloodCompatibilityService.changeStatus(id, status));
     }
+
+
+    //=======================================Mas Common Status ====================================================
+
+    @GetMapping("mas-common-status/all/")
+    public ResponseEntity<?> getAllCommonStatus() {
+        return ResponseEntity.ok(masCommonStatusService.getAllCommonStatus());
+    }
+
+    @GetMapping("mas-common-status/{id}")
+    public ResponseEntity<?> getCommonStatusById(@PathVariable Long id) {
+        return ResponseEntity.ok(masCommonStatusService.getCommonStatusById(id));
+    }
+
+    @PostMapping("mas-common-status/create")
+    public ResponseEntity<?> createCommonStatus(@Valid @RequestBody MasCommonStatusRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masCommonStatusService.createCommonStatus(request));
+    }
+
+    @PutMapping("mas-common-status/update/{id}")
+    public ResponseEntity<?> updateCommonStatusById(@PathVariable Long id, @Valid @RequestBody MasCommonStatusRequest request) {
+        return ResponseEntity.ok(masCommonStatusService.updateCommonStatusById(id, request));
+    }
+
+    @GetMapping("mas-common-status/search")
+    public Page<EntityNameResponse> search(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return masCommonStatusService.searchEntities(keyword, PageRequest.of(page, size));
+    }
+
+    @GetMapping("mas-common-status/table")
+    public ResponseEntity<?> getTableName(@RequestParam String entityName ) {
+        return ResponseEntity.ok(masCommonStatusService.getTableNameForEntity(entityName));
+    }
+
+    @GetMapping("mas-common-status/columns")
+    public ResponseEntity<?> getColumnNames(@RequestParam String entityName ) {
+        return ResponseEntity.ok(masCommonStatusService.getColumnNamesFromEntity(entityName));
+    }
+    //=======================================Mas Language ====================================================
+    @GetMapping("masLanguage/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasLanguageResponse>>> getAllMasLanguage(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masLanguageService.getAll(flag));
+    }
+
 }

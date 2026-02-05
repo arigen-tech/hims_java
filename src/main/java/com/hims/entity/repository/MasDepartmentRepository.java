@@ -35,6 +35,8 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
 
     
 
+    List<MasDepartment> findByIndentApplicableIgnoreCase(String indentApplicable);
+
 
     List<MasDepartment> findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(Long hospitalId, Long opdId, String keyword);
 

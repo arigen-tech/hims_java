@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.*;
@@ -37,6 +38,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     private final MasStoreItemRepository masStoreItemRepository;
     private final MasDepartmentRepository masDepartmentRepository;
     private final StoreItemBatchStockRepository storeItemBatchStockRepository;
+    private final MasCommonStatusRepository masCommonStatusRepository;
     @Autowired
     AuthUtil authUtil;
     @Autowired
@@ -98,14 +100,19 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Override
     @Transactional
     public ApiResponse<StoreInternalIndentResponse> saveIndent(StoreInternalIndentRequest request) {
-        return processIndent(request, "S"); // "S" for Save/Draft
+        MasCommonStatus masCommonStatus = masCommonStatusRepository.findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INTERNAL_INDENT_M, AppConstants.M_COLUMN_NAME, AppConstants.INDENT_CREATED_AT_REQ_DEPT)
+                .orElseThrow(() -> new RuntimeException("Status Not found"));
+        return processIndent(request, masCommonStatus.getStatusCode()); // "S" for Save/Draft
     }
 
     // Submit indent — backend sets status = "Y"
     @Override
     @Transactional
     public ApiResponse<StoreInternalIndentResponse> submitIndent(StoreInternalIndentRequest request) {
-        return processIndent(request, "Y"); // "Y" for Submit
+        MasCommonStatus masCommonStatus = masCommonStatusRepository.findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INTERNAL_INDENT_M, AppConstants.M_COLUMN_NAME, AppConstants.INDENT_SUBMITTED_AT_REQ_DEPT)
+                                                                  .orElseThrow(() -> new RuntimeException("Status Not found"));
+
+        return processIndent(request, masCommonStatus.getStatusCode()); // "Y" for Submit
     }
 
     // NEW: Approval/Rejection method
@@ -117,7 +124,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     .orElseThrow(() -> new RuntimeException("Indent not found with ID: " + request.getIndentMId()));
 
             // Validate current status - only pending indents (Y) can be approved/rejected
-            if (!"Y".equalsIgnoreCase(indentM.getStatus())) {
+            if (!AppConstants.INDENT_SUBMITTED_AT_REQ_DEPT.equalsIgnoreCase(indentM.getStatus())) {
                 throw new RuntimeException("Only pending indents can be approved or rejected. Current status: " + indentM.getStatus());
             }
 
@@ -130,7 +137,11 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             }
 
             // Update status based on action
-            String newStatus = "approved".equalsIgnoreCase(request.getAction()) ? "A" : "R";
+            String approvedStatus = masCommonStatusRepository.findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INTERNAL_INDENT_M, AppConstants.M_COLUMN_NAME, AppConstants.INDENT_APPROVED_AT_REQ_DEPT).orElseThrow().getStatusCode();
+            String rejectedStatus = masCommonStatusRepository.findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INTERNAL_INDENT_M, AppConstants.M_COLUMN_NAME, AppConstants.INDENT_REJECTED_AT_REQ_DEPT).orElseThrow().getStatusCode();
+
+
+            String newStatus = "approved".equalsIgnoreCase(request.getAction()) ? approvedStatus: rejectedStatus;
 
             indentM.setStatus(newStatus);
             indentM.setApprovedBy(currentUserName);
@@ -181,6 +192,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             return ResponseUtils.createSuccessResponse(response, new TypeReference<StoreInternalIndentResponse>() {});
 
         } catch (Exception e) {
+            log.error("approveRejectIndent method error :: ",e);
             return ResponseUtils.createFailureResponse(null,
                     new TypeReference<StoreInternalIndentResponse>() {},
                     "Error processing indent: " + e.getMessage(), 400);
@@ -239,6 +251,9 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
     // Common method to process both save and submit
     private ApiResponse<StoreInternalIndentResponse> processIndent(StoreInternalIndentRequest request, String status) {
+        //For Issue Status N for StoreInternalIndentT
+        MasCommonStatus masCommonStatus = masCommonStatusRepository.findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INTERNAL_INDENT_T, AppConstants.T_COLUMN_NAME, AppConstants.INDENT_NOT_ISSUED_AT_ISSUE_DEPT)
+                .orElseThrow(() -> new RuntimeException("Invalid Status , Status not found for column name " + AppConstants.T_COLUMN_NAME + " in entity " + AppConstants.ENTITY_STORE_INTERNAL_INDENT_T));
         StoreInternalIndentM indentM;
         boolean isNew = (request.getIndentMId() == null);
 
@@ -283,7 +298,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         indentM.setStatus(status);
 
         // For submitted indents, set approval info and UPDATE indent date
-        if ("Y".equals(status)) {
+        if (AppConstants.INDENT_SUBMITTED_AT_REQ_DEPT.equals(status)) {
             indentM.setApprovedBy(currentUserName);
             indentM.setApprovedDate(LocalDateTime.now());
 
@@ -323,7 +338,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                         MasStoreItem item = masStoreItemRepository.findById(dReq.getItemId())
                                 .orElseThrow(() -> new RuntimeException("Item not found: " + dReq.getItemId()));
                         detail.setItemId(item);
-                        detail.setIssueStatus("N");
+                        detail.setIssueStatus(masCommonStatus.getStatusCode());
                     }
                 } else {
                     // CREATE new item - when no indentTId is provided
@@ -333,7 +348,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     MasStoreItem item = masStoreItemRepository.findById(dReq.getItemId())
                             .orElseThrow(() -> new RuntimeException("Item not found: " + dReq.getItemId()));
                     detail.setItemId(item);
-                    detail.setIssueStatus("N");
+                    detail.setIssueStatus(masCommonStatus.getStatusCode());
                 }
 
                 // Update fields
@@ -518,7 +533,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     .orElseThrow(() -> new RuntimeException("Indent not found with ID: " + request.getIndentMId()));
 
             // 2. Only indents with status A are allowed
-            if (!"A".equalsIgnoreCase(indentM.getStatus())) {
+            if (!AppConstants.INDENT_APPROVED_AT_REQ_DEPT.equalsIgnoreCase(indentM.getStatus())) {
                 throw new RuntimeException(
                         "Only indents with status 'A' can be processed. Current status: " + indentM.getStatus());
             }
@@ -528,6 +543,15 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
             String action = request.getAction() != null ? request.getAction().trim().toLowerCase() : "";
+
+            String approvedStatus = masCommonStatusRepository
+                    .findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INTERNAL_INDENT_M, AppConstants.M_COLUMN_NAME, AppConstants.INDENT_APPROVED_AT_ISSUED_DEPT)
+                    .orElseThrow(() -> new RuntimeException("Status not found with name " + AppConstants.INDENT_APPROVED_AT_ISSUED_DEPT + " for column name " + AppConstants.M_COLUMN_NAME + " for entity " + AppConstants.ENTITY_STORE_INTERNAL_INDENT_M))
+                    .getStatusCode();
+            String rejectedStatus = masCommonStatusRepository
+                    .findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INTERNAL_INDENT_M, AppConstants.M_COLUMN_NAME, AppConstants.INDENT_REJECTED_AT_ISSUED_DEPT)
+                    .orElseThrow(() -> new RuntimeException("Status not found with name " + AppConstants.INDENT_REJECTED_AT_ISSUED_DEPT + " for column name " + AppConstants.M_COLUMN_NAME + " for entity " + AppConstants.ENTITY_STORE_INTERNAL_INDENT_M))
+                    .getStatusCode();
 
             // 4. Common item processing (approve qty + reason)
             if (request.getItems() != null && !request.getItems().isEmpty()) {
@@ -560,12 +584,12 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             // 5. Action-based status change
             if ("approved".equals(action)) {
                 // Submitted for issue
-                indentM.setStatus("AA");                 // Approved and submitted for issue
+                indentM.setStatus(approvedStatus);                 // Approved and submitted for issue
                 indentM.setStoreApprovedBy(currentUserName);
                 indentM.setStoreApprovedDate(LocalDateTime.now());
             } else if ("rejected".equals(action)) {
                 // Rejected after approval
-                indentM.setStatus("RR");                 // Rejected after approval
+                indentM.setStatus(rejectedStatus);                 // Rejected after approval
                 indentM.setStoreApprovedBy(currentUserName);
                 indentM.setStoreApprovedDate(LocalDateTime.now());
             } else {
@@ -1118,6 +1142,19 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             // Get store department (issuing department)
             MasDepartment storeDept = indentM.getToDeptId();
 
+            String receivedStatusM = masCommonStatusRepository
+                    .findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INDENT_RECEIVE_M, AppConstants.COLUMN_NAME, AppConstants.STATUS_R)
+                    .orElseThrow()
+                    .getStatusCode();
+            String rejectStatusM = masCommonStatusRepository
+                    .findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INDENT_RECEIVE_M, AppConstants.COLUMN_NAME_IS_RETURN, AppConstants.STATUS_N)
+                    .orElseThrow()
+                    .getStatusCode();
+            String notRejectStatusM = masCommonStatusRepository
+                    .findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INDENT_RECEIVE_M, AppConstants.COLUMN_NAME_IS_RETURN, AppConstants.STATUS_Y)
+                    .orElseThrow()
+                    .getStatusCode();
+
             // ==============================================
             // VALIDATION: received + rejected = issued for each item
             // ==============================================
@@ -1152,7 +1189,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     request.getReceivingDate() : LocalDateTime.now());
             receiveM.setReceivedBy(currentUserName);
             receiveM.setRemarks(request.getRemarks());
-            receiveM.setStatus("R");
+            receiveM.setStatus(receivedStatusM);
             receiveM.setReceivedDepartment(receivingDept);
             receiveM.setStoreDepartment(storeDept);
             receiveM.setCreatedBy(currentUserName);
@@ -1162,7 +1199,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             boolean hasRejections = request.getItems().stream()
                     .anyMatch(item -> item.getQtyRejected() != null &&
                             item.getQtyRejected().compareTo(BigDecimal.ZERO) > 0);
-            receiveM.setIsReturn(hasRejections ? "N" : "Y");
+            receiveM.setIsReturn(hasRejections ? rejectStatusM : notRejectStatusM);
 
             receiveM = receiveMRepository.save(receiveM);
 
@@ -1229,15 +1266,9 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 indentT.setReceivedQty(newTotalReceived);
                 indentTRepository.save(indentT);
 
-                // ==============================================
-                // 5. Update batch stock if received quantity > 0
-                // ==============================================
-                if (qtyReceived.compareTo(BigDecimal.ZERO) > 0) {
-                    updateBatchStockForReceiving(indentT, issueT, qtyReceived, currentUserName);
-                }
 
                 // ==============================================
-                // 6. Handle rejected items (prepare for return)
+                // 5. Handle rejected items (prepare for return)
                 // ==============================================
                 if (qtyRejected.compareTo(BigDecimal.ZERO) > 0) {
                     createReturn = true;
@@ -1248,15 +1279,23 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                             issueT.getStockId(),
                             qtyRejected
                     ));
+
+
                 }
 
                 // ==============================================
-                // 7. Create ledger entry for received quantity
+                // 6. Create ledger entry for received quantity
                 // ==============================================
                 if (qtyReceived.compareTo(BigDecimal.ZERO) > 0) {
+
+                    // 7. Update batch stock if received quantity > 0
+
+                    StoreItemBatchStock storeItemBatchStock = updateBatchStockForReceiving(indentT, issueT, qtyReceived, currentUserName);
+
                     createReceivingLedgerEntry(
+                            storeItemBatchStock,
                             qtyReceived,
-                            indentT.getIndentTId(),
+                            indentT,
                             issueT.getStockId().getStockId(),
                             "RECEIVED AGAINST ISSUE NO: " + indentM.getIssueNo() + " BATCH: " + issueT.getBatchNo(),
                             currentUserName
@@ -1278,6 +1317,8 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             // ==============================================
             if (createReturn && !returnItems.isEmpty()) {
                 createStoreReturn(receiveM, returnItems, currentUserName);
+
+
             }
 
             // ==============================================
@@ -1434,43 +1475,56 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         }
     }
 
-    // Update batch stock for received quantity
-    private void updateBatchStockForReceiving(StoreInternalIndentT indentT,
-                                              StoreIssueT issueT, BigDecimal qtyReceived, String userName) {
+    private StoreItemBatchStock updateBatchStockForReceiving(
+            StoreInternalIndentT indentT,
+            StoreIssueT issueT,
+            BigDecimal qtyReceived,
+            String userName) {
 
         StoreItemBatchStock stock = issueT.getStockId();
+
         if (stock == null) {
             // If no specific stock record, find the batch in receiving department
             Long receivingDeptId = authUtil.getCurrentDepartmentId();
-            MasDepartment receivingDept = masDepartmentRepository.findById(receivingDeptId).orElse(null);
+            MasDepartment receivingDept =
+                    masDepartmentRepository.findById(receivingDeptId).orElse(null);
 
-            if (receivingDept == null) return;
+            if (receivingDept == null) {
+                return null;
+            }
 
-            List<StoreItemBatchStock> stocks = batchStockRepository.findByDepartmentIdAndItemId(
-                    receivingDept,
-                    indentT.getItemId()
-            );
-
+            List<StoreItemBatchStock> stocks =
+                    batchStockRepository.findByDepartmentIdAndItemId(
+                            receivingDept,
+                            indentT.getItemId()
+                    );
             if (!stocks.isEmpty()) {
                 stock = stocks.get(0); // Use first batch
             }
         }
-
-        if (stock != null) {
-            Long currentStock = stock.getClosingStock() != null ? stock.getClosingStock() : 0L;
-            Long newStock = currentStock + qtyReceived.longValue();
-            stock.setClosingStock(newStock);
-            stock.setIndentReceivedQty((stock.getIndentReceivedQty() != null ? stock.getIndentReceivedQty() : 0L) +
-                    qtyReceived.longValue());
-            stock.setLastChgBy(userName);
-            stock.setLastChgDate(LocalDateTime.now());
-            batchStockRepository.save(stock);
+        if (stock == null) {
+            return null;
         }
+        Long currentStock =
+                stock.getClosingStock() != null ? stock.getClosingStock() : 0L;
+
+        Long receivedQty = qtyReceived.longValue();
+
+        stock.setClosingStock(currentStock + receivedQty);
+        stock.setIndentReceivedQty(
+                (stock.getIndentReceivedQty() != null
+                        ? stock.getIndentReceivedQty()
+                        : 0L) + receivedQty
+        );
+        stock.setLastChgBy(userName);
+        stock.setLastChgDate(LocalDateTime.now());
+
+        return batchStockRepository.save(stock);
     }
 
     // Create ledger entry for receiving
-    private void createReceivingLedgerEntry(BigDecimal qty, Long indentTId, Long stockId,
-                                            String remarks, String userName) {
+    private void createReceivingLedgerEntry(StoreItemBatchStock batchStock,BigDecimal qty, StoreInternalIndentT indentT, Long stockId,
+                                            String remarks,  String userName) {
 
         StoreItemBatchStock stock = batchStockRepository.findById(stockId)
                 .orElseThrow(() -> new EntityNotFoundException("Stock with ID " + stockId + " not found."));
@@ -1484,7 +1538,13 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         ledger.setStockId(stock);
         ledger.setTxnType("RECEIVED");
         ledger.setRemarks(remarks);
-        ledger.setTxnReferenceId(indentTId);
+        ledger.setTxnReferenceId(indentT.getIndentTId());
+        ledger.setTxnSource("RECEIVED");
+        ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Invalid Department ID")));
+        ledger.setHospital(authUtil.getCurrentUser().getHospital());
+        ledger.setQtyBefore(batchStock.getClosingStock()>0?BigDecimal.valueOf(batchStock.getClosingStock()).subtract(qty):BigDecimal.ZERO);
+        ledger.setQtyAfter(BigDecimal.valueOf(batchStock.getClosingStock()));
+        ledger.setReferenceNum(indentT.getIndentM().getIssueNo());
 
         storeStockLedgerRepository.save(ledger);
     }
@@ -1512,6 +1572,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         // 1. Create Store Return Master
         // ==============================================
         StoreReturnM returnM = new StoreReturnM();
+        String returnNo = generateReturnNumber();
         returnM.setStoreIndentReceiveM(receiveM);
         returnM.setStoreDepartment(receiveM.getStoreDepartment());
         returnM.setReturnDate(LocalDateTime.now());
@@ -1524,11 +1585,13 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         returnM.setCreatedBy(userName);
         returnM.setLastUpdateDate(LocalDateTime.now());
         returnM = returnMRepository.save(returnM);
+        returnM.setReturnNo(returnNo);
 
         // ==============================================
         // 2. Create Store Return Transactions
         // ==============================================
         for (StoreReturnItemDetail itemDetail : returnItems) {
+
             StoreReturnT returnT = new StoreReturnT();
 
             returnT.setStoreReturnM(returnM);
@@ -1541,17 +1604,25 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             returnT.setDom(itemDetail.issueT.getDom());
             returnT.setBrandName(itemDetail.issueT.getBrandname());
             returnT.setManufacturerName(itemDetail.issueT.getManufacturername());
-
-
-
             returnT.setRejectedQty(
                     itemDetail.rejectedQty != null ? itemDetail.rejectedQty : BigDecimal.ZERO
             );
-//            returnT.setRejectionReason(itemDetail.rejectionReason);
             returnT.setCreatedBy(userName);
             returnT.setLastUpdateDate(LocalDateTime.now());
 
             returnTRepository.save(returnT);
+
+            //  LEDGER ENTRY FOR RETURN (REJECTED)
+
+            returnedLedger(
+                    BigDecimal.valueOf(itemDetail.stock.getClosingStock()),                // qty before (or compute properly if you track)
+                    itemDetail.rejectedQty.longValue(),
+                    itemDetail.receiveT.getStoreInternalIndentT().getIndentTId(),
+                    itemDetail.stock.getStockId(),
+                    "REJECTED DURING RECEIVING",
+                    "RETURN NO: " + returnNo,
+                    returnNo
+            );
         }
 
         // ==============================================
@@ -1601,6 +1672,22 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             // === Current User ===
             String userName = authUtil.getCurrentUser().getFirstName();
 
+            String issuedStatusM = masCommonStatusRepository
+                    .findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_ISSUE_M, AppConstants.COLUMN_NAME, AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT)
+                    .orElseThrow()
+                    .getStatusCode();
+            String issuedStatusT = masCommonStatusRepository
+                    .findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_ISSUE_T, AppConstants.COLUMN_NAME, AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT)
+                    .orElseThrow()
+                    .getStatusCode();
+            String notIssuedStatus = masCommonStatusRepository
+                    .findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INTERNAL_INDENT_T, AppConstants.T_COLUMN_NAME, AppConstants.INDENT_NOT_ISSUED_AT_ISSUE_DEPT)
+                    .orElseThrow(() -> new RuntimeException("Invalid Status , Status not found for column name " + AppConstants.T_COLUMN_NAME + " in entity " + AppConstants.ENTITY_STORE_INTERNAL_INDENT_T))
+                    .getStatusCode();
+            String issuedStatusIndentT = masCommonStatusRepository
+                    .findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_INTERNAL_INDENT_T, AppConstants.T_COLUMN_NAME, AppConstants.STATUS_Y)
+                    .orElseThrow()
+                    .getStatusCode();
             // ============================================================
             // === CREATE STORE_ISSUE_M ===================================
             // ============================================================
@@ -1613,7 +1700,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             issueM.setHospitalId(indentM.getToDeptId().getHospital());
             issueM.setIndentMId(indentM);
             issueM.setIssuedBy(userName);
-            issueM.setStatus("I"); // Issued
+            issueM.setStatus(issuedStatusM); // Issued
 
             issueM = storeIssueMRepository.save(issueM);
 
@@ -1650,7 +1737,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 if (newIssue.compareTo(BigDecimal.ZERO) <= 0) {
                     // Item not issued - update with actual available stock
                     indentT.setAvailableStock(actualAvailableStock);
-                    indentT.setIssueStatus("N"); // Not issued
+                    indentT.setIssueStatus(notIssuedStatus); // Not issued
                     indentTRepository.save(indentT);
                     continue; // Skip to next item
                 }
@@ -1670,7 +1757,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     // Insufficient stock for full issue - don't issue this item
                     // But still update available stock
                     indentT.setAvailableStock(actualAvailableStock);
-                    indentT.setIssueStatus("N");
+                    indentT.setIssueStatus(notIssuedStatus);
                     indentTRepository.save(indentT);
                     continue;
                 }
@@ -1723,17 +1810,19 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                     issueT.setDom(batch.getManufactureDate());
                     issueT.setManufacturername(batch.getManufacturerId().getManufacturerName());
                     issueT.setBrandname(batch.getBrandId().getBrandName());
-                    issueT.setStatus("I");
+                    issueT.setStatus(issuedStatusT);
                     issueT.setUnitPrice(nvl(batch.getMrpPerUnit()));
 
                     storeIssueTRepository.save(issueT);
 
                     // === Ledger ===
                     transferOutLedger(
+                            BigDecimal.valueOf(closing),
                             qtyToIssue,
                             indentT.getIndentTId(),
                             batch.getStockId(),
-                            "ISSUE AGAINST INDENT NO: " + indentM.getIndentNo()
+                            "ISSUE AGAINST INDENT NO: " + indentM.getIndentNo(),
+                            issueNo
                     );
 
                     remainingQty -= qtyToIssue;
@@ -1754,9 +1843,9 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 
                 // === Set item issue status ===
                 if (approved.compareTo(BigDecimal.ZERO) == 0) {
-                    indentT.setIssueStatus("N"); // Not applicable
+                    indentT.setIssueStatus(notIssuedStatus); // Not applicable
                 } else {
-                    indentT.setIssueStatus("Y"); // Yes, fully issued
+                    indentT.setIssueStatus(issuedStatusIndentT); // Yes, fully issued
                 }
 
                 indentTRepository.save(indentT);
@@ -1787,6 +1876,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             );
 
         } catch (Exception e) {
+            log.error("issueIndent method error :: ",e);
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<StoreInternalIndentResponse>() {},
@@ -2200,7 +2290,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 //=============================================ledger Entry================================
 
 
-    private String transferOutLedger(long qty, Long indentTId, Long stockId, String remarks) {
+    private String transferOutLedger(BigDecimal qtyBefore, long qty, Long indentTId, Long stockId, String remarks,String  referenceNum) {
 
         StoreItemBatchStock stock = storeItemBatchStockRepository.findById(stockId)
                 .orElseThrow(() -> new EntityNotFoundException("Stock with ID " + stockId + " not found."));
@@ -2223,16 +2313,58 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         ledger.setTxnType("ISSUE");                 // you can use config if available
         ledger.setRemarks(remarks);
         ledger.setTxnReferenceId(indentTId);
-
+        ledger.setQtyBefore(qtyBefore);
+        ledger.setQtyAfter(qtyBefore.subtract(BigDecimal.valueOf(qty)));
+        ledger.setReferenceNum(referenceNum);
+        ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found")));
+        ledger.setHospital(currentUser.getHospital());
+        ledger.setTxnSource("ISSUE");
         storeStockLedgerRepository.save(ledger);
+
 
         return "success";
     }
 
+    private void returnedLedger(BigDecimal qtyBefore,long qtyReturned,Long indentTId,Long stockId,String rejectedReason,String remarks,String referenceNum){
+
+        StoreItemBatchStock stock = storeItemBatchStockRepository.findById(stockId)
+                .orElseThrow(() -> new EntityNotFoundException("Stock with ID " + stockId + " not found."));
+
+        StoreStockLedger ledger = new StoreStockLedger();
+        ledger.setCreatedDt(LocalDateTime.now());
+
+        User currentUser = authUtil.getCurrentUser();
+        String fName = currentUser.getFirstName()
+                + (currentUser.getMiddleName() != null ? " " + currentUser.getMiddleName() : "")
+                + (currentUser.getLastName() != null ? " " + currentUser.getLastName() : "");
+
+        ledger.setCreatedBy(fName.trim());
+        ledger.setTxnDate(LocalDate.now());
+
+        ledger.setQtyOut(null);
+        ledger.setQtyIn(null);
+
+        ledger.setStockId(stock);
+        ledger.setTxnType("RETURNED");                 // you can use config if available
+        ledger.setRemarks(remarks);
+        ledger.setTxnReferenceId(indentTId);
+        ledger.setQtyBefore(qtyBefore);
+        ledger.setQtyAfter(qtyBefore);
+        ledger.setQtyReject(BigDecimal.valueOf(qtyReturned));
+        ledger.setReferenceNum(referenceNum);
+        ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found")));
+        ledger.setHospital(currentUser.getHospital());
+        ledger.setTxnSource("RETURNED");
+        storeStockLedgerRepository.save(ledger);
+
+    }
 
 
+    private String generateReturnNumber() {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        return "RET-" + timestamp;
 
-
+    }
 
 
 }

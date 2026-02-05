@@ -95,7 +95,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     private Long collectedStatusId;
     
 
-    @Value("${app.pending.days}")
+    @Value("${sample.collection.display.days}")
     private int pendingDays;
     private String getCurrentTimeFormatted(Instant instant) {
         LocalTime time = instant
