@@ -272,6 +272,8 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
 
     @Autowired
     private MasCommonStatusService masCommonStatusService;
+    @Autowired
+    private MasLanguageService masLanguageService;
 
 
 
@@ -4249,6 +4251,12 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
     @GetMapping("mas-common-status/columns")
     public ResponseEntity<?> getColumnNames(@RequestParam String entityName ) {
         return ResponseEntity.ok(masCommonStatusService.getColumnNamesFromEntity(entityName));
+    }
+    //=======================================Mas Language ====================================================
+    @GetMapping("masLanguage/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasLanguageResponse>>> getAllMasLanguage(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masLanguageService.getAll(flag));
     }
 
 }
