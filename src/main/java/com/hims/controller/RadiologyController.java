@@ -2,20 +2,16 @@ package com.hims.controller;
 
 import com.hims.request.PatientRegistrationReq;
 import com.hims.request.RadRegInvReq;
-import com.hims.response.ApiResponse;
-import com.hims.response.AppsetupResponse;
-import com.hims.response.PatientRegFollowUpResp;
-import com.hims.response.RadiologyAppSetupResponse;
+import com.hims.response.*;
 import com.hims.service.RadiologyService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @Tag(name = "PatientController", description = "This controller is used for any Patient Related task.")
@@ -30,4 +26,9 @@ public class RadiologyController {
         ApiResponse<RadiologyAppSetupResponse> response = radiologyService.registerPatientWithInv(request.getPatient(), request.getRadInvestigationReq());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @GetMapping("/pendingRadiology")
+    public ApiResponse<List<RadiologyResponse>> getPendingRadiology(@RequestParam(required = true) Long patientId, @RequestParam(required = true) Long modality) {
+        return radiologyService.pendingRadiology(patientId, modality);
+    }
+
 }

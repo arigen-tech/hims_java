@@ -1698,8 +1698,16 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory(
             Integer flag, String mobileNo) {
         try {
-            Instant startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
+
+            // 🔹 normalize input (NO LOGIC CHANGE)
+            String normalizedMobileNo = mobileNo == null ? null : mobileNo.trim();
+
+            Instant startOfToday = LocalDate.now()
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toInstant();
+
             List<Visit> visits;
+
             if (flag != null && flag == 1) {
                 // flag=1 → all dates status->y,c,n
                 visits = visitRepository.findByVisitStatusInIgnoreCase(
@@ -1709,19 +1717,28 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 // flag=0 → today & future only and status->n
                 visits = visitRepository.findNVisitsFromToday(startOfToday);
             }
+
             List<AppointmentBookingHistoryResponseDetails> response = visits.stream()
-                    .filter(v -> mobileNo == null
-                            || mobileNo.isBlank()
+                    .filter(v -> normalizedMobileNo == null
+                            || normalizedMobileNo.isBlank()
                             || (v.getPatient() != null
-                            && mobileNo.equals(v.getPatient().getPatientMobileNumber())))
+                            && normalizedMobileNo.equals(
+                            v.getPatient().getPatientMobileNumber()
+                    )))
                     .sorted(Comparator.comparing(Visit::getVisitDate))
                     .map(this::mapToDto)
                     .toList();
-            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+            return ResponseUtils.createSuccessResponse(
+                    response, new TypeReference<>() {}
+            );
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    ex.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
