@@ -269,7 +269,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             MasHospital masHospital = masHospitalRepository
                     .findById(currentUser.getHospital().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
-            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "radOrderhd.orderDate"));
+
             List<RadOrderDt> list = radOrderDtRepository.findByRadOrderhd_Hospital_IdAndBillingStatusIgnoreCase(
                             masHospital.getId(), "y"
                     );
