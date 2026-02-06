@@ -735,7 +735,7 @@ public class PatientServiceImpl implements PatientService {
         opdPatientDetail.setDoctor(savedVisit!=null?savedVisit.getDoctor():userRepository.findById(opdPatientDetailRequest.getDoctorId()).get());
         opdPatientDetail.setLastChgDate(Instant.now());
         opdPatientDetail.setLastChgBy(opdPatientDetailRequest.getLastChgBy());
-        return opdPatientDetailRepository.save(opdPatientDetail); // Save OPD details
+        return opdPatientDetailRepository.save(opdPatientDetail);
     }
 
 

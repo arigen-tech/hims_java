@@ -193,8 +193,13 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .stream()
                     .map(EmployeeDocumentDTO::fromEntity)
                     .toList();
+            List<EmployeeLanguageDTO> languages = masEmployeeLanguageMappingRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeLanguageDTO::fromEntity)
+                    .toList();
 
-            return MasEmployeeDTO.fromEntity(employee, qualifications, documents,specialtyCenters,workExperiences,memberships,specialtyInterests,awards);
+            return MasEmployeeDTO.fromEntity(employee, qualifications, documents,specialtyCenters,workExperiences,memberships,specialtyInterests,awards,languages);
         }).toList();
 
         return ResponseUtils.createSuccessResponse(employeeDTOs, new TypeReference<>() {});
@@ -256,7 +261,13 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .map(EmployeeDocumentDTO::fromEntity)
                     .toList();
 
-            return MasEmployeeDTO.fromEntity(employee, qualifications, documents ,specialtyCenters,workExperiences,memberships,specialtyInterests,awards);
+            List<EmployeeLanguageDTO> languages = masEmployeeLanguageMappingRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeLanguageDTO::fromEntity)
+                    .toList();
+
+            return MasEmployeeDTO.fromEntity(employee, qualifications, documents ,specialtyCenters,workExperiences,memberships,specialtyInterests,awards,languages);
         }).toList();
 
         return ResponseUtils.createSuccessResponse(employeeDTOs, new TypeReference<>() {});
@@ -310,12 +321,18 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                 .map(EmployeeDocumentDTO::fromEntity)
                 .toList();
 
+        List<EmployeeLanguageDTO> languages = masEmployeeLanguageMappingRepository
+                .findByEmployee(employee)
+                .stream()
+                .map(EmployeeLanguageDTO::fromEntity)
+                .toList();
+
         MasEmployeeDTO employeeDTO = MasEmployeeDTO.fromEntity(employee, qualifications, documents,
                 specialtyCenters,
                 workExperiences,
                 memberships,
                 specialtyInterests,
-                awards);
+                awards,languages);
 
         return ResponseUtils.createSuccessResponse(employeeDTO, new TypeReference<>() {});
     }
@@ -1749,6 +1766,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         MasEmployee savedEmployee = masEmployeeRepository.save(employee);
         processQualifications(req.getQualification(), savedEmployee, currentUser);
         processSpecialtyCenter(req.getSpecialtyCenter(), savedEmployee, currentUser);
+        processLanguages(req.getLanguages(), savedEmployee, currentUser);
         processWorkExperiences(req.getWorkExperiences(), savedEmployee, currentUser);
         processMemberships(req.getEmployeeMemberships(), savedEmployee, currentUser);
         processSpecialtyInterest(req.getEmployeeSpecialtyInterests(), savedEmployee, currentUser);
@@ -2033,6 +2051,46 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
+
+    private void processLanguages(List<EmployeeLanguageRequest> languageRequests, MasEmployee savedEmployee, User currentUser) {
+        if (languageRequests == null || languageRequests.isEmpty()) {
+            log.info("No languages provided for employee {}", savedEmployee.getEmployeeId());
+            return;
+        }
+        for (EmployeeLanguageRequest languageReq : languageRequests) {
+            try {
+                Long languageId = languageReq.getLanguageId();
+
+                MasLanguage language = masLanguageRepository.findById(languageId)
+                        .orElseThrow(() -> new EntityNotFoundException("Language not found with ID: " + languageId));
+
+                EmployeeLanguageId languageIdObj = new EmployeeLanguageId();
+                languageIdObj.setEmpId(savedEmployee.getEmployeeId());
+                languageIdObj.setLanguageId(languageId);
+
+                MasEmployeeLanguageMapping languageMapping = new MasEmployeeLanguageMapping();
+                languageMapping.setId(languageIdObj);
+                languageMapping.setEmployee(savedEmployee);
+                languageMapping.setLanguage(language);
+                languageMapping.setLastChgBy(currentUser.getUserId()); // Assuming User has getUserId()
+                languageMapping.setLastChgDate(LocalDateTime.now());
+
+                masEmployeeLanguageMappingRepository.save(languageMapping);
+
+                log.debug("Language mapping created for employee {} with language {}",
+                        savedEmployee.getEmployeeId(), languageId);
+
+            } catch (EntityNotFoundException e) {
+                throw new LanguageProcessingException("Invalid language ID: " + languageReq.getLanguageId(), e);
+            } catch (IllegalArgumentException e) {
+                throw new LanguageProcessingException("Invalid language request: " + e.getMessage(), e);
+            } catch (Exception e) {
+                throw new LanguageProcessingException(
+                        "Failed to process language with ID: " + languageReq.getLanguageId() +
+                                " for employee: " + savedEmployee.getEmployeeId(), e);
+            }
+        }
+    }
     private void processWorkExperiences(List<EmployeeWorkExperienceRequest> workExperiences, MasEmployee savedEmployee, User currentUser){
         if (workExperiences == null || workExperiences.isEmpty()) {
             return;
@@ -2192,6 +2250,11 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
     }
     public static class SpecialtyCenterProcessingException extends RuntimeException {
         public SpecialtyCenterProcessingException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+    public static class LanguageProcessingException extends RuntimeException {
+        public LanguageProcessingException(String message, Throwable cause) {
             super(message, cause);
         }
     }
