@@ -1,6 +1,5 @@
 package com.hims.response;
 
-import com.hims.entity.EmployeeLanguageId;
 import com.hims.entity.MasEmployee;
 import lombok.Builder;
 
@@ -46,7 +45,7 @@ public record MasEmployeeDTO(
         Long designationId,
         List<EmployeeQualificationDTO> qualifications,
         List<EmployeeDocumentDTO> documents,
-        List<EmployeeLanguageDTO> languageIds,
+        List<EmployeeLanguageDTO> languages,
         List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters,
         List<EmployeeWorkExperienceDTO> workExperiences,
         List<EmployeeMembershipDTO> memberships,
@@ -122,7 +121,7 @@ public record MasEmployeeDTO(
                 .yearOfExperience(employee.getYearOfExperience())
                 .profileDescription(employee.getProfileDescription())
                 .designationId(employee.getDesignationId())
-                .languageIds(languages)
+                .languages(languages)
                 .build();
     }
 }

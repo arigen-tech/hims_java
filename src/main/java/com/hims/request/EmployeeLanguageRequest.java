@@ -8,6 +8,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class EmployeeLanguageRequest {
-    private long languageId;
-   private String languageName;;
+    private Long languageId;
+    private String languageName;
 }

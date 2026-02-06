@@ -193,12 +193,12 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .stream()
                     .map(EmployeeDocumentDTO::fromEntity)
                     .toList();
+
             List<EmployeeLanguageDTO> languages = masEmployeeLanguageMappingRepository
-                    .findByEmployee(employee)
+                    .findByEmpId(employee.getEmployeeId())
                     .stream()
                     .map(EmployeeLanguageDTO::fromEntity)
                     .toList();
-
             return MasEmployeeDTO.fromEntity(employee, qualifications, documents,specialtyCenters,workExperiences,memberships,specialtyInterests,awards,languages);
         }).toList();
 
@@ -262,7 +262,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                     .toList();
 
             List<EmployeeLanguageDTO> languages = masEmployeeLanguageMappingRepository
-                    .findByEmployee(employee)
+                    .findByEmpId(employee.getEmployeeId())
                     .stream()
                     .map(EmployeeLanguageDTO::fromEntity)
                     .toList();
@@ -322,7 +322,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
                 .toList();
 
         List<EmployeeLanguageDTO> languages = masEmployeeLanguageMappingRepository
-                .findByEmployee(employee)
+                .findByEmpId(employee.getEmployeeId())
                 .stream()
                 .map(EmployeeLanguageDTO::fromEntity)
                 .toList();
@@ -357,6 +357,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
         handleIdDocument(employee, req);
         handleProfileImage(employee, req);
         updateSpecialtyCenters(employee, req);
+        updateLanguages(employee, req);
         updateWorkExperiences(employee, req);
         updateMemberships(employee, req);
         updateSpecialtyInterests(employee, req);
@@ -482,6 +483,41 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
             m.setIsPrimary(Boolean.TRUE.equals(sc.getIsPrimary()));
             m.setLastUpdateDate(Instant.now());
             employeeSpecialtyCenterRepository.save(m);
+        }
+    }
+
+    private void updateLanguages(MasEmployee employee, MasEmployeeRequest req) {
+        if (req.getLanguages() == null) {
+            log.debug("Languages not provided in update request, keeping existing languages");
+            return;
+        }
+        masEmployeeLanguageMappingRepository.deleteByEmpId(employee.getEmployeeId());
+        log.debug("Deleted existing language mappings for employee ID: {}", employee.getEmployeeId());
+
+        if (req.getLanguages().isEmpty()) {
+            log.debug("Empty languages array provided, no languages to add");
+            return;
+        }
+        for (EmployeeLanguageRequest languageReq : req.getLanguages()) {
+            if (languageReq.getLanguageId() == null || languageReq.getLanguageId() == 0L) {
+                continue;
+            }
+
+            try {
+                MasEmployeeLanguageMapping mapping = MasEmployeeLanguageMapping.builder()
+                        .empId(employee.getEmployeeId())
+                        .languageId(languageReq.getLanguageId())
+                        .lastChgBy(getCurrentUser().getUserId())
+                        .build();
+
+                masEmployeeLanguageMappingRepository.save(mapping);
+                log.debug("Added language mapping: employeeId={}, languageId={}",
+                        employee.getEmployeeId(), languageReq.getLanguageId());
+
+            } catch (Exception e) {
+                log.error("Failed to add language mapping for languageId: {}", languageReq.getLanguageId(), e);
+                throw new RuntimeException("Failed to process language: " + languageReq.getLanguageId(), e);
+            }
         }
     }
     private void updateWorkExperiences(MasEmployee emp, MasEmployeeRequest req) {
@@ -1645,17 +1681,16 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                             .map(EmployeeAward::getAwardSummary)
                             .toList()
             );
-            List<MasEmployeeLanguageMapping> mappings = (List<MasEmployeeLanguageMapping>) masEmployeeLanguageMappingRepository.findByEmployee(optionalUser.get().getEmployee());
-
-            doctor.setLanguages(
-                    mappings.stream()
-                            .map(MasEmployeeLanguageMapping::getLanguage)
-                            .filter(Objects::nonNull)
-                            .map(MasLanguage::getLanguageName)
-                            .filter(Objects::nonNull)
-                            .distinct()
-                            .toList()
-            );
+//            List<MasEmployeeLanguageMapping> mappings = masEmployeeLanguageMappingRepository.findByEmpId(optionalUser.get().getEmployee().getEmployeeId());
+//            doctor.setLanguages(
+//                    mappings.stream()
+//                            .map(MasEmployeeLanguageMapping::getLanguage)
+//                            .filter(Objects::nonNull)
+//                            .map(MasLanguage::getLanguageName)
+//                            .filter(Objects::nonNull)
+//                            .distinct()
+//                            .toList()
+//            );
 
             doctor.setSpecialitiesResponseList(specialitiesList);
             return ResponseUtils.createSuccessResponse(doctor, new TypeReference<>() {}
@@ -2068,47 +2103,34 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-
-    private void processLanguages(List<EmployeeLanguageRequest> languageRequests, MasEmployee savedEmployee, User currentUser) {
+    private void processLanguages(List<EmployeeLanguageRequest> languageRequests,MasEmployee savedEmployee, User currentUser) {
         if (languageRequests == null || languageRequests.isEmpty()) {
-            log.info("No languages provided for employee {}", savedEmployee.getEmployeeId());
+            log.debug("No languages provided for employee creation");
             return;
         }
+
         for (EmployeeLanguageRequest languageReq : languageRequests) {
+            if (languageReq.getLanguageId() == null) {
+                continue;
+            }
+
             try {
-                Long languageId = languageReq.getLanguageId();
+                MasEmployeeLanguageMapping mapping = MasEmployeeLanguageMapping.builder()
+                        .empId(savedEmployee.getEmployeeId())
+                        .languageId(languageReq.getLanguageId())
+                        .lastChgBy(currentUser.getUserId())
+                        .build();
 
-                MasLanguage language = masLanguageRepository.findById(languageId)
-                        .orElseThrow(() -> new EntityNotFoundException("Language not found with ID: " + languageId));
+                masEmployeeLanguageMappingRepository.save(mapping);
+                log.debug("Created language mapping: employeeId={}, languageId={}",
+                        savedEmployee.getEmployeeId(), languageReq.getLanguageId());
 
-                EmployeeLanguageId languageIdObj = new EmployeeLanguageId();
-                languageIdObj.setEmpId(savedEmployee.getEmployeeId());
-                languageIdObj.setLanguageId(languageId);
-
-                MasEmployeeLanguageMapping languageMapping = new MasEmployeeLanguageMapping();
-                languageMapping.setId(languageIdObj);
-                languageMapping.setEmployee(savedEmployee);
-                languageMapping.setLanguage(language);
-                languageMapping.setLastChgBy(currentUser.getUserId()); // Assuming User has getUserId()
-                languageMapping.setLastChgDate(LocalDateTime.now());
-
-                masEmployeeLanguageMappingRepository.save(languageMapping);
-
-                log.debug("Language mapping created for employee {} with language {}",
-                        savedEmployee.getEmployeeId(), languageId);
-
-            } catch (EntityNotFoundException e) {
-                throw new LanguageProcessingException("Invalid language ID: " + languageReq.getLanguageId(), e);
-            } catch (IllegalArgumentException e) {
-                throw new LanguageProcessingException("Invalid language request: " + e.getMessage(), e);
             } catch (Exception e) {
-                throw new LanguageProcessingException(
-                        "Failed to process language with ID: " + languageReq.getLanguageId() +
-                                " for employee: " + savedEmployee.getEmployeeId(), e);
+                log.error("Failed to create language mapping for languageId: {}", languageReq.getLanguageId(), e);
+                throw new RuntimeException("Failed to process language: " + languageReq.getLanguageId(), e);
             }
         }
-    }
-    private void processWorkExperiences(List<EmployeeWorkExperienceRequest> workExperiences, MasEmployee savedEmployee, User currentUser){
+    }    private void processWorkExperiences(List<EmployeeWorkExperienceRequest> workExperiences, MasEmployee savedEmployee, User currentUser){
         if (workExperiences == null || workExperiences.isEmpty()) {
             return;
         }

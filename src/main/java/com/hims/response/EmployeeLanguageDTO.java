@@ -11,13 +11,13 @@ import java.time.LocalDateTime;
 @Setter
 @Builder
 public class EmployeeLanguageDTO {
+    private Long employeeId;
     private Long languageId;
-    private String languageName;
 
     public static EmployeeLanguageDTO fromEntity(MasEmployeeLanguageMapping mapping) {
         return EmployeeLanguageDTO.builder()
-                .languageId(mapping.getLanguage().getLanguageId())
-                .languageName(mapping.getLanguage().getLanguageName())
+                .employeeId(mapping.getEmpId())
+                .languageId(mapping.getLanguageId())
                 .build();
     }
 }
