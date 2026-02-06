@@ -1,8 +1,6 @@
 package com.hims.service;
 
-import com.hims.response.ApiResponse;
-import com.hims.response.IndentTrackingListReportResponse;
-import com.hims.response.MasCommonStatusResponse;
+import com.hims.response.*;
 import org.springframework.data.domain.Page;
 
 import java.time.LocalDate;
@@ -23,4 +21,7 @@ public interface IndentReportGetApiService {
     ApiResponse<Long> getIssueMIdFromIndentMId(Long indentMId);
     ApiResponse<Long> getReceiveMIdFromIndentMId(Long indentMId);
     ApiResponse<Long> getReturnMIdFromIndentMId(Long indentMId);
+    ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String keyword,int page,int size);
+    ApiResponse<List<String>> getBatchesFromItemId(Long itemId);
+    ApiResponse<Page<StoreStockLedgerReportResponse>> getStoreStockLedgerReport(int page,int size,Long itemId, String batchNo);
 }

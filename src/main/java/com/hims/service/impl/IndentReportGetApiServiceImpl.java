@@ -4,13 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.IndentTResponseForIndentTracking;
-import com.hims.response.IndentTrackingListReportResponse;
-import com.hims.response.MasCommonStatusResponse;
+import com.hims.response.*;
 import com.hims.service.IndentReportGetApiService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,8 +32,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class IndentReportGetApiServiceImpl
-        implements IndentReportGetApiService {
+public class IndentReportGetApiServiceImpl implements IndentReportGetApiService {
 
     private final StoreInternalIndentMRepository indentMRepository;
     private final StoreInternalIndentTRepository indentTRepository;
@@ -42,6 +41,9 @@ public class IndentReportGetApiServiceImpl
     private final StoreIssueMRepository issueMRepository;
     private final StoreIndentReceiveMRepository receiveMRepository;
     private final StoreReturnMRepository returnMRepository;
+    private final MasStoreItemRepository storeItemRepository;
+    private final StoreItemBatchStockRepository storeItemBatchStockRepository;
+    private final StoreStockLedgerRepository storeStockLedgerRepository;
     private final AuthUtil authUtil;
 
 
@@ -349,6 +351,111 @@ public class IndentReportGetApiServiceImpl
             log.error("getReceiveMIdFromIndentMId method error :: ",e);
             return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+    @Override
+    public ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String keyword, int page, int size) {
+       try {
+           log.info("getStoreItems with item contains name {} ,method started...",keyword);
+           if(keyword==null){
+               throw new RuntimeException();
+           }
+
+           Pageable pageable=PageRequest.of(
+                   page,
+                   size,
+                   Sort.by(Sort.Direction.ASC,"nomenclature")
+           );
+           Page<MasStoreItem> entities = storeItemRepository.findByNomenclatureContainingIgnoreCaseAndStatus(keyword, "y", pageable);
+           Page<ItemStockLedgerWithBatchResponse> responses = entities.map((item) -> {
+               ItemStockLedgerWithBatchResponse response = new ItemStockLedgerWithBatchResponse();
+               response.setItemId(item.getItemId());
+               response.setPvmsNo(item.getPvmsNo());
+               response.setNomenclature(item.getNomenclature());
+               return response;
+           });
+           log.info("getStoreItems with item contains name {} ,method ended...",keyword);
+           return  ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+       }catch (Exception e) {
+           log.error("getStoreItems method error :: ",e);
+           return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
+       }
+    }
+
+    @Override
+    public ApiResponse<List<String>> getBatchesFromItemId(Long itemId) {
+       try {
+           log.info("getBatchesFromItemId method started...");
+           MasStoreItem masStoreItem = storeItemRepository.findById(itemId).orElseThrow(() -> new RuntimeException("Invalid Item ID , Item not found in MasStoreItem"));
+           List<String> batches = storeItemBatchStockRepository.findByItemId(masStoreItem).stream().map(StoreItemBatchStock::getBatchNo).toList();
+           log.info("getBatchesFromItemId method ended...");
+           return  ResponseUtils.createSuccessResponse(batches, new TypeReference<>() {});
+       }catch (Exception e) {
+           log.error("getBatchesFromItemId method error :: ",e);
+           return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
+       }
+    }
+
+    @Override
+    public ApiResponse<Page<StoreStockLedgerReportResponse>> getStoreStockLedgerReport(int page,int size,Long itemId, String batchNo) {
+        try {
+            log.info("getStoreStockLedgerReport method started with item id {} and batch number {}",itemId,batchNo);
+            if(itemId==null || batchNo==null){
+                throw  new RuntimeException("Item id and batch number for this method can not be null");
+            }
+//            Sort sort = Sort.by(Sort.Direction.DESC, "stockId.expiryDate");
+            Sort sort = Sort.by(Sort.Direction.DESC, "createdDt");
+            Pageable pageable=PageRequest.of(
+                    page,
+                    size,
+                    sort
+            );
+
+            Specification<StoreStockLedger> spec = searchLedger(itemId, batchNo);
+            Page<StoreStockLedger> all = storeStockLedgerRepository.findAll(spec, pageable);
+
+            log.info("getStoreStockLedgerReport method ended with item id {} and batch number {}",itemId,batchNo);
+
+            return ResponseUtils.createSuccessResponse(all.map(this::mapToStoreStockLedgerReportResponse), new TypeReference<Page<StoreStockLedgerReportResponse>>() {});
+        }catch (Exception e) {
+            log.error("getStoreStockLedgerReport method error :: ",e);
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    private static Specification<StoreStockLedger> searchLedger(Long itemId,String batchNo){
+        return (root, query, cb) -> {
+
+            List<Predicate> predicates= new ArrayList<>();
+
+            Join<StoreStockLedger, StoreItemBatchStock> storeItemBatchStockJoin = root.join("stockId", JoinType.INNER);
+            Join<StoreItemBatchStock,MasStoreItem> storeItemJoin=storeItemBatchStockJoin.join("itemId",JoinType.INNER);
+
+            predicates.add(
+                    cb.equal(storeItemJoin.get("itemId"),itemId)
+            );
+            predicates.add(
+                    cb.equal(storeItemBatchStockJoin.get("batchNo"),batchNo)
+            );
+
+            return  cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    private StoreStockLedgerReportResponse mapToStoreStockLedgerReportResponse(StoreStockLedger entity){
+        StoreStockLedgerReportResponse response= new StoreStockLedgerReportResponse();
+        response.setLedgerId(entity.getLedgerId());
+        response.setCreatedDate(entity.getCreatedDt());
+        response.setReferenceNum(entity.getReferenceNum());
+        response.setTxnType(entity.getTxnType());
+        response.setTxnSource(entity.getTxnSource());
+        response.setQtyBefore(entity.getQtyBefore());
+        response.setQtyIn(entity.getQtyIn());
+        response.setQtyOut(entity.getQtyOut());
+        response.setQtyReturn(entity.getQtyReject());
+        response.setQtyAfter(entity.getQtyAfter());
+        response.setRemarks(entity.getRemarks());
+        return  response;
     }
 
 
