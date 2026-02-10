@@ -11,6 +11,7 @@ public class DoctorDetailResponse {
     private Long doctorId;
     private String hospitalName;
     private List<AppSetResponse> appSetResponseList;
+    private List<SessionResponseList> sessionResponseLists;
 
     private BasicInfo basicInfo;
     private List<SpecialitiesResponse> specialitiesResponseList;

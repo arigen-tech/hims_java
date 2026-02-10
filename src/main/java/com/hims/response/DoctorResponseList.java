@@ -3,6 +3,7 @@ package com.hims.response;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class DoctorResponseList {
@@ -14,5 +15,6 @@ public class DoctorResponseList {
     private String age;
     private Integer  yearsOfExperience;
     private BigDecimal consultancyFee;
+    private List<SessionResponseList> sessionResponseLists;
 
 }

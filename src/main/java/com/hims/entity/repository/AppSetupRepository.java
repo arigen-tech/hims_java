@@ -39,4 +39,13 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
 
 
     List<AppSetup> findByDoctorId_UserId(Long userId);
+
+    @Query(value = """
+    SELECT DISTINCT a.doctor_id, a.session_id, a.start_time, a.end_time
+    FROM app_setup a
+    WHERE a.doctor_id = :doctorId
+      AND a.start_time IS NOT NULL
+      AND a.end_time IS NOT NULL
+""", nativeQuery = true)
+    List<Object[]> findDistinctDoctorSession(@Param("doctorId") Long doctorId);
 }

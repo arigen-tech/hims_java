@@ -1119,6 +1119,10 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
     public ApiResponse<List<MasHospitalResponse>> getAllHospitals(@PathVariable int flag) {
         return masHospitalService.getAllHospitals(flag);
     }
+    @GetMapping("/hospitalResponse/getAll/{flag}")
+    public ApiResponse<List<MasHospitalResponse2>> getAllHospitalsResponse(@PathVariable int flag) {
+        return masHospitalService.getAllHospitalsResponse(flag);
+    }
 
     @GetMapping("/hospital/getById/{id}")
     public ResponseEntity<ApiResponse<MasHospitalResponse>> getHospitalById(@PathVariable Long id) {

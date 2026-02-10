@@ -6,6 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.MasHospitalRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasHospitalResponse;
+import com.hims.response.MasHospitalResponse2;
 import com.hims.service.MasHospitalService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -123,6 +124,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
 
         return response;
     }
+
 
     @Override
     @Transactional
@@ -253,6 +255,29 @@ public class MasHospitalServiceImpl implements MasHospitalService {
     }
 
     @Override
+    public ApiResponse<List<MasHospitalResponse2>> getAllHospitalsResponse(int flag) {
+        List<MasHospital> hospitals;
+
+        if (flag == 1) {
+            // Fetch only records with status 'Y'
+            hospitals = masHospitalRepository.findByStatusIgnoreCaseOrderByHospitalNameAsc("Y");
+        } else if (flag == 0) {
+            // Fetch all records with status 'Y' or 'N'
+            hospitals = masHospitalRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
+        } else {
+            // Handle invalid flag values
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasHospitalResponse2> responses = hospitals.stream()
+                .map(this::convertToResponse2)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+
+    }
+
+    @Override
     @Transactional
     public ApiResponse<MasHospitalResponse> changeHospitalStatus(Long id, String status) {
         try{
@@ -301,5 +326,16 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<MasHospitalResponse>() {},
                     "Hospital not found", 404);
         }
+    }
+    private MasHospitalResponse2 convertToResponse2(MasHospital hospital) {
+        MasHospitalResponse2 response = new MasHospitalResponse2();
+        response.setId(hospital.getId());
+        response.setHospitalName(hospital.getHospitalName());
+        response.setLatitude(hospital.getLatitude());
+        response.setLongitude(hospital.getLongitude());
+        response.setExecutive1Contact(hospital.getExecutive1Contact());
+        response.setExecutive2Contact(hospital.getExecutive2Contact());
+
+        return response;
     }
 }
