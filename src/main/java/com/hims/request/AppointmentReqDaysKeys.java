@@ -15,4 +15,6 @@ public class AppointmentReqDaysKeys {
     Integer maxNoOfDay;
     Integer minNoOfday;
     String opdLocation;
+    String startTime;
+    String endTime;
 }

@@ -86,8 +86,8 @@ public class AppSetupServicesImpl implements AppSetupServices {
                 entry.setDoctorId(doctor);
                 entry.setSession(session);
 
-                entry.setStartTime(appointmentReq.getStartTime());
-                entry.setEndTime(appointmentReq.getEndTime());
+                entry.setStartTime(key.getStartTime());
+                entry.setEndTime(key.getEndTime());
                 entry.setTimeTaken(appointmentReq.getTimeTaken());
 
                 entry.setDays(key.getDay());
@@ -185,8 +185,8 @@ public class AppSetupServicesImpl implements AppSetupServices {
             wrapper.setDayOfWeek(firstAppSetup.getDayOfWeek());
             wrapper.setDoctorId(firstAppSetup.getDoctorId() != null ? firstAppSetup.getDoctorId().getUserId() : null);
             wrapper.setSessionId(firstAppSetup.getSession() != null ? firstAppSetup.getSession().getId() : null);
-            wrapper.setStartTime(firstAppSetup.getStartTime());
-            wrapper.setEndTime(firstAppSetup.getEndTime());
+//            wrapper.setStartTime(firstAppSetup.getStartTime());
+//            wrapper.setEndTime(firstAppSetup.getEndTime());
             wrapper.setTimeTaken(firstAppSetup.getTimeTaken());
         }
 
@@ -195,6 +195,8 @@ public class AppSetupServicesImpl implements AppSetupServices {
 
         for (AppSetup appSetup : appSetups) {
             AppSetupDTO.appSetupDTO dayDTO = new AppSetupDTO.appSetupDTO();
+            dayDTO.setStartTime(appSetup.getStartTime());
+            dayDTO.setEndTime(appSetup.getEndTime());
             dayDTO.setId(appSetup.getId());
             dayDTO.setDays(appSetup.getDays());
             dayDTO.setMaxNoOfDays(appSetup.getMaxNoOfDays());

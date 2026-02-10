@@ -1681,16 +1681,11 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                             .map(EmployeeAward::getAwardSummary)
                             .toList()
             );
-//            List<MasEmployeeLanguageMapping> mappings = masEmployeeLanguageMappingRepository.findByEmpId(optionalUser.get().getEmployee().getEmployeeId());
-//            doctor.setLanguages(
-//                    mappings.stream()
-//                            .map(MasEmployeeLanguageMapping::getLanguage)
-//                            .filter(Objects::nonNull)
-//                            .map(MasLanguage::getLanguageName)
-//                            .filter(Objects::nonNull)
-//                            .distinct()
-//                            .toList()
-//            );
+//          List<MasEmployeeLanguageMapping> mappings = masEmployeeLanguageMappingRepository.findByEmpId(optionalUser.get().getEmployee().getEmployeeId());
+            doctor.setLanguages(masLanguageRepository.findById(optionalUser.get().getEmployee().getEmployeeId())
+                    .stream()
+                    .map(MasLanguage::getLanguageName)
+                    .toList());
 
             doctor.setSpecialitiesResponseList(specialitiesList);
             return ResponseUtils.createSuccessResponse(doctor, new TypeReference<>() {}
