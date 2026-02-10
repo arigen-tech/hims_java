@@ -13,5 +13,5 @@ public interface RadiologyService {
 
     ApiResponse<RadiologyAppSetupResponse> registerPatientWithInv(PatientRequest patient, List<LabInvestigationReq> radInvestigationReq);
 
-    ApiResponse<List<RadiologyResponse>> pendingRadiology(Long patientId, Long modality);
+    ApiResponse<List<RadiologyResponse>> pendingRadiology( Long modality);
 }

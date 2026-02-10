@@ -14,6 +14,7 @@ public class RadiologyResponse {
     private String patientName;
     private String age;
     private String gender;
+    private String phoneNumber;
     private String modality;
     private String investigationName;
     private LocalDate orderDate;

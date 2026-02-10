@@ -27,8 +27,8 @@ public class RadiologyController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @GetMapping("/pendingRadiology")
-    public ApiResponse<List<RadiologyResponse>> getPendingRadiology(@RequestParam(required = true) Long patientId, @RequestParam(required = true) Long modality) {
-        return radiologyService.pendingRadiology(patientId, modality);
+    public ApiResponse<List<RadiologyResponse>> getPendingRadiology(@RequestParam(required = true) Long modality) {
+        return radiologyService.pendingRadiology(modality);
     }
 
 }
