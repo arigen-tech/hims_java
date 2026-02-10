@@ -125,7 +125,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     private AppSetupRepository appSetupRepository;
 
 
-    @Value("${app.opd}")
+    @Value("${app.opdDepartmentType}")
     private Long opdId;
 
     @Value("${app.role.doctor}")
@@ -1370,17 +1370,17 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         String keyword = search.trim();
         // ================= Departments =================
         List<MasDepartment> departments;
-        if (hospitalId != null) {
+//        if (hospitalId != null) {
             departments =
                     masDepartmentRepository
                             .findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(
                                     hospitalId, opdId, keyword);
-        } else {
-            departments =
-                    masDepartmentRepository
-                            .findByDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(
-                                    opdId, keyword);
-        }
+//        } else {
+//            departments =
+//                    masDepartmentRepository
+//                            .findByDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(
+//                                    opdId, keyword);
+//        }
 
         List<SpecialitiesResponse> deptResponseList =
                 departments.stream().map(dept -> {
@@ -1396,7 +1396,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
 // CASE 1: hospitalId present
 
-        if (hospitalId != null) {
+//        if (hospitalId != null) {
 
             // Step 1: Departments (hospital + OPD)
             List<MasDepartment> departments2 = masDepartmentRepository.findByHospitalIdAndDepartmentTypeId(hospitalId, opdId);
@@ -1410,25 +1410,25 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                             .map(MasEmployee::getEmployeeId)
                             .distinct()
                             .toList();
-        }
+       // }
 // =========================
 // CASE 2: hospitalId NOT present
 // =========================
-        else {
-            // Step 1: Departments (ONLY OPD)
-            List<MasDepartment> departments2 = masDepartmentRepository.findByDepartmentTypeId(opdId);
-
-            // Step 2: UserDepartment → EmployeeIds
-            List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartmentIn(departments2);
-            employeeIds = userDepartments.stream()
-                            .map(UserDepartment::getUser)
-                            .filter(Objects::nonNull)
-                            .map(User::getEmployee)
-                            .filter(Objects::nonNull)
-                            .map(MasEmployee::getEmployeeId)
-                            .distinct()
-                            .toList();
-        }
+//        else {
+//            // Step 1: Departments (ONLY OPD)
+//            List<MasDepartment> departments2 = masDepartmentRepository.findByDepartmentTypeId(opdId);
+//
+//            // Step 2: UserDepartment → EmployeeIds
+//            List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartmentIn(departments2);
+//            employeeIds = userDepartments.stream()
+//                            .map(UserDepartment::getUser)
+//                            .filter(Objects::nonNull)
+//                            .map(User::getEmployee)
+//                            .filter(Objects::nonNull)
+//                            .map(MasEmployee::getEmployeeId)
+//                            .distinct()
+//                            .toList();
+//        }
 
 //        if (employeeIds.isEmpty()) {
 //            return ResponseUtils.createFailureResponse(
@@ -1631,12 +1631,14 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             List<AppSetup> appSetups =
                     appSetupRepository.findByDoctorId_UserId(optionalUser.get().getUserId());
 
-            List<AppSetResponse> appSetResponseList = appSetups.stream()
+            List<SessionResponse> appSetResponseList = appSetups.stream()
                     .map(appSetup -> {
-                        AppSetResponse resp = new AppSetResponse();
+                        SessionResponse resp = new SessionResponse();
                         resp.setMinDay(appSetup.getMinNoOfDays());
                         resp.setMaxDay(appSetup.getMaxNoOfDays());
-                        resp.setSession(
+                        resp.setStartTime(appSetup.getStartTime());
+                        resp.setEndTime(appSetup.getEndTime());
+                        resp.setSessionId(
                                 appSetup.getSession() != null
                                         ? appSetup.getSession().getId()
                                         : null
@@ -1646,18 +1648,18 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     })
                     .toList();
 
-            doctor.setAppSetResponseList(appSetResponseList);
-            List<Object[]> rows = appSetupRepository.findDistinctDoctorSession(optionalUser.get().getUserId());
-            List<SessionResponseList> sessionList1 = rows.stream().map(r -> {
-                SessionResponseList s = new SessionResponseList();
-                s.setSessionId(((Number) r[1]).longValue());
-                s.setStartTime((String) r[2]);
-                s.setEndTime((String) r[3]);
-
-                return s;
-            }).toList();
-
-            doctor.setSessionResponseLists(sessionList1);
+            doctor.setSessionResponseList(appSetResponseList);
+//            List<Object[]> rows = appSetupRepository.findDistinctDoctorSession(optionalUser.get().getUserId());
+//            List<SessionResponseList> sessionList1 = rows.stream().map(r -> {
+//                SessionResponseList s = new SessionResponseList();
+//                s.setSessionId(((Number) r[1]).longValue());
+//                s.setStartTime((String) r[2]);
+//                s.setEndTime((String) r[3]);
+//
+//                return s;
+//            }).toList();
+//
+//            doctor.setSessionResponseLists(sessionList1);
 
             BasicInfo basicInfo=new BasicInfo();
             basicInfo.setDoctorName(optionalUser.get().getEmployee().getFirstName()+ " " + (optionalUser.get().getEmployee().getMiddleName() != null ? optionalUser.get().getEmployee().getMiddleName() + " " : "") + optionalUser.get().getEmployee().getLastName());
@@ -1698,7 +1700,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 s.setEndTime(session.getEndTime().toString());
                 return s;
             }).toList();
-            doctor.setSessionResponseLists(sessionList);
+           // doctor.setSessionResponseLists(sessionList);
             doctor.setWorkExperience(
                     employeeWorkExperienceRepository.findByEmployee(optionalUser.get().getEmployee())
                             .stream()
