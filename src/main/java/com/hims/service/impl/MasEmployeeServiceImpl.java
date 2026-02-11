@@ -1758,6 +1758,46 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
     }
 
     @Override
+    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory(Long hospitalId, Long patientId, String mobileNo) {
+        try {
+            String normalizedMobileNo = (mobileNo == null) ? null : mobileNo.trim();
+
+            Instant startOfToday = LocalDate.now()
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toInstant();
+
+            List<Visit> visits;
+
+            // Case 1: hospitalId + patientId => status y,c,n
+            if (patientId != null) {
+                visits = visitRepository.findHistoryByHospitalAndPatient(
+                        hospitalId, patientId
+                );
+            }
+            // Case 2: only mobileNo => status n AND from today onwards
+            else {
+                // If hospitalId is mandatory for mobile search, you can validate here.
+                visits = visitRepository.findUpcomingByHospitalAndMobile(
+                        hospitalId, startOfToday, normalizedMobileNo
+                );
+            }
+            List<AppointmentBookingHistoryResponseDetails> response = visits.stream()
+                    .sorted(Comparator.comparing(Visit::getVisitDate))
+                    .map(this::mapToDto)
+                    .toList();
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, ex.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+
+    @Override
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>>  appointmentHistory() {
         try {
             Instant startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
@@ -1780,62 +1820,14 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         }
     }
 
-    @Override
-    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory(
-            Integer flag, String mobileNo) {
-        try {
 
-            // 🔹 normalize input (NO LOGIC CHANGE)
-            String normalizedMobileNo = mobileNo == null ? null : mobileNo.trim();
-
-            Instant startOfToday = LocalDate.now()
-                    .atStartOfDay(ZoneId.systemDefault())
-                    .toInstant();
-
-            List<Visit> visits;
-
-            if (flag != null && flag == 1) {
-                // flag=1 → all dates status->y,c,n
-                visits = visitRepository.findByVisitStatusInIgnoreCase(
-                        List.of("y", "c", "n")
-                );
-            } else {
-                // flag=0 → today & future only and status->n
-                visits = visitRepository.findNVisitsFromToday(startOfToday);
-            }
-
-            List<AppointmentBookingHistoryResponseDetails> response = visits.stream()
-                    .filter(v -> normalizedMobileNo == null
-                            || normalizedMobileNo.isBlank()
-                            || (v.getPatient() != null
-                            && normalizedMobileNo.equals(
-                            v.getPatient().getPatientMobileNumber()
-                    )))
-                    .sorted(Comparator.comparing(Visit::getVisitDate))
-                    .map(this::mapToDto)
-                    .toList();
-
-            return ResponseUtils.createSuccessResponse(
-                    response, new TypeReference<>() {}
-            );
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<>() {},
-                    ex.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
-        }
-    }
 
 
     private AppointmentBookingHistoryResponseDetails mapToDto(Visit v) {
         AppointmentBookingHistoryResponseDetails dto = new AppointmentBookingHistoryResponseDetails();
         dto.setVisitId(v.getId());
         dto.setPatientId(v.getPatient()!= null?v.getPatient().getId():null);
-        dto.setPatientName(v.getPatient().getPatientFn());
+        dto.setPatientName(v.getPatient().getPatientFn()+" "+v.getPatient().getPatientMn()+" "+v.getPatient().getPatientLn());
         dto.setMobileNumber(v.getPatient().getPatientMobileNumber());
         dto.setPatientAge(v.getPatient().getPatientAge());
         dto.setDoctorId(v.getDoctor()!=null?v.getDoctor().getUserId():null);
@@ -1845,7 +1837,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setAppointmentDate(v.getVisitDate());
         dto.setAppointmentStartTime(v.getStartTime());
         dto.setAppointmentEndTime(v.getEndTime());
-        dto.setStatus(v.getVisitStatus());
+        dto.setVisitStatus(v.getVisitStatus());
         dto.setReason(v.getReason()!=null? v.getReason().getReasonName():null);
         return dto;
     }

@@ -138,10 +138,13 @@ public class MobileController {
     public ApiResponse<DoctorDetailResponse> getByDoctor(@RequestParam(required = false) Long doctorId) {
        return masEmployeeService.getDoctor(doctorId);
     }
-    @GetMapping("/getAppointmentHistory")
-    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistory(@RequestParam Integer flag,
-            @RequestParam(required = false) String mobileNo) {
-        return masEmployeeService.appointmentHistory(flag, mobileNo);
+    @GetMapping("/getAppointmentHistoryList")
+    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistory(
+            @RequestParam(required = true) Long hospitalId,
+            @RequestParam(required = false) Long patientId,
+            @RequestParam(required = false) String mobileNo
+    ) {
+        return masEmployeeService.appointmentHistory(hospitalId, patientId, mobileNo);
     }
 
 }

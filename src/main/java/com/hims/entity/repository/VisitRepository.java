@@ -221,4 +221,37 @@ WHERE v.visit_status = 'n'
     );
 
 
+    @Query("""
+        select v
+        from Visit v
+        where v.hospital.id = :hospitalId
+          and v.patient.id  = :patientId
+          and lower(v.visitStatus) in ('y','c','n')
+        order by v.visitDate asc
+    """)
+    List<Visit> findHistoryByHospitalAndPatient(
+            @Param("hospitalId") Long hospitalId,
+            @Param("patientId") Long patientId
+    );
+
+
+    @Query("""
+        select v
+        from Visit v
+        join v.patient p
+        where (:hospitalId is null or v.hospital.id = :hospitalId)
+          and lower(v.visitStatus) = 'n'
+          and v.visitDate >= :fromDate
+          and (
+                :mobileNo is null or :mobileNo = ''
+                or p.patientMobileNumber = :mobileNo
+              )
+        order by v.visitDate asc
+    """)
+    List<Visit> findUpcomingByHospitalAndMobile(
+            @Param("hospitalId") Long hospitalId,
+            @Param("fromDate") Instant fromDate,
+            @Param("mobileNo") String mobileNo
+    );
+
 }

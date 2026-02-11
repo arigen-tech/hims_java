@@ -19,8 +19,7 @@ public class AppointmentBookingHistoryResponseDetails {
     private Instant appointmentDate;
     private Instant appointmentStartTime;
     private Instant appointmentEndTime;
-    private String status;
+    private String visitStatus;
     private String reason;
-    private boolean canReschedule;
-    private boolean canCancel;
+
 }
