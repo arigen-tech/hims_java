@@ -70,4 +70,11 @@ public class RadOrderHd {
     @OneToMany(mappedBy = "radOrderhd")
     private Set<RadOrderDt> radOrderDts = new LinkedHashSet<>();
 
+    @Size(max = 1)
+    @Column(name = "payment_status", length = 1)
+    private String paymentStatus;
+
+    @OneToMany(mappedBy = "radOrderHd")
+    private Set<BillingHeader> billingHeaders = new LinkedHashSet<>();
+
 }

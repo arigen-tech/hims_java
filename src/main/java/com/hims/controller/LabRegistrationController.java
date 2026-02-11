@@ -26,6 +26,10 @@ public class LabRegistrationController {
 
     @Autowired
     LabRegistrationServices labRegistrationServices;
+
+    @Autowired
+    RadiologyService radiologyService;
+
     @Autowired
     SampleValidationService validationService;
     @Autowired
@@ -48,6 +52,8 @@ public class LabRegistrationController {
     @PostMapping("/updatepaymentstatus")
     public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
         log.info("Update Payment Status API called");
+        if(request.getBillingType().equalsIgnoreCase("Radiology Services"))
+            return new ResponseEntity<>(radiologyService.paymentStatusReq(request), HttpStatus.OK);
         return new ResponseEntity<>(labRegistrationServices.paymentStatusReq(request), HttpStatus.OK);
     }
     @GetMapping("/pending")

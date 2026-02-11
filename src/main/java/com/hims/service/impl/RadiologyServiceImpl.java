@@ -4,13 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
-import com.hims.request.LabInvestigationReq;
-import com.hims.request.LabRegRequest;
-import com.hims.request.PatientRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.AppsetupResponse;
-import com.hims.response.RadiologyAppSetupResponse;
-import com.hims.response.RadiologyResponse;
+import com.hims.request.*;
+import com.hims.response.*;
 import com.hims.service.RadiologyService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
@@ -19,14 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,7 +48,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     RadOrderHdRepository radOrderHdRepository;
     @Autowired
     RadOrderDtRepository radOrderDtRepository;
-    @Value("${serviceCategoryLab}")
+    @Value("${serviceCategoryRad}")
     private String serviceCategoryRad;
     @Autowired
     LabRegistrationServicesImpl labRegistrationServices;
@@ -75,6 +68,8 @@ public class RadiologyServiceImpl implements RadiologyService {
     DgInvestigationPackageRepository dgInvestigationPackageRepository;
     @Autowired
     PackageInvestigationMappingRepository packageInvestigationMappingRepository;
+    @Autowired
+    PaymentDetailRepository paymentDetailRepository;
 
     public RadiologyServiceImpl(RandomNumGenerator randomNumGenerator) {
         this.randomNumGenerator = randomNumGenerator;
@@ -165,6 +160,7 @@ public class RadiologyServiceImpl implements RadiologyService {
 
                 RadOrderHd hd = new RadOrderHd();
                 hd.setAppointmentDate(date);
+                hd.setPaymentStatus("n");
                 hd.setOrderDate(LocalDate.now());
                 hd.setOrderTime(Instant.now());
                 hd.setPatient(savedPatient);
@@ -213,6 +209,11 @@ public class RadiologyServiceImpl implements RadiologyService {
                         dt.setCreatedon(Instant.now());
                         dt.setLastChgDate(Instant.now());
                         dt.setBillingHd(headerId);
+                        dt.setStudyStatus("n");
+                        dt.setReportStatus("n");
+                        dt.setHl7MwlStatus("n");
+                        dt.setPacsCompletionStatus("n");
+                        dt.setOrderStatus("y");
                         RadOrderDt savedDt = radOrderDtRepository.save(dt);
                         BillingDetaiDataSave(headerId, savedDt, inv);
 //                        savedDt.setBillingHd();
@@ -422,5 +423,113 @@ public class RadiologyServiceImpl implements RadiologyService {
         return  billingDetailRepository.save(billingDetail);
     }
 
+
+
+    @Override
+    @Transactional
+    public ApiResponse paymentStatusReq(PaymentUpdateRequest request) {
+        PaymentResponse res = new PaymentResponse();
+        log.info("Starting payment status update process");
+        log.debug("Received PaymentUpdateRequest: {}", request);
+        try{
+
+            //Payment table data inserted
+            // User currentUser = authUtil.getCurrentUser();
+            PaymentDetail paymentDetail = new PaymentDetail();
+            paymentDetail.setPaymentMode(request.getMode());
+            paymentDetail.setPaymentStatus("y");
+            paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
+            paymentDetail.setPaymentDate(Instant.now());
+            paymentDetail.setAmount(request.getAmount());
+            paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+            paymentDetail.setCreatedAt(Instant.now());
+            paymentDetail.setUpdatedAt(Instant.now());
+            paymentDetail.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
+            PaymentDetail details = paymentDetailRepository.save(paymentDetail);
+            log.info("PaymentDetail saved successfully, PaymentDetailId={}",
+                    details.getId());
+
+            for (InvestigationandPackegBillStatus invpkg : request.getInvestigationandPackegBillStatus()) {
+                if (invpkg.getType().equalsIgnoreCase("i")) {
+                    int investigationId = invpkg.getId();
+                    int billHdId = request.getBillHeaderId();
+                    log.debug("Updating payment status for InvestigationId={}, BillHdId={}",
+                            investigationId, billHdId);
+                    billingDetailRepository.updatePaymentStatusInvestigation("y", investigationId, billHdId);
+                    radOrderDtRepository.updatePaymentStatusInvestigationDt("y", investigationId, billHdId);
+                } else {
+                    int pkgId = invpkg.getId();
+                    int billHdId = request.getBillHeaderId();
+                    log.debug("Updating payment status for PackageId={}, BillHdId={}",
+                            pkgId, billHdId);
+
+                    billingDetailRepository.updatePaymentStatuPackeg("y", pkgId, billHdId);
+                    radOrderDtRepository.updatePaymentStatusPackegDt("y",(long) pkgId,(long) billHdId);
+                }
+            }
+            boolean fullyPaid = true;
+            boolean partialPaid = false;
+            List<RadOrderDt> dtList = radOrderDtRepository.findUnbilledByBillingHdId((long)request.getBillHeaderId());
+            log.debug("Fetched OrderDt count={}", dtList.size());
+            for (RadOrderDt orderDt : dtList) {
+                if (orderDt.getBillingStatus().equalsIgnoreCase("n")) {
+                    fullyPaid = false;
+                    partialPaid = true;
+                    break;
+                }
+//              else{
+//                  partialPaid=false;
+//                  fullyPaid=true;
+//              }
+            }
+            BillingHeader billingHeader = billingHeaderRepository.findById(request.getBillHeaderId()).get();
+            RadOrderHd hdorderObj = billingHeader.getRadOrderHd();
+            Visit visit = visitRepository.findByBillingHd(billingHeader);
+            res.setBillNo(billingHeader.getBillNo());
+            res.setPaymentStatus(billingHeader.getPaymentStatus());
+
+            log.info("Payment calculation => fullyPaid={}, partialPaid={}",
+                    fullyPaid, partialPaid);
+
+            if (fullyPaid) {
+                hdorderObj.setPaymentStatus("y");
+                visit.setBillingStatus("y");
+                billingHeader.setPaymentStatus("y");
+                res.setPaymentStatus("y");
+                BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
+                BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
+                billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
+                log.info("Fully paid. TotalPaid updated={}",
+                        billingHeader.getTotalPaid());
+            } else if (partialPaid) {
+                hdorderObj.setPaymentStatus("p");
+                visit.setBillingStatus("p");
+                billingHeader.setPaymentStatus("p");
+                res.setPaymentStatus("p");
+                BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
+                BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
+                billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
+                log.info("Partial payment. TotalPaid updated={}",
+                        billingHeader.getTotalPaid());
+            }
+            log.info("Payment status updated successfully for BillHeaderId={}",
+                    request.getBillHeaderId());
+            radOrderHdRepository.save(hdorderObj);
+            visitRepository.save(visit);
+            billingHeaderRepository.save(billingHeader);
+        } catch (SDDException e) {
+            log.error("SDDException occurred during payment update", e);
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
+        } catch (Exception e) {
+            log.error("Unexpected error during payment status update", e);
+
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
+        }
+        res.setMsg("Success");
+        log.info("Payment status update completed successfully");
+        return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
+    }
 
 }
