@@ -1,6 +1,8 @@
 package com.hims.exception;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.exception.BloodBankException.DonorSaveException;
+import com.hims.exception.BloodBankException.ScreeningSaveException;
 import com.hims.response.ApiResponse;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityExistsException;
@@ -44,30 +46,23 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(EntityExistsException.class)
-    public ResponseEntity<ApiResponse<Object>> handleEntityExists(EntityExistsException ex) {
-
-        return ResponseEntity.badRequest().body(
-                ResponseUtils.createFailureResponse(
-                        null,
-                        new TypeReference<>() {},
-                        ex.getMessage(),
-                        HttpStatus.BAD_REQUEST.value()
-                )
-        );
+    @ExceptionHandler(DonorSaveException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDonorError(DonorSaveException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {},
+                        ex.getMessage(), 400));
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<Object>> handleRuntime(RuntimeException ex) {
-
-        return ResponseEntity.badRequest().body(
-                ResponseUtils.createFailureResponse(
-                        null,
-                        new TypeReference<>() {},
-                        ex.getMessage(),
-                        HttpStatus.BAD_REQUEST.value()
-                )
-        );
+    @ExceptionHandler(ScreeningSaveException.class)
+    public ResponseEntity<ApiResponse<Object>> handleScreeningError(ScreeningSaveException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {},
+                        ex.getMessage(), 400));
     }
+
+
+
 
 }
