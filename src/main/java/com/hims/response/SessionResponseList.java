@@ -9,5 +9,6 @@ public class SessionResponseList {
     private Long sessionId;
     private String  startTime;
     private String endTime;
+    private String day;
 
 }

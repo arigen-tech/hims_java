@@ -1370,17 +1370,9 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         String keyword = search.trim();
         // ================= Departments =================
         List<MasDepartment> departments;
-//        if (hospitalId != null) {
-            departments =
-                    masDepartmentRepository
+        departments = masDepartmentRepository
                             .findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(
                                     hospitalId, opdId, keyword);
-//        } else {
-//            departments =
-//                    masDepartmentRepository
-//                            .findByDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(
-//                                    opdId, keyword);
-//        }
 
         List<SpecialitiesResponse> deptResponseList =
                 departments.stream().map(dept -> {
@@ -1390,15 +1382,8 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     return dto;
                 }).toList();
 // Doctors
-
         List<Long> employeeIds;
-
-
-// CASE 1: hospitalId present
-
-//        if (hospitalId != null) {
-
-            // Step 1: Departments (hospital + OPD)
+        // Step 1: Departments (hospital + OPD)
             List<MasDepartment> departments2 = masDepartmentRepository.findByHospitalIdAndDepartmentTypeId(hospitalId, opdId);
             // Step 2: UserDepartment → EmployeeIds
             List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartmentIn(departments2);
@@ -1455,16 +1440,15 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                    // User user=userRepo.findByEmployee_EmployeeId(emp.getEmployeeId());
                     Optional<MasServiceOpd> masServiceOpd=masServiceOpdRepository.findByDoctorId_UserId(user!=null?user.getUserId():null);
                     dto.setConsultancyFee(masServiceOpd.map(MasServiceOpd::getBaseTariff).orElse(null));
-                    List<Object[]> rows = appSetupRepository.findDistinctDoctorSession(user.getUserId());
+                    List<Object[]> rows = appSetupRepository.findDistinctDoctorSessionNextDay(user.getUserId());
                     List<SessionResponseList> sessionList = rows.stream().map(r -> {
                         SessionResponseList s = new SessionResponseList();
                         s.setSessionId(((Number) r[1]).longValue());
-                        s.setStartTime((String) r[2]);
-                        s.setEndTime((String) r[3]);
-
+                        s.setDay((String) r[2]);          // <-- nearest day for that session
+                        s.setStartTime((String) r[3]);
+                        s.setEndTime((String) r[4]);
                         return s;
                     }).toList();
-
                     dto.setSessionResponseLists(sessionList);
                     return dto;
                 }).toList();
@@ -1567,13 +1551,13 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 doctor.setPhoneNo(emp.getMobileNo());
                 doctor.setAge(emp.getAge() != null ? emp.getAge().toString() : null);
                 doctor.setYearsOfExperience(emp.getYearOfExperience());
-                List<Object[]> rows = appSetupRepository.findDistinctDoctorSession(user.getUserId());
+                List<Object[]> rows = appSetupRepository.findDistinctDoctorSessionNextDay(user.getUserId());
                 List<SessionResponseList> sessionList = rows.stream().map(r -> {
                     SessionResponseList s = new SessionResponseList();
                     s.setSessionId(((Number) r[1]).longValue());
-                    s.setStartTime((String) r[2]);
-                    s.setEndTime((String) r[3]);
-
+                    s.setDay((String) r[2]);
+                    s.setStartTime((String) r[3]);
+                    s.setEndTime((String) r[4]);
                     return s;
                 }).toList();
 
@@ -1632,17 +1616,15 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     appSetupRepository.findByDoctorId_UserId(optionalUser.get().getUserId());
 
             List<SessionResponse> appSetResponseList = appSetups.stream()
+                    .filter(a -> a.getStartTime() != null && !a.getStartTime().isBlank()
+                            && a.getEndTime()   != null && !a.getEndTime().isBlank())
                     .map(appSetup -> {
                         SessionResponse resp = new SessionResponse();
                         resp.setMinDay(appSetup.getMinNoOfDays());
                         resp.setMaxDay(appSetup.getMaxNoOfDays());
                         resp.setStartTime(appSetup.getStartTime());
                         resp.setEndTime(appSetup.getEndTime());
-                        resp.setSessionId(
-                                appSetup.getSession() != null
-                                        ? appSetup.getSession().getId()
-                                        : null
-                        );
+                        resp.setSessionId(appSetup.getSession() != null ? appSetup.getSession().getId() : null);
                         resp.setDay(appSetup.getDays());
                         return resp;
                     })

@@ -37,15 +37,44 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
             @Param("sessionId") Long sessionId,
             @Param("dayName") String dayName);
 
-
     List<AppSetup> findByDoctorId_UserId(Long userId);
 
     @Query(value = """
-    SELECT DISTINCT a.doctor_id, a.session_id, a.start_time, a.end_time
-    FROM app_setup a
-    WHERE a.doctor_id = :doctorId
-      AND a.start_time IS NOT NULL
-      AND a.end_time IS NOT NULL
-""", nativeQuery = true)
-    List<Object[]> findDistinctDoctorSession(@Param("doctorId") Long doctorId);
-}
+    WITH ranked_days AS (
+        SELECT
+            a.doctor_id,
+            a.session_id,
+            a.days,
+            a.start_time,
+            a.end_time,
+            CASE a.days
+                WHEN 'Sunday' THEN 0
+                WHEN 'Monday' THEN 1
+                WHEN 'Tuesday' THEN 2
+                WHEN 'Wednesday' THEN 3
+                WHEN 'Thursday' THEN 4
+                WHEN 'Friday' THEN 5
+                WHEN 'Saturday' THEN 6
+            END AS day_number
+        FROM app_setup a
+        WHERE a.doctor_id = :doctorId
+          AND a.start_time IS NOT NULL
+          AND a.end_time IS NOT NULL
+    )
+    SELECT DISTINCT ON (r.session_id)
+           r.doctor_id,
+           r.session_id,
+           r.days,
+           r.start_time,
+           r.end_time
+    FROM ranked_days r
+    ORDER BY 
+        r.session_id,
+        ((r.day_number - CAST(EXTRACT(DOW FROM CURRENT_DATE) AS integer) + 7) % 7),
+        r.start_time
+    """, nativeQuery = true)
+    List<Object[]> findDistinctDoctorSessionNextDay(@Param("doctorId") Long doctorId);
+    }
+
+
+
