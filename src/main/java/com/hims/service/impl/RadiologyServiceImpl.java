@@ -14,12 +14,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,7 +73,6 @@ public class RadiologyServiceImpl implements RadiologyService {
     PackageInvestigationMappingRepository packageInvestigationMappingRepository;
     @Autowired
     PaymentDetailRepository paymentDetailRepository;
-
     public RadiologyServiceImpl(RandomNumGenerator randomNumGenerator) {
         this.randomNumGenerator = randomNumGenerator;
     }
@@ -262,48 +264,7 @@ public class RadiologyServiceImpl implements RadiologyService {
 
 
     }
-    public ApiResponse<List<RadiologyResponse>> pendingRadiology(Long modalityId) {
-        try {
-            User currentUser = authUtil.getCurrentUser();
-            Long departmentId = authUtil.getCurrentDepartmentId();
-            MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
 
-            List<RadOrderDt> list = radOrderDtRepository.findByRadOrderhd_Hospital_IdAndBillingStatusIgnoreCase(masHospital.getId(), "y");
-
-            List<RadiologyResponse> response = list.stream()
-                    //  modality filter  (all patients under this modality)
-                    .filter(dt -> modalityId == null ||
-                            (dt.getSubChargecode() != null &&
-                                    modalityId.equals(dt.getSubChargecode().getSubId())))
-                    .map(dt -> {
-                        RadiologyResponse dto = new RadiologyResponse();
-
-                        dto.setAccessionNo(dt.getOrderAccessionNo());
-
-                        RadOrderHd hd = dt.getRadOrderhd();
-                        Patient p = hd != null ? hd.getPatient() : null;
-
-                            dto.setUhidNo(p.getUhidNo());
-                            dto.setPatientName(p.getFullName());
-                            dto.setAge(p.getPatientAge());
-                            dto.setPhoneNumber(p.getPatientMobileNumber());
-                            dto.setGender(p.getPatientGender() != null ? p.getPatientGender().getGenderName() : null);
-                            MasSubChargeCode sc = dt.getSubChargecode();
-                            dto.setModality(sc.getSubName());
-                            dto.setInvestigationName(dt.getInvestigation() != null ? dt.getInvestigation().getInvestigationName() : null);
-                            dto.setOrderDate(hd.getOrderDate());
-                            dto.setOrderTime(hd.getOrderTime());
-                            dto.setDepartment(hd.getDepartment() != null ? hd.getDepartment().getDepartmentName() : null);
-                            return dto;
-                    }).toList();
-
-            return ResponseUtils.createSuccessResponse(response, new TypeReference<List<RadiologyResponse>>() {});
-        } catch (Exception e) {
-            log.error("Error while fetching pending radiology data", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Internal Server Error", 500);
-        }
-    }
 
 
     private BillingHeader BillingHeaderDataSave(RadOrderHd hdId, Visit vId, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
@@ -349,7 +310,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad));//pass from property file..
 
         billingDetail.setItemName(dtId.getInvestigation().getInvestigationName()) ;  // investigation or packeg  name to be store
-         billingDetail.setQuantity(1);//default
+        billingDetail.setQuantity(1);//default
         billingDetail.setInvestigation(dtId.getInvestigation());
         billingDetail.setPackageField(dtId.getPackageId());
         billingDetail.setCreatedDt(OffsetDateTime.now());
@@ -422,7 +383,6 @@ public class RadiologyServiceImpl implements RadiologyService {
         ///calculation
         return  billingDetailRepository.save(billingDetail);
     }
-
 
 
     @Override
@@ -530,6 +490,50 @@ public class RadiologyServiceImpl implements RadiologyService {
         res.setMsg("Success");
         log.info("Payment status update completed successfully");
         return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
+    }
+
+    @Override
+    public ApiResponse<Page<RadiologyRequisitionResponse>> pendingRadiology(Long modalityId, String patientName, String phoneNumber, int page, int size) {
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
+            String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
+            String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdon"));
+            Page<RadOrderDt> paged = radOrderDtRepository.findPendingRadiology(masHospital.getId(), "y", "n", modalityId, patientLike, phoneLike, pageable
+            );
+
+            Page<RadiologyRequisitionResponse> response= paged.map(this::mapToRadiologyDto);
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<Page<RadiologyRequisitionResponse>>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching pending radiology data", e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal Server Error", 500
+            );
+        }
+    }
+
+    private RadiologyRequisitionResponse mapToRadiologyDto(RadOrderDt dt) {
+        RadiologyRequisitionResponse dto = new RadiologyRequisitionResponse();
+        dto.setAccessionNo(dt.getOrderAccessionNo());
+        RadOrderHd hd = dt.getRadOrderhd();
+        Patient p =hd.getPatient();
+        dto.setUhidNo(p.getUhidNo());
+        dto.setPatientName(p.getFullName());
+        dto.setAge(p.getPatientAge());
+        dto.setPhoneNumber(p.getPatientMobileNumber());
+
+        dto.setGender(p.getPatientGender() != null ? p.getPatientGender().getGenderName() : null);
+        MasSubChargeCode sc = dt.getSubChargecode();
+        dto.setModality(sc.getSubName());
+        dto.setInvestigationName(dt.getInvestigation() != null ? dt.getInvestigation().getInvestigationName() : null);
+        dto.setOrderDate(hd.getOrderDate());
+        dto.setOrderTime(hd.getOrderTime());
+        dto.setDepartment(hd.getDepartment() != null ? hd.getDepartment().getDepartmentName() : null);
+
+        return dto;
     }
 
 }

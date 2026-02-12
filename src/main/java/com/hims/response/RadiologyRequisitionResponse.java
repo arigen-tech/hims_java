@@ -1,14 +1,12 @@
 package com.hims.response;
 
-import com.hims.request.UserDepartmentRequestOne;
 import lombok.Data;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
-public class RadiologyResponse {
+public class RadiologyRequisitionResponse {
     private String accessionNo;
     private String uhidNo;
     private String patientName;
