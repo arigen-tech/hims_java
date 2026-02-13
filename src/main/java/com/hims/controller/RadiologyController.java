@@ -34,4 +34,10 @@ public class RadiologyController {
     ) {
         return radiologyService.pendingRadiology(modality, patientName, phoneNumber, page, size);
     }
+    //  status use cancel=c and complete=y
+    @PutMapping("/cancelOrCompleteInvestigationRadiology")
+    public ApiResponse<String> getInvestigationRadiology(@RequestParam Long id,@RequestParam String status) {
+        return radiologyService.pendingInvestigationRadiology(id,status);
+    }
+
 }

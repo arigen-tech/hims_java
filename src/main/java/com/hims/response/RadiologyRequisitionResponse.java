@@ -18,4 +18,5 @@ public class RadiologyRequisitionResponse {
     private LocalDate orderDate;
     private Instant orderTime;
     private String Department;
+    private Long radOrderDtId;
 }

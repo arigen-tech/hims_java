@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -491,7 +492,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         log.info("Payment status update completed successfully");
         return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
     }
-
+    @Transactional
     @Override
     public ApiResponse<Page<RadiologyRequisitionResponse>> pendingRadiology(Long modalityId, String patientName, String phoneNumber, int page, int size) {
         try {
@@ -515,6 +516,25 @@ public class RadiologyServiceImpl implements RadiologyService {
         }
     }
 
+    @Override
+    public ApiResponse<String> pendingInvestigationRadiology(Long id, String status) {
+        try{
+        log.info("pendingInvestigationRadiology called with id={}, status={}", id, status);
+        Optional<RadOrderDt> radOrderDt=radOrderDtRepository.findById(id);
+        RadOrderDt radDt=radOrderDt.get();
+        radDt.setStudyStatus(status);
+        radOrderDtRepository.save(radDt);
+        log.info("Study status updated successfully for id={} newStatus={}",
+                id, radDt.getStudyStatus());
+        return ResponseUtils.createSuccessResponse("status change successfully", new TypeReference<>() {});
+    } catch (Exception e) {
+            log.error("Error while updating study status for id={}, status={}", id, status, e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal Server Error", 500
+            );
+    }
+    }
+
     private RadiologyRequisitionResponse mapToRadiologyDto(RadOrderDt dt) {
         RadiologyRequisitionResponse dto = new RadiologyRequisitionResponse();
         dto.setAccessionNo(dt.getOrderAccessionNo());
@@ -531,6 +551,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         dto.setInvestigationName(dt.getInvestigation() != null ? dt.getInvestigation().getInvestigationName() : null);
         dto.setOrderDate(hd.getOrderDate());
         dto.setOrderTime(hd.getOrderTime());
+        dto.setRadOrderDtId(dt.getId());
         dto.setDepartment(hd.getDepartment() != null ? hd.getDepartment().getDepartmentName() : null);
 
         return dto;

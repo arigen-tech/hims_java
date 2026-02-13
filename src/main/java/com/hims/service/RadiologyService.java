@@ -7,6 +7,7 @@ import com.hims.response.ApiResponse;
 import com.hims.response.RadiologyAppSetupResponse;
 import com.hims.response.RadiologyRequisitionResponse;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -20,4 +21,5 @@ public interface RadiologyService {
     ApiResponse<Page<RadiologyRequisitionResponse>> pendingRadiology(Long modality, String patientName, String phoneNumber, int page, int size);
 
 
+    ApiResponse<String> pendingInvestigationRadiology(Long id, String status);
 }
