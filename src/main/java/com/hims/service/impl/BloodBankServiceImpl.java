@@ -3,8 +3,8 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.exception.BloodBankException.DonorSaveException;
-import com.hims.exception.BloodBankException.ScreeningSaveException;
+import com.hims.exception.bloodBankException.DonorSaveException;
+import com.hims.exception.bloodBankException.ScreeningSaveException;
 import com.hims.request.BloodDonorPersonalDetailsRequest;
 import com.hims.request.BloodDonorScreeningRequest;
 import com.hims.request.DonorRegistrationRequest;
@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @Slf4j

@@ -212,10 +212,11 @@ WHERE v.visit_status = 'n'
             @Param("currentVisitId") Long currentVisitId);
 
 
-    boolean existsByDepartment_IdAndDoctor_UserIdAndVisitDateAndSession_IdAndTokenNo(
+    boolean existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNo(
             Long departmentId,
             Long doctorId,
-            Instant visitDate,
+            Instant startOfDay,
+            Instant endOfDay,
             Long sessionId,
             Long tokenNo
     );

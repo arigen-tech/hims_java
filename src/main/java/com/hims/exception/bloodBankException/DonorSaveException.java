@@ -1,4 +1,4 @@
-package com.hims.exception.BloodBankException;
+package com.hims.exception.bloodBankException;
 
 public class DonorSaveException extends RuntimeException{
 

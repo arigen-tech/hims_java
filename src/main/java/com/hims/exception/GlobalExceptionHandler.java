@@ -1,11 +1,13 @@
 package com.hims.exception;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.exception.BloodBankException.DonorSaveException;
-import com.hims.exception.BloodBankException.ScreeningSaveException;
+import com.hims.exception.bloodBankException.DonorSaveException;
+import com.hims.exception.bloodBankException.ScreeningSaveException;
+import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
+import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
 import com.hims.response.ApiResponse;
 import com.hims.utils.ResponseUtils;
-import jakarta.persistence.EntityExistsException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -63,6 +65,33 @@ public class GlobalExceptionHandler {
     }
 
 
+    @ExceptionHandler(TokenAlreadyBookedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleTokenException(
+            TokenAlreadyBookedException ex) {
 
+        ApiResponse<Object> response =
+                ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<Object>() {},
+                        ex.getMessage(),
+                        HttpStatus.CONFLICT.value()
+                );
+
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(AppSetupNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAppSetup(
+            AppSetupNotFoundException ex) {
+
+        ApiResponse<Object> response =
+                ResponseUtils.createFailureResponse(
+                        null,
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value()
+                );
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 
 }

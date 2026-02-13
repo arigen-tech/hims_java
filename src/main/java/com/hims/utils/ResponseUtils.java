@@ -53,6 +53,14 @@ public class ResponseUtils {
         return response;
     }
 
+    public <T> ApiResponse<T> createFailureResponse(T data, String msg, Integer status) {
+        ApiResponse<T> response = new ApiResponse<>();
+        response.setResponse(data);
+        response.setStatus(status);
+        response.setMessage(msg);
+        return response;
+    }
+
     public <T> ApiResponse<T> createNotFoundResponse(String msg, Integer status) {
         ApiResponse<T> response = new ApiResponse<>();
         response.setStatus(status);

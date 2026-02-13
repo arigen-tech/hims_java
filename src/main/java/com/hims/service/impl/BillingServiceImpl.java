@@ -315,7 +315,6 @@ public class BillingServiceImpl implements BillingService {
 
             billingHeaders = billingHeaders.stream()
                     .filter(bh -> {
-                        // Fetch visit or check visit status
                         Visit visit = visitRepository.findById(bh.getVisit().getId()).orElse(null);
                         return visit != null && !"c".equalsIgnoreCase(visit.getVisitStatus());
                     })

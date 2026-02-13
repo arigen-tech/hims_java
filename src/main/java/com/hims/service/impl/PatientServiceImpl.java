@@ -3,6 +3,8 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
+import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.OpdPatientDetailMapper;
 import com.hims.mapper.PatientMapper;
@@ -408,7 +410,7 @@ public class PatientServiceImpl implements PatientService {
             throw new RuntimeException("Patient ID is required");
         }
 
-        resp.setPatient(patientMapper.mapToDTO(patient));
+        resp.setPatient(PatientMapper.mapToDTO(patient));
 
         if (followUpRequest.isAppointmentFlag()) {
             List<VisitRequest> visitList = details.getVisits();
@@ -831,10 +833,23 @@ public class PatientServiceImpl implements PatientService {
 
 
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
-        boolean alreadyExists = visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateAndSession_IdAndTokenNo(
-                visit.getDepartmentId(), visit.getDoctorId(), visit.getVisitDate(), visit.getSessionId(), visit.getTokenNo());
+        LocalDate date = visit.getVisitDate().atOffset(ZoneOffset.UTC).toLocalDate();
+
+        Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+        boolean alreadyExists =
+                visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNo(
+                        visit.getDepartmentId(),
+                        visit.getDoctorId(),
+                        startOfDay,
+                        endOfDay,
+                        visit.getSessionId(),
+                        visit.getTokenNo()
+                );
         if (alreadyExists) {
-            throw new RuntimeException("This token has just been booked by another user. Please select a different slot.");
+            throw new TokenAlreadyBookedException(
+                    "This token has just been booked by another user. Please select a different slot."
+            );
         }
         Visit newVisit = new Visit();
         String todayDayName = visit.getVisitDate().atZone(ZoneId.systemDefault()).getDayOfWeek().name();
@@ -842,7 +857,9 @@ public class PatientServiceImpl implements PatientService {
         List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(
                 visit.getDoctorId(), visit.getDepartmentId(), visit.getSessionId(), todayDayName.toLowerCase());
         if (optionalSetup.isEmpty()) {
-            throw new RuntimeException("AppSetup not configured for today’s session.");
+            throw new AppSetupNotFoundException(
+                    "AppSetup not configured for today’s session."
+            );
         }
 
        AppSetup setup = optionalSetup.stream()
