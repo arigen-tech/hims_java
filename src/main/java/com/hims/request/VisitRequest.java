@@ -14,7 +14,6 @@ public class VisitRequest {
     private Instant tokenStartTime;
     private Instant tokenEndTime;
     private Instant visitDate;
-//    private String visitStatus;
     private Long priority;
     private Long departmentId;
     private Long doctorId;

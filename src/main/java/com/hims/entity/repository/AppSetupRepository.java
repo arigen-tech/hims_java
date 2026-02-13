@@ -30,7 +30,7 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
             "WHERE a.doctorId.id = :doctorId " +
             "AND a.dept.Id = :departmentId " +
             "AND a.session.id = :sessionId " +
-            "AND a.days LIKE %:dayName%")
+            "AND LOWER(a.days) = LOWER(:dayName)")
     List<AppSetup> findByDoctorHospitalSessionAndDayName(
             @Param("doctorId") Long doctorId,
             @Param("departmentId") Long departmentId,

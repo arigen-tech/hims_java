@@ -383,7 +383,9 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
 
         if (appSetup.getStartToken() == null ||
                 appSetup.getTotalInterval() == null ||
-                appSetup.getTotalToken() == null) {
+                appSetup.getTotalToken() == null||
+                appSetup.getStartTime()==null||
+                appSetup.getEndTime()==null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"App setup not defined for this day (Missing Token/Interval data)",400);
         }else {
             startToken = appSetup.getStartToken();

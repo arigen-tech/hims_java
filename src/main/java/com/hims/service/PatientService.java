@@ -30,4 +30,6 @@ public interface PatientService {
     ApiResponse<String> cancelAppointment(CancelAppointmentRequest request);
 
     ApiResponse<RescheduleAppointmentResponse> rescheduleAppointment(RescheduleAppointmentRequest request);
+
+    ApiResponse<BookingAppointmentResponse> bookAppointment(Long patientId, VisitRequest visitRequest);
 }

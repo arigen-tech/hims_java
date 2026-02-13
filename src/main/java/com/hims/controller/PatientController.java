@@ -71,6 +71,13 @@ public class PatientController {
         ApiResponse<PatientRegFollowUpResp> response = patientService.updatePatient(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PostMapping("bookAppointment/{patientId}")
+    public ResponseEntity<ApiResponse<BookingAppointmentResponse>> bookAppointment(@PathVariable Long patientId , @RequestBody VisitRequest visitRequest){
+        ApiResponse<BookingAppointmentResponse> response = patientService.bookAppointment(patientId, visitRequest);
+        return  new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
     @PostMapping("/image")
     public ResponseEntity<ApiResponse<String>> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
