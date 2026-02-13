@@ -80,15 +80,15 @@ public class DispensaryController {
     }
 
     @GetMapping("/stocks/{fromDate}/{toDate}/{itemId}/{hospitalId}/{departmentId}")
-    public ResponseEntity<ApiResponse<List<OpeningBalanceStockResponse2 >>> getStockByDateRange(
+    public ResponseEntity<ApiResponse<List<OpeningBalanceStockResponseDto>>> getStockByDateRange(
             @PathVariable LocalDate fromDate, @PathVariable LocalDate toDate,@RequestParam(required = false) Long itemId,@PathVariable Long hospitalId,@PathVariable Long departmentId){
-        ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByDateRange(fromDate, toDate,itemId,hospitalId,departmentId);
+        ApiResponse<List<OpeningBalanceStockResponseDto>> response = openingBalanceEntryService.getStockByDateRange(fromDate, toDate,itemId,hospitalId,departmentId);
         return ResponseEntity.ok(response);
     }
     @GetMapping("/getStockByItemId/{itemId}/{hospitalId}/{departmentId}")
-    public ResponseEntity<ApiResponse<List<OpeningBalanceStockResponse2 >>> getStockByItemId(
+    public ResponseEntity<ApiResponse<List<OpeningBalanceStockResponseDto>>> getStockByItemId(
             @PathVariable  Long itemId,@PathVariable Long hospitalId,@PathVariable Long departmentId){
-        ApiResponse<List<OpeningBalanceStockResponse2 >> response = openingBalanceEntryService.getStockByItemId(itemId, hospitalId, departmentId);
+        ApiResponse<List<OpeningBalanceStockResponseDto>> response = openingBalanceEntryService.getStockByItemId(itemId, hospitalId, departmentId);
         return ResponseEntity.ok(response);
     }
 

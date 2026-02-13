@@ -3,7 +3,6 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.exception.SDDException;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.OpeningBalanceEntryService;
@@ -399,8 +398,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
         }
         else if (type.equals("details")) {
-            List<OpeningBalanceStockResponse2> dtos = stocks.stream().map(s -> {
-                OpeningBalanceStockResponse2 dto = new OpeningBalanceStockResponse2();
+            List<OpeningBalanceStockResponseDto> dtos = stocks.stream().map(s -> {
+                OpeningBalanceStockResponseDto dto = new OpeningBalanceStockResponseDto();
                 dto.setStockId(s.getStockId());
                 dto.setItemId(s.getItemId().getItemId());
                 dto.setItemName(s.getItemId().getNomenclature());
@@ -433,7 +432,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
 
 
     @Override
-    public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByDateRange(LocalDate fromDate, LocalDate toDate, Long itemId, Long hospitalId, Long departmentId) {
+    public ApiResponse<List<OpeningBalanceStockResponseDto>> getStockByDateRange(LocalDate fromDate, LocalDate toDate, Long itemId, Long hospitalId, Long departmentId) {
 
         if (!masHospitalRepository.existsById(hospitalId)) {
             return ResponseUtils.createNotFoundResponse("Invalid hospital ID: " + hospitalId, 404);
@@ -465,7 +464,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         }
 
 
-        List<OpeningBalanceStockResponse2> responseList = stocks.stream()
+        List<OpeningBalanceStockResponseDto> responseList = stocks.stream()
                 .map(this::convertedToResponse)
                 .toList();
 
@@ -502,14 +501,14 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     }
 
     @Override
-    public ApiResponse<List<OpeningBalanceStockResponse2>> getStockByItemId(Long itemId,Long hospitalId, Long departmentId) {
+    public ApiResponse<List<OpeningBalanceStockResponseDto>> getStockByItemId(Long itemId, Long hospitalId, Long departmentId) {
         List<StoreItemBatchStock> stocks = storeItemBatchStockRepository.findByItemIdItemIdAndHospitalIdIdAndDepartmentIdId(itemId, hospitalId, departmentId);
 
         if (stocks.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("No stock found for itemId: " + itemId, 404);
         }
 
-        List<OpeningBalanceStockResponse2> responseList = stocks.stream()
+        List<OpeningBalanceStockResponseDto> responseList = stocks.stream()
                 .map(this::convertedToResponse)
                 .toList();
 
@@ -699,8 +698,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         response.setOpeningBalanceDtResponseList(dtResponses);
         return response;
     }
-    private OpeningBalanceStockResponse2 convertedToResponse(StoreItemBatchStock stock){
-        OpeningBalanceStockResponse2 dto=new OpeningBalanceStockResponse2();
+    private OpeningBalanceStockResponseDto convertedToResponse(StoreItemBatchStock stock){
+        OpeningBalanceStockResponseDto dto=new OpeningBalanceStockResponseDto();
         dto.setStockId(stock.getStockId());
         dto.setItemId(stock.getItemId() != null?stock.getItemId().getItemId():null);
         dto.setItemName(stock.getItemId()!=null?stock.getItemId().getNomenclature():null);

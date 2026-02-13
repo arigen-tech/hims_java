@@ -6,7 +6,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.MasHospitalRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasHospitalResponse;
-import com.hims.response.MasHospitalResponse2;
+import com.hims.response.MasHospitalResponseDto;
 import com.hims.service.MasHospitalService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -255,7 +254,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
     }
 
     @Override
-    public ApiResponse<List<MasHospitalResponse2>> getAllHospitalsResponse(int flag) {
+    public ApiResponse<List<MasHospitalResponseDto>> getAllHospitalsResponse(int flag) {
         List<MasHospital> hospitals;
 
         if (flag == 1) {
@@ -269,7 +268,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
 
-        List<MasHospitalResponse2> responses = hospitals.stream()
+        List<MasHospitalResponseDto> responses = hospitals.stream()
                 .map(this::convertToResponse2)
                 .collect(Collectors.toList());
 
@@ -327,8 +326,8 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                     "Hospital not found", 404);
         }
     }
-    private MasHospitalResponse2 convertToResponse2(MasHospital hospital) {
-        MasHospitalResponse2 response = new MasHospitalResponse2();
+    private MasHospitalResponseDto convertToResponse2(MasHospital hospital) {
+        MasHospitalResponseDto response = new MasHospitalResponseDto();
         response.setId(hospital.getId());
         response.setHospitalName(hospital.getHospitalName());
         response.setLatitude(hospital.getLatitude());

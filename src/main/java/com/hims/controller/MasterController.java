@@ -1,7 +1,6 @@
 package com.hims.controller;
 
 import com.hims.entity.*;
-import com.hims.entity.repository.MasMedicalHistoryRepository;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
@@ -1120,7 +1119,7 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
         return masHospitalService.getAllHospitals(flag);
     }
     @GetMapping("/hospitalResponse/getAll/{flag}")
-    public ApiResponse<List<MasHospitalResponse2>> getAllHospitalsResponse(@PathVariable int flag) {
+    public ApiResponse<List<MasHospitalResponseDto>> getAllHospitalsResponse(@PathVariable int flag) {
         return masHospitalService.getAllHospitalsResponse(flag);
     }
 
@@ -1374,7 +1373,7 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @GetMapping("/masStoreItem/getAll2/{flag}")
-    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(@PathVariable int flag) {
+    public ApiResponse<List<MasStoreItemResponseDto>> getAllMasStore(@PathVariable int flag) {
         return masStoreItemService.getAllMasStore(flag);
     }
 

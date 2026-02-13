@@ -1549,7 +1549,16 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 doctor.setSpecialityName(dept.getDepartmentName());
                 doctor.setGender(emp.getGenderId() != null ? emp.getGenderId().getGenderName() : null);
                 doctor.setPhoneNo(emp.getMobileNo());
-                doctor.setAge(emp.getAge() != null ? emp.getAge().toString() : null);
+                LocalDate dob = user.getEmployee().getDob(); // LocalDate
+
+                String ageStr = null;
+                if (dob != null) {
+                    int years = Period.between(dob, LocalDate.now()).getYears();
+                    ageStr = String.valueOf(years);
+                }
+
+                doctor.setAge(ageStr);
+              //  doctor.setAge(emp.getAge() != null ? emp.getAge().toString() : null);
                 doctor.setYearsOfExperience(emp.getYearOfExperience());
                 List<Object[]> rows = appSetupRepository.findDistinctDoctorSessionNextDay(user.getUserId());
                 List<SessionResponseList> sessionList = rows.stream().map(r -> {
@@ -1647,7 +1656,18 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             basicInfo.setDoctorName(optionalUser.get().getEmployee().getFirstName()+ " " + (optionalUser.get().getEmployee().getMiddleName() != null ? optionalUser.get().getEmployee().getMiddleName() + " " : "") + optionalUser.get().getEmployee().getLastName());
             basicInfo.setGender(optionalUser.get().getEmployee().getGenderId() != null ? optionalUser.get().getEmployee().getGenderId().getGenderName() : null);
             basicInfo.setPhoneNo(optionalUser.get().getEmployee().getMobileNo());
-            basicInfo.setAge(optionalUser.get().getEmployee().getAge() != null ? optionalUser.get().getEmployee().getAge().toString() : null);
+            LocalDate dob = optionalUser.get().getEmployee().getDob(); // LocalDate
+
+            String ageStr = null;
+            if (dob != null) {
+                int years = Period.between(dob, LocalDate.now()).getYears();
+                ageStr = String.valueOf(years);
+            }
+
+            basicInfo.setAge(ageStr);
+
+          //  basicInfo.setAge(optionalUser.get().getEmployee().getAge() != null ? optionalUser.get().getEmployee().getAge().toString() : null);
+
             basicInfo.setYearsOfExperience(optionalUser.get().getEmployee().getYearOfExperience());
             basicInfo.setProfileDescription(optionalUser.get().getEmployee().getProfileDescription());
             User user=userRepo.findByEmployee_EmployeeId(optionalUser.get().getEmployee().getEmployeeId());
