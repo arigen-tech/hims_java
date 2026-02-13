@@ -347,8 +347,8 @@ public class ReportController {
         Map<String, Object> params = new HashMap<>();
         params.put("indent_m_id", indentMId);
         params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO
-                .toString()));
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
         try{
             if ("D".equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_JASPER, params, getConnection());
@@ -472,8 +472,8 @@ public class ReportController {
                 .getResource(ReportConstants.JASPER_BASE_PATH_STORE + ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_SUBREPORT_DIR)
                 .toString());
         params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO
-                .toString()));
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
 
         try{
             if ("D".equalsIgnoreCase(flag)) {
@@ -502,8 +502,8 @@ public class ReportController {
         Map<String, Object> params = new HashMap<>();
         params.put("issue_m_id", issueMId);
         params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO
-                .toString()));
+                .getResource(ReportConstants.ASSET_LOGO)
+                .toString());
         try{
             if ("D".equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_ISSUE_JASPER, params, getConnection());
