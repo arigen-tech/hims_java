@@ -84,4 +84,6 @@ public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long>
             String status,
             Pageable pageable
     );
+
+    List<MasStoreItem> findByItemIdIn(List<Long> list);
 }

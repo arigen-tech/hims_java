@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -50,11 +51,16 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
     @Value("${hos.define.adminId}")
     private Long adminDeptId;
 
+
     @Override
-    public ApiResponse<Page<IndentTrackingListReportResponse>>
-    getIndentTrackingList(int page, int size) {
+    public ApiResponse<Page<IndentTrackingListReportResponse>> getIndentTrackingList(int page, int size) {
 
         try {
+            log.info("getIndentTrackingList method started...");
+            User currentUser = authUtil.getCurrentUser();
+            if(currentUser==null){
+                return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.UNAUTHORIZED.value());
+            }
             Long deptId = authUtil.getCurrentDepartmentId();
 
             Pageable pageable = PageRequest.of(
@@ -111,10 +117,7 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
 
     /* ================= CORE BATCH BUILDER ================= */
 
-    private Page<IndentTrackingListReportResponse>
-    buildIndentTrackingResponse(
-            Page<StoreInternalIndentM> indentPage
-    ) {
+    private Page<IndentTrackingListReportResponse> buildIndentTrackingResponse(Page<StoreInternalIndentM> indentPage) {
 
         List<Long> indentMIds =
                 indentPage.getContent()
@@ -153,8 +156,7 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
 
     /* ================= M MAPPER ================= */
 
-    private IndentTrackingListReportResponse
-    mapIndentMOnly(StoreInternalIndentM indent) {
+    private IndentTrackingListReportResponse mapIndentMOnly(StoreInternalIndentM indent) {
 
         IndentTrackingListReportResponse res =
                 new IndentTrackingListReportResponse();
@@ -208,11 +210,9 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
 
     /* ================= T MAPPER ================= */
 
-    private IndentTResponseForIndentTracking
-    mapIndentT(StoreInternalIndentT t) {
+    private IndentTResponseForIndentTracking mapIndentT(StoreInternalIndentT t) {
 
-        IndentTResponseForIndentTracking dto =
-                new IndentTResponseForIndentTracking();
+        IndentTResponseForIndentTracking dto = new IndentTResponseForIndentTracking();
 
         dto.setIndentTId(t.getIndentTId());
 
@@ -269,6 +269,11 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
             int size
     ) {
         try {
+            log.info("searchIndentTrackingList method started...");
+            User currentUser = authUtil.getCurrentUser();
+            if(currentUser==null){
+                return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.UNAUTHORIZED.value());
+            }
             Pageable pageable = PageRequest.of(
                     page,
                     size,
@@ -288,6 +293,7 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
             Page<IndentTrackingListReportResponse> responsePage =
                     buildIndentTrackingResponse(indentPage);
 
+            log.info("searchIndentTrackingList method ended...");
             return ResponseUtils.createSuccessResponse(
                     responsePage,
                     new TypeReference<>() {}
@@ -309,6 +315,10 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
     public ApiResponse<List<MasCommonStatusResponse>> getStatusMapForIndentTracking() {
         try {
             log.info("getStatusMapForIndentTracking method Started... ");
+            User currentUser = authUtil.getCurrentUser();
+            if(currentUser==null){
+                return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.UNAUTHORIZED.value());
+            }
             List<String> entities = List.of(AppConstants.ENTITY_STORE_INTERNAL_INDENT_M);
             List<String> columns = List.of(AppConstants.M_COLUMN_NAME);
             List<MasCommonStatus> statusList = commonStatusRepository.findByEntityNameInAndColumnNameIn(entities, columns);
@@ -323,7 +333,13 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
     @Override
     public ApiResponse<Long> getIssueMIdFromIndentMId(Long indentMId) {
         try {
+            log.info("getIssueMIdFromIndentMId method started...");
+            User currentUser = authUtil.getCurrentUser();
+            if(currentUser==null){
+                return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.UNAUTHORIZED.value());
+            }
             StoreIssueM byIndentMIdIndentMId = issueMRepository.findByIndentMId_IndentMId(indentMId);
+            log.info("getIssueMIdFromIndentMId method started...");
             return ResponseUtils.createSuccessResponse(byIndentMIdIndentMId.getStoreIssueMId(), new TypeReference<>() {});
         }catch (Exception e) {
             log.error("getIssueMIdFromIndentMId method error :: ",e);
@@ -334,7 +350,13 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
     @Override
     public ApiResponse<Long> getReceiveMIdFromIndentMId(Long indentMId) {
         try {
+            log.info("getReceiveMIdFromIndentMId method started...");
+            User currentUser = authUtil.getCurrentUser();
+            if(currentUser==null){
+                return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.UNAUTHORIZED.value());
+            }
             StoreIndentReceiveM receiveM = receiveMRepository.findByStoreInternalIndent_IndentMId(indentMId);
+            log.info("getReceiveMIdFromIndentMId method started...");
             return ResponseUtils.createSuccessResponse(receiveM.getReceiveMId(), new TypeReference<>() {});
         }catch (Exception e) {
             log.error("getReceiveMIdFromIndentMId method error :: ",e);
@@ -345,7 +367,13 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
     @Override
     public ApiResponse<Long> getReturnMIdFromIndentMId(Long indentMId) {
         try {
+            log.info("getReturnMIdFromIndentMId method started...");
+            User currentUser = authUtil.getCurrentUser();
+            if(currentUser==null){
+                return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.UNAUTHORIZED.value());
+            }
             StoreReturnM returnM = returnMRepository.findByStoreIndentReceiveM_StoreInternalIndent_IndentMId(indentMId);
+            log.info("getReturnMIdFromIndentMId method started...");
             return ResponseUtils.createSuccessResponse(returnM.getReturnMId(), new TypeReference<>() {});
         }catch (Exception e) {
             log.error("getReceiveMIdFromIndentMId method error :: ",e);
@@ -357,8 +385,12 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
     public ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String keyword, int page, int size) {
        try {
            log.info("getStoreItems with item contains name {} ,method started...",keyword);
+           User currentUser = authUtil.getCurrentUser();
+           if(currentUser==null){
+               return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.UNAUTHORIZED.value());
+           }
            if(keyword==null){
-               throw new RuntimeException();
+               throw new RuntimeException("Search keyword can not be blank");
            }
 
            Pageable pageable=PageRequest.of(
@@ -386,6 +418,10 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
     public ApiResponse<List<String>> getBatchesFromItemId(Long itemId) {
        try {
            log.info("getBatchesFromItemId method started...");
+           User currentUser = authUtil.getCurrentUser();
+           if(currentUser==null){
+               return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.UNAUTHORIZED.value());
+           }
            MasStoreItem masStoreItem = storeItemRepository.findById(itemId).orElseThrow(() -> new RuntimeException("Invalid Item ID , Item not found in MasStoreItem"));
            List<String> batches = storeItemBatchStockRepository.findByItemId(masStoreItem).stream().map(StoreItemBatchStock::getBatchNo).toList();
            log.info("getBatchesFromItemId method ended...");
@@ -400,6 +436,11 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
     public ApiResponse<Page<StoreStockLedgerReportResponse>> getStoreStockLedgerReport(int page,int size,Long itemId, String batchNo) {
         try {
             log.info("getStoreStockLedgerReport method started with item id {} and batch number {}",itemId,batchNo);
+            User currentUser = authUtil.getCurrentUser();
+            if(currentUser==null){
+                return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.UNAUTHORIZED.value());
+            }
+            Long hospitalId = currentUser.getHospital().getId();
             if(itemId==null || batchNo==null){
                 throw  new RuntimeException("Item id and batch number for this method can not be null");
             }
@@ -411,7 +452,12 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
                     sort
             );
 
-            Specification<StoreStockLedger> spec = searchLedger(itemId, batchNo);
+            Specification<StoreStockLedger> spec = searchLedger(
+                    currentUser.getHospital().getId(),
+                    authUtil.getCurrentDepartmentId(),
+                    itemId,
+                    batchNo
+            );
             Page<StoreStockLedger> all = storeStockLedgerRepository.findAll(spec, pageable);
 
             log.info("getStoreStockLedgerReport method ended with item id {} and batch number {}",itemId,batchNo);
@@ -423,14 +469,23 @@ public class IndentReportGetApiServiceImpl implements IndentReportGetApiService 
         }
     }
 
-    private static Specification<StoreStockLedger> searchLedger(Long itemId,String batchNo){
+    private static Specification<StoreStockLedger> searchLedger(Long hospitalId,Long deptId,Long itemId,String batchNo){
         return (root, query, cb) -> {
 
             List<Predicate> predicates= new ArrayList<>();
 
+            Join<StoreStockLedger, MasHospital> hospitalJoin = root.join("hospital", JoinType.INNER);
+
+            predicates.add(
+                   cb.equal(hospitalJoin.get("id"),hospitalId)
+            );
+
+            Join<StoreStockLedger, MasDepartment> deptJoin = root.join("dept", JoinType.INNER);
+            predicates.add(
+                    cb.equal(deptJoin.get("id"),deptId)
+            );
             Join<StoreStockLedger, StoreItemBatchStock> storeItemBatchStockJoin = root.join("stockId", JoinType.INNER);
             Join<StoreItemBatchStock,MasStoreItem> storeItemJoin=storeItemBatchStockJoin.join("itemId",JoinType.INNER);
-
             predicates.add(
                     cb.equal(storeItemJoin.get("itemId"),itemId)
             );

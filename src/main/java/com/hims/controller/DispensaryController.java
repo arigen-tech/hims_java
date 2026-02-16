@@ -122,6 +122,11 @@ public class DispensaryController {
         return new ResponseEntity<>(physicalBatchStockService.approvedPhysical(request),HttpStatus.CREATED);
     }
 
+    @GetMapping("stock/items")
+    public  ResponseEntity<?> getItems(){
+        return  ResponseEntity.ok(physicalBatchStockService.getItems());
+    }
+
     // ===========================   Indent  ================================
 
 
