@@ -52,8 +52,9 @@ public class LabRegistrationController {
     @PostMapping("/updatepaymentstatus")
     public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
         log.info("Update Payment Status API called");
-        if(request.getBillingType().equalsIgnoreCase("Radiology Services"))
-            return new ResponseEntity<>(radiologyService.paymentStatusReq(request), HttpStatus.OK);
+        if(request.getBillingType()!=null)
+            if(request.getBillingType().equalsIgnoreCase("Radiology Services"))
+                return new ResponseEntity<>(radiologyService.paymentStatusReq(request), HttpStatus.OK);
         return new ResponseEntity<>(labRegistrationServices.paymentStatusReq(request), HttpStatus.OK);
     }
     @GetMapping("/pending")
@@ -161,6 +162,13 @@ public class LabRegistrationController {
         log.info("track-order-status/create api called");
         return ResponseEntity.status(HttpStatus.CREATED).body(labOrderTrackingStatusService.create(request));
     }
+
+    @GetMapping("/investigationResultForMobile")
+    public ApiResponse<List<ResultForInvestigationResponse>> getResultForInvestigation(@RequestParam Long patientId,@RequestParam Long hospitalId) {
+        log.info("investigationResultForMobile");
+        return  resultService.getResultForInvestigation(patientId,hospitalId);
+    }
+
 
 
 }
