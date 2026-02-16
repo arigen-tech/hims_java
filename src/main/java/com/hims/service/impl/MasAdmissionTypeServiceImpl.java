@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.hims.constants.AppConstants.*;
+
 @Service
 public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
     @Autowired
@@ -29,7 +31,7 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
     public ApiResponse<List<MasAdmissionTypeResponse>> getAll(int flag) {
         try {
             List<MasAdmissionType> list =
-                    (flag == 1) ? repository.findByStatusIgnoreCaseOrderByAdmissionTypeNameAsc("y") : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
+                    (flag == FLAG_ACTIVE_ONLY) ? repository.findByStatusIgnoreCaseOrderByAdmissionTypeNameAsc(STATUS_ACTIVE) : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List<MasAdmissionTypeResponse> response =
                     list.stream().map(this::toResponse).collect(Collectors.toList());
@@ -64,7 +66,7 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
             MasAdmissionType data = MasAdmissionType.builder()
                     .admissionTypeName(request.getAdmissionTypeName())
                     .description(request.getDescription())
-                    .status("y")
+                    .status(STATUS_ACTIVE)
                     .createdBy(user.getFirstName())
                     .lastUpdatedBy(user.getFirstName())
                     .lastUpdateDate(LocalDateTime.now())
@@ -111,7 +113,7 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
             if (data == null)
                 return ResponseUtils.createNotFoundResponse("ID Not Found!", 404);
 
-            if (!status.equals("y") && !status.equals("n"))
+            if (!status.equals(STATUS_ACTIVE) && !status.equals(STATUS_INACTIVE))
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid Status!", 400);
 

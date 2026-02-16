@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.hims.constants.AppConstants.*;
+
 @Service
 public class MasHospitalServiceImpl implements MasHospitalService {
 
@@ -62,15 +64,15 @@ public class MasHospitalServiceImpl implements MasHospitalService {
     public ApiResponse<List<MasHospitalResponse>> getAllHospitals(int flag) {
         List<MasHospital> hospitals;
 
-        if (flag == 1) {
+        if (flag == FLAG_ACTIVE_ONLY) {
             // Fetch only records with status 'Y'
-            hospitals = masHospitalRepository.findByStatusIgnoreCaseOrderByHospitalNameAsc("Y");
-        } else if (flag == 0) {
+            hospitals = masHospitalRepository.findByStatusIgnoreCaseOrderByHospitalNameAsc(STATUS_ACTIVE_UPPER);
+        } else if (flag == FLAG_ALL) {
             // Fetch all records with status 'Y' or 'N'
             hospitals = masHospitalRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
             // Handle invalid flag values
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, MSG_INVALID_FLAG, 400);
         }
 
         List<MasHospitalResponse> responses = hospitals.stream()
@@ -127,7 +129,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             MasHospital hospital = new MasHospital();
             hospital.setHospitalCode(hospitalRequest.getHospitalCode());
             hospital.setHospitalName(hospitalRequest.getHospitalName());
-            hospital.setStatus("y");
+            hospital.setStatus(STATUS_ACTIVE);
             hospital.setAddress(hospitalRequest.getAddress());
             hospital.setContactNumber(hospitalRequest.getContactNumber());
             hospital.setContactNumber2(hospitalRequest.getContactNumber2());
@@ -135,7 +137,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                        MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
             }
             hospital.setLastChgBy(String.valueOf(currentUser.getUserId()));
             hospital.setLastChgDate(LocalDate.now());
@@ -163,7 +165,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             hospital.setRegCostApplicable(hospitalRequest.getRegCostApplicable());
             hospital.setAppCostApplicable(hospitalRequest.getAppCostApplicable());
             hospital.setPreConsultationAvailable(hospitalRequest.getPreConsultationAvailable());
-            if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase("y")) {
+            if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase(STATUS_ACTIVE)) {
                 hospital.setRegistrationCost(hospitalRequest.getRegistrationCost());
             }else{
                 hospital.setRegistrationCost(BigDecimal.valueOf(0));
@@ -194,7 +196,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 if (currentUser == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
-                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                            MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
                 }
                 existingHospital.setLastChgBy(String.valueOf(currentUser.getUserId()));
                 existingHospital.setLastChgDate(LocalDate.now());
@@ -223,7 +225,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 existingHospital.setRegCostApplicable(hospitalRequest.getRegCostApplicable());
                 existingHospital.setAppCostApplicable(hospitalRequest.getAppCostApplicable());
                 existingHospital.setPreConsultationAvailable(hospitalRequest.getPreConsultationAvailable());
-                if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase("y")) {
+                if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase(STATUS_ACTIVE)) {
                     existingHospital.setRegistrationCost(hospitalRequest.getRegistrationCost());
                 }else{
                     existingHospital.setRegistrationCost(BigDecimal.valueOf(0));
@@ -253,7 +255,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 MasHospital existingHospital = existingHospitalOpt.get();
 
                 // Validate status value
-                if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n")) {
+                if (!status.equalsIgnoreCase(STATUS_ACTIVE) && !status.equalsIgnoreCase(STATUS_INACTIVE)) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<MasHospitalResponse>() {
                             },
                             "Invalid status value. Use 'Y' for Active and 'N' for Inactive.", 400);
@@ -264,7 +266,7 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 if (currentUser == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
-                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                            MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
                 }
                 existingHospital.setLastChgBy(String.valueOf(currentUser.getUserId()));
                 MasHospital updatedHospital = masHospitalRepository.save(existingHospital);
