@@ -32,7 +32,7 @@ public class MasMainChargeCode {
 
     @Size(max = 1)
     @Column(name = "status", nullable = false, length = 1)
-    @Pattern(regexp = STATUS_PATTERN, message = "Status must be y or n")
+    @Pattern(regexp = STATUS_PATTERN, message = "Status must be y, n, Y, or N")
     private String status = STATUS_ACTIVE;
 
     @Size(max = 12)
