@@ -5,6 +5,16 @@ public final class ReportConstants {
     private ReportConstants() {
         // prevent instantiation
     }
+
+    public static final String REPORT_FLAG_DOWNLOAD = "D";
+    public static final String REPORT_FLAG_PRINT = "P";
+    public static final int HTTP_STATUS_BAD_REQUEST = 400;
+
+    // General Report Error Messages
+    public static final String ERROR_FAILED_TO_GENERATE_REPORT = "Failed to generate report: ";
+    public static final String ERROR_INVALID_FLAG = "Invalid flag value. Use D or P";
+
+
     public static final String JASPER_BASE_PATH_DISPENSARY = "/jasperReport/Dispensary/";
     public static final String JASPER_BASE_PATH_LAB = "/jasperReport/Lab/";
     public static final String JASPER_BASE_PATH_OPD = "/jasperReport/OPD/";
