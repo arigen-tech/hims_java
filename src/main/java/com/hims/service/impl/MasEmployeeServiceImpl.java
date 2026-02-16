@@ -1550,7 +1550,6 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 doctor.setGender(emp.getGenderId() != null ? emp.getGenderId().getGenderName() : null);
                 doctor.setPhoneNo(emp.getMobileNo());
                 LocalDate dob = user.getEmployee().getDob(); // LocalDate
-
                 String ageStr = null;
                 if (dob != null) {
                     int years = Period.between(dob, LocalDate.now()).getYears();

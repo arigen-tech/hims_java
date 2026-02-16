@@ -64,6 +64,9 @@ public class ResultServiceImpl implements ResultService {
     private VisitRepository visitRepository;
     @Autowired
     private LabDtRepository dgOrderDtRepository;
+    @Autowired
+    private LabHdRepository dgOrderHDRepository;
+
 
     @Autowired
     private MasLabResultAmendmentTypeRepository masLabResultAmendmentTypeRepository;
@@ -943,7 +946,43 @@ public class ResultServiceImpl implements ResultService {
         }
 
     }
-
+    @Override
+    public ApiResponse<List<ResultForInvestigationResponse>> getResultForInvestigation(Long patientId,Long hospitalId) {
+        log.info("patientId={}, hospitalId={}", patientId, hospitalId);
+        try {
+            Optional<DgOrderHd> dgOrderHd = dgOrderHDRepository.findByPatientId_IdAndHospitalId(patientId, hospitalId);
+            if (dgOrderHd.isEmpty()) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {
+                        }, "data not found",
+                        404);
+            }
+            Optional<DgResultEntryHeader> dgResultEntryHeader = headerRepo.findByOrderHd_IdAndHospitalId_Id((long) dgOrderHd.get().getId(), hospitalId);
+            Long resultEntryId = dgResultEntryHeader.get().getResultEntryId();
+            List<DgResultEntryDetail> details = detailRepo.findByResultEntryId_ResultEntryIdAndValidatedIgnoreCase(resultEntryId, "y");
+            List<ResultForInvestigationResponse> arr = details.stream()
+                    .map(d -> {
+                        ResultForInvestigationResponse response = new ResultForInvestigationResponse();
+                        response.setPatientId(dgOrderHd.get().getPatientId().getId());
+                        response.setPatientName(dgOrderHd.get().getPatientId().getFullName());
+                        response.setAge(dgOrderHd.get().getPatientId().getPatientAge());
+                        response.setInvestigationName(d.getInvestigationId().getInvestigationName());
+                        response.setNormalRange(d.getNormalRange());
+                        response.setResult(d.getResult());
+                        return response;
+                    })
+                    .toList();
+            log.info("getResultForInvestigation: success patientId={}, hospitalId={}, resultEntryId={}",
+                    patientId, hospitalId, resultEntryId);
+            return ResponseUtils.createSuccessResponse(arr, new TypeReference<>() {
+            });
+        }catch (Exception e) {
+            log.error("getResultForInvestigation: error patientId={}, hospitalId={}", patientId, hospitalId, e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "internal server error", 500
+            );
+        }
+    }
     private void updateResultEntryStatusIfComplete(Long sampleHeaderId, Long subChargeCodeId) {
         List<DgSampleCollectionDetails> allDetails =
                 dgSampleCollectionDetailsRepository
