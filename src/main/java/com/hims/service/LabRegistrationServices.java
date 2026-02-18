@@ -9,6 +9,7 @@ import com.hims.response.AppsetupResponse;
 import com.hims.response.PaymentResponse;
 import com.hims.response.PendingSampleResponse;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface LabRegistrationServices {
@@ -18,5 +19,6 @@ public interface LabRegistrationServices {
 
     List<PendingSampleResponse> getPendingSamples();
     ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest labreq);
-    public ApiResponse<AppsetupResponse> labRegForExistingOrder(LabBillingOnlyRequest labReq);
+    ApiResponse<AppsetupResponse> labRegForExistingOrder(LabBillingOnlyRequest labReq);
+//    ApiResponse<Boolean> findDuplicateInvestigationAndPackage(Long investigationId,Long packageId,List<Long> packageList, List<Long> investigationList, LocalDate date);
 }

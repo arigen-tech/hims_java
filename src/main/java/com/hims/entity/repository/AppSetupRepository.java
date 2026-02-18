@@ -30,12 +30,92 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
             "WHERE a.doctorId.id = :doctorId " +
             "AND a.dept.Id = :departmentId " +
             "AND a.session.id = :sessionId " +
-            "AND a.days LIKE %:dayName%")
+            "AND LOWER(a.days) = LOWER(:dayName)")
     List<AppSetup> findByDoctorHospitalSessionAndDayName(
             @Param("doctorId") Long doctorId,
             @Param("departmentId") Long departmentId,
             @Param("sessionId") Long sessionId,
             @Param("dayName") String dayName);
 
+    List<AppSetup> findByDoctorId_UserId(Long userId);
+
+    @Query(value = """
+    WITH ranked_days AS (
+        SELECT
+            a.doctor_id,
+            a.session_id,
+            a.days,
+            a.start_time,
+            a.end_time,
+            CASE a.days
+                WHEN 'Sunday' THEN 0
+                WHEN 'Monday' THEN 1
+                WHEN 'Tuesday' THEN 2
+                WHEN 'Wednesday' THEN 3
+                WHEN 'Thursday' THEN 4
+                WHEN 'Friday' THEN 5
+                WHEN 'Saturday' THEN 6
+            END AS day_number
+        FROM app_setup a
+        WHERE a.doctor_id = :doctorId
+          AND a.start_time IS NOT NULL
+          AND a.end_time IS NOT NULL
+    )
+    SELECT DISTINCT ON (r.session_id)
+           r.doctor_id,
+           r.session_id,
+           r.days,
+           r.start_time,
+           r.end_time
+    FROM ranked_days r
+    ORDER BY 
+        r.session_id,
+        ((r.day_number - CAST(EXTRACT(DOW FROM CURRENT_DATE) AS integer) + 7) % 7),
+        r.start_time
+    """, nativeQuery = true)
+    List<Object[]> findDistinctDoctorSessionNextDay(@Param("doctorId") Long doctorId);
+
+
+
+    // Fetch doctor sessions for multiple doctor IDs in Batch
+    @Query(value = """
+    WITH ranked_days AS (
+        SELECT
+            a.doctor_id,
+            a.session_id,
+            a.days,
+            a.start_time,
+            a.end_time,
+            CASE a.days
+                WHEN 'Sunday' THEN 0
+                WHEN 'Monday' THEN 1
+                WHEN 'Tuesday' THEN 2
+                WHEN 'Wednesday' THEN 3
+                WHEN 'Thursday' THEN 4
+                WHEN 'Friday' THEN 5
+                WHEN 'Saturday' THEN 6
+            END AS day_number
+        FROM app_setup a
+        WHERE a.doctor_id IN :doctorIds
+          AND a.start_time IS NOT NULL
+          AND a.end_time IS NOT NULL
+    )
+    SELECT DISTINCT ON (r.doctor_id, r.session_id)
+           r.doctor_id,
+           r.session_id,
+           r.days,
+           r.start_time,
+           r.end_time
+    FROM ranked_days r
+    ORDER BY 
+        r.doctor_id,
+        r.session_id,
+        ((r.day_number - CAST(EXTRACT(DOW FROM CURRENT_DATE) AS integer) + 7) % 7),
+        r.start_time
+    """, nativeQuery = true)
+    List<Object[]> findDistinctDoctorSessionNextDayBatch(@Param("doctorIds") List<Long> doctorIds);
 
 }
+
+
+

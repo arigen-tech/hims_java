@@ -462,7 +462,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     }
 
      @Override
-    public ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(int flag) {
+    public ApiResponse<List<MasStoreItemResponseDto>> getAllMasStore(int flag) {
 
          List<MasStoreItem> masStoreItems;
          if (flag == 1) {
@@ -473,7 +473,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
              }, "Invalid flag value. Use 1.", 400);
          }
 
-         List<MasStoreItemResponse2> responses = masStoreItems.stream()
+         List<MasStoreItemResponseDto> responses = masStoreItems.stream()
                  .map(this::convertToResponse2)
                  .collect(Collectors.toList());
 
@@ -710,8 +710,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     }
 
 
-    private MasStoreItemResponse2 convertToResponse2(MasStoreItem item) {
-        MasStoreItemResponse2 response = new MasStoreItemResponse2();
+    private MasStoreItemResponseDto convertToResponse2(MasStoreItem item) {
+        MasStoreItemResponseDto response = new MasStoreItemResponseDto();
         response.setId(item.getItemId());
         response.setCode(item.getPvmsNo());
         response.setName(item.getNomenclature());
