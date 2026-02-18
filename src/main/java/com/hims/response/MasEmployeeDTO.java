@@ -45,6 +45,7 @@ public record MasEmployeeDTO(
         Long designationId,
         List<EmployeeQualificationDTO> qualifications,
         List<EmployeeDocumentDTO> documents,
+        List<EmployeeLanguageDTO> languages,
         List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters,
         List<EmployeeWorkExperienceDTO> workExperiences,
         List<EmployeeMembershipDTO> memberships,
@@ -59,7 +60,8 @@ public record MasEmployeeDTO(
             List<EmployeeWorkExperienceDTO> workExperiences,
             List<EmployeeMembershipDTO> memberships,
             List<EmployeeSpecialtyInterestDTO> specialtyInterests,
-            List<EmployeeAwardDTO> awards
+            List<EmployeeAwardDTO> awards,
+            List<EmployeeLanguageDTO> languages
     ) {
         return MasEmployeeDTO.builder()
                 .employeeId(employee.getEmployeeId())
@@ -119,6 +121,7 @@ public record MasEmployeeDTO(
                 .yearOfExperience(employee.getYearOfExperience())
                 .profileDescription(employee.getProfileDescription())
                 .designationId(employee.getDesignationId())
+                .languages(languages)
                 .build();
     }
 }

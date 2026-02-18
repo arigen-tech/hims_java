@@ -11,4 +11,5 @@ import org.springframework.stereotype.Repository;
 public interface StoreIndentReceiveMRepository extends JpaRepository<StoreIndentReceiveM, Long> {
     StoreIndentReceiveM findByStoreInternalIndent(StoreInternalIndentM indentM);
     boolean existsByStoreInternalIndent(StoreInternalIndentM indentM);
+    StoreIndentReceiveM findByStoreInternalIndent_IndentMId(Long indentMId);
 }

@@ -22,4 +22,5 @@ public class MasDepartmentResponse {
     private String departmentNo;
     private Long wardCategoryId;
     private String wardCategoryName;
+    private String indentApplicable;
 }

@@ -1,5 +1,6 @@
 package com.hims.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -92,14 +93,17 @@ public class Patient {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "p_district_id")
+    @JsonIgnore
     private MasDistrict patientDistrict;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "p_state_id")
+    @JsonIgnore
     private MasState patientState;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "p_country_id")
+    @JsonIgnore
     private MasCountry patientCountry;
 
     @Size(max = 8)
@@ -116,6 +120,7 @@ public class Patient {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "emer_relation")
+    @JsonIgnore
     private MasRelation emerRelation;
 
     @Size(max = 20)
@@ -152,14 +157,17 @@ public class Patient {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "nok_district_id")
+    @JsonIgnore
     private MasDistrict nokDistrict;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "nok_state_id")
+    @JsonIgnore
     private MasState nokState;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "nok_country_id")
+    @JsonIgnore
     private MasCountry nokCountry;
 
     @Size(max = 8)
@@ -168,6 +176,7 @@ public class Patient {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "nok_relation_id")
+    @JsonIgnore
     private MasRelation nokRelation;
 
     @Size(max = 20)
@@ -191,6 +200,7 @@ public class Patient {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "p_hospital_id")
+    @JsonIgnore
     private MasHospital patientHospital;
 
     public String getFullName(){

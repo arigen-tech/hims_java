@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
@@ -15,7 +16,7 @@ public class BillingPolicyResponse {
     private String description;
     private String applicableBillingType;
     private Integer followupDaysAllowed;
-    private Integer discountPercentage;
+    private BigDecimal discountPercentage;
     private String createdBy;
     private String lastUpdatedBy;
     private LocalDateTime lastUpdateDate;

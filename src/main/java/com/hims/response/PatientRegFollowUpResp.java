@@ -11,8 +11,8 @@ import java.util.List;
 @Setter
 @Getter
 public class PatientRegFollowUpResp {
-    private Patient patient;
-    private OpdPatientDetail opdPatientDetail;
-    private List<Visit> visits;
+    private PatientResponseDTO patient;
+    private OpdPatientDetailResponseDTO opdPatientDetail;
+    private List<OpdVisitResponseDTO> visits;
     private OPDBillingPatientResponse opdBillingPatientResponse;
 }

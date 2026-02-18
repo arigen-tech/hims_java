@@ -40,6 +40,21 @@ public class StoreStockLedger {
     @Column(name = "qty_out")
     private BigDecimal qtyOut;
 
+    @Column(name = "qty_before")
+    private BigDecimal qtyBefore;
+
+    @Column(name = "qty_after")
+    private BigDecimal qtyAfter;
+
+    @Column(name = "qty_reject")
+    private BigDecimal qtyReject;
+
+    @Column(name = "reference_number",length = 150)
+    private String referenceNum;
+
+    @Column(name = "txn_source",length = 100)
+    private String txnSource;
+
     @Column(name = "remarks", columnDefinition = "text")
     private String remarks;
 
@@ -48,4 +63,12 @@ public class StoreStockLedger {
 
     @Column(name = "created_dt")
     private LocalDateTime createdDt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hospital_id")
+    private MasHospital hospital;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private  MasDepartment dept;
 }

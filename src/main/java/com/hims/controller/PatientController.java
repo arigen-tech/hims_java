@@ -2,12 +2,14 @@ package com.hims.controller;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.MasAppointmentChangeReason;
 import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.request.*;
 import com.hims.response.*;
+import com.hims.service.MasAppointmentChangeReasonService;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.service.PatientService;
 import com.hims.utils.ResponseUtils;
@@ -69,6 +71,13 @@ public class PatientController {
         ApiResponse<PatientRegFollowUpResp> response = patientService.updatePatient(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PostMapping("bookAppointment/{patientId}")
+    public ResponseEntity<ApiResponse<BookingAppointmentResponse>> bookAppointment(@PathVariable Long patientId , @RequestBody VisitRequest visitRequest){
+        ApiResponse<BookingAppointmentResponse> response = patientService.bookAppointment(patientId, visitRequest);
+        return  new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
     @PostMapping("/image")
     public ResponseEntity<ApiResponse<String>> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
@@ -217,14 +226,22 @@ public class PatientController {
     }
 
     @GetMapping("/getFullDetails/{patientId}")
-    public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientFullDetails(
-            @PathVariable Long patientId) {
-
-        ApiResponse<FollowUpPatientResponseDetails> response =
-                patientService.getAllFollowUpDetails(patientId);
+    public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientFullDetails(@PathVariable Long patientId) {
+        ApiResponse<FollowUpPatientResponseDetails> response = patientService.getAllFollowUpDetails(patientId);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @PostMapping("/cancel_appointment")
+    public ResponseEntity<?> cancelAppointment(@RequestBody CancelAppointmentRequest request) {
+        ApiResponse<String> response = patientService.cancelAppointment(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/reschedule_Appointment")
+    public ResponseEntity<ApiResponse<RescheduleAppointmentResponse>> rescheduleAppointment(@RequestBody RescheduleAppointmentRequest request){
+        ApiResponse<RescheduleAppointmentResponse> response = patientService.rescheduleAppointment(request);
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
 
 }

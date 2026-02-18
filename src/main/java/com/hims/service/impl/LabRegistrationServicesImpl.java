@@ -84,9 +84,18 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     private MasMainChargeCodeRepository masMainChargeCodeRepository;
     @Autowired
     private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
+
+    @Autowired
+    private LabOrderTrackingStatusRepository labOrderTrackingStatusRepository;
+
+    @Value("${lab.track-order-status-reg.ordered}")
+    private Long orderedStatusId;
+
+    @Value("${lab.track-order-status-sample.collect}")
+    private Long collectedStatusId;
     
 
-    @Value("${app.pending.days}")
+    @Value("${sample.collection.display.days}")
     private int pendingDays;
     private String getCurrentTimeFormatted(Instant instant) {
         LocalTime time = instant
@@ -114,36 +123,55 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     @Override
     @Transactional
     public ApiResponse<AppsetupResponse> labReg(LabRegRequest labReq) {
+        log.info("Starting lab registration process");
+
+
         Long departmentId = authUtil.getCurrentDepartmentId();
         User currentUser = authUtil.getCurrentUser();
+
+        log.debug("DepartmentId: {}", departmentId);
+        log.debug("CurrentUser: {}", currentUser);
 
         AppsetupResponse res = new AppsetupResponse();
 
         if (currentUser == null) {
+            log.warn("Current user not found");
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
 
         if (labReq.getPatientId() == null) {
+            log.warn("Patient ID is null");
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
                     "Patient ID must not be null", HttpStatus.BAD_REQUEST.value());
         }
 
         if (departmentId == null) {
+            log.warn("Department ID is null");
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
                     "Current department ID is null", HttpStatus.BAD_REQUEST.value());
         }
 
         MasDepartment department = masDepartmentRepository.findById(departmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid department ID: " + departmentId));
+                .orElseThrow(() -> {
+                    log.error("Invalid department ID: {}", departmentId);
+                    return new IllegalArgumentException("Invalid department ID: " + departmentId);
+                });
+
 
         Patient patient = patientRepository.findById(labReq.getPatientId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid patient ID: " + labReq.getPatientId()));
-
-        MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
-
+                .orElseThrow(() -> {
+                    log.error("Invalid patient ID: {}", labReq.getPatientId());
+                    return new IllegalArgumentException("Invalid patient ID: " + labReq.getPatientId());
+                });
+        MasHospital masHospital = masHospitalRepository
+                .findById(currentUser.getHospital().getId())
+                .orElseThrow(() -> {
+                    log.error("Invalid hospital ID");
+                    return new IllegalArgumentException("Invalid hospital ID");
+                });
         Long existingTokens = visitRepository.countTokensForToday(currentUser.getHospital().getId(), departmentId);
+        log.info("Existing token count: {}", existingTokens);
         try {
         Visit visit = new Visit();
         visit.setPatient(patient);
@@ -156,9 +184,12 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         visit.setDepartment(department);
         visit.setDisplayPatientStatus("wp");
         Visit savedVisit = visitRepository.save(visit);
+            log.info("Visit saved successfully, VisitId={}", savedVisit.getId());
+
             // Validate all investigation appointment dates
             for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {
                 if (inv.getAppointmentDate() == null) {
+                    log.error("Appointment date missing for investigationId={}", inv.getId());
                     throw new IllegalArgumentException("Investigation appointment date must not be null for investigationId: " + inv.getId());
                 }
             }
@@ -166,9 +197,12 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             Map<LocalDate, List<LabInvestigationReq>> grouped = labReq.getLabInvestigationReq().stream()
                     .filter(req -> req.getAppointmentDate() != null)
                     .collect(Collectors.groupingBy(LabInvestigationReq::getAppointmentDate));
+            log.info("Investigations grouped by appointment date");
             for (Map.Entry<LocalDate, List<LabInvestigationReq>> entry : grouped.entrySet()) {
                 LocalDate date = entry.getKey();
                 List<LabInvestigationReq> investigations = entry.getValue();
+                log.info("Processing appointmentDate={}, investigationCount={}",
+                        date, investigations.size());
                 BigDecimal sum=BigDecimal.ZERO;
                 BigDecimal tax=BigDecimal.ZERO;
                 BigDecimal disc=BigDecimal.ZERO;
@@ -182,6 +216,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     }
                    // }
                 }
+                log.debug("Calculated Amounts => Sum={}, Discount={}, Tax={}",
+                        sum, disc, tax);
                 DgOrderHd hd = new DgOrderHd();
                 hd.setAppointmentDate(date);
                 hd.setOrderDate(LocalDate.now());
@@ -202,6 +238,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 hd.setLastChgDate(LocalDate.now());
                 hd.setLastChgTime(LocalTime.now().toString());
                 DgOrderHd savedHd = labHdRepository.save(hd);
+                log.info("Order Header saved, OrderHdId={}", savedHd.getId());
 //                boolean flag=false;  //flag
 //                for (LabInvestigationReq req:investigations){
 //                    if(req.isCheckStatus()){
@@ -216,20 +253,27 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     savedVisit.setBillingHd(headerId);
                     visitRepository.save(savedVisit);
                // }
+                log.info("Billing Header created, BillingHdId={}", headerId.getId());
                 for (LabInvestigationReq inv : investigations) {
                     //check, type= "i"  for  investigation   and  "p"  for packeg to differenciate
                     if (inv.getType().equalsIgnoreCase("i")) {
                         if (inv.getId() == null) {
                             throw new IllegalArgumentException("Investigation ID must not be null");
                         }
-                        DgMasInvestigation invEntity = investigation.findById(inv.getId())
-                                .orElseThrow(() -> new IllegalArgumentException("Invalid Investigation ID: " + inv.getId()));
+                        DgMasInvestigation invEntity =
+                                investigation.findById(inv.getId())
+                                        .orElseThrow(() -> {
+                                            log.error("Invalid investigation ID={}", inv.getId());
+                                            return new IllegalArgumentException(
+                                                    "Invalid Investigation ID: " + inv.getId());
+                                        });
                         DgOrderDt dt = new DgOrderDt();
                         dt.setInvestigationId(invEntity);
                         dt.setOrderhdId(savedHd);
                         dt.setMainChargecodeId(invEntity.getMainChargeCodeId().getChargecodeId());
                         dt.setSubChargeid(invEntity.getSubChargeCodeId().getSubId());
                         dt.setAppointmentDate(inv.getAppointmentDate());
+                        dt.setOrderTrackingStatus(labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow());
 
                         dt.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                         dt.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
@@ -247,6 +291,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                        // }
                        // if (inv.isCheckStatus()) {//flag
                             BillingDetaiDataSave(headerId, savedDt, inv);
+                        log.debug("Investigation OrderDt saved, OrderDtId={}",
+                                savedDt.getId());
                        // }
                     } else {
                         DgInvestigationPackage pkgObj = dgInvestigationPackageRepository.findById(inv.getId()).get();
@@ -269,6 +315,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                             dt.setOrderQty(1);
                             dt.setCreatedon(Instant.now());
                             dt.setLastChgTime(LocalTime.now().toString());
+                            dt.setOrderTrackingStatus(labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow());
                             DgOrderDt savedDt = labDtRepository.save(dt);
                             //if(flag) {
                                 savedDt.setBillingHd(headerId);
@@ -365,13 +412,19 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 //                      }
 //                 }
 //            }
-        } catch (SDDException e) {
+        }
+        catch (SDDException e) {
+            log.error("SDDException occurred", e);
+            e.printStackTrace();
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
+            log.error("Unexpected error during lab registration", e);
             e.printStackTrace(); // log exception for debugging
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
         }
         res.setMsg("Success");
+        log.info("Lab registration completed successfully");
         return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
     }
 
@@ -379,6 +432,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     @Transactional
     public ApiResponse paymentStatusReq(PaymentUpdateRequest request) {
         PaymentResponse res = new PaymentResponse();
+        log.info("Starting payment status update process");
+        log.debug("Received PaymentUpdateRequest: {}", request);
         try{
 
                 //Payment table data inserted
@@ -394,16 +449,23 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 paymentDetail.setUpdatedAt(Instant.now());
                 paymentDetail.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
                 PaymentDetail details = paymentDetailRepository.save(paymentDetail);
+            log.info("PaymentDetail saved successfully, PaymentDetailId={}",
+                    details.getId());
 
                 for (InvestigationandPackegBillStatus invpkg : request.getInvestigationandPackegBillStatus()) {
                     if (invpkg.getType().equalsIgnoreCase("i")) {
                         int investigationId = invpkg.getId();
                         int billHdId = request.getBillHeaderId();
+                        log.debug("Updating payment status for InvestigationId={}, BillHdId={}",
+                                investigationId, billHdId);
                         billingDetailRepository.updatePaymentStatusInvestigation("y", investigationId, billHdId);
                         labDtRepository.updatePaymentStatusInvestigationDt("y", investigationId, billHdId);
                     } else {
                         int pkgId = invpkg.getId();
                         int billHdId = request.getBillHeaderId();
+                        log.debug("Updating payment status for PackageId={}, BillHdId={}",
+                                pkgId, billHdId);
+
                         billingDetailRepository.updatePaymentStatuPackeg("y", pkgId, billHdId);
                         labDtRepository.updatePaymentStatusPackegDt("y", pkgId, billHdId);
                     }
@@ -411,6 +473,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 boolean fullyPaid = true;
                 boolean partialPaid = false;
                 List<DgOrderDt> dtList = labDtRepository.findByStatus(request.getBillHeaderId());
+            log.debug("Fetched OrderDt count={}", dtList.size());
                 for (DgOrderDt orderDt : dtList) {
                     if (orderDt.getBillingStatus().equalsIgnoreCase("n")) {
                         fullyPaid = false;
@@ -428,6 +491,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 res.setBillNo(billingHeader.getBillNo());
                 res.setPaymentStatus(billingHeader.getPaymentStatus());
 
+            log.info("Payment calculation => fullyPaid={}, partialPaid={}",
+                    fullyPaid, partialPaid);
+
                 if (fullyPaid) {
                     hdorderObj.setPaymentStatus("y");
                     visit.setBillingStatus("y");
@@ -436,6 +502,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
                     BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
                     billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
+                    log.info("Fully paid. TotalPaid updated={}",
+                            billingHeader.getTotalPaid());
                 } else if (partialPaid) {
                     hdorderObj.setPaymentStatus("p");
                     visit.setBillingStatus("p");
@@ -444,7 +512,11 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
                     BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
                     billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
+                    log.info("Partial payment. TotalPaid updated={}",
+                            billingHeader.getTotalPaid());
                 }
+            log.info("Payment status updated successfully for BillHeaderId={}",
+                    request.getBillHeaderId());
                 labHdRepository.save(hdorderObj);
                 visitRepository.save(visit);
                 billingHeaderRepository.save(billingHeader);
@@ -494,12 +566,17 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 //            visitRepository.save(visit);
 //            billingHeaderRepository.save(billingHeader);
         } catch (SDDException e) {
+            log.error("SDDException occurred during payment update", e);
+            e.printStackTrace();
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
         } catch (Exception e) {
+            log.error("Unexpected error during payment status update", e);
+
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
         }
         res.setMsg("Success");
+        log.info("Payment status update completed successfully");
         return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
     }
 
@@ -621,8 +698,12 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     @Override
     public List<PendingSampleResponse> getPendingSamples() {
+        log.info("Fetching pending samples");
         Long departmentId = authUtil.getCurrentDepartmentId();
+        log.debug("Current DepartmentId={}", departmentId);
+
         if (departmentId == null) {
+            log.error("Department ID is null");
             throw new IllegalArgumentException("Current department ID is null");
         }
 
@@ -633,18 +714,24 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(pendingDays);
-
+        log.debug("Date range => startDate={}, endDate={}",
+                startDate, endDate);
 
         // Fetch only records matching both filters in DB
 //        List<DgOrderHd> orderHdList = labHdRepository
 //                .findPendingOrdersByDateRange(paymentStatuses, orderStatusFilter,startDate,endDate);
         List<DgOrderHd> orderHdList = labHdRepository
                 .findPendingOrdersByDateRange(paymentStatuses, orderStatusFilter, startDate, endDate);
-
+        log.info("Pending OrderHd count={}",
+                orderHdList != null ? orderHdList.size() : 0);
         List<PendingSampleResponse> responseList = new ArrayList<>();
 
         MasDepartment department = masDepartmentRepository.findById(departmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid department ID: " + departmentId));
+                .orElseThrow(() -> {
+                    log.error("Invalid department ID={}", departmentId);
+                    return new IllegalArgumentException(
+                            "Invalid department ID: " + departmentId);
+                });
 
         for (DgOrderHd orderHd : orderHdList) {
             // Filter details by billingStatus (y) and orderStatus (n)
@@ -758,6 +845,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 responseList.add(response);
             }
         }
+        log.info("Pending samples processing completed, finalCount={}",
+                responseList.size());
         return responseList;
     }
 
@@ -1223,10 +1312,12 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
 //    public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleReq) {
 
         AppsetupResponse res = new AppsetupResponse();
+        log.info("Sample collection process started");
 
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
+                log.warn("Current user not found");
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "HospitalId not found", HttpStatus.UNAUTHORIZED.value());
@@ -1234,6 +1325,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
 
             Long departmentId = authUtil.getCurrentDepartmentId();
             if (departmentId == null) {
+
                 return ResponseUtils.createFailureResponse(
                         res, new TypeReference<>() {},
                         "Current department ID not found", HttpStatus.BAD_REQUEST.value());
@@ -1241,6 +1333,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
 
             Optional<Visit> visitOpt = visitRepository.findById((long) sampleReq.getVisitId());
             if (visitOpt.isEmpty()) {
+                log.warn("Visit not found, visitId={}", sampleReq.getVisitId());
                 return ResponseUtils.createNotFoundResponse("Visit not found", 404);
             }
             Visit visit = visitOpt.get();
@@ -1254,20 +1347,23 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                     ).filter(Objects::nonNull)
                     .collect(Collectors.joining(" "));
 
-            // 1️⃣ GROUP BY MODALITY (SubChargeCodeId)
+            //GROUP BY MODALITY (SubChargeCodeId)
             Map<Integer, List<SampleCollectionInvestigationReq>> groupedData =
                     sampleReq.getSampleCollectionReq()
                             .stream()
                             .collect(Collectors.groupingBy(
                                     SampleCollectionInvestigationReq::getSubChargeCodeId
                             ));
+            log.info("Total modalities found={}", groupedData.size());
 
             for (Map.Entry<Integer, List<SampleCollectionInvestigationReq>> entry : groupedData.entrySet()) {
 
                 Integer subChargeCodeId = entry.getKey();
                 List<SampleCollectionInvestigationReq> detailsList = entry.getValue();
+                log.debug("Processing SubChargeCodeId={}, itemCount={}",
+                        subChargeCodeId, detailsList.size());
 
-                // 2️⃣ FIND OR CREATE HEADER (UNCHANGED)
+                //FIND OR CREATE HEADER
                 Optional<DgSampleCollectionHeader> existingHeaderOpt =
                         dgSampleCollectionHeaderRepository
                                 .findByVisitIdAndSubChargeCodeAndValidateStatusN(
@@ -1278,7 +1374,10 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                 DgSampleCollectionHeader header;
 
                 if (existingHeaderOpt.isPresent()) {
+
                     header = existingHeaderOpt.get();
+                    log.debug("Existing header found, headerId={}",
+                            header.getSampleCollectionHeaderId());
                 } else {
                     header = new DgSampleCollectionHeader();
 
@@ -1309,9 +1408,11 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                     header.setResult_entry_status("n");
 
                     dgSampleCollectionHeaderRepository.save(header);
+                    log.info("New sample collection header created, headerId={}",
+                            header.getSampleCollectionHeaderId());
                 }
 
-                // 3️⃣ GROUP DETAILS BY PHYSICAL CONTAINER (sampleId)
+                // GROUP DETAILS BY PHYSICAL CONTAINER (sampleId)
                 Map<Integer, List<SampleCollectionInvestigationReq>> 
                         
                         containerWiseMap =
@@ -1323,7 +1424,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                 int dailySequence = dgSampleCollectionDetailsRepository.getNextSequenceValue().intValue();
 
 
-                // 4️⃣ GENERATE ONE SAMPLE ID PER CONTAINER
+                //GENERATE ONE SAMPLE ID PER CONTAINER
                 for (Map.Entry<Integer, List<SampleCollectionInvestigationReq>> containerEntry
                         : containerWiseMap.entrySet()) {
 
@@ -1337,6 +1438,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                                     dailySequence++,
                                     containerSuffix
                             );
+                    log.info("Generated sampleId={} for containerId={}", sampleId, key);
 
                     for (SampleCollectionInvestigationReq detailReq : containerEntry.getValue()) {
 
@@ -1369,7 +1471,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
 
                         dgSampleCollectionDetailsRepository.save(detail);
 
-                        // 5️⃣ TURN AROUND TIME (UNCHANGED)
+                        //TURN AROUND TIME
                         LabTurnAroundTime tat = new LabTurnAroundTime();
                         tat.setInvestigation(investigation);
                         tat.setOrderHd(
@@ -1380,11 +1482,15 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                         tat.setPatient(visit.getPatient());
                         tat.setSampleCollectionDateTime(now);
                         tat.setSampleCollectedBy(fullName);
+                        tat.setGeneratedSampleId(sampleId);
 
                         labTurnAroundTimeRepository.save(tat);
+                        log.debug("Saved investigationId={} with sampleId={}",
+                                investigation.getInvestigationId(), sampleId);
                     }
                 }
             }
+            log.info("Updating order status for orderHdId={}", sampleReq.getOrderHdId());
 
             // 6️⃣ UPDATE ORDER DETAILS STATUS (UNCHANGED)
             List<DgOrderDt> orderDetails =
@@ -1403,6 +1509,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                         "y".equalsIgnoreCase(orderDetail.getBillingStatus())) {
 
                     orderDetail.setOrderStatus("y");
+                    orderDetail.setOrderTrackingStatus(labOrderTrackingStatusRepository.findById(collectedStatusId).orElseThrow());
                     labDtRepository.save(orderDetail);
                 }
             }
@@ -1434,10 +1541,11 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                     });
 
             res.setMsg("success");
-
+            log.info("Sample collection completed successfully");
             return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
 
         } catch (Exception e) {
+            log.error("Error during sample collection process", e);
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(
                     res, new TypeReference<>() {},
@@ -1449,20 +1557,25 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
     @Transactional
     @Override
     public ApiResponse<AppsetupResponse> labRegForExistingOrder(LabBillingOnlyRequest labReq) {
+        log.info("Starting lab billing for existing order. OrderHdId={}", labReq.getOrderhdid());
+
         User currentUser = authUtil.getCurrentUser();
         AppsetupResponse res = new AppsetupResponse();
 
         if (currentUser == null) {
+            log.warn("Current user not found during lab billing");
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
 
         if (labReq.getPatientId() == null) {
+            log.warn("Patient ID is null in billing request");
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
                     "Patient ID must not be null", HttpStatus.BAD_REQUEST.value());
         }
 
         if (labReq.getOrderhdid() == null) {
+            log.warn("OrderHdId is null in billing request");
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {},
                     "Orderhdid must not be null for billing flow", HttpStatus.BAD_REQUEST.value());
         }
@@ -1472,6 +1585,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
 
         DgOrderHd existingOrderHd = labHdRepository.findById(labReq.getOrderhdid());
         if (existingOrderHd == null) {
+            log.error("Invalid OrderHdId={}", labReq.getOrderhdid());
             throw new IllegalArgumentException("Invalid orderhdid: " + labReq.getOrderhdid());
         }
 
@@ -1481,6 +1595,8 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
         }
 
         try {
+            log.debug("Calculating billing amounts");
+
             // ✅ Calculate sum, discount, tax based on ALL items in request
             BigDecimal sum = BigDecimal.ZERO;
             BigDecimal tax = BigDecimal.ZERO;
@@ -1499,6 +1615,7 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
                     );
                 }
             }
+            log.info("Billing calculation done. Sum={}, Discount={}, Tax={}", sum, disc, tax);
 
             // ✅ Create BillingHeader
             BillingHeader billingHeader = BillingHeaderDataSave(
@@ -1512,9 +1629,13 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
             );
 
             res.setBillinghdId(billingHeader.getId().toString());
+            log.info("Billing header created. BillingHdId={}", billingHeader.getId());
+
 
             // ✅ Get ALL existing order details for this order
             List<DgOrderDt> allOrderDetails = labDtRepository.findByOrderhdId(existingOrderHd);
+            log.info("Found {} order details for OrderHdId={}",
+                    allOrderDetails.size(), existingOrderHd.getId());
             System.out.println("Found " + allOrderDetails.size() + " existing order details for orderhdid: " + existingOrderHd.getId());
 
             // ✅ Link ALL order details to billing header
@@ -1573,11 +1694,16 @@ public ApiResponse<AppsetupResponse> savesample(SampleCollectionRequest sampleRe
             System.out.println("✓ Successfully created billing for existing order. Billing ID: " + billingHeader.getId());
             System.out.println("✓ Linked " + allOrderDetails.size() + " order details to billing header");
             System.out.println("✓ Created billing details for " + labReq.getLabInvestigationReq().size() + " items");
+            log.info("Billing completed successfully. BillingHdId={}, TotalItems={}",
+                    billingHeader.getId(), labReq.getLabInvestigationReq().size());
 
             res.setMsg("Success");
             return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {});
 
         } catch (Exception e) {
+            log.error("Exception occurred during lab billing for OrderHdId={}",
+                    labReq.getOrderhdid(), e);
+
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error: " + e.getMessage(), 500);
         }

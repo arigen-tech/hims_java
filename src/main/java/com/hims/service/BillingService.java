@@ -2,6 +2,7 @@ package com.hims.service;
 
 import com.hims.entity.*;
 import com.hims.response.ApiResponse;
+import com.hims.response.BillingHeaderResponse;
 import com.hims.response.OpdBillingPaymentResponse;
 import com.hims.response.PendingBillingResponse;
 
@@ -13,4 +14,5 @@ public interface BillingService {
 
     ApiResponse<List<PendingBillingResponse>> getPendingBilling();
 
+    ApiResponse<List<BillingHeaderResponse>> getBillingStatus();
 }

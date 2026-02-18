@@ -12,7 +12,7 @@ import java.util.List;
 
 @Getter
 @Setter
-@NoArgsConstructor  // ADD THIS
+@NoArgsConstructor
 @AllArgsConstructor
 public class PatientRegistrationReq {
      PatientRequest patient;

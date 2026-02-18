@@ -49,6 +49,15 @@ public interface StoreInternalIndentTRepository extends JpaRepository<StoreInter
             @Param("itemId") Long itemId
     );
 
+    @Query("""
+           SELECT t
+           FROM StoreInternalIndentT t
+           WHERE t.indentM.indentMId IN :indentMIds
+           """)
+    List<StoreInternalIndentT> findByIndentMIds(
+            @Param("indentMIds") List<Long> indentMIds
+    );
+
 
 
 }

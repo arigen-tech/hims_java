@@ -41,6 +41,7 @@ public class MasEmployeeRequest {
     private MultipartFile idDocumentName;
     private MultipartFile  profilePicName;
 
+    private List<EmployeeLanguageRequest> languages;
     private List<EmployeeQualificationReq> qualification;
     private List<EmployeeSpecialtyCenterRequest> specialtyCenter;
     private List<EmployeeWorkExperienceRequest> workExperiences;
