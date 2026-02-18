@@ -1,11 +1,13 @@
 package com.hims.service;
 
+import com.hims.entity.MasStoreItem;
 import com.hims.request.MasStoreItemRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasStoreItemResponse;
-import com.hims.response.MasStoreItemResponseDto;
+import com.hims.response.MasStoreItemResponse2;
 import com.hims.response.MasStoreItemResponseWithStock;
 import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -25,7 +27,7 @@ public interface MasStoreItemService {
 
     ApiResponse<MasStoreItemResponse> findByCode(String code);
 
-    ApiResponse<List<MasStoreItemResponseDto>> getAllMasStore(int flag);
+    ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(int flag);
 
     public ApiResponse<List<MasStoreItemResponseWithStock>> getAllMasStoreItemBySectionOnly(int flag);
 

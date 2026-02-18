@@ -23,5 +23,4 @@ public class DgMasInvestigationSingleReqest {
     private String preparationRequired;
     private Integer tatHours;
     private Integer estimatedDays;
-    private String contrastRequired;
 }

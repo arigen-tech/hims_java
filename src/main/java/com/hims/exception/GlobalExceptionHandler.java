@@ -1,13 +1,9 @@
 package com.hims.exception;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.exception.bloodBankException.DonorSaveException;
-import com.hims.exception.bloodBankException.ScreeningSaveException;
-import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
-import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
 import com.hims.response.ApiResponse;
 import com.hims.utils.ResponseUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -48,50 +44,30 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(DonorSaveException.class)
-    public ResponseEntity<ApiResponse<Object>> handleDonorError(DonorSaveException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ResponseUtils.createFailureResponse(
-                        null, new TypeReference<>() {},
-                        ex.getMessage(), 400));
-    }
+    @ExceptionHandler(EntityExistsException.class)
+    public ResponseEntity<ApiResponse<Object>> handleEntityExists(EntityExistsException ex) {
 
-    @ExceptionHandler(ScreeningSaveException.class)
-    public ResponseEntity<ApiResponse<Object>> handleScreeningError(ScreeningSaveException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ResponseUtils.createFailureResponse(
-                        null, new TypeReference<>() {},
-                        ex.getMessage(), 400));
-    }
-
-
-    @ExceptionHandler(TokenAlreadyBookedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleTokenException(
-            TokenAlreadyBookedException ex) {
-
-        ApiResponse<Object> response =
+        return ResponseEntity.badRequest().body(
                 ResponseUtils.createFailureResponse(
                         null,
-                        new TypeReference<Object>() {},
-                        ex.getMessage(),
-                        HttpStatus.CONFLICT.value()
-                );
-
-        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
-    }
-
-    @ExceptionHandler(AppSetupNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleAppSetup(
-            AppSetupNotFoundException ex) {
-
-        ApiResponse<Object> response =
-                ResponseUtils.createFailureResponse(
-                        null,
+                        new TypeReference<>() {},
                         ex.getMessage(),
                         HttpStatus.BAD_REQUEST.value()
-                );
+                )
+        );
+    }
 
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Object>> handleRuntime(RuntimeException ex) {
+
+        return ResponseEntity.badRequest().body(
+                ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value()
+                )
+        );
     }
 
 }

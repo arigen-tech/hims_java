@@ -14,5 +14,4 @@ public class MasDepartmentRequest {
     private String status;
     private String lastChgBy;
     private Long wardCategoryId;
-    private  String indentApplicable;
 }

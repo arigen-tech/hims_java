@@ -78,12 +78,4 @@ public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long>
             @Param("search") String search,
             Pageable pageable
     );
-
-    Page<MasStoreItem> findByNomenclatureContainingIgnoreCaseAndStatus(
-            String nomenclature,
-            String status,
-            Pageable pageable
-    );
-
-    List<MasStoreItem> findByItemIdIn(List<Long> list);
 }

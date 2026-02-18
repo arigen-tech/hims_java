@@ -7,6 +7,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface StoreReturnMRepository extends JpaRepository<StoreReturnM, Long> {
-
-    StoreReturnM findByStoreIndentReceiveM_StoreInternalIndent_IndentMId(Long indentMId);
 }

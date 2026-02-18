@@ -9,5 +9,5 @@ public class OtpRequest {
     String otp;
     String sessionId;
     String mobileNo;
-
+    Long patientId;
 }

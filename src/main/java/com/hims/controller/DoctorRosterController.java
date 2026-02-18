@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
@@ -62,23 +61,6 @@ public class DoctorRosterController {
 
         return ResponseEntity.ok(apiResponse);
     }
-
-    @GetMapping("/checkAllAvailableTokens/{flag}")
-    public ResponseEntity<ApiResponse<List<AvailableTokenSlotResponse>>> getAllOnlineTokens(
-            @RequestParam Long deptId,
-            @RequestParam(required = false) Long doctorId,
-            @RequestParam String appointmentDate,
-            @RequestParam(required = false) Long sessionId,
-            @PathVariable Integer flag
-    ) {
-        ApiResponse<List<AvailableTokenSlotResponse>> response =
-                doctorRosterServices.getAvailableToken(
-                        deptId, doctorId, appointmentDate, sessionId,flag
-                );
-        return ResponseEntity.ok(response);
-    }
-
-
 
 
 

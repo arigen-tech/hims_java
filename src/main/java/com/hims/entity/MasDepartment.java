@@ -41,9 +41,6 @@ public class MasDepartment {
     @Column(name = "last_chg_time", length = 10)
     private String lastChgTime;
 
-    @Column(name = "indent_applicable",nullable = false,length = 1)
-    private String indentApplicable;
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_type_id")
     private MasDepartmentType departmentType;

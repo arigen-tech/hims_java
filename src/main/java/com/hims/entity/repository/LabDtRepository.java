@@ -7,7 +7,6 @@ import com.hims.entity.DgOrderDt;
 import com.hims.entity.DgOrderHd;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,7 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Repository
-public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> , JpaSpecificationExecutor<DgOrderDt> {
+public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> {
  List<DgOrderDt> findByOrderhdId(DgOrderHd hdObj);
 
     @Modifying

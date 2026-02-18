@@ -3,7 +3,6 @@ package com.hims.service;
 import com.hims.request.StoreStockTakingMRequest;
 import com.hims.request.StoreStockTakingMRequest2;
 import com.hims.response.ApiResponse;
-import com.hims.response.StockItemResponse;
 import com.hims.response.StoreStockTakingMResponse;
 import com.hims.response.StoreStockTakingTResponse;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +19,4 @@ public interface PhysicalBatchStockService {
     ApiResponse<String> updatePhysicalById(Long id, StoreStockTakingMRequest storeStockTakingMRequest);
 
     ApiResponse<String> approvedPhysical( StoreStockTakingMRequest2 request);
-
-    ApiResponse<List<StockItemResponse>>  getItems();
 }

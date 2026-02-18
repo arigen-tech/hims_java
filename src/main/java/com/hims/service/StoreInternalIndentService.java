@@ -44,7 +44,4 @@ public interface StoreInternalIndentService {
 
     public ApiResponse<StoreIndentReceiveResponse> saveReceiving(StoreIndentReceiveRequest request) ;
 
-    ApiResponse<List<StoreIssueMResponse>> getIssuesForReceiving(Long fromDeptId, LocalDate fromDate, LocalDate toDate);
-
-    ApiResponse<List<ReceiveItemResponse>> getReceiveItem();
-}
+    }

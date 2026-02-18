@@ -1,23 +1,13 @@
-  //  List<UserDepartment> findByDepartmentId(List<MasDepartment> departments2);
-
-   // Optional<UserDepartment> findByUser_Employee_EmployeeId(Long doctorId);
-
-
-
-
-
 package com.hims.entity.repository;
 
 import com.hims.entity.MasDepartment;
 import com.hims.entity.User;
 import com.hims.entity.UserDepartment;
-import com.hims.response.SpecialitiesResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface UserDepartmentRepository extends JpaRepository<UserDepartment, Long> {
     List<UserDepartment> findByDepartment(MasDepartment masDepartment);
@@ -39,23 +29,4 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
 
 
     List<UserDepartment> findAllByOrderByUserAsc();
-
-    @Query("""
-        SELECT ud
-        FROM UserDepartment ud
-        JOIN FETCH ud.user u
-        JOIN FETCH u.employee e
-        WHERE ud.department.id = :departmentId
-
-    """)
-    List<UserDepartment> findByDepartmentIds(
-            @Param("departmentId") Long departmentId
-    );
-
-
-    List<UserDepartment> findByUserUserId(Long userId);
-
-
-    List<UserDepartment> findByDepartment_IdIn(List<Long> departmentIds);
-
 }

@@ -14,7 +14,4 @@ public interface MasOpdSessionRepository extends JpaRepository<MasOpdSession, Lo
   //  List<MasOpdSession> findByStatusInIgnoreCaseOrderByLastChgDtDesc(List<String> y);
 
     List<MasOpdSession> findAllByOrderByStatusDescLastChgDtDesc();
-
-
-    List<MasOpdSession> findByIdInAndStatusIgnoreCase(List<Long> sessionIds, String y);
 }

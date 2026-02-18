@@ -1,10 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.StoreInternalIndentM;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -12,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface StoreInternalIndentMRepository extends JpaRepository<StoreInternalIndentM,Long> , JpaSpecificationExecutor<StoreInternalIndentM> {
+public interface StoreInternalIndentMRepository extends JpaRepository<StoreInternalIndentM,Long> {
 
     Optional<StoreInternalIndentM> findTopByOrderByIndentMIdDesc();
 
@@ -46,10 +43,6 @@ public interface StoreInternalIndentMRepository extends JpaRepository<StoreInter
             LocalDateTime startDate,
             LocalDateTime endDate
     );
-
-    Page<StoreInternalIndentM> findByFromDeptId_Id(Long deptId, Pageable pageable);
-
-    Page<StoreInternalIndentM> findByFromDeptId_IdIn(List<Long> deptIds, Pageable pageable);
 
 
 }

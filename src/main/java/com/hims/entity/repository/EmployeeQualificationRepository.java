@@ -7,12 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-
 @Repository
 public interface EmployeeQualificationRepository extends JpaRepository<EmployeeQualification, Long> {
-
-
-     List<EmployeeQualification> findByEmployee(MasEmployee emp);
-
-
+    List<EmployeeQualification> findByEmployee(MasEmployee employee);
 }

@@ -5,7 +5,6 @@ import lombok.Data;
 import java.time.Instant;
 
 @Data
-
 public class VisitResponse {
     private Long id;
     private Long tokenNo;

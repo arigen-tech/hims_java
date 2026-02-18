@@ -2,9 +2,8 @@ package com.hims.entity.repository;
 
 import com.hims.entity.StoreStockLedger;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface StoreStockLedgerRepository extends JpaRepository<StoreStockLedger,Long>, JpaSpecificationExecutor<StoreStockLedger> {
+public interface StoreStockLedgerRepository extends JpaRepository<StoreStockLedger,Long> {
 }

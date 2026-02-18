@@ -7,7 +7,6 @@ import com.hims.response.*;
 import com.hims.service.StoreInternalIndentService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -158,24 +157,6 @@ public class StoreInternalIndentController {
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
-    @GetMapping("/storeIssueM/list")
-    public ResponseEntity<ApiResponse<List<StoreIssueMResponse>>> getIssuesForReceiving(
-            @RequestParam(required = false) Long fromDeptId,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
 
-        ApiResponse<List<StoreIssueMResponse>> response =
-                indentService.getIssuesForReceiving(fromDeptId, fromDate, toDate);
-
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/receiveItem")
-    public ApiResponse<List<ReceiveItemResponse>> getReceiveItem() {
-
-        return indentService.getReceiveItem();
-    }
 
 }

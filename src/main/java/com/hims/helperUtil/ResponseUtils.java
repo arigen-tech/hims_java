@@ -36,8 +36,6 @@ public class ResponseUtils {
         return response;
     }
 
-
-
     public <T> ApiResponse<T> createNotFoundResponse(String msg, Integer status) {
         ApiResponse<T> response = new ApiResponse<>();
         response.setStatus(status);

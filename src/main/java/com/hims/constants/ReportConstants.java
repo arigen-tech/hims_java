@@ -5,16 +5,6 @@ public final class ReportConstants {
     private ReportConstants() {
         // prevent instantiation
     }
-
-    public static final String REPORT_FLAG_DOWNLOAD = "D";
-    public static final String REPORT_FLAG_PRINT = "P";
-    public static final int HTTP_STATUS_BAD_REQUEST = 400;
-
-    // General Report Error Messages
-    public static final String ERROR_FAILED_TO_GENERATE_REPORT = "Failed to generate report: ";
-    public static final String ERROR_INVALID_FLAG = "Invalid flag value. Use D or P";
-
-
     public static final String JASPER_BASE_PATH_DISPENSARY = "/jasperReport/Dispensary/";
     public static final String JASPER_BASE_PATH_LAB = "/jasperReport/Lab/";
     public static final String JASPER_BASE_PATH_OPD = "/jasperReport/OPD/";
@@ -61,43 +51,5 @@ public final class ReportConstants {
 
     public static final String LAB_JASPER = "Lab_report";
     public static final String LAB_REPORT = "LabInvoice";
-
-    public static final String INDENT_MEDICINE_ISSUE_REGISTER_SUBREPORT_DIR = "IndentMedicineIssueRegisterReport/";
-    public static final String INDENT_MEDICINE_ISSUE_REGISTER_JASPER = "Medicine_issue_register";
-    public static final String INDENT_MEDICINE_ISSUE_REGISTER_REPORT = "IndentMedicineIssueRegisterReport";
-
-    public static final String INDENT_ISSUE_JASPER = "indent_issue_report";
-    public static final String INDENT_ISSUE_REPORT = "IndentIssueReport";
-
-    public static final String INDENT_RECEIVING_JASPER = "indent_receive_report";
-    public static final String INDENT_RECEIVING_REPORT = "IndentReceiveReport";
-
-    public static final String LAB_REGISTER_SUB_REPORT_DIR = "LabRegisterReport/";
-    public static final String LAB_REGISTER_JASPER = "Lab_Main_Report";
-    public static final String LAB_REGISTER_REPORT = "LabRegisterReport";
-
-    public static final String ITEM_WISE_RECEIVING_JASPER = "Item_wise_receiving_report";
-    public static final String ITEM_WISE_RECEIVING_REPORT = "ItemWiseReceivingReport";
-
-    public static final String DATE_WISE_RECEIVING_JASPER = "Date_wise_receiving_report";
-    public static final String DATE_WISE_RECEIVING_REPORT = "DateWiseReceivingReport";
-
-    public static final String INDENT_RETURN_JASPER = "Return_report";
-    public static final String INDENT_RETURN_REPORT = "ReturnReport";
-
-    public static final String ITEM_WISE_RETURN_JASPER = "Item_wise_return_register";
-    public static final String ITEM_WISE_RETURN_REPORT = "ItemWiseReturnRegister";
-
-    public static final String DATE_WISE_RETURN_JASPER = "Date_wise_return_register";
-    public static final String DATE_WISE_RETURN_REPORT = "DateWiseReturnRegister";
-
-    public static final String DETAILED_TAT_JASPER = "Detailed_tat_report";
-    public static final String DETAILED_TAT_REPORT = "DetailedTatReport";
-
-    public static final String SUMMARY_TAT_JASPER = "Summary_tat_report";
-    public static final String SUMMARY_TAT_REPORT = "SummaryTatReport";
-
-    public static final String RESULT_AMENDMENT_JASPER = "Result_amendment";
-    public static final String RESULT_AMENDMENT_REPORT = "ResultAmendmentReport";
 
 }

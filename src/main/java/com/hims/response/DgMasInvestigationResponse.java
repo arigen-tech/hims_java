@@ -62,8 +62,6 @@ public class DgMasInvestigationResponse {
     private List<DgSubMasInvestigationResponse> subInvestigationResponseList;
     private List<DgFixedValueResponse> fixedValueResponseList;
     private List<DgNormalValueResponse> normalValueResponseList;
-    private String contrastRequired;
-
 }
 
 

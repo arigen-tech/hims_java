@@ -43,7 +43,6 @@ public class AuthController {
     @Autowired
     private UserRepo userRepo;
 
-    //Comment
     @Autowired
     private AuthService authService;
 
