@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.hims.constants.AppConstants.*;
+
 @Service
 public class MasFrequencyServiceImp implements MasFrequencyService {
 
@@ -54,7 +56,7 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
     @Override
     public ApiResponse<MasFrequencyResponse> createMasFrequency(MasFrequencyRequest masFrequencyRequest) {
         MasFrequency masFrequency = new MasFrequency();
-        if (!("y".equalsIgnoreCase(masFrequencyRequest.getStatus()) || "n".equalsIgnoreCase(masFrequencyRequest.getStatus()))) {
+        if (!(STATUS_ACTIVE.equalsIgnoreCase(masFrequencyRequest.getStatus()) || STATUS_INACTIVE.equalsIgnoreCase(masFrequencyRequest.getStatus()))) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid status. Status should be 'Y' or 'N'", 400);
         } else {
@@ -66,7 +68,7 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
             if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                        MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
             }
             masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
             masFrequency.setLastChgTime(getCurrentTimeFormatted());
@@ -93,7 +95,7 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
             if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                        MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
             }
             masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
             masFrequency.setLastChgTime(getCurrentTimeFormatted());
@@ -113,13 +115,13 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
         Optional<MasFrequency> oldMasFrequency=masFrequencyRepository.findById(id);
         if(oldMasFrequency.isPresent()){
             MasFrequency masFrequency=oldMasFrequency.get();
-            if("y".equalsIgnoreCase(status)||"n".equalsIgnoreCase(status)){
+            if(STATUS_ACTIVE.equalsIgnoreCase(status)||STATUS_INACTIVE.equalsIgnoreCase(status)){
                 masFrequency.setStatus(status);
                 User currentUser = getCurrentUser();
                 if (currentUser == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
-                            "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                            MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
                 }
                 masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
                 masFrequency.setLastChgTime(getCurrentTimeFormatted());
@@ -153,12 +155,12 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
         List<MasFrequency> masFrequency;
 
 
-        if (flag == 1) {
-            masFrequency= masFrequencyRepository.findByStatusIgnoreCaseOrderByFrequencyNameAsc("Y");
-        } else if (flag == 0) {
+        if (flag == FLAG_ACTIVE_ONLY) {
+            masFrequency= masFrequencyRepository.findByStatusIgnoreCaseOrderByFrequencyNameAsc(STATUS_ACTIVE_UPPER);
+        } else if (flag == FLAG_ALL) {
             masFrequency= masFrequencyRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, MSG_INVALID_FLAG, 400);
         }
         List<MasFrequencyResponse> responses = masFrequency.stream()
                 .map(this::convertedToResponse)

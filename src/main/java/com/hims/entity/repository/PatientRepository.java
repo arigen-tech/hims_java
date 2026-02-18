@@ -20,30 +20,30 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     Optional<Patient> findByUniqueCombination(String firstName, String lastName, MasGender gender,
                                               LocalDate dob, String age, String mobileNumber, MasRelation relation);
 
-        @Query(value = """
-        SELECT * FROM patient p 
-        WHERE (:mobileNo IS NULL OR CAST(p.p_mobile_number AS TEXT) ILIKE CONCAT('%', :mobileNo, '%'))
+        @Query("""
+        SELECT p FROM Patient p 
+        WHERE (:mobileNo IS NULL OR LOWER(p.patientMobileNumber) LIKE LOWER(CONCAT('%', :mobileNo, '%')))
         AND (:patientName IS NULL OR 
-             CAST(p.p_fn AS TEXT) ILIKE CONCAT('%', :patientName, '%') OR 
-             CAST(p.p_mn AS TEXT) ILIKE CONCAT('%', :patientName, '%') OR 
-             CAST(p.p_ln AS TEXT) ILIKE CONCAT('%', :patientName, '%'))
-        AND (:uhidNo IS NULL OR CAST(p.uhid_no AS TEXT) ILIKE CONCAT('%', :uhidNo, '%'))
-        """, nativeQuery = true)
+             LOWER(p.patientFn) LIKE LOWER(CONCAT('%', :patientName, '%')) OR 
+             LOWER(p.patientMn) LIKE LOWER(CONCAT('%', :patientName, '%')) OR 
+             LOWER(p.patientLn) LIKE LOWER(CONCAT('%', :patientName, '%')))
+        AND (:uhidNo IS NULL OR LOWER(p.uhidNo) LIKE LOWER(CONCAT('%', :uhidNo, '%')))
+        """)
         List<Patient> searchPatients(@Param("mobileNo") String mobileNo,
                                      @Param("patientName") String patientName,
                                      @Param("uhidNo") String uhidNo);
 
-        @Query(value = """
-        SELECT DISTINCT p.* FROM patient p 
-        LEFT JOIN appointment a ON p.patient_id = a.patient_id
-        WHERE (:mobileNo IS NULL OR CAST(p.p_mobile_number AS TEXT) ILIKE CONCAT('%', :mobileNo, '%'))
+        @Query("""
+        SELECT DISTINCT p FROM Patient p 
+        LEFT JOIN Appointment a ON p.id = a.patient.id
+        WHERE (:mobileNo IS NULL OR LOWER(p.patientMobileNumber) LIKE LOWER(CONCAT('%', :mobileNo, '%')))
         AND (:patientName IS NULL OR 
-             CAST(p.p_fn AS TEXT) ILIKE CONCAT('%', :patientName, '%') OR 
-             CAST(p.p_mn AS TEXT) ILIKE CONCAT('%', :patientName, '%') OR 
-             CAST(p.p_ln AS TEXT) ILIKE CONCAT('%', :patientName, '%'))
-        AND (:uhidNo IS NULL OR CAST(p.uhid_no AS TEXT) ILIKE CONCAT('%', :uhidNo, '%'))
-        AND (:appointmentDate IS NULL OR DATE(a.appointment_date) = :appointmentDate)
-        """, nativeQuery = true)
+             LOWER(p.patientFn) LIKE LOWER(CONCAT('%', :patientName, '%')) OR 
+             LOWER(p.patientMn) LIKE LOWER(CONCAT('%', :patientName, '%')) OR 
+             LOWER(p.patientLn) LIKE LOWER(CONCAT('%', :patientName, '%')))
+        AND (:uhidNo IS NULL OR LOWER(p.uhidNo) LIKE LOWER(CONCAT('%', :uhidNo, '%')))
+        AND (:appointmentDate IS NULL OR CAST(a.appointmentDate AS date) = :appointmentDate)
+        """)
         List<Patient> searchPatients(@Param("mobileNo") String mobileNo,
                                      @Param("patientName") String patientName,
                                      @Param("uhidNo") String uhidNo,
