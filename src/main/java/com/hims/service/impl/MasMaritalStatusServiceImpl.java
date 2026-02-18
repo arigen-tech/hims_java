@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.hims.constants.AppConstants.*;
+
 @Service
 public class MasMaritalStatusServiceImpl implements MasMaritalStatusService {
 
@@ -76,12 +78,12 @@ public class MasMaritalStatusServiceImpl implements MasMaritalStatusService {
     public ApiResponse<List<MasMaritalStatusResponse>> getAllMaritalStatuses(int flag) {
         List<MasMaritalStatus> statuses;
 
-        if (flag == 1) {
-            statuses = masMaritalStatusRepository.findByStatusIgnoreCaseOrderByNameAsc("Y");
-        } else if (flag == 0) {
+        if (flag == FLAG_ACTIVE_ONLY) {
+            statuses = masMaritalStatusRepository.findByStatusIgnoreCaseOrderByNameAsc(STATUS_ACTIVE_UPPER);
+        } else if (flag == FLAG_ALL) {
             statuses = masMaritalStatusRepository.findAllByOrderByStatusDescLastChgDateDesc();
         } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, MSG_INVALID_FLAG, 400);
         }
 
         List<MasMaritalStatusResponse> responses = statuses.stream()

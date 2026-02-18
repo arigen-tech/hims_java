@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import static com.hims.constants.AppConstants.*;
+
 @Getter
 @Setter
 @Entity
@@ -30,8 +32,8 @@ public class MasMainChargeCode {
 
     @Size(max = 1)
     @Column(name = "status", nullable = false, length = 1)
-    @Pattern(regexp = "y|n", message = "Message should be y or n")
-    private String status = "y";
+    @Pattern(regexp = STATUS_PATTERN, message = "Status must be y, n, Y, or N")
+    private String status = STATUS_ACTIVE;
 
     @Size(max = 12)
     @Column(name = "last_chg_by", nullable = false, length = 12)
