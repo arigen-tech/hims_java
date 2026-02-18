@@ -2,11 +2,8 @@ package com.hims.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.response.ApiResponse;
-import com.hims.response.AvailableTokenSlotResponse;
 import lombok.experimental.UtilityClass;
 import org.springframework.http.HttpStatus;
-
-import java.util.List;
 
 @UtilityClass
 
@@ -46,14 +43,6 @@ public class ResponseUtils {
     }
 
     public <T> ApiResponse<T> createFailureResponse(T data, TypeReference<T> tClass, String msg, Integer status) {
-        ApiResponse<T> response = new ApiResponse<>();
-        response.setResponse(data);
-        response.setStatus(status);
-        response.setMessage(msg);
-        return response;
-    }
-
-    public <T> ApiResponse<T> createFailureResponse(T data, String msg, Integer status) {
         ApiResponse<T> response = new ApiResponse<>();
         response.setResponse(data);
         response.setStatus(status);

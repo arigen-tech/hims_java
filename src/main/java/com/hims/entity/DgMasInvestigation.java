@@ -102,7 +102,4 @@ public class DgMasInvestigation {
 
     @Column(name = "estimated_days")
     private Integer estimatedDays;
-
-    @Column(name = "contrast_req")
-    private String contrastRequired;
 }

@@ -1,13 +1,12 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.MasState;
-import io.netty.handler.codec.http2.Http2Connection;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
 public interface MasStateRepository extends JpaRepository<MasState, Long> {
-   // List<MasState> findByCountryIdAndStatusIgnoreCase(Long countryId, String status);
+    List<MasState> findByCountryIdAndStatusIgnoreCase(Long countryId, String status);
     List<MasState> findByStatusIgnoreCase(String status);
     List<MasState> findByStatusInIgnoreCase(List<String> statuses);
 
@@ -18,6 +17,4 @@ public interface MasStateRepository extends JpaRepository<MasState, Long> {
     List<MasState> findByStatusIgnoreCaseOrderByStateNameAsc(String y);
 
     List<MasState> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
-
-    List<MasState> findByCountryIdAndStatusIgnoreCaseOrderByStateNameAsc(Long countryId, String y);
 }

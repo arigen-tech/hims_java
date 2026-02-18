@@ -2,7 +2,8 @@ package com.hims.service;
 
 import com.hims.entity.MasEmployee;
 import com.hims.request.MasEmployeeRequest;
-import com.hims.response.*;
+import com.hims.response.ApiResponse;
+import com.hims.response.MasEmployeeDTO;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -23,15 +24,4 @@ public interface MasEmployeeService {
     ApiResponse<MasEmployee> updateEmployeeApprovalStatus(Long empId, Long deptId);
     @Transactional(rollbackFor = {Exception.class})
     ApiResponse<MasEmployee> createAndApproveEmployee(MasEmployeeRequest masEmployeeRequest);
-
-    ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(String search, Long hospitalId);
-
-    ApiResponse<List<SpecialityResponse>> getSpecialityAndDoctor(Long specialityId);
-
-    ApiResponse<DoctorDetailResponse> getDoctor(Long doctorId);
-    ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory();
-
-    ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory(Long hospitalId, Long patientId, String mobileNo);
-
-    ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistoryList(Long hospitalId, Long patientId, String mobileNo, String deptTypeCode);
 }

@@ -3,7 +3,6 @@ package com.hims.entity.repository;
 import com.hims.entity.DgSampleCollectionDetails;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 @Repository
-public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSampleCollectionDetails,Long>,JpaSpecificationExecutor<DgSampleCollectionDetails> {
+public interface DgSampleCollectionDetailsRepository extends JpaRepository<DgSampleCollectionDetails,Long> {
 
 
 
@@ -115,6 +114,6 @@ List<DgSampleCollectionDetails> findBySampleCollectionHeader_SampleCollectionHea
     @Query(value = "SELECT nextval('sample_id_seq')", nativeQuery = true)
     Long getNextSequenceValue();
 
-    List<DgSampleCollectionDetails> findByInvestigationId_InvestigationIdAndSampleCollectionHeader_visitId_Id(Long investigationId,Long visitId);
+    DgSampleCollectionDetails findBySampleCollectionDetailsIdAndInvestigationId_InvestigationId(Long sampleCollectionDetailsId,Long investigationId);
 
 }

@@ -14,7 +14,4 @@ public class AppointmentReqDaysKeys {
     Integer totalOnlineToken;
     Integer maxNoOfDay;
     Integer minNoOfday;
-    String opdLocation;
-    String startTime;
-    String endTime;
 }

@@ -6,7 +6,6 @@ import com.hims.request.ResultValidationUpdateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DgResultEntryValidationResponse;
 import com.hims.response.ResultEntryUpdateResponse;
-import com.hims.response.ResultForInvestigationResponse;
 
 import java.util.List;
 
@@ -20,6 +19,4 @@ public interface ResultService {
    ApiResponse<List<ResultEntryUpdateResponse>> getUpdate();
 
    ApiResponse<String> updateResult(ResultUpdateRequest request);
-
-    ApiResponse<List<ResultForInvestigationResponse>> getResultForInvestigation(Long patientId,Long hospitalId);
 }

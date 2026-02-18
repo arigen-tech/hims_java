@@ -75,11 +75,8 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
 //            "WHERE h.patientId.id = :patientId  AND h.visitId.id = :visitId")
 //    DgOrderHd findByPatientIdAndVisitId(Long patientId, Long visitId);
 
+    DgOrderHd findByPatientId_IdAndVisitId_Id(Long id, Long id1);
 
-
-    Optional<DgOrderHd> findByPatientId_IdAndHospitalId(Long patientId, Long id);
-
-    DgOrderHd findByPatientId_IdAndVisitId_Id(Long patientId, Long visitId);
 
 
 //    Optional<DgOrderHd> findByPatientId_IdAndOrderStatus(Long patientId, String n);

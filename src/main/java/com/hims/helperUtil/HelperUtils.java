@@ -8,10 +8,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 @Service
 public class HelperUtils {
@@ -61,14 +57,9 @@ public class HelperUtils {
 
     public  String generateOTP() {
         SecureRandom random = new SecureRandom();
-        int otp = 100000 + random.nextInt(900000);
-        return String.valueOf(otp);
+        int otp = 100000 + random.nextInt(900000); // Generates a 6-digit number
+        return String.valueOf(otp); // Convert to string for OTP usage
     }
 
-    public static String extractTimeFromInstant(Instant instant) {
-        return instant.atZone(ZoneOffset.UTC)
-                .toLocalTime()
-                .format(DateTimeFormatter.ofPattern("HH:mm"));
-    }
 
 }

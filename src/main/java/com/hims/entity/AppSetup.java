@@ -96,7 +96,4 @@ public class AppSetup {
     @Column(name = "end_time", length = 5)
     private String endTime;
 
-    @Size(max = 200)
-    @Column(name = "opd_location", length = 200)
-    private String opdLocation;
 }

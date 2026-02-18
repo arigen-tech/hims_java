@@ -19,7 +19,6 @@ public class AppointmentReq {
     String startTime;
     String endTime;
     Integer timeTaken;
-    String opdLocation;
     List<AppointmentReqDaysKeys> days;
 //    AppointmentReqDays days;
 //    AppointmentReqDaysKeys daysKeys;

@@ -21,10 +21,10 @@ public interface MasInvestigationPriceDetailsRepository extends JpaRepository<Ma
     @Query("SELECT m FROM MasInvestigationPriceDetails m WHERE m.status = :status ORDER BY m.id ASC")
     List<MasInvestigationPriceDetails> getAllPriceDetailsByStatus(String status);
 
-    List<MasInvestigationPriceDetails> findByStatusIgnoreCase(String priceStatus);
+    List<MasInvestigationPriceDetails> findByStatusIgnoreCase(String status);
 
     // Find records with multiple status values
-    List<MasInvestigationPriceDetails> findByStatusInIgnoreCaseAndInvestigation_StatusIgnoreCase(List<String> statuses,String invStatus);
+    List<MasInvestigationPriceDetails> findByStatusInIgnoreCase(List<String> statuses);
 
 
     List<MasInvestigationPriceDetails> findByInvestigation_InvestigationId(Long investigationId);

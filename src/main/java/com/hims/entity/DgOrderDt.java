@@ -79,8 +79,4 @@ public class DgOrderDt {
     @JoinColumn(name = "billing_hd_id")
     private BillingHeader billingHd;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_tracking_status_id")
-    private LabOrderTrackingStatus orderTrackingStatus;
-
 }

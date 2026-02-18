@@ -24,15 +24,12 @@ public class AppSetupDTO {
     public static class appSetupDTO {
         private Long id;
         private String days;
-        private String startTime;
-        private String endTime;
         private Integer maxNoOfDays;
         private Integer minNoOfDays;
         private Integer totalToken;
         private Integer totalInterval;
         private Integer startToken;
         private Integer totalOnlineToken;
-        private String opdLocation;
 
     }
 }

@@ -1,9 +1,12 @@
 package com.hims.service;
 
+import com.hims.entity.StoreItemBatchStock;
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpeningBalanceEntryResponse;
-import com.hims.response.OpeningBalanceStockResponseDto;
+import com.hims.response.OpeningBalanceStockResponse2;
+import com.hims.response.StoreStockTakingTResponse;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -31,11 +34,11 @@ public interface OpeningBalanceEntryService {
     ApiResponse<List<?>> getAllStock(String type,Long hospitalId, Long departmentId);
 
 
-    ApiResponse<List<OpeningBalanceStockResponseDto>> getStockByDateRange(LocalDate fromDate, LocalDate toDate, Long itemId, Long hospitalId, Long departmentId);
+    ApiResponse<List<OpeningBalanceStockResponse2 >> getStockByDateRange(LocalDate fromDate, LocalDate toDate,Long itemId, Long hospitalId, Long departmentId);
 
     ApiResponse<String> updateByMrp(List<UpdateMrpValue> marValue);
 
-    ApiResponse<List<OpeningBalanceStockResponseDto>> getStockByItemId(Long itemId, Long hospitalId, Long departmentId);
+    ApiResponse<List<OpeningBalanceStockResponse2>> getStockByItemId(Long itemId,Long hospitalId, Long departmentId);
 
 
 }

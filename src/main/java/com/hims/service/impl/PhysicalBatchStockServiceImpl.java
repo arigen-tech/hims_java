@@ -6,12 +6,13 @@ import com.hims.entity.repository.*;
 import com.hims.request.StoreStockTakingMRequest;
 import com.hims.request.StoreStockTakingMRequest2;
 import com.hims.request.StoreStockTakingTRequest;
-import com.hims.response.*;
+import com.hims.response.ApiResponse;
+import com.hims.response.StoreStockTakingMResponse;
+import com.hims.response.StoreStockTakingTResponse;
 import com.hims.service.PhysicalBatchStockService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,6 @@ import java.util.stream.Collectors;
 
 
 @Service
-@Slf4j
 public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService {
     @Autowired
     AuthUtil authUtil;
@@ -280,34 +280,6 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
         return ResponseUtils.createSuccessResponse("Status updated successfully", new TypeReference<>() {});
 
         }
-
-    @Override
-    public ApiResponse<List<StockItemResponse>> getItems() {
-        try {
-            log.info("getItems method started...");
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
-                return  ResponseUtils.createNotFoundResponse("Current user not found",HttpStatus.UNAUTHORIZED.value());
-            }
-            List<Long> list = storeItemBatchStockRepository.findAll().stream().map(StoreItemBatchStock::getItemId).map(MasStoreItem::getItemId).distinct().toList();
-            List<MasStoreItem> storeItems=masStoreItemRepository.findByItemIdIn(list);
-            List<StockItemResponse> response = storeItems.stream().map(
-                    item -> {
-                        StockItemResponse res = new StockItemResponse();
-                        res.setId(item.getItemId());
-                        res.setName(item.getNomenclature());
-                        res.setCode(item.getPvmsNo());
-                        return res;
-                    }).toList();
-            log.info("getItems method ended...");
-            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
-
-        }catch (Exception e){
-            log.error("getItems method error :: ",e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
-        }
-
-    }
 
 
     public String addDetails(List<StoreStockTakingTRequest> storeStockTakingTRequests, long mId) {

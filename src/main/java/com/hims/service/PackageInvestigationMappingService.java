@@ -2,7 +2,6 @@ package com.hims.service;
 
 import com.hims.request.PackageInvestigationMappingRequest;
 import com.hims.response.ApiResponse;
-import com.hims.response.InvestigationPackageDTO;
 import com.hims.response.PackageInvestigationMappingDTO;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +19,7 @@ public interface PackageInvestigationMappingService {
     ApiResponse<PackageInvestigationMappingDTO> changeStatus(Long pimId, String status);
 
     ApiResponse<PackageInvestigationMappingDTO> getByPimId(Long pimId);
-    ApiResponse<List<InvestigationPackageDTO>>getAllPackageMap(int flag);
+    ApiResponse<List<PackageInvestigationMappingDTO>>getAllPackageMap(int flag);
     ApiResponse<List<PackageInvestigationMappingDTO>> getAllMappings(int flag);
 
     @Transactional(rollbackFor = {Exception.class})

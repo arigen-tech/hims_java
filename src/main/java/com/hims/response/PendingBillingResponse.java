@@ -35,8 +35,6 @@ public class PendingBillingResponse {
     private String sessionName;
     private BigDecimal registrationCost;
 
-    private Long billingPolicyId;
-
 
     private List<Long> billingHeaderIds;
     private List<AppointmentBlock> appointments;
