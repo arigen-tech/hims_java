@@ -12,13 +12,6 @@ import java.util.Optional;
 public interface MasServiceOpdRepository extends JpaRepository<MasServiceOpd, Long> {
     List<MasServiceOpd> findByHospitalIdId(Long hospitalId);
 
-//    Optional<MasServiceOpd> findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(MasHospital hospital, User doctor, MasDepartment department, MasServiceCategory serviceCategory);
-
-//    @Query("SELECT a FROM MasServiceOpd a WHERE a.hospitalId = :hospital AND a.doctorId = :doctor AND a.departmentId = :department AND a.serviceCategory = :serviceCat")
-//    Optional<MasServiceOpd> findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatId(@Param("hospital") MasHospital hospital,
-//                                      @Param("doctor") User doctor,
-//                                      @Param("department") MasDepartment department,
-//                                      @Param("serviceCat") MasServiceCategory serviceCat);
 
     @Query("SELECT a FROM MasServiceOpd a " +
             "WHERE a.hospitalId = :hospital " +
@@ -35,7 +28,12 @@ public interface MasServiceOpdRepository extends JpaRepository<MasServiceOpd, Lo
             @Param("currentDateTime") Instant currentDateTime);
 
 
-
-
-    Optional<MasServiceOpd> findByDoctorId_UserId(Long userId);
+    @Query("""
+        SELECT s
+        FROM MasServiceOpd s
+        WHERE s.doctorId.userId IN :userIds
+        """)
+    List<MasServiceOpd> getOPDServiceByUserIds(
+        @Param("userIds") List<Long> userIds
+    );
 }

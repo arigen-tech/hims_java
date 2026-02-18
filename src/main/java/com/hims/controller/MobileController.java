@@ -124,27 +124,28 @@ public class MobileController {
         return ResponseEntity.badRequest().body(new ApiResponse("error", message, null));
     }
 
-    @GetMapping("/searchByDepartmentAndDoctor")
-    public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctorList(
+    @GetMapping("/searchBySpecialityAndDoctor")
+    public ApiResponse<List<SpecialitiesAndDoctorResponse>> searchBySpecialityAndDoctor(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long hospitalId) {
         return masEmployeeService.getDepartmentAndDoctor(search, hospitalId);
     }
-    @GetMapping("/getAllDoctorBySpeciality")
-    public ApiResponse<List<SpecialityResponse>> getDoctorSpecialityBy(@RequestParam(required = false) Long specialityId) {
+    @GetMapping("/getAllDoctorBySpecialityWise")
+    public ApiResponse<List<SpecialityResponse>> getAllDoctorBySpecialityWise(@RequestParam(required = false) Long specialityId) {
         return masEmployeeService.getSpecialityAndDoctor(specialityId);
     }
-    @GetMapping("/getByDoctor")
-    public ApiResponse<DoctorDetailResponse> getByDoctor(@RequestParam(required = false) Long doctorId) {
+    @GetMapping("/getDoctorDetailById")
+    public ApiResponse<DoctorDetailResponse> getDoctorDetailById(@RequestParam(required = false) Long doctorId) {
        return masEmployeeService.getDoctor(doctorId);
     }
     @GetMapping("/getAppointmentHistoryList")
-    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistory(
+    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistoryList(
             @RequestParam(required = true) Long hospitalId,
             @RequestParam(required = false) Long patientId,
-            @RequestParam(required = false) String mobileNo
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) String deptTypeCode
     ) {
-        return masEmployeeService.appointmentHistory(hospitalId, patientId, mobileNo);
+        return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, deptTypeCode);
     }
 
 }

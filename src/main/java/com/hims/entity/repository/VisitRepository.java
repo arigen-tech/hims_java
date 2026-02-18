@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.*;
+import com.hims.projection.AppointmentHistoryProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -200,7 +201,7 @@ WHERE v.visit_status = 'n'
             "doctor_id = :doctorId AND " +
             "department_id = :departmentId AND " +
             "hospital_id = :hospitalId AND " +
-            "visit_id != :currentVisitId " +  // <-- Current visit ko exclude karo
+            "visit_id != :currentVisitId " +  // <-- Current visit excluded
             "ORDER BY visit_date DESC " +
             "LIMIT 1",
             nativeQuery = true)
@@ -254,5 +255,70 @@ WHERE v.visit_status = 'n'
             @Param("fromDate") Instant fromDate,
             @Param("mobileNo") String mobileNo
     );
+
+    @Query("""
+        select v
+        from Visit v
+        where v.hospital.id = :hospitalId
+          and v.patient.id  = :patientId
+          and lower(v.visitStatus) in ('y','c','n')
+        order by v.visitDate asc
+    """)
+    List<Visit> findAppointmentHistoryByHospitalAndPatient(
+            @Param("hospitalId") Long hospitalId,
+            @Param("patientId") Long patientId
+    );
+
+  /*
+     This query is used to fetch appointment history for a patient based on hospital ID, patient ID or mobile number, and department IDs.
+     It retrieves details such as visit ID, patient name, doctor name, department name, appointment date and time, visit status, reason for cancellation (if any), payment status, billed amount, and billing header ID.
+   */
+    @Query(value = """
+        SELECT 
+            v.visit_id AS visitId,
+            v.patient_id AS patientId,
+            CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            ) AS patientName,
+            p.p_mobile_number AS mobileNumber,
+            p.p_age AS patientAge,
+            v.doctor_id AS doctorId,
+            v.doctor_name AS doctorName,
+            v.department_id AS departmentId,
+            d.department_name AS departmentName,
+            v.visit_date AS appointmentDate,
+            v.start_time AS appointmentStartTime,
+            v.end_time AS appointmentEndTime,
+            v.visit_status AS visitStatus,
+            r.reason_name AS reason,
+            v.billing_status AS paymentStatus,
+            bh.net_amount AS billedAmount,
+            v.billing_hd_id AS billingHeaderId
+        FROM visit v
+        LEFT JOIN patient p ON p.patient_id = v.patient_id
+        LEFT JOIN mas_department d ON d.department_id = v.department_id
+        LEFT JOIN mas_appointment_change_reason r ON r.reason_id = v.cancelled_reason_id
+        LEFT JOIN billing_header bh ON bh.bill_hd_id = v.billing_hd_id
+        WHERE v.hospital_id = :hospitalId
+                   
+        AND (
+                  (:patientId IS NOT NULL AND v.patient_id = :patientId)
+        OR
+                (:mobileNo IS NOT NULL AND :mobileNo <> '' AND p.p_mobile_number = :mobileNo)
+            )
+                  
+        AND LOWER(v.visit_status) IN ('y', 'c', 'n')
+        AND v.department_id IN (:departmentIds)
+        ORDER BY v.visit_date ASC
+    """, nativeQuery = true)
+   List<AppointmentHistoryProjection> findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
+            @Param("hospitalId") Long hospitalId,
+            @Param("patientId") Long patientId,
+            @Param("mobileNo") String mobileNo,
+            @Param("departmentIds") List<Long> departmentIds
+    );
+
 
 }

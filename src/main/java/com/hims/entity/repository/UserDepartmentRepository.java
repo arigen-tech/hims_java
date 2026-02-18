@@ -1,3 +1,11 @@
+  //  List<UserDepartment> findByDepartmentId(List<MasDepartment> departments2);
+
+   // Optional<UserDepartment> findByUser_Employee_EmployeeId(Long doctorId);
+
+
+
+
+
 package com.hims.entity.repository;
 
 import com.hims.entity.MasDepartment;
@@ -37,23 +45,17 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
         FROM UserDepartment ud
         JOIN FETCH ud.user u
         JOIN FETCH u.employee e
-        WHERE ud.department.id IN :departmentIds
-
+        WHERE ud.department.id = :departmentId
 
     """)
     List<UserDepartment> findByDepartmentIds(
-            @Param("departmentIds") List<Long> departmentIds
+            @Param("departmentId") Long departmentId
     );
 
-   // Optional<UserDepartment> findByUser_Employee_EmployeeId(Long doctorId);
 
     List<UserDepartment> findByUserUserId(Long userId);
 
-  //  List<UserDepartment> findByDepartmentId(List<MasDepartment> departments2);
 
-    List<UserDepartment> findByDepartmentIn(List<MasDepartment> departments2);
+    List<UserDepartment> findByDepartment_IdIn(List<Long> departmentIds);
 
-//    List<SpecialitiesResponse> findSpecialitiesByDoctorId(Long doctorId);
-//
-//   List<UserDepartment> findByDepartmentId(List<Long> deptIds);
 }
