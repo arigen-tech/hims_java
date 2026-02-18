@@ -71,9 +71,7 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
     List<MasDepartment> findByDepartmentTypeId(Long opdId);
     List<MasDepartment> findByDepartmentTypeId(int opdId);
 
-    // ============================================================================
-    // ✅ OPTIMIZED: Methods with JOIN FETCH to prevent N+1 problems
-    // ============================================================================
+ 
 
     /**
      *  Fetches departments with all relationships in a single query.
