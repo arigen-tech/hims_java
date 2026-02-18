@@ -1,5 +1,6 @@
 package com.hims.controller;
 
+
 import com.hims.constants.ReportConstants;
 import com.hims.utils.JasperReportUtil;
 import com.hims.utils.ResponseUtils;
@@ -19,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 
 @RestController
@@ -42,26 +44,24 @@ public class ReportController {
         Map<String, Object> params = new HashMap<>();
         params.put("Bill_no", billNo);
         params.put("Pay_status", paymentStatus);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)) {
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.LAB_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)) {
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Opening Balance report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -71,26 +71,24 @@ public class ReportController {
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("visit_id", visit);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)) {
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.OPD_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)) {
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Opening Balance report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
 
     }
@@ -110,26 +108,24 @@ public class ReportController {
         params.put("SECTION_ID", sectionId);
         params.put("ITEM_ID", itemId);
         params.put("CurrentDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_SUMMARY_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.STOCK_SUMMARY_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)) {
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_SUMMARY_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Opening Balance report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
 
     }
@@ -149,26 +145,24 @@ public class ReportController {
         params.put("SECTION_ID", sectionId);
         params.put("ITEM_ID", itemId);
         params.put("CurrentDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date()));
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_STATUS_DETAILED_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.STOCK_STATUS_DETAILED_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_STATUS_DETAILED_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Opening Balance report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
 
     }
@@ -185,27 +179,25 @@ public class ReportController {
         params.put("department_id", departmentId);
         params.put("FromDate", fromDate);
         params.put("ToDate", toDate);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_REGISTRY_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.OPENING_BALANCE_REGISTRY_REPORT);
             }
-            else if("P".equalsIgnoreCase(flag)) {
+            else if(ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_REGISTRY_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Opening Balance report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
 
     }
@@ -216,26 +208,24 @@ public class ReportController {
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("balance_m_id", balanceMId);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.OPENING_BALANCE_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Opening Balance report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -251,26 +241,24 @@ public class ReportController {
         params.put("DEPARTMENT_ID", departmentId);
         params.put("FromDate", fromDate);
         params.put("ToDate", toDate);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_REGISTER_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.STOCK_TAKING_REGISTER_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_REGISTER_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Stock Taking Register: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -280,26 +268,24 @@ public class ReportController {
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("TAKING_M_ID", takingMId);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.STOCK_TAKING_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Stock taking Report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -317,26 +303,24 @@ public class ReportController {
         params.put("ITEM_ID", itemId);
         params.put("FromDate", fromDate);
         params.put("ToDate", toDate);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DRUG_EXPIRY_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.DRUG_EXPIRY_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DRUG_EXPIRY_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Drug Expiry Report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -346,26 +330,24 @@ public class ReportController {
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("indent_m_id", indentMId);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.INDENT_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Lab investigation report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -376,22 +358,22 @@ public class ReportController {
         Map<String , Object> params = new HashMap<>();
         params.put("visit_id",visit);
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_TOKEN_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.OPD_TOKEN_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_TOKEN_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Lab investigation report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -401,27 +383,25 @@ public class ReportController {
             @RequestParam String flag){
         Map<String , Object> params = new HashMap<>();
         params.put("orderhd_id", orderhd_id);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB,ReportConstants.LAB_INVESTIGATION_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf,ReportConstants.LAB_INVESTIGATION_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB,ReportConstants.LAB_INVESTIGATION_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Lab investigation report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -431,30 +411,26 @@ public class ReportController {
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("visit_id", visitId);
-        params.put("SUBREPORT_DIR", getClass()
-                .getResource(ReportConstants.JASPER_BASE_PATH_OPD + ReportConstants.OPD_SUBREPORT_DIR)
-                .toString());
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_OPD + ReportConstants.OPD_SUBREPORT_DIR)).toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try {
-            if ("D".equalsIgnoreCase(flag)) {
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_CASESHEET_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.OPD_CASESHEET_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)) {
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_CASESHEET_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate OPD case sheet: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -468,25 +444,21 @@ public class ReportController {
         params.put("drug_id", itemId);
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
-        params.put("SUBREPORT_DIR", getClass()
-                .getResource(ReportConstants.JASPER_BASE_PATH_STORE + ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_SUBREPORT_DIR)
-                .toString());
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_STORE + ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_SUBREPORT_DIR)).toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
-            if ("D".equalsIgnoreCase(flag)) {
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)) {
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
                 e.printStackTrace();
@@ -501,26 +473,24 @@ public class ReportController {
             @RequestParam String flag ) {
         Map<String, Object> params = new HashMap<>();
         params.put("issue_m_id", issueMId);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_ISSUE_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.INDENT_ISSUE_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_ISSUE_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Indent issue report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -530,27 +500,25 @@ public class ReportController {
             @RequestParam String flag ) {
         Map<String, Object> params = new HashMap<>();
         params.put("indent_m_id", indentMId);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_RECEIVING_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.INDENT_RECEIVING_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_RECEIVING_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Indent receiving report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -575,30 +543,26 @@ public class ReportController {
         params.put("investigation_id", safeInvestigationId);
         params.put("from_age", safeFromAge);
         params.put("to_age", safeToAge);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
-        params.put("SUBREPORT_DIR", getClass()
-                .getResource(ReportConstants.JASPER_BASE_PATH_LAB + ReportConstants.LAB_REGISTER_SUB_REPORT_DIR)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+        params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_LAB + ReportConstants.LAB_REGISTER_SUB_REPORT_DIR)).toString());
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_REGISTER_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.LAB_REGISTER_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_REGISTER_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Lab Register report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -609,30 +573,28 @@ public class ReportController {
             @RequestParam Long itemId,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
         params.put("item_id", itemId);
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RECEIVING_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.ITEM_WISE_RECEIVING_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RECEIVING_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Item Wise Receiving report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -642,29 +604,27 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RECEIVING_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.DATE_WISE_RECEIVING_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RECEIVING_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Date Wise Receiving report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -678,27 +638,25 @@ public class ReportController {
         params.put("hospital_id", hospitalId);
         params.put("department_id", departmentId);
         params.put("return_m_id", returnMId);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.INDENT_RETURN_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.INDENT_RETURN_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.INDENT_RETURN_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate item return report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -716,27 +674,25 @@ public class ReportController {
         params.put("item_id", itemId);
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RETURN_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.ITEM_WISE_RETURN_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RETURN_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Item Wise Return report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -752,27 +708,25 @@ public class ReportController {
         params.put("to_date", toDate);
         params.put("hospital_id", hospitalId);
         params.put("department_id", departmentId);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RETURN_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.DATE_WISE_RETURN_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RETURN_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Date Wise Return report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -790,27 +744,25 @@ public class ReportController {
         params.put("hospital_id", hospitalId);
         params.put("investigation_id", investigationId);
         params.put("sub_chargecode_id", subChargeCodeId);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.DETAILED_TAT_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.DETAILED_TAT_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.DETAILED_TAT_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Detailed TAT report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -828,27 +780,25 @@ public class ReportController {
         params.put("hospital_id", hospitalId);
         params.put("investigation_id", investigationId);
         params.put("sub_chargecode_id", subChargeCodeId);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SUMMARY_TAT_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.SUMMARY_TAT_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SUMMARY_TAT_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Summary TAT report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -875,27 +825,25 @@ public class ReportController {
         params.put("from_date", safeFromDate);
         params.put("to_date", safeToDate);
         params.put("mobile_no", mobileNumber);
-        params.put("path", getClass()
-                .getResource(ReportConstants.ASSET_LOGO)
-                .toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
-            if ("D".equalsIgnoreCase(flag)){
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.RESULT_AMENDMENT_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf, ReportConstants.RESULT_AMENDMENT_REPORT);
-            } else if ("P".equalsIgnoreCase(flag)){
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.RESULT_AMENDMENT_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
-                                "Invalid flag value. Use D or P", 400));
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to generate Result Amendment report: " + e.getMessage());
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
     }
 
@@ -909,3 +857,5 @@ public class ReportController {
                 .body(pdfData);
     }
 }
+
+

@@ -4,13 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.helperUtil.HelperUtils;
+import com.hims.projection.AppointmentHistoryProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.websocket.Session;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -126,7 +127,7 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
 
 
     @Value("${app.opdDepartmentType}")
-    private Long opdId;
+    private Long opdDepartmentTypeId;
 
     @Value("${app.role.doctor}")
     private Long roleId;
@@ -1359,20 +1360,25 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     }
 
 @Override
-public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(String search,Long hospitalId) {
+public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(String searchInput,Long hospitalId) {
     try {
-        log.info("Fetching OPD departments and doctors list with search: {}", search);
-        if (search == null || search.isBlank()) {
+        log.info("Fetching OPD Speciality departments and doctors list with search: {}", searchInput);
+        if (searchInput == null || searchInput.isBlank()) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Search text is required", HttpStatus.BAD_REQUEST.value()
+                    "Search Input is required", HttpStatus.BAD_REQUEST.value()
             );
         }
-        String keyword = search.trim();
-        // ================= Departments =================
-        List<MasDepartment> departments;
-        departments = masDepartmentRepository
+
+        if(hospitalId == null || hospitalId <= 0){
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Hospital ID is required", HttpStatus.BAD_REQUEST.value()
+            );
+        }
+
+        //  Get Speciality Department Name
+        List<MasDepartment> departments = masDepartmentRepository
                             .findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(
-                                    hospitalId, opdId, keyword);
+                                    hospitalId, opdDepartmentTypeId, searchInput.trim());
 
         List<SpecialitiesResponse> deptResponseList =
                 departments.stream().map(dept -> {
@@ -1381,13 +1387,22 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     dto.setSpecialityName(dept.getDepartmentName());
                     return dto;
                 }).toList();
-// Doctors
-        List<Long> employeeIds;
-        // Step 1: Departments (hospital + OPD)
-            List<MasDepartment> departments2 = masDepartmentRepository.findByHospitalIdAndDepartmentTypeId(hospitalId, opdId);
-            // Step 2: UserDepartment → EmployeeIds
-            List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartmentIn(departments2);
-            employeeIds = userDepartments.stream()
+
+
+        //  Get Doctors Name
+
+            List<Long> opdDepartmentIds = masDepartmentRepository.findDepartmentIdsByDepartmentTypeId(opdDepartmentTypeId);
+
+            List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartment_IdIn(opdDepartmentIds);
+
+        List<Long> userIds = userDepartments.stream()
+                .map(UserDepartment::getUser)
+                .filter(Objects::nonNull)
+                .map(User::getUserId)
+                .distinct()
+                .toList();
+
+            List<Long> employeeIds = userDepartments.stream()
                             .map(UserDepartment::getUser)
                             .filter(Objects::nonNull)
                             .map(User::getEmployee)
@@ -1395,68 +1410,92 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                             .map(MasEmployee::getEmployeeId)
                             .distinct()
                             .toList();
-       // }
-// =========================
-// CASE 2: hospitalId NOT present
-// =========================
-//        else {
-//            // Step 1: Departments (ONLY OPD)
-//            List<MasDepartment> departments2 = masDepartmentRepository.findByDepartmentTypeId(opdId);
-//
-//            // Step 2: UserDepartment → EmployeeIds
-//            List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartmentIn(departments2);
-//            employeeIds = userDepartments.stream()
-//                            .map(UserDepartment::getUser)
-//                            .filter(Objects::nonNull)
-//                            .map(User::getEmployee)
-//                            .filter(Objects::nonNull)
-//                            .map(MasEmployee::getEmployeeId)
-//                            .distinct()
-//                            .toList();
-//        }
 
-//        if (employeeIds.isEmpty()) {
-//            return ResponseUtils.createFailureResponse(
-//                    null, new TypeReference<>() {},
-//                    "No doctor found",
-//                    HttpStatus.NOT_FOUND.value()
-//            );
-//        }
 
         List<MasEmployee> doctors =
                 masEmployeeRepository
                         .findByEmployeeIdInAndRoleIdIdAndStatusIgnoreCaseAndFirstNameContainingIgnoreCaseOrderByFirstNameAsc(
-                                employeeIds, roleId, "A", keyword
+                                employeeIds, roleId, "A", searchInput
                         );
 
-        List<DoctorResponse> doctorResponseList =
-                doctors.stream().map(emp -> {
-                    DoctorResponse dto = new DoctorResponse();
-                    User user = userRepo.findByEmployee_EmployeeId(emp.getEmployeeId());
-                    dto.setDoctorId( user.getUserId());
-                    //dto.setDoctorId(emp.getEmployeeId());
-                    dto.setYearOfExperience(user.getEmployee().getYearOfExperience());
-                    dto.setDoctorName(emp.getFirstName() + (emp.getLastName() != null ? " " + emp.getLastName() : ""));
-                   // User user=userRepo.findByEmployee_EmployeeId(emp.getEmployeeId());
-                    Optional<MasServiceOpd> masServiceOpd=masServiceOpdRepository.findByDoctorId_UserId(user!=null?user.getUserId():null);
-                    dto.setConsultancyFee(masServiceOpd.map(MasServiceOpd::getBaseTariff).orElse(null));
-                    List<Object[]> rows = appSetupRepository.findDistinctDoctorSessionNextDay(user.getUserId());
-                    List<SessionResponseList> sessionList = rows.stream().map(r -> {
-                        SessionResponseList s = new SessionResponseList();
-                        s.setSessionId(((Number) r[1]).longValue());
-                        s.setDay((String) r[2]);          // <-- nearest day for that session
-                        s.setStartTime((String) r[3]);
-                        s.setEndTime((String) r[4]);
-                        return s;
-                    }).toList();
-                    dto.setSessionResponseLists(sessionList);
-                    return dto;
-                }).toList();
+        if (doctors.isEmpty()) {
+            log.info("No doctors found for search input: {}", searchInput);
+        }
+
+        // Batch fetch users by employee IDs to avoid N+1 query problem
+        List<Long> doctorEmployeeIds = doctors.stream()
+                .map(MasEmployee::getEmployeeId)
+                .toList();
+
+        Map<Long, User> employeeIdToUserMap = userRepo.findUsersByEmployee_EmployeeIdIn(doctorEmployeeIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        u -> u.getEmployee().getEmployeeId(),
+                        u -> u,
+                        (existing, replacement) -> existing
+                ));
+
+        //Get Service OPD details for doctors and session details for doctors in batch to avoid N+1 problem
+
+        Map<Long, MasServiceOpd> serviceOpdMap = masServiceOpdRepository
+                .getOPDServiceByUserIds(userIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        s -> s.getDoctorId().getUserId(),
+                        s -> s,
+                        (existing, replacement) -> existing
+                ));
+
+        List<Object[]> allSessions = appSetupRepository
+                .findDistinctDoctorSessionNextDayBatch(userIds);
+        Map<Long, List<Object[]>> sessionMap = allSessions.stream()
+                .collect(Collectors.groupingBy(r -> ((Number) r[0]).longValue()));
+
+
+
+
+        List<DoctorResponse> doctorResponseList = doctors.stream().map(emp -> {
+            DoctorResponse dto = new DoctorResponse();
+
+            // Get user from pre-loaded map
+            User user = employeeIdToUserMap.get(emp.getEmployeeId());
+            if (user == null) {
+                log.warn("No user found for employee ID: {}", emp.getEmployeeId());
+                return dto;
+            }
+
+            // Set basic doctor information
+            dto.setDoctorId(user.getUserId());
+            dto.setYearOfExperience(user.getEmployee().getYearOfExperience() + " years");
+            dto.setDoctorName(emp.getFirstName() +
+                    (emp.getLastName() != null && !emp.getLastName().trim().isEmpty()
+                            ? " " + emp.getLastName() : ""));
+
+            // Get consultancy fee from preloaded map created outside of loop
+
+            MasServiceOpd serviceOpd = serviceOpdMap.get(user.getUserId());
+            dto.setConsultancyFee(serviceOpd != null ? serviceOpd.getBaseTariff() : null);
+
+            // Get sessions from preloaded map created outside of loop
+
+            List<Object[]> sessionRows = sessionMap.getOrDefault(user.getUserId(), Collections.emptyList());
+            List<SessionResponseList> sessionList = sessionRows.stream().map(r -> {
+                SessionResponseList session = new SessionResponseList();
+                session.setSessionId(((Number) r[1]).longValue());
+                session.setDay((String) r[2]);
+                session.setStartTime((String) r[3]);
+                session.setEndTime((String) r[4]);
+                return session;
+            }).toList();
+            dto.setSessionResponseLists(sessionList);
+
+            return dto;
+        }).toList();
 
         if (deptResponseList.isEmpty() && doctorResponseList.isEmpty()) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
-                    "No department or doctor found",
+                    "Speciality departments and doctors not found for the given search input",
                     HttpStatus.NOT_FOUND.value()
             );
         }
@@ -1476,90 +1515,121 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
     @Override
     public ApiResponse<List<SpecialityResponse>> getSpecialityAndDoctor(Long specialityId) {
-
         log.info("Fetching OPD Speciality and Doctor list, specialityId={}", specialityId);
         try {
-            //  OPD Departments
-            List<MasDepartment> opdDepartments = masDepartmentRepository.findByDepartmentTypeId(opdId);
-            if (opdDepartments == null || opdDepartments.isEmpty()) {
-                log.info("No OPD departments found for departmentTypeId = 5");
-                return ResponseUtils.createSuccessResponse(
-                        Collections.emptyList(),
-                        new TypeReference<>() {}
+
+            if (specialityId == null || specialityId <= 0) {
+                log.warn("Speciality Department ID is required");
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Speciality Department ID is required",
+                        HttpStatus.BAD_REQUEST.value()
                 );
             }
 
-            // Filter by specialityId (if provided)
-            if (specialityId != null) {
-                opdDepartments = opdDepartments.stream().filter(d -> d.getId().equals(specialityId)).toList();
-                log.debug("Filtered OPD departments by specialityId={}", specialityId);
-            }
-
+            Optional<MasDepartment> opdDepartments = masDepartmentRepository.findById(specialityId);
             if (opdDepartments.isEmpty()) {
-                log.info("No department found for specialityId={}", specialityId);
-                return ResponseUtils.createSuccessResponse(
-                        Collections.emptyList(),
-                        new TypeReference<>() {}
-                );
+                log.info("No OPD departments found for departmentId={}", specialityId);
+                return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
             }
 
-            List<Long> deptIds = opdDepartments.stream()
-                    .map(MasDepartment::getId)
+
+            List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartmentIds(specialityId);
+
+            if (userDepartments.isEmpty()) {
+                log.info("No doctors found for the specified department(s){}", specialityId);
+                return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
+            }
+
+            List<UserDepartment> doctorUserDepartments = userDepartments.stream()
+                    .filter(ud -> {
+                        User user = ud.getUser();
+                        MasEmployee emp = user != null ? user.getEmployee() : null;
+                        return emp != null
+                                && emp.getRoleId() != null
+                                && emp.getRoleId().getId().equals(3L);
+                    })
                     .toList();
 
-            //  UserDepartment → User → Employee
-            List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartmentIds(deptIds);
+            if (doctorUserDepartments.isEmpty()) {
+                log.info("No doctors found for the specified department(s)");
+                return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
+            }
 
-            //  Grouping Response
+            List<Long> userIds = doctorUserDepartments.stream()
+                    .map(ud -> ud.getUser().getUserId())
+                    .distinct()
+                    .toList();
+
+
+            Map<Long, MasEmployee> employeeMap = doctorUserDepartments.stream()
+                    .collect(Collectors.toMap(
+                            ud -> ud.getUser().getUserId(),
+                            ud -> ud.getUser().getEmployee(),
+                            (existing, replacement) -> existing
+                    ));
+
+
+            Map<Long, MasServiceOpd> serviceOpdMap = masServiceOpdRepository
+                    .getOPDServiceByUserIds(userIds)
+                    .stream()
+                    .collect(Collectors.toMap(
+                            s -> s.getDoctorId().getUserId(),
+                            s -> s,
+                            (existing, replacement) -> existing
+                    ));
+
+            List<Object[]> allSessions = appSetupRepository
+                    .findDistinctDoctorSessionNextDayBatch(userIds);
+            Map<Long, List<Object[]>> sessionMap = allSessions.stream()
+                    .collect(Collectors.groupingBy(r -> ((Number) r[0]).longValue()));
+
+
             Map<Long, SpecialityResponse> responseMap = new LinkedHashMap<>();
 
-            for (UserDepartment ud : userDepartments) {
+            for (UserDepartment ud : doctorUserDepartments) {
                 User user = ud.getUser();
-                MasEmployee emp = user != null ? user.getEmployee() : null;
-
-//               (role_id = 3)
-                if (emp == null
-                        || emp.getRoleId() == null
-                        || !emp.getRoleId().getId().equals(3L)) {
-                    continue;
-                }
-
                 MasDepartment dept = ud.getDepartment();
 
-               // MasEmployee emp = ud.getUser().getEmployee();
-               // User user=ud.getUser();
+                MasEmployee emp = employeeMap.get(user.getUserId());
 
-                // Speciality
-                SpecialityResponse speciality =
-                        responseMap.computeIfAbsent(dept.getId(), k -> {
-                            SpecialityResponse s = new SpecialityResponse();
-                            s.setSpecialityId(dept.getId());
-                            s.setSpecialityName(dept.getDepartmentName());
-                            s.setHospitalId(dept.getHospital().getId());
-                            s.setHospitalName(dept.getHospital().getHospitalName());
-                            s.setDoctorResponseListList(new ArrayList<>());
-                            return s;
-                        });
+                // Create or get speciality response
+                SpecialityResponse speciality = responseMap.computeIfAbsent(dept.getId(), k -> {
+                    SpecialityResponse s = new SpecialityResponse();
+                    s.setSpecialityId(dept.getId());
+                    s.setSpecialityName(dept.getDepartmentName());
+                    s.setHospitalId(dept.getHospital().getId());
+                    s.setHospitalName(dept.getHospital().getHospitalName());
+                    s.setDoctorResponseListList(new ArrayList<>());
+                    return s;
+                });
 
-                // Doctor
+                // Build doctor response
+
                 DoctorResponseList doctor = new DoctorResponseList();
-               // User user=userRepo.findByEmployee_EmployeeId(emp.getEmployeeId());
                 doctor.setDoctorId(user.getUserId());
-                doctor.setDoctorName(emp.getFirstName() + " " + (emp.getMiddleName() != null ? emp.getMiddleName() + " " : "") + emp.getLastName());
+                doctor.setDoctorName(emp.getFirstName() + " " +
+                        (emp.getMiddleName() != null ? emp.getMiddleName() + " " : "") +
+                        emp.getLastName());
                 doctor.setSpecialityName(dept.getDepartmentName());
                 doctor.setGender(emp.getGenderId() != null ? emp.getGenderId().getGenderName() : null);
                 doctor.setPhoneNo(emp.getMobileNo());
-                LocalDate dob = user.getEmployee().getDob(); // LocalDate
-                String ageStr = null;
+
+                LocalDate dob = emp.getDob();
                 if (dob != null) {
                     int years = Period.between(dob, LocalDate.now()).getYears();
-                    ageStr = String.valueOf(years);
+                    doctor.setAge(String.valueOf(years)+ " years");
                 }
 
-                doctor.setAge(ageStr);
-              //  doctor.setAge(emp.getAge() != null ? emp.getAge().toString() : null);
                 doctor.setYearsOfExperience(emp.getYearOfExperience());
-                List<Object[]> rows = appSetupRepository.findDistinctDoctorSessionNextDay(user.getUserId());
+
+                // Get consultancy fee from Map created above outside the loop to avoid repeated DB calls
+                MasServiceOpd serviceOpd = serviceOpdMap.get(user.getUserId());
+                doctor.setConsultancyFee(serviceOpd != null ? serviceOpd.getBaseTariff() : null);
+
+                // Get sessions from Map created above outside the loop to avoid repeated DB
+                List<Object[]> rows = sessionMap.getOrDefault(user.getUserId(), Collections.emptyList());
                 List<SessionResponseList> sessionList = rows.stream().map(r -> {
                     SessionResponseList s = new SessionResponseList();
                     s.setSessionId(((Number) r[1]).longValue());
@@ -1568,25 +1638,25 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     s.setEndTime((String) r[4]);
                     return s;
                 }).toList();
-
                 doctor.setSessionResponseLists(sessionList);
-                Optional<MasServiceOpd> masServiceOpd=masServiceOpdRepository.findByDoctorId_UserId(user!=null?user.getUserId():null);
-                doctor.setConsultancyFee(masServiceOpd.map(MasServiceOpd::getBaseTariff).orElse(null));
-                speciality.getDoctorResponseListList().add(doctor);
 
+                speciality.getDoctorResponseListList().add(doctor);
             }
 
             List<SpecialityResponse> response = new ArrayList<>(responseMap.values());
 
-            log.info("Successfully fetched {} specialities", response.size());
-            return ResponseUtils.createSuccessResponse(
-                    response,
-                    new TypeReference<>() {}
-            );
+            log.info("Successfully fetched {} specialities with {} total doctors",
+                    response.size(),
+                    response.stream().mapToInt(s -> s.getDoctorResponseListList().size()).sum());
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
 
         } catch (Exception ex) {
             log.error("Error while fetching OPD Speciality and Doctor list", ex);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    ex.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -1596,36 +1666,72 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
     public ApiResponse<DoctorDetailResponse> getDoctor(Long doctorId) {
         log.info("Fetching doctor details for doctorId={}", doctorId);
         try {
-            //Employee
 
-
-            // User using employeeId
-            Optional<User> optionalUser = userRepo.findById(doctorId);
-           // MasEmployee emp = masEmployeeRepository.findById().orElseThrow(() -> new RuntimeException("Doctor not found"));
-
-            List<SpecialitiesResponse> specialitiesList = new ArrayList<>();
-            if (optionalUser.isPresent()) {
-                User user = optionalUser.get();
-                // UserDepartment using userId
-                List<UserDepartment> userDepartments = userDepartmentRepository.findByUserUserId(user.getUserId());
-                for (UserDepartment ud : userDepartments) {
-                    MasDepartment dept = ud.getDepartment();
-                    SpecialitiesResponse sr = new SpecialitiesResponse();
-                    sr.setSpecialityId(dept!=null?dept.getId():null);
-                    sr.setSpecialityName(dept!=null?dept.getDepartmentName():null);
-                    specialitiesList.add(sr);
-                }
+            if(doctorId == null || doctorId <= 0) {
+                log.warn("Doctor ID is required");
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Doctor ID is required",
+                        HttpStatus.BAD_REQUEST.value()
+                );
             }
 
-            // Response
-            DoctorDetailResponse doctor = new DoctorDetailResponse();
-            doctor.setDoctorId( optionalUser.get().getUserId());
-            List<AppSetup> appSetups =
-                    appSetupRepository.findByDoctorId_UserId(optionalUser.get().getUserId());
+            Optional<User> optionalUser = userRepo.findById(doctorId);
+            if (optionalUser.isEmpty()) {
+                log.warn("Doctor details are not available for this userId={}", doctorId);
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Doctor details are not available for this ID: " + doctorId,
+                        HttpStatus.NOT_FOUND.value()
+                );
+            }
 
-            List<SessionResponse> appSetResponseList = appSetups.stream()
+            User user = optionalUser.get();
+
+            MasEmployee employee = user.getEmployee();
+            if (employee == null) {
+                log.warn("Employee record not found for userId={}", doctorId);
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Employee details are not available for this userId",
+                        HttpStatus.NOT_FOUND.value()
+                );
+            }
+
+            Long userId = user.getUserId();
+            Long empId = employee.getEmployeeId();
+
+            List<MasServiceOpd> masServiceOpd = masServiceOpdRepository.getOPDServiceByUserIds(Collections.singletonList(userId));
+            if(masServiceOpd.isEmpty()) {
+                log.info("Consultancy fee not found for doctorId={}", doctorId);
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Consultancy fee not found for doctorId",
+                        HttpStatus.NOT_FOUND.value()
+                );
+            }
+
+           //Fetch specialities with department info (1 query - optimized with JOIN FETCH if available)
+            List<UserDepartment> userDepartments = userDepartmentRepository.findByUserUserId(userId);
+            List<SpecialitiesResponse> specialitiesList = userDepartments.stream()
+                    .map(ud -> {
+                        MasDepartment dept = ud.getDepartment();
+                        SpecialitiesResponse sr = new SpecialitiesResponse();
+                        sr.setSpecialityId(dept != null ? dept.getId() : null);
+                        sr.setSpecialityName(dept != null ? dept.getDepartmentName() : null);
+                        return sr;
+                    })
+                    .toList();
+
+            // Fetch app setups
+            List<AppSetup> appSetups = appSetupRepository.findByDoctorId_UserId(userId);
+            List<SessionResponse> sessionResponseList = appSetups.stream()
                     .filter(a -> a.getStartTime() != null && !a.getStartTime().isBlank()
-                            && a.getEndTime()   != null && !a.getEndTime().isBlank())
+                            && a.getEndTime() != null && !a.getEndTime().isBlank())
                     .map(appSetup -> {
                         SessionResponse resp = new SessionResponse();
                         resp.setMinDay(appSetup.getMinNoOfDays());
@@ -1638,96 +1744,53 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     })
                     .toList();
 
-            doctor.setSessionResponseList(appSetResponseList);
-//            List<Object[]> rows = appSetupRepository.findDistinctDoctorSession(optionalUser.get().getUserId());
-//            List<SessionResponseList> sessionList1 = rows.stream().map(r -> {
-//                SessionResponseList s = new SessionResponseList();
-//                s.setSessionId(((Number) r[1]).longValue());
-//                s.setStartTime((String) r[2]);
-//                s.setEndTime((String) r[3]);
-//
-//                return s;
-//            }).toList();
-//
-//            doctor.setSessionResponseLists(sessionList1);
 
-            BasicInfo basicInfo=new BasicInfo();
-            basicInfo.setDoctorName(optionalUser.get().getEmployee().getFirstName()+ " " + (optionalUser.get().getEmployee().getMiddleName() != null ? optionalUser.get().getEmployee().getMiddleName() + " " : "") + optionalUser.get().getEmployee().getLastName());
-            basicInfo.setGender(optionalUser.get().getEmployee().getGenderId() != null ? optionalUser.get().getEmployee().getGenderId().getGenderName() : null);
-            basicInfo.setPhoneNo(optionalUser.get().getEmployee().getMobileNo());
-            LocalDate dob = optionalUser.get().getEmployee().getDob(); // LocalDate
+            // Fetch employee qualifications
+            List<String> educationList = employeeQualificationRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(eq -> {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(eq.getQualificationName());
+                        if (eq.getInstitutionName() != null) {
+                            sb.append(" - ").append(eq.getInstitutionName());
+                        }
+                        if (eq.getCompletionYear() != null) {
+                            sb.append(" (").append(eq.getCompletionYear()).append(")");
+                        }
+                        return sb.toString();
+                    })
+                    .toList();
 
-            String ageStr = null;
-            if (dob != null) {
-                int years = Period.between(dob, LocalDate.now()).getYears();
-                ageStr = String.valueOf(years);
-            }
+            // Fetch work experience
+            List<String> workExperience = employeeWorkExperienceRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeWorkExperience::getExperienceSummary)
+                    .toList();
 
-            basicInfo.setAge(ageStr);
+            // Fetch specialty interests
+            List<String> specialtyInterests = employeeSpecialtyInterestRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeSpecialtyInterest::getInterestSummary)
+                    .toList();
 
-          //  basicInfo.setAge(optionalUser.get().getEmployee().getAge() != null ? optionalUser.get().getEmployee().getAge().toString() : null);
+            // Fetch memberships
+            List<String> memberships = employeeMembershipRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeMembership::getMembershipSummary)
+                    .toList();
 
-            basicInfo.setYearsOfExperience(optionalUser.get().getEmployee().getYearOfExperience());
-            basicInfo.setProfileDescription(optionalUser.get().getEmployee().getProfileDescription());
-            User user=userRepo.findByEmployee_EmployeeId(optionalUser.get().getEmployee().getEmployeeId());
-            Optional<MasServiceOpd> masServiceOpd=masServiceOpdRepository.findByDoctorId_UserId(user.getUserId());
-            basicInfo.setConsultancyFee(masServiceOpd.map(MasServiceOpd::getBaseTariff).orElse(null));
-            doctor.setBasicInfo( basicInfo);
-            doctor.setHospitalName(optionalUser.map(User::getHospital).map(MasHospital::getHospitalName).orElse(null));
-            doctor.setEducation(employeeQualificationRepository
-                            .findById(optionalUser.get().getEmployee().getEmployeeId())
-                            .stream()
-                            .map(eq -> {
-                                StringBuilder sb = new StringBuilder();
-                                // Qualification
-                                sb.append(eq.getQualificationName());
-                                // College
-                                if (eq.getInstitutionName() != null) {
-                                    sb.append(" - ").append(eq.getInstitutionName());
-                                }
-                                // Year
-                                if (eq.getCompletionYear()!= null) {
-                                    sb.append(" (").append(eq.getCompletionYear()).append(")");
-                                }
-                                return sb.toString();
-                            })
-                            .toList()
-            );
-            List<MasOpdSession> sessions = masOpdSessionRepository.findByStatusIgnoreCase("y");
-            List<SessionResponseList> sessionList = sessions.stream().map(session -> {
-                SessionResponseList s = new SessionResponseList();
-                s.setSessionId(session.getId());
-                s.setStartTime(session.getFromTime().toString());
-                s.setEndTime(session.getEndTime().toString());
-                return s;
-            }).toList();
-           // doctor.setSessionResponseLists(sessionList);
-            doctor.setWorkExperience(
-                    employeeWorkExperienceRepository.findByEmployee(optionalUser.get().getEmployee())
-                            .stream()
-                            .map(EmployeeWorkExperience::getExperienceSummary)
-                            .toList()
-            );
-            doctor.setSpecialtyInterests(
-                    employeeSpecialtyInterestRepository.findByEmployee(optionalUser.get().getEmployee())
-                            .stream()
-                            .map(EmployeeSpecialtyInterest::getInterestSummary)
-                            .toList()
-            );
-            doctor.setMemberships(
-                    employeeMembershipRepository.findByEmployee(optionalUser.get().getEmployee())
-                            .stream()
-                            .map(EmployeeMembership::getMembershipSummary)
-                            .toList()
-            );
-            doctor.setAwardsAndDistinctions(
-                    employeeAwardRepository.findByEmployee(optionalUser.get().getEmployee())
-                            .stream()
-                            .map(EmployeeAward::getAwardSummary)
-                            .toList()
-            );
+            // Fetch awards
+            List<String> awards = employeeAwardRepository
+                    .findByEmployee(employee)
+                    .stream()
+                    .map(EmployeeAward::getAwardSummary)
+                    .toList();
 
-            Long empId = optionalUser.get().getEmployee().getEmployeeId();
+            // Fetch languages
             List<Long> langIds = masEmployeeLanguageMappingRepository.findByEmpId(empId)
                     .stream()
                     .map(MasEmployeeLanguageMapping::getLanguageId)
@@ -1743,20 +1806,63 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     .filter(Objects::nonNull)
                     .toList();
 
+            // Build response using employee object
+
+            DoctorDetailResponse doctor = new DoctorDetailResponse();
+            doctor.setDoctorId(userId);
+            doctor.setSessionResponseList(sessionResponseList);
+            doctor.setHospitalName(user.getHospital() != null ? user.getHospital().getHospitalName() : null);
+            doctor.setEducation(educationList);
+            doctor.setWorkExperience(workExperience);
+            doctor.setSpecialtyInterests(specialtyInterests);
+            doctor.setMemberships(memberships);
+            doctor.setAwardsAndDistinctions(awards);
             doctor.setLanguages(langNames);
             doctor.setSpecialitiesResponseList(specialitiesList);
-            return ResponseUtils.createSuccessResponse(doctor, new TypeReference<>() {}
-            );
+
+            //  Build basic info
+            BasicInfo basicInfo = mapToBasicInfo(employee, masServiceOpd);
+            doctor.setBasicInfo(basicInfo);
+
+            log.info("Successfully fetched doctor details for doctorId={} with {} queries optimized", doctorId, "~11");
+            return ResponseUtils.createSuccessResponse(doctor, new TypeReference<>() {});
 
         } catch (Exception ex) {
             log.error("Error while fetching doctor details for doctorId={}", doctorId, ex);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Failed to fetch doctor details: " + ex.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
 
-
     }
+
+    //can you create a separate method for basic info and return the response to back
+
+    private BasicInfo mapToBasicInfo(MasEmployee employee, List<MasServiceOpd> serviceOpd) {
+        BasicInfo basicInfo = new BasicInfo();
+        basicInfo.setDoctorName(employee.getFirstName() + " " +
+                (employee.getMiddleName() != null ? employee.getMiddleName() + " " : "") +
+                employee.getLastName());
+        basicInfo.setGender(employee.getGenderId() != null ? employee.getGenderId().getGenderName() : null);
+        basicInfo.setPhoneNo(employee.getMobileNo());
+
+        LocalDate dob = employee.getDob();
+        if (dob != null) {
+            int years = Period.between(dob, LocalDate.now()).getYears();
+            basicInfo.setAge(String.valueOf(years) + " years");
+        }
+
+        basicInfo.setYearsOfExperience(employee.getYearOfExperience());
+        basicInfo.setProfileDescription(employee.getProfileDescription());
+        Optional<MasServiceOpd> optionalServiceOpd = serviceOpd.stream().findFirst();
+        optionalServiceOpd.ifPresent(masServiceOpd -> basicInfo.setConsultancyFee(masServiceOpd.getBaseTariff()));
+
+        return basicInfo;
+    }
+
 
     @Override
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory(Long hospitalId, Long patientId, String mobileNo) {
@@ -1797,6 +1903,99 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         }
     }
 
+
+    @Override
+    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistoryList(Long hospitalId, Long patientId, String mobileNo, String deptTypeCode) {
+        log.info("Fetching appointment history list: hospitalId={}, patientId={}, mobileNo={}, deptTypeCode={}",
+                 hospitalId, patientId, mobileNo != null ? "***" : null, deptTypeCode);
+
+        try {
+            if (hospitalId == null || hospitalId <= 0) {
+                log.warn("Hospital ID is required");
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Hospital ID is required",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            if (patientId == null && (mobileNo == null || mobileNo.trim().isEmpty())) {
+                log.warn("Either patientId or mobileNo is required");
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Either patient ID or mobile number is required",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            if(deptTypeCode == null || deptTypeCode.trim().isEmpty()){
+                log.warn("Department Type Code is required");
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Department Type Code is required",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            String normalizedMobileNo = (mobileNo == null) ? null : mobileNo.trim();
+            String normalizedDeptTypeCode = deptTypeCode.trim();
+
+            Instant startOfToday = LocalDate.now()
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toInstant();
+
+            List<AppointmentBookingHistoryResponseDetails> response;
+
+            // Get department IDs if deptTypeCode is provided
+            List<Long> departmentIds = null;
+
+                departmentIds = masDepartmentRepository.findDepartmentIdsByDepartmentTypeCode(normalizedDeptTypeCode);
+                log.debug("Found {} departments for deptTypeCode={}", departmentIds.size(), normalizedDeptTypeCode);
+
+                if (departmentIds.isEmpty()) {
+                    log.warn("No departments found for deptTypeCode={}", normalizedDeptTypeCode);
+                    // Return empty list if no departments found for the given type code
+                    return ResponseUtils.createSuccessResponse(
+                            List.of(),
+                            new TypeReference<>() {}
+                    );
+                }
+
+
+            if (patientId != null) {
+                log.debug("Fetching appointment history by patient Id and  using native query");
+
+                response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
+                        hospitalId, patientId,null,departmentIds
+                ).stream()
+                        .map(this::mapProjectionToDto)
+                        .toList();
+            } else {
+                log.debug("Fetching upcoming appointments by mobile and department ");
+                response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
+                        hospitalId,null,normalizedMobileNo,departmentIds
+                ).stream()
+                        .map(this::mapProjectionToDto)
+                        .toList();
+            }
+
+            log.info("Successfully fetched {} appointment(s) for deptTypeCode={}", response.size(), normalizedDeptTypeCode);
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+        } catch (Exception ex) {
+            log.error("Error fetching appointment history list for hospitalId={}, patientId={}, mobileNo={}, deptTypeCode={}",
+                      hospitalId, patientId, mobileNo, deptTypeCode, ex);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Failed to fetch appointment history: " + ex.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
 
     @Override
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>>  appointmentHistory() {
@@ -1840,6 +2039,37 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setAppointmentEndTime(v.getEndTime());
         dto.setVisitStatus(v.getVisitStatus());
         dto.setReason(v.getReason()!=null? v.getReason().getReasonName():null);
+        return dto;
+    }
+
+    /**
+     *  Maps Interface Projection to DTO
+     * Avoids entity loading and N+1 queries
+     */
+    private AppointmentBookingHistoryResponseDetails mapProjectionToDto(AppointmentHistoryProjection projection) {
+        if (projection == null) {
+            return null;
+        }
+
+        AppointmentBookingHistoryResponseDetails dto = new AppointmentBookingHistoryResponseDetails();
+        dto.setVisitId(projection.getVisitId());
+        dto.setPatientId(projection.getPatientId());
+        dto.setPatientName(projection.getPatientName() != null ? projection.getPatientName().trim() : null);
+        dto.setMobileNumber(projection.getMobileNumber());
+        dto.setPatientAge(projection.getPatientAge());
+        dto.setDoctorId(projection.getDoctorId());
+        dto.setDoctorName(projection.getDoctorName());
+        dto.setDepartmentId(projection.getDepartmentId());
+        dto.setDepartmentName(projection.getDepartmentName());
+        dto.setAppointmentDate(projection.getAppointmentDate());
+        dto.setAppointmentStartTime(projection.getAppointmentStartTime());
+        dto.setAppointmentEndTime(projection.getAppointmentEndTime());
+        dto.setVisitStatus(projection.getVisitStatus());
+        dto.setReason(projection.getReason());
+        dto.setPaymentStatus(projection.getPaymentStatus());
+        dto.setBilledAmount(projection.getBilledAmount());
+        dto.setBillingHeaderId(projection.getBillingHeaderId());
+
         return dto;
     }
 

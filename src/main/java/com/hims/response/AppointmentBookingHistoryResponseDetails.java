@@ -21,5 +21,9 @@ public class AppointmentBookingHistoryResponseDetails {
     private Instant appointmentEndTime;
     private String visitStatus;
     private String reason;
+    private String paymentStatus;
+    private Double billedAmount;
+    private Long billingHeaderId;
+
 
 }

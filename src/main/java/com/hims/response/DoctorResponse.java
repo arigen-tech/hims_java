@@ -12,7 +12,7 @@ public class DoctorResponse {
     private Long doctorId;
     private String doctorName;
     private BigDecimal consultancyFee;
-    private Integer yearOfExperience;
+    private String yearOfExperience;
     private List<SessionResponseList> sessionResponseLists;
 
 
