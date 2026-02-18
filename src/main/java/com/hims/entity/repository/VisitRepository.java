@@ -12,8 +12,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import static com.hims.constants.AppConstants.*;
-
 public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     @Query("SELECT MAX(v.tokenNo) FROM Visit v " +
@@ -73,25 +71,25 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     List<Visit> findByVisitStatus(String visitStatus);
 
-    @Query("""
-    SELECT v FROM Visit v
-    JOIN v.patient p
-    WHERE v.visitStatus = 'c'
+    @Query(value = """
+    SELECT v.* FROM visit v
+    JOIN patient p ON p.patient_id = v.patient_id
+    WHERE v.visit_status = 'c'
       AND (
-            :visitDate IS NULL
-            OR CAST(v.visitDate AS date) = :visitDate
+            CAST(:visitDate AS DATE) IS NULL
+            OR DATE(v.visit_date) = CAST(:visitDate AS DATE)
       )
       AND (
             :mobile = '' 
-            OR p.patientMobileNumber = :mobile
+            OR p.p_mobile_number = :mobile
       )
       AND (
             :name = '' 
-            OR LOWER(p.patientFn) LIKE '%' || LOWER(:name) || '%'
-            OR LOWER(p.patientMn) LIKE '%' || LOWER(:name) || '%'
-            OR LOWER(p.patientLn) LIKE '%' || LOWER(:name) || '%'
+            OR LOWER(p.p_fn) LIKE '%' || LOWER(:name) || '%'
+            OR LOWER(p.p_mn) LIKE '%' || LOWER(:name) || '%'
+            OR LOWER(p.p_ln) LIKE '%' || LOWER(:name) || '%'
       )
-    """)
+""", nativeQuery = true)
     List<Visit> searchRecallVisits(
             @Param("visitDate") LocalDate visitDate,
             @Param("mobile") String mobile,
@@ -110,22 +108,24 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
 
 
-    @Query("""
-    SELECT v FROM Visit v
-    JOIN v.patient p
-    WHERE v.visitStatus = 'n'
-      AND v.billingStatus = 'y'
-      AND CAST(v.visitDate AS date) = :visitDate
-      AND (:doctorId IS NULL OR v.doctor.userId = :doctorId)
-      AND (:sessionId IS NULL OR v.session.id = :sessionId)
-      AND (:employeeNo IS NULL OR p.uhidNo = :employeeNo)
-      AND (
-            :patientName IS NULL OR
-            LOWER(
-                CONCAT(COALESCE(p.patientFn, ''), ' ', COALESCE(p.patientMn, ''), ' ', COALESCE(p.patientLn, ''))
-            ) LIKE LOWER(CONCAT('%', :patientName, '%'))
-          )
-    """)
+    @Query(value = """
+SELECT v.* FROM visit v
+JOIN patient p ON p.patient_id = v.patient_id
+WHERE v.visit_status = 'n'
+  AND v.billing_status = 'y'
+  AND DATE(v.visit_date) = :visitDate   -- match only the date part
+  AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
+  AND (:sessionId IS NULL OR v.session_id = :sessionId)
+  AND (:employeeNo IS NULL OR p.uhid_no = :employeeNo)
+  AND (
+        :patientName IS NULL OR
+        LOWER(
+            CAST(p.p_fn AS VARCHAR) || ' ' ||
+            CAST(p.p_mn AS VARCHAR) || ' ' ||
+            CAST(p.p_ln AS VARCHAR)
+        ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+      )
+""", nativeQuery = true)
     List<Visit> findActiveVisitsWithFilters(
             @Param("doctorId") Long doctorId,
             @Param("sessionId") Long sessionId,

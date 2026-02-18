@@ -23,8 +23,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import static com.hims.constants.AppConstants.*;
-
 @Slf4j
 @Service
 public class MasWardServiceImpl implements MasWardService {
@@ -41,12 +39,12 @@ public class MasWardServiceImpl implements MasWardService {
         try {
 
             List<MasWard> masWards;
-            if(flag==FLAG_ALL){
+            if(flag==0){
                 masWards=masWardRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
-            } else if (flag==FLAG_ACTIVE_ONLY) {
-                masWards=masWardRepository.findByStatusIgnoreCaseOrderByWardNameAsc(STATUS_ACTIVE);
+            } else if (flag==1) {
+                masWards=masWardRepository.findByStatusIgnoreCaseOrderByWardNameAsc("y");
             }else{
-                return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},MSG_INVALID_FLAG,HttpStatus.BAD_REQUEST.value());
+                return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Flag Value , Provide flag as 0 or 1",HttpStatus.BAD_REQUEST.value());
             }
             return  ResponseUtils.createSuccessResponse(masWards.stream().map(this::mapToResponse).toList(), new TypeReference<>() {});
 
@@ -86,7 +84,7 @@ public class MasWardServiceImpl implements MasWardService {
             }
             MasWard masWard=new MasWard();
             masWard.setWardName(request.getWardName());
-            masWard.setStatus(STATUS_ACTIVE);
+            masWard.setStatus("y");
             masWard.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
             masWard.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
             masWard.setLastUpdateDate(LocalDate.now());
@@ -125,7 +123,7 @@ public class MasWardServiceImpl implements MasWardService {
             MasWard masWard= masWardRepository.findById(id).orElseThrow(()-> new RuntimeException("Invalid Ward Id"));
            masWard.setWardName(request.getWardName());
            masWard.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
-           masWard.setStatus(STATUS_ACTIVE);
+           masWard.setStatus("y");
             Optional<MasWardCategory> masWardCategory= masWardCategoryRepository.findById(request.getWardCategoryId());
             if(masWardCategory.isEmpty()){
                 return  ResponseUtils.createNotFoundResponse("Mas Ward Category Not Found", HttpStatus.NOT_FOUND.value());

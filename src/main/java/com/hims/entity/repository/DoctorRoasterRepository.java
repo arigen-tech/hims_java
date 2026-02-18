@@ -23,7 +23,7 @@ public interface DoctorRoasterRepository extends JpaRepository<DoctorRoaster, In
 
 
 
-    @Query("SELECT dr FROM DoctorRoaster dr WHERE dr.department.id = :deptId AND CAST(dr.roasterDate AS date) >= CAST(:rosterDate AS date) AND CAST(dr.roasterDate AS date) < CAST(:endDate AS date) ORDER BY dr.roasterDate")
+    @Query(value = "SELECT * FROM doctor_roaster dr WHERE dr.department_id = :deptId AND DATE(dr.roaster_date) >= DATE(:rosterDate) AND DATE(dr.roaster_date) < DATE(:endDate) ORDER BY dr.roaster_date", nativeQuery = true)
     List<DoctorRoaster> findDoctorRostersByDept(
             @Param("deptId") Long deptId,
             @Param("rosterDate") Date rosterDate,
