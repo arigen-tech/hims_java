@@ -9,6 +9,7 @@ import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.OpdPatientDetailMapper;
 import com.hims.mapper.PatientMapper;
 import com.hims.mapper.VisitMapper;
+import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
@@ -197,7 +198,6 @@ public class PatientServiceImpl implements PatientService {
                 + " " + (patient.getPatientAddress2() == null ? "" : patient.getPatientAddress2()));
 
         for (Visit sVisit : savedVisits) {
-            // defensive checks
             BillingHeader billingHeader = sVisit.getBillingHd();
             if (billingHeader == null) {
                 continue;
@@ -624,19 +624,17 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public ApiResponse<List<Patient>> searchPatient(PatientSearchReq req) {
-        // Helper method to clean string parameters
+    public ApiResponse<List<PatientProjection>> searchPatient(PatientSearchReq req) {
+
         String mobileNo = cleanStringParameter(req.getMobileNo());
-        String uhidNo = cleanStringParameter(req.getUhidNo());
         String patientName = cleanStringParameter(req.getPatientName());
-        LocalDate appointmentDate = req.getAppointmentDate();
 
-        List<Patient> patientList;
+        List<PatientProjection> patientList;
 
-        if (appointmentDate != null) {
-            patientList = patientRepository.searchPatients(mobileNo, patientName, uhidNo, appointmentDate);
+        if (patientName != null) {
+            patientList = patientRepository.searchPatients(mobileNo, patientName);
         } else {
-            patientList = patientRepository.searchPatients(mobileNo, patientName, uhidNo);
+            patientList = patientRepository.findPatientsByMobile(mobileNo);
         }
 
         return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {});
@@ -683,8 +681,6 @@ public class PatientServiceImpl implements PatientService {
     }
 
     public Patient savePatient(PatientRequest request, boolean followUp) {
-
-//        User loggedInUser=userRepository.findByUserName(request.getLastChgBy());
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null){
             log.info("current users not found");
@@ -724,7 +720,6 @@ public class PatientServiceImpl implements PatientService {
         patient.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
         patient.setPatientHospital(currentUser.getHospital());
 
-        // Fetch and set related entities using IDs
 
         Optional.ofNullable(request.getPatientGenderId())
                 .flatMap(masGenderRepository::findById)
@@ -781,7 +776,7 @@ public class PatientServiceImpl implements PatientService {
         else{
             patient.setUhidNo(generateUhid(patient));
         }
-        patient = patientRepository.save(patient); // Save patient
+        patient = patientRepository.save(patient);
         return patient;
     }
 

@@ -2,6 +2,7 @@ package com.hims.service;
 
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
+import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,7 +16,7 @@ public interface PatientService {
     ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq request);
     ApiResponse<String> uploadImage(MultipartFile file);
 
-    ApiResponse<List<Patient>> searchPatient(PatientSearchReq substring);
+    ApiResponse<List<PatientProjection>> searchPatient(PatientSearchReq substring);
 
     ApiResponse<List<Visit>> getPendingPreConsultations();
 
