@@ -12,7 +12,5 @@ import java.util.Date;
 public class PatientSearchReq {
     private String mobileNo;
     private String patientName;
-    private String uhidNo;
-    private LocalDate appointmentDate;
 }
 

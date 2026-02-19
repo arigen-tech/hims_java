@@ -7,6 +7,7 @@ import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.PatientRepository;
+import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.MasAppointmentChangeReasonService;
@@ -89,8 +90,8 @@ public class PatientController {
         }
     }
     @PostMapping("/search")
-    public ResponseEntity<ApiResponse<List<Patient>>> searchPatient(@RequestBody PatientSearchReq searchRequest){
-        ApiResponse<List<Patient>> response = patientService.searchPatient(searchRequest);
+    public ResponseEntity<ApiResponse<List<PatientProjection>>> searchPatient(@RequestBody PatientSearchReq searchRequest){
+        ApiResponse<List<PatientProjection>> response = patientService.searchPatient(searchRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @GetMapping("/getPendingPreConsultations")
