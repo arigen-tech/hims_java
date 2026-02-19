@@ -308,7 +308,7 @@ WHERE v.visit_status = 'n'
         OR
                 (:mobileNo IS NOT NULL AND :mobileNo <> '' AND p.p_mobile_number = :mobileNo)
             )
-                  
+        AND (:includeAllHistory = true OR v.visit_date >= CURRENT_DATE)  -- Include all history if flag is true, otherwise only future appointments
         AND LOWER(v.visit_status) IN ('y', 'c', 'n')
         AND v.department_id IN (:departmentIds)
         ORDER BY v.visit_date ASC
@@ -317,7 +317,8 @@ WHERE v.visit_status = 'n'
             @Param("hospitalId") Long hospitalId,
             @Param("patientId") Long patientId,
             @Param("mobileNo") String mobileNo,
-            @Param("departmentIds") List<Long> departmentIds
+            @Param("departmentIds") List<Long> departmentIds,
+            @Param("includeAllHistory") Boolean includeAllHistory
     );
 
 
