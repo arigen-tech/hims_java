@@ -44,11 +44,11 @@ public class MasDepartment {
     @Column(name = "indent_applicable",nullable = false,length = 1)
     private String indentApplicable;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_type_id")
     private MasDepartmentType departmentType;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hospital_id")
     private MasHospital hospital;
 
@@ -57,11 +57,11 @@ public class MasDepartment {
     private String departmentNo;
 
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "care_id")
     private MasCareLevel careLevel;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ward_category_id")
     private MasWardCategory wardCategory;
 

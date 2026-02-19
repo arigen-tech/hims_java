@@ -18,11 +18,11 @@ public class StoreBalanceHd {
     @Column(name = "balance_no", length = 50)
     private String balanceNo;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hospital_id")
     private MasHospital hospitalId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private MasDepartment departmentId;
 

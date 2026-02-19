@@ -17,15 +17,15 @@ public class DgSampleCollectionDetails {
     @Column(name = "sample_collection_details_id")
     private Long sampleCollectionDetailsId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sample_collection_header_id")
     private DgSampleCollectionHeader sampleCollectionHeader;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "investigation_id")
     private DgMasInvestigation investigationId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sample_id")
     private DgMasSample sampleId;
 

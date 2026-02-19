@@ -37,7 +37,7 @@ public class MasStoreSection {
     @Column(name = "hospital_id")
     private Integer hospitalId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_type_id")
     private MasItemType masItemType;
 
