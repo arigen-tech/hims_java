@@ -1610,11 +1610,11 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
     }
     @GetMapping("/masInvestigationMethodology/findAll")
     public ResponseEntity<ApiResponse<List<MasInvestigationMethodologyResponse >>> getMethodology() {
-        ApiResponse<List<MasInvestigationMethodologyResponse >> response = masInvestigationMethodologyService.get();
+        ApiResponse<List<MasInvestigationMethodologyResponse >> response = masInvestigationMethodologyService.getAll();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @GetMapping("/masInvestigationMethodology/getById/{id}")
-    public ResponseEntity<ApiResponse<MasInvestigationMethodologyResponse >> getMasHSNById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<MasInvestigationMethodologyResponse >> getMasInvestigationMethodologyById(@PathVariable Long id) {
         ApiResponse<MasInvestigationMethodologyResponse > response = masInvestigationMethodologyService.findById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }

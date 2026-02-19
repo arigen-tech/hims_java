@@ -40,10 +40,9 @@ public class SecurityConfig {
                         .requestMatchers("/users/**").permitAll()
                         .requestMatchers("/patient/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/**").permitAll()
+                       // .requestMatchers("/**").permitAll()
                         .requestMatchers("/userType/**").permitAll()
                         .requestMatchers("/app/**").permitAll()
-
                         .requestMatchers("/masterController/searchAirport/{query}").permitAll()
                         .requestMatchers("/masterController/frequentAirport").permitAll()
                         .requestMatchers("/authController/getEmpName/{empCode}").permitAll()
