@@ -28,7 +28,7 @@ public class MasBloodTest {
     @Column(name = "is_mandatory", length = 1)
     private String isMandatory;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "applicable_collection_type_id")
     private MasBloodCollectionType applicableCollectionTypeId;
 

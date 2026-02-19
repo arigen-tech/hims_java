@@ -36,11 +36,11 @@ public class MasTemplate {
     @Column(name = "status", length = 4)
     private String status;
 
-//    @ManyToOne(fetch = FetchType.EAGER)
+//    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "department_id")
 //    private MasDepartment department;
 
-//    @ManyToOne(fetch = FetchType.EAGER)
+//    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "template_parent_id")
 //    private MasTemplate templateParent;
 

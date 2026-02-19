@@ -21,7 +21,7 @@ public class StoreStockLedger {
     @Column(name = "ledger_id")
     private Long ledgerId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stock_id")
     private  StoreItemBatchStock stockId;
 

@@ -49,22 +49,22 @@ public class DgMasInvestigation {
     private String hicCode;
 //    @Column(name = "charge_code_id")
 //    private MasChargeCode chargeCodeId;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "main_chargecode_id")
     private MasMainChargeCode mainChargeCodeId;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uom_id")
     private DgUom uomId;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_chargecode_id")
     private MasSubChargeCode subChargeCodeId ;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sample_id")
     private DgMasSample sampleId;
     @Column(name = "equipment_id")
     private String equipmentId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collection_id")
     private DgMasCollection collectionId;
 
@@ -83,11 +83,11 @@ public class DgMasInvestigation {
     @Column(name = "price", length=255)
     private Double price;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private MasInvestigationCategory categoryId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "method_id")
     private MasInvestigationMethodology methodId;
 

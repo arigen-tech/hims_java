@@ -39,7 +39,7 @@ public class MasSubChargeCode {
     @Column(name = "last_chg_time", nullable = false, length = 10)
     private String lastChgTime;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "main_chargecode_id")
     private MasMainChargeCode mainChargeId;
 

@@ -19,15 +19,15 @@ public class MasBloodCompatibility {
     @Column(name = "compatibility_id")
     private Long compatibilityId;
 
-     @ManyToOne(fetch = FetchType.EAGER)
+     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "component_id")
     private MasBloodComponent componentId;
 
-     @ManyToOne(fetch = FetchType.EAGER)
+     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_blood_group_id")
     private MasBloodGroup patientBloodGroupId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "donor_blood_group_id")
     private MasBloodGroup donorBloodGroupId;
 
