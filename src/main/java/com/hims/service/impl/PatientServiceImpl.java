@@ -9,6 +9,7 @@ import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.OpdPatientDetailMapper;
 import com.hims.mapper.PatientMapper;
 import com.hims.mapper.VisitMapper;
+import com.hims.projection.CancelledAppointmentProjection;
 import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -1126,5 +1128,102 @@ public class PatientServiceImpl implements PatientService {
         }
 
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {},"Appointment Booked");
+    }
+
+
+    @Override
+    public ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(
+            Long hospitalId,
+            Long departmentId,
+            Long doctorId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            Long cancellationReasonId
+    ) {
+
+        log.info("Fetching cancelled appointments: hospitalId={}, departmentId={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}",
+                hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId);
+
+        try {
+            if (hospitalId == null || hospitalId <= 0) {
+                log.warn("Hospital ID is required");
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Hospital ID is required",
+                        org.springframework.http.HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+
+            List<CancelledAppointmentProjection> projectionList = visitRepository.findCancelledAppointments(
+                    hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId
+            );
+
+            // Map projections to response DTOs
+            List<CancelledAppointmentResponse> responseList = projectionList.stream()
+                    .map(this::mapCancelledAppointmentProjectionToDto)
+                    .collect(Collectors.toList());
+
+            log.info("Successfully fetched {} cancelled appointment(s)", responseList.size());
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception ex) {
+            log.error("Error fetching cancelled appointments for hospitalId={}, departmentId={}, doctorId={}",
+                    hospitalId, departmentId, doctorId, ex);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Failed to fetch cancelled appointments: " + ex.getMessage(),
+                    org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    /**
+     * Maps CancelledAppointmentProjection to CancelledAppointmentResponse
+     */
+    private CancelledAppointmentResponse mapCancelledAppointmentProjectionToDto(
+            com.hims.projection.CancelledAppointmentProjection projection) {
+
+        if (projection == null) {
+            return null;
+        }
+
+        CancelledAppointmentResponse dto = new CancelledAppointmentResponse();
+        dto.setVisitId(projection.getVisitId());
+        dto.setPatientId(projection.getPatientId());
+        dto.setPatientName(projection.getPatientName() != null ? projection.getPatientName().trim() : null);
+        dto.setMobileNumber(projection.getMobileNumber());
+        dto.setAge(projection.getPatientAge());
+        dto.setGender(projection.getGender());
+        dto.setDoctorId(projection.getDoctorId());
+        dto.setDoctorName(projection.getDoctorName());
+        dto.setDepartmentId(projection.getDepartmentId());
+        dto.setDepartmentName(projection.getDepartmentName());
+        dto.setAppointmentDate(projection.getAppointmentDate());
+        dto.setAppointmentTime(projection.getAppointmentTime());  // Combined time "HH:MM to HH:MM"
+        dto.setCancellationDateTime(projection.getCancellationDateTime());
+        dto.setCancelledBy(projection.getCancelledBy());
+        dto.setCancellationReason(projection.getCancellationReason());
+
+        return dto;
+    }
+
+    private String formatAgeGender(String age, String gender) {
+        StringBuilder result = new StringBuilder();
+
+        if (age != null && !age.trim().isEmpty()) {
+            result.append(age);
+        }
+
+        if (gender != null && !gender.trim().isEmpty()) {
+            if (!result.isEmpty()) {
+                result.append(" / ");
+            }
+            result.append(gender);
+        }
+
+        return !result.isEmpty() ? result.toString() : "";
     }
 }

@@ -1,5 +1,6 @@
 package com.hims.service;
 
+import com.beust.ah.A;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.projection.PatientProjection;
@@ -8,6 +9,7 @@ import com.hims.response.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface PatientService {
@@ -33,4 +35,6 @@ public interface PatientService {
     ApiResponse<RescheduleAppointmentResponse> rescheduleAppointment(RescheduleAppointmentRequest request);
 
     ApiResponse<BookingAppointmentResponse> bookAppointment(Long patientId, VisitRequest visitRequest);
+
+    ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate, Long cancellationReasonId);
 }

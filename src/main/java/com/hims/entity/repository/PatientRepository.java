@@ -4,7 +4,7 @@ package com.hims.entity.repository;
 import com.hims.entity.MasGender;
 import com.hims.entity.MasRelation;
 import com.hims.entity.Patient;
-import com.hims.projection.CancellationReportProjection;
+import com.hims.projection.CancelledAppointmentProjection;
 import com.hims.projection.PatientProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
