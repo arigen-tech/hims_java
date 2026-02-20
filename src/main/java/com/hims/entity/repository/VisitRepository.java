@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.*;
 import com.hims.projection.AppointmentHistoryProjection;
+import com.hims.projection.CancelledAppointmentProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -308,7 +309,7 @@ WHERE v.visit_status = 'n'
         OR
                 (:mobileNo IS NOT NULL AND :mobileNo <> '' AND p.p_mobile_number = :mobileNo)
             )
-                  
+        AND (:includeAllHistory = true OR v.visit_date >= CURRENT_DATE)  -- Include all history if flag is true, otherwise only future appointments
         AND LOWER(v.visit_status) IN ('y', 'c', 'n')
         AND v.department_id IN (:departmentIds)
         ORDER BY v.visit_date ASC
@@ -317,7 +318,71 @@ WHERE v.visit_status = 'n'
             @Param("hospitalId") Long hospitalId,
             @Param("patientId") Long patientId,
             @Param("mobileNo") String mobileNo,
-            @Param("departmentIds") List<Long> departmentIds
+            @Param("departmentIds") List<Long> departmentIds,
+            @Param("includeAllHistory") Boolean includeAllHistory
+    );
+
+
+    /**
+     * Fetches cancelled appointments based on hospital, department, doctor, date range and cancellation reason
+     * @param hospitalId Hospital ID (required)
+     * @param departmentId Department ID (optional)
+     * @param doctorId Doctor ID (optional)
+     * @param fromDate From date (optional)
+     * @param toDate To date (optional)
+     * @param cancellationReasonId Cancellation reason ID (optional)
+     * @return List of cancelled appointments
+     */
+    @Query(value = """
+        SELECT 
+            v.visit_id AS visitId,
+            v.patient_id AS patientId,
+            CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            ) AS patientName,
+            p.p_mobile_number AS mobileNumber,
+            p.p_age AS patientAge,
+            CASE 
+                WHEN g.gender_name IS NOT NULL THEN g.gender_name
+                ELSE ''
+            END AS gender,
+            v.doctor_id AS doctorId,
+            v.doctor_name AS doctorName,
+            v.department_id AS departmentId,
+            d.department_name AS departmentName,
+            DATE(v.visit_date) AS appointmentDate,
+            CONCAT(
+                TO_CHAR(v.start_time, 'HH24:MI'),
+                ' to ',
+                TO_CHAR(v.end_time, 'HH24:MI')
+            ) AS appointmentTime,
+            v.cancelled_datetime AS cancellationDateTime,
+            v.cancelled_by AS cancelledBy,
+            r.reason_name AS cancellationReason
+        FROM visit v
+        LEFT JOIN patient p ON p.patient_id = v.patient_id
+        LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+        LEFT JOIN mas_department d ON d.department_id = v.department_id
+        LEFT JOIN mas_appointment_change_reason r ON r.reason_id = v.cancelled_reason_id
+        WHERE v.hospital_id = :hospitalId
+        AND LOWER(v.visit_status) = 'c'
+        AND (:departmentId IS NULL OR v.department_id = :departmentId)
+        AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
+        AND (:fromDate IS NULL OR DATE(v.visit_date) >= :fromDate)
+        AND (:toDate IS NULL OR DATE(v.visit_date) <= :toDate)
+        AND (:cancellationReasonId IS NULL OR v.cancelled_reason_id = :cancellationReasonId)
+        ORDER BY v.cancelled_datetime DESC
+    """,
+            nativeQuery = true)
+    List<CancelledAppointmentProjection> findCancelledAppointments(
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("doctorId") Long doctorId,
+            @Param("fromDate") java.time.LocalDate fromDate,
+            @Param("toDate") java.time.LocalDate toDate,
+            @Param("cancellationReasonId") Long cancellationReasonId
     );
 
 

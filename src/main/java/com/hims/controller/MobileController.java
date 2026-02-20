@@ -138,14 +138,25 @@ public class MobileController {
     public ApiResponse<DoctorDetailResponse> getDoctorDetailById(@RequestParam(required = false) Long doctorId) {
        return masEmployeeService.getDoctor(doctorId);
     }
+    /**
+     * Fetches appointment history for a patient.
+     *
+     * @param hospitalId Hospital ID (required)
+     * @param patientId Patient ID (optional if mobileNo provided)
+     * @param mobileNo Mobile number (optional if patientId provided)
+     * @param deptTypeCode Department type code (required)
+     * @param includeAllHistory true (default) = all appointments (past + future), false = only future appointments
+     * @return Appointment history based on flag
+     */
     @GetMapping("/getAppointmentHistoryList")
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistoryList(
             @RequestParam(required = true) Long hospitalId,
             @RequestParam(required = false) Long patientId,
             @RequestParam(required = false) String mobileNo,
-            @RequestParam(required = false) String deptTypeCode
+            @RequestParam(required = false) String deptTypeCode,
+            @RequestParam(required = false, defaultValue = "true") Boolean includeAllHistory
     ) {
-        return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, deptTypeCode);
+        return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, deptTypeCode, includeAllHistory);
     }
 
 }
