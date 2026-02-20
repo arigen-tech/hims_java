@@ -245,4 +245,35 @@ public class PatientController {
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
+    /**
+     * Fetches cancelled appointments based on filters
+     *
+     * @param hospitalId Hospital ID (required)
+     * @param departmentId Department ID (optional)
+     * @param doctorId Doctor ID (optional)
+     * @param fromDate From date in format yyyy-MM-dd (optional)
+     * @param toDate To date in format yyyy-MM-dd (optional)
+     * @param cancellationReasonId Cancellation reason ID (optional)
+     * @return List of cancelled appointments with patient details
+     */
+    @GetMapping("/cancelledAppointments")
+    public ResponseEntity<ApiResponse<List<CancelledAppointmentResponse>>> getCancelledAppointments(
+            @RequestParam(required = true) Long hospitalId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) Long cancellationReasonId
+    ) {
+        log.info("GET /patient/cancelled-appointments called: hospitalId={}, departmentId={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}",
+                hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId);
+
+        ApiResponse<List<CancelledAppointmentResponse>> response =
+                patientService.getCancelledAppointments(
+                        hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
 }

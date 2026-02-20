@@ -1905,9 +1905,11 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
 
     @Override
-    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistoryList(Long hospitalId, Long patientId, String mobileNo, String deptTypeCode) {
-        log.info("Fetching appointment history list: hospitalId={}, patientId={}, mobileNo={}, deptTypeCode={}",
-                 hospitalId, patientId, mobileNo != null ? "***" : null, deptTypeCode);
+    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistoryList(
+            Long hospitalId, Long patientId, String mobileNo, String deptTypeCode, Boolean includeHistory) {
+
+        log.info("Fetching appointment history list: hospitalId={}, patientId={}, mobileNo={}, deptTypeCode={}, includeHistory={}",
+                 hospitalId, patientId, mobileNo != null ? "***" : null, deptTypeCode, includeHistory);
 
         try {
             if (hospitalId == null || hospitalId <= 0) {
@@ -1940,12 +1942,10 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 );
             }
 
+            // Default to true (all history) if not provided
+            boolean includeHistoryFlag = includeHistory != null ? includeHistory : true;
             String normalizedMobileNo = (mobileNo == null) ? null : mobileNo.trim();
             String normalizedDeptTypeCode = deptTypeCode.trim();
-
-            Instant startOfToday = LocalDate.now()
-                    .atStartOfDay(ZoneId.systemDefault())
-                    .toInstant();
 
             List<AppointmentBookingHistoryResponseDetails> response;
 
@@ -1969,20 +1969,21 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 log.debug("Fetching appointment history by patient Id and  using native query");
 
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId, patientId,null,departmentIds
+                        hospitalId, patientId,null,departmentIds, includeHistoryFlag
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
             } else {
                 log.debug("Fetching upcoming appointments by mobile and department ");
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId,null,normalizedMobileNo,departmentIds
+                        hospitalId,null,normalizedMobileNo,departmentIds, includeHistoryFlag
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
             }
 
-            log.info("Successfully fetched {} appointment(s) for deptTypeCode={}", response.size(), normalizedDeptTypeCode);
+            log.info("Successfully fetched {} appointment(s) for deptTypeCode={}, includeHistory={}",
+                     response.size(), normalizedDeptTypeCode, includeHistoryFlag);
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
 
         } catch (Exception ex) {

@@ -33,5 +33,5 @@ public interface MasEmployeeService {
 
     ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory(Long hospitalId, Long patientId, String mobileNo);
 
-    ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistoryList(Long hospitalId, Long patientId, String mobileNo, String deptTypeCode);
+    ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistoryList(Long hospitalId, Long patientId, String mobileNo, String deptTypeCode, Boolean includeAllHistory);
 }
