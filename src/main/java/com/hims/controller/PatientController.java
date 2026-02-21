@@ -2,12 +2,15 @@ package com.hims.controller;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.MasAppointmentChangeReason;
 import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.PatientRepository;
+import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
+import com.hims.service.MasAppointmentChangeReasonService;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.service.PatientService;
 import com.hims.utils.ResponseUtils;
@@ -69,6 +72,13 @@ public class PatientController {
         ApiResponse<PatientRegFollowUpResp> response = patientService.updatePatient(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PostMapping("bookAppointment/{patientId}")
+    public ResponseEntity<ApiResponse<BookingAppointmentResponse>> bookAppointment(@PathVariable Long patientId , @RequestBody VisitRequest visitRequest){
+        ApiResponse<BookingAppointmentResponse> response = patientService.bookAppointment(patientId, visitRequest);
+        return  new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
     @PostMapping("/image")
     public ResponseEntity<ApiResponse<String>> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
@@ -80,8 +90,8 @@ public class PatientController {
         }
     }
     @PostMapping("/search")
-    public ResponseEntity<ApiResponse<List<Patient>>> searchPatient(@RequestBody PatientSearchReq searchRequest){
-        ApiResponse<List<Patient>> response = patientService.searchPatient(searchRequest);
+    public ResponseEntity<ApiResponse<List<PatientProjection>>> searchPatient(@RequestBody PatientSearchReq searchRequest){
+        ApiResponse<List<PatientProjection>> response = patientService.searchPatient(searchRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @GetMapping("/getPendingPreConsultations")
@@ -217,14 +227,53 @@ public class PatientController {
     }
 
     @GetMapping("/getFullDetails/{patientId}")
-    public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientFullDetails(
-            @PathVariable Long patientId) {
-
-        ApiResponse<FollowUpPatientResponseDetails> response =
-                patientService.getAllFollowUpDetails(patientId);
+    public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientFullDetails(@PathVariable Long patientId) {
+        ApiResponse<FollowUpPatientResponseDetails> response = patientService.getAllFollowUpDetails(patientId);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @PostMapping("/cancel_appointment")
+    public ResponseEntity<?> cancelAppointment(@RequestBody CancelAppointmentRequest request) {
+        ApiResponse<String> response = patientService.cancelAppointment(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/reschedule_Appointment")
+    public ResponseEntity<ApiResponse<RescheduleAppointmentResponse>> rescheduleAppointment(@RequestBody RescheduleAppointmentRequest request){
+        ApiResponse<RescheduleAppointmentResponse> response = patientService.rescheduleAppointment(request);
+        return new ResponseEntity<>(response,HttpStatus.OK);
+    }
+
+    /**
+     * Fetches cancelled appointments based on filters
+     *
+     * @param hospitalId Hospital ID (required)
+     * @param departmentId Department ID (optional)
+     * @param doctorId Doctor ID (optional)
+     * @param fromDate From date in format yyyy-MM-dd (optional)
+     * @param toDate To date in format yyyy-MM-dd (optional)
+     * @param cancellationReasonId Cancellation reason ID (optional)
+     * @return List of cancelled appointments with patient details
+     */
+    @GetMapping("/cancelledAppointments")
+    public ResponseEntity<ApiResponse<List<CancelledAppointmentResponse>>> getCancelledAppointments(
+            @RequestParam(required = true) Long hospitalId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) Long cancellationReasonId
+    ) {
+        log.info("GET /patient/cancelled-appointments called: hospitalId={}, departmentId={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}",
+                hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId);
+
+        ApiResponse<List<CancelledAppointmentResponse>> response =
+                patientService.getCancelledAppointments(
+                        hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId
+                );
+
+        return ResponseEntity.ok(response);
+    }
 
 }

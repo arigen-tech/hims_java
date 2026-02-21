@@ -21,7 +21,7 @@ public class MasDesignation {
     @Column(name = "designation_name", length = 100, nullable = false)
     private String designationName;
 
-     @ManyToOne(fetch = FetchType.EAGER)
+     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_type_id")
     private MasUserType userTypeId;
 

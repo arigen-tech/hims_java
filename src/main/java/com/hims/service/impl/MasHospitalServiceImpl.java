@@ -6,6 +6,8 @@ import com.hims.entity.repository.*;
 import com.hims.request.MasHospitalRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasHospitalResponse;
+import com.hims.response.MasHospitalResponseDto;
+import com.hims.response.MasHospitalResponseDto;
 import com.hims.service.MasHospitalService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -116,9 +118,14 @@ public class MasHospitalServiceImpl implements MasHospitalService {
         response.setAppCostApplicable(hospital.getAppCostApplicable());
         response.setPreConsultationAvailable(hospital.getPreConsultationAvailable());
         response.setRegistrationCost(hospital.getRegistrationCost());
+        response.setLatitude(hospital.getLatitude());
+        response.setLongitude(hospital.getLongitude());
+        response.setExecutive1Contact(hospital.getExecutive1Contact());
+        response.setExecutive2Contact(hospital.getExecutive2Contact());
 
         return response;
     }
+
 
     @Override
     @Transactional
@@ -223,6 +230,10 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 existingHospital.setRegCostApplicable(hospitalRequest.getRegCostApplicable());
                 existingHospital.setAppCostApplicable(hospitalRequest.getAppCostApplicable());
                 existingHospital.setPreConsultationAvailable(hospitalRequest.getPreConsultationAvailable());
+                existingHospital.setLongitude(hospitalRequest.getLongitude());
+                existingHospital.setLatitude(hospitalRequest.getLatitude());
+                existingHospital.setExecutive1Contact(hospitalRequest.getExecutive1Contact());
+                existingHospital.setExecutive2Contact(hospitalRequest.getExecutive2Contact());
                 if(hospitalRequest.getRegCostApplicable().equalsIgnoreCase("y")) {
                     existingHospital.setRegistrationCost(hospitalRequest.getRegistrationCost());
                 }else{
@@ -242,6 +253,29 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+    @Override
+    public ApiResponse<List<MasHospitalResponseDto>> getAllHospitalsResponse(int flag) {
+        List<MasHospital> hospitals;
+
+        if (flag == 1) {
+            // Fetch only records with status 'Y'
+            hospitals = masHospitalRepository.findByStatusIgnoreCaseOrderByHospitalNameAsc("Y");
+        } else if (flag == 0) {
+            // Fetch all records with status 'Y' or 'N'
+            hospitals = masHospitalRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
+        } else {
+            // Handle invalid flag values
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        }
+
+        List<MasHospitalResponseDto> responses = hospitals.stream()
+                .map(this::convertToResponse2)
+                .collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+
     }
 
     @Override
@@ -293,5 +327,16 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<MasHospitalResponse>() {},
                     "Hospital not found", 404);
         }
+    }
+    private MasHospitalResponseDto convertToResponse2(MasHospital hospital) {
+        MasHospitalResponseDto response = new MasHospitalResponseDto();
+        response.setId(hospital.getId());
+        response.setHospitalName(hospital.getHospitalName());
+        response.setLatitude(hospital.getLatitude());
+        response.setLongitude(hospital.getLongitude());
+        response.setExecutive1Contact(hospital.getExecutive1Contact());
+        response.setExecutive2Contact(hospital.getExecutive2Contact());
+
+        return response;
     }
 }

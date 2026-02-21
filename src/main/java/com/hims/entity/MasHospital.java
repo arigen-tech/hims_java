@@ -59,15 +59,15 @@ public class MasHospital {
     @Column(name = "last_chg_time", length = 10)
     private String lastChgTime;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "country_id")
     private MasCountry country;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "state_id")
     private MasState state;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "district_id")
     private MasDistrict district;
 
@@ -111,4 +111,15 @@ public class MasHospital {
 
     @Column(name = "rol_is_manual", length = 1)
     private String rolIsAuto;
+    @Column(name = "latitude", precision = 12, scale = 8)
+    private BigDecimal latitude;
+
+    @Column(name = "longitude", precision = 12, scale = 8)
+    private BigDecimal longitude;
+
+    @Column(name = "executive1_contact", length = 20)
+    private String executive1Contact;
+
+    @Column(name = "executive2_contact", length = 20)
+    private String executive2Contact;
 }

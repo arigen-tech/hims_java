@@ -4,6 +4,7 @@ import com.hims.request.DgMasInvestigationMultiRequest;
 import com.hims.request.DgMasInvestigationRequest;
 import com.hims.request.DgMasInvestigationSingleReqest;
 import com.hims.response.ApiResponse;
+import com.hims.response.DgMasInvestigationRes;
 import com.hims.response.DgMasInvestigationResponse;
 import com.hims.response.DgMasInvestigationSingleResponse;
 import org.springframework.data.domain.Page;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface DgMasInvestigationService {
-    ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable);
+    ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable,Boolean radioFlag);
 
     ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag);
 
@@ -33,4 +34,6 @@ public interface DgMasInvestigationService {
 
 
     List<Map<String, Object>> getInvestigationTypes();
+
+    ApiResponse<List<DgMasInvestigationRes>> getAllInvestigations();
 }

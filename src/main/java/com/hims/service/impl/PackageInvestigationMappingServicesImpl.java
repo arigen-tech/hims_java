@@ -8,6 +8,8 @@ import com.hims.entity.repository.PackageInvestigationMappingRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.request.PackageInvestigationMappingRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.DgMasInvestigationRes;
+import com.hims.response.InvestigationPackageDTO;
 import com.hims.response.PackageInvestigationMappingDTO;
 import com.hims.service.PackageInvestigationMappingService;
 import com.hims.utils.ResponseUtils;
@@ -20,9 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -231,21 +231,55 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
     }
 
     @Override
-    public ApiResponse<List<PackageInvestigationMappingDTO>> getAllPackageMap(int flag) {
-        String status = null;
+    public ApiResponse<List<InvestigationPackageDTO>> getAllPackageMap(int flag) {
+
+        String status;
         if (flag == 1) {
             status = "y";
-        } else if (flag != 0) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+        } else if (flag == 0) {
+            status = null;
+        } else {
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {},
+                    "Invalid flag value. Use 0 or 1.", 400
+            );
         }
 
-        List<DgInvestigationPackage> distinctPackages = mapRepo.findDistinctPackages(status);
-        List<PackageInvestigationMappingDTO> dtoList = distinctPackages.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        List<PackageInvestigationMapping> mappings =
+                mapRepo.findActivePackageMappings(status);
 
-        return ResponseUtils.createSuccessResponse(dtoList, new TypeReference<>() {});
+        Map<Long, InvestigationPackageDTO> packageMap = new LinkedHashMap<>();
+
+        for (PackageInvestigationMapping m : mappings) {
+            DgInvestigationPackage pack = m.getPackageId();
+            DgMasInvestigation inv = m.getInvestId();
+
+            InvestigationPackageDTO dto = packageMap.computeIfAbsent(
+                    pack.getPackId(),
+                    id -> {
+                        InvestigationPackageDTO p = new InvestigationPackageDTO();
+                        p.setPackageId(pack.getPackId());
+                        p.setPackName(pack.getPackName());
+                        p.setActualCost(pack.getActualCost());
+                        p.setStatus(pack.getStatus());
+                        p.setInvestigations(new ArrayList<>());
+                        return p;
+                    }
+            );
+
+            DgMasInvestigationRes invDto = new DgMasInvestigationRes();
+            invDto.setInvestigationId(inv.getInvestigationId());
+            invDto.setInvestigationName(inv.getInvestigationName());
+
+            dto.getInvestigations().add(invDto);
+        }
+
+        return ResponseUtils.createSuccessResponse(
+                new ArrayList<>(packageMap.values()),
+                new TypeReference<>() {}
+        );
     }
+
 
     @Override
     public ApiResponse<List<PackageInvestigationMappingDTO>> getInvestigationsByPackageId(Long packageId) {

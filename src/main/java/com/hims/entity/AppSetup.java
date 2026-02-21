@@ -48,11 +48,11 @@ public class AppSetup {
     @Column(name = "days", length = 45)
     private String days;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hospital_id")
     private MasHospital hospital;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dept_id")
     private MasDepartment dept;
 
@@ -65,7 +65,7 @@ public class AppSetup {
     @Column(name = "day_of_week")
     private Integer dayOfWeek;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id")
     private User doctorId;
 
@@ -78,7 +78,7 @@ public class AppSetup {
     @Column(name = "start_token")
     private Integer startToken;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id")
     private MasOpdSession session;
 
@@ -96,4 +96,7 @@ public class AppSetup {
     @Column(name = "end_time", length = 5)
     private String endTime;
 
+    @Size(max = 200)
+    @Column(name = "opd_location", length = 200)
+    private String opdLocation;
 }

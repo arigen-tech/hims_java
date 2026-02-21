@@ -7,11 +7,14 @@ import com.hims.entity.repository.*;
 import com.hims.request.MasDepartmentRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDepartmentResponse;
+import com.hims.response.MasDeptResponse;
 import com.hims.response.MasUserDepartmentResponse;
 import com.hims.service.MasDepartmentService;
 import com.hims.utils.ResponseUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -22,6 +25,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 @Service
+@Slf4j
 public class MasDepartmentServiceImpl implements MasDepartmentService {
 
     @Autowired
@@ -65,6 +69,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         department.setLastChgBy(request.getLastChgBy());
         department.setLastChgTime(getCurrentTimeFormatted());
         department.setLastChgDate(Instant.now());
+        department.setIndentApplicable(request.getIndentApplicable());
         if (request.getWardCategoryId() != null) {
             department.setWardCategory( masWardCategoryRepository.findById(request.getWardCategoryId()).orElse(null));
         }
@@ -110,6 +115,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
             department.setLastChgBy(request.getLastChgBy());
             department.setLastChgTime(getCurrentTimeFormatted());
             department.setLastChgDate(Instant.now());
+            department.setIndentApplicable(request.getIndentApplicable());
 
 
             if (request.getDepartmentTypeId() != null) {
@@ -185,6 +191,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         response.setLastChgBy(department.getLastChgBy());
         response.setLastChgDate(department.getLastChgDate());
         response.setLastChgTime(department.getLastChgTime());
+        response.setIndentApplicable(department.getIndentApplicable());
         if(department.getWardCategory()!=null){
             response.setWardCategoryId(department.getWardCategory().getId());
             response.setWardCategoryName(department.getWardCategory().getCategoryName());
@@ -238,6 +245,26 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
+    @Override
+    public ApiResponse<List<MasDeptResponse>> getAllIndentApplicableDepartments(String indentApplicable) {
 
+        try {
+            log.info("getAllIndentApplicableDepartments method started ...");
+            List<MasDepartment> departments = masDepartmentRepository.findByIndentApplicableIgnoreCase(indentApplicable);
+            log.info("getAllIndentApplicableDepartments method ended ...");
+            return  ResponseUtils.createSuccessResponse(departments.stream().map(this::mapToResponseForDropDown).toList(), new TypeReference<>() {});
+        }catch (Exception e){
+            log.error("getAllIndentApplicableDepartments method error :: ",e);
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+    }
+
+    private MasDeptResponse mapToResponseForDropDown(MasDepartment department){
+        MasDeptResponse response= new MasDeptResponse();
+        response.setDeptId(department.getId());
+        response.setDeptName(department.getDepartmentName());
+        return  response;
+    }
 
 }

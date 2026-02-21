@@ -34,4 +34,8 @@ Optional<DgResultEntryHeader> findBySampleCollectionHeaderId_SampleCollectionHea
 
 
     List<DgResultEntryHeader> findAllByOrderByLastChgdDateDescLastChgdTimeDesc();
+
+    Optional<DgResultEntryHeader> findByOrderHd_Id(Long aLong);
+
+    Optional<DgResultEntryHeader> findByOrderHd_IdAndHospitalId_Id(long id, Long hospitalId);
 }

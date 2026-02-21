@@ -1,5 +1,6 @@
 package com.hims.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -42,7 +43,7 @@ public class Patient {
     @Column(name = "p_age", length = 50)
     private String patientAge;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_gender_id")
     private MasGender patientGender;
 
@@ -62,15 +63,15 @@ public class Patient {
     @Column(name = "file_name", length = 50)
     private String fileName;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_relation_id")
     private MasRelation patientRelation;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_marital_status_id")
     private MasMaritalStatus patientMaritalStatus;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_religion_id")
     private MasReligion patientReligion;
 
@@ -90,16 +91,19 @@ public class Patient {
     @Column(name = "p_pincode", length = 10)
     private String patientPincode;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_district_id")
+    @JsonIgnore
     private MasDistrict patientDistrict;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_state_id")
+    @JsonIgnore
     private MasState patientState;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_country_id")
+    @JsonIgnore
     private MasCountry patientCountry;
 
     @Size(max = 8)
@@ -114,8 +118,9 @@ public class Patient {
     @Column(name = "emer_ln", length = 50)
     private String emerLn;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emer_relation")
+    @JsonIgnore
     private MasRelation emerRelation;
 
     @Size(max = 20)
@@ -150,24 +155,28 @@ public class Patient {
     @Column(name = "nok_city", length = 100)
     private String nokCity;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nok_district_id")
+    @JsonIgnore
     private MasDistrict nokDistrict;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nok_state_id")
+    @JsonIgnore
     private MasState nokState;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nok_country_id")
+    @JsonIgnore
     private MasCountry nokCountry;
 
     @Size(max = 8)
     @Column(name = "nok_pincode", length = 8)
     private String nokPincode;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nok_relation_id")
+    @JsonIgnore
     private MasRelation nokRelation;
 
     @Size(max = 20)
@@ -189,8 +198,9 @@ public class Patient {
     @Column(name = "last_chg_by", length = 200)
     private String lastChgBy;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "p_hospital_id")
+    @JsonIgnore
     private MasHospital patientHospital;
 
     public String getFullName(){
