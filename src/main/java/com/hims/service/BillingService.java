@@ -31,5 +31,11 @@ public interface BillingService {
     //Laboratory
     ApiResponse<PaymentResponse> paymentStatusReqLab(PaymentUpdateRequest labreq);
 
-    ApiResponse<?> getBillingPatientsByCatagory(String serviceCategoryCode, int page, int size);
+    public ApiResponse<?> getBillingPatientsByCatagory(
+            String serviceCategoryCode,
+            String patientName,
+            String mobileNo,
+            String registrationNo,
+            int page,
+            int size);
 }

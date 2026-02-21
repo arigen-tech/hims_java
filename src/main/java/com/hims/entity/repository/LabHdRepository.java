@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.DgOrderHd;
 import com.hims.entity.Visit;
+import com.hims.projection.LabBillingProjection;
 import com.hims.response.PendingSampleResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,7 +10,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -92,7 +94,6 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
                                                    @Param("hospitalId") Long hospitalId);
 
 
-//    Optional<DgOrderHd> findByPatientId_IdAndOrderStatus(Long patientId, String n);
 }
 
 

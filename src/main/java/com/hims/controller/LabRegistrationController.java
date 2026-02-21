@@ -58,11 +58,11 @@ public class LabRegistrationController {
                 return new ResponseEntity<>(radiologyService.paymentStatusReq(request), HttpStatus.OK);
         return new ResponseEntity<>(labRegistrationServices.paymentStatusReq(request), HttpStatus.OK);
     }
-    @GetMapping("/pending")
-    public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
-        log.info("Get Pending Billing API called");
-        return billingService.getPendingBilling();
-    }
+//    @GetMapping("/pending")
+//    public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
+//        log.info("Get Pending Billing API called");
+//        return billingService.getPendingBilling();
+//    }
 
     @GetMapping("/pending-samples")
     public ResponseEntity<ApiResponse<List<PendingSampleResponse>>> getPendingSamples() {
