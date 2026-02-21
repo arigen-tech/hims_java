@@ -1085,7 +1085,7 @@ public class PatientServiceImpl implements PatientService {
         history.setNewVisitDatetime(request.getAppointmentStartTime());
         history.setOldVisitDatetime(v.getVisitDate());
         history.setRescheduleDatetime(Instant.now());
-        history.setRescheduleReason("Demo");
+        history.setRescheduleReason("");
         historyRepository.save(history);
 
 
