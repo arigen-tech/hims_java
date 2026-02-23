@@ -38,4 +38,13 @@ Optional<DgResultEntryHeader> findBySampleCollectionHeaderId_SampleCollectionHea
     Optional<DgResultEntryHeader> findByOrderHd_Id(Long aLong);
 
     Optional<DgResultEntryHeader> findByOrderHd_IdAndHospitalId_Id(long id, Long hospitalId);
+
+    @Query("""
+    select h.resultEntryId
+    from DgResultEntryHeader h
+    where h.orderHd.id in :orderHdIds
+      and h.hospitalId.id = :hospitalId
+""")
+    List<Long> findResultEntryIdsByOrderHdIds(@Param("orderHdIds") List<Long> orderHdIds,
+                                              @Param("hospitalId") Long hospitalId);
 }

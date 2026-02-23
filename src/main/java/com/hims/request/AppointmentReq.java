@@ -11,16 +11,15 @@ import java.util.List;
 @Getter
 @Setter
 public class AppointmentReq {
-
-    Long departmentId;
+     private Long departmentId;
+     private Long doctorId;
+     private Long sessionId;
+     private String startTime;
+     private  String endTime;
+     private  Integer timeTaken;
+     private String opdLocation;
+     private List<AppointmentReqDaysKeys> days;
     //MasDepartment departmentId;
-    Long doctorId;
-    Long sessionId;
-    String startTime;
-    String endTime;
-    Integer timeTaken;
-    String opdLocation;
-    List<AppointmentReqDaysKeys> days;
 //    AppointmentReqDays days;
 //    AppointmentReqDaysKeys daysKeys;
 }

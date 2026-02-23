@@ -119,8 +119,7 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
         @Param("searchInput") String searchInput
     );
 
-
-
-
+    @Query(value = "select d.department_id from mas_department d where department_id = :departmentId", nativeQuery = true)
+    Long findByDepartmentId(@Param("departmentId") Long departmentId);
 }
 

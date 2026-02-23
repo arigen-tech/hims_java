@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -77,9 +78,18 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
 
 
 
-    Optional<DgOrderHd> findByPatientId_IdAndHospitalId(Long patientId, Long id);
 
     DgOrderHd findByPatientId_IdAndVisitId_Id(Long patientId, Long visitId);
+
+    List<DgOrderHd> findByPatientId_IdAndHospitalId(Long patientId, Long hospitalId);
+    @Query(value = """
+    SELECT d.orderHd_id
+    FROM dg_orderhd d
+    WHERE d.patient_id = :patientId
+      AND d.hospital_id = :hospitalId
+    """, nativeQuery = true)
+    List<Long> findByDgOrderHdIdByPatient(@Param("patientId") Long patientId,
+                                                   @Param("hospitalId") Long hospitalId);
 
 
 //    Optional<DgOrderHd> findByPatientId_IdAndOrderStatus(Long patientId, String n);

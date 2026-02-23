@@ -51,24 +51,31 @@ public interface RadOrderDtRepository extends JpaRepository<RadOrderDt, Long> {
             @Param("billHdId") int billHdId
     );
     @Query("""
-    select dt
-    from RadOrderDt dt
-    join dt.radOrderhd hd
-    left join hd.patient p
-    where hd.hospital.id = :hospitalId
-      and lower(dt.billingStatus) = lower(:billingStatus)
-      and lower(dt.studyStatus)   = lower(:studyStatus)
-      and  dt.subChargecode.subId = :modalityId
-      and (
-             :patientName is null
-              or lower(coalesce(p.patientFn,'')) like :patientName
-              or lower(coalesce(p.patientMn,'')) like :patientName
-              or lower(coalesce(p.patientLn,'')) like :patientName
+select dt
+from RadOrderDt dt
+join dt.radOrderhd hd
+left join hd.patient p
+where hd.hospital.id = :hospitalId
+  and lower(dt.billingStatus) = lower(:billingStatus)
+  and lower(dt.studyStatus)   = lower(:studyStatus)
+  and dt.subChargecode.subId  = :modalityId
+ and (
+        :patientName is null
+        or lower(
+              function('replace',
+                concat(
+                  concat(coalesce(p.patientFn,''), coalesce(p.patientMn,'')),
+                  coalesce(p.patientLn,'')
+                ),
+                ' ', ''
               )
-      and (
-             :phoneNumber is null
-              or p.patientMobileNumber like :phoneNumber
+           ) like :patientName
       )
+and (
+        :phoneNumber is null
+        or function('replace', coalesce(p.patientMobileNumber,''), ' ', '')
+           like :phoneNumber
+  )
 """)
     Page<RadOrderDt> findPendingRadiology(
             @Param("hospitalId") Long hospitalId,

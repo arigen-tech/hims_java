@@ -950,30 +950,27 @@ public class ResultServiceImpl implements ResultService {
     public ApiResponse<List<ResultForInvestigationResponse>> getResultForInvestigation(Long patientId,Long hospitalId) {
         log.info("patientId={}, hospitalId={}", patientId, hospitalId);
         try {
-            Optional<DgOrderHd> dgOrderHd = dgOrderHDRepository.findByPatientId_IdAndHospitalId(patientId, hospitalId);
-            if (dgOrderHd.isEmpty()) {
-                return ResponseUtils.createFailureResponse(
-                        null, new TypeReference<>() {
-                        }, "data not found",
-                        404);
-            }
-            Optional<DgResultEntryHeader> dgResultEntryHeader = headerRepo.findByOrderHd_IdAndHospitalId_Id((long) dgOrderHd.get().getId(), hospitalId);
-            Long resultEntryId = dgResultEntryHeader.get().getResultEntryId();
-            List<DgResultEntryDetail> details = detailRepo.findByResultEntryId_ResultEntryIdAndValidatedIgnoreCase(resultEntryId, "y");
+            List<Long> dgOrderHd = dgOrderHDRepository.findByDgOrderHdIdByPatient(patientId, hospitalId);
+            List<Long> resultEntryIds = headerRepo.findResultEntryIdsByOrderHdIds(dgOrderHd, hospitalId);
+            List<DgResultEntryDetail> details = detailRepo.findByResultEntryIdsAndValidated(resultEntryIds, "y");
+            Patient patient = patientRepository.findById(patientId).orElse(null);
             List<ResultForInvestigationResponse> arr = details.stream()
                     .map(d -> {
                         ResultForInvestigationResponse response = new ResultForInvestigationResponse();
-                        response.setPatientId(dgOrderHd.get().getPatientId().getId());
-                        response.setPatientName(dgOrderHd.get().getPatientId().getFullName());
-                        response.setAge(dgOrderHd.get().getPatientId().getPatientAge());
-                        response.setInvestigationName(d.getInvestigationId().getInvestigationName());
+                        response.setPatientId(patientId);
+                       response.setPatientName(patient.getFullName());
+                        response.setAge(patient.getPatientAge());
+                        response.setInvestigationName(
+                                d.getInvestigationId() != null ? d.getInvestigationId().getInvestigationName() : null
+                        );
                         response.setNormalRange(d.getNormalRange());
                         response.setResult(d.getResult());
                         return response;
                     })
                     .toList();
-            log.info("getResultForInvestigation: success patientId={}, hospitalId={}, resultEntryId={}",
-                    patientId, hospitalId, resultEntryId);
+
+            log.info("getResultForInvestigation: success patientId={}, hospitalId={}",
+                  patientId, hospitalId);
             return ResponseUtils.createSuccessResponse(arr, new TypeReference<>() {
             });
         }catch (Exception e) {

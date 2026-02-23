@@ -123,7 +123,6 @@ public class MobileController {
     private ResponseEntity<ApiResponse> createErrorResponse(String message) {
         return ResponseEntity.badRequest().body(new ApiResponse("error", message, null));
     }
-
     @GetMapping("/searchBySpecialityAndDoctor")
     public ApiResponse<List<SpecialitiesAndDoctorResponse>> searchBySpecialityAndDoctor(
             @RequestParam(required = false) String search,
