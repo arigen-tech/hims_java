@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -36,4 +37,21 @@ public interface MasServiceOpdRepository extends JpaRepository<MasServiceOpd, Lo
     List<MasServiceOpd> getOPDServiceByUserIds(
         @Param("userIds") List<Long> userIds
     );
+
+    @Query("""
+        SELECT a.baseTariff
+        FROM MasServiceOpd a
+        WHERE a.hospitalId.id = :hospitalId
+          AND a.doctorId.userId = :doctorId
+          AND a.departmentId.id = :deptId
+          AND a.serviceCategory = :serviceCat
+          AND :currentDateTime BETWEEN a.fromDt AND a.toDt
+          AND a.status = 'y'
+    """)
+    Optional<BigDecimal> findBaseTariffForDoctor(@Param("hospitalId") Long hospitalId,
+                                                 @Param("doctorId") Long doctorId,
+                                                 @Param("deptId") Long deptId,
+                                                 @Param("serviceCat") MasServiceCategory serviceCat,
+                                                 @Param("currentDateTime") Instant currentDateTime);
 }
+

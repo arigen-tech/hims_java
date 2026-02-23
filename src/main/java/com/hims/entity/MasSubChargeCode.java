@@ -42,5 +42,9 @@ public class MasSubChargeCode {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "main_chargecode_id")
     private MasMainChargeCode mainChargeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private MasDepartment masDepartment;
+
 
 }

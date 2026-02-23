@@ -163,7 +163,7 @@ public class LabRegistrationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(labOrderTrackingStatusService.create(request));
     }
 
-    @GetMapping("/investigationResultForMobile")
+    @GetMapping("/investigationResultByPatient")
     public ApiResponse<List<ResultForInvestigationResponse>> getResultForInvestigation(@RequestParam Long patientId,@RequestParam Long hospitalId) {
         log.info("investigationResultForMobile");
         return  resultService.getResultForInvestigation(patientId,hospitalId);

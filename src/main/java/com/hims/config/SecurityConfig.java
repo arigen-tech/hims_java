@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/mobileController/mLogin").permitAll()
                         .requestMatchers("/mobileController/verifyOtp").permitAll()
                         .requestMatchers("report/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/userType/**").permitAll()
                         .requestMatchers("/app/**").permitAll()
                         .requestMatchers("/masterController/searchAirport/{query}").permitAll()
