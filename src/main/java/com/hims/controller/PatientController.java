@@ -10,6 +10,7 @@ import com.hims.entity.repository.PatientRepository;
 import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
+import com.hims.service.DoctorRosterServices;
 import com.hims.service.MasAppointmentChangeReasonService;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.service.PatientService;
@@ -51,6 +52,8 @@ public class PatientController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    @Autowired
+    DoctorRosterServices doctorRosterServices;
 
 
     @GetMapping("/getOpdByVisit")
@@ -266,6 +269,35 @@ public class PatientController {
                         hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId
                 );
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Retrieves available appointment token slots for a specific doctor,
+     * department, session, and appointment date.
+     *
+     * <p>This API returns a list of available token slots based on the
+     * provided department ID, doctor ID, appointment date, session ID,
+     * and flag value.</p>
+     * @param deptId           the unique ID of the department (required)
+     * @param doctorId         the unique ID of the doctor (required)
+     * @param appointmentDate  the appointment date in yyyy-MM-dd format (required)
+     * @param sessionId        the session ID (e.g., Morning/Evening) (required)
+     * @param flag             flag to determine slot online or offline tokens logic (required)
+     * @return ResponseEntity containing ApiResponse with list of AvailableTokenSlotResponse objects
+     */
+    @GetMapping("/getAppointmentSlots/{flag}")
+    public ResponseEntity<ApiResponse<List<AvailableTokenSlotResponse>>> getAllOnlineTokens(
+            @RequestParam Long deptId,
+            @RequestParam Long doctorId,
+            @RequestParam String appointmentDate,
+            @RequestParam Long sessionId,
+            @PathVariable Integer flag
+    ) {
+        ApiResponse<List<AvailableTokenSlotResponse>> response =
+                patientService.getAppointmentSlots(
+                        deptId, doctorId, appointmentDate, sessionId,flag
+                );
         return ResponseEntity.ok(response);
     }
 
