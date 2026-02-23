@@ -273,7 +273,8 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
     private MasCommonStatusService masCommonStatusService;
     @Autowired
     private MasLanguageService masLanguageService;
-
+@Autowired
+private RadiologyTemplateService radiologyTemplateService;
 
 
 
@@ -4260,6 +4261,38 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
     public ResponseEntity<ApiResponse<List<MasLanguageResponse>>> getAllMasLanguage(
             @PathVariable int flag) {
         return ResponseEntity.ok(masLanguageService.getAll(flag));
+    }
+
+    //=======================================Radiology Template master ====================================================
+    @GetMapping("radiologyTemplate/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<RadiologyTemplateResponse>>> getAllemplate(@PathVariable int flag) {
+        return ResponseEntity.ok(radiologyTemplateService.getAll(flag));
+    }
+
+    @GetMapping("radiologyTemplate/getById/{id}")
+    public ResponseEntity<ApiResponse<RadiologyTemplateResponse>> getByIdTemplate(@PathVariable Long id) {
+        return ResponseEntity.ok(radiologyTemplateService.getById(id));
+    }
+
+    @PostMapping("radiologyTemplate/create")
+    public ResponseEntity<ApiResponse<RadiologyTemplateResponse>> createRadiologyTemplate(
+            @Valid @RequestBody RadiologyTemplateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(radiologyTemplateService.create(request));
+    }
+
+    @PutMapping("radiologyTemplate/update/{id}")
+    public ResponseEntity<ApiResponse<RadiologyTemplateResponse>> updateTemplate(
+            @PathVariable Long id,
+            @Valid @RequestBody RadiologyTemplateRequest request) {
+        return ResponseEntity.ok(radiologyTemplateService.update(id, request));
+    }
+
+    @PutMapping("radiologyTemplate/status/{id}")
+    public ResponseEntity<ApiResponse<RadiologyTemplateResponse>> changeStatusTemplate(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(radiologyTemplateService.changeStatus(id, status));
     }
 
 }
