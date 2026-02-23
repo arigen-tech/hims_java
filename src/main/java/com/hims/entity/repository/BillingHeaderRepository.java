@@ -224,7 +224,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             LEFT JOIN mas_gender g ON p.p_gender_id = g.id
             LEFT JOIN mas_department d ON v.department_id = d.department_id
             LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
-            WHERE LOWER(bh.payment_status) = lower(:status)
+            WHERE LOWER(bh.payment_status) IN (lower(:complete), lower(:partial))
               AND LOWER(
                     TRIM(
                         COALESCE(p.p_fn, '') || ' ' ||
@@ -240,7 +240,8 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             @Param("patientName") String patientName,
             @Param("phoneNo") String phoneNo,
             @Param("registrationNo") String registrationNo,
-            @Param("status") String status
+            @Param("complete") String complete,
+            @Param("partial") String partial
     );
 
 

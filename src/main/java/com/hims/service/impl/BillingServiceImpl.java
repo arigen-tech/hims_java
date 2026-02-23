@@ -702,7 +702,7 @@ public class BillingServiceImpl implements BillingService {
             List<BillingHeaderResponseProjection> response = billingHeaderRepository.searchBillingStatus(
                     patientNameLike,
                     phoneNoLike,
-                    registrationNoLike, AppConstants.STATUS_Y
+                    registrationNoLike, AppConstants.STATUS_Y ,AppConstants.STATUS_P
             );
 
             return ResponseUtils.createSuccessResponse(
