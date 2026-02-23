@@ -4,6 +4,8 @@ import com.hims.entity.AppSetup;
 import com.hims.entity.MasDepartment;
 import com.hims.entity.MasOpdSession;
 import com.hims.entity.User;
+import com.hims.projection.AppSetupProjection;
+import com.hims.projection.AvailableTokensProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,8 +20,45 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
     @Query("SELECT a FROM AppSetup a WHERE a.dept.id = :deptId AND a.doctorId.userId = :doctorId AND a.session.id = :sessionId")
     List<AppSetup> findAppSetupsByIds(@Param("deptId") Long deptId,
                                       @Param("doctorId") Long doctorId,
-                                      @Param("sessionId") Long sessionId);
-    Optional<AppSetup> findByDeptAndDoctorIdAndSession(MasDepartment dept, User doctorId, MasOpdSession session);
+                                     @Param("sessionId") Long sessionId);
+
+    @Query("""
+SELECT
+  a.fromTime AS fromTime,
+  a.toTime AS toTime,
+  h.id AS hospitalId,
+  d.id AS deptId,
+  a.validFrom AS validFrom,
+  a.validTo AS validTo,
+  a.dayOfWeek AS dayOfWeek,
+  doc.userId AS doctorId,
+  s.id AS sessionId,
+  a.startTime AS startTime,
+  a.endTime AS endTime,
+  a.timeTaken AS timeTaken,
+
+  a.id AS id,
+  a.days AS days,
+  a.maxNoOfDays AS maxNoOfDays,
+  a.minNoOfDays AS minNoOfDays,
+  a.totalToken AS totalToken,
+  a.totalInterval AS totalInterval,
+  a.startToken AS startToken,
+  a.totalOnlineToken AS totalOnlineToken,
+  a.opdLocation AS opdLocation
+FROM AppSetup a
+JOIN a.dept d
+JOIN a.doctorId doc
+JOIN a.session s
+LEFT JOIN a.hospital h
+WHERE d.id = :deptId
+  AND doc.userId = :doctorId
+  AND s.id = :sessionId
+""")
+    List<AppSetupProjection> findAppSetupById(@Param("deptId") Long deptId,
+                                                @Param("doctorId") Long doctorId,
+                                                @Param("sessionId") Long sessionId);
+  Optional<AppSetup> findByDeptAndDoctorIdAndSession(MasDepartment dept, User doctorId, MasOpdSession session);
 
 
     @Query("SELECT COUNT(a) FROM AppSetup a WHERE a.dept = :department AND a.doctorId = :doctor AND a.session = :session")
@@ -114,6 +153,7 @@ public interface AppSetupRepository extends JpaRepository<AppSetup, Long> {
         r.start_time
     """, nativeQuery = true)
     List<Object[]> findDistinctDoctorSessionNextDayBatch(@Param("doctorIds") List<Long> doctorIds);
+
 
 }
 

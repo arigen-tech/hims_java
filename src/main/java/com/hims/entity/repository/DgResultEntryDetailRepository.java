@@ -51,4 +51,12 @@ public interface DgResultEntryDetailRepository extends JpaRepository<DgResultEnt
     """)
     List<ResultForInvestigationResponse> findValidatedResultsByPatient(@Param("patientId") Long patientId);
   //  List<ResultForInvestigationResponse> findValidatedResultsByPatient(Long patientId);
+  @Query("""
+    select d
+    from DgResultEntryDetail d
+    where d.resultEntryId.resultEntryId in :resultEntryIds
+      and lower(d.validated) = lower(:validated)
+""")
+  List<DgResultEntryDetail> findByResultEntryIdsAndValidated(@Param("resultEntryIds") List<Long> resultEntryIds,
+                                                             @Param("validated") String validated);
 }

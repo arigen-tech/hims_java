@@ -6,15 +6,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AppointmentReqDaysKeys {
-    Long id;
-    String day;
-    Integer tokenStartNo;
-    Integer tokenInterval;
-    Integer totalToken;
-    Integer totalOnlineToken;
-    Integer maxNoOfDay;
-    Integer minNoOfday;
-    String opdLocation;
-    String startTime;
-    String endTime;
+    private Long id;
+    private   String day;
+    private Integer tokenStartNo;
+    private Integer tokenInterval;
+    private   Integer totalToken;
+    private Integer totalOnlineToken;
+    private Integer maxNoOfDay;
+    private Integer minNoOfday;
+    private String opdLocation;
+    private   String startTime;
+    private   String endTime;
 }
