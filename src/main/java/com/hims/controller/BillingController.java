@@ -1,5 +1,6 @@
 package com.hims.controller;
 
+import com.hims.projection.BillingHeaderResponseProjection;
 import com.hims.request.PaymentUpdateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.PatientAppointmentResponse;
@@ -69,6 +70,17 @@ public class BillingController {
     public ApiResponse<List<PendingBillingResponse>> getPendingBillingLabRadio(@PathVariable Long billingHdId,@RequestParam String serviceCategoryCode){
         log.info("Get Pending Billing API called for Lab Radio");
         return billingService.getPendingBillingLabRadio(billingHdId, serviceCategoryCode);
+    }
+
+
+    @GetMapping("/billingStatus/search")
+    public ApiResponse<List<BillingHeaderResponseProjection>> searchBillingStatus(
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String phoneNo,
+            @RequestParam(required = false) String registrationNo) {
+        log.info("billingStatus search api called, patientName: {}, phoneNo: {}, registrationNo: {}",
+                patientName, phoneNo, registrationNo);
+        return billingService.getBillingStatus(patientName, phoneNo, registrationNo);
     }
 
 

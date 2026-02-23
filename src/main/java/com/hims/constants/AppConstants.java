@@ -24,6 +24,7 @@ public class AppConstants {
     public static final String STATUS_R = "R";
     public static final String COLUMN_NAME_IS_RETURN = "is_return";
     public static final String STATUS_N = "N";
+    public static final String STATUS_P = "P";
 
     //Visit Status
     public static final String VISIT_STATUS_PENDING = "N";
