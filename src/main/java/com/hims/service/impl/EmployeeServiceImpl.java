@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.DuplicatePersonFoundException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.projection.AppointmentHistoryProjection;
 import com.hims.request.*;
@@ -889,7 +890,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Optional<MasEmployee> existingEmp = masEmployeeRepository.findByMobileNo(request.getMobileNo());
         if (existingEmp.isPresent()) {
-            throw new EntityExistsException("Mobile number " + request.getMobileNo() + " already exists with Emp: " + existingEmp.get().getFirstName() + " " + existingEmp.get().getMiddleName() + " " + existingEmp.get().getLastName());
+            throw new DuplicatePersonFoundException(
+                    "Mobile number " + request.getMobileNo() +
+                            " already exists with employee: " +
+                            existingEmp.get().getFirstName() + " " +
+                            existingEmp.get().getLastName()
+            );
         }
 
 
