@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
+import com.hims.exception.patientRegistrationException.InvalidDateException;
 import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.OpdPatientDetailMapper;
@@ -122,6 +123,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 
     @Override
+    @Transactional
     public ApiResponse<PatientRegFollowUpResp> createPatient(PatientRequest patient, OpdPatientDetailRequest opdPatientDetail, List<VisitRequest> visit) {
         PatientRegFollowUpResp resp=new PatientRegFollowUpResp();
         Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(
@@ -700,10 +702,19 @@ public class RegistrationServiceImpl implements RegistrationService {
         return count > 0 ? "F" : "N";
     }
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
-        LocalDate date = visit.getVisitDate().atOffset(ZoneOffset.UTC).toLocalDate();
 
-        Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+        LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
+        LocalDate tokenStartTime = visit.getTokenStartTime().atZone(ZoneOffset.UTC).toLocalDate();
+        LocalDate tokenEndTime = visit.getTokenEndTime().atZone(ZoneOffset.UTC).toLocalDate();
+
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+
+        if (visitDate.isBefore(today)||visitDate.isBefore(tokenStartTime)||visitDate.isBefore(tokenEndTime)) {
+            throw new InvalidDateException("Past dates are not allowed. Please select today or a future date.");
+        }
+
+        Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
         boolean alreadyExists =
                 visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNo(
                         visit.getDepartmentId(),

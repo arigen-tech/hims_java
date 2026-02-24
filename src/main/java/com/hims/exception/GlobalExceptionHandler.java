@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.exception.bloodBankException.DonorSaveException;
 import com.hims.exception.bloodBankException.ScreeningSaveException;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
+import com.hims.exception.patientRegistrationException.InvalidDateException;
 import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
 import com.hims.response.ApiResponse;
 import com.hims.utils.ResponseUtils;
@@ -91,6 +92,18 @@ public class GlobalExceptionHandler {
                         HttpStatus.BAD_REQUEST.value()
                 );
 
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidDateException.class)
+    public ResponseEntity<ApiResponse<String>> handleInvalidDate(InvalidDateException ex) {
+
+        ApiResponse<String> response =
+                ResponseUtils.createFailureResponse(
+                        null,
+                        ex.getMessage(),
+                        HttpStatus.BAD_REQUEST.value()
+                );
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
