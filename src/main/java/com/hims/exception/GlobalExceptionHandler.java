@@ -107,4 +107,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(DuplicatePersonFoundException.class)
+    public ResponseEntity<ApiResponse<String>> handleDuplicatePerson(DuplicatePersonFoundException ex){
+
+        ApiResponse<String> response =
+                ResponseUtils.createFailureResponse(
+                        null,
+                        ex.getMessage(),
+                        HttpStatus.CONFLICT.value()
+                );
+
+        return new ResponseEntity<>(response,HttpStatus.CONFLICT);
+    }
+
 }
