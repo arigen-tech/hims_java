@@ -130,6 +130,25 @@ public class RadiologyController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+
+
+    @GetMapping("/pendingListForRadiologyReport")
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingReportRadiology(
+            @RequestParam(required = false) Long modality,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return radiologyService.getPendingReportRadiology(modality, patientName, phoneNumber, page, size);
+    }
+    @PostMapping("/saveDetailsReportForRadiology")
+    public ResponseEntity<ApiResponse<String>> addDetailsReport(
+            @Valid @RequestBody RadiologyReportRequest request,
+            @RequestParam String status) {
+        ApiResponse<String> response = radiologyService.add(request, status);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
     @GetMapping("/getPACSStudyList")
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(
             @RequestParam(required = false) Long modality,
