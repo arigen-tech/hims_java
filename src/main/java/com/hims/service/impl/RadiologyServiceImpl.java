@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.projection.RadiologyProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.RadiologyService;
@@ -74,6 +75,8 @@ public class RadiologyServiceImpl implements RadiologyService {
     PackageInvestigationMappingRepository packageInvestigationMappingRepository;
     @Autowired
     PaymentDetailRepository paymentDetailRepository;
+    @Autowired
+    private RadStudyReportRepository radStudyReportRepository;
     public RadiologyServiceImpl(RandomNumGenerator randomNumGenerator) {
         this.randomNumGenerator = randomNumGenerator;
     }
@@ -534,9 +537,119 @@ public class RadiologyServiceImpl implements RadiologyService {
             );
     }
     }
+    @Override
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingReportRadiology(
+            Long modality, String patientName, String phoneNumber, int page, int size) {
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
+            String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
+            String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdon"));
+            Page<RadiologyProjection> paged = radOrderDtRepository.findPendingReportRadiologyProjection(masHospital.getId(), modality, patientLike, phoneLike, pageable);
+            Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
+            return ResponseUtils.createSuccessResponse(
+                    response, new TypeReference<Page<RadiologyRequisitionResponse>>() {}
+            );
+
+        } catch (Exception e) {
+            log.error("Error while fetching pending radiology data", e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal Server Error", 500
+            );
+        }
+    }
+     @Transactional
+    @Override
+    public ApiResponse<String> add(RadiologyReportRequest request,String status) {
+         try {
+        User currentUser = authUtil.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Current user not found", 401
+            );
+        }
+        RadStudyReport radStudyReport = new RadStudyReport();
+        radStudyReport.setReportDesc(request.getReportDesc());
+        RadOrderDt orderDt = radOrderDtRepository.findById(request.getRadOrderDtId()).orElse(null);
+        if (orderDt == null) {
+            return ResponseUtils.createNotFoundResponse(
+                    "RadOrderDt not found for id: " + request.getRadOrderDtId(), 404
+            );
+        }
+            radStudyReport.setRadOrderDt(orderDt);
+            // radStudyReport.setReportStatus();
+            radStudyReport.setLastChgBy(currentUser.getFullName());
+            radStudyReport.setLastChgDate(LocalDateTime.now());
+            radStudyReport.setCreatedBy(currentUser.getFullName());
+            radStudyReport.setCreatedOn(LocalDateTime.now());
+            // radStudyReport.setReportImagePath();
+            radStudyReportRepository.save(radStudyReport);
+            orderDt.setReportStatus(status.toLowerCase().trim());
+            orderDt.setLastChgDate(Instant.now());
+            orderDt.setLastChgBy(currentUser.getFullName());
+            return ResponseUtils.createSuccessResponse(
+                    "Radiology result saved successfully", new TypeReference<>() {});
+         } catch (Exception e) {
+             log.error("Error while saving radiology report", e);
+             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                     "Internal Server Error", 500
+             );
+         }
+
+        }
+
+    @Override
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size) {
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
+            String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
+            String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdon"));
+            Page<RadiologyProjection> paged = radOrderDtRepository.findByRadiologyPACSStudyList(masHospital.getId(), modality, patientLike, phoneLike, pageable);
+            Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
+            return ResponseUtils.createSuccessResponse(
+                    response, new TypeReference<Page<RadiologyRequisitionResponse>>() {}
+            );
+
+        } catch (Exception e) {
+            log.error("Error while fetching pending radiology data", e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal Server Error", 500
+            );
+        }
+    }
+
+    private RadiologyRequisitionResponse toResponse(RadiologyProjection p) {
+        RadiologyRequisitionResponse r = new RadiologyRequisitionResponse();
+        r.setAccessionNo(p.getOrderAccessionNo());
+        r.setUhidNo(p.getUhid());
+        r.setPatientName(p.getPatientName());
+        r.setAge(p.getAge());
+        r.setGender(p.getGender());
+        r.setPhoneNumber(p.getMobileNo());
+        r.setModality(p.getModalityName());
+        r.setModalityId(p.getModalityId());
+        r.setInvestigationName(p.getInvestigationName());
+        r.setOrderDate(p.getOrderDate());
+        r.setOrderTime(p.getOrderTime());
+        r.setDepartment(p.getDepartment());
+        r.setRadOrderDtId(p.getRadOrderdtId());
+        r.setReportStatus(p.getReportStatus());
+        r.setStudyStatus(p.getStudyStatus());
+        r.setStudyDate(null);
+        r.setStudyTime(null);
+        return r;
+    }
 
     private RadiologyRequisitionResponse mapToRadiologyDto(RadOrderDt dt) {
         RadiologyRequisitionResponse dto = new RadiologyRequisitionResponse();
+        dto.setRadOrderDtId(dt.getId());
         dto.setAccessionNo(dt.getOrderAccessionNo());
         RadOrderHd hd = dt.getRadOrderhd();
         Patient p =hd.getPatient();
@@ -544,17 +657,15 @@ public class RadiologyServiceImpl implements RadiologyService {
         dto.setPatientName(p.getFullName());
         dto.setAge(p.getPatientAge());
         dto.setPhoneNumber(p.getPatientMobileNumber());
-
         dto.setGender(p.getPatientGender() != null ? p.getPatientGender().getGenderName() : null);
         MasSubChargeCode sc = dt.getSubChargecode();
         dto.setModality(sc.getSubName());
         dto.setInvestigationName(dt.getInvestigation() != null ? dt.getInvestigation().getInvestigationName() : null);
         dto.setOrderDate(hd.getOrderDate());
         dto.setOrderTime(hd.getOrderTime());
-        dto.setRadOrderDtId(dt.getId());
         dto.setDepartment(hd.getDepartment() != null ? hd.getDepartment().getDepartmentName() : null);
 
         return dto;
     }
 
-}
+    }

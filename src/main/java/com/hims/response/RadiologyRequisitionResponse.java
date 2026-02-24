@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 public class RadiologyRequisitionResponse {
@@ -14,9 +15,15 @@ public class RadiologyRequisitionResponse {
     private String gender;
     private String phoneNumber;
     private String modality;
+    private Long modalityId;
     private String investigationName;
     private LocalDate orderDate;
     private Instant orderTime;
     private String Department;
     private Long radOrderDtId;
+    private String reportStatus;
+    private String studyStatus;
+    private LocalDate studyDate;
+    private LocalTime studyTime;
+
 }
