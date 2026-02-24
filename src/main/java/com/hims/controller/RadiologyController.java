@@ -1,9 +1,11 @@
 package com.hims.controller;
 
 import com.hims.request.RadRegInvReq;
+import com.hims.request.RadiologyReportRequest;
 import com.hims.response.*;
 import com.hims.service.RadiologyService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -40,4 +42,36 @@ public class RadiologyController {
         return radiologyService.pendingInvestigationRadiology(id,status);
     }
 
+
+
+    @GetMapping("/pendingListForRadiologyReport")
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingReportRadiology(
+            @RequestParam(required = false) Long modality,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return radiologyService.getPendingReportRadiology(modality, patientName, phoneNumber, page, size);
+    }
+    @PostMapping("/saveDetailsReportForRadiology")
+    public ResponseEntity<ApiResponse<String>> addDetailsReport(
+            @Valid @RequestBody RadiologyReportRequest request,
+            @RequestParam String status) {
+        ApiResponse<String> response = radiologyService.add(request, status);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/getPACSStudyList")
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(
+            @RequestParam(required = false) Long modality,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return radiologyService.getPACSStudyList(modality, patientName, phoneNumber, page, size);
+    }
+
+
 }
+
+

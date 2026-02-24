@@ -16,4 +16,6 @@ public interface RadiologyTemplateService {
     ApiResponse<RadiologyTemplateResponse> update(Long id, RadiologyTemplateRequest request);
 
     ApiResponse<RadiologyTemplateResponse> changeStatus(Long id, String status);
+
+    ApiResponse<List<RadiologyTemplateResponse>> getByIdTemplateList(Long modalityId);
 }

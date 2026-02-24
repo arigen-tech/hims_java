@@ -4294,5 +4294,10 @@ private RadiologyTemplateService radiologyTemplateService;
             @RequestParam String status) {
         return ResponseEntity.ok(radiologyTemplateService.changeStatus(id, status));
     }
+    @GetMapping("radiologyTemplateList/getById/{modalityId}")
+    public ResponseEntity<ApiResponse<List<RadiologyTemplateResponse>>> getByIdTemplateList(@PathVariable Long modalityId) {
+        return ResponseEntity.ok(radiologyTemplateService.getByIdTemplateList(modalityId));
+    }
+
 
 }
