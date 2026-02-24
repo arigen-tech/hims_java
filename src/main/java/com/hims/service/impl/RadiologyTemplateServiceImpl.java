@@ -88,8 +88,8 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
             entity.setTemplateText(request.getTemplateText());
             entity.setStatus("y");
 
-            entity.setCreatedBy(user.getCreatedBy());
-            entity.setLastUpdatedBy(user.getLastChangedBy());
+            entity.setCreatedBy(user.getFullName());
+            entity.setLastUpdatedBy(user.getFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             MasPacsTemplate saved = radiologyTemplateRepository.save(entity);
             return ResponseUtils.createSuccessResponse(
@@ -137,7 +137,7 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
             entity.setSubChargecodeId(subChargeCode);
             entity.setTemplateText(request.getTemplateText());
 
-            entity.setLastUpdatedBy(user.getLastChangedBy());
+            entity.setLastUpdatedBy(user.getFirstName());
             entity.setLastUpdateDate(LocalDateTime.now());
             MasPacsTemplate saved = radiologyTemplateRepository.save(entity);
             return ResponseUtils.createSuccessResponse(
@@ -177,7 +177,7 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getLastChangedBy());
+            entity.setLastUpdatedBy(user.getFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             MasPacsTemplate saved = radiologyTemplateRepository.save(entity);
             return ResponseUtils.createSuccessResponse(
@@ -193,12 +193,52 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
         }
     }
 
+    @Override
+    public ApiResponse<List<RadiologyTemplateResponse>> getByIdTemplateList(Long modalityId) {
+        try {
+            if (modalityId == null) {
+                return ResponseUtils.createFailureResponse(List.of(), new TypeReference<List<RadiologyTemplateResponse>>() {},
+                        "subChargecodeId is required",
+                        400
+                );
+            }
+            List<MasPacsTemplate> templates = radiologyTemplateRepository
+                            .findBySubChargecodeId_SubIdAndStatusIgnoreCaseOrderByTemplateNameAsc(modalityId, "y");
+
+            List<RadiologyTemplateResponse> resp = templates.stream()
+                    .map(t -> RadiologyTemplateResponse.builder()
+                            .pacsTemplateId(t.getPacsTemplateId())
+                            .templateCode(t.getTemplateCode())
+                            .templateName(t.getTemplateName())
+                            .templateText(t.getTemplateText())
+                            .subChargecodeId(t.getSubChargecodeId().getSubId())
+                            .subChargeCodeName(t.getSubChargecodeId().getSubName())
+                            .build()
+                    )
+                    .toList();
+
+            return ResponseUtils.createSuccessResponse(resp, new TypeReference<List<RadiologyTemplateResponse>>() {});
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(
+                    List.of(),
+                    new com.fasterxml.jackson.core.type.TypeReference<List<RadiologyTemplateResponse>>() {},
+                    "Error while fetching template list",
+                    500
+            );
+        }
+    }
+
+
+
+
+
     private RadiologyTemplateResponse toResponse(MasPacsTemplate e) {
         RadiologyTemplateResponse res = new RadiologyTemplateResponse();
         res.setPacsTemplateId(e.getPacsTemplateId());
         res.setTemplateCode(e.getTemplateCode());
         res.setTemplateName(e.getTemplateName());
         res.setSubChargecodeId(e.getSubChargecodeId() != null ? e.getSubChargecodeId().getSubId() : null);
+        res.setSubChargeCodeName(e.getSubChargecodeId() != null ? e.getSubChargecodeId().getSubName() : null);
         res.setTemplateText(e.getTemplateText());
         return res;
     }

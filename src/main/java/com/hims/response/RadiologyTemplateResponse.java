@@ -12,6 +12,7 @@ public class RadiologyTemplateResponse {
     private String templateCode;
     private String templateName;
     private Long subChargecodeId;
+    private String subChargeCodeName;
     private String templateText;
 
 }
