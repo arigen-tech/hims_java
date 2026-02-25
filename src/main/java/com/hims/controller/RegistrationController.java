@@ -7,7 +7,6 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.RegistrationService;
 import com.hims.utils.ResponseUtils;
-import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -60,7 +59,7 @@ public class RegistrationController {
      */
     @PostMapping("/bookAppointment/{patientId}")
     public ResponseEntity<ApiResponse<BookingAppointmentResponse>> bookAppointment(
-            @PathVariable @Parameter(description = "Patient ID") Long patientId,
+            @PathVariable Long patientId,
             @RequestBody VisitRequest visitRequest) {
         log.info("POST /registration/bookAppointment/{} called", patientId);
         ApiResponse<BookingAppointmentResponse> response = registrationService.bookAppointment(patientId, visitRequest);
@@ -99,11 +98,11 @@ public class RegistrationController {
      */
     @GetMapping("/checkDuplicatePatient")
     public ResponseEntity<Boolean> checkDuplicatePatient(
-            @RequestParam @Parameter(description = "First name") String firstName,
-            @RequestParam @Parameter(description = "Date of birth in yyyy-MM-dd format") String dob,
-            @RequestParam @Parameter(description = "Gender ID") Long gender,
-            @RequestParam @Parameter(description = "Mobile number") String mobile,
-            @RequestParam @Parameter(description = "Relation ID") Long relation) {
+            @RequestParam String firstName,
+            @RequestParam String dob,
+            @RequestParam Long gender,
+            @RequestParam String mobile,
+            @RequestParam Long relation) {
         log.info("GET /registration/checkDuplicatePatient called");
         boolean exists = patientRepository.existsByPatientFnAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(
                 firstName.trim(), LocalDate.parse(dob), gender, mobile.trim(), relation);
@@ -115,7 +114,7 @@ public class RegistrationController {
      */
     @GetMapping("/getPatientDetails/{patientId}")
     public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientDetails(
-            @PathVariable @Parameter(description = "Patient ID") Long patientId) {
+            @PathVariable Long patientId) {
         log.info("GET /registration/getPatientDetails/{} called", patientId);
         ApiResponse<FollowUpPatientResponseDetails> response = registrationService.getPatientDetails(patientId);
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -158,14 +157,14 @@ public class RegistrationController {
      */
     @GetMapping("/getCancelledAppointments")
     public ResponseEntity<ApiResponse<List<CancelledAppointmentResponse>>> getCancelledAppointments(
-            @RequestParam @Parameter(description = "Hospital ID") Long hospitalId,
-            @RequestParam(required = false) @Parameter(description = "Department ID (optional)") Long departmentId,
-            @RequestParam(required = false) @Parameter(description = "Doctor ID (optional)") Long doctorId,
-            @RequestParam(required = false) @Parameter(description = "From date in yyyy-MM-dd format (optional)")
+            @RequestParam Long hospitalId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @Parameter(description = "To date in yyyy-MM-dd format (optional)")
+            @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            @RequestParam(required = false) @Parameter(description = "Cancellation reason ID (optional)") Long cancellationReasonId) {
+            @RequestParam(required = false) Long cancellationReasonId) {
         log.info("GET /registration/getCancelledAppointments called: hospitalId={}, departmentId={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}",
                 hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId);
         ApiResponse<List<CancelledAppointmentResponse>> response = registrationService.getCancelledAppointments(
