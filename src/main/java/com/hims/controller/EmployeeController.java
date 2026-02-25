@@ -6,7 +6,6 @@ import com.hims.request.MasEmployeeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasEmployeeDTO;
 import com.hims.service.EmployeeService;
-import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -48,7 +47,7 @@ public class EmployeeController {
      */
     @GetMapping("/getEmployeesByStatus/{status}")
     public ResponseEntity<ApiResponse<List<MasEmployeeDTO>>> getEmployeesByStatus(
-            @PathVariable @Parameter(description = "Employee status") String status) {
+            @PathVariable String status) {
         log.info("GET /employee/getEmployeesByStatus/{} called", status);
         return ResponseEntity.ok(employeeService.getEmployeesByStatus(status));
     }
@@ -58,7 +57,7 @@ public class EmployeeController {
      */
     @GetMapping("/getEmployeeById/{id}")
     public ResponseEntity<ApiResponse<MasEmployeeDTO>> getEmployeeById(
-            @PathVariable @Parameter(description = "Employee ID") Long id) {
+            @PathVariable Long id) {
         log.info("GET /employee/getEmployeeById/{} called", id);
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
@@ -77,7 +76,7 @@ public class EmployeeController {
      */
     @PutMapping(value = "/updateEmployee/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<MasEmployee>> updateEmployee(
-            @PathVariable @Parameter(description = "Employee ID") Long id,
+            @PathVariable Long id,
             @ModelAttribute MasEmployeeRequest request) {
         log.info("PUT /employee/updateEmployee/{} called", id);
         return ResponseEntity.ok(employeeService.updateEmployee(id, request));
@@ -88,8 +87,8 @@ public class EmployeeController {
      */
     @PutMapping("/approveEmployee/{id}/{deptId}")
     public ResponseEntity<ApiResponse<MasEmployee>> approveEmployee(
-            @PathVariable @Parameter(description = "Employee ID") Long id,
-            @PathVariable @Parameter(description = "Department ID") Long deptId) {
+            @PathVariable Long id,
+            @PathVariable Long deptId) {
         log.info("PUT /employee/approveEmployee/{}/{} called", id, deptId);
         return ResponseEntity.ok(employeeService.updateEmployeeApprovalStatus(id, deptId));
     }
@@ -109,7 +108,7 @@ public class EmployeeController {
      */
     @GetMapping("/getEmployeeProfileImage/{empId}")
     public ResponseEntity<?> getEmployeeProfileImage(
-            @PathVariable @Parameter(description = "Employee ID") Long empId) {
+            @PathVariable Long empId) {
         log.info("GET /employee/getEmployeeProfileImage/{} called", empId);
         Optional<MasEmployee> optionalEmployee = masEmployeeRepository.findById(empId);
 
@@ -148,7 +147,7 @@ public class EmployeeController {
      */
     @GetMapping("/viewEmployeeDocument")
     public ResponseEntity<?> viewEmployeeDocument(
-            @RequestParam @Parameter(description = "Document file path") String filePath) {
+            @RequestParam String filePath) {
         log.info("GET /employee/viewEmployeeDocument called");
         File file = new File(filePath);
         if (!file.exists()) {
