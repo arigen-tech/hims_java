@@ -173,12 +173,14 @@ public class ReportController {
             @RequestParam Long departmentId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String balanceType,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("HOSPITAL_ID", hospitalId);
         params.put("department_id", departmentId);
         params.put("FromDate", fromDate);
         params.put("ToDate", toDate);
+        params.put("balance_type", balanceType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
@@ -204,10 +206,16 @@ public class ReportController {
 
     @GetMapping(value = "/openingBalanceReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintOpeningBalanceReportPdf(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
             @RequestParam Long balanceMId,
+            @RequestParam String balanceType,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", departmentId);
         params.put("balance_m_id", balanceMId);
+        params.put("balance_type", balanceType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
@@ -326,10 +334,16 @@ public class ReportController {
 
     @GetMapping(value = "/indentReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintIndentReportPdf(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
             @RequestParam Long indentMId ,
+            @RequestParam String indentType,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", departmentId);
         params.put("indent_m_id", indentMId);
+        params.put("indent_type", indentType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
@@ -439,11 +453,13 @@ public class ReportController {
             @RequestParam Long itemId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String indentType,
             @RequestParam String flag ) {
         Map<String, Object> params = new HashMap<>();
         params.put("drug_id", itemId);
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
+        params.put("indent_type", indentType);
         params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_STORE + ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_SUBREPORT_DIR)).toString());
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
@@ -469,10 +485,16 @@ public class ReportController {
 
     @GetMapping(value = "/indentIssue", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewDownloadIndentIssue(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
             @RequestParam Long issueMId,
+            @RequestParam String indentType,
             @RequestParam String flag ) {
         Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", departmentId);
         params.put("issue_m_id", issueMId);
+        params.put("indent_type", indentType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
@@ -496,10 +518,16 @@ public class ReportController {
 
     @GetMapping(value = "/indentReceiving", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewDownloadIndentReceiving(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
             @RequestParam Long indentMId,
+            @RequestParam String indentType,
             @RequestParam String flag ) {
         Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", departmentId);
         params.put("indent_m_id", indentMId);
+        params.put("indent_type", indentType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -571,12 +599,14 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam Long itemId,
+            @RequestParam String indentType,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
         params.put("item_id", itemId);
+        params.put("indent_type", indentType);
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
@@ -602,11 +632,13 @@ public class ReportController {
     public ResponseEntity<?> viewDownloadDateWiseReceiving(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String indentType,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
+        params.put("indent_type", indentType);
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
@@ -633,11 +665,13 @@ public class ReportController {
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
             @RequestParam Long returnMId,
+            @RequestParam String indentType,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("hospital_id", hospitalId);
         params.put("department_id", departmentId);
         params.put("return_m_id", returnMId);
+        params.put("indent_type", indentType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -667,6 +701,7 @@ public class ReportController {
             @RequestParam Long itemId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String indentType,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("hospital_id", hospitalId);
@@ -674,6 +709,7 @@ public class ReportController {
         params.put("item_id", itemId);
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
+        params.put("indent_type", indentType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -702,12 +738,14 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
+            @RequestParam String indentType,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
         params.put("hospital_id", hospitalId);
         params.put("department_id", departmentId);
+        params.put("indent_type", indentType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
