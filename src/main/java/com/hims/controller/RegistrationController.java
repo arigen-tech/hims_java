@@ -7,7 +7,6 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.RegistrationService;
 import com.hims.utils.ResponseUtils;
-import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
