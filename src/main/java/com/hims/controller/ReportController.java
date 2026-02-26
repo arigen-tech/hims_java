@@ -99,7 +99,7 @@ public class ReportController {
             @RequestParam Long departmentId,
             @RequestParam Integer itemClassId,
             @RequestParam Integer sectionId,
-            @RequestParam Long itemId,
+            @RequestParam Integer itemId,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("HOSPITAL_ID", hospitalId);
@@ -439,16 +439,17 @@ public class ReportController {
     @GetMapping(value = "/indentMedicineIssueRegister", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintMedicineIssueRegisterReport(
             @RequestParam Long hospitalId,
-            @RequestParam Long department_id,
-            @RequestParam Long itemId,
+            @RequestParam Long departmentId,
+            @RequestParam (required = false) Long itemId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
-            @RequestParam String indentType,
+            @RequestParam (required = false) String indentType,
             @RequestParam String flag ) {
+        Long safeItemId = (itemId == null ? 0L : itemId);
         Map<String, Object> params = new HashMap<>();
         params.put("hospital_id", hospitalId);
-        params.put("department_id", department_id);
-        params.put("drug_id", itemId);
+        params.put("department_id", departmentId);
+        params.put("drug_id", safeItemId);
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
         params.put("indent_type", indentType);
