@@ -431,7 +431,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     @Query("SELECT v.tokenNo FROM Visit v WHERE " +
             "v.department.id = :departmentId AND " +
-            "v.doctor.userId = :doctorId AND " +
+            "v.doctor.userid = :doctorId AND " +
             "v.session.id = :sessionId AND " +
             "v.visitDate >= :startOfDay AND v.visitDate < :endOfDay AND " +
             "v.visitStatus NOT IN ('c')")
