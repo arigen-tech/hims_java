@@ -20,7 +20,7 @@ public interface PatientService {
 
     ApiResponse<List<PatientProjection>> searchPatient(PatientSearchReq substring);
 
-    ApiResponse<List<Visit>> getPendingPreConsultations();
+    ApiResponse<List<OpdPreConsultationResponse>> getPendingPreConsultations();
 
     ApiResponse<List<Visit>> getWaitingList();
 
