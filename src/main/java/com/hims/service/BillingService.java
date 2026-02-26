@@ -15,7 +15,7 @@ public interface BillingService {
 
     ApiResponse<List<PendingBillingResponse>> getPendingBilling();
 
-    
+
 
     ApiResponse<PatientAppointmentResponse> getBillingDetails(Long patientId);
 
