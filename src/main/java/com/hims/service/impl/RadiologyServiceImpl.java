@@ -567,8 +567,7 @@ public class RadiologyServiceImpl implements RadiologyService {
          try {
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Current user not found", 401
+            return ResponseUtils.createNotFoundResponse("current user not found", 404
             );
         }
         RadStudyReport radStudyReport = new RadStudyReport();

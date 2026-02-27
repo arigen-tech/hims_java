@@ -112,7 +112,7 @@ join dt.subChargecode sc
 join dt.investigation inv
 where hd.hospital.id = :hospitalId
   and lower(dt.studyStatus) = 'y'
-  and dt.reportStatus is null
+  and lower(dt.reportStatus) = 'n'
   and (:modalityId is null or sc.subId = :modalityId)
   and (
         :patientName is null

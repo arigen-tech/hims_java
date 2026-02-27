@@ -1,10 +1,8 @@
 package com.hims.service;
 
+import com.hims.projection.ItemProjection;
 import com.hims.request.MasStoreItemRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.MasStoreItemResponse;
-import com.hims.response.MasStoreItemResponseDto;
-import com.hims.response.MasStoreItemResponseWithStock;
+import com.hims.response.*;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -34,5 +32,7 @@ public interface MasStoreItemService {
             String search,
             int page,
             int size);
+
+    ApiResponse<List<ItemProjection>> getAllDrugs(Integer sectionId);
 }
 

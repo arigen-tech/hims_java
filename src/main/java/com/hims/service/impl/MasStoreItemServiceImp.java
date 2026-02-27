@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.projection.ItemProjection;
 import com.hims.request.MasStoreItemRequest;
 import com.hims.response.*;
 import com.hims.service.MasStoreItemService;
@@ -581,6 +582,18 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
     }
 
+    @Override
+    public ApiResponse<List<ItemProjection>> getAllDrugs(Integer sectionId) {
+        try {
+
+            List<ItemProjection> list = masStoreItemRepository.findDrugsBySection(sectionId);
+            return ResponseUtils.createSuccessResponse(list, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Internal server error", 500);
+        }
+    }
 
 
     private MasStoreItemResponseWithStock convertToResponsefast(MasStoreItem item,
