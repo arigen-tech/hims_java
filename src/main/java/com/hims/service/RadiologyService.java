@@ -19,14 +19,14 @@ public interface RadiologyService {
     @Transactional
     ApiResponse paymentStatusReq(PaymentUpdateRequest request);
 
-    ApiResponse<Page<RadiologyRequisitionResponse>> pendingRadiology(Long modality, String patientName, String phoneNumber, int page, int size);
+    ApiResponse<Page<RadiologyRequisitionResponse>> getPendingRadiology(Long modality, String patientName, String phoneNumber, int page, int size);
 
 
-    ApiResponse<String> pendingInvestigationRadiology(Long id, String status);
+    ApiResponse<String> cancelOrCompleteInvestigationRadiology(Long id, String status);
 
-    ApiResponse<Page<RadiologyRequisitionResponse>> getPendingReportRadiology(Long modality, String patientName, String phoneNumber, int page, int size);
+    ApiResponse<Page<RadiologyRequisitionResponse>> getPendingListForRadiologyReport(Long modality, String patientName, String phoneNumber, int page, int size);
 
-    ApiResponse<String> add(RadiologyReportRequest request,String status);
+    ApiResponse<String> saveDetailsReportForRadiology(RadiologyReportRequest request,String status);
 
     ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size);
 }

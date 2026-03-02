@@ -34,30 +34,27 @@ public class RadiologyController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
-        return radiologyService.pendingRadiology(modality, patientName, phoneNumber, page, size);
+        return radiologyService.getPendingRadiology(modality, patientName, phoneNumber, page, size);
     }
     //  status use cancel=c and complete=y
     @PutMapping("/cancelOrCompleteInvestigationRadiology")
-    public ApiResponse<String> getInvestigationRadiology(@RequestParam Long id,@RequestParam String status) {
-        return radiologyService.pendingInvestigationRadiology(id,status);
+    public ApiResponse<String> cancelOrCompleteInvestigationRadiology(@RequestParam Long id,@RequestParam String status) {
+        return radiologyService.cancelOrCompleteInvestigationRadiology(id,status);
     }
-
-
-
     @GetMapping("/pendingListForRadiologyReport")
-    public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingReportRadiology(
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingListForRadiologyReport(
             @RequestParam(required = false) Long modality,
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) String phoneNumber,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
-        return radiologyService.getPendingReportRadiology(modality, patientName, phoneNumber, page, size);
+        return radiologyService.getPendingListForRadiologyReport(modality, patientName, phoneNumber, page, size);
     }
     @PostMapping("/saveDetailsReportForRadiology")
-    public ResponseEntity<ApiResponse<String>> addDetailsReport(
+    public ResponseEntity<ApiResponse<String>> saveDetailsReportForRadiology(
             @Valid @RequestBody RadiologyReportRequest request,
             @RequestParam String status) {
-        ApiResponse<String> response = radiologyService.add(request, status);
+        ApiResponse<String> response = radiologyService.saveDetailsReportForRadiology(request, status);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
