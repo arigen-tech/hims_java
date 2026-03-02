@@ -295,14 +295,15 @@ public class ReportController {
     public ResponseEntity<?> viewPrintDrugExpiryReportPdf(
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
-            @RequestParam Long itemId,
+            @RequestParam (required = false) Long itemId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam String flag) {
+        Long safeItemId = itemId != null ? itemId: 0L;
         Map<String, Object> params = new HashMap<>();
         params.put("HOSPITAL_ID", hospitalId);
         params.put("DEPARTMENT_ID", departmentId);
-        params.put("ITEM_ID", itemId);
+        params.put("ITEM_ID", safeItemId);
         params.put("FromDate", fromDate);
         params.put("ToDate", toDate);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
@@ -505,16 +506,10 @@ public class ReportController {
 
     @GetMapping(value = "/indentReceiving", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewDownloadIndentReceiving(
-            @RequestParam Long hospitalId,
-            @RequestParam Long departmentId,
             @RequestParam Long indentMId,
-            @RequestParam String indentType,
             @RequestParam String flag ) {
         Map<String, Object> params = new HashMap<>();
-        params.put("hospital_id", hospitalId);
-        params.put("department_id", departmentId);
         params.put("indent_m_id", indentMId);
-        params.put("indent_type", indentType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
