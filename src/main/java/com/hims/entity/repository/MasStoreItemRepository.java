@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.MasItemCategory;
 import com.hims.entity.MasStoreItem;
+import com.hims.projection.ItemProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -86,4 +87,46 @@ public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long>
     );
 
     List<MasStoreItem> findByItemIdIn(List<Long> list);
+    @Query("""
+    select
+        i.itemId as itemId,
+        i.pvmsNo as pvmsNo,
+        i.nomenclature as nomenclature,
+        i.adispQty as adispQty,
+        g.id as groupId,
+        g.groupName as groupName,
+        t.id as itemTypeId,
+        t.name as itemTypeName,
+        s.sectionId as sectionId,
+        s.sectionName as sectionName,
+        c.itemClassId as itemClassId,
+        c.itemClassName as itemClassName,
+        cat.itemCategoryId as masItemCategoryId,
+        cat.itemCategoryName as masItemCategoryName,
+        uau.unitId as unitAU,
+        uau.unitName as unitAuName,
+        du.unitId as dispUnit,
+        du.unitName as dispUnitName,
+        h.hsnCode as hsnCode,
+        h.gstRate as hsnGstPercent,
+        i.reOrderLevelDispensary as reOrderLevelDispensary,
+        i.reOrderLevelStore as reOrderLevelStore
+    from MasStoreItem i
+    left join i.groupId g
+    left join i.itemTypeId t
+    left join i.sectionId s
+    left join i.itemClassId c
+    left join i.masItemCategory cat
+    left join i.unitAU uau
+    left join i.dispUnit du
+    left join i.hsnCode h
+    where
+        (
+            (:sectionId is not null and s.sectionId = :sectionId)
+            or
+            (:sectionId is null and s.sectionId <> 18)
+        )
+    order by i.nomenclature
+""")
+    List<ItemProjection> findDrugsBySection(@Param("sectionId") Integer sectionId);
 }

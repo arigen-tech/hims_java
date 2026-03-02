@@ -198,13 +198,9 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
         try {
             if (modalityId == null) {
                 return ResponseUtils.createFailureResponse(List.of(), new TypeReference<List<RadiologyTemplateResponse>>() {},
-                        "subChargecodeId is required",
-                        400
-                );
+                        "subChargecodeId is required", 404);
             }
-            List<MasPacsTemplate> templates = radiologyTemplateRepository
-                            .findBySubChargecodeId_SubIdAndStatusIgnoreCaseOrderByTemplateNameAsc(modalityId, "y");
-
+            List<MasPacsTemplate> templates = radiologyTemplateRepository.findBySubChargecodeId_SubIdAndStatusIgnoreCaseOrderByTemplateNameAsc(modalityId, "y");
             List<RadiologyTemplateResponse> resp = templates.stream()
                     .map(t -> RadiologyTemplateResponse.builder()
                             .pacsTemplateId(t.getPacsTemplateId())

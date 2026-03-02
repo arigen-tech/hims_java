@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -111,8 +112,8 @@ left join hd.patient p
 join dt.subChargecode sc
 join dt.investigation inv
 where hd.hospital.id = :hospitalId
-  and lower(dt.studyStatus) = 'y'
-  and dt.reportStatus is null
+  and lower(dt.studyStatus) = lower(:status)
+  and lower(dt.reportStatus) = lower(:statuss)
   and (:modalityId is null or sc.subId = :modalityId)
   and (
         :patientName is null
@@ -132,8 +133,10 @@ where hd.hospital.id = :hospitalId
            like :phoneNumber
   )
 """)
-    Page<RadiologyProjection> findPendingReportRadiologyProjection(
+    Page<RadiologyProjection> getPendingReportRadiologyProjection(
             @Param("hospitalId") Long hospitalId,
+            @Param("status") String status,
+            @Param("statuss") String statuss,
             @Param("modalityId") Long modalityId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,
@@ -164,7 +167,7 @@ left join hd.patient p
 join dt.subChargecode sc
 join dt.investigation inv
 where hd.hospital.id = :hospitalId
-  and lower(dt.studyStatus) = 'y'
+  and lower(dt.studyStatus) = lower(:status)
   and (:modalityId is null or sc.subId = :modalityId)
   and (
         :patientName is null
@@ -184,8 +187,9 @@ where hd.hospital.id = :hospitalId
            like :phoneNumber
   )
 """)
-    Page<RadiologyProjection> findByRadiologyPACSStudyList(
+    Page<RadiologyProjection> getRadiologyPACSStudyList(
             @Param("hospitalId") Long hospitalId,
+            @Param("status") String status,
             @Param("modalityId") Long modalityId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,

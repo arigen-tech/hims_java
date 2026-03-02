@@ -1,6 +1,7 @@
 package com.hims.controller;
 
 import com.hims.entity.*;
+import com.hims.projection.ItemProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
@@ -275,6 +276,8 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
     private MasLanguageService masLanguageService;
 @Autowired
 private RadiologyTemplateService radiologyTemplateService;
+@Autowired
+    private MasComponentFailureReasonService masComponentFailureReasonService;
 
 
 
@@ -1353,6 +1356,11 @@ private RadiologyTemplateService radiologyTemplateService;
     @GetMapping("/masStoreItemWithotStock/getAll/{flag}")
     public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithotStock(@PathVariable int flag) {
         return masStoreItemService.getAllMasStoreItemWithotStock(flag);
+    }
+
+    @GetMapping("/getAll/drugsAndNonDrugs")
+    public ApiResponse<List<ItemProjection>> getAllDrugs(@RequestParam(required = false) Integer sectionId) {
+        return masStoreItemService.getAllDrugs(sectionId);
     }
 
     @PutMapping("/masStoreItem/update/{id}")
@@ -4078,13 +4086,13 @@ private RadiologyTemplateService radiologyTemplateService;
         return ResponseEntity.ok(masBloodInventoryStatusService.getAll(flag));
     }
 
-    @GetMapping("/getById/{id}")
+    @GetMapping("masBloodInventoryStatus/getById/{id}")
     public ResponseEntity<ApiResponse<MasBloodInventoryStatusResponse>> getByIdBloodInventoryStatus(
             @PathVariable Long id) {
         return ResponseEntity.ok(masBloodInventoryStatusService.getById(id));
     }
 
-    @PostMapping("/create")
+    @PostMapping("masBloodInventoryStatus/create")
     public ResponseEntity<ApiResponse<MasBloodInventoryStatusResponse>> createBloodInventoryStatus(
             @Valid @RequestBody MasBloodInventoryStatusRequest request) {
 
@@ -4092,7 +4100,7 @@ private RadiologyTemplateService radiologyTemplateService;
                 .body(masBloodInventoryStatusService.create(request));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("masBloodInventoryStatus/update/{id}")
     public ResponseEntity<ApiResponse<MasBloodInventoryStatusResponse>> updateBloodInventoryStatus(
             @PathVariable Long id,
             @Valid @RequestBody MasBloodInventoryStatusRequest request) {
@@ -4100,7 +4108,7 @@ private RadiologyTemplateService radiologyTemplateService;
         return ResponseEntity.ok(masBloodInventoryStatusService.update(id, request));
     }
 
-    @PutMapping("/status/{id}")
+    @PutMapping("masBloodInventoryStatus/status/{id}")
     public ResponseEntity<ApiResponse<MasBloodInventoryStatusResponse>> changeStatusBloodInventoryStatus(
             @PathVariable Long id,
             @RequestParam String status) {
@@ -4213,6 +4221,40 @@ private RadiologyTemplateService radiologyTemplateService;
             @PathVariable Long id,
             @RequestParam String status) {
         return ResponseEntity.ok(masBloodCompatibilityService.changeStatus(id, status));
+    }
+    //======================================= Mas Component Failure Reason====================================================
+
+    @GetMapping("masComponentFailureReason/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasComponentFailureReasonResponse>>> getAllComponentFailureReason(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masComponentFailureReasonService.getAll(flag));
+    }
+
+    @GetMapping("masComponentFailureReason/getById/{id}")
+    public ResponseEntity<ApiResponse<MasComponentFailureReasonResponse>> getByIdComponentFailureReason(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masComponentFailureReasonService.getById(id));
+    }
+
+    @PostMapping("masComponentFailureReason/create")
+    public ResponseEntity<ApiResponse<MasComponentFailureReasonResponse>> createComponentFailureReason(
+            @Valid @RequestBody MasComponentFailureReasonRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masComponentFailureReasonService.create(request));
+    }
+
+    @PutMapping("masComponentFailureReason/update/{id}")
+    public ResponseEntity<ApiResponse<MasComponentFailureReasonResponse>> updateComponentFailureReason(
+            @PathVariable Long id,
+            @Valid @RequestBody MasComponentFailureReasonRequest request) {
+        return ResponseEntity.ok(masComponentFailureReasonService.update(id, request));
+    }
+
+    @PutMapping("masComponentFailureReason/status/{id}")
+    public ResponseEntity<ApiResponse<MasComponentFailureReasonResponse>> changeStatusComponentFailureReason(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masComponentFailureReasonService.changeStatus(id, status));
     }
 
 
