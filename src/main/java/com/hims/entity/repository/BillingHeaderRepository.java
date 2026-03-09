@@ -91,18 +91,24 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             p.p_mobile_number AS patientMobileNumber,
             EXTRACT(YEAR FROM AGE(p.p_dob)) AS patientAge,
             g.gender_name AS gender,
-            CONCAT( p.p_address1, ', ',
-                    p.p_address2, ', ',
-                    p.p_city, ' - ',
-                    p.p_pincode) AS address,            
+            
+            CONCAT(
+                COALESCE(p.p_address1,''), ' ',
+                COALESCE(p.p_address2,''), ' ',
+                COALESCE(p.p_city,''), ' ',
+                COALESCE(p.p_pincode,'')
+            ) AS address,
+            
             r.relation_name AS relation,
             p.uhid_no AS uhidNo
+            
             FROM patient p
             LEFT JOIN mas_gender g ON p.p_gender_id = g.id
             LEFT JOIN mas_relation r ON p.p_relation_id = r.relation_id
-            WHERE p.patient_id = :patientId       
+            
+            WHERE p.patient_id = :patientId
             """, nativeQuery = true)
-    PatientProjection getPatientDetails(Long patientId);
+    PatientProjection getPatientDetails(@Param("patientId") Long patientId);
 
 
     @Query(value = """
@@ -117,8 +123,17 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             v.visit_type AS visitType,
             v.token_no AS tokenNo,
             
+            (
+               SELECT bd2.registration_cost
+               FROM billing_details bd2
+               JOIN mas_service_category msc 
+                    ON bd2.service_category_id = msc.id
+               WHERE bd2.bill_hd_id = bh.bill_hd_id
+               AND msc.service_cate_code = 'SC010'
+               LIMIT 1
+            ) AS registrationCost,
+            
             bd.tariff AS tariff,
-            bd.registration_cost AS registrationCost,
             bd.tax_percent AS taxPercent,
             bh.discount_amount AS discountAmount,
             bh.total_amount AS totalAmount,
@@ -138,6 +153,10 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             
             LEFT JOIN billing_details bd 
                    ON bh.bill_hd_id = bd.bill_hd_id
+                   AND bd.service_category_id NOT IN (
+                       SELECT id FROM mas_service_category 
+                       WHERE service_cate_code = 'SC010'
+                   )
             
             LEFT JOIN mas_department d
                    ON v.department_id = d.department_id

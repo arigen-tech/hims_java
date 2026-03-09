@@ -19,10 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
@@ -123,7 +120,9 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
             Long deptId, Long doctorId, LocalDate rosterDate, Long sessionId) {
 
         Date convertedDate = java.sql.Date.valueOf(rosterDate);
-        Instant currentDate = Instant.now();
+        Instant currentDate = rosterDate
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
         List<DoctorRoaster> rosterList;
         if (doctorId != null) {
             rosterList = doctorRoasterRepository.findDoctorRosterByDeptAndDoctor(deptId, doctorId, convertedDate);
