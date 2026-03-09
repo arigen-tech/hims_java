@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -497,7 +498,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
     @Transactional
     @Override
-    public ApiResponse<Page<RadiologyRequisitionResponse>> pendingRadiology(Long modalityId, String patientName, String phoneNumber, int page, int size) {
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingRadiology(Long modalityId, String patientName, String phoneNumber, int page, int size) {
         try {
             User currentUser = authUtil.getCurrentUser();
             MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
@@ -520,7 +521,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
 
     @Override
-    public ApiResponse<String> pendingInvestigationRadiology(Long id, String status) {
+    public ApiResponse<String> cancelOrCompleteInvestigationRadiology(Long id, String status) {
         try{
         log.info("pendingInvestigationRadiology called with id={}, status={}", id, status);
         Optional<RadOrderDt> radOrderDt=radOrderDtRepository.findById(id);
@@ -538,7 +539,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
     }
     @Override
-    public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingReportRadiology(
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingListForRadiologyReport(
             Long modality, String patientName, String phoneNumber, int page, int size) {
         try {
             User currentUser = authUtil.getCurrentUser();
@@ -548,7 +549,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdon"));
-            Page<RadiologyProjection> paged = radOrderDtRepository.findPendingReportRadiologyProjection(masHospital.getId(), modality, patientLike, phoneLike, pageable);
+            Page<RadiologyProjection> paged = radOrderDtRepository.getPendingReportRadiologyProjection(masHospital.getId(), AppConstants.STATUS_Y,AppConstants.STATUS_N , modality, patientLike, phoneLike, pageable);
             Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
             return ResponseUtils.createSuccessResponse(
                     response, new TypeReference<Page<RadiologyRequisitionResponse>>() {}
@@ -563,12 +564,11 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
      @Transactional
     @Override
-    public ApiResponse<String> add(RadiologyReportRequest request,String status) {
+    public ApiResponse<String> saveDetailsReportForRadiology(RadiologyReportRequest request,String status) {
          try {
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Current user not found", 401
+            return ResponseUtils.createNotFoundResponse("current user not found", 404
             );
         }
         RadStudyReport radStudyReport = new RadStudyReport();
@@ -611,7 +611,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdon"));
-            Page<RadiologyProjection> paged = radOrderDtRepository.findByRadiologyPACSStudyList(masHospital.getId(), modality, patientLike, phoneLike, pageable);
+            Page<RadiologyProjection> paged = radOrderDtRepository.getRadiologyPACSStudyList(masHospital.getId(),AppConstants.STATUS_Y, modality, patientLike, phoneLike, pageable);
             Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
             return ResponseUtils.createSuccessResponse(
                     response, new TypeReference<Page<RadiologyRequisitionResponse>>() {}
