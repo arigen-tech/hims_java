@@ -1,6 +1,7 @@
 package com.hims.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.projection.BillingHeaderResponseProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
@@ -151,10 +152,14 @@ public class LabRegistrationController {
         return labRegistrationServices.labRegForExistingOrder(labReq);
     }
 
-    @GetMapping("/billingStatus")
-    public ApiResponse<List<BillingHeaderResponse>> getBillingStatus() {
-        log.info("billingStatus api called");
-        return  billingService.getBillingStatus();
+    @GetMapping("/billingStatus/search")
+    public ApiResponse<List<BillingHeaderResponseProjection>> searchBillingStatus(
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String phoneNo,
+            @RequestParam(required = false) String registrationNo) {
+        log.info("billingStatus search api called, patientName: {}, phoneNo: {}, registrationNo: {}",
+                patientName, phoneNo, registrationNo);
+        return billingService.getBillingStatus(patientName, phoneNo, registrationNo);
     }
 
     @PostMapping("/track-order-status/create")
