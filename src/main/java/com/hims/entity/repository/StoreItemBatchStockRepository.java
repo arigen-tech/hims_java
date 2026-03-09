@@ -105,4 +105,20 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
 
 
     List<StoreItemBatchStock> findByItemIdItemId(Long itemId);
+
+    @Query("""
+SELECT COALESCE(SUM(s.closingStock),0)
+FROM StoreItemBatchStock s
+WHERE s.itemId.itemId = :itemId
+  AND s.hospitalId.id = :hospitalId
+  AND s.departmentId.id = :departmentId
+  AND s.closingStock > 0
+  AND (s.expiryDate IS NULL OR s.expiryDate >= :threshold)
+""")
+    Long getAvailableStock(
+            @Param("itemId") Long itemId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("threshold") LocalDate threshold
+    );
 }

@@ -9,8 +9,10 @@ public class AppConstants {
     public static final String INDENT_APPROVED_AT_REQ_DEPT = "A";
     public static final String INDENT_REJECTED_AT_REQ_DEPT = "R";
     public static final String INDENT_APPROVED_AT_ISSUED_DEPT = "AA";
+    public static final String INDENT_ISSUED_AT_ISSUED_DEPT = "FI";
     public static final String INDENT_REJECTED_AT_ISSUED_DEPT = "RR";
     public static final String INDENT_SUBMITTED_AT_REQ_DEPT = "Y";
+    public static final String INDENT_RECEIVED_AT_REQ_DEPT = "RC";
     public static final String INDENT_CREATED_AT_REQ_DEPT = "S";
     public static final String INDENT_NOT_ISSUED_AT_ISSUE_DEPT = "N";
     public static final String ENTITY_STORE_ISSUE_M = "StoreIssueM";
@@ -34,6 +36,48 @@ public class AppConstants {
     public static final String PAYMENT_NOT_PAID = "N";
 
 
+
+    public static final String INTERNAL_SERVER_ERR_MSG="Internal server error !";
+    public static final String INDENT_M_NOT_FOUND_MSG="Invalid indentMId , indentMId is not found !";
+    public static final String CURRENT_USER_NOT_FOUND_MSG="Current User Not Found";
+    public static final String DEPARTMENT_NAME_ADMIN="ADMIN";
+    public static final String ITEM_NOT_FOUND_ERR_MSG="Item not found";
+    public static final String DEPT_NOT_FOUND_ERR_MSG="Department not found";
+    public static final String STATUS_NOT_FOUND_ERR_MSG="Invalid status ! Status not found";
+    public static final String CURRENT_DEPT_NOT_FOUND_ERR_MSG="Current department not found";
+    public static final String INDENT_HEADER_NOT_FOUND_ERR_MSG="Invalid indent MID ! Indent header not found";
+    public static final String INDENT_DETAILS_NOT_FOUND_ERR_MSG="Invalid indent TID ! Indent details not found";
+    public static  final String INDENT_NUM_GENERATION_PREFIX="IND-";
+    public static final String ISSUE_NUM_GENERATION_PREFIX="ISS-";
+    public static final String RETURN_NUM_GENERATION_PREFIX="RET-";
+    public static final String ITEM_TYPE_DRUG ="D";
+    public static final String ITEM_TYPE_NON_DRUG ="N";
+    public static final String INDENT_APPROVED_WARNING_MSG="Only pending indents can be approved or rejected.";
+    public static final String ACTION_APPROVED="approved";
+    public static final String ACTION_REJECTED="rejected";
+    public static  final String INVALID_ACTION_WARNING_MSG="Invalid action. Must be approved or rejected";
+    public static final String INDENT_ISSUE_HEADER_NOT_FOUND_ERR_MSG="Invalid issue MID ! Issue header not found";
+    public static final String INDENT_RECEIVE_HEADER_NOT_FOUND_ERR_MSG="Invalid issue MID ! Issue header not found";
+    public static final String ATLEAST_ONE_INDENT_ISSUE_WARN_MSG="At least one item must be issued";
+    public static final String ATLEAST_ONE_INDENT_RECEIVE_WARN_MSG="At least one item must be received";
+    public  static final String ALREADY_RECEIVED_WARN_MSG="This indent has already been received";
+    public static final String ISSUED_MORE_THAN_APPROVED_WARN_MSG="Issuing more than approved quantity";
+    public static final String STOCK_NOT_AVAILABLE_WARN_MSG="No stock available for this item ";
+    public static  final String ITEM_NOT_ISSUED_MSG="No items were issued";
+    public static final String DATE_TIME_FORMAT_FOR_RANDOM_NO_GENERATION="yyyyMMddHHmmss";
+    public static final String TRANSACTION_TYPE_AND_SOURCE_ISSUE="ISSUE";
+    public static final String TRANSACTION_TYPE_AND_SOURCE_RECEIVE="RECEIVED";
+    public static final String TRANSACTION_TYPE_AND_SOURCE_RETURN="RETURNED";
+    public  static  final  String SUCCESS_MSG="success";
+    public static final String RECEIVING_DEPT_NOT_FOUND_ERR_MSG="Receiving department not found";
+    public  static  final  String FALLBACK_ITEM_NAME="Unknown Item";
+    public  static  final  String NOT_APPLICABLE="N/A";
+    public static final String STRING_FORMATTER_FOR_RECEIVING_VALIDATION="For Item: %s, Batch: %s\n\nReceived (%s) + Rejected (%s) = %s\nBut Issued Quantity is %s\n\nThey must be equal to proceed.";
+    public  static final String INDENT_DETAILS_NOT_BELONG_TO_INDENT_M_WARN_MSG="Indent details do not belong to the given indentMId";
+    public static final String INDENT_ISSUE_DETAILS_NOT_FOUND_ERR_MSG="Issue details not found";
+    public static  final String INDENT_RECEIVE_SUCCESS_MSG="Indent received successfully";
+    public  static  final String RETURN_CREATED_FOR_REJECTED_ITEMS_MSG="Return created for rejected items successfully";
+    public static final String STOCK_NOT_FOUND_ERR_MSG="Invalid stock Id ,Stock not found ";
 
     private AppConstants() {
     }
