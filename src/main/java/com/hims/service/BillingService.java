@@ -2,6 +2,7 @@ package com.hims.service;
 
 import com.beust.ah.A;
 import com.hims.entity.*;
+import com.hims.projection.BillingHeaderResponseProjection;
 import com.hims.request.PaymentUpdateRequest;
 import com.hims.response.*;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,12 +15,11 @@ public interface BillingService {
 
     ApiResponse<List<PendingBillingResponse>> getPendingBilling();
 
-    ApiResponse<?> getBillingPatientsByCatagory(String serviceCategoryCode);
+    
 
     ApiResponse<PatientAppointmentResponse> getBillingDetails(Long patientId);
 
-    ApiResponse<List<BillingHeaderResponse>> getBillingStatus();
-
+    ApiResponse<List<BillingHeaderResponseProjection>> getBillingStatus(String patientName, String phoneNo, String registrationNo);
 
     //Update the Consultation services payment status
     ApiResponse<PaymentResponse> updatePayment(PaymentUpdateRequest opdreq);
@@ -30,4 +30,6 @@ public interface BillingService {
 
     //Laboratory
     ApiResponse<PaymentResponse> paymentStatusReqLab(PaymentUpdateRequest labreq);
+
+    ApiResponse<?> getBillingPatientsByCatagory(String serviceCategoryCode, int page, int size);
 }

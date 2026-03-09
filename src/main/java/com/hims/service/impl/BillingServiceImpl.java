@@ -6,6 +6,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.BillingException;
 import com.hims.exception.SDDException;
+import com.hims.projection.BillingHeaderResponseProjection;
 import com.hims.projection.OpdBillingProjection;
 import com.hims.projection.PatientProjection;
 import com.hims.projection.VisitBillingProjection;
@@ -19,6 +20,10 @@ import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -377,104 +382,109 @@ public class BillingServiceImpl implements BillingService {
     }
 
     @Override
-    public ApiResponse<?> getBillingPatientsByCatagory(String serviceCategoryCode) {
+    public ApiResponse<?> getBillingPatientsByCatagory(String serviceCategoryCode, int page, int size) {
+        try {
+            if (page < 0 || size <= 0) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<Object>() {},
+                        "page must be >= 0 and size must be > 0",
+                        400
+                );
+            }
 
-        MasServiceCategory serviceCategory =
-                masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
+            MasServiceCategory serviceCategory =
+                    masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
 
-        Long categoryId = serviceCategory.getId();
+            if (serviceCategory == null) {
+                return ResponseUtils.createNotFoundResponse("Service category not found", 404);
+            }
 
-        // OPD
-        if (opdServiceCatagoryCode.equalsIgnoreCase(serviceCategoryCode)) {
-            List<OpdBillingProjection> billingHeaders = billingHeaderRepository.findPendingBillingByServiceCategories(categoryId);
+            Long categoryId = serviceCategory.getId();
 
-            Map<String, List<OpdBillingProjection>> grouped =
-                    billingHeaders.stream()
-                            .collect(Collectors.groupingBy(p ->
-                                    p.getPatientName() + "_" +
-                                            p.getConsultingDoctorName() + "_" +
-                                            p.getDepartmentName()
-                            ));
+            // OPD
+            if (opdServiceCatagoryCode.equalsIgnoreCase(serviceCategoryCode)) {
+                List<OpdBillingProjection> billingHeaders =
+                        billingHeaderRepository.findPendingBillingByServiceCategories(categoryId);
 
-            List<OpdPendingBillingResponse> response = grouped.values().stream()
-                    .map(list -> {
+                Map<String, List<OpdBillingProjection>> grouped =
+                        billingHeaders.stream()
+                                .collect(Collectors.groupingBy(
+                                        p -> p.getPatientName() + "_" +
+                                                p.getConsultingDoctorName() + "_" +
+                                                p.getDepartmentName(),
+                                        LinkedHashMap::new,
+                                        Collectors.toList()
+                                ));
 
-                        OpdPendingBillingResponse r = new OpdPendingBillingResponse();
+                List<OpdPendingBillingResponse> response = grouped.values().stream()
+                        .map(list -> {
 
-                        r.setVisitIds(
-                                list.stream()
-                                        .map(OpdBillingProjection::getVisitId)
-                                        .collect(Collectors.toList())
-                        );
+                            OpdPendingBillingResponse r = new OpdPendingBillingResponse();
 
-                        r.setBillingHdId(null);
-                        OpdBillingProjection first = list.get(0);
-                        r.setPatientId(first.getPatientId());
-                        r.setRegistrationNo(first.getRegistrationNo());
-                        r.setPatientName(first.getPatientName());
-                        r.setAge(first.getAge());
-                        r.setGender(first.getGender());
-                        r.setRelation(first.getRelation());
-                        r.setBillingType(first.getBillingType());
-                        r.setConsultingDoctorName(first.getConsultingDoctorName());
-                        r.setDepartmentName(first.getDepartmentName());
-                        r.setMobileNo(first.getMobileNo());
-                        r.setAppointmentDate(first.getAppointmentDate());
+                            r.setVisitIds(
+                                    list.stream()
+                                            .map(OpdBillingProjection::getVisitId)
+                                            .collect(Collectors.toList())
+                            );
 
-                        r.setNetAmount(
-                                list.stream()
-                                        .mapToDouble(OpdBillingProjection::getNetAmount)
-                                        .sum()
-                        );
-                        return r;
-                    }).toList();
+                            r.setBillingHdId(null);
 
-            return ResponseUtils.createSuccessResponse(
-                    response,
-                    new TypeReference<List<OpdPendingBillingResponse>>() {}
+                            OpdBillingProjection first = list.get(0);
+                            r.setPatientId(first.getPatientId());
+                            r.setRegistrationNo(first.getRegistrationNo());
+                            r.setPatientName(first.getPatientName());
+                            r.setAge(first.getAge());
+                            r.setGender(first.getGender());
+                            r.setRelation(first.getRelation());
+                            r.setBillingType(first.getBillingType());
+                            r.setConsultingDoctorName(first.getConsultingDoctorName());
+                            r.setDepartmentName(first.getDepartmentName());
+                            r.setMobileNo(first.getMobileNo());
+                            r.setAppointmentDate(first.getAppointmentDate());
+
+                            r.setNetAmount(
+                                    list.stream()
+                                            .mapToDouble(OpdBillingProjection::getNetAmount)
+                                            .sum()
+                            );
+                            return r;
+                        })
+                        .toList();
+
+                Pageable pageable = PageRequest.of(page, size);
+
+                int start = (int) pageable.getOffset();
+                int end = Math.min(start + pageable.getPageSize(), response.size());
+
+                List<OpdPendingBillingResponse> pagedResponse =
+                        start >= response.size() ? Collections.emptyList() : response.subList(start, end);
+
+                Page<OpdPendingBillingResponse> pageResult =
+                        new PageImpl<>(pagedResponse, pageable, response.size());
+
+                return ResponseUtils.createSuccessResponse(
+                        pageResult,
+                        new TypeReference<Page<OpdPendingBillingResponse>>() {}
+                );
+            }
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<Object>() {},
+                    "Invalid service category",
+                    400
+            );
+
+        } catch (Exception e) {
+            log.error("Error while fetching billing patients by category: {}", serviceCategoryCode, e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<Object>() {},
+                    "Something went wrong while fetching billing patients",
+                    500
             );
         }
-
-        // LAB
-//        if ("LAB".equalsIgnoreCase(serviceCategoryCode)) {
-//
-//            List<DgOrderHd> orderHeaders =
-//                    labHdRepository.findByPaymentStatusInAndSource(List.of("n", "p"), "OPD PATIENT");
-//
-//            List<LabPendingBillingResponse> response =
-//                    orderHeaders.stream()
-//                            .map(LabPendingBillingResponse::new)
-//                            .toList();
-//
-//            return ResponseUtils.createSuccessResponse(
-//                    response,
-//                    new TypeReference<List<LabPendingBillingResponse>>() {}
-//            );
-//        }
-
-        // RADIOLOGY
-//        if ("RAD".equalsIgnoreCase(serviceCategoryCode)) {
-//
-//            List<DgOrderHd> radiologyOrders =
-//                    labHdRepository.findByPaymentStatusInAndSource(List.of("n", "p"), "OPD PATIENT");
-//
-//            List<RadiologyPendingBillingResponse> response =
-//                    radiologyOrders.stream()
-//                            .map(RadiologyPendingBillingResponse::new)
-//                            .toList();
-//
-//            return ResponseUtils.createSuccessResponse(
-//                    response,
-//                    new TypeReference<List<RadiologyPendingBillingResponse>>() {}
-//            );
-//        }
-
-        return ResponseUtils.createFailureResponse(
-                null,
-                new TypeReference<Object>() {},
-                "Invalid service category",
-                400
-        );
     }
 
     @Override
@@ -556,67 +566,41 @@ public class BillingServiceImpl implements BillingService {
     }
 
     @Override
-    public ApiResponse<List<BillingHeaderResponse>> getBillingStatus() {
-        log.info("Fetching billing status data started");
+    public ApiResponse<List<BillingHeaderResponseProjection>> getBillingStatus(
+            String patientName, String phoneNo, String registrationNo) {
         try {
-            List<BillingHeader> headers =
-                    billingHeaderRepository.findHeaderWithPaidDetails();
+            String patientNameLike = (patientName == null || patientName.trim().isEmpty())
+                    ? null
+                    : "%" + patientName.trim().toLowerCase() + "%";
 
+            String phoneNoLike = (phoneNo == null || phoneNo.trim().isEmpty())
+                    ? null
+                    : "%" + phoneNo.trim() + "%";
 
-            List<BillingHeaderResponse> responseList = new ArrayList<>();
+            String registrationNoLike = (registrationNo == null || registrationNo.trim().isEmpty())
+                    ? null
+                    : "%" + registrationNo.trim().toLowerCase() + "%";
 
-            for (BillingHeader header : headers) {
-
-                //  Map Header
-                BillingHeaderResponse headerResponse = new BillingHeaderResponse();
-                headerResponse.setHeaderId(header.getId());
-                headerResponse.setVisitId(header.getVisit().getId());
-                headerResponse.setBillNo(header.getBillNo());
-                headerResponse.setPatientName(header.getPatientDisplayName());
-                headerResponse.setPhoneNo(
-                        header.getPatient().getPatientMobileNumber()
-                );
-                headerResponse.setRegistrationNo(header.getPatient().getUhidNo());
-                headerResponse.setAge(header.getPatientAge());
-                headerResponse.setSex(header.getPatientGender());
-                headerResponse.setRelation(
-                        header.getPatient()
-                                .getPatientRelation()
-                                .getRelationName()
-                );
-
-                headerResponse.setBillDate(
-                        header.getBillDate() != null
-                                ? header.getBillDate().toString()
-                                : null
-                );
-                headerResponse.setNetAmount(header.getNetAmount());
-                headerResponse.setServiceCategoryId(header.getServiceCategory().getId());
-                headerResponse.setServiceCategoryName(header.getServiceCategory().getServiceCatName());
-                headerResponse.setPaymentStatus(header.getPaymentStatus());
-                headerResponse.setDepartment(header.getVisit().getDepartment().getDepartmentName());
-
-                responseList.add(headerResponse);
-            }
-
-            log.info("Billing status data fetched successfully. Total records: {}",
-                    responseList.size());
+            List<BillingHeaderResponseProjection> response = billingHeaderRepository.searchBillingStatus(
+                            patientNameLike,
+                            phoneNoLike,
+                            registrationNoLike,AppConstants.STATUS_Y
+                    );
 
             return ResponseUtils.createSuccessResponse(
-                    responseList,
-                    new TypeReference<>() {}
+                    response,
+                    new TypeReference<List<BillingHeaderResponseProjection>>() {}
             );
 
-        } catch (Exception ex) {
-
-            log.error("Error occurred while fetching billing status data",
-                    ex);
-
-
-        return ResponseUtils.createFailureResponse(new ArrayList<>(),
-                new TypeReference<>() {},
-                "Failed to fetch billing status data", 500);
-    }
+        } catch (Exception e) {
+            log.error("Error while searching billing status", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<List<BillingHeaderResponseProjection>>() {},
+                    "Something went wrong while searching billing status",
+                    500
+            );
+        }
     }
 
 
