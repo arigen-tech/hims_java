@@ -2,9 +2,11 @@ package com.hims.entity.repository;
 
 import com.hims.entity.BillingHeader;
 import com.hims.entity.Visit;
+import com.hims.projection.BillingHeaderResponseProjection;
 import com.hims.projection.OpdBillingProjection;
 import com.hims.projection.PatientProjection;
 import com.hims.projection.VisitBillingProjection;
+import com.hims.response.BillingHeaderResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -153,4 +155,51 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             ORDER BY v.visit_date DESC
             """, nativeQuery = true)
     List<VisitBillingProjection> getVisitBillingDetails(@Param("patientId") Long patientId);
+
+    @Query(value = """
+        SELECT
+            bh.bill_hd_id AS headerId,
+            v.visit_id AS visitId,
+            bh.bill_no AS billNo,
+            TRIM(
+                COALESCE(p.p_fn, '') || ' ' ||
+                COALESCE(p.p_mn, '') || ' ' ||
+                COALESCE(p.p_ln, '')
+            ) AS patientName,
+            p.p_mobile_number AS phoneNo,
+            CAST(EXTRACT(YEAR FROM AGE(p.p_dob)) AS text) AS age,
+            r.relation_name AS relation,
+            g.gender_name AS sex,
+            d.department_name AS department,
+            CAST(bh.bill_date AS text) AS billDate,
+            bh.net_amount AS netAmount,
+            sc.id AS serviceCategoryId,
+            sc.service_cat_name AS serviceCategoryName,
+            bh.payment_status AS paymentStatus,
+            p.uhid_no AS registrationNo
+        FROM billing_header bh
+        LEFT JOIN visit v ON v.billing_hd_id = bh.bill_hd_id
+        LEFT JOIN patient p ON p.patient_id = bh.patient_id
+        LEFT JOIN mas_relation r ON p.p_relation_id = r.relation_id
+        LEFT JOIN mas_gender g ON p.p_gender_id = g.id
+        LEFT JOIN mas_department d ON v.department_id = d.department_id
+        LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
+        WHERE LOWER(bh.payment_status) = lower(:status)
+          AND LOWER(
+                TRIM(
+                    COALESCE(p.p_fn, '') || ' ' ||
+                    COALESCE(p.p_mn, '') || ' ' ||
+                    COALESCE(p.p_ln, '')
+                )
+          ) LIKE CONCAT('%', LOWER(:patientName), '%')
+          AND p.p_mobile_number LIKE CONCAT('%', :phoneNo, '%')
+          AND LOWER(p.uhid_no) LIKE CONCAT('%', LOWER(:registrationNo), '%')
+        ORDER BY bh.bill_hd_id DESC
+        """, nativeQuery = true)
+    List<BillingHeaderResponseProjection> searchBillingStatus(
+            @Param("patientName") String patientName,
+            @Param("phoneNo") String phoneNo,
+            @Param("registrationNo") String registrationNo,
+            @Param("status") String status
+    );
 }
