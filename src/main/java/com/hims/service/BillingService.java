@@ -1,10 +1,10 @@
 package com.hims.service;
 
+import com.beust.ah.A;
 import com.hims.entity.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.BillingHeaderResponse;
-import com.hims.response.OpdBillingPaymentResponse;
-import com.hims.response.PendingBillingResponse;
+import com.hims.request.PaymentUpdateRequest;
+import com.hims.response.*;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.List;
@@ -14,5 +14,20 @@ public interface BillingService {
 
     ApiResponse<List<PendingBillingResponse>> getPendingBilling();
 
+    ApiResponse<?> getBillingPatientsByCatagory(String serviceCategoryCode);
+
+    ApiResponse<PatientAppointmentResponse> getBillingDetails(Long patientId);
+
     ApiResponse<List<BillingHeaderResponse>> getBillingStatus();
+
+
+    //Update the Consultation services payment status
+    ApiResponse<PaymentResponse> updatePayment(PaymentUpdateRequest opdreq);
+
+    //Radiology Services
+    @Transactional
+    ApiResponse paymentStatusReq(PaymentUpdateRequest request);
+
+    //Laboratory
+    ApiResponse<PaymentResponse> paymentStatusReqLab(PaymentUpdateRequest labreq);
 }

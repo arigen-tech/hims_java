@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Period;
 
 @Getter
 @Setter
@@ -205,5 +206,10 @@ public class Patient {
 
     public String getFullName(){
         return patientFn+" "+patientMn +" "+patientLn;
+    }
+
+    public int getAge() {
+        if (patientDob == null) {return 0;}
+        return Period.between(patientDob, LocalDate.now()).getYears();
     }
 }

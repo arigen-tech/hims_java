@@ -10,6 +10,7 @@ import com.hims.mapper.OpdPatientDetailMapper;
 import com.hims.mapper.PatientMapper;
 import com.hims.mapper.VisitMapper;
 import com.hims.projection.CancelledAppointmentProjection;
+import com.hims.projection.OpdPreConsultationProjection;
 import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
@@ -647,13 +648,36 @@ public class PatientServiceImpl implements PatientService {
         return param.trim();
     }
     @Override
-    public ApiResponse<List<Visit>> getPendingPreConsultations() {
+    public ApiResponse<List<OpdPreConsultationResponse>> getPendingPreConsultations() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User current_user=userRepository.findByUserName(username);
-        List<Visit> response=visitRepository.findByHospitalAndPreConsultationAndBillingStatus(current_user.getHospital(),"n","y");
+        List<OpdPreConsultationProjection> projections = visitRepository.findPendingPreConsultationsByHospital(current_user.getHospital().getId(),"n","y");
+
+        // Convert projections to response objects
+        List<OpdPreConsultationResponse> response = projections.stream().map(proj -> {
+            OpdPreConsultationResponse resp = new OpdPreConsultationResponse();
+            resp.setVisitId(proj.getVisitId());
+            resp.setPatientId(proj.getPatientId());
+            resp.setPatientName(proj.getPatientName());
+            resp.setAge(proj.getPatientAge());
+            resp.setGender(proj.getGender());
+            resp.setDepartmentId(String.valueOf(proj.getDepartmentId()));
+            resp.setDepartmentName(proj.getDepartmentName());
+            resp.setMobleNumber(proj.getMobileNumber());
+            resp.setVisitType(proj.getVisitType());
+            resp.setDoctorId(proj.getDoctorId());
+            resp.setDoctorName(proj.getDoctorName());
+            resp.setAppointmentDate(proj.getAppointmentDate() != null ? proj.getAppointmentDate().toString() : "");
+            resp.setAppointmentTime(proj.getAppointmentTime());
+            resp.setTokenNumber(String.valueOf(proj.getTokenNumber()));
+            return resp;
+        }).collect(Collectors.toList());
+
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
         });
     }
+
+
 
 
     @Override

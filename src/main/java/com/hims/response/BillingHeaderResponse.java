@@ -21,6 +21,7 @@ public class BillingHeaderResponse {
     private Long serviceCategoryId;
     private String serviceCategoryName;
     private String paymentStatus;
+    private String registrationNo;
 
 
 

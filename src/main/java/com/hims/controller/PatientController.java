@@ -91,8 +91,8 @@ public class PatientController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @GetMapping("/getPendingPreConsultations")
-    public ResponseEntity<ApiResponse<List<Visit>>> getPendingPreConsultations(){
-        ApiResponse<List<Visit>> response = patientService.getPendingPreConsultations();
+    public ResponseEntity<ApiResponse<List<OpdPreConsultationResponse>>> getPendingPreConsultations(){
+        ApiResponse<List<OpdPreConsultationResponse>> response = patientService.getPendingPreConsultations();
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
     @PostMapping("/saveVitalDetails")

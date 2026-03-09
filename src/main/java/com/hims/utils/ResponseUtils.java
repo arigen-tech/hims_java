@@ -17,11 +17,10 @@ public class ResponseUtils {
         response.setResponse(data);
         response.setStatus(HttpStatus.OK.value());
         response.setMessage("success");
-//        response.setAndroidVersion("prod_v1.1.0");
-//        response.setApiVersion("prod_v1.1.0");
-//        response.setIosVersion("prod_v1.1.0");
         return response;
     }
+
+
 
     public <T> ApiResponse<T> createSuccessResponseWithCred(T data, TypeReference<T> tClass) {
         ApiResponse<T> response = new ApiResponse<>();
