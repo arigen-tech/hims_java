@@ -92,6 +92,17 @@ public class AppConstants {
     public static final String OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG="Invalid opening balance entry header Id ,Opening balance entry header not found";
     public static final String OPENING_BALANCE_DETAILS_NOT_FOUND_ERR_MSG="Invalid opening balance entry details Id ,Opening balance entry detail not found";
 
+    //Visit Status
+    public static final String VISIT_STATUS_PENDING = "N";
+    public static final String VISIT_STATUS_COMPLETED = "Y";
+    public static final String VISIT_STATUS_CANCELLED = "C";
+    public static final String VISIT_STATUS_CLOSED = "X";
+    //billing status
+    public static final String PAYMENT_PENDING = "P";
+    public static final String PAYMENT_PAID = "Y";
+    public static final String PAYMENT_NOT_PAID = "N";
+
+
 
     private AppConstants() {
     }
