@@ -1,5 +1,6 @@
 package com.hims.service;
 
+import com.beust.ah.A;
 import com.hims.entity.*;
 import com.hims.request.PaymentUpdateRequest;
 import com.hims.response.*;
@@ -12,6 +13,10 @@ public interface BillingService {
     ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount);
 
     ApiResponse<List<PendingBillingResponse>> getPendingBilling();
+
+    ApiResponse<?> getBillingPatientsByCatagory(String serviceCategoryCode);
+
+    ApiResponse<PatientAppointmentResponse> getBillingDetails(Long patientId);
 
     ApiResponse<List<BillingHeaderResponse>> getBillingStatus();
 

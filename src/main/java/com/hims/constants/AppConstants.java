@@ -23,6 +23,17 @@ public class AppConstants {
     public static final String COLUMN_NAME_IS_RETURN = "is_return";
     public static final String STATUS_N = "N";
 
+    //Visit Status
+    public static final String VISIT_STATUS_PENDING = "N";
+    public static final String VISIT_STATUS_COMPLETED = "Y";
+    public static final String VISIT_STATUS_CANCELLED = "C";
+    public static final String VISIT_STATUS_CLOSED = "X";
+    //billing status
+    public static final String PAYMENT_PENDING = "P";
+    public static final String PAYMENT_PAID = "Y";
+    public static final String PAYMENT_NOT_PAID = "N";
+
+
 
     private AppConstants() {
     }

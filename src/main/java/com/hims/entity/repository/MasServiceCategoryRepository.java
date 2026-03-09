@@ -26,4 +26,5 @@ public interface MasServiceCategoryRepository extends JpaRepository<MasServiceCa
     List<MasServiceCategory> findAllByStatusOrderByServiceCatNameAsc(String y);
 
     List<MasServiceCategory> findAllByOrderByStatusDescLastChgDtDesc();
+
 }
