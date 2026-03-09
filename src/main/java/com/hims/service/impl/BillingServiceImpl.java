@@ -1463,10 +1463,4 @@ public class BillingServiceImpl implements BillingService {
     private String safe(String value) {
         return value != null ? value : "";
     }
-
-
-
-
-
-
 }
