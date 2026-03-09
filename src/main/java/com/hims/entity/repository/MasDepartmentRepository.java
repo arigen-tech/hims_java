@@ -1,12 +1,13 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.MasDepartment;
-import com.hims.response.SpecialitiesResponse;
+import com.hims.response.DepartmentDropdownResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Long> {
    // MasDepartment findById(Long amountTypeId);
@@ -121,5 +122,34 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
 
     @Query(value = "select d.department_id from mas_department d where department_id = :departmentId", nativeQuery = true)
     Long findByDepartmentId(@Param("departmentId") Long departmentId);
+    @Query("""
+    SELECT new com.hims.response.DepartmentDropdownResponse(
+        d.id,
+        d.departmentName
+    )
+    FROM MasDepartment d
+    WHERE d.id IN :ids
+      AND LOWER(d.status) = 'y'
+    ORDER BY d.departmentName ASC
+""")
+    List<DepartmentDropdownResponse> findDropdownDepartmentsByIds(
+            @Param("ids") List<Long> ids
+    );
+
+    @Query("""
+    SELECT new com.hims.response.DepartmentDropdownResponse(
+        d.id,
+        d.departmentName
+    )
+    FROM MasDepartment d
+    WHERE d.id = :id
+      AND LOWER(d.status) = 'y'
+""")
+    Optional<DepartmentDropdownResponse> findCurrentDeptById(
+            @Param("id") Long id
+    );
+
+
+
 }
 

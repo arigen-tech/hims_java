@@ -1,14 +1,19 @@
 package com.hims.response;
 
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class StoreIssueMResponse {
     private Long StoreIssueMId;
     private String issueNo;
     private LocalDateTime issueDate;
     private Long indentMId;
+    private String indentNo;
+    private LocalDateTime indentDate;
 
 }
