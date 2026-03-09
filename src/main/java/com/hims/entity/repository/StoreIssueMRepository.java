@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.StoreInternalIndentM;
 import com.hims.entity.StoreIssueM;
+import com.hims.response.StoreIssueMResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,5 +28,32 @@ public interface StoreIssueMRepository extends JpaRepository<StoreIssueM,Long> {
             @Param("toDate") LocalDateTime toDate
     );
 
+    @Query("""
+    SELECT new com.hims.response.StoreIssueMResponse(
+        sim.storeIssueMId,
+        sim.issueNo,
+        sim.issueDate,
+        sim.indentMId.indentMId,
+        sim.indentMId.indentNo,
+        sim.indentMId.indentDate
+    )
+    FROM StoreIssueM sim
+    WHERE sim.toDeptId.id = :toDeptId
+    AND sim.issueDate BETWEEN :fromDate AND :toDate
+    ORDER BY sim.issueDate DESC
+""")
+    List<StoreIssueMResponse> findIssuesBetweenDatesWrtToDept(
+            @Param("toDeptId") Long toDeptId,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate
+    );
+
     StoreIssueM findByIndentMId_IndentMId(Long indentMId);
+
+    @Query("""
+       SELECT s.storeIssueMId
+       FROM StoreIssueM s
+       WHERE s.indentMId.indentMId = :indentMId
+       """)
+    Long findIssueMIdByIndentMId(@Param("indentMId") Long indentMId);
 }

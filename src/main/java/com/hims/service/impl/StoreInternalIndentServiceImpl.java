@@ -1307,6 +1307,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             // 8. Update indent master status and receiving info
             // ==============================================
             indentM.setReceivedBy(currentUserName);
+            indentM.setStatus(AppConstants.INDENT_RECEIVED_AT_REQ_DEPT);
             indentM.setReceivedDate(LocalDateTime.now());
             indentM.setIsReturn(hasRejections ? "N" : "Y");
 

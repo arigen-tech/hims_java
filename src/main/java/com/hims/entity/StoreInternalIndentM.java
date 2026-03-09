@@ -80,5 +80,8 @@ public class StoreInternalIndentM {
     @Column(name = "is_return", length = 2)
     private String isReturn;
 
+    @Column(name = "indent_type_drug_or_nondrug", length = 1)
+    private String indentType;
+
 
 }

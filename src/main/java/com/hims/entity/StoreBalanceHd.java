@@ -46,4 +46,7 @@ public class StoreBalanceHd {
 
     @Column(name = "last_updated_dt")
     private LocalDateTime lastUpdatedDt;
+
+    @Column(name = "balance_type_drug_or_nondrug", length = 1)
+    private String balanceType; //Drug or Non-Drug
 }

@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.*;
@@ -54,12 +55,18 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     @Autowired
     private MasHospitalRepository masHospitalRepository;
 
+    @Autowired
+    private MasStoreSectionRepository masStoreSectionRepository;
+
 
     @Autowired
     AuthUtil authUtil;
 
     @Value("${op_txn_type}")
     private String opTxnType;
+
+    @Value("${sectionId.drugs}")
+    private Long sectionIdForDrugs;
 
 
     private static final Logger log = LoggerFactory.getLogger(DoctorRosterServicesImpl.class);
@@ -97,6 +104,13 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         hd.setEnteredDt(LocalDateTime.now());
         hd.setStatus("s"); // status = saved
         hd.setLastUpdatedDt(LocalDateTime.now());
+        String balanceType;
+        if( masStoreSectionRepository.existsById(sectionIdForDrugs.intValue())){
+            balanceType= AppConstants.ITEM_TYPE_DRUG;
+        }else{
+            balanceType=AppConstants.ITEM_TYPE_NON_DRUG;
+        }
+        hd.setBalanceType(balanceType);
         StoreBalanceHd savedHd = hdRepo.save(hd);
 
 
