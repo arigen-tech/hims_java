@@ -163,6 +163,16 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                LIMIT 1
             ) AS registrationCost,
             
+            (
+               SELECT bd2.registration_cost
+               FROM billing_details bd2
+               JOIN mas_service_category msc 
+                    ON bd2.service_category_id = msc.id
+               WHERE bd2.bill_hd_id = bh.bill_hd_id
+               AND msc.service_cate_code = 'SC010'
+               LIMIT 1
+            ) AS registrationCost,
+            
             bd.tariff AS tariff,
             bd.tax_percent AS taxPercent,
             bh.discount_amount AS discountAmount,
