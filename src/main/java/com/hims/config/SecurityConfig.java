@@ -76,6 +76,7 @@ public class SecurityConfig {
                         .requestMatchers("/user-departments/**").permitAll()
                         .requestMatchers("/identification-types/**").permitAll()
                         .requestMatchers("/v3/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/master/mas-common-status/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

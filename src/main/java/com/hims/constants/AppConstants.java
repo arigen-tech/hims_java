@@ -50,6 +50,7 @@ public class AppConstants {
     public static  final String INDENT_NUM_GENERATION_PREFIX="IND-";
     public static final String ISSUE_NUM_GENERATION_PREFIX="ISS-";
     public static final String RETURN_NUM_GENERATION_PREFIX="RET-";
+    public static final String BALANCE_NUM_GENERATION_PREFIX="BAL";
     public static final String ITEM_TYPE_DRUG ="D";
     public static final String ITEM_TYPE_NON_DRUG ="N";
     public static final String INDENT_APPROVED_WARNING_MSG="Only pending indents can be approved or rejected.";
@@ -78,6 +79,15 @@ public class AppConstants {
     public static  final String INDENT_RECEIVE_SUCCESS_MSG="Indent received successfully";
     public  static  final String RETURN_CREATED_FOR_REJECTED_ITEMS_MSG="Return created for rejected items successfully";
     public static final String STOCK_NOT_FOUND_ERR_MSG="Invalid stock Id ,Stock not found ";
+    public  static final String BALANCE_SAVED_STATUS="S";
+    public static final String BALANCE_SUBMIT_STATUS="P";
+    public static final String BALANCE_APPROVE_STATUS="A";
+    public static final  String MANUFACTURER_NOT_FOUND_ERR_MSG="Invalid Manufacture Id ,Manufacturer not found";
+    public  static final String OPENING_BALANCE_ENTRY_SAVED_SUCCESS_MSG="Opening balance entry saved successfully";
+    public static  final  String OPENING_BALANCE_ENTRY_SUBMIT_SUCCESS_MSG="Opening balance entry submitted successfully";
+    public static final String OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG="Invalid opening balance entry header Id ,Opening balance entry header not found";
+    public static final String OPENING_BALANCE_DETAILS_NOT_FOUND_ERR_MSG="Invalid opening balance entry details Id ,Opening balance entry detail not found";
+
 
     private AppConstants() {
     }

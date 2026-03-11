@@ -11,6 +11,7 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.InventoryService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -25,12 +26,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +63,19 @@ public class InventoryServiceImpl implements InventoryService {
     private final StoreIndentReceiveTRepository storeReceiveTRepository;
 
     private  final StoreReturnTRepository storeReturnTRepository;
+
+    private final  StoreBalanceHdRepository storeBalanceHdRepository;
+
+    private final StoreBalanceDtRepository storeBalanceDtRepository;
+
+    private final RandomNumGenerator randomNumGenerator;
+
+    private final MasBrandRepository masBrandRepository;
+
+    private final MasManufacturerRepository masManufacturerRepository;
+
+    @Value("${op_txn_type}")
+    private String opTxnType;
 
     @Value("${hos.define.wardPharmacyId}")
     private Long warddeptId;
@@ -1527,6 +1543,553 @@ public class InventoryServiceImpl implements InventoryService {
         }
 
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> saveOpeningBalanceEntry(OpeningBalanceEntryRequest openingBalanceEntryRequest) {
+
+
+
+        // Save HD record
+        StoreBalanceHd hd = new StoreBalanceHd();
+        MasDepartment depObj = masDepartmentRepository.findById(openingBalanceEntryRequest.getDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found"));
+        hd.setHospitalId(authUtil.getCurrentUser().getHospital());
+        hd.setDepartmentId(depObj);
+        hd.setEnteredBy(openingBalanceEntryRequest.getEnteredBy());
+        String orderNum = createInvoice();
+        hd.setBalanceNo(orderNum);
+        hd.setEnteredDt(LocalDateTime.now());
+        hd.setStatus(AppConstants.BALANCE_SAVED_STATUS.toLowerCase()); // status = saved
+        hd.setLastUpdatedDt(LocalDateTime.now());
+        String balanceType;
+        if( masStoreSectionRepository.existsById(sectionIdForDrugs.intValue())){
+            balanceType= AppConstants.ITEM_TYPE_DRUG;
+        }else{
+            balanceType=AppConstants.ITEM_TYPE_NON_DRUG;
+        }
+        hd.setBalanceType(balanceType);
+        StoreBalanceHd savedHd = storeBalanceHdRepository.save(hd);
+
+
+        List<OpeningBalanceDtRequest> dtRequests = openingBalanceEntryRequest.getStoreBalanceDtList();
+
+
+        //  save DT records
+        List<StoreBalanceDt> dtList = new ArrayList<>();
+        for (OpeningBalanceDtRequest dtRequest : dtRequests) {
+            StoreBalanceDt dt = new StoreBalanceDt();
+            dt.setBalanceMId(savedHd);
+            Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(dtRequest.getItemId());
+            if (masStoreItem.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse(AppConstants.ITEM_NOT_FOUND_ERR_MSG, HttpStatus.NOT_FOUND.value());
+            }
+            dt.setItemId(masStoreItem.get());
+            MasHSN hsnObj = masStoreItem.get().getHsnCode();
+            dt.setHsnCode(hsnObj);
+            dt.setGstPercent(dtRequest.getGstPercent());
+            dt.setBatchNo(dtRequest.getBatchNo());
+            dt.setManufactureDate(dtRequest.getManufactureDate());
+            dt.setExpiryDate(dtRequest.getExpiryDate());
+            dt.setQty(dtRequest.getQty());
+            dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
+            dt.setPurchaseRatePerUnit(dtRequest.getPurchaseRatePerUnit());
+            dt.setTotalMrp(dtRequest.getTotalMrp());
+            dt.setMrpPerUnit(dtRequest.getMrpPerUnit());
+
+            // GST and base rate calculations
+            BigDecimal gst = dtRequest.getGstPercent();
+            BigDecimal purchaseRatePerUnit = dtRequest.getPurchaseRatePerUnit();
+            BigDecimal divisor = BigDecimal.ONE.add(gst.divide(BigDecimal.valueOf(100)));
+            BigDecimal basePrice = purchaseRatePerUnit.divide(divisor, 2, RoundingMode.HALF_UP);
+            BigDecimal gstAmount = purchaseRatePerUnit.subtract(basePrice);
+            dt.setGstAmountPerUnit(gstAmount);
+            dt.setBaseRatePerUnit(basePrice);
+            Long qty = dtRequest.getQty();
+            BigDecimal purRateUnit = dtRequest.getPurchaseRatePerUnit();
+            BigDecimal total = purRateUnit.multiply(BigDecimal.valueOf(qty));
+            dt.setTotalPurchaseCost(total);
+            dt.setBrandId(masBrandRepository.findById(dtRequest.getBrandId()).orElse(null));
+            Optional<MasManufacturer> masManufacturer = masManufacturerRepository.findById(dtRequest.getManufacturerId());
+            if (masManufacturer.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse(AppConstants.MANUFACTURER_NOT_FOUND_ERR_MSG, HttpStatus.NOT_FOUND.value());
+            }
+            dt.setManufacturerId(masManufacturer.get());
+            dtList.add(dt);
+        }
+        storeBalanceDtRepository.saveAll(dtList);
+        return ResponseUtils.createSuccessResponse(
+                AppConstants.OPENING_BALANCE_ENTRY_SAVED_SUCCESS_MSG,
+                new TypeReference<>() {
+                });
+
+
+    }
+    public String createInvoice() {
+        return randomNumGenerator.generateOrderNumber(AppConstants.BALANCE_NUM_GENERATION_PREFIX, true, true);
+    }
+
+
+    @Override
+    public ApiResponse<Page<OpeningBalanceEntryHeaderResponse>> getOpeningBalanceEntryHeaderListWrtDept(Integer pageNo,Integer pageSize,Long hospitalId, Long deptId,LocalDate fromDate,LocalDate toDate) {
+        try {
+            log.info("getOpeningBalanceEntryHeaderListWrtDept method started for hospitalId - {} and deptId {}:: ", hospitalId, deptId);
+            Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("enteredDt").descending());
+
+            List<String> statuses= Stream.of(AppConstants.INDENT_CREATED_AT_REQ_DEPT,
+                    AppConstants.INDENT_APPROVED_AT_REQ_DEPT,
+                    AppConstants.INDENT_REJECTED_AT_REQ_DEPT,
+                    AppConstants.BALANCE_SUBMIT_STATUS)
+                    .map(String::toLowerCase).toList();
+
+            Page<OpeningBalanceEntryHeaderResponse> page =
+                    storeBalanceHdRepository.findOpeningBalanceHeadersWrtDept(
+                            hospitalId,
+                            deptId,
+                            statuses,
+                            fromDate!=null?fromDate.atStartOfDay():null,
+                            toDate!=null?toDate.atTime(23, 59, 59):null,
+                            pageable
+                    );
+            log.info("getOpeningBalanceEntryHeaderListWrtDept method ended for hospitalId - {} and deptId {}:: ", hospitalId, deptId);
+            return  ResponseUtils.createSuccessResponse(
+                    page,
+                    new TypeReference<>() {}
+            );
+        } catch (Exception e) {
+            log.info("getOpeningBalanceEntryHeaderListWrtDept method error for hospitalId - {} and deptId {} :: ", hospitalId, deptId, e);
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        AppConstants.INTERNAL_SERVER_ERR_MSG,
+                        HttpStatus.INTERNAL_SERVER_ERROR.value()
+                );
+        }
+    }
+
+    @Override
+    public ApiResponse<List<OpeningBalanceEntryDetailResponse>> getOpeningBalanceEntryDetailsWrtHeader(Long balanceMId) {
+        try {
+            log.info("getOpeningBalanceEntryDetailsWrtHeader method started for balanceMId - {} :: ", balanceMId);
+            List<OpeningBalanceEntryDetailResponse> response =
+                    storeBalanceDtRepository.findOpeningBalanceDetailsWrtHeader(balanceMId)
+                            .stream()
+                            .map(r -> new OpeningBalanceEntryDetailResponse(
+                                    r.getBalanceTId(),
+                                    r.getBalanceMId(),
+                                    r.getItemId(),
+                                    r.getItemName(),
+                                    r.getItemUnit(),
+                                    r.getItemGst(),
+                                    r.getItemCode(),
+                                    r.getBatchNo(),
+                                    r.getManufactureDate(),
+                                    r.getExpiryDate(),
+                                    r.getQty(),
+                                    r.getUnitsPerPack(),
+                                    r.getPurchaseRatePerUnit(),
+                                    r.getGstPercent(),
+                                    r.getMrpPerUnit(),
+                                    r.getHsnCode(),
+                                    r.getBaseRatePerUnit(),
+                                    r.getGstAmountPerUnit(),
+                                    r.getTotalPurchaseCost(),
+                                    r.getTotalMrpValue(),
+                                    r.getBrandId(),
+                                    r.getManufacturerId(),
+                                    r.getBrandName(),
+                                    r.getManufacturerName()
+                            ))
+                            .toList();
+            log.info("getOpeningBalanceEntryDetailsWrtHeader method ended for balanceMId - {} :: ", balanceMId);
+            return ResponseUtils.createSuccessResponse(
+                    response,
+                    new TypeReference<>() {}
+            );
+
+        } catch (Exception e) {
+            log.error("getOpeningBalanceEntryDetailsWrtHeader method error for balanceMId - {} :: ", balanceMId, e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<List<OpeningBalanceEntryDetailResponse>>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<List<OpeningBalanceEntryHeaderResponse>> getAllOpeningBalanceEntryHeadersWrtDeptWithOutPagination(Long hospitalId, Long deptId) {
+       try {
+           log.info("getAllOpeningBalanceEntryHeadersWrtDeptWithOutPagination method started for hospitalId - {} and deptId {}:: ", hospitalId, deptId);
+           List<OpeningBalanceEntryHeaderResponse> responses = storeBalanceHdRepository.findOpeningBalanceHeadersWrtDeptWithoutPagination(hospitalId, deptId, AppConstants.BALANCE_SUBMIT_STATUS.toLowerCase());
+           log.info("getAllOpeningBalanceEntryHeadersWrtDeptWithOutPagination method ended for hospitalId - {} and deptId {}:: ", hospitalId, deptId);
+           return ResponseUtils.createSuccessResponse(
+                   responses,
+                   new TypeReference<>() {}
+           );
+       } catch (Exception e) {
+            log.error("getAllOpeningBalanceEntryHeadersWrtDeptWithOutPagination method error for hospitalId - {} and deptId {} :: ", hospitalId, deptId, e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+       }
+    }
+
+    @Override
+    public ApiResponse<String> createOpeningBalanceEntryAndUpdateStatus(OpeningBalanceEntryRequest request) {
+        StoreBalanceHd hd = new StoreBalanceHd();
+        MasDepartment depObj = masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found"));
+        hd.setHospitalId(authUtil.getCurrentUser().getHospital());
+        hd.setDepartmentId(depObj);
+        hd.setEnteredBy(request.getEnteredBy());
+        String orderNum = createInvoice();
+        hd.setBalanceNo(orderNum);
+        hd.setEnteredDt(LocalDateTime.now());
+        hd.setStatus(AppConstants.BALANCE_SUBMIT_STATUS.toLowerCase()); // status = saved
+        hd.setLastUpdatedDt(LocalDateTime.now());
+        String balanceType;
+        if( masStoreSectionRepository.existsById(sectionIdForDrugs.intValue())){
+            balanceType= AppConstants.ITEM_TYPE_DRUG;
+        }else{
+            balanceType=AppConstants.ITEM_TYPE_NON_DRUG;
+        }
+        hd.setBalanceType(balanceType);
+        StoreBalanceHd savedHd = storeBalanceHdRepository.save(hd);
+
+
+        List<OpeningBalanceDtRequest> dtRequests = request.getStoreBalanceDtList();
+
+
+        //  save DT records
+        List<StoreBalanceDt> dtList = new ArrayList<>();
+        for (OpeningBalanceDtRequest dtRequest : dtRequests) {
+            StoreBalanceDt dt = new StoreBalanceDt();
+            dt.setBalanceMId(savedHd);
+            Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(dtRequest.getItemId());
+            if (masStoreItem.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse(AppConstants.ITEM_NOT_FOUND_ERR_MSG, HttpStatus.NOT_FOUND.value());
+            }
+            dt.setItemId(masStoreItem.get());
+            MasHSN hsnObj = masStoreItem.get().getHsnCode();
+            dt.setHsnCode(hsnObj);
+            dt.setGstPercent(dtRequest.getGstPercent());
+            dt.setBatchNo(dtRequest.getBatchNo());
+            dt.setManufactureDate(dtRequest.getManufactureDate());
+            dt.setExpiryDate(dtRequest.getExpiryDate());
+            dt.setQty(dtRequest.getQty());
+            dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
+            dt.setPurchaseRatePerUnit(dtRequest.getPurchaseRatePerUnit());
+            dt.setTotalMrp(dtRequest.getTotalMrp());
+            dt.setMrpPerUnit(dtRequest.getMrpPerUnit());
+
+            // GST and base rate calculations
+            BigDecimal gst = dtRequest.getGstPercent();
+            BigDecimal purchaseRatePerUnit = dtRequest.getPurchaseRatePerUnit();
+            BigDecimal divisor = BigDecimal.ONE.add(gst.divide(BigDecimal.valueOf(100)));
+            BigDecimal basePrice = purchaseRatePerUnit.divide(divisor, 2, RoundingMode.HALF_UP);
+            BigDecimal gstAmount = purchaseRatePerUnit.subtract(basePrice);
+            dt.setGstAmountPerUnit(gstAmount);
+            dt.setBaseRatePerUnit(basePrice);
+            Long qty = dtRequest.getQty();
+            BigDecimal purRateUnit = dtRequest.getPurchaseRatePerUnit();
+            BigDecimal total = purRateUnit.multiply(BigDecimal.valueOf(qty));
+            dt.setTotalPurchaseCost(total);
+            dt.setBrandId(masBrandRepository.findById(dtRequest.getBrandId()).orElse(null));
+            Optional<MasManufacturer> masManufacturer = masManufacturerRepository.findById(dtRequest.getManufacturerId());
+            if (masManufacturer.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse(AppConstants.MANUFACTURER_NOT_FOUND_ERR_MSG, HttpStatus.NOT_FOUND.value());
+            }
+            dt.setManufacturerId(masManufacturer.get());
+            dtList.add(dt);
+        }
+        storeBalanceDtRepository.saveAll(dtList);
+        return ResponseUtils.createSuccessResponse(AppConstants.OPENING_BALANCE_ENTRY_SUBMIT_SUCCESS_MSG, new TypeReference<>() {
+        });
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> updateOpeningBalanceById(Long id, OpeningBalanceEntryRequest openingBalanceEntryRequest) {
+
+
+
+        Optional<StoreBalanceHd> optionalHd = storeBalanceHdRepository.findById(id);
+
+        if (optionalHd.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse(AppConstants.OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG, HttpStatus.NOT_FOUND.value());
+        }
+
+        addDetails(openingBalanceEntryRequest.getStoreBalanceDtList(), id);
+
+        if (openingBalanceEntryRequest.getDeletedDt() != null && !openingBalanceEntryRequest.getDeletedDt().isEmpty()) {
+            for (Long ids : openingBalanceEntryRequest.getDeletedDt()) {
+                deletedById(ids);
+            }
+        }
+
+        StoreBalanceHd hd = optionalHd.get();
+
+        // Update HD fields
+        MasDepartment depObj = masDepartmentRepository.getById(openingBalanceEntryRequest.getDepartmentId());
+        hd.setDepartmentId(depObj);
+        hd.setEnteredBy(openingBalanceEntryRequest.getEnteredBy());
+        hd.setLastUpdatedDt(LocalDateTime.now());
+        if (openingBalanceEntryRequest.getStatus().equalsIgnoreCase(AppConstants.BALANCE_SAVED_STATUS) ) {
+            hd.setStatus(AppConstants.BALANCE_SAVED_STATUS.toLowerCase());
+        } else if (openingBalanceEntryRequest.getStatus().equalsIgnoreCase(AppConstants.BALANCE_SUBMIT_STATUS)) {
+            hd.setStatus(AppConstants.BALANCE_SUBMIT_STATUS.toLowerCase());
+        }
+        StoreBalanceHd updatedHd = storeBalanceHdRepository.save(hd);
+        return ResponseUtils.createSuccessResponse(AppConstants.SUCCESS_MSG, new TypeReference<>() {
+        });
+
+    }
+
+    @Transactional
+    @Override
+    public ApiResponse<String> approveOpeningBalance(Long id, OpeningBalanceRequestForApprove request) {
+        User currentUser = authUtil.getCurrentUser();
+
+
+        Optional<StoreBalanceHd> hdOpt = storeBalanceHdRepository.findById(id);
+        if (hdOpt.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse(AppConstants.OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG, 404);
+        }
+
+        String fName = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+
+        StoreBalanceHd hd = hdOpt.get();
+        hd.setStatus(request.getStatus());
+        hd.setApprovalDt(LocalDateTime.now());
+        hd.setRemarks(request.getRemark());
+        hd.setApprovedBy(fName);
+        StoreBalanceHd hdObj = storeBalanceHdRepository.save(hd);
+
+        if (AppConstants.BALANCE_APPROVE_STATUS.equalsIgnoreCase(request.getStatus())) {
+
+            List<StoreBalanceDt> dtList = storeBalanceDtRepository.findByBalanceMId(hd);
+            Map<String, StoreItemBatchStock> stockMap = new HashMap<>();
+
+            for (StoreBalanceDt dt : dtList) {
+                if (Boolean.TRUE.equals(dt.getIsApproved())) {
+                    continue;
+                }
+
+                String batchNo = dt.getBatchNo().trim().toUpperCase();
+                String key = dt.getItemId().getItemId() + "_" +
+                        batchNo + "_" +
+                        dt.getManufactureDate() + "_" +
+                        dt.getExpiryDate() + "_" +
+                        dt.getManufacturerId().getManufacturerId();
+
+                StoreItemBatchStock stock;
+
+                if (stockMap.containsKey(key)) {
+                    stock = stockMap.get(key);
+                    Long qty = dt.getQty();
+                    stock.setQty(stock.getQty() + qty);
+                    stock.setClosingStock(stock.getClosingStock() + qty);
+                    stock.setOpeningBalanceQty(stock.getOpeningBalanceQty() + qty);
+                    transferInLedger(stock.getQty(),qty, dt.getBalanceTId(), stock.getStockId(), hdObj.getRemarks(),hdObj.getBalanceNo());
+                } else {
+                    Optional<StoreItemBatchStock> existingStockOpt = storeItemBatchStockRepository.findMatchingStock(
+                            dt.getItemId(),
+                            batchNo,
+                            dt.getManufactureDate(),
+                            dt.getExpiryDate(),
+                            dt.getManufacturerId().getManufacturerId()
+                    );
+
+                    if (existingStockOpt.isPresent()) {
+                        stock = existingStockOpt.get();
+                        Long qty = dt.getQty();
+                        stock.setClosingStock(stock.getClosingStock() + qty);
+                        stock.setOpeningBalanceQty(stock.getOpeningBalanceQty() + qty);
+                        transferInLedger(stock.getClosingStock(),qty, dt.getBalanceTId(), stock.getStockId(), hdObj.getRemarks(), hd.getBalanceNo());
+                    } else {
+                        Long deptId = authUtil.getCurrentDepartmentId();
+                        MasDepartment department = masDepartmentRepository.getById(deptId);
+
+                        stock = new StoreItemBatchStock();
+                        stock.setHospitalId(currentUser.getHospital());
+                        stock.setDepartmentId(department);
+                        stock.setItemId(dt.getItemId());
+                        stock.setManufacturerId(dt.getManufacturerId());
+                        stock.setBatchNo(batchNo);
+                        stock.setManufactureDate(dt.getManufactureDate());
+                        stock.setExpiryDate(dt.getExpiryDate());
+                        stock.setOpeningBalanceQty(dt.getQty());
+                        stock.setClosingStock(dt.getQty());
+                        stock.setUnitsPerPack(dt.getUnitsPerPack());
+                        stock.setPurchaseRatePerUnit(dt.getPurchaseRatePerUnit());
+                        stock.setGstPercent(dt.getGstPercent());
+                        stock.setMrpPerUnit(dt.getMrpPerUnit());
+                        stock.setHsnCode(dt.getHsnCode());
+                        stock.setGstAmountPerUnit(dt.getGstAmountPerUnit());
+                        stock.setTotalPurchaseCost(dt.getTotalPurchaseCost());
+                        stock.setTotalMrpValue(dt.getTotalMrp());
+                        stock.setBrandId(dt.getBrandId());
+                        stock.setLastChgDate(LocalDateTime.now());
+
+
+                        stock.setLastChgBy(fName);
+
+                        stock = storeItemBatchStockRepository.save(stock);
+
+                        transferInLedger(0,dt.getQty(), dt.getBalanceTId(), stock.getStockId(), hdObj.getRemarks(),hdObj.getBalanceNo());
+                    }
+
+                    stock.setLastChgDate(LocalDateTime.now());
+                    stock.setLastChgBy(currentUser.getUsername());
+
+                    stockMap.put(key, stock);
+                }
+
+                dt.setIsApproved(true);
+            }
+
+            storeItemBatchStockRepository.saveAll(stockMap.values());
+            storeBalanceDtRepository.saveAll(dtList);
+        }
+
+        return ResponseUtils.createSuccessResponse("Approved and stock moved to batch successfully", new TypeReference<>() {
+        });
+    }
+
+    private String transferInLedger(long qtyBefore,long qty, long balanceDtId, long stockId, String remarks,String referenceNum) {
+        Optional<StoreItemBatchStock> stockOpt = storeItemBatchStockRepository.findById(stockId);
+        if (stockOpt.isEmpty()) {
+            throw new EntityNotFoundException("Stock with ID " + stockId + " not found.");
+        }
+        StoreItemBatchStock stock = stockOpt.get();
+        StoreStockLedger ledger = new StoreStockLedger();
+        ledger.setCreatedDt(LocalDateTime.now());
+        User currentUser = authUtil.getCurrentUser();
+        String fName= currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+
+        if (currentUser != null) {
+            ledger.setCreatedBy(fName);
+        }
+        ledger.setTxnDate(LocalDate.now());
+        ledger.setQtyIn(BigDecimal.valueOf(qty));
+        ledger.setStockId(stock);
+        ledger.setQtyBefore(BigDecimal.valueOf(stock.getClosingStock()));
+        ledger.setQtyAfter(BigDecimal.valueOf(stock.getClosingStock()+qty));
+        ledger.setReferenceNum(referenceNum);
+        ledger.setHospital(authUtil.getCurrentUser().getHospital());
+        ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Department Not Found")));
+        ledger.setTxnSource(opTxnType);
+        ledger.setTxnType(opTxnType);
+        ledger.setRemarks(remarks);
+        ledger.setTxnReferenceId(balanceDtId);
+        storeStockLedgerRepository.save(ledger);
+        return "success";
+    }
+
+
+    public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
+        for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {
+            if (dtRequest.getBalanceId() == null) {
+
+                StoreBalanceDt dt = new StoreBalanceDt();
+                Optional<StoreBalanceHd> optionalHd = storeBalanceHdRepository.findById(hdId);
+                if (optionalHd.isEmpty()) {
+                    return AppConstants.OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG;
+                }
+                dt.setBalanceMId(optionalHd.get());
+                Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(dtRequest.getItemId());
+                if (masStoreItem.isEmpty()) {
+                    return AppConstants.ITEM_NOT_FOUND_ERR_MSG;
+                }
+
+                dt.setItemId(masStoreItem.get());
+                MasHSN hsnObj = masStoreItem.get().getHsnCode();
+                dt.setHsnCode(hsnObj);
+                dt.setGstPercent(dtRequest.getGstPercent());
+                dt.setBatchNo(dtRequest.getBatchNo());
+                dt.setManufactureDate(dtRequest.getManufactureDate());
+                dt.setExpiryDate(dtRequest.getExpiryDate());
+                dt.setQty(dtRequest.getQty());
+                dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
+                dt.setPurchaseRatePerUnit(dtRequest.getPurchaseRatePerUnit());
+                dt.setTotalMrp(dtRequest.getTotalMrp());
+                dt.setMrpPerUnit(dtRequest.getMrpPerUnit());
+
+                // GST and base rate calculations
+                BigDecimal gst = dtRequest.getGstPercent();
+                BigDecimal purchaseRatePerUnit = dtRequest.getPurchaseRatePerUnit();
+                BigDecimal divisor = BigDecimal.ONE.add(gst.divide(BigDecimal.valueOf(100)));
+                BigDecimal basePrice = purchaseRatePerUnit.divide(divisor, 2, RoundingMode.HALF_UP);
+                BigDecimal gstAmount = purchaseRatePerUnit.subtract(basePrice);
+
+                dt.setGstAmountPerUnit(gstAmount);
+                dt.setBaseRatePerUnit(basePrice);
+
+                Long qty = dtRequest.getQty();
+                BigDecimal purRateUnit = dtRequest.getPurchaseRatePerUnit();
+                BigDecimal total= purRateUnit.multiply(BigDecimal.valueOf(qty));
+                dt.setTotalPurchaseCost(total);
+
+                dt.setBrandId(masBrandRepository.findById(dtRequest.getBrandId()).orElse(null));
+                Optional<MasManufacturer> masManufacturer = masManufacturerRepository.findById(dtRequest.getManufacturerId());
+                if (masManufacturer.isEmpty()) {
+                    return AppConstants.MANUFACTURER_NOT_FOUND_ERR_MSG;
+                }
+                dt.setManufacturerId(masManufacturer.get());
+                storeBalanceDtRepository.save(dt);
+            } else {
+                Optional<StoreBalanceDt> storeBalanceDt=storeBalanceDtRepository.findById(dtRequest.getBalanceId());
+                if(storeBalanceDt.isEmpty()){
+                    return AppConstants.OPENING_BALANCE_DETAILS_NOT_FOUND_ERR_MSG;
+                }
+                StoreBalanceDt dt =storeBalanceDt.get();
+                Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(dtRequest.getItemId());
+                if (masStoreItem.isEmpty()) {
+                    return AppConstants.ITEM_NOT_FOUND_ERR_MSG;
+                }
+                dt.setItemId(masStoreItem.get());
+                dt.setHsnCode(masStoreItem.get().getHsnCode());
+                dt.setGstPercent(dtRequest.getGstPercent());
+                dt.setBatchNo(dtRequest.getBatchNo());
+                dt.setManufactureDate(dtRequest.getManufactureDate());
+                dt.setExpiryDate(dtRequest.getExpiryDate());
+                dt.setQty(dtRequest.getQty());
+                dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
+                dt.setPurchaseRatePerUnit(dtRequest.getPurchaseRatePerUnit());
+                dt.setTotalMrp(dtRequest.getTotalMrp());
+                dt.setMrpPerUnit(dtRequest.getMrpPerUnit());
+                BigDecimal gst = dtRequest.getGstPercent();
+                BigDecimal purchaseRatePerUnit = dtRequest.getPurchaseRatePerUnit();
+                BigDecimal divisor = BigDecimal.ONE.add(gst.divide(BigDecimal.valueOf(100)));
+                BigDecimal basePrice = purchaseRatePerUnit.divide(divisor, 2, RoundingMode.HALF_UP);
+                BigDecimal gstAmount = purchaseRatePerUnit.subtract(basePrice);
+
+                dt.setGstAmountPerUnit(gstAmount);
+                dt.setBaseRatePerUnit(basePrice);
+
+                BigDecimal total = dtRequest.getPurchaseRatePerUnit().multiply(BigDecimal.valueOf(dtRequest.getQty()));
+                dt.setTotalPurchaseCost(total);
+
+                dt.setBrandId(masBrandRepository.findById(dtRequest.getBrandId()).orElse(null));
+                Optional<MasManufacturer> masManufacturer = masManufacturerRepository.findById(dtRequest.getManufacturerId());
+                if (masManufacturer.isEmpty()) {
+                    return AppConstants.MANUFACTURER_NOT_FOUND_ERR_MSG;
+                }
+                dt.setManufacturerId(masManufacturer.get());
+
+                storeBalanceDtRepository.save(dt);
+            }
+        }
+        return AppConstants.SUCCESS_MSG;
+    }
+
+    private void  deletedById(Long id){
+        storeBalanceDtRepository.deleteById(id);
+    }
+
 
     private void createReceivingLedgerEntry(StoreItemBatchStock batchStock,BigDecimal qty, StoreInternalIndentT indentT, Long stockId,
                                             String remarks,  String userName) {
