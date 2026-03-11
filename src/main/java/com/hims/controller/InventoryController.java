@@ -8,12 +8,14 @@ import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -285,5 +287,57 @@ public class InventoryController {
         return  ResponseEntity.ok(inventoryService.getIndentDetailsForRequestingDept(indentMId,currentDeptId));
     }
 
+
+    //   ========================================================Opening Balance Entry=====================================================
+
+    @PostMapping("/openingBalanceEntry/save")
+    public ResponseEntity<?> saveOpeningBalanceEntry(@RequestBody OpeningBalanceEntryRequest openingBalanceEntryRequest) {
+        return  ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.saveOpeningBalanceEntry(openingBalanceEntryRequest));
+    }
+
+    @GetMapping("/openingBalanceEntry/headers/{hospitalId}/{departmentId}")
+    public ResponseEntity<?> getOpeningBalanceEntryHeaderListWrtDept(@RequestParam(defaultValue = "0") int page,
+                                                                     @RequestParam(defaultValue = "5") int size,
+                                                                     @PathVariable Long hospitalId,
+                                                                     @PathVariable Long departmentId,
+                                                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+                                                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        return ResponseEntity.ok(inventoryService.getOpeningBalanceEntryHeaderListWrtDept(page,size,hospitalId,departmentId,fromDate,toDate));
+    }
+
+
+    @GetMapping("/openingBalanceEntry/details/{balanceMId}")
+    public ResponseEntity<?> getOpeningBalanceEntryDetailsWrtHeader(@PathVariable Long balanceMId){
+        return  ResponseEntity.ok(inventoryService.getOpeningBalanceEntryDetailsWrtHeader(balanceMId));
+    }
+
+    @GetMapping("/openingBalanceEntry/headers/withoutPagination")
+    public ResponseEntity<?> getOpeningBalanceEntryHeaderListWrtDeptWithoutPagination(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId) {
+        return ResponseEntity.ok(inventoryService.getAllOpeningBalanceEntryHeadersWrtDeptWithOutPagination(hospitalId, departmentId));
+    }
+
+    @PostMapping("/openingBalanceEntry/submit")
+    public ResponseEntity<?> createOpeningBalanceEntryAndUpdateStatus(
+            @RequestBody OpeningBalanceEntryRequest request
+    ) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.createOpeningBalanceEntryAndUpdateStatus(request));
+    }
+
+    @PutMapping("/openingBalanceEntry/updateById/{id}")
+    public ResponseEntity<ApiResponse<String>> updateOpeningBalanceById(@PathVariable Long id,
+                                                                    @RequestBody OpeningBalanceEntryRequest openingBalanceEntryRequest) {
+        return ResponseEntity.ok(inventoryService.updateOpeningBalanceById(id,openingBalanceEntryRequest));
+    }
+
+    @PutMapping("/openingBalanceEntry/approve/{id}")
+    public ResponseEntity<ApiResponse<String>> approveOpeningBalance(@PathVariable Long id,
+                                                        @RequestBody OpeningBalanceRequestForApprove request
+    ) {
+
+        return  ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.approveOpeningBalance(id,request));
+    }
 
 }
