@@ -583,7 +583,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             // radStudyReport.setReportStatus();
             radStudyReport.setLastChgBy(currentUser.getFullName());
             radStudyReport.setLastChgDate(LocalDateTime.now());
-            radStudyReport.setCreatedBy(currentUser.getFullName());
+            radStudyReport.setCreatedBy(currentUser.getUserId());
             radStudyReport.setCreatedOn(LocalDateTime.now());
             // radStudyReport.setReportImagePath();
             radStudyReportRepository.save(radStudyReport);
