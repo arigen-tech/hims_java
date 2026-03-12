@@ -1618,7 +1618,7 @@ public class InventoryServiceImpl implements InventoryService {
         }
         storeBalanceDtRepository.saveAll(dtList);
         return ResponseUtils.createSuccessResponse(
-                AppConstants.OPENING_BALANCE_ENTRY_SAVED_SUCCESS_MSG,
+                savedHd.getBalanceMId().toString(),
                 new TypeReference<>() {
                 });
 
@@ -1806,7 +1806,7 @@ public class InventoryServiceImpl implements InventoryService {
             dtList.add(dt);
         }
         storeBalanceDtRepository.saveAll(dtList);
-        return ResponseUtils.createSuccessResponse(AppConstants.OPENING_BALANCE_ENTRY_SUBMIT_SUCCESS_MSG, new TypeReference<>() {
+        return ResponseUtils.createSuccessResponse(savedHd.getBalanceMId().toString(), new TypeReference<>() {
         });
     }
 
