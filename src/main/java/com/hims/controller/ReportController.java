@@ -506,16 +506,10 @@ public class ReportController {
 
     @GetMapping(value = "/indentReceiving", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewDownloadIndentReceiving(
-            @RequestParam Long hospitalId,
-            @RequestParam Long departmentId,
-            @RequestParam Long indentMId,
-            @RequestParam String indentType,
+            @RequestParam Long receiveMId,
             @RequestParam String flag ) {
         Map<String, Object> params = new HashMap<>();
-        params.put("hospital_id", hospitalId);
-        params.put("department_id", departmentId);
-        params.put("indent_m_id", indentMId);
-        params.put("indent_type", indentType);
+        params.put("receive_m_id", receiveMId);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -857,6 +851,68 @@ public class ReportController {
                 return buildPdfResponse(viewPdf, ReportConstants.RESULT_AMENDMENT_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.RESULT_AMENDMENT_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/stockMoment", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadStockMoment(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
+            @RequestParam Long itemId,
+            @RequestParam String batchNo,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", departmentId);
+        params.put("item_id", itemId);
+        params.put("batch_no", batchNo);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_MOVEMENT_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.STOCK_MOVEMENT_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_MOVEMENT_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/radiologyReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadRadioLogy(
+            @RequestParam Long radOrderDtId,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("rad_orderdt_id", radOrderDtId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.RADIOLOGY_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
