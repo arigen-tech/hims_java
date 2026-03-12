@@ -442,17 +442,20 @@ public class ReportController {
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
             @RequestParam (required = false) Long itemId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam (required = false) String indentType,
             @RequestParam String flag ) {
         Long safeItemId = (itemId == null ? 0L : itemId);
+        Date safeFromDate = (fromDate != null) ? new Date(fromDate.getTime()) : null;
+        Date safeToDate = (toDate != null) ? new Date(toDate.getTime()) : null;
+
         Map<String, Object> params = new HashMap<>();
         params.put("hospital_id", hospitalId);
         params.put("department_id", departmentId);
         params.put("drug_id", safeItemId);
-        params.put("from_date", fromDate);
-        params.put("to_date", toDate);
+        params.put("from_date", safeFromDate);
+        params.put("to_date", safeToDate);
         params.put("indent_type", indentType);
         params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_STORE + ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_SUBREPORT_DIR)).toString());
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
@@ -580,16 +583,20 @@ public class ReportController {
     public ResponseEntity<?> viewDownloadItemWiseReceiving(
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam Long itemId,
             @RequestParam String flag) {
+
+        Date safeFromDate = (fromDate != null) ? new Date(fromDate.getTime()) : null;
+        Date safeToDate = (toDate != null) ? new Date(toDate.getTime()) : null;
+
         Map<String, Object> params = new HashMap<>();
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         params.put("hospital_id", hospitalId);
         params.put("department_id", departmentId);
-        params.put("from_date", fromDate);
-        params.put("to_date", toDate);
+        params.put("from_date", safeFromDate);
+        params.put("to_date", safeToDate);
         params.put("item_id", itemId);
 
         try{
@@ -681,15 +688,19 @@ public class ReportController {
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
             @RequestParam Long itemId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam String flag) {
+
+        Date safeFromDate = (fromDate != null) ? new Date(fromDate.getTime()) : null;
+        Date safeToDate = (toDate != null) ? new Date(toDate.getTime()) : null;
+
         Map<String, Object> params = new HashMap<>();
         params.put("hospital_id", hospitalId);
         params.put("department_id", departmentId);
         params.put("item_id", itemId);
-        params.put("from_date", fromDate);
-        params.put("to_date", toDate);
+        params.put("from_date", safeFromDate);
+        params.put("to_date", safeToDate);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -865,8 +876,8 @@ public class ReportController {
         }
     }
 
-    @GetMapping(value = "/stockMoment", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<?> viewDownloadStockMoment(
+    @GetMapping(value = "/stockMovement", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadStockMovement(
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
             @RequestParam Long itemId,
