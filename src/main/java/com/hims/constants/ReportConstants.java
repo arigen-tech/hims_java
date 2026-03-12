@@ -19,6 +19,7 @@ public final class ReportConstants {
     public static final String JASPER_BASE_PATH_LAB = "/jasperReport/Lab/";
     public static final String JASPER_BASE_PATH_OPD = "/jasperReport/OPD/";
     public static final String JASPER_BASE_PATH_STORE = "/jasperReport/Store/";
+    public static final String JASPER_BASE_PATH_RADIOLOGY = "/jasperReport/Radiology/";
 
     public static final String ASSET_LOGO = "/Assets/arigen_health.png";
 
@@ -99,5 +100,11 @@ public final class ReportConstants {
 
     public static final String RESULT_AMENDMENT_JASPER = "Result_amendment";
     public static final String RESULT_AMENDMENT_REPORT = "ResultAmendmentReport";
+
+    public static final String STOCK_MOVEMENT_JASPER = "Item_stock_moment_history";
+    public static final String STOCK_MOVEMENT_REPORT = "ItemStockMomentHistory";
+
+    public static final String RADIOLOGY_JASPER = "radiology_report";
+    public static final String RADIOLOGY_REPORT = "RadiologyReport";
 
 }
