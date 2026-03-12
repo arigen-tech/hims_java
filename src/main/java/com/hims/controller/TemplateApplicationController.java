@@ -17,30 +17,30 @@ import java.util.List;
 @RequestMapping("/template-applications")
 public class TemplateApplicationController {
 
-    @Autowired
-    private TemplateApplicationService templateApplicationService;
-
-    @PostMapping("/assignAppTemplate")
-    public ResponseEntity<ApiResponse<TemplateApplicationResponse>> assignTemplateToApplication(@RequestBody TemplateApplicationRequest request) {
-        ApiResponse<TemplateApplicationResponse> response = templateApplicationService.assignTemplateToApplication(request);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    @PutMapping("/changeStatus")
-    public ResponseEntity<ApiResponse<String>> changeTemplateApplicationStatus(
-            @RequestParam Long id,
-            @RequestParam String status) {
-        ApiResponse<String> response = templateApplicationService.changeTemplateApplicationStatus(id, status);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-
-    @GetMapping("/getAllTemplateById/{templateId}")
-    public ResponseEntity<ApiResponse<List<TemplateApplicationResponse>>> getAllTemplateById(@PathVariable Long templateId) {
-        return ResponseEntity.ok(templateApplicationService.getAllTemplateById(templateId));
-    }
-
-    @GetMapping("/getAllTemplateApplications/{flag}")
-    public ApiResponse<List<TemplateApplicationResponse>> getAllTemplateApplications(@PathVariable int flag) {
-        return templateApplicationService.getAllTemplateApplications(flag);
-    }
+//    @Autowired
+//    private TemplateApplicationService templateApplicationService;
+//
+//    @PostMapping("/assignAppTemplate")
+//    public ResponseEntity<ApiResponse<TemplateApplicationResponse>> assignTemplateToApplication(@RequestBody TemplateApplicationRequest request) {
+//        ApiResponse<TemplateApplicationResponse> response = templateApplicationService.assignTemplateToApplication(request);
+//        return new ResponseEntity<>(response, HttpStatus.OK);
+//    }
+//
+//    @PutMapping("/changeStatus")
+//    public ResponseEntity<ApiResponse<String>> changeTemplateApplicationStatus(
+//            @RequestParam Long id,
+//            @RequestParam String status) {
+//        ApiResponse<String> response = templateApplicationService.changeTemplateApplicationStatus(id, status);
+//        return new ResponseEntity<>(response, HttpStatus.OK);
+//    }
+//
+//    @GetMapping("/getAllTemplateById/{templateId}")
+//    public ResponseEntity<ApiResponse<List<TemplateApplicationResponse>>> getAllTemplateById(@PathVariable Long templateId) {
+//        return ResponseEntity.ok(templateApplicationService.getAllTemplateById(templateId));
+//    }
+//
+//    @GetMapping("/getAllTemplateApplications/{flag}")
+//    public ApiResponse<List<TemplateApplicationResponse>> getAllTemplateApplications(@PathVariable int flag) {
+//        return templateApplicationService.getAllTemplateApplications(flag);
+//    }
 }

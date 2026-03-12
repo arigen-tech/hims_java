@@ -29,14 +29,14 @@ public class UrlByRoleController {
 //        return urlByRoleService.getAllUrlByRoleId(roleId);
 //    }
 
-    @GetMapping("/getAllUrlByRoles/{roleIds}")
-    public ApiResponse getTemplatesByRoleIds(@PathVariable String roleIds) {
-        List<Long> roleIdList = Arrays.stream(roleIds.split(","))
-                .map(String::trim)
-                .map(Long::parseLong)
-                .collect(Collectors.toList());
-
-        return urlByRoleService.getAllUrlByRoleIds(roleIdList);
-    }
+//    @GetMapping("/getAllUrlByRoles/{roleIds}")
+//    public ApiResponse getTemplatesByRoleIds(@PathVariable String roleIds) {
+//        List<Long> roleIdList = Arrays.stream(roleIds.split(","))
+//                .map(String::trim)
+//                .map(Long::parseLong)
+//                .collect(Collectors.toList());
+//
+//        return urlByRoleService.getAllUrlByRoleIds(roleIdList);
+//    }
 
 }
