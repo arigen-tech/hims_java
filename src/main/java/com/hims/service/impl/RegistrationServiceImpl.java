@@ -381,8 +381,13 @@ public class RegistrationServiceImpl implements RegistrationService {
             } else if ("N".equalsIgnoreCase(v.getVisitStatus())) {
                 appt.setVisitStatus("Pending");
             }
-            appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
-            appt.setTokenEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
+            if (v != null && v.getStartTime() != null) {
+                appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
+            }
+
+            if (v != null && v.getEndTime() != null) {
+                appt.setTokenEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
+            }
             appointmentList.add(appt);
         }
 

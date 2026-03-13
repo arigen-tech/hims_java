@@ -444,7 +444,7 @@ public class BillingServiceImpl implements BillingService {
                             r.setPatientId(first.getPatientId());
                             r.setRegistrationNo(first.getRegistrationNo());
                             r.setPatientName(first.getPatientName());
-                            r.setAge(first.getAge());
+                            r.setAge(ageCalculator(first.getAge()));
                             r.setGender(first.getGender());
                             r.setRelation(first.getRelation());
                             r.setBillingType(first.getBillingType());
@@ -506,7 +506,7 @@ public class BillingServiceImpl implements BillingService {
                             response.setMobileNo(p.getMobileNumber());
                             response.setAppointmentDate(p.getAppointmentDate());
                             response.setPatientName(p.getPatientName());
-                            response.setAge(p.getAge());
+                            response.setAge(ageCalculator(p.getAge()));
                             response.setGender(p.getGenderName());
                             response.setBillingType(p.getServiceCategoryName());
                             response.setBillingHeaderId(p.getBillingHeaderId());
@@ -548,7 +548,7 @@ public class BillingServiceImpl implements BillingService {
                             r.setPatientId(p.getPatientId());
                             r.setRegistrationNo(p.getRegistrationNo());
                             r.setPatientName(p.getPatientName());
-                            r.setAge(p.getAge());
+                            r.setAge(ageCalculator(p.getAge()));
                             r.setGender(p.getGenderName());
                             r.setBillingType(p.getServiceCategoryName());
                             r.setMobileNo(p.getMobileNumber());
@@ -1447,13 +1447,11 @@ public class BillingServiceImpl implements BillingService {
         d.setPaymentStatus(safe(detail.getPaymentStatus()));
         d.setRegistrationCost(detail.getRegistrationCost());
         d.setTotal(detail.getNetAmount());
-        // ✅ Include Investigation
         if (detail.getInvestigation() != null) {
             d.setInvestigationId(detail.getInvestigation().getInvestigationId());
             d.setInvestigationName(detail.getInvestigation().getInvestigationName());
         }
 
-        // ✅ Include Package
         if (detail.getPackageField() != null) {
             d.setPackageId(detail.getPackageField().getPackId());
             d.setPackageName(detail.getPackageField().getPackName());
@@ -1465,4 +1463,10 @@ public class BillingServiceImpl implements BillingService {
     private String safe(String value) {
         return value != null ? value : "";
     }
+
+
+
+
+
+
 }

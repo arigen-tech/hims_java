@@ -43,6 +43,36 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
                                            @Param("patientName") String patientName);
 
 
+    @Query(value = """
+        SELECT DISTINCT p.* FROM patient p 
+        LEFT JOIN appointment a ON p.patient_id = a.patient_id
+        WHERE (:mobileNo IS NULL OR CAST(p.p_mobile_number AS TEXT) ILIKE CONCAT('%', :mobileNo, '%'))
+        AND (:patientName IS NULL OR 
+             CAST(p.p_fn AS TEXT) ILIKE CONCAT('%', :patientName, '%') OR 
+             CAST(p.p_mn AS TEXT) ILIKE CONCAT('%', :patientName, '%') OR 
+             CAST(p.p_ln AS TEXT) ILIKE CONCAT('%', :patientName, '%'))
+        AND (:uhidNo IS NULL OR CAST(p.uhid_no AS TEXT) ILIKE CONCAT('%', :uhidNo, '%'))
+        AND (:appointmentDate IS NULL OR DATE(a.appointment_date) = :appointmentDate)
+        """, nativeQuery = true)
+    List<Patient> searchPatients(@Param("mobileNo") String mobileNo,
+                                 @Param("patientName") String patientName,
+                                 @Param("uhidNo") String uhidNo,
+                                 @Param("appointmentDate") LocalDate appointmentDate);
+
+    @Query(value = """
+        SELECT * FROM patient p 
+        WHERE (:mobileNo IS NULL OR CAST(p.p_mobile_number AS TEXT) ILIKE CONCAT('%', :mobileNo, '%'))
+        AND (:patientName IS NULL OR 
+             CAST(p.p_fn AS TEXT) ILIKE CONCAT('%', :patientName, '%') OR 
+             CAST(p.p_mn AS TEXT) ILIKE CONCAT('%', :patientName, '%') OR 
+             CAST(p.p_ln AS TEXT) ILIKE CONCAT('%', :patientName, '%'))
+        AND (:uhidNo IS NULL OR CAST(p.uhid_no AS TEXT) ILIKE CONCAT('%', :uhidNo, '%'))
+        """, nativeQuery = true)
+    List<Patient> searchPatients(@Param("mobileNo") String mobileNo,
+                                 @Param("patientName") String patientName,
+                                 @Param("uhidNo") String uhidNo);
+
+
     @Query("""
        SELECT 
        p.id as id,

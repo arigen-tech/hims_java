@@ -63,7 +63,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 p.uhid_no AS registrationNo,
                 p.p_mobile_number AS mobileNo,
                 (p.p_fn || ' ' || COALESCE(p.p_mn,'') || ' ' || p.p_ln) AS patientName,
-                EXTRACT(YEAR FROM AGE(p.p_dob)) AS age,
+                p.p_dob AS age,
                 g.gender_name AS gender,
                 r.relation_name AS relation,
                 sc.service_cat_name AS billingType,
@@ -138,10 +138,8 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 v.visit_type AS visitType,
                 v.token_no AS tokenNo,
             
-                -- Use COALESCE to return 0 instead of NULL if no registration exists
                 COALESCE(bd_reg.amount_after_discount, 0) AS registrationCost,
             
-                -- Use COALESCE for tariff to avoid NULL issues in the projection
                 COALESCE(bd_serv.tariff, 0) AS tariff,
             
                 COALESCE(bd_serv.tax_percent, bd_reg.tax_percent, 0) AS taxPercent,
@@ -175,7 +173,6 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             FROM visit v
             LEFT JOIN billing_header bh ON v.visit_id = bh.visit_id
             
-            -- Optimized: Join once to get the ID, then join details
             LEFT JOIN billing_details bd_reg ON bh.bill_hd_id = bd_reg.bill_hd_id
                 AND bd_reg.service_category_id = (SELECT msc.id FROM mas_service_category msc WHERE msc.service_cate_code = :serviceCategoryId LIMIT 1)
             LEFT JOIN billing_details bd 
@@ -193,9 +190,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             LEFT JOIN billing_policy_master bp ON bh.billing_policy_id = bp.billing_policy_id
             
             WHERE v.patient_id = :patientId
-            -- Use LOWER on the parameter as well to ensure a match
             AND LOWER(v.visit_status) = LOWER(:visitStatus)
-            -- Handle the IN clause with individual parameters
             AND (LOWER(bh.payment_status) = LOWER(:paymentStatusPending) 
                  OR LOWER(bh.payment_status) = LOWER(:paymentStatusPartial))
             
@@ -256,36 +251,6 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             @Param("status") String status
     );
 
-    @Query(value = """
-            SELECT 
-                p.uhid_no AS registrationNo,
-                p.p_mobile_number AS mobileNo,
-                TRIM(p.p_fn || ' ' || COALESCE(p.p_mn,'') || ' ' || p.p_ln) AS patientName,
-                EXTRACT(YEAR FROM AGE(p.p_dob)) AS age,
-                g.gender_name AS gender,
-                r.relation_name AS relationName,
-                v.visit_date AS appointmentDate,
-                bh.net_amount AS billAmount,
-                bh.bill_hd_id AS billingHeaderId,
-                bh.patient_id AS patientId
-            FROM billing_header bh
-            JOIN mas_service_category msc 
-                ON msc.id = bh.service_category_id
-            JOIN patient p 
-                ON p.patient_id = bh.patient_id
-            LEFT JOIN mas_gender g 
-                ON g.id = p.p_gender_id
-            LEFT JOIN mas_relation r 
-                ON r.relation_id = p.p_relation_id
-            LEFT JOIN visit v 
-                ON v.visit_id = bh.visit_id
-            WHERE bh.payment_status = 'n'
-            AND msc.service_cate_code = :serviceCategoryCode
-            """, nativeQuery = true)
-    List<RadiologyBillingProjection> getRadiologyBillingByServiceCategory(
-            @Param("serviceCategoryCode") String serviceCategoryCode
-    );
-
 
     @Query(value = """
             SELECT 
@@ -297,7 +262,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                     COALESCE(p.p_ln,'')
                 ) AS patientName,
             
-                CAST(EXTRACT(YEAR FROM AGE(p.p_dob)) AS TEXT) AS age,
+                p.p_dob AS age,
                 g.gender_name AS genderName,
                 CAST(v.visit_date AS TEXT) AS appointmentDate,
                 bh.net_amount AS netAmount,
