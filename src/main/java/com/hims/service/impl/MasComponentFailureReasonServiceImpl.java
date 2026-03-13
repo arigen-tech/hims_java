@@ -31,7 +31,7 @@ public class MasComponentFailureReasonServiceImpl implements MasComponentFailure
             List<MasComponentFailureReason> list =
                     (flag == 1)
                             ? repository.findByStatusIgnoreCaseOrderByFailureReasonNameAsc("y")
-                            : repository.findAllByOrderByOrderhdIdAscLastUpdateDateDesc();
+                            : repository.findAllByOrderByLastUpdateDateDesc();
 
             return ResponseUtils.createSuccessResponse(
                     list.stream().map(this::toResponse).toList(),
