@@ -10,5 +10,5 @@ import java.util.List;
 public interface MasComponentFailureReasonRepository extends JpaRepository<MasComponentFailureReason,Long> {
     List<MasComponentFailureReason> findByStatusIgnoreCaseOrderByFailureReasonNameAsc(String y);
 
-    List<MasComponentFailureReason> findAllByOrderByOrderhdIdAscLastUpdateDateDesc();
+    List<MasComponentFailureReason> findAllByOrderByLastUpdateDateDesc();
 }

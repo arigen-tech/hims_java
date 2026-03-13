@@ -1,9 +1,8 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.*;
-import com.hims.projection.AppointmentHistoryProjection;
-import com.hims.projection.CancelledAppointmentProjection;
-import com.hims.projection.OpdPreConsultationProjection;
+import com.hims.projection.*;
+import com.hims.response.AppointmentSummaryDoctorResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -433,5 +432,91 @@ WHERE v.visit_status = 'n'
             @Param("cancellationReasonId") Long cancellationReasonId
     );
 
+    /**
+     * Appointment Summary Report - Department-wise and Doctor-wise
+     * Shows appointment statistics grouped by doctor and department
+     *
+     * @param hospitalId Hospital ID (required)
+     * @param departmentId Department ID (optional - null for all departments)
+    // * @param doctorId Doctor ID (optional - null for all doctors)
+     * @param fromDate Start date (optional)
+     * @param toDate End date (optional)
+     * @return List of appointment summary statistics
+     */
+    @Query(value = """
+    SELECT 
+         v.department_id AS departmentId,
+        d.department_name AS departmentName,
+        COUNT(v.visit_id) AS totalCount,
+        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCompete) THEN 1 END) AS completedCount,
+        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCancel) THEN 1 END) AS cancelledCount,
+        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusClosed) THEN 1 END) AS noShowCount,
+        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusPending) THEN 1 END) AS pendingCount
+    FROM visit v
+    LEFT JOIN mas_department d ON d.department_id = v.department_id
+    WHERE v.hospital_id = :hospitalId
+    AND (:departmentId IS NULL OR v.department_id = :departmentId)
+     AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
+      AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
+     AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
+    GROUP BY  v.department_id, d.department_name
+    ORDER BY d.department_name
+""", nativeQuery = true)
+    List<AppointmentSummaryDepartmentProjection> getAppointmentSummaryDepartmentWiseReport(
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("statusPending") String statusPending,
+            @Param("statusCancel") String statusCancel,
+            @Param("statusCompete") String statusCompete,
+            @Param("statusClosed") String statusClosed,
+            @Param("followUpStatus") String followUpStatus,
+            @Param("newStatus") String newStatus
 
+    );
+    /**
+     * Appointment Summary Report - Department-wise and Doctor-wise
+     * Shows appointment statistics grouped by doctor and department
+     *
+     * @param hospitalId Hospital ID (required)
+    // * @param departmentId Department ID (optional - null for all departments)
+     * @param doctorId Doctor ID (optional - null for all doctors)
+     * @param fromDate Start date (optional)
+     * @param toDate End date (optional)
+     * @return List of appointment summary statistics
+     */
+    @Query(value = """
+    SELECT 
+        v.doctor_id AS doctorId,
+        v.doctor_name AS doctorName,
+       
+        COUNT(v.visit_id) AS totalCount,
+       COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCompete) THEN 1 END) AS completedCount,
+        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCancel) THEN 1 END) AS cancelledCount,
+        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusClosed) THEN 1 END) AS noShowCount,
+        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusPending) THEN 1 END) AS pendingCount
+    FROM visit v
+    LEFT JOIN mas_department d ON d.department_id = v.department_id
+    WHERE v.hospital_id = :hospitalId
+      AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
+      AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
+      AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
+      AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
+    GROUP BY v.doctor_id, v.doctor_name
+    ORDER BY  v.doctor_name
+""", nativeQuery = true)
+    List<AppointmentSummaryDoctorProjection> getAppointmentSummaryDoctorWiseReport(
+            @Param("hospitalId") Long hospitalId,
+            @Param("doctorId") Long doctorId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("statusPending") String statusPending,
+            @Param("statusCancel") String statusCancel,
+            @Param("statusCompete") String statusCompete,
+            @Param("statusClosed") String statusClosed,
+             @Param("followUpStatus") String followUpStatus,
+            @Param("newStatus") String newStatus
+
+    );
 }
