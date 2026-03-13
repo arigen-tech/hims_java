@@ -30,6 +30,9 @@ public class AppConstants {
     public static final String VISIT_STATUS_COMPLETED = "Y";
     public static final String VISIT_STATUS_CANCELLED = "C";
     public static final String VISIT_STATUS_CLOSED = "X";
+    public static final String VISIT_TYPE_FOLLOW_UP= "F";
+    public static final String VISIT_TYPE_NEW = "N";
+
     //billing status
     public static final String PAYMENT_PENDING = "P";
     public static final String PAYMENT_PAID = "Y";

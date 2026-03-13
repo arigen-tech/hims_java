@@ -3,7 +3,6 @@ package com.hims.service;
 import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,6 +34,7 @@ public interface RegistrationService {
 
     ApiResponse<List<AvailableTokenSlotResponse>> getAppointmentSlots(Long deptId, Long doctorId, String appointmentDate, Long sessionId, int flag);
 
+    ApiResponse<List<?>> getAppointmentSummaryReport(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate,Integer flag);
 }
 
 

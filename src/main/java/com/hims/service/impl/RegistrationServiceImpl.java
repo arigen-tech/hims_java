@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
@@ -10,6 +11,8 @@ import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.OpdPatientDetailMapper;
 import com.hims.mapper.PatientMapper;
 import com.hims.mapper.VisitMapper;
+import com.hims.projection.AppointmentSummaryDepartmentProjection;
+import com.hims.projection.AppointmentSummaryDoctorProjection;
 import com.hims.projection.CancelledAppointmentProjection;
 import com.hims.projection.PatientProjection;
 import com.hims.request.*;
@@ -21,7 +24,6 @@ import com.hims.service.RegistrationService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import kong.unirest.HttpStatus;
-import lombok.extern.java.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -966,6 +968,123 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         return ResponseUtils.createSuccessResponse(list, new TypeReference<List<AvailableTokenSlotResponse>>() {});
     }
+
+    @Override
+    public ApiResponse<List<?>> getAppointmentSummaryReport(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate, Integer flag
+    ) {
+        try {
+            log.info("Processing appointment summary report with hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}, flag: {}",
+                    hospitalId, departmentId, doctorId, fromDate, toDate, flag);
+            if (flag == 0) {
+                return getAppointmentSummaryDepartmentWiseReport(hospitalId, departmentId, fromDate, toDate);
+            }
+            if (flag == 1) {
+                log.info("Fetching doctor wise appointment summary report for hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}",
+                        hospitalId, departmentId, doctorId, fromDate, toDate);
+
+                return getAppointmentSummaryDoctorWiseReport(hospitalId, doctorId, fromDate, toDate);
+            }
+
+            return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {}, "Invalid flag. Use 0 for department summary and 1 for doctor summary",
+                    HttpStatus.BAD_REQUEST
+            );
+
+        } catch (Exception e) {
+            log.error("Error while fetching appointment summary report", e);
+            return ResponseUtils.createFailureResponse(
+                    List.of(),
+                    new TypeReference<>() {},
+                    "Something went wrong while fetching appointment summary report",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+    private ApiResponse<List<?>> getAppointmentSummaryDepartmentWiseReport(Long hospitalId, Long departmentId, LocalDate fromDate, LocalDate toDate) {
+        try {
+            log.info("Fetching department wise appointment summary report for hospitalId: {}, departmentId: {}, fromDate: {}, toDate: {}",
+                    hospitalId, departmentId, fromDate, toDate);
+            if (hospitalId == null) {
+                return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {}, "hospitalId is required", 400
+                );
+            }
+            List<AppointmentSummaryDepartmentProjection> list = visitRepository.getAppointmentSummaryDepartmentWiseReport(
+                    hospitalId, departmentId, fromDate, toDate,
+                    AppConstants.VISIT_STATUS_PENDING,
+                    AppConstants.VISIT_STATUS_CANCELLED,
+                    AppConstants.VISIT_STATUS_COMPLETED,
+                    AppConstants.VISIT_STATUS_CLOSED,
+                    AppConstants.VISIT_TYPE_FOLLOW_UP,
+                    AppConstants.VISIT_TYPE_NEW);
+
+            List<AppointmentSummaryDepartmentResponse> responseList = list.stream().map(item -> {
+                AppointmentSummaryDepartmentResponse response = new AppointmentSummaryDepartmentResponse();
+                response.setDepartmentId(item.getDepartmentId());
+                response.setDepartmentName(item.getDepartmentName());
+                response.setTotalCount(item.getTotalCount());
+                response.setCompletedCount(item.getCompletedCount());
+                response.setCancelledCount(item.getCancelledCount());
+                response.setNoShowCount(item.getNoShowCount());
+                response.setPendingCount(item.getPendingCount());
+                return response;
+            }).toList();
+            log.info("Department wise appointment summary response prepared successfully. Response count: {}", responseList.size());
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching doctor wise appointment summary report", e);
+            return ResponseUtils.createFailureResponse(
+                    List.of(),
+                    new TypeReference<>() {},
+                    "Something went wrong while fetching doctor wise appointment summary report",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+    private ApiResponse<List<?>> getAppointmentSummaryDoctorWiseReport(Long hospitalId, Long doctorId, LocalDate fromDate, LocalDate toDate) {
+        try {
+            log.info("Processing doctor wise appointment summary report with hospitalId: {}, doctorId: {}, fromDate: {}, toDate: {}",
+                    hospitalId, doctorId, fromDate, toDate);
+
+            if (hospitalId == null) {
+                return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {}, "hospitalId is required", 400
+                );
+            }
+
+            List<AppointmentSummaryDoctorProjection> list = visitRepository.getAppointmentSummaryDoctorWiseReport(
+                    hospitalId, doctorId, fromDate, toDate,
+                    AppConstants.VISIT_STATUS_PENDING,
+                    AppConstants.VISIT_STATUS_CANCELLED,
+                    AppConstants.VISIT_STATUS_COMPLETED,
+                    AppConstants.VISIT_STATUS_CLOSED,
+                    AppConstants.VISIT_TYPE_FOLLOW_UP,
+                    AppConstants.VISIT_TYPE_NEW
+            );
+
+            List<AppointmentSummaryDoctorResponse> responseList = list.stream().map(item -> {
+                AppointmentSummaryDoctorResponse response = new AppointmentSummaryDoctorResponse();
+                response.setDoctorId(item.getDoctorId());
+                response.setDoctorName(item.getDoctorName());
+                response.setTotalCount(item.getTotalCount());
+                response.setCompletedCount(item.getCompletedCount());
+                response.setCancelledCount(item.getCancelledCount());
+                response.setNoShowCount(item.getNoShowCount());
+                response.setPendingCount(item.getPendingCount());
+                return response;
+            }).toList();
+            log.info("Doctor wise appointment summary response prepared successfully. Response count: {}", responseList.size());
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching doctor wise appointment summary report", e);
+            return ResponseUtils.createFailureResponse(
+                    List.of(),
+                    new TypeReference<>() {},
+                    "Something went wrong while fetching doctor wise appointment summary report",
+                    500
+            );
+        }
+    }
+
 
     public static List<AvailableTokenSlotResponse> generateSlotsWithAvailability(int tokenStart,int tokenInterval, int totalTokens, String dayStartTime, String dayEndTime, int timeTakenMin, Set<Long> occupiedTokenNumbers, int flag) {
 

@@ -25,43 +25,43 @@ import java.util.List;
 @Slf4j
 public class DoctorRosterController {
 
-
-    @Autowired
-    DoctorRosterServices doctorRosterServices;
-    @PostMapping("/roster")
-    public ResponseEntity<ApiResponse<AppsetupResponse>> doctorRosterResponse(@RequestBody DoctorRosterRequest request) {
-        return new ResponseEntity<>(doctorRosterServices.doctorRoster(request), HttpStatus.OK);
-    }
-
-
-
-    @GetMapping("/rosterfind")
-    public ResponseEntity<ApiResponse<List<DoctorRosterDTO>>> findDoctorRoster(
-            @RequestParam Long deptId,
-            @RequestParam(required = false) Long doctorId,
-            @RequestParam LocalDate rosterDate,
-            @RequestParam(required = false) Long sessionId
-            ) {
-
-        ApiResponse<List<DoctorRosterDTO>> doctorRosterList = doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate,sessionId);
-
-        return ResponseEntity.ok(doctorRosterList);
-    }
-
-
-    @GetMapping("/rosterfindWithDays")
-    public ResponseEntity<ApiResponse<DoctorRosterResponseDTO>> findDoctorRostersWithDays(
-            @RequestParam Long deptId,
-            @RequestParam(required = false) Long doctorId,
-            @RequestParam String rosterDate) {
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate parsedDate = LocalDate.parse(rosterDate, formatter);
-
-        ApiResponse<DoctorRosterResponseDTO> apiResponse = doctorRosterServices.getDoctorRostersWithDays(deptId, doctorId, parsedDate, false);
-
-        return ResponseEntity.ok(apiResponse);
-    }
+//
+   @Autowired
+  DoctorRosterServices doctorRosterServices;
+//    @PostMapping("/roster")
+//    public ResponseEntity<ApiResponse<AppsetupResponse>> doctorRosterResponse(@RequestBody DoctorRosterRequest request) {
+//        return new ResponseEntity<>(doctorRosterServices.doctorRoster(request), HttpStatus.OK);
+//    }
+//
+//
+//
+//    @GetMapping("/rosterfind")
+//    public ResponseEntity<ApiResponse<List<DoctorRosterDTO>>> findDoctorRoster(
+//            @RequestParam Long deptId,
+//            @RequestParam(required = false) Long doctorId,
+//            @RequestParam LocalDate rosterDate,
+//            @RequestParam(required = false) Long sessionId
+//            ) {
+//
+//        ApiResponse<List<DoctorRosterDTO>> doctorRosterList = doctorRosterServices.getDoctorRoster(deptId, doctorId, rosterDate,sessionId);
+//
+//        return ResponseEntity.ok(doctorRosterList);
+//    }
+//
+//
+//    @GetMapping("/rosterfindWithDays")
+//    public ResponseEntity<ApiResponse<DoctorRosterResponseDTO>> findDoctorRostersWithDays(
+//            @RequestParam Long deptId,
+//            @RequestParam(required = false) Long doctorId,
+//            @RequestParam String rosterDate) {
+//
+//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//        LocalDate parsedDate = LocalDate.parse(rosterDate, formatter);
+//
+//        ApiResponse<DoctorRosterResponseDTO> apiResponse = doctorRosterServices.getDoctorRostersWithDays(deptId, doctorId, parsedDate, false);
+//
+//        return ResponseEntity.ok(apiResponse);
+//    }
 
     @GetMapping("/checkAllAvailableTokens/{flag}")
     public ResponseEntity<ApiResponse<List<AvailableTokenSlotResponse>>> getAllOnlineTokens(
