@@ -1447,13 +1447,11 @@ public class BillingServiceImpl implements BillingService {
         d.setPaymentStatus(safe(detail.getPaymentStatus()));
         d.setRegistrationCost(detail.getRegistrationCost());
         d.setTotal(detail.getNetAmount());
-        // ✅ Include Investigation
         if (detail.getInvestigation() != null) {
             d.setInvestigationId(detail.getInvestigation().getInvestigationId());
             d.setInvestigationName(detail.getInvestigation().getInvestigationName());
         }
 
-        // ✅ Include Package
         if (detail.getPackageField() != null) {
             d.setPackageId(detail.getPackageField().getPackId());
             d.setPackageName(detail.getPackageField().getPackName());
@@ -1465,4 +1463,10 @@ public class BillingServiceImpl implements BillingService {
     private String safe(String value) {
         return value != null ? value : "";
     }
+
+
+
+
+
+
 }
