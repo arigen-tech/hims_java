@@ -29,7 +29,7 @@ public interface RadiologyService {
 
     ApiResponse<Page<RadiologyRequisitionResponse>> getPendingListForRadiologyReport(Long modality, String patientName, String phoneNumber, int page, int size);
 
-    ApiResponse<String> saveDetailsReportForRadiology(RadiologyReportRequest request, String status);
+    ApiResponse<String> saveDetailsReportForRadiology(RadiologyReportRequest request,String status);
 
     ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size);
 }
