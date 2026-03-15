@@ -625,17 +625,19 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public ApiResponse<List<PatientProjection>> searchPatient(PatientSearchReq req) {
+    public ApiResponse<List<Patient>> searchPatient(PatientSearchReq req) {
 
         String mobileNo = cleanStringParameter(req.getMobileNo());
         String patientName = cleanStringParameter(req.getPatientName());
+        String uhidNo = cleanStringParameter(req.getUhidNo());
+        LocalDate appointmentDate = req.getAppointmentDate();
 
-        List<PatientProjection> patientList;
+        List<Patient> patientList;
 
         if (patientName != null) {
-            patientList = patientRepository.searchPatients(mobileNo, patientName);
+            patientList = patientRepository.searchPatients(mobileNo, patientName, uhidNo, appointmentDate);
         } else {
-            patientList = patientRepository.findPatientsByMobile(mobileNo);
+            patientList = patientRepository.searchPatients(mobileNo,patientName, uhidNo);
         }
 
         return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {});
