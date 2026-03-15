@@ -657,14 +657,12 @@ public class RadiologyServiceImpl implements RadiologyService {
         dto.setPatientName(p.getFullName());
         dto.setAge(p.getPatientAge());
         dto.setPhoneNumber(p.getPatientMobileNumber());
-
         dto.setGender(p.getPatientGender() != null ? p.getPatientGender().getGenderName() : null);
         MasSubChargeCode sc = dt.getSubChargecode();
         dto.setModality(sc.getSubName());
         dto.setInvestigationName(dt.getInvestigation() != null ? dt.getInvestigation().getInvestigationName() : null);
         dto.setOrderDate(hd.getOrderDate());
         dto.setOrderTime(hd.getOrderTime());
-        dto.setRadOrderDtId(dt.getId());
         dto.setDepartment(hd.getDepartment() != null ? hd.getDepartment().getDepartmentName() : null);
 
         return dto;
