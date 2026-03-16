@@ -112,8 +112,8 @@ left join hd.patient p
 join dt.subChargecode sc
 join dt.investigation inv
 where hd.hospital.id = :hospitalId
-  and lower(dt.studyStatus) = lower(:status)
-  and lower(dt.reportStatus) = lower(:statuss)
+  and lower(dt.studyStatus) = lower(:studyStatus)
+  and lower(dt.reportStatus) = lower(:reportStatus)
   and (:modalityId is null or sc.subId = :modalityId)
   and (
         :patientName is null
@@ -135,8 +135,8 @@ where hd.hospital.id = :hospitalId
 """)
     Page<RadiologyProjection> getPendingReportRadiologyProjection(
             @Param("hospitalId") Long hospitalId,
-            @Param("status") String status,
-            @Param("statuss") String statuss,
+            @Param("studyStatus") String studyStatus,
+            @Param("reportStatus") String reportStatus,
             @Param("modalityId") Long modalityId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,
@@ -167,7 +167,7 @@ left join hd.patient p
 join dt.subChargecode sc
 join dt.investigation inv
 where hd.hospital.id = :hospitalId
-  and lower(dt.studyStatus) = lower(:status)
+  and lower(dt.studyStatus) = lower(:studyStatus)
   and (:modalityId is null or sc.subId = :modalityId)
   and (
         :patientName is null
@@ -189,7 +189,7 @@ where hd.hospital.id = :hospitalId
 """)
     Page<RadiologyProjection> getRadiologyPACSStudyList(
             @Param("hospitalId") Long hospitalId,
-            @Param("status") String status,
+            @Param("studyStatus") String studyStatus,
             @Param("modalityId") Long modalityId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,

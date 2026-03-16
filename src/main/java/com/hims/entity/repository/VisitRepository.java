@@ -456,8 +456,8 @@ WHERE v.visit_status = 'n'
     LEFT JOIN mas_department d ON d.department_id = v.department_id
     WHERE v.hospital_id = :hospitalId
     AND (:departmentId IS NULL OR v.department_id = :departmentId)
-     AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
-      AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
+     AND (CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
+      AND (CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
      AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
     GROUP BY  v.department_id, d.department_name
     ORDER BY d.department_name
