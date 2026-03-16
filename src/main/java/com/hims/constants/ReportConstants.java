@@ -20,6 +20,7 @@ public final class ReportConstants {
     public static final String JASPER_BASE_PATH_OPD = "/jasperReport/OPD/";
     public static final String JASPER_BASE_PATH_STORE = "/jasperReport/Store/";
     public static final String JASPER_BASE_PATH_RADIOLOGY = "/jasperReport/Radiology/";
+    public static final String JASPER_BASE_PATH_REGISTRATION = "/jasperReport/Registration/";
 
     public static final String ASSET_LOGO = "/Assets/arigen_health.png";
 
@@ -107,4 +108,18 @@ public final class ReportConstants {
     public static final String RADIOLOGY_JASPER = "radiology_report";
     public static final String RADIOLOGY_REPORT = "RadiologyReport";
 
+    public static final String OPD_REGISTRATION_JASPER = "OPD_register_report";
+    public static final String OPD_REGISTRATION_REPORT = "OPDRegisterReport";
+
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_JASPER = "Appointment_summary_department";
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_REPORT = "AppointmentSummaryDepartment";
+
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_JASPER_DASHED = "Appointment_summary_department_dashed";
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_REPORT_DASHED = "AppointmentSummaryDepartmentDashed";
+
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_JASPER = "Appointment_summary_doctor";
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_REPORT = "AppointmentSummaryDoctor";
+
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_JASPER_DASHED = "Appointment_summary_doctor_dashed";
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_REPORT_DASHED = "AppointmentSummaryDoctorDashed";
 }
