@@ -218,9 +218,9 @@ public class RegistrationController {
             @RequestParam Long hospitalId,
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) Long doctorId,
-            @RequestParam(required = false)
+            @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false)
+            @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam Integer flag) {
         log.info("Received getAppointmentSummaryReport request with hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}, flag: {}",
