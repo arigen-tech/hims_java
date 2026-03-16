@@ -312,7 +312,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         BillingDetail billingDetail = new BillingDetail();
         billingDetail.setBillingHd(bhdId);
         billingDetail.setBillHd(bhdId);
-        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad));//pass from property file..
+        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad));//pass from property file
 
         billingDetail.setItemName(dtId.getInvestigation().getInvestigationName()) ;  // investigation or packeg  name to be store
         billingDetail.setQuantity(1);//default
@@ -353,7 +353,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         BillingDetail billingDetail = new BillingDetail();
         billingDetail.setBillingHd(bhdId);
         billingDetail.setBillHd(bhdId);
-        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad));//pass from property file..
+        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad));//pass from property file.
 
         billingDetail.setItemName(dtId.getPackName()) ;  // investigation or packeg  name to be store
         billingDetail.setQuantity(1);//default
@@ -523,20 +523,20 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Override
     public ApiResponse<String> cancelOrCompleteInvestigationRadiology(Long id, String status) {
         try{
-        log.info("pendingInvestigationRadiology called with id={}, status={}", id, status);
-        Optional<RadOrderDt> radOrderDt=radOrderDtRepository.findById(id);
-        RadOrderDt radDt=radOrderDt.get();
-        radDt.setStudyStatus(status);
-        radOrderDtRepository.save(radDt);
-        log.info("Study status updated successfully for id={} newStatus={}",
-                id, radDt.getStudyStatus());
-        return ResponseUtils.createSuccessResponse("status change successfully", new TypeReference<>() {});
-    } catch (Exception e) {
+            log.info("pendingInvestigationRadiology called with id={}, status={}", id, status);
+            Optional<RadOrderDt> radOrderDt=radOrderDtRepository.findById(id);
+            RadOrderDt radDt=radOrderDt.get();
+            radDt.setStudyStatus(status);
+            radOrderDtRepository.save(radDt);
+            log.info("Study status updated successfully for id={} newStatus={}",
+                    id, radDt.getStudyStatus());
+            return ResponseUtils.createSuccessResponse("status change successfully", new TypeReference<>() {});
+        } catch (Exception e) {
             log.error("Error while updating study status for id={}, status={}", id, status, e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {}, "Internal Server Error", 500
             );
-    }
+        }
     }
     @Override
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingListForRadiologyReport(
@@ -562,23 +562,23 @@ public class RadiologyServiceImpl implements RadiologyService {
             );
         }
     }
-     @Transactional
+    @Transactional
     @Override
     public ApiResponse<String> saveDetailsReportForRadiology(RadiologyReportRequest request,String status) {
-         try {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
-            return ResponseUtils.createNotFoundResponse("current user not found", 404
-            );
-        }
-        RadStudyReport radStudyReport = new RadStudyReport();
-        radStudyReport.setReportDesc(request.getReportDesc());
-        RadOrderDt orderDt = radOrderDtRepository.findById(request.getRadOrderDtId()).orElse(null);
-        if (orderDt == null) {
-            return ResponseUtils.createNotFoundResponse(
-                    "RadOrderDt not found for id: " + request.getRadOrderDtId(), 404
-            );
-        }
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createNotFoundResponse("current user not found", 404
+                );
+            }
+            RadStudyReport radStudyReport = new RadStudyReport();
+            radStudyReport.setReportDesc(request.getReportDesc());
+            RadOrderDt orderDt = radOrderDtRepository.findById(request.getRadOrderDtId()).orElse(null);
+            if (orderDt == null) {
+                return ResponseUtils.createNotFoundResponse(
+                        "RadOrderDt not found for id: " + request.getRadOrderDtId(), 404
+                );
+            }
             radStudyReport.setRadOrderDt(orderDt);
             // radStudyReport.setReportStatus();
             radStudyReport.setLastChgBy(currentUser.getFullName());
@@ -592,14 +592,14 @@ public class RadiologyServiceImpl implements RadiologyService {
             orderDt.setLastChgBy(currentUser.getFullName());
             return ResponseUtils.createSuccessResponse(
                     "Radiology result saved successfully", new TypeReference<>() {});
-         } catch (Exception e) {
-             log.error("Error while saving radiology report", e);
-             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                     "Internal Server Error", 500
-             );
-         }
-
+        } catch (Exception e) {
+            log.error("Error while saving radiology report", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Internal Server Error", 500
+            );
         }
+
+    }
 
     @Override
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size) {
@@ -668,4 +668,4 @@ public class RadiologyServiceImpl implements RadiologyService {
         return dto;
     }
 
-    }
+}

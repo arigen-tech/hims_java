@@ -49,10 +49,14 @@ public class BillingController {
     @GetMapping("/CatagoryWiseBilling/{serviceCategoryCode}")
     public ApiResponse<?> getBillingPatientsByCatagory(
             @PathVariable String serviceCategoryCode,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) String registrationNo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
-        log.info("Get Pending Billing API called");
-        return billingService.getBillingPatientsByCatagory(serviceCategoryCode, page, size);
+
+        return billingService.getBillingPatientsByCatagory(
+                serviceCategoryCode, patientName, mobileNo, registrationNo, page, size);
     }
 
     @GetMapping("/patientBillingDetails/{patientId}")

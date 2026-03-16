@@ -6,10 +6,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.BillingException;
 import com.hims.exception.SDDException;
-import com.hims.projection.BillingHeaderResponseProjection;
-import com.hims.projection.OpdBillingProjection;
-import com.hims.projection.PatientProjection;
-import com.hims.projection.VisitBillingProjection;
+import com.hims.projection.*;
 import com.hims.request.InvestigationandPackegBillStatus;
 import com.hims.request.PaymentUpdateRequest;
 import com.hims.response.*;
@@ -98,6 +95,15 @@ public class BillingServiceImpl implements BillingService {
     @Value("${serviceCategoryOPD}")
     private String opdServiceCatagoryCode;
 
+    @Value("${serviceCategoryLab}")
+    private String labServiceCatagoryCode;
+
+    @Value("${serviceCategoryRegistration}")
+    private String regServiceCatagoryCode;
+
+    @Value("${serviceCategoryRad}")
+    private String radioServiceCatagoryCode;
+
 
     @Override
     @Transactional
@@ -106,7 +112,7 @@ public class BillingServiceImpl implements BillingService {
         String orderNum = createInvoices();
         OpdBillingPaymentResponse response = new OpdBillingPaymentResponse();
         User currentUser = authUtil.getCurrentUser();
-        BigDecimal tax=BigDecimal.ZERO;
+        BigDecimal tax = BigDecimal.ZERO;
         BigDecimal registrationCost = BigDecimal.ZERO;
 
         Long policyIdToApply = opdPaid;
@@ -143,7 +149,7 @@ public class BillingServiceImpl implements BillingService {
             );
 
             //finding the policy
-            BillingPolicyMaster policy = FindCorrectBillingPolicy(lastVisitOpt,visit);
+            BillingPolicyMaster policy = FindCorrectBillingPolicy(lastVisitOpt, visit);
             header.setBillingPolicy(policy);
 
             Optional<MasServiceOpd> serviceOpd = masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatIdAndCurrentDate(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory, currentDate);
@@ -157,16 +163,16 @@ public class BillingServiceImpl implements BillingService {
                     }
                 }
                 //policy Discount
-                if(header.getBillingPolicy()!=null){
+                if (header.getBillingPolicy() != null) {
                     BigDecimal policyDiscount = header.getBillingPolicy().getDiscountPercentage();
                     if (policyDiscount != null) {
                         totalDiscount = serviceOpd.get().getBaseTariff().multiply(policyDiscount.divide(BigDecimal.valueOf(100)));
                     }
                 }
 
-                if(visit.getVisitType().equalsIgnoreCase("N")) {
+                if (visit.getVisitType().equalsIgnoreCase("N")) {
                     MasServiceCategory masServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRegistration);
-                    if(masServiceCategory!=null){
+                    if (masServiceCategory != null) {
                         registrationCost = masServiceCategory.getRegistrationCost();
                     }
                 }
@@ -180,13 +186,13 @@ public class BillingServiceImpl implements BillingService {
                 header.setNetAmount(total.add(registrationCost));
                 header.setTaxTotal(tax);
                 header.setTotalPaid(BigDecimal.valueOf(0));
-            }else {
+            } else {
                 throw new BillingException("MasServiceOPD or Tariff is not defined yet");
             }
             header.setDiscountAmount(totalDiscount);
-            if(visit.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
+            if (visit.getHospital().getAppCostApplicable().equalsIgnoreCase("n")) {
                 header.setPaymentStatus("y");
-            }else{
+            } else {
                 header.setPaymentStatus("n");
             }
             header.setPaymentStatus("n");
@@ -205,7 +211,7 @@ public class BillingServiceImpl implements BillingService {
             BillingHeader savedHeader = billingHeaderRepository.save(header);
             response.setHeader(savedHeader);
             //only for new patient we add new details with same header
-            if(visit.getVisitType().equalsIgnoreCase("N")){
+            if (visit.getVisitType().equalsIgnoreCase("N")) {
                 MasServiceCategory masServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRegistration);
                 if (savedHeader != null) {
                     BillingDetail detail = new BillingDetail();
@@ -213,9 +219,9 @@ public class BillingServiceImpl implements BillingService {
                     detail.setServiceCategory(masServiceCategory);
                     detail.setServiceId(0L);
                     detail.setItemName("");
-                    if(visit.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
+                    if (visit.getHospital().getAppCostApplicable().equalsIgnoreCase("n")) {
                         detail.setPaymentStatus("y");
-                    }else{
+                    } else {
                         detail.setPaymentStatus("n");
                     }
                     detail.setInvestigation(null);
@@ -244,9 +250,9 @@ public class BillingServiceImpl implements BillingService {
                 detail.setServiceCategory(serviceCategory);
                 detail.setServiceId(0L);
                 detail.setItemName("");
-                if(visit.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
+                if (visit.getHospital().getAppCostApplicable().equalsIgnoreCase("n")) {
                     detail.setPaymentStatus("y");
-                }else{
+                } else {
                     detail.setPaymentStatus("n");
                 }
 
@@ -293,7 +299,7 @@ public class BillingServiceImpl implements BillingService {
     }
 
     public String createInvoices() {
-        return randomNumGenerator.generateOrderNumber("BILL",true,true);
+        return randomNumGenerator.generateOrderNumber("BILL", true, true);
     }
 
     private BillingPolicyMaster FindCorrectBillingPolicy(Optional<Visit> lastVisitOpt, Visit currentVisit) {
@@ -343,32 +349,33 @@ public class BillingServiceImpl implements BillingService {
                             "OPD PATIENT"
                     );
 
-//            List<PendingBillingResponse> billingResponses = billingHeaders.stream()
-//                    .map(this::mapToResponse)
-//                    .collect(Collectors.toList());
-//            log.debug("Mapped BillingHeader responses count={}",
-//                    billingResponses.size());
+            List<PendingBillingResponse> billingResponses = billingHeaders.stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+            log.debug("Mapped BillingHeader responses count={}",
+                    billingResponses.size());
 
-//            List<PendingBillingResponse> orderResponses = orderHeaders.stream()
-//                    .map(this::mapOrderToResponse)
-//                    .collect(Collectors.toList());
-//            log.debug("Mapped OrderHeader responses count={}",
-//                    orderResponses.size());
+            List<PendingBillingResponse> orderResponses = orderHeaders.stream()
+                    .map(this::mapOrderToResponse)
+                    .collect(Collectors.toList());
+            log.debug("Mapped OrderHeader responses count={}",
+                    orderResponses.size());
 
             List<PendingBillingResponse> combinedList = new ArrayList<>();
 
-//            combinedList.addAll(billingResponses);
-//            combinedList.addAll(orderResponses);
+            combinedList.addAll(billingResponses);
+            combinedList.addAll(orderResponses);
             log.debug("Combined pending billing list count={}",
                     combinedList.size());
 
-//            combinedList = mergeConsultation(combinedList);
+            combinedList = mergeConsultation(combinedList);
             log.info("Pending billing records fetched successfully, finalCount={}",
                     combinedList.size());
 
             return ResponseUtils.createSuccessResponse(
                     combinedList,
-                    new TypeReference<List<PendingBillingResponse>>() {}
+                    new TypeReference<List<PendingBillingResponse>>() {
+                    }
             );
         } catch (Exception e) {
             log.error("Error occurred while fetching pending billing data", e);
@@ -376,25 +383,27 @@ public class BillingServiceImpl implements BillingService {
             System.err.println("Error in getPendingBilling: " + e.getMessage());
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(new ArrayList<>(),
-                    new TypeReference<List<PendingBillingResponse>>() {},
+                    new TypeReference<List<PendingBillingResponse>>() {
+                    },
                     "Error fetching pending billing data", 500);
         }
     }
 
     @Override
-    public ApiResponse<?> getBillingPatientsByCatagory(String serviceCategoryCode, int page, int size) {
+    public ApiResponse<?> getBillingPatientsByCatagory(
+            String serviceCategoryCode,
+            String patientName,
+            String mobileNo,
+            String registrationNo,
+            int page,
+            int size) {
         try {
-            if (page < 0 || size <= 0) {
-                return ResponseUtils.createFailureResponse(
-                        null,
-                        new TypeReference<Object>() {},
-                        "page must be >= 0 and size must be > 0",
-                        400
-                );
-            }
+
 
             MasServiceCategory serviceCategory =
                     masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
+
+            Pageable pageable = PageRequest.of(page, size);
 
             if (serviceCategory == null) {
                 return ResponseUtils.createNotFoundResponse("Service category not found", 404);
@@ -405,8 +414,12 @@ public class BillingServiceImpl implements BillingService {
             // OPD
             if (opdServiceCatagoryCode.equalsIgnoreCase(serviceCategoryCode)) {
                 List<OpdBillingProjection> billingHeaders =
-                        billingHeaderRepository.findPendingBillingByServiceCategories(categoryId);
-
+                        billingHeaderRepository.findPendingBillingByServiceCategories(
+                                categoryId,
+                                patientName,
+                                mobileNo,
+                                registrationNo
+                        );
                 Map<String, List<OpdBillingProjection>> grouped =
                         billingHeaders.stream()
                                 .collect(Collectors.groupingBy(
@@ -419,22 +432,19 @@ public class BillingServiceImpl implements BillingService {
 
                 List<OpdPendingBillingResponse> response = grouped.values().stream()
                         .map(list -> {
-
                             OpdPendingBillingResponse r = new OpdPendingBillingResponse();
-
                             r.setVisitIds(
                                     list.stream()
                                             .map(OpdBillingProjection::getVisitId)
                                             .collect(Collectors.toList())
                             );
-
                             r.setBillingHdId(null);
 
                             OpdBillingProjection first = list.get(0);
                             r.setPatientId(first.getPatientId());
                             r.setRegistrationNo(first.getRegistrationNo());
                             r.setPatientName(first.getPatientName());
-                            r.setAge(first.getAge());
+                            r.setAge(ageCalculator(first.getAge()));
                             r.setGender(first.getGender());
                             r.setRelation(first.getRelation());
                             r.setBillingType(first.getBillingType());
@@ -452,7 +462,6 @@ public class BillingServiceImpl implements BillingService {
                         })
                         .toList();
 
-                Pageable pageable = PageRequest.of(page, size);
 
                 int start = (int) pageable.getOffset();
                 int end = Math.min(start + pageable.getPageSize(), response.size());
@@ -465,13 +474,105 @@ public class BillingServiceImpl implements BillingService {
 
                 return ResponseUtils.createSuccessResponse(
                         pageResult,
-                        new TypeReference<Page<OpdPendingBillingResponse>>() {}
+                        new TypeReference<Page<OpdPendingBillingResponse>>() {
+                        }
+                );
+            } else if (labServiceCatagoryCode.equalsIgnoreCase(serviceCategoryCode)) {
+
+                Page<LabBillingProjection> projections =
+                        billingHeaderRepository.findPendingBillingByCategoryId(
+                                serviceCategoryCode,
+                                patientName,
+                                mobileNo,
+                                registrationNo,
+                                pageable,
+                                LabBillingProjection.class
+                        );
+
+                if (projections == null || projections.isEmpty()) {
+                    return ResponseUtils.createSuccessResponse(
+                            Page.empty(pageable),
+                            new TypeReference<Page<LabBillingPatientResponse>>() {
+                            }
+                    );
+                }
+
+                List<LabBillingPatientResponse> responseList =
+                        projections.getContent().stream().map(p -> {
+
+                            LabBillingPatientResponse response = new LabBillingPatientResponse();
+
+                            response.setRegistrationNo(p.getRegistrationNo());
+                            response.setMobileNo(p.getMobileNumber());
+                            response.setAppointmentDate(p.getAppointmentDate());
+                            response.setPatientName(p.getPatientName());
+                            response.setAge(ageCalculator(p.getAge()));
+                            response.setGender(p.getGenderName());
+                            response.setBillingType(p.getServiceCategoryName());
+                            response.setBillingHeaderId(p.getBillingHeaderId());
+                            response.setDgOrderHdId(p.getOrderId());
+                            response.setBillAmount(p.getNetAmount());
+                            response.setPatientId(p.getPatientId());
+
+                            return response;
+
+                        }).toList();
+
+                Page<LabBillingPatientResponse> pageResult =
+                        new PageImpl<>(responseList, pageable, projections.getTotalElements());
+
+                return ResponseUtils.createSuccessResponse(
+                        pageResult,
+                        new TypeReference<Page<LabBillingPatientResponse>>() {
+                        }
+                );
+            }
+            if (radioServiceCatagoryCode.equalsIgnoreCase(serviceCategoryCode)) {
+
+                Page<RadiologyBillingProjection> billingHeaders =
+                        billingHeaderRepository.findPendingBillingByCategoryId(
+                                serviceCategoryCode,
+                                patientName,
+                                mobileNo,
+                                registrationNo,
+                                pageable,
+                                RadiologyBillingProjection.class
+                        );
+
+                List<RadiologyBillingResponse> response = billingHeaders.getContent()
+                        .stream()
+                        .map(p -> {
+                            RadiologyBillingResponse r = new RadiologyBillingResponse();
+
+                            r.setBillingHeaderId(p.getBillingHeaderId());
+                            r.setPatientId(p.getPatientId());
+                            r.setRegistrationNo(p.getRegistrationNo());
+                            r.setPatientName(p.getPatientName());
+                            r.setAge(ageCalculator(p.getAge()));
+                            r.setGender(p.getGenderName());
+                            r.setBillingType(p.getServiceCategoryName());
+                            r.setMobileNo(p.getMobileNumber());
+                            r.setAppointmentDate(p.getAppointmentDate());
+                            r.setBillAmount(p.getNetAmount());
+
+                            return r;
+                        }).toList();
+
+                Page<RadiologyBillingResponse> pageResult =
+                        new PageImpl<>(response, pageable, billingHeaders.getTotalElements());
+
+                return ResponseUtils.createSuccessResponse(
+                        pageResult,
+                        new TypeReference<Page<RadiologyBillingResponse>>() {
+                        }
                 );
             }
 
+
             return ResponseUtils.createFailureResponse(
                     null,
-                    new TypeReference<Object>() {},
+                    new TypeReference<Object>() {
+                    },
                     "Invalid service category",
                     400
             );
@@ -480,7 +581,8 @@ public class BillingServiceImpl implements BillingService {
             log.error("Error while fetching billing patients by category: {}", serviceCategoryCode, e);
             return ResponseUtils.createFailureResponse(
                     null,
-                    new TypeReference<Object>() {},
+                    new TypeReference<Object>() {
+                    },
                     "Something went wrong while fetching billing patients",
                     500
             );
@@ -490,10 +592,13 @@ public class BillingServiceImpl implements BillingService {
     @Override
     public ApiResponse<PatientAppointmentResponse> getBillingDetails(Long patientId) {
         log.info("Fetching billing details for patientId={}", patientId);
+        String visitStatus = AppConstants.VISIT_STATUS_PENDING;
+        String paymentStatusPending = AppConstants.PAYMENT_PARTIAL_PENDING;
+        String paymentStatusPartial = AppConstants.PAYMENT_NOT_PAID;
         try {
             PatientProjection patient = billingHeaderRepository.getPatientDetails(patientId);
 
-            List<VisitBillingProjection> visits = billingHeaderRepository.getVisitBillingDetails(patientId);
+            List<VisitBillingProjection> visits = billingHeaderRepository.getVisitBillingDetails(patientId, regServiceCatagoryCode, visitStatus, paymentStatusPending, paymentStatusPartial);
 
             PatientAppointmentResponse response = new PatientAppointmentResponse();
 
@@ -517,7 +622,7 @@ public class BillingServiceImpl implements BillingService {
                 block.setConsultedDoctor(v.getConsultedDoctor());
                 block.setSessionName(v.getSessionName());
                 block.setVisitDate(v.getVisitDate());
-
+                block.setBillingHdId(v.getBillingHdId());
                 block.setTariff(v.getTariff());
                 block.setDiscount(v.getDiscountAmount());
                 block.setTaxPercent(v.getTaxPercent());
@@ -542,7 +647,8 @@ public class BillingServiceImpl implements BillingService {
                 log.warn("No billing records found for patientId={}", patientId);
                 return ResponseUtils.createFailureResponse(
                         null,
-                        new TypeReference<PatientAppointmentResponse>() {},
+                        new TypeReference<PatientAppointmentResponse>() {
+                        },
                         "No billing records found for the patient",
                         404
                 );
@@ -552,13 +658,15 @@ public class BillingServiceImpl implements BillingService {
             log.info("Billing details fetched successfully for patientId={}", patientId);
             return ResponseUtils.createSuccessResponse(
                     response,
-                    new TypeReference<PatientAppointmentResponse>() {}
+                    new TypeReference<PatientAppointmentResponse>() {
+                    }
             );
         } catch (Exception e) {
             log.error("Error occurred while fetching billing details for patientId={}", patientId, e);
             return ResponseUtils.createFailureResponse(
                     null,
-                    new TypeReference<PatientAppointmentResponse>() {},
+                    new TypeReference<PatientAppointmentResponse>() {
+                    },
                     "Error fetching billing details",
                     500
             );
@@ -582,21 +690,23 @@ public class BillingServiceImpl implements BillingService {
                     : "%" + registrationNo.trim().toLowerCase() + "%";
 
             List<BillingHeaderResponseProjection> response = billingHeaderRepository.searchBillingStatus(
-                            patientNameLike,
-                            phoneNoLike,
-                            registrationNoLike,AppConstants.STATUS_Y
-                    );
+                    patientNameLike,
+                    phoneNoLike,
+                    registrationNoLike, AppConstants.STATUS_Y
+            );
 
             return ResponseUtils.createSuccessResponse(
                     response,
-                    new TypeReference<List<BillingHeaderResponseProjection>>() {}
+                    new TypeReference<List<BillingHeaderResponseProjection>>() {
+                    }
             );
 
         } catch (Exception e) {
             log.error("Error while searching billing status", e);
             return ResponseUtils.createFailureResponse(
                     null,
-                    new TypeReference<List<BillingHeaderResponseProjection>>() {},
+                    new TypeReference<List<BillingHeaderResponseProjection>>() {
+                    },
                     "Something went wrong while searching billing status",
                     500
             );
@@ -628,7 +738,7 @@ public class BillingServiceImpl implements BillingService {
             }
             List<BillingDetail> details = billingDetailRepository.findByBillHdId(Long.valueOf(billHeaderId));
             if (!details.isEmpty()) {
-                for(BillingDetail bdt: details){
+                for (BillingDetail bdt : details) {
                     bdt.setChargeCost(bdt.getNetAmount());
                     bdt.setPaymentStatus("y");
                 }
@@ -671,7 +781,8 @@ public class BillingServiceImpl implements BillingService {
         res.setMsg("Success");
         res.setPaymentStatus("y");
         res.setBillPayments(paymentItemList);
-        return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {
+        });
     }
 
 
@@ -681,7 +792,7 @@ public class BillingServiceImpl implements BillingService {
         PaymentResponse res = new PaymentResponse();
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
-        try{
+        try {
 
             //Payment table data inserted
             // User currentUser = authUtil.getCurrentUser();
@@ -815,16 +926,19 @@ public class BillingServiceImpl implements BillingService {
         } catch (SDDException e) {
             log.error("SDDException occurred during payment update", e);
             e.printStackTrace();
-            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
+            }, e.getMessage(), e.getStatus());
         } catch (Exception e) {
             log.error("Unexpected error during payment status update", e);
 
             e.printStackTrace();
-            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
+            }, "Internal Server Error", 500);
         }
         res.setMsg("Success");
         log.info("Payment status update completed successfully");
-        return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
+        return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {
+        });
     }
 
     @Override
@@ -833,7 +947,7 @@ public class BillingServiceImpl implements BillingService {
         PaymentResponse res = new PaymentResponse();
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
-        try{
+        try {
 
             //Payment table data inserted
             // User currentUser = authUtil.getCurrentUser();
@@ -866,12 +980,12 @@ public class BillingServiceImpl implements BillingService {
                             pkgId, billHdId);
 
                     billingDetailRepository.updatePaymentStatuPackeg("y", pkgId, billHdId);
-                    radOrderDtRepository.updatePaymentStatusPackegDt("y",(long) pkgId,(long) billHdId);
+                    radOrderDtRepository.updatePaymentStatusPackegDt("y", (long) pkgId, (long) billHdId);
                 }
             }
             boolean fullyPaid = true;
             boolean partialPaid = false;
-            List<RadOrderDt> dtList = radOrderDtRepository.findUnbilledByBillingHdId((long)request.getBillHeaderId());
+            List<RadOrderDt> dtList = radOrderDtRepository.findUnbilledByBillingHdId((long) request.getBillHeaderId());
             log.debug("Fetched OrderDt count={}", dtList.size());
             for (RadOrderDt orderDt : dtList) {
                 if (orderDt.getBillingStatus().equalsIgnoreCase("n")) {
@@ -922,189 +1036,191 @@ public class BillingServiceImpl implements BillingService {
         } catch (SDDException e) {
             log.error("SDDException occurred during payment update", e);
             e.printStackTrace();
-            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, e.getMessage(), e.getStatus());
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
+            }, e.getMessage(), e.getStatus());
         } catch (Exception e) {
             log.error("Unexpected error during payment status update", e);
 
             e.printStackTrace();
-            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {}, "Internal Server Error", 500);
+            return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
+            }, "Internal Server Error", 500);
         }
         res.setMsg("Success");
         log.info("Payment status update completed successfully");
-        return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {});
+        return ResponseUtils.createSuccessResponse(res, new TypeReference<PaymentResponse>() {
+        });
     }
 
 
+    // Your existing mapToResponse method (for BillingHeader)
+    private PendingBillingResponse mapToResponse(BillingHeader header) {
+        PendingBillingResponse response = new PendingBillingResponse();
+        response.setBillinghdid(header.getId());
+        response.setPatientName(safe(header.getPatientDisplayName()));
+        response.setAddress(header.getPatientAddress());
+        response.setVisitId(header.getVisit().getId());
 
-//    // Your existing mapToResponse method (for BillingHeader)
-//    private PendingBillingResponse mapToResponse(BillingHeader header) {
-//        PendingBillingResponse response = new PendingBillingResponse();
-//        response.setBillinghdid(header.getId());
-//        response.setPatientName(safe(header.getPatientDisplayName()));
-//        response.setAddress(header.getPatientAddress());
-//        response.setVisitId(header.getVisit().getId());
-//
-//
-//        if (header.getVisit() != null && header.getVisit().getPatient() != null) {
-//            response.setPatientid(header.getVisit().getPatient().getId());
-//            response.setPatientUhid(header.getVisit().getPatient().getUhidNo());
-//            response.setTokenNo(header.getVisit().getTokenNo());
-//            String sessionName = Optional.ofNullable(header.getVisit())
-//                    .map(v -> v.getSession())
-//                    .map(s -> s.getSessionName())
-//                    .orElse(null);
-//
-//            response.setSessionName(sessionName);
-//            response.setVisitType(header.getVisit().getVisitType());
-//            response.setVisitDate(header.getVisit().getVisitDate());
-//
-//        } else {
-//            response.setPatientid(null);
-//        }
-//        if (header.getVisit() != null && header.getVisit().getPatient() != null) {
-//            response.setMobileNo(safe(header.getVisit().getPatient().getPatientMobileNumber()));
-//        } else {
-//            response.setMobileNo("");
-//        }
-//        if (header.getVisit() != null && header.getVisit().getPatient() != null &&
-//                header.getVisit().getPatient().getPatientDob() != null) {
-//            String ageStr = ageCalculator(header.getVisit().getPatient().getPatientDob());
-//            response.setAge(ageStr);
-//        } else {
-//            response.setAge("");
-//        }
-//        response.setSex(safe(header.getPatientGender()));
-//        if (header.getVisit() != null && header.getVisit().getPatient() != null &&
-//                header.getVisit().getPatient().getPatientRelation() != null) {
-//            response.setRelation(safe(header.getVisit().getPatient().getPatientRelation().getRelationName()));
-//        } else {
-//            response.setRelation("");
-//        }
-//        response.setConsultedDoctor(safe(header.getReferredBy()));
-//        if (header.getVisit() != null && header.getVisit().getDepartment() != null) {
-//            response.setDepartment(safe(header.getVisit().getDepartment().getDepartmentName()));
-//        } else {
-//            response.setDepartment("");
-//        }
-//        if (header.getServiceCategory() != null) {
-//            response.setBillingType(safe(header.getServiceCategory().getServiceCatName()));
-//        } else {
-//            response.setBillingType("");
-//        }
-//
-//        response.setFlag("Direct");
-//        response.setAmount(
-//                header.getNetAmount() != null
-//                        ? header.getNetAmount().subtract(
-//                        header.getTotalPaid() != null ? header.getTotalPaid() : BigDecimal.ZERO
-//                )
-//                        : BigDecimal.ZERO
-//        );
-//        response.setBillingStatus(safe(header.getPaymentStatus()));
-//        response.setOrderhdid(null);
-//        response.setOrderhdPaymentStatus(null);
-//
-//            List<BillingDetail> detailsList = billingDetailRepository.findByBillHdIdAndPaymentStatusIn(
-//                    header.getId(), List.of("n", "p")
-//            );
-//
-//        Optional<BillingDetail> registrationServiceOpt = detailsList.stream()
-//                .filter(bd -> bd.getServiceCategory() != null &&
-//                        "Registration Service".equalsIgnoreCase(bd.getServiceCategory().getServiceCatName()))
-//                .findFirst();
-//        BigDecimal registrationCost = registrationServiceOpt
-//                .map(bd -> bd.getServiceCategory().getRegistrationCost()) // Replace with actual method to get the value you need
-//                .orElse(null);
-//
-//        List<BillingDetailResponse> details = detailsList.stream()
-//                .filter(bd -> bd.getServiceCategory() == null ||    // keep if null
-//                        ! "Registration Service".equalsIgnoreCase(
-//                                bd.getServiceCategory().getServiceCatName()
-//                        )
-//                )
-//                .map(this::mapToDetailResponse)
-//                .collect(Collectors.toList());
-//        if(header.getBillingPolicy()!=null){
-//            response.setBillingPolicyId(header.getBillingPolicy().getBillingPolicyId());
-//        }
-//        response.setRegistrationCost(registrationCost);
-//        response.setDetails(details);
-//        return response;
-//    }
 
-//    // ✅ NEW METHOD: Map OrderHd to PendingBillingResponse
-//    private PendingBillingResponse mapOrderToResponse(DgOrderHd orderHd) {
-//        PendingBillingResponse response = new PendingBillingResponse();
-//        response.setOrderhdid(orderHd.getId());
-//        response.setOrderhdPaymentStatus(safe(orderHd.getPaymentStatus()));
-//        response.setSource(safe(orderHd.getSource())); // Add source to response
-//
-//        // Set billing fields as null for order records
-//        response.setBillinghdid(null);
-//        response.setBillingStatus(null);
-//
-//        response.setFlag("OPD");
-//
-//        // ✅ Patient information
-//        if (orderHd.getPatientId() != null) {
-//            response.setPatientid(orderHd.getPatientId().getId());
-//            response.setPatientName(safe(
-//                    orderHd.getPatientId().getPatientFn() + " " +
-//                            safe(orderHd.getPatientId().getPatientMn()) + " " +
-//                            safe(orderHd.getPatientId().getPatientLn())
-//            ).trim());
-//            response.setMobileNo(safe(orderHd.getPatientId().getPatientMobileNumber()));
-//            response.setAddress(safe(orderHd.getPatientId().getPatientAddress1()) + " " +
-//                    safe(orderHd.getPatientId().getPatientAddress2()));
-//
-//            // ✅ Age calculation
-//            if (orderHd.getPatientId().getPatientDob() != null) {
-//                String ageStr = ageCalculator(orderHd.getPatientId().getPatientDob());
-//                response.setAge(ageStr);
-//            } else {
-//                response.setAge("");
-//            }
-//
-//            // ✅ Sex/Gender
-//            response.setSex(safe(orderHd.getPatientId().getPatientGender() != null ?
-//                    orderHd.getPatientId().getPatientGender().getGenderName() : ""));
-//
-//            // ✅ Relation
-//            if (orderHd.getPatientId().getPatientRelation() != null) {
-//                response.setRelation(safe(orderHd.getPatientId().getPatientRelation().getRelationName()));
-//            }
-//        }
-//
-//        response.setBillingType(null);
-//        response.setConsultedDoctor("");
-//
-//        // ✅ Department
-//        if (orderHd.getVisitId() != null && orderHd.getVisitId().getDepartment() != null) {
-//            response.setDepartment(orderHd.getVisitId().getDepartment().getDepartmentName());
-//        } else {
-//            response.setDepartment("");
-//        }
-//
-//        // ✅ Amount calculation
-//        BigDecimal totalAmount = BigDecimal.ZERO;
-//        List<BillingDetailResponse> details = new ArrayList<>();
-//
-//        // Fetch order details to calculate amount and set details
-//        List<DgOrderDt> orderDetails = labDtRepository.findByOrderhdIdAndBillingStatus(orderHd, "n");
-//
-//        for (DgOrderDt orderDetail : orderDetails) {
-//            BillingDetailResponse detailResponse = mapOrderDetailToResponse(orderDetail);
-//            details.add(detailResponse);
-//
-//            // ✅ Calculate total using the correctly mapped net amount
-//            totalAmount = totalAmount.add(detailResponse.getNetAmount());
-//        }
-//
-//        response.setAmount(totalAmount);
-//        response.setDetails(details);
-//
-//        return response;
-//    }
+        if (header.getVisit() != null && header.getVisit().getPatient() != null) {
+            response.setPatientid(header.getVisit().getPatient().getId());
+            response.setPatientUhid(header.getVisit().getPatient().getUhidNo());
+            response.setTokenNo(header.getVisit().getTokenNo());
+            String sessionName = Optional.ofNullable(header.getVisit())
+                    .map(v -> v.getSession())
+                    .map(s -> s.getSessionName())
+                    .orElse(null);
+
+            response.setSessionName(sessionName);
+            response.setVisitType(header.getVisit().getVisitType());
+            response.setVisitDate(header.getVisit().getVisitDate());
+
+        } else {
+            response.setPatientid(null);
+        }
+        if (header.getVisit() != null && header.getVisit().getPatient() != null) {
+            response.setMobileNo(safe(header.getVisit().getPatient().getPatientMobileNumber()));
+        } else {
+            response.setMobileNo("");
+        }
+        if (header.getVisit() != null && header.getVisit().getPatient() != null &&
+                header.getVisit().getPatient().getPatientDob() != null) {
+            String ageStr = ageCalculator(header.getVisit().getPatient().getPatientDob());
+            response.setAge(ageStr);
+        } else {
+            response.setAge("");
+        }
+        response.setSex(safe(header.getPatientGender()));
+        if (header.getVisit() != null && header.getVisit().getPatient() != null &&
+                header.getVisit().getPatient().getPatientRelation() != null) {
+            response.setRelation(safe(header.getVisit().getPatient().getPatientRelation().getRelationName()));
+        } else {
+            response.setRelation("");
+        }
+        response.setConsultedDoctor(safe(header.getReferredBy()));
+        if (header.getVisit() != null && header.getVisit().getDepartment() != null) {
+            response.setDepartment(safe(header.getVisit().getDepartment().getDepartmentName()));
+        } else {
+            response.setDepartment("");
+        }
+        if (header.getServiceCategory() != null) {
+            response.setBillingType(safe(header.getServiceCategory().getServiceCatName()));
+        } else {
+            response.setBillingType("");
+        }
+
+        response.setFlag("Direct");
+        response.setAmount(
+                header.getNetAmount() != null
+                        ? header.getNetAmount().subtract(
+                        header.getTotalPaid() != null ? header.getTotalPaid() : BigDecimal.ZERO
+                )
+                        : BigDecimal.ZERO
+        );
+        response.setBillingStatus(safe(header.getPaymentStatus()));
+        response.setOrderhdid(null);
+        response.setOrderhdPaymentStatus(null);
+
+        List<BillingDetail> detailsList = billingDetailRepository.findByBillHdIdAndPaymentStatusIn(
+                header.getId(), List.of("n", "p")
+        );
+
+        Optional<BillingDetail> registrationServiceOpt = detailsList.stream()
+                .filter(bd -> bd.getServiceCategory() != null &&
+                        "Registration Service".equalsIgnoreCase(bd.getServiceCategory().getServiceCatName()))
+                .findFirst();
+        BigDecimal registrationCost = registrationServiceOpt
+                .map(bd -> bd.getServiceCategory().getRegistrationCost()) // Replace with actual method to get the value you need
+                .orElse(null);
+
+        List<BillingDetailResponse> details = detailsList.stream()
+                .filter(bd -> bd.getServiceCategory() == null ||    // keep if null
+                        !"Registration Service".equalsIgnoreCase(
+                                bd.getServiceCategory().getServiceCatName()
+                        )
+                )
+                .map(this::mapToDetailResponse)
+                .collect(Collectors.toList());
+        if (header.getBillingPolicy() != null) {
+            response.setBillingPolicyId(header.getBillingPolicy().getBillingPolicyId());
+        }
+        response.setRegistrationCost(registrationCost);
+        response.setDetails(details);
+        return response;
+    }
+
+    //    // ✅ NEW METHOD: Map OrderHd to PendingBillingResponse
+    private PendingBillingResponse mapOrderToResponse(DgOrderHd orderHd) {
+        PendingBillingResponse response = new PendingBillingResponse();
+        response.setOrderhdid(orderHd.getId());
+        response.setOrderhdPaymentStatus(safe(orderHd.getPaymentStatus()));
+        response.setSource(safe(orderHd.getSource())); // Add source to response
+
+        // Set billing fields as null for order records
+        response.setBillinghdid(null);
+        response.setBillingStatus(null);
+
+        response.setFlag("OPD");
+
+        // ✅ Patient information
+        if (orderHd.getPatientId() != null) {
+            response.setPatientid(orderHd.getPatientId().getId());
+            response.setPatientName(safe(
+                    orderHd.getPatientId().getPatientFn() + " " +
+                            safe(orderHd.getPatientId().getPatientMn()) + " " +
+                            safe(orderHd.getPatientId().getPatientLn())
+            ).trim());
+            response.setMobileNo(safe(orderHd.getPatientId().getPatientMobileNumber()));
+            response.setAddress(safe(orderHd.getPatientId().getPatientAddress1()) + " " +
+                    safe(orderHd.getPatientId().getPatientAddress2()));
+
+            // ✅ Age calculation
+            if (orderHd.getPatientId().getPatientDob() != null) {
+                String ageStr = ageCalculator(orderHd.getPatientId().getPatientDob());
+                response.setAge(ageStr);
+            } else {
+                response.setAge("");
+            }
+
+            // ✅ Sex/Gender
+            response.setSex(safe(orderHd.getPatientId().getPatientGender() != null ?
+                    orderHd.getPatientId().getPatientGender().getGenderName() : ""));
+
+            // ✅ Relation
+            if (orderHd.getPatientId().getPatientRelation() != null) {
+                response.setRelation(safe(orderHd.getPatientId().getPatientRelation().getRelationName()));
+            }
+        }
+
+        response.setBillingType(null);
+        response.setConsultedDoctor("");
+
+        // ✅ Department
+        if (orderHd.getVisitId() != null && orderHd.getVisitId().getDepartment() != null) {
+            response.setDepartment(orderHd.getVisitId().getDepartment().getDepartmentName());
+        } else {
+            response.setDepartment("");
+        }
+
+        // ✅ Amount calculation
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        List<BillingDetailResponse> details = new ArrayList<>();
+
+        // Fetch order details to calculate amount and set details
+        List<DgOrderDt> orderDetails = labDtRepository.findByOrderhdIdAndBillingStatus(orderHd, "n");
+
+        for (DgOrderDt orderDetail : orderDetails) {
+            BillingDetailResponse detailResponse = mapOrderDetailToResponse(orderDetail);
+            details.add(detailResponse);
+
+            // ✅ Calculate total using the correctly mapped net amount
+            totalAmount = totalAmount.add(detailResponse.getNetAmount());
+        }
+
+        response.setAmount(totalAmount);
+        response.setDetails(details);
+
+        return response;
+    }
 
     // ✅ NEW METHOD: Map Order Detail to BillingDetailResponse
     private BillingDetailResponse mapOrderDetailToResponse(DgOrderDt orderDetail) {
@@ -1175,109 +1291,109 @@ public class BillingServiceImpl implements BillingService {
         return response;
     }
 
-//    public List<PendingBillingResponse> mergeConsultation(List<PendingBillingResponse> list) {
-//
-//        Map<String, List<PendingBillingResponse>> groups = new LinkedHashMap<>();
-//        List<PendingBillingResponse> finalList = new ArrayList<>();
-//
-//        for (PendingBillingResponse item : list) {
-//            if (!"Consultation Services".equalsIgnoreCase(item.getBillingType())) {
-//                finalList.add(item);
-//                continue;
-//            }
-//            String key = item.getPatientid() + "|"
-//                    + item.getBillingType();
-//
-//            groups.computeIfAbsent(key, k -> new ArrayList<>()).add(item);
-//        }
-//        for (List<PendingBillingResponse> group : groups.values()) {
-//            if (group.size() == 1) {
-//                PendingBillingResponse single = group.get(0);
-//                single.setBillingHeaderIds(
-//                        Collections.singletonList(single.getBillinghdid())
-//                );
-//                AppointmentBlock ab = new AppointmentBlock();
-//                ab.setBillingPolicyId(single.getBillingPolicyId());
-//                ab.setBillingHdId(single.getBillinghdid());
-//                ab.setConsultedDoctor(single.getConsultedDoctor());
-//                ab.setDepartment(single.getDepartment());
-//                ab.setSessionName(single.getSessionName());
-//                ab.setVisitDate(single.getVisitDate());
-//                ab.setTokenNo(single.getTokenNo());
-//                ab.setVisitType(single.getVisitType());
-//
-//                single.setAppointments(Collections.singletonList(ab));
-//                if (single.getDetails() == null) {
-//                    single.setDetails(new ArrayList<>());
-//                }
-//                finalList.add(single);
-//                continue;
-//            }
-//            PendingBillingResponse merged = new PendingBillingResponse();
-//            PendingBillingResponse first = group.get(0);
-//
-//            merged.setPatientid(first.getPatientid());
-//            merged.setPatientUhid(first.getPatientUhid());
-//            merged.setPatientName(first.getPatientName());
-//            merged.setMobileNo(first.getMobileNo());
-//            merged.setAge(first.getAge());
-//            merged.setSex(first.getSex());
-//            merged.setRelation(first.getRelation());
-//            merged.setBillingType(first.getBillingType());
-//            merged.setConsultedDoctor(first.getConsultedDoctor());
-//            merged.setDepartment(first.getDepartment());
-//            merged.setAddress(first.getAddress());
-//            merged.setVisitType(first.getVisitType());
-//            merged.setVisitDate(first.getVisitDate());
-//            merged.setSessionName(first.getSessionName());
-//            merged.setBillingStatus(first.getBillingStatus());
-//            merged.setTokenNo(first.getTokenNo());
-//            merged.setVisitDate(first.getVisitDate());
-//            merged.setVisitType(first.getVisitType());
-//            merged.setRegistrationCost(first.getRegistrationCost());
-//            merged.setBillingHeaderIds(
-//                    group.stream()
-//                            .map(PendingBillingResponse::getBillinghdid)
-//                            .filter(Objects::nonNull)
-//                            .collect(Collectors.toList())
-//            );
-//            List<AppointmentBlock> appointmentList = new ArrayList<>();
-//            for (PendingBillingResponse item : group) {
-//                AppointmentBlock ab = new AppointmentBlock();
-//                ab.setBillingPolicyId(item.getBillingPolicyId());
-//                ab.setBillingHdId(item.getBillinghdid());
-//                ab.setConsultedDoctor(item.getConsultedDoctor());
-//                ab.setDepartment(item.getDepartment());
-//                ab.setSessionName(item.getSessionName());
-//                ab.setVisitDate(item.getVisitDate());
-//                ab.setTokenNo(item.getTokenNo());
-//                ab.setVisitType(item.getVisitType());
-//                appointmentList.add(ab);
-//            }
-//            merged.setAppointments(appointmentList);
-//
-//            // Merge details
-//            merged.setDetails(
-//                    group.stream()
-//                            .flatMap(it -> it.getDetails() == null ? Stream.empty() : it.getDetails().stream())
-//                            .collect(Collectors.toList())
-//            );
-//
-//            // Sum amounts
-//            merged.setAmount(
-//                    group.stream()
-//                            .map(PendingBillingResponse::getAmount)
-//                            .filter(Objects::nonNull)
-//                            .reduce(BigDecimal.ZERO, BigDecimal::add)
-//            );
-//
-//            // Final billinghdid = first ID
-//            merged.setBillinghdid(merged.getBillingHeaderIds().get(0));
-//            finalList.add(merged);
-//        }
-//
-//        return finalList;
-//    }
+    public List<PendingBillingResponse> mergeConsultation(List<PendingBillingResponse> list) {
+
+        Map<String, List<PendingBillingResponse>> groups = new LinkedHashMap<>();
+        List<PendingBillingResponse> finalList = new ArrayList<>();
+
+        for (PendingBillingResponse item : list) {
+            if (!"Consultation Services".equalsIgnoreCase(item.getBillingType())) {
+                finalList.add(item);
+                continue;
+            }
+            String key = item.getPatientid() + "|"
+                    + item.getBillingType();
+
+            groups.computeIfAbsent(key, k -> new ArrayList<>()).add(item);
+        }
+        for (List<PendingBillingResponse> group : groups.values()) {
+            if (group.size() == 1) {
+                PendingBillingResponse single = group.get(0);
+                single.setBillingHeaderIds(
+                        Collections.singletonList(single.getBillinghdid())
+                );
+                AppointmentBlock ab = new AppointmentBlock();
+                ab.setBillingPolicyId(single.getBillingPolicyId());
+                ab.setBillingHdId(single.getBillinghdid());
+                ab.setConsultedDoctor(single.getConsultedDoctor());
+                ab.setDepartment(single.getDepartment());
+                ab.setSessionName(single.getSessionName());
+                ab.setVisitDate(single.getVisitDate());
+                ab.setTokenNo(single.getTokenNo());
+                ab.setVisitType(single.getVisitType());
+
+                single.setAppointments(Collections.singletonList(ab));
+                if (single.getDetails() == null) {
+                    single.setDetails(new ArrayList<>());
+                }
+                finalList.add(single);
+                continue;
+            }
+            PendingBillingResponse merged = new PendingBillingResponse();
+            PendingBillingResponse first = group.get(0);
+
+            merged.setPatientid(first.getPatientid());
+            merged.setPatientUhid(first.getPatientUhid());
+            merged.setPatientName(first.getPatientName());
+            merged.setMobileNo(first.getMobileNo());
+            merged.setAge(first.getAge());
+            merged.setSex(first.getSex());
+            merged.setRelation(first.getRelation());
+            merged.setBillingType(first.getBillingType());
+            merged.setConsultedDoctor(first.getConsultedDoctor());
+            merged.setDepartment(first.getDepartment());
+            merged.setAddress(first.getAddress());
+            merged.setVisitType(first.getVisitType());
+            merged.setVisitDate(first.getVisitDate());
+            merged.setSessionName(first.getSessionName());
+            merged.setBillingStatus(first.getBillingStatus());
+            merged.setTokenNo(first.getTokenNo());
+            merged.setVisitDate(first.getVisitDate());
+            merged.setVisitType(first.getVisitType());
+            merged.setRegistrationCost(first.getRegistrationCost());
+            merged.setBillingHeaderIds(
+                    group.stream()
+                            .map(PendingBillingResponse::getBillinghdid)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList())
+            );
+            List<AppointmentBlock> appointmentList = new ArrayList<>();
+            for (PendingBillingResponse item : group) {
+                AppointmentBlock ab = new AppointmentBlock();
+                ab.setBillingPolicyId(item.getBillingPolicyId());
+                ab.setBillingHdId(item.getBillinghdid());
+                ab.setConsultedDoctor(item.getConsultedDoctor());
+                ab.setDepartment(item.getDepartment());
+                ab.setSessionName(item.getSessionName());
+                ab.setVisitDate(item.getVisitDate());
+                ab.setTokenNo(item.getTokenNo());
+                ab.setVisitType(item.getVisitType());
+                appointmentList.add(ab);
+            }
+            merged.setAppointments(appointmentList);
+
+            // Merge details
+            merged.setDetails(
+                    group.stream()
+                            .flatMap(it -> it.getDetails() == null ? Stream.empty() : it.getDetails().stream())
+                            .collect(Collectors.toList())
+            );
+
+            // Sum amounts
+            merged.setAmount(
+                    group.stream()
+                            .map(PendingBillingResponse::getAmount)
+                            .filter(Objects::nonNull)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            );
+
+            // Final billinghdid = first ID
+            merged.setBillinghdid(merged.getBillingHeaderIds().get(0));
+            finalList.add(merged);
+        }
+
+        return finalList;
+    }
 
 
     // ✅ METHOD: Get current investigation price from price details table
@@ -1347,10 +1463,4 @@ public class BillingServiceImpl implements BillingService {
     private String safe(String value) {
         return value != null ? value : "";
     }
-
-
-
-
-
-
 }

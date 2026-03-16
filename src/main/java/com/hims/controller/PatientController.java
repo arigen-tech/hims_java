@@ -86,8 +86,8 @@ public class PatientController {
         }
     }
     @PostMapping("/search")
-    public ResponseEntity<ApiResponse<List<PatientProjection>>> searchPatient(@RequestBody PatientSearchReq searchRequest){
-        ApiResponse<List<PatientProjection>> response = patientService.searchPatient(searchRequest);
+    public ResponseEntity<ApiResponse<List<Patient>>> searchPatient(@RequestBody PatientSearchReq searchRequest){
+        ApiResponse<List<Patient>> response = patientService.searchPatient(searchRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @GetMapping("/getPendingPreConsultations")

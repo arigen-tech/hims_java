@@ -34,7 +34,7 @@ public class AppConstants {
     public static final String VISIT_TYPE_NEW = "N";
 
     //billing status
-    public static final String PAYMENT_PENDING = "P";
+    public static final String PAYMENT_PARTIAL_PENDING = "P";
     public static final String PAYMENT_PAID = "Y";
     public static final String PAYMENT_NOT_PAID = "N";
 
