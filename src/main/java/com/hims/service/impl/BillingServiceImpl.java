@@ -434,12 +434,15 @@ public class BillingServiceImpl implements BillingService {
 
                 List<OpdPendingBillingResponse> response = grouped.values().stream()
                         .map(list -> {
+
                             OpdPendingBillingResponse r = new OpdPendingBillingResponse();
+
                             r.setVisitIds(
                                     list.stream()
                                             .map(OpdBillingProjection::getVisitId)
                                             .collect(Collectors.toList())
                             );
+
                             r.setBillingHdId(null);
 
                             OpdBillingProjection first = list.get(0);
@@ -573,7 +576,6 @@ public class BillingServiceImpl implements BillingService {
                         }
                 );
             }
-
 
             return ResponseUtils.createFailureResponse(
                     null,
@@ -789,8 +791,7 @@ public class BillingServiceImpl implements BillingService {
         res.setMsg("Success");
         res.setPaymentStatus("y");
         res.setBillPayments(paymentItemList);
-        return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {
-        });
+        return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {});
     }
 
 
@@ -800,7 +801,7 @@ public class BillingServiceImpl implements BillingService {
         PaymentResponse res = new PaymentResponse();
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
-        try {
+        try{
 
             //Payment table data inserted
             // User currentUser = authUtil.getCurrentUser();
