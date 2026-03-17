@@ -373,8 +373,8 @@ WHERE v.visit_status = 'n'
      * Fetches cancelled appointments based on hospital, department, doctor, date range and cancellation reason
      * @param hospitalId Hospital ID (required)
      * @param departmentId Department ID (optional)
-     * @param doctorId Doctor ID (optional)
-     * @param fromDate From date (optional)
+     * @param doctorId Doctor ID
+     * @param fromDate From date
      * @param toDate To date (optional)
      * @param cancellationReasonId Cancellation reason ID (optional)
      * @return List of cancelled appointments
@@ -438,8 +438,8 @@ WHERE v.visit_status = 'n'
      * @param hospitalId Hospital ID (required)
      * @param departmentId Department ID (optional - null for all departments)
     // * @param doctorId Doctor ID (optional - null for all doctors)
-     * @param fromDate Start date (optional)
-     * @param toDate End date (optional)
+     * @param fromDate Start date
+     * @param toDate End date
      * @return List of appointment summary statistics
      */
     @Query(value = """
@@ -455,8 +455,8 @@ WHERE v.visit_status = 'n'
     LEFT JOIN mas_department d ON d.department_id = v.department_id
     WHERE v.hospital_id = :hospitalId
     AND (:departmentId IS NULL OR v.department_id = :departmentId)
-     AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
-      AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
+     AND CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE)
+      AND CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE)
      AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
     GROUP BY  v.department_id, d.department_name
     ORDER BY d.department_name
@@ -498,6 +498,7 @@ WHERE v.visit_status = 'n'
     FROM visit v
     LEFT JOIN mas_department d ON d.department_id = v.department_id
     WHERE v.hospital_id = :hospitalId
+    AND (:departmentId IS NULL OR v.department_id = :departmentId)
       AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
       AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
       AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
@@ -507,6 +508,7 @@ WHERE v.visit_status = 'n'
 """, nativeQuery = true)
     List<AppointmentSummaryDoctorProjection> getAppointmentSummaryDoctorWiseReport(
             @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
             @Param("doctorId") Long doctorId,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,

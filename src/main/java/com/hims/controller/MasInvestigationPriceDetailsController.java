@@ -2,10 +2,12 @@ package com.hims.controller;
 
 import com.hims.request.MasInvestigationPriceDetailsRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.MasInvestigationPriceDetailsProjectionResponse;
 import com.hims.response.MasInvestigationPriceDetailsResponse;
 import com.hims.service.MasInvestigationPriceDetailsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,9 +22,14 @@ public class MasInvestigationPriceDetailsController {
     private MasInvestigationPriceDetailsService priceDetailsService;
 
     @GetMapping("/getAllPriceDetails/{flag}")
-    public ApiResponse<List<MasInvestigationPriceDetailsResponse>> getAllPriceDetails(@PathVariable int flag) {
-        return priceDetailsService.getAllPriceDetails(flag);
+    public ApiResponse<Page<MasInvestigationPriceDetailsProjectionResponse>> getAllPriceDetails(
+            @PathVariable int flag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String investigationName) {
+        return priceDetailsService.getAllPriceDetails(flag, page, size, investigationName);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MasInvestigationPriceDetailsResponse>> getPriceDetailsById(@PathVariable Long id) {
