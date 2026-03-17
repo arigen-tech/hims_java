@@ -2,13 +2,17 @@ package com.hims.service;
 
 import com.hims.request.MasInvestigationPriceDetailsRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.MasInvestigationPriceDetailsProjectionResponse;
 import com.hims.response.MasInvestigationPriceDetailsResponse;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
 public interface MasInvestigationPriceDetailsService {
 
-    ApiResponse<List<MasInvestigationPriceDetailsResponse>> getAllPriceDetails(int flag);
+    ApiResponse<Page<MasInvestigationPriceDetailsProjectionResponse>> getAllPriceDetails(
+            int flag, int page, int size, String investigationName);
+
 
     ApiResponse<MasInvestigationPriceDetailsResponse> findById(Long id);
 
