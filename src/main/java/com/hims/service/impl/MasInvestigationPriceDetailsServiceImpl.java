@@ -1,20 +1,27 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.DgMasInvestigation;
 import com.hims.entity.MasInvestigationPriceDetails;
 import com.hims.entity.User;
 import com.hims.entity.repository.DgMasInvestigationRepository;
 import com.hims.entity.repository.MasInvestigationPriceDetailsRepository;
 import com.hims.entity.repository.UserRepo;
+import com.hims.projection.MasInvestigationPriceDetailsProjection;
 import com.hims.request.MasInvestigationPriceDetailsRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.MasInvestigationPriceDetailsProjectionResponse;
 import com.hims.response.MasInvestigationPriceDetailsResponse;
 import com.hims.service.MasInvestigationPriceDetailsService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -53,13 +60,34 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
     }
 
     @Override
-    public ApiResponse<List<MasInvestigationPriceDetailsResponse>> getAllPriceDetails(int flag) {
+    public ApiResponse<Page<MasInvestigationPriceDetailsProjectionResponse>> getAllPriceDetails(
+            int flag, int page, int size, String investigationName) {
+
         try {
-            List<MasInvestigationPriceDetails> priceDetailsList;
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+            String investigationNameLike = investigationName == null || investigationName.trim().isEmpty()
+                    ? null
+                    : "%" + investigationName.toLowerCase().trim() + "%";
+
+            Page<MasInvestigationPriceDetailsProjection> paged;
+
             if (flag == 1) {
-                priceDetailsList = repository.findByStatusIgnoreCase("Y");
+                paged = repository.getAllPriceDetails(
+                        AppConstants.STATUS_Y,
+                        investigationNameLike,
+                        pageable
+                );
             } else if (flag == 0) {
-                priceDetailsList = repository.findByStatusInIgnoreCaseAndInvestigation_StatusIgnoreCase(List.of("Y", "N"),"y");
+                paged = repository.getAllPriceDetail(
+                        List.of(
+                                AppConstants.STATUS_Y.toLowerCase(),
+                                AppConstants.STATUS_N.toLowerCase()
+                        ),
+                        AppConstants.STATUS_Y,
+                        investigationNameLike,
+                        pageable
+                );
             } else {
                 return ResponseUtils.createFailureResponse(
                         null,
@@ -69,20 +97,16 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                 );
             }
 
-            // Check if the list is null
-            if (priceDetailsList == null) {
-                priceDetailsList = new ArrayList<>();
-            }
+            Page<MasInvestigationPriceDetailsProjectionResponse> response =
+                    paged.map(this::convertedToResponse);
 
-            List<MasInvestigationPriceDetailsResponse> responseList = priceDetailsList.stream()
-                    .map(this::mapToResponse)
-                    .collect(Collectors.toList());
+            return ResponseUtils.createSuccessResponse(
+                    response,
+                    new TypeReference<Page<MasInvestigationPriceDetailsProjectionResponse>>() {}
+            );
 
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
         } catch (Exception e) {
-            // Log the error
             e.printStackTrace();
-            // Return a meaningful error response
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},
@@ -91,7 +115,6 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             );
         }
     }
-
     @Override
     public ApiResponse<MasInvestigationPriceDetailsResponse> findById(Long id) {
         return repository.findById(id)
@@ -339,5 +362,16 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
         response.setStatus(entity.getStatus());
         response.setLastChgBy(entity.getLastChgBy());
         return response;
+    }
+    private MasInvestigationPriceDetailsProjectionResponse convertedToResponse(
+            MasInvestigationPriceDetailsProjection projection) {
+        return new MasInvestigationPriceDetailsProjectionResponse(
+                projection.getId(),
+                projection.getInvestigationId(),
+                projection.getInvestigationName(),
+                projection.getFromDt(),
+                projection.getToDt(),
+                projection.getPrice()
+        );
     }
 }

@@ -208,8 +208,8 @@ public class RegistrationController {
      * @param hospitalId Hospital ID (required)
      * @param departmentId Department ID (optional - null for all departments)
      * @param doctorId Doctor ID (optional - null for all doctors)
-     * @param fromDate Start date (optional)
-     * @param toDate End date (optional)
+     * @param fromDate Start date
+     * @param toDate End date
      * @return List of appointment summary statistics
      * flag=0 use for department and flag=1  use for doctor
      */
@@ -218,9 +218,9 @@ public class RegistrationController {
             @RequestParam Long hospitalId,
             @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) Long doctorId,
-            @RequestParam(required = false)
+            @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false)
+            @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam Integer flag) {
         log.info("Received getAppointmentSummaryReport request with hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}, flag: {}",
