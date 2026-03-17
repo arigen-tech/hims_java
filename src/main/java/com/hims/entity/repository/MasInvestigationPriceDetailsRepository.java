@@ -2,6 +2,9 @@ package com.hims.entity.repository;
 
 import com.hims.entity.DgMasInvestigation;
 import com.hims.entity.MasInvestigationPriceDetails;
+import com.hims.projection.MasInvestigationPriceDetailsProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -47,4 +50,45 @@ public interface MasInvestigationPriceDetailsRepository extends JpaRepository<Ma
 
     // Simple method for latest price
     Optional<MasInvestigationPriceDetails> findTopByInvestigationOrderByFromDateDesc(DgMasInvestigation investigation);
+
+    @Query("""
+    SELECT
+        m.id AS id,
+        i.id AS investigationId,
+        i.investigationName AS investigationName,
+        m.fromDate AS fromDt,
+        m.toDate AS toDt,
+        m.price AS price
+    FROM MasInvestigationPriceDetails m
+    LEFT JOIN m.investigation i
+    WHERE LOWER(m.status) = LOWER(:status)
+      AND (:investigationName IS NULL OR LOWER(i.investigationName) LIKE :investigationName)
+""")
+    Page<MasInvestigationPriceDetailsProjection> getAllPriceDetails(
+            @Param("status") String status,
+            @Param("investigationName") String investigationName,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT
+        m.id AS id,
+        i.id AS investigationId,
+        i.investigationName AS investigationName,
+        m.fromDate AS fromDt,
+        m.toDate AS toDt,
+        m.price AS price
+    FROM MasInvestigationPriceDetails m
+    LEFT JOIN m.investigation i
+    WHERE LOWER(m.status) IN (:statuses)
+      AND LOWER(i.status) = LOWER(:investigationStatus)
+      AND (:investigationName IS NULL OR LOWER(i.investigationName) LIKE :investigationName)
+""")
+    Page<MasInvestigationPriceDetailsProjection> getAllPriceDetail(
+            @Param("statuses") List<String> statuses,
+            @Param("investigationStatus") String investigationStatus,
+            @Param("investigationName") String investigationName,
+            Pageable pageable
+    );
+
 }
