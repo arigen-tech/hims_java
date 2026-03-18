@@ -24,7 +24,7 @@ public interface RadOrderDtRepository extends JpaRepository<RadOrderDt, Long> {
             UPDATE RadOrderDt b 
             SET b.billingStatus = :billingStatus
             WHERE b.packageId.packId = :pkgId
-            AND b.billingHd.billingHdId = :billHdId
+            AND b.billingHd.id = :billHdId
             """)
     void updatePaymentStatusPackegDt(
             @Param("billingStatus") String billingStatus,
@@ -34,7 +34,7 @@ public interface RadOrderDtRepository extends JpaRepository<RadOrderDt, Long> {
 
     @Query("""
             select b from RadOrderDt b
-            WHERE b.billingHd.billingHdId = :billHdId
+            WHERE b.billingHd.id = :billHdId
             AND b.billingStatus = 'n'
             """)
     List<RadOrderDt> findUnbilledByBillingHdId(

@@ -65,4 +65,11 @@ public class BillingController {
         return billingService.getBillingDetails(patientId);
     }
 
+    @GetMapping("/pendingBillingLabRadioDetails/{billingHdId}")
+    public ApiResponse<List<PendingBillingResponse>> getPendingBillingLabRadio(@PathVariable Long billingHdId,@RequestParam String serviceCategoryCode){
+        log.info("Get Pending Billing API called for Lab Radio");
+        return billingService.getPendingBillingLabRadio(billingHdId, serviceCategoryCode);
+    }
+
+
 }
