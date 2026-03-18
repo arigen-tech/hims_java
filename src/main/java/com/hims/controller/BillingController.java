@@ -10,6 +10,9 @@ import com.hims.service.BillingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +24,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class BillingController {
+
+    @Value("${serviceCategoryRad}")
+    private String radioServiceCategoryCode;
+
     @Autowired
     private final BillingService billingService;
 
@@ -36,7 +43,7 @@ public class BillingController {
     public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
         log.info("Update Payment Status API called");
         if(request.getBillingType()!=null)
-            if(request.getBillingType().equalsIgnoreCase("Radiology Services"))
+            if(request.getBillingType().equalsIgnoreCase(radioServiceCategoryCode))
                 return new ResponseEntity<>(billingService.paymentStatusReq(request), HttpStatus.OK);
         return new ResponseEntity<>(billingService.paymentStatusReqLab(request), HttpStatus.OK);
     }
@@ -74,13 +81,14 @@ public class BillingController {
 
 
     @GetMapping("/billingStatus/search")
-    public ApiResponse<List<BillingHeaderResponseProjection>> searchBillingStatus(
+    public ApiResponse<Page<BillingHeaderResponseProjection>> searchBillingStatus(
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) String phoneNo,
-            @RequestParam(required = false) String registrationNo) {
+            @RequestParam(required = false) String registrationNo,
+            Pageable pageable) {
         log.info("billingStatus search api called, patientName: {}, phoneNo: {}, registrationNo: {}",
                 patientName, phoneNo, registrationNo);
-        return billingService.getBillingStatus(patientName, phoneNo, registrationNo);
+        return billingService.getBillingStatus(patientName, phoneNo, registrationNo, pageable);
     }
 
 

@@ -106,11 +106,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     Visit findByBillingHd(BillingHeader obj);
 
-    @Query("""
-            SELECT v FROM Visit v
-            WHERE v.billingHd.id = :billHdId
-            """)
-    Optional<Visit> findByBillingHd_id(@Param("billHdId") Long billHdId);
+    Optional<Visit> findByBillingHd_Id(Long billHdId);
 
     Optional<Visit> findById(Long id);
 
