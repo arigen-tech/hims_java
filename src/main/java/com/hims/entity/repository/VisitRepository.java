@@ -14,10 +14,10 @@ import java.util.Optional;
 public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     @Query("SELECT MAX(v.tokenNo) FROM Visit v " +
-                "WHERE v.doctor.userId = :doctorId " +
-                "AND v.hospital.id = :hospitalId " +
-                "AND v.session.id = :sessionId " +
-                "AND FUNCTION('DATE', v.visitDate) = CURRENT_DATE")
+            "WHERE v.doctor.userId = :doctorId " +
+            "AND v.hospital.id = :hospitalId " +
+            "AND v.session.id = :sessionId " +
+            "AND FUNCTION('DATE', v.visitDate) = CURRENT_DATE")
     Long findMaxTokenForSessionToday(@Param("doctorId") Long doctorId,
                                      @Param("hospitalId") Long hospitalId,
                                      @Param("sessionId") Long sessionId);
@@ -41,47 +41,47 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                                                                  @Param("billingStatus") String billingStatus);
 
     @Query(value = """
-SELECT
-    v.visit_id AS visitId,
-    p.patient_id AS patientId,
-    CONCAT(
-        COALESCE(p.p_fn, ''), ' ',
-        COALESCE(p.p_mn, ''), ' ',
-        COALESCE(p.p_ln, '')
-    ) AS patientName,
-    p.p_age AS patientAge,
-    COALESCE(g.gender_name, '') AS gender,
-    d.department_id AS departmentId,
-    d.department_name AS departmentName,
-    p.p_mobile_number AS mobileNumber,
-    CASE
-        WHEN v.visit_type = 'F' THEN 'Follow Up'
-        WHEN v.visit_type = 'N' THEN 'New'
-        ELSE 'Walk In'
-    END AS visitType,
-    v.doctor_id AS doctorId,
-    v.doctor_name AS doctorName,
-
-    CONCAT(
-        TO_CHAR(v.start_time, 'HH24:MI'),
-        ' - ',
-        TO_CHAR(v.end_time, 'HH24:MI')
-    ) AS appointmentTime,
-
-    v.token_no AS tokenNumber,
-    CAST(v.visit_date AS DATE) AS appointmentDate
-
-FROM visit v
-LEFT JOIN patient p ON p.patient_id = v.patient_id
-LEFT JOIN mas_gender g ON g.id = p.p_gender_id
-LEFT JOIN mas_department d ON d.department_id = v.department_id
-
-WHERE v.hospital_id = :hospitalId
-  AND v.pre_consultation = :preConsultation
-  AND v.billing_status = :billingStatus
-
-ORDER BY v.visit_date ASC, v.start_time ASC
-""", nativeQuery = true)
+            SELECT
+                v.visit_id AS visitId,
+                p.patient_id AS patientId,
+                CONCAT(
+                    COALESCE(p.p_fn, ''), ' ',
+                    COALESCE(p.p_mn, ''), ' ',
+                    COALESCE(p.p_ln, '')
+                ) AS patientName,
+                p.p_age AS patientAge,
+                COALESCE(g.gender_name, '') AS gender,
+                d.department_id AS departmentId,
+                d.department_name AS departmentName,
+                p.p_mobile_number AS mobileNumber,
+                CASE
+                    WHEN v.visit_type = 'F' THEN 'Follow Up'
+                    WHEN v.visit_type = 'N' THEN 'New'
+                    ELSE 'Walk In'
+                END AS visitType,
+                v.doctor_id AS doctorId,
+                v.doctor_name AS doctorName,
+            
+                CONCAT(
+                    TO_CHAR(v.start_time, 'HH24:MI'),
+                    ' - ',
+                    TO_CHAR(v.end_time, 'HH24:MI')
+                ) AS appointmentTime,
+            
+                v.token_no AS tokenNumber,
+                CAST(v.visit_date AS DATE) AS appointmentDate
+            
+            FROM visit v
+            LEFT JOIN patient p ON p.patient_id = v.patient_id
+            LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+            LEFT JOIN mas_department d ON d.department_id = v.department_id
+            
+            WHERE v.hospital_id = :hospitalId
+              AND v.pre_consultation = :preConsultation
+              AND v.billing_status = :billingStatus
+            
+            ORDER BY v.visit_date ASC, v.start_time ASC
+            """, nativeQuery = true)
     List<OpdPreConsultationProjection> findPendingPreConsultationsByHospital(
             @Param("hospitalId") Long hospitalId,
             @Param("preConsultation") String preConsultation,
@@ -104,8 +104,13 @@ ORDER BY v.visit_date ASC, v.start_time ASC
 //                             @Param("departmentId") Long departmentId);
 
 
-
     Visit findByBillingHd(BillingHeader obj);
+
+    @Query("""
+            SELECT v FROM Visit v
+            WHERE v.billingHd.id = :billHdId
+            """)
+    Optional<Visit> findByBillingHd_id(@Param("billHdId") Long billHdId);
 
     Optional<Visit> findById(Long id);
 
@@ -118,24 +123,24 @@ ORDER BY v.visit_date ASC, v.start_time ASC
     List<Visit> findByVisitStatus(String visitStatus);
 
     @Query(value = """
-    SELECT v.* FROM visit v
-    JOIN patient p ON p.patient_id = v.patient_id
-    WHERE v.visit_status = 'c'
-      AND (
-            CAST(:visitDate AS DATE) IS NULL
-            OR DATE(v.visit_date) = CAST(:visitDate AS DATE)
-      )
-      AND (
-            :mobile = '' 
-            OR p.p_mobile_number = :mobile
-      )
-      AND (
-            :name = '' 
-            OR LOWER(p.p_fn) LIKE '%' || LOWER(:name) || '%'
-            OR LOWER(p.p_mn) LIKE '%' || LOWER(:name) || '%'
-            OR LOWER(p.p_ln) LIKE '%' || LOWER(:name) || '%'
-      )
-""", nativeQuery = true)
+                SELECT v.* FROM visit v
+                JOIN patient p ON p.patient_id = v.patient_id
+                WHERE v.visit_status = 'c'
+                  AND (
+                        CAST(:visitDate AS DATE) IS NULL
+                        OR DATE(v.visit_date) = CAST(:visitDate AS DATE)
+                  )
+                  AND (
+                        :mobile = '' 
+                        OR p.p_mobile_number = :mobile
+                  )
+                  AND (
+                        :name = '' 
+                        OR LOWER(p.p_fn) LIKE '%' || LOWER(:name) || '%'
+                        OR LOWER(p.p_mn) LIKE '%' || LOWER(:name) || '%'
+                        OR LOWER(p.p_ln) LIKE '%' || LOWER(:name) || '%'
+                  )
+            """, nativeQuery = true)
     List<Visit> searchRecallVisits(
             @Param("visitDate") LocalDate visitDate,
             @Param("mobile") String mobile,
@@ -152,26 +157,24 @@ ORDER BY v.visit_date ASC, v.start_time ASC
                                      @Param("visitDate") Instant visitDate);
 
 
-
-
     @Query(value = """
-SELECT v.* FROM visit v
-JOIN patient p ON p.patient_id = v.patient_id
-WHERE v.visit_status = 'n'
-  AND v.billing_status = 'y'
-  AND DATE(v.visit_date) = :visitDate   -- match only the date part
-  AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
-  AND (:sessionId IS NULL OR v.session_id = :sessionId)
-  AND (:employeeNo IS NULL OR p.uhid_no = :employeeNo)
-  AND (
-        :patientName IS NULL OR
-        LOWER(
-            CAST(p.p_fn AS VARCHAR) || ' ' ||
-            CAST(p.p_mn AS VARCHAR) || ' ' ||
-            CAST(p.p_ln AS VARCHAR)
-        ) LIKE LOWER(CONCAT('%', :patientName, '%'))
-      )
-""", nativeQuery = true)
+            SELECT v.* FROM visit v
+            JOIN patient p ON p.patient_id = v.patient_id
+            WHERE v.visit_status = 'n'
+              AND v.billing_status = 'y'
+              AND DATE(v.visit_date) = :visitDate   -- match only the date part
+              AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
+              AND (:sessionId IS NULL OR v.session_id = :sessionId)
+              AND (:employeeNo IS NULL OR p.uhid_no = :employeeNo)
+              AND (
+                    :patientName IS NULL OR
+                    LOWER(
+                        CAST(p.p_fn AS VARCHAR) || ' ' ||
+                        CAST(p.p_mn AS VARCHAR) || ' ' ||
+                        CAST(p.p_ln AS VARCHAR)
+                    ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+                  )
+            """, nativeQuery = true)
     List<Visit> findActiveVisitsWithFilters(
             @Param("doctorId") Long doctorId,
             @Param("sessionId") Long sessionId,
@@ -181,23 +184,22 @@ WHERE v.visit_status = 'n'
     );
 
 
-
     @Query("""
-    SELECT v FROM Visit v 
-    WHERE v.doctor.userId = :doctorId 
-    AND CAST(v.visitDate AS date) = CAST(:visitDate AS date)
-    AND v.displayPatientStatus = :status
-""")
+                SELECT v FROM Visit v 
+                WHERE v.doctor.userId = :doctorId 
+                AND CAST(v.visitDate AS date) = CAST(:visitDate AS date)
+                AND v.displayPatientStatus = :status
+            """)
     Optional<Visit> findCpVisit(Long doctorId, Instant visitDate, String status);
 
 
     @Query("""
-    SELECT v FROM Visit v 
-    WHERE v.doctor.userId = :doctorId
-    AND CAST(v.visitDate AS date) = CAST(:visitDate AS date)
-    AND v.tokenNo > :tokenNo
-    ORDER BY v.tokenNo ASC
-""")
+                SELECT v FROM Visit v 
+                WHERE v.doctor.userId = :doctorId
+                AND CAST(v.visitDate AS date) = CAST(:visitDate AS date)
+                AND v.tokenNo > :tokenNo
+                ORDER BY v.tokenNo ASC
+            """)
     List<Visit> findNextVisits(Long doctorId, Instant visitDate, Long tokenNo);
 
     Optional<Visit> findByPatientIdAndVisitDateAndSessionId(
@@ -212,7 +214,7 @@ WHERE v.visit_status = 'n'
 
     @Query("SELECT v.tokenNo FROM Visit v WHERE " +
             "v.department.id = :departmentId AND " +
-            "v.doctor.userid = :doctorId AND " +
+            "v.doctor.userId = :doctorId AND " +
             "v.session.id = :sessionId AND " +
             "v.visitDate >= :startOfDay AND v.visitDate < :endOfDay AND " +
             "v.visitStatus NOT IN ('c')")
@@ -235,12 +237,13 @@ WHERE v.visit_status = 'n'
     List<Visit> findByVisitStatusIgnoreCase(String n);
 
     List<Visit> findByVisitStatusInIgnoreCase(List<String> y);
+
     @Query("""
-    SELECT v
-    FROM Visit v
-    WHERE LOWER(v.visitStatus) = 'n'
-      AND v.visitDate >= :startDate
-""")
+                SELECT v
+                FROM Visit v
+                WHERE LOWER(v.visitStatus) = 'n'
+                  AND v.visitDate >= :startDate
+            """)
     List<Visit> findNVisitsFromToday(@Param("startDate") Instant startDate);
 
     @Query(value = "SELECT * FROM visit WHERE " +
@@ -271,13 +274,13 @@ WHERE v.visit_status = 'n'
 
 
     @Query("""
-        select v
-        from Visit v
-        where v.hospital.id = :hospitalId
-          and v.patient.id  = :patientId
-          and lower(v.visitStatus) in ('y','c','n')
-        order by v.visitDate asc
-    """)
+                select v
+                from Visit v
+                where v.hospital.id = :hospitalId
+                  and v.patient.id  = :patientId
+                  and lower(v.visitStatus) in ('y','c','n')
+                order by v.visitDate asc
+            """)
     List<Visit> findHistoryByHospitalAndPatient(
             @Param("hospitalId") Long hospitalId,
             @Param("patientId") Long patientId
@@ -285,18 +288,18 @@ WHERE v.visit_status = 'n'
 
 
     @Query("""
-        select v
-        from Visit v
-        join v.patient p
-        where (:hospitalId is null or v.hospital.id = :hospitalId)
-          and lower(v.visitStatus) = 'n'
-          and v.visitDate >= :fromDate
-          and (
-                :mobileNo is null or :mobileNo = ''
-                or p.patientMobileNumber = :mobileNo
-              )
-        order by v.visitDate asc
-    """)
+                select v
+                from Visit v
+                join v.patient p
+                where (:hospitalId is null or v.hospital.id = :hospitalId)
+                  and lower(v.visitStatus) = 'n'
+                  and v.visitDate >= :fromDate
+                  and (
+                        :mobileNo is null or :mobileNo = ''
+                        or p.patientMobileNumber = :mobileNo
+                      )
+                order by v.visitDate asc
+            """)
     List<Visit> findUpcomingByHospitalAndMobile(
             @Param("hospitalId") Long hospitalId,
             @Param("fromDate") Instant fromDate,
@@ -304,63 +307,63 @@ WHERE v.visit_status = 'n'
     );
 
     @Query("""
-        select v
-        from Visit v
-        where v.hospital.id = :hospitalId
-          and v.patient.id  = :patientId
-          and lower(v.visitStatus) in ('y','c','n')
-        order by v.visitDate asc
-    """)
+                select v
+                from Visit v
+                where v.hospital.id = :hospitalId
+                  and v.patient.id  = :patientId
+                  and lower(v.visitStatus) in ('y','c','n')
+                order by v.visitDate asc
+            """)
     List<Visit> findAppointmentHistoryByHospitalAndPatient(
             @Param("hospitalId") Long hospitalId,
             @Param("patientId") Long patientId
     );
 
-  /*
-     This query is used to fetch appointment history for a patient based on hospital ID, patient ID or mobile number, and department IDs.
-     It retrieves details such as visit ID, patient name, doctor name, department name, appointment date and time, visit status, reason for cancellation (if any), payment status, billed amount, and billing header ID.
-   */
+    /*
+       This query is used to fetch appointment history for a patient based on hospital ID, patient ID or mobile number, and department IDs.
+       It retrieves details such as visit ID, patient name, doctor name, department name, appointment date and time, visit status, reason for cancellation (if any), payment status, billed amount, and billing header ID.
+     */
     @Query(value = """
-        SELECT 
-            v.visit_id AS visitId,
-            v.patient_id AS patientId,
-            CONCAT(
-                COALESCE(p.p_fn, ''), ' ',
-                COALESCE(p.p_mn, ''), ' ',
-                COALESCE(p.p_ln, '')
-            ) AS patientName,
-            p.p_mobile_number AS mobileNumber,
-            p.p_age AS patientAge,
-            v.doctor_id AS doctorId,
-            v.doctor_name AS doctorName,
-            v.department_id AS departmentId,
-            d.department_name AS departmentName,
-            v.visit_date AS appointmentDate,
-            v.start_time AS appointmentStartTime,
-            v.end_time AS appointmentEndTime,
-            v.visit_status AS visitStatus,
-            r.reason_name AS reason,
-            v.billing_status AS paymentStatus,
-            bh.net_amount AS billedAmount,
-            v.billing_hd_id AS billingHeaderId
-        FROM visit v
-        LEFT JOIN patient p ON p.patient_id = v.patient_id
-        LEFT JOIN mas_department d ON d.department_id = v.department_id
-        LEFT JOIN mas_appointment_change_reason r ON r.reason_id = v.cancelled_reason_id
-        LEFT JOIN billing_header bh ON bh.bill_hd_id = v.billing_hd_id
-        WHERE v.hospital_id = :hospitalId
-                   
-        AND (
-                  (:patientId IS NOT NULL AND v.patient_id = :patientId)
-        OR
-                (:mobileNo IS NOT NULL AND :mobileNo <> '' AND p.p_mobile_number = :mobileNo)
-            )
-        AND (:includeAllHistory = true OR v.visit_date >= CURRENT_DATE)  -- Include all history if flag is true, otherwise only future appointments
-        AND LOWER(v.visit_status) IN ('y', 'c', 'n')
-        AND v.department_id IN (:departmentIds)
-        ORDER BY v.visit_date ASC
-    """, nativeQuery = true)
-   List<AppointmentHistoryProjection> findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
+                SELECT 
+                    v.visit_id AS visitId,
+                    v.patient_id AS patientId,
+                    CONCAT(
+                        COALESCE(p.p_fn, ''), ' ',
+                        COALESCE(p.p_mn, ''), ' ',
+                        COALESCE(p.p_ln, '')
+                    ) AS patientName,
+                    p.p_mobile_number AS mobileNumber,
+                    p.p_age AS patientAge,
+                    v.doctor_id AS doctorId,
+                    v.doctor_name AS doctorName,
+                    v.department_id AS departmentId,
+                    d.department_name AS departmentName,
+                    v.visit_date AS appointmentDate,
+                    v.start_time AS appointmentStartTime,
+                    v.end_time AS appointmentEndTime,
+                    v.visit_status AS visitStatus,
+                    r.reason_name AS reason,
+                    v.billing_status AS paymentStatus,
+                    bh.net_amount AS billedAmount,
+                    v.billing_hd_id AS billingHeaderId
+                FROM visit v
+                LEFT JOIN patient p ON p.patient_id = v.patient_id
+                LEFT JOIN mas_department d ON d.department_id = v.department_id
+                LEFT JOIN mas_appointment_change_reason r ON r.reason_id = v.cancelled_reason_id
+                LEFT JOIN billing_header bh ON bh.bill_hd_id = v.billing_hd_id
+                WHERE v.hospital_id = :hospitalId
+            
+                AND (
+                          (:patientId IS NOT NULL AND v.patient_id = :patientId)
+                OR
+                        (:mobileNo IS NOT NULL AND :mobileNo <> '' AND p.p_mobile_number = :mobileNo)
+                    )
+                AND (:includeAllHistory = true OR v.visit_date >= CURRENT_DATE)  -- Include all history if flag is true, otherwise only future appointments
+                AND LOWER(v.visit_status) IN ('y', 'c', 'n')
+                AND v.department_id IN (:departmentIds)
+                ORDER BY v.visit_date ASC
+            """, nativeQuery = true)
+    List<AppointmentHistoryProjection> findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
             @Param("hospitalId") Long hospitalId,
             @Param("patientId") Long patientId,
             @Param("mobileNo") String mobileNo,
@@ -371,56 +374,57 @@ WHERE v.visit_status = 'n'
 
     /**
      * Fetches cancelled appointments based on hospital, department, doctor, date range and cancellation reason
-     * @param hospitalId Hospital ID (required)
-     * @param departmentId Department ID (optional)
-     * @param doctorId Doctor ID
-     * @param fromDate From date
-     * @param toDate To date (optional)
+     *
+     * @param hospitalId           Hospital ID (required)
+     * @param departmentId         Department ID (optional)
+     * @param doctorId             Doctor ID (optional)
+     * @param fromDate             From date (optional)
+     * @param toDate               To date (optional)
      * @param cancellationReasonId Cancellation reason ID (optional)
      * @return List of cancelled appointments
      */
     @Query(value = """
-        SELECT 
-            v.visit_id AS visitId,
-            v.patient_id AS patientId,
-            CONCAT(
-                COALESCE(p.p_fn, ''), ' ',
-                COALESCE(p.p_mn, ''), ' ',
-                COALESCE(p.p_ln, '')
-            ) AS patientName,
-            p.p_mobile_number AS mobileNumber,
-            p.p_age AS patientAge,
-            CASE 
-                WHEN g.gender_name IS NOT NULL THEN g.gender_name
-                ELSE ''
-            END AS gender,
-            v.doctor_id AS doctorId,
-            v.doctor_name AS doctorName,
-            v.department_id AS departmentId,
-            d.department_name AS departmentName,
-            DATE(v.visit_date) AS appointmentDate,
-            CONCAT(
-                TO_CHAR(v.start_time, 'HH24:MI'),
-                ' to ',
-                TO_CHAR(v.end_time, 'HH24:MI')
-            ) AS appointmentTime,
-            v.cancelled_datetime AS cancellationDateTime,
-            v.cancelled_by AS cancelledBy,
-            r.reason_name AS cancellationReason
-        FROM visit v
-        LEFT JOIN patient p ON p.patient_id = v.patient_id
-        LEFT JOIN mas_gender g ON g.id = p.p_gender_id
-        LEFT JOIN mas_department d ON d.department_id = v.department_id
-        LEFT JOIN mas_appointment_change_reason r ON r.reason_id = v.cancelled_reason_id
-        WHERE v.hospital_id = :hospitalId
-        AND LOWER(v.visit_status) = 'c'
-        AND (:departmentId IS NULL OR v.department_id = :departmentId)
-        AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
-        AND (:fromDate IS NULL OR DATE(v.visit_date) >= :fromDate)
-        AND (:toDate IS NULL OR DATE(v.visit_date) <= :toDate)
-        AND (:cancellationReasonId IS NULL OR v.cancelled_reason_id = :cancellationReasonId)
-        ORDER BY v.cancelled_datetime DESC
-    """,
+                SELECT 
+                    v.visit_id AS visitId,
+                    v.patient_id AS patientId,
+                    CONCAT(
+                        COALESCE(p.p_fn, ''), ' ',
+                        COALESCE(p.p_mn, ''), ' ',
+                        COALESCE(p.p_ln, '')
+                    ) AS patientName,
+                    p.p_mobile_number AS mobileNumber,
+                    p.p_age AS patientAge,
+                    CASE 
+                        WHEN g.gender_name IS NOT NULL THEN g.gender_name
+                        ELSE ''
+                    END AS gender,
+                    v.doctor_id AS doctorId,
+                    v.doctor_name AS doctorName,
+                    v.department_id AS departmentId,
+                    d.department_name AS departmentName,
+                    DATE(v.visit_date) AS appointmentDate,
+                    CONCAT(
+                        TO_CHAR(v.start_time, 'HH24:MI'),
+                        ' to ',
+                        TO_CHAR(v.end_time, 'HH24:MI')
+                    ) AS appointmentTime,
+                    v.cancelled_datetime AS cancellationDateTime,
+                    v.cancelled_by AS cancelledBy,
+                    r.reason_name AS cancellationReason
+                FROM visit v
+                LEFT JOIN patient p ON p.patient_id = v.patient_id
+                LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+                LEFT JOIN mas_department d ON d.department_id = v.department_id
+                LEFT JOIN mas_appointment_change_reason r ON r.reason_id = v.cancelled_reason_id
+                WHERE v.hospital_id = :hospitalId
+                AND LOWER(v.visit_status) = 'c'
+                AND (:departmentId IS NULL OR v.department_id = :departmentId)
+                AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
+                AND (:fromDate IS NULL OR DATE(v.visit_date) >= :fromDate)
+                AND (:toDate IS NULL OR DATE(v.visit_date) <= :toDate)
+                AND (:cancellationReasonId IS NULL OR v.cancelled_reason_id = :cancellationReasonId)
+                ORDER BY v.cancelled_datetime DESC
+            """,
             nativeQuery = true)
     List<CancelledAppointmentProjection> findCancelledAppointments(
             @Param("hospitalId") Long hospitalId,
@@ -435,32 +439,32 @@ WHERE v.visit_status = 'n'
      * Appointment Summary Report - Department-wise and Doctor-wise
      * Shows appointment statistics grouped by doctor and department
      *
-     * @param hospitalId Hospital ID (required)
+     * @param hospitalId   Hospital ID (required)
      * @param departmentId Department ID (optional - null for all departments)
-    // * @param doctorId Doctor ID (optional - null for all doctors)
-     * @param fromDate Start date
-     * @param toDate End date
+     *                     // * @param doctorId Doctor ID (optional - null for all doctors)
+     * @param fromDate     Start date (optional)
+     * @param toDate       End date (optional)
      * @return List of appointment summary statistics
      */
     @Query(value = """
-    SELECT 
-         v.department_id AS departmentId,
-        d.department_name AS departmentName,
-        COUNT(v.visit_id) AS totalCount,
-        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCompete) THEN 1 END) AS completedCount,
-        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCancel) THEN 1 END) AS cancelledCount,
-        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusClosed) THEN 1 END) AS noShowCount,
-        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusPending) THEN 1 END) AS pendingCount
-    FROM visit v
-    LEFT JOIN mas_department d ON d.department_id = v.department_id
-    WHERE v.hospital_id = :hospitalId
-    AND (:departmentId IS NULL OR v.department_id = :departmentId)
-     AND CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE)
-      AND CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE)
-     AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
-    GROUP BY  v.department_id, d.department_name
-    ORDER BY d.department_name
-""", nativeQuery = true)
+                SELECT 
+                     v.department_id AS departmentId,
+                    d.department_name AS departmentName,
+                    COUNT(v.visit_id) AS totalCount,
+                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCompete) THEN 1 END) AS completedCount,
+                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCancel) THEN 1 END) AS cancelledCount,
+                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusClosed) THEN 1 END) AS noShowCount,
+                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusPending) THEN 1 END) AS pendingCount
+                FROM visit v
+                LEFT JOIN mas_department d ON d.department_id = v.department_id
+                WHERE v.hospital_id = :hospitalId
+                AND (:departmentId IS NULL OR v.department_id = :departmentId)
+                 AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
+                  AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
+                 AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
+                GROUP BY  v.department_id, d.department_name
+                ORDER BY d.department_name
+            """, nativeQuery = true)
     List<AppointmentSummaryDepartmentProjection> getAppointmentSummaryDepartmentWiseReport(
             @Param("hospitalId") Long hospitalId,
             @Param("departmentId") Long departmentId,
@@ -474,41 +478,40 @@ WHERE v.visit_status = 'n'
             @Param("newStatus") String newStatus
 
     );
+
     /**
      * Appointment Summary Report - Department-wise and Doctor-wise
      * Shows appointment statistics grouped by doctor and department
      *
      * @param hospitalId Hospital ID (required)
-    // * @param departmentId Department ID (optional - null for all departments)
-     * @param doctorId Doctor ID (optional - null for all doctors)
-     * @param fromDate Start date (optional)
-     * @param toDate End date (optional)
+     *                   // * @param departmentId Department ID (optional - null for all departments)
+     * @param doctorId   Doctor ID (optional - null for all doctors)
+     * @param fromDate   Start date (optional)
+     * @param toDate     End date (optional)
      * @return List of appointment summary statistics
      */
     @Query(value = """
-    SELECT 
-        v.doctor_id AS doctorId,
-        v.doctor_name AS doctorName,
-       
-        COUNT(v.visit_id) AS totalCount,
-       COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCompete) THEN 1 END) AS completedCount,
-        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCancel) THEN 1 END) AS cancelledCount,
-        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusClosed) THEN 1 END) AS noShowCount,
-        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusPending) THEN 1 END) AS pendingCount
-    FROM visit v
-    LEFT JOIN mas_department d ON d.department_id = v.department_id
-    WHERE v.hospital_id = :hospitalId
-    AND (:departmentId IS NULL OR v.department_id = :departmentId)
-      AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
-      AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
-      AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
-      AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
-    GROUP BY v.doctor_id, v.doctor_name
-    ORDER BY  v.doctor_name
-""", nativeQuery = true)
+                SELECT 
+                    v.doctor_id AS doctorId,
+                    v.doctor_name AS doctorName,
+            
+                    COUNT(v.visit_id) AS totalCount,
+                   COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCompete) THEN 1 END) AS completedCount,
+                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCancel) THEN 1 END) AS cancelledCount,
+                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusClosed) THEN 1 END) AS noShowCount,
+                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusPending) THEN 1 END) AS pendingCount
+                FROM visit v
+                LEFT JOIN mas_department d ON d.department_id = v.department_id
+                WHERE v.hospital_id = :hospitalId
+                  AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
+                  AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
+                  AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
+                  AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
+                GROUP BY v.doctor_id, v.doctor_name
+                ORDER BY  v.doctor_name
+            """, nativeQuery = true)
     List<AppointmentSummaryDoctorProjection> getAppointmentSummaryDoctorWiseReport(
             @Param("hospitalId") Long hospitalId,
-            @Param("departmentId") Long departmentId,
             @Param("doctorId") Long doctorId,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
@@ -516,7 +519,7 @@ WHERE v.visit_status = 'n'
             @Param("statusCancel") String statusCancel,
             @Param("statusCompete") String statusCompete,
             @Param("statusClosed") String statusClosed,
-             @Param("followUpStatus") String followUpStatus,
+            @Param("followUpStatus") String followUpStatus,
             @Param("newStatus") String newStatus
 
     );

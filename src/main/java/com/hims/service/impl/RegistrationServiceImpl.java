@@ -987,7 +987,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 log.info("Fetching doctor wise appointment summary report for hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}",
                         hospitalId, departmentId, doctorId, fromDate, toDate);
 
-                return getAppointmentSummaryDoctorWiseReport(hospitalId,departmentId, doctorId, fromDate, toDate);
+                return getAppointmentSummaryDoctorWiseReport(hospitalId, doctorId, fromDate, toDate);
             }
 
             return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {}, "Invalid flag. Use 0 for department summary and 1 for doctor summary",
@@ -1045,7 +1045,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             );
         }
     }
-    private ApiResponse<List<?>> getAppointmentSummaryDoctorWiseReport(Long hospitalId,Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate) {
+    private ApiResponse<List<?>> getAppointmentSummaryDoctorWiseReport(Long hospitalId, Long doctorId, LocalDate fromDate, LocalDate toDate) {
         try {
             log.info("Processing doctor wise appointment summary report with hospitalId: {}, doctorId: {}, fromDate: {}, toDate: {}",
                     hospitalId, doctorId, fromDate, toDate);
@@ -1056,7 +1056,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
 
             List<AppointmentSummaryDoctorProjection> list = visitRepository.getAppointmentSummaryDoctorWiseReport(
-                    hospitalId,departmentId, doctorId, fromDate, toDate,
+                    hospitalId, doctorId, fromDate, toDate,
                     AppConstants.VISIT_STATUS_PENDING,
                     AppConstants.VISIT_STATUS_CANCELLED,
                     AppConstants.VISIT_STATUS_COMPLETED,
