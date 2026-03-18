@@ -108,8 +108,8 @@ public final class ReportConstants {
     public static final String RADIOLOGY_JASPER = "radiology_report";
     public static final String RADIOLOGY_REPORT = "RadiologyReport";
 
-    public static final String OPD_REGISTRATION_JASPER = "OPD_register_report";
-    public static final String OPD_REGISTRATION_REPORT = "OPDRegisterReport";
+    public static final String OPD_REGISTER_JASPER = "OPD_register_report";
+    public static final String OPD_REGISTER_REPORT = "OPDRegisterReport";
 
     public static final String APPOINTMENT_SUMMARY_DEPARTMENT_JASPER = "Appointment_summary_department";
     public static final String APPOINTMENT_SUMMARY_DEPARTMENT_REPORT = "AppointmentSummaryDepartment";
@@ -122,4 +122,7 @@ public final class ReportConstants {
 
     public static final String APPOINTMENT_SUMMARY_DOCTOR_JASPER_DASHED = "Appointment_summary_doctor_dashed";
     public static final String APPOINTMENT_SUMMARY_DOCTOR_REPORT_DASHED = "AppointmentSummaryDoctorDashed";
+
+    public static final String DAILY_CANCELLATION_JASPER = "Daily_cancellation_report";
+    public static final String DAILY_CANCELLATION_REPORT = "DailyCancellationReport";
 }
