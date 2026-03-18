@@ -12,7 +12,7 @@ public class PaymentUpdateRequest {
 
     private String billingType;
     private List<Integer> billHeaderIds;
-    private int billHeaderId;
+    private Integer billHeaderId;
     private BigDecimal amount;
     private String mode;
     private String paymentReferenceNo;

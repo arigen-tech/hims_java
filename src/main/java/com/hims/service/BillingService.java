@@ -38,4 +38,7 @@ public interface BillingService {
             String registrationNo,
             int page,
             int size);
+
+    ApiResponse<List<PendingBillingResponse>> getPendingBillingLabRadio(Long billingHdId , String serviceCategoryCode);
+
 }
