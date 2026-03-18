@@ -16,9 +16,10 @@ import java.util.List;
 
 public interface BillingHeaderRepository extends JpaRepository<BillingHeader, Integer> {
     List<BillingHeader> findByPaymentStatusIn(List<String> paymentStatuses);
-    BillingHeader findByBillNoAndPaymentStatus(String billNo, String paymentStatus);
-    BillingHeader findByVisit(Visit visit);
 
+    BillingHeader findByBillNoAndPaymentStatus(String billNo, String paymentStatus);
+
+    BillingHeader findByVisit(Visit visit);
 
 
     @Query("""
