@@ -39,11 +39,9 @@ public class ReportController {
     @GetMapping(value = "/labReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintLabReportPdf(
             @RequestParam String billNo,
-            @RequestParam String paymentStatus,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("Bill_no", billNo);
-        params.put("Pay_status", paymentStatus);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
@@ -1176,6 +1174,33 @@ public class ReportController {
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/radiologyInvoice", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintRadiologyInvoice(
+            @RequestParam String billNo,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("Bill_no", billNo);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_INVOICE_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.RADIOLOGY_INVOICE_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_INVOICE_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
                                 ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));

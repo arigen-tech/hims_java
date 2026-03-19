@@ -1,0 +1,726 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Opening_Balance_report" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="782" leftMargin="30" rightMargin="30" topMargin="20" bottomMargin="20" uuid="39d22281-45c8-4606-bf48-7dcee887b858">
+	<property name="ireport.scriptlethandling" value="0"/>
+	<property name="ireport.encoding" value="UTF-8"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<import value="net.sf.jasperreports.engine.*"/>
+	<import value="java.util.*"/>
+	<import value="net.sf.jasperreports.engine.data.*"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="balance_m_id" class="java.lang.Long"/>
+	<queryString>
+		<![CDATA[select 
+	store_balance_m.balance_m_id,
+	mas_hospital.hospital_name,
+    store_balance_m.balance_no,
+    mas_department.department_name,
+    mas_store_item.pvms_no,
+    mas_store_item.nomenclature,
+    mas_store_unit.unit_name,
+    store_balance_t.batch_no,
+    store_balance_t.expiry_date,
+    store_balance_t.manufacture_date,
+	concat(mas_brand.brand_name, ' / ', mas_manufacturer.manufacturer_name) as brand_manufacturer,
+    store_balance_t.qty,
+	store_balance_t.units_per_pack,
+	store_balance_t.purchase_rate_per_unit,
+	store_balance_t.gst_percent,
+    store_balance_t.mrp_per_unit,
+    store_balance_m.entered_dt as balance_dt,
+    case upper(store_balance_m.status)
+        when 'A' then 'Approved'
+        when 'R' then 'Rejected'
+		when 'P' then 'Pending'
+		when 'S' then 'Saved'
+        else ''
+    end as status,
+    store_balance_t.total_mrp_value as total_amount,
+	store_balance_m.approved_by as approved_rejected_by,
+	store_balance_m.remarks,
+	store_balance_m.entered_by as submitted_by,
+	case store_balance_m.balance_type_drug_or_nondrug
+		when 'D' then 'Drug'
+		when 'N' then 'Non Drug'
+	end as balance_type
+from store_balance_t
+left join store_balance_m on store_balance_t.balance_m_id = store_balance_m.balance_m_id
+left join mas_department on store_balance_m.department_id = mas_department.department_id
+left join mas_store_item on store_balance_t.item_id = mas_store_item.item_id
+left join mas_store_unit on mas_store_item.unit_au = mas_store_unit.unit_id
+left join mas_brand on store_balance_t.brand_id = mas_brand.brand_id
+left join mas_manufacturer on store_balance_t.manufacturer_id = mas_manufacturer.manufacturer_id
+left join mas_hospital on store_balance_m.hospital_id = mas_hospital.hospital_id
+where store_balance_m.balance_m_id = $P{balance_m_id}
+order by mas_store_item.nomenclature]]>
+	</queryString>
+	<field name="balance_m_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="balance_m_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="balance_m_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_m"/>
+	</field>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<field name="balance_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="balance_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="balance_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_m"/>
+	</field>
+	<field name="department_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="department_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="department_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_department"/>
+	</field>
+	<field name="pvms_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pvms_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="pvms_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="nomenclature" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="nomenclature"/>
+		<property name="com.jaspersoft.studio.field.label" value="nomenclature"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="unit_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="unit_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="unit_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_unit"/>
+	</field>
+	<field name="batch_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="batch_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="batch_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_t"/>
+	</field>
+	<field name="expiry_date" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="expiry_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="expiry_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_t"/>
+	</field>
+	<field name="manufacture_date" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="manufacture_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="manufacture_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_t"/>
+	</field>
+	<field name="brand_manufacturer" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="brand_manufacturer"/>
+		<property name="com.jaspersoft.studio.field.label" value="brand_manufacturer"/>
+	</field>
+	<field name="qty" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="qty"/>
+		<property name="com.jaspersoft.studio.field.label" value="qty"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_t"/>
+	</field>
+	<field name="units_per_pack" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="units_per_pack"/>
+		<property name="com.jaspersoft.studio.field.label" value="units_per_pack"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_t"/>
+	</field>
+	<field name="purchase_rate_per_unit" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="purchase_rate_per_unit"/>
+		<property name="com.jaspersoft.studio.field.label" value="purchase_rate_per_unit"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_t"/>
+	</field>
+	<field name="gst_percent" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="gst_percent"/>
+		<property name="com.jaspersoft.studio.field.label" value="gst_percent"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_t"/>
+	</field>
+	<field name="mrp_per_unit" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="mrp_per_unit"/>
+		<property name="com.jaspersoft.studio.field.label" value="mrp_per_unit"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_t"/>
+	</field>
+	<field name="balance_dt" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="balance_dt"/>
+		<property name="com.jaspersoft.studio.field.label" value="balance_dt"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_m"/>
+	</field>
+	<field name="status" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="status"/>
+		<property name="com.jaspersoft.studio.field.label" value="status"/>
+	</field>
+	<field name="total_amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="total_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="total_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_t"/>
+	</field>
+	<field name="approved_rejected_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="approved_rejected_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="approved_rejected_by"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_m"/>
+	</field>
+	<field name="remarks" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="remarks"/>
+		<property name="com.jaspersoft.studio.field.label" value="remarks"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_m"/>
+	</field>
+	<field name="submitted_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="submitted_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="submitted_by"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_balance_m"/>
+	</field>
+	<field name="balance_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="balance_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="balance_type"/>
+	</field>
+	<variable name="S.NO." class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="71" splitType="Stretch">
+			<image>
+				<reportElement x="3" y="19" width="97" height="40" uuid="e200a8e8-a015-40f2-ae16-756bb4d05482"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="0" y="22" width="782" height="16" uuid="4916c95d-e02d-4d9a-b87a-28a3260c8a35"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="2" width="782" height="16" uuid="445c4306-7a26-4a6d-806c-8632879a7125"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="41" width="782" height="16" uuid="45546e6b-14aa-4714-ae4a-83628a84ddcd"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Opening Balance Report" + " - " + $F{balance_type}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="70" splitType="Stretch">
+			<staticText>
+				<reportElement x="520" y="45" width="156" height="16" uuid="4f3e0ad2-79fa-4874-a577-3f523c0ef2ba"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Remarks]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="520" y="24" width="156" height="16" uuid="acca1e37-ad32-4b5c-933f-bfcdef029adf"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Approved/Rejected By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="519" y="2" width="156" height="16" uuid="bc500e68-5812-4843-b313-fb8e241cf644"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Opening Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="45" width="118" height="16" uuid="257e09e9-0bda-4d79-a562-6a12630141ef"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Status]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="24" width="156" height="16" uuid="d71bd859-edfe-47cc-b3fd-59a5a98ebe25"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Submitted By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="2" width="156" height="16" uuid="32a0ca1d-4589-4014-acf3-1f7bf729aa0a"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Opening Balance No.     ]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement key="textField" x="640" y="2" width="131" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="dcb92600-d3a9-4e20-95e9-cf171139083f"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{balance_dt}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="114" y="2" width="184" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="35b202e1-f35d-4285-9d30-16e8cabf6567"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{balance_no}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="640" y="44" width="131" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="11f31676-faf3-4d14-a5fe-3c8a8ef3cac7"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{remarks}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="640" y="23" width="130" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="9f61f0eb-b37e-4e3e-9f9a-a7bd30243cd2"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{approved_rejected_by}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="114" y="23" width="184" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="aa50d625-0f69-4592-8db1-38f5f4b0a466"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{submitted_by}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="114" y="44" width="184" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="e8abf309-1c4a-46c4-9441-42754b778eb7"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-31" positionType="Float" x="0" y="20" width="782" height="1" uuid="55abd50b-ff17-4d55-9898-a74df9a77a37"/>
+				<graphicElement>
+					<pen lineWidth="0.0" lineStyle="Solid"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement key="line-32" positionType="Float" x="0" y="41" width="782" height="1" uuid="71804d4f-9de5-4b19-867f-a599620a64ec"/>
+				<graphicElement>
+					<pen lineWidth="0.0" lineStyle="Solid"/>
+				</graphicElement>
+			</line>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="45" splitType="Stretch">
+			<line>
+				<reportElement key="line-1" x="0" y="3" width="1" height="42" uuid="be660948-e058-4c02-b1f5-c9d65a8061a1"/>
+			</line>
+			<line>
+				<reportElement key="line-4" x="79" y="3" width="1" height="42" uuid="e3c9261e-611a-4335-9657-b466dbd49aad"/>
+			</line>
+			<line>
+				<reportElement key="line-5" x="192" y="3" width="1" height="42" uuid="c2c661b6-44ae-470c-8a16-867c1568dc44"/>
+			</line>
+			<line>
+				<reportElement key="line-6" x="238" y="3" width="1" height="42" uuid="89d5497a-e4ff-4096-8ab2-4ce2b697373d"/>
+			</line>
+			<line>
+				<reportElement key="line-8" x="291" y="3" width="1" height="42" uuid="5ba34430-9836-4313-8c84-50909b43c589"/>
+			</line>
+			<line>
+				<reportElement key="line-9" x="403" y="3" width="1" height="42" uuid="a6e53edf-31d1-428c-a084-235ddd08325c"/>
+			</line>
+			<line>
+				<reportElement key="line-10" x="593" y="3" width="1" height="42" uuid="5c73d281-9a66-4de6-8325-abedfa763633"/>
+			</line>
+			<line>
+				<reportElement key="line-11" x="730" y="3" width="1" height="42" uuid="153c131b-a5af-4019-8876-4680699c7d6f"/>
+			</line>
+			<line>
+				<reportElement key="line-13" x="0" y="3" width="782" height="1" uuid="447c3c22-a3d2-4bde-823d-d121654bf76f"/>
+			</line>
+			<line>
+				<reportElement key="line-27" x="0" y="44" width="782" height="1" uuid="e4818b1e-485a-402b-91b0-1c8f7d4a6991"/>
+			</line>
+			<line>
+				<reportElement key="line-29" x="781" y="3" width="1" height="42" uuid="82fe04ce-dcdc-444a-8729-6bed5de9389c"/>
+			</line>
+			<line>
+				<reportElement key="line-33" x="347" y="3" width="1" height="42" uuid="ba58777b-7cce-4314-ae3f-4cd860581870"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="24" y="4" width="1" height="40" uuid="99699deb-6203-4ed1-8206-cdfe3075af28"/>
+			</line>
+			<staticText>
+				<reportElement x="4" y="10" width="19" height="29" uuid="aadd6636-540a-4509-8bf4-085d22056129"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S. No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="9" width="46" height="30" uuid="9b104ea7-1a5a-48ab-af19-514e35460ec3"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Drug Code]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="84" y="9" width="106" height="30" uuid="cbd099e6-3a3d-4bd6-880a-28638757954b"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Drug Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="195" y="10" width="42" height="30" uuid="3dc3e99c-4181-4a91-b601-e2d06cc3f42c"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Unit]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="242" y="10" width="44" height="30" uuid="238eb2c5-903c-4bd7-97a3-ddd7edd2f8f5"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Batch No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="295" y="10" width="49" height="30" uuid="27ffdbf3-8d23-4ba7-9e90-e990c44f678a"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DOM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="351" y="10" width="49" height="30" uuid="8958da0f-10ca-4f77-b483-f5d732cb433e"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DOE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="521" y="9" width="31" height="30" uuid="309e982b-8803-48dd-9a25-b3eb6df404cb"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="695" y="9" width="28" height="30" uuid="45b0b440-6574-4751-aefe-a19504c6b9c6"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Unit Rate]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="733" y="9" width="46" height="30" uuid="54e0a7f3-eb93-4be7-ab31-b1051689eb6b"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Amount]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-10" x="553" y="3" width="1" height="42" uuid="452f0ac1-20f8-4809-a0d5-6a4fc8000b30"/>
+			</line>
+			<staticText>
+				<reportElement x="557" y="9" width="33" height="30" uuid="1b1e52fa-e9f7-42e4-80f4-d957c3c45ccb"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Units/ pack]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="597" y="9" width="51" height="30" uuid="eb30000c-2611-438b-8866-9e998e85883c"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Purchase rate/ unit]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-11" x="648" y="3" width="1" height="42" uuid="ec847fed-2050-40af-a75f-c26f448a20f0"/>
+			</line>
+			<staticText>
+				<reportElement x="654" y="9" width="33" height="30" uuid="534d9c63-018a-4383-99e7-0a9304f6c7ac"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GST %]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-11" x="689" y="3" width="1" height="42" uuid="d934f534-91f4-43ab-96c9-dc83ae74c276"/>
+			</line>
+			<staticText>
+				<reportElement x="406" y="9" width="111" height="30" uuid="1228d4fa-2868-4ae6-ae60-93041f6e6da5"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Brand / Manufacturer]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-10" x="518" y="2" width="1" height="42" uuid="eb99e7b3-9cef-4efd-bcd5-309480d2b068"/>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="33" splitType="Stretch">
+			<line>
+				<reportElement key="line-14" positionType="Float" x="0" y="31" width="782" height="1" uuid="8143e879-9cd5-4a1a-9a75-5232cdb105e3"/>
+			</line>
+			<line>
+				<reportElement key="line-15" positionType="Float" stretchType="RelativeToTallestObject" x="0" y="-2" width="1" height="34" uuid="996e1cee-1b69-4410-9271-4b7c98b9e2a3"/>
+			</line>
+			<line>
+				<reportElement key="line-18" positionType="Float" stretchType="RelativeToTallestObject" x="79" y="-2" width="1" height="34" uuid="dfd55a22-296f-4b31-8251-064b19f0f5e1"/>
+			</line>
+			<line>
+				<reportElement key="line-20" positionType="Float" stretchType="RelativeToTallestObject" x="192" y="-3" width="1" height="35" uuid="31aa6a7d-e70e-4365-b539-4a5bf4bfea7c"/>
+			</line>
+			<line>
+				<reportElement key="line-21" positionType="Float" stretchType="RelativeToTallestObject" x="238" y="-2" width="1" height="34" uuid="a6fc15d5-79ee-499e-a75b-a50534296b1a"/>
+			</line>
+			<line>
+				<reportElement key="line-23" positionType="Float" stretchType="RelativeToTallestObject" x="291" y="-5" width="1" height="37" uuid="f9fc1697-7830-40f7-ba54-4c8b8abadf86"/>
+			</line>
+			<line>
+				<reportElement key="line-24" positionType="Float" stretchType="RelativeToTallestObject" x="593" y="-2" width="1" height="34" uuid="1934b214-d638-44ea-8da5-6958b4c7bc00"/>
+			</line>
+			<line>
+				<reportElement key="line-25" positionType="Float" stretchType="RelativeToTallestObject" x="730" y="-2" width="1" height="34" uuid="c8dd9879-e511-4ae4-951a-d85cafe9f3e6"/>
+			</line>
+			<line>
+				<reportElement key="line-26" positionType="Float" stretchType="RelativeToTallestObject" x="781" y="-2" width="1" height="34" uuid="00552ae8-9d58-4806-b178-b99ee7f53503"/>
+			</line>
+			<line>
+				<reportElement key="line-30" positionType="Float" stretchType="RelativeToTallestObject" x="403" y="-4" width="1" height="37" uuid="b9e6e6bf-7b65-4412-932a-31e80b2b3033"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="28" y="2" width="50" height="29" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="727edb28-9067-4c29-9130-90c69bf51ae5"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pvms_no}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="83" y="2" width="107" height="25" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="70e5b97c-d326-4ed9-847e-92a8d6bb7b58"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nomenclature}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="194" y="2" width="42" height="25" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="f5d2bfa1-a4d3-4feb-9a26-866d2b9aa6bd"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{unit_name}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="241" y="2" width="49" height="25" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="a6c2b73b-ba5a-4eda-b30a-90b3d8849370"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{batch_no}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement key="textField" x="350" y="2" width="52" height="25" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="6d502ffc-466f-454f-be83-2398a4e40c03"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{expiry_date}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="###0" isBlankWhenNull="true">
+				<reportElement key="textField" x="520" y="2" width="31" height="25" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="9a8dbf1a-7782-41d9-9640-4a7739da54fc"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{qty}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="###0.00" isBlankWhenNull="true">
+				<reportElement key="textField" x="695" y="2" width="34" height="25" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="9b31526b-f290-4c08-b431-0267824f87b5"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mrp_per_unit}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="###0.00" isBlankWhenNull="true">
+				<reportElement key="textField" x="732" y="2" width="48" height="25" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="b89ff158-d45f-4f09-91f7-a182b5ac098f"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{total_amount}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-34" positionType="Float" stretchType="RelativeToTallestObject" x="347" y="-5" width="1" height="37" uuid="ca60d753-d472-4296-ac2b-d14c4c55971f"/>
+			</line>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement key="textField" x="294" y="2" width="52" height="25" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="4651f063-858e-4b49-bf5e-52afcf0f94ce"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{manufacture_date}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-36" positionType="Float" stretchType="RelativeToBandHeight" x="24" y="-2" width="1" height="35" uuid="0d1f6c60-20a5-4373-b76e-5e15aec79bc6"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField-1" x="4" y="3" width="19" height="15" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="37b77f52-4484-4635-a1cd-be0feba77f01"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{S.NO.}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-24" positionType="Float" stretchType="RelativeToTallestObject" x="553" y="-2" width="1" height="34" uuid="7560a6ae-2f76-4191-b720-7d2addfaec99"/>
+			</line>
+			<line>
+				<reportElement key="line-25" positionType="Float" stretchType="RelativeToTallestObject" x="648" y="-2" width="1" height="34" uuid="f05c5c65-2596-4e17-9e72-fcd3c76eb96e"/>
+			</line>
+			<line>
+				<reportElement key="line-25" positionType="Float" stretchType="RelativeToTallestObject" x="689" y="-2" width="1" height="34" uuid="032b73f7-ca80-492a-8148-42835d4050ff"/>
+			</line>
+			<line>
+				<reportElement key="line-24" positionType="Float" stretchType="RelativeToTallestObject" x="518" y="-3" width="1" height="34" uuid="90120cca-f19b-4145-bc0b-2a2f1569649c"/>
+			</line>
+			<textField>
+				<reportElement x="406" y="2" width="111" height="25" uuid="55547d64-f025-4b44-83d8-efa2d82bf963"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{brand_manufacturer}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="557" y="2" width="33" height="25" uuid="502dfdac-04ce-45a7-9eff-43ac694da5d1"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{units_per_pack}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="597" y="2" width="51" height="25" uuid="7ec643b3-a3c3-4f23-bf51-552b8bc1e657"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{purchase_rate_per_unit}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="650" y="2" width="38" height="25" uuid="3a3a67b6-03e7-426e-a12c-c26b9c39271d"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gst_percent} + "%"]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="26" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="4" width="551" height="16" uuid="a4b84aa4-9804-43ca-a62e-7487231b43ea"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOUND]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

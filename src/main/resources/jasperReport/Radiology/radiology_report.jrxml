@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="radiology_report" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="dc46afb7-39ed-4d83-824c-9e2895af52bb">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="rad_orderdt_id" class="java.lang.Long"/>
+	<queryString>
+		<![CDATA[select 
+	mh.hospital_name,
+	p.uhid_no as patient_id,
+	concat(p.p_fn, ' ', p.p_ln) as patient_name,
+	concat(p.p_age, '/', mg.gender_name) as age_gender,
+	to_char(hd.order_time, 'dd/MM/yyyy hh12:mi am') as order_date_time,
+	to_char(dt.study_date, 'dd/MM/yyyy hh12:mi am') as study_date_time,
+	to_char(dt.report_date, 'dd/MM/yyyy hh12:mi am') as report_date_time,
+	dmi.investigation_name,
+	replace(
+		replace(
+			replace(
+				replace(
+					rsr.report_desc,'<h3><strong>','<b>'
+				),'</strong></h3>','</b><br/><br/>'
+			),'<p>',''
+		),'</p>','<br/><br/>'
+	) as description,
+	concat(me.emp_fn, ' ', coalesce(me.emp_mn, ''), ' ',me.emp_ln) as doc_name,
+	me.qualification,
+	me.medical_registration_no
+from rad_orderdt dt
+left join rad_study_report rsr on dt.rad_orderdt_id = rsr.rad_orderdt_id
+left join users u on rsr.createdby = u.user_id
+left join mas_employee me on u.employee_id = me.emp_id
+left join rad_orderhd hd on dt.rad_orderhd_id = hd.rad_orderhd_id
+left join dg_mas_investigation dmi on dt.investigation_id = dmi.investigation_id
+left join patient p on hd.patient_id = p.patient_id
+left join mas_gender mg on p.p_gender_id = mg.id
+left join mas_hospital mh on hd.hospital_id = mh.hospital_id
+where dt.report_status = 'y'
+and dt.rad_orderdt_id = $P{rad_orderdt_id}]]>
+	</queryString>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<field name="patient_id" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="patient_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_name"/>
+	</field>
+	<field name="age_gender" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="age_gender"/>
+		<property name="com.jaspersoft.studio.field.label" value="age_gender"/>
+	</field>
+	<field name="order_date_time" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="order_date_time"/>
+		<property name="com.jaspersoft.studio.field.label" value="order_date_time"/>
+	</field>
+	<field name="study_date_time" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="study_date_time"/>
+		<property name="com.jaspersoft.studio.field.label" value="study_date_time"/>
+	</field>
+	<field name="report_date_time" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="report_date_time"/>
+		<property name="com.jaspersoft.studio.field.label" value="report_date_time"/>
+	</field>
+	<field name="investigation_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="investigation_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="investigation_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_mas_investigation"/>
+	</field>
+	<field name="description" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="description"/>
+		<property name="com.jaspersoft.studio.field.label" value="description"/>
+	</field>
+	<field name="doc_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="doc_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="doc_name"/>
+	</field>
+	<field name="qualification" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="qualification"/>
+		<property name="com.jaspersoft.studio.field.label" value="qualification"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_employee"/>
+	</field>
+	<field name="medical_registration_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="medical_registration_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="medical_registration_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_employee"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="132" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="24" width="555" height="18" uuid="b15ea879-d266-4cfb-8100-b5fea577b3a6"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Radiology Report]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="5" width="555" height="16" uuid="62601cf0-11d0-47e2-a837-54734d7b813f"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="10" y="7" width="97" height="40" uuid="68979e1d-57b6-4056-a11e-ce90cf43da01"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="4" y="54" width="80" height="14" uuid="92835743-61a5-44ca-ab20-6745081584eb"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient ID]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="88" y="54" width="119" height="14" uuid="d0398cba-8d24-43a0-b0b9-6a9891bedf74"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{patient_id}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="4" y="70" width="80" height="14" uuid="307d49a1-44c0-420d-942e-fa5dff3c33e0"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient Name]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="88" y="70" width="119" height="14" uuid="e3b7f741-b9f2-4d8c-b24c-6c0788b8fcdc"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="4" y="87" width="80" height="14" uuid="875a38a0-853a-4705-aaf9-2f02c1d4d7bc"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Age/Gender]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="88" y="87" width="119" height="14" uuid="73efea3f-937c-4394-926b-ba54e0f87b0f"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{age_gender}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="4" y="103" width="80" height="14" uuid="8bfa97ca-19cb-40ba-adf8-2b5e5b2f9bbb"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ref. By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="307" y="54" width="102" height="14" uuid="67cf3ece-43ab-45d2-a9c6-53041a5a483e"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Order Date/Time]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="411" y="54" width="141" height="14" uuid="1d01c9e4-e9cd-4210-9be3-c243cfa2a877"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{order_date_time}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="307" y="70" width="102" height="14" uuid="7ffb232c-2459-4a32-a919-a6c5e5534e28"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Study Date/TIme]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="411" y="70" width="141" height="14" uuid="2b0cac49-8fdd-43af-87c8-079a59eb49c8"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{study_date_time}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="307" y="87" width="102" height="14" uuid="e6a69323-e38f-41eb-8d5a-75749ad03a0a"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Report Date/Time]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="411" y="87" width="141" height="14" uuid="0f1fafad-513d-499f-9f91-568ca90b8781"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{report_date_time}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="307" y="103" width="102" height="14" uuid="a89c74ef-1edd-4688-b823-72de2e6d44a1"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Generated on]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="411" y="103" width="141" height="14" uuid="fd10a6e5-8e53-426a-a733-44525eada1c1"/>
+				<textElement textAlignment="Left">
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toLowerCase()]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="126" width="555" height="1" uuid="bdc2f417-e6b8-44a8-a833-a447a7526a3c"/>
+			</line>
+		</band>
+	</title>
+	<detail>
+		<band height="50">
+			<textField>
+				<reportElement x="0" y="10" width="555" height="18" uuid="7662371a-045e-4dfc-8cd9-9fe8eaf2f337"/>
+				<textElement textAlignment="Center">
+					<font size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{investigation_name}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement stretchType="ElementGroupBottom" x="4" y="30" width="543" height="14" isPrintWhenDetailOverflows="true" uuid="0f6056be-69f3-480b-91fd-fc8e215172e7"/>
+				<textElement textAlignment="Left" markup="html">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{description}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="74">
+			<staticText>
+				<reportElement x="415" y="7" width="139" height="14" uuid="847fd3bb-c146-49b9-a560-f16ec42572cc"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Report Created By:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="415" y="22" width="139" height="14" uuid="8d9da108-f22b-4cdc-a659-c6552e13be03"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{doc_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="415" y="37" width="139" height="14" uuid="46f6ca44-5751-483c-87b3-d284633d2ce0"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{qualification}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="415" y="53" width="139" height="21" uuid="240b57ee-e99a-4e9f-840c-daccd6eaa4a5"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Reg no." +$F{medical_registration_no}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="22">
+			<staticText>
+				<reportElement x="0" y="4" width="555" height="18" uuid="4415b764-2c84-411e-9cc3-3342818739c1"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOUND]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

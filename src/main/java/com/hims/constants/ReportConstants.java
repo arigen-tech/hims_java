@@ -125,4 +125,7 @@ public final class ReportConstants {
 
     public static final String DAILY_CANCELLATION_JASPER = "Daily_cancellation_report";
     public static final String DAILY_CANCELLATION_REPORT = "DailyCancellationReport";
+
+    public static final String RADIOLOGY_INVOICE_JASPER = "Radiology_invoice";
+    public static final String RADIOLOGY_INVOICE_REPORT = "Radiology_invoice";
 }
