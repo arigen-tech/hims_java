@@ -11,13 +11,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 public interface BillingHeaderRepository extends JpaRepository<BillingHeader, Integer> {
     List<BillingHeader> findByPaymentStatusIn(List<String> paymentStatuses);
-    BillingHeader findByBillNoAndPaymentStatus(String billNo, String paymentStatus);
-    BillingHeader findByVisit(Visit visit);
 
+    BillingHeader findByBillNoAndPaymentStatus(String billNo, String paymentStatus);
+
+    BillingHeader findByVisit(Visit visit);
 
 
     @Query("""
@@ -135,40 +137,13 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 v.token_no AS tokenNo,
             
                 COALESCE(bd_reg.amount_after_discount, 0) AS registrationCost,
+                COALESCE(bd_other.tariff, 0) AS tariff,
+                COALESCE(bd_other.tax_percent, bd_reg.tax_percent, 0) AS taxPercent,
             
-                COALESCE(bd_serv.tariff, 0) AS tariff,
-            
-                COALESCE(bd_serv.tax_percent, bd_reg.tax_percent, 0) AS taxPercent,
                 bh.discount_amount AS discountAmount,
                 bh.total_amount AS totalAmount,
                 bh.tax_total AS taxAmount,
                 bh.net_amount AS netAmount,
-            (
-               SELECT bd2.registration_cost
-               FROM billing_details bd2
-               JOIN mas_service_category msc 
-                    ON bd2.service_category_id = msc.id
-               WHERE bd2.bill_hd_id = bh.bill_hd_id
-               AND msc.service_cate_code = 'SC010'
-               LIMIT 1
-            ) AS registrationCost,
-            
-            (
-               SELECT bd2.registration_cost
-               FROM billing_details bd2
-               JOIN mas_service_category msc 
-                    ON bd2.service_category_id = msc.id
-               WHERE bd2.bill_hd_id = bh.bill_hd_id
-               AND msc.service_cate_code = 'SC010'
-               LIMIT 1
-            ) AS registrationCost,
-            
-            bd.tariff AS tariff,
-            bd.tax_percent AS taxPercent,
-            bh.discount_amount AS discountAmount,
-            bh.total_amount AS totalAmount,
-            bh.tax_total AS taxAmount,
-            bh.net_amount AS netAmount,
             
                 bp.policy_code AS policyCode,
                 bp.applicable_billing_type AS policyType,
@@ -177,84 +152,131 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 bp.description AS policyDescription
             
             FROM visit v
-            LEFT JOIN billing_header bh ON v.visit_id = bh.visit_id
+            LEFT JOIN billing_header bh 
+                   ON v.visit_id = bh.visit_id
             
-            LEFT JOIN billing_details bd_reg ON bh.bill_hd_id = bd_reg.bill_hd_id
-                AND bd_reg.service_category_id = (SELECT msc.id FROM mas_service_category msc WHERE msc.service_cate_code = :serviceCategoryId LIMIT 1)
-            LEFT JOIN billing_details bd 
-                   ON bh.bill_hd_id = bd.bill_hd_id
-                   AND bd.service_category_id NOT IN (
-                       SELECT id FROM mas_service_category 
-                       WHERE service_cate_code = 'SC010'
-                   )
+            -- Fetch category IDs once
+            LEFT JOIN mas_service_category reg_cat 
+                   ON reg_cat.service_cate_code = :regServiceCategory
             
-            LEFT JOIN billing_details bd_serv ON bh.bill_hd_id = bd_serv.bill_hd_id
-                AND bd_serv.service_category_id != (SELECT msc.id FROM mas_service_category msc WHERE msc.service_cate_code = :serviceCategoryId LIMIT 1)
+            LEFT JOIN mas_service_category opd_cat 
+                   ON opd_cat.service_cate_code = :opdServiceCategoryCode
             
-            LEFT JOIN mas_department d ON v.department_id = d.department_id
-            LEFT JOIN mas_opd_session s ON v.session_id = s.id
-            LEFT JOIN billing_policy_master bp ON bh.billing_policy_id = bp.billing_policy_id
+            -- Registration billing
+            LEFT JOIN billing_details bd_reg 
+                   ON bh.bill_hd_id = bd_reg.bill_hd_id
+                  AND bd_reg.service_category_id = reg_cat.id
+            
+            -- Other services
+            LEFT JOIN billing_details bd_other 
+                   ON bh.bill_hd_id = bd_other.bill_hd_id
+                  AND bd_other.service_category_id <> reg_cat.id
+            
+            LEFT JOIN mas_department d 
+                   ON v.department_id = d.department_id
+            LEFT JOIN mas_opd_session s 
+                   ON v.session_id = s.id
+            LEFT JOIN billing_policy_master bp 
+                   ON bh.billing_policy_id = bp.billing_policy_id
             
             WHERE v.patient_id = :patientId
-            AND LOWER(v.visit_status) = LOWER(:visitStatus)
-            AND (LOWER(bh.payment_status) = LOWER(:paymentStatusPending) 
-                 OR LOWER(bh.payment_status) = LOWER(:paymentStatusPartial))
+              AND LOWER(v.visit_status) = LOWER(:visitStatus)
+              AND LOWER(bh.payment_status) IN 
+                  (LOWER(:paymentStatusPending), LOWER(:paymentStatusPartial))
+              AND bh.service_category_id = opd_cat.id
             
             ORDER BY v.visit_date DESC
             """, nativeQuery = true)
     List<VisitBillingProjection> getVisitBillingDetails(
             @Param("patientId") Long patientId,
-            @Param("serviceCategoryId") String serviceCategoryId,
+            @Param("opdServiceCategoryCode") String opdServiceCategoryCode,
             @Param("visitStatus") String visitStatus,
             @Param("paymentStatusPending") String paymentStatusPending,
-            @Param("paymentStatusPartial") String paymentStatusPartial
+            @Param("paymentStatusPartial") String paymentStatusPartial,
+            @Param("regServiceCategory") String regServiceCategory
     );
 
     @Query(value = """
-            SELECT
-                bh.bill_hd_id AS headerId,
-                v.visit_id AS visitId,
-                bh.bill_no AS billNo,
-                TRIM(
+        SELECT
+            bh.bill_hd_id AS headerId,
+            v.visit_id AS visitId,
+            bh.bill_no AS billNo,
+            TRIM(
+                COALESCE(p.p_fn, '') || ' ' ||
+                COALESCE(p.p_mn, '') || ' ' ||
+                COALESCE(p.p_ln, '')
+            ) AS patientName,
+            p.p_mobile_number AS phoneNo,
+            CAST(EXTRACT(YEAR FROM AGE(p.p_dob)) AS text) AS age,
+            r.relation_name AS relation,
+            g.gender_name AS sex,
+            d.department_name AS department,
+            CAST(bh.bill_date AS text) AS billDate,
+            bh.net_amount AS netAmount,
+            sc.id AS serviceCategoryId,
+            sc.service_cat_name AS serviceCategoryName,
+            bh.payment_status AS paymentStatus,
+            p.uhid_no AS registrationNo
+        FROM billing_header bh
+        LEFT JOIN visit v ON v.billing_hd_id = bh.bill_hd_id
+        LEFT JOIN patient p ON p.patient_id = bh.patient_id
+        LEFT JOIN mas_relation r ON p.p_relation_id = r.relation_id
+        LEFT JOIN mas_gender g ON p.p_gender_id = g.id
+        LEFT JOIN mas_department d ON v.department_id = d.department_id
+        LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
+        WHERE LOWER(bh.payment_status) IN (LOWER(:complete), LOWER(:partial))
+          AND (
+                :patientName IS NULL OR
+                LOWER(TRIM(
                     COALESCE(p.p_fn, '') || ' ' ||
                     COALESCE(p.p_mn, '') || ' ' ||
                     COALESCE(p.p_ln, '')
-                ) AS patientName,
-                p.p_mobile_number AS phoneNo,
-                CAST(EXTRACT(YEAR FROM AGE(p.p_dob)) AS text) AS age,
-                r.relation_name AS relation,
-                g.gender_name AS sex,
-                d.department_name AS department,
-                CAST(bh.bill_date AS text) AS billDate,
-                bh.net_amount AS netAmount,
-                sc.id AS serviceCategoryId,
-                sc.service_cat_name AS serviceCategoryName,
-                bh.payment_status AS paymentStatus,
-                p.uhid_no AS registrationNo
-            FROM billing_header bh
-            LEFT JOIN visit v ON v.billing_hd_id = bh.bill_hd_id
-            LEFT JOIN patient p ON p.patient_id = bh.patient_id
-            LEFT JOIN mas_relation r ON p.p_relation_id = r.relation_id
-            LEFT JOIN mas_gender g ON p.p_gender_id = g.id
-            LEFT JOIN mas_department d ON v.department_id = d.department_id
-            LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
-            WHERE LOWER(bh.payment_status) = lower(:status)
-              AND LOWER(
-                    TRIM(
-                        COALESCE(p.p_fn, '') || ' ' ||
-                        COALESCE(p.p_mn, '') || ' ' ||
-                        COALESCE(p.p_ln, '')
-                    )
-              ) LIKE CONCAT('%', LOWER(:patientName), '%')
-              AND p.p_mobile_number LIKE CONCAT('%', :phoneNo, '%')
-              AND LOWER(p.uhid_no) LIKE CONCAT('%', LOWER(:registrationNo), '%')
-            ORDER BY bh.bill_hd_id DESC
-            """, nativeQuery = true)
-    List<BillingHeaderResponseProjection> searchBillingStatus(
+                )) LIKE LOWER(CONCAT('%', :patientName, '%'))
+          )
+          AND (
+                :phoneNo IS NULL OR
+                p.p_mobile_number LIKE CONCAT('%', :phoneNo, '%')
+          )
+          AND (
+                :registrationNo IS NULL OR
+                LOWER(p.uhid_no) LIKE LOWER(CONCAT('%', :registrationNo, '%'))
+          )
+        ORDER BY bh.bill_hd_id DESC
+        """,
+
+            countQuery = """
+        SELECT COUNT(*)
+        FROM billing_header bh
+        LEFT JOIN visit v ON v.billing_hd_id = bh.bill_hd_id
+        LEFT JOIN patient p ON p.patient_id = bh.patient_id
+        WHERE LOWER(bh.payment_status) IN (LOWER(:complete), LOWER(:partial))
+          AND (
+                :patientName IS NULL OR
+                LOWER(TRIM(
+                    COALESCE(p.p_fn, '') || ' ' ||
+                    COALESCE(p.p_mn, '') || ' ' ||
+                    COALESCE(p.p_ln, '')
+                )) LIKE LOWER(CONCAT('%', :patientName, '%'))
+          )
+          AND (
+                :phoneNo IS NULL OR
+                p.p_mobile_number LIKE CONCAT('%', :phoneNo, '%')
+          )
+          AND (
+                :registrationNo IS NULL OR
+                LOWER(p.uhid_no) LIKE LOWER(CONCAT('%', :registrationNo, '%'))
+          )
+        """,
+
+            nativeQuery = true
+    )
+    Page<BillingHeaderResponseProjection> searchBillingStatus(
             @Param("patientName") String patientName,
             @Param("phoneNo") String phoneNo,
             @Param("registrationNo") String registrationNo,
-            @Param("status") String status
+            @Param("complete") String complete,
+            @Param("partial") String partial,
+            Pageable pageable
     );
 
 
@@ -276,52 +298,133 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 bh.patient_id AS patientId,
                 bh.hdorder_id AS orderId
             FROM billing_header bh
-            JOIN mas_service_category msc 
-                ON msc.id = bh.service_category_id
-            JOIN patient p 
-                ON p.patient_id = bh.patient_id
-            LEFT JOIN mas_gender g 
-                ON g.id = p.p_gender_id
-            LEFT JOIN visit v 
-                ON v.visit_id = bh.visit_id
-            WHERE LOWER(bh.payment_status) = 'n'
-              AND msc.service_cate_code = :serviceCategoryCode
+            JOIN patient p ON p.patient_id = bh.patient_id
+            LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+            LEFT JOIN visit v ON v.visit_id = bh.visit_id
             
-              AND (:patientName IS NULL OR 
-                   LOWER(CONCAT(p.p_fn,' ',p.p_mn,' ',p.p_ln)) LIKE LOWER(CONCAT('%',:patientName,'%')))
+            WHERE LOWER(bh.payment_status) 
+                  IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
+            AND bh.service_category_id = :serviceCategoryId
             
-              AND (:mobileNo IS NULL OR 
-                   p.p_mobile_number LIKE CONCAT('%',:mobileNo,'%'))
+            AND (:patientName IS NULL OR 
+                 LOWER(CONCAT(p.p_fn,' ',p.p_mn,' ',p.p_ln)) 
+                 LIKE LOWER(CONCAT('%',:patientName,'%')))
             
-              AND (:registrationNo IS NULL OR 
-                   LOWER(p.uhid_no) LIKE LOWER(CONCAT('%',:registrationNo,'%')))
+            AND (:mobileNo IS NULL OR 
+                 LOWER(p.p_mobile_number) 
+                 LIKE LOWER(CONCAT('%',:mobileNo,'%')))
+            
+            AND (:registrationNo IS NULL OR 
+                 LOWER(p.uhid_no) 
+                 LIKE LOWER(CONCAT('%',:registrationNo,'%')))
+            
+            ORDER BY v.visit_date DESC
             """,
 
             countQuery = """
                     SELECT COUNT(*)
                     FROM billing_header bh
-                    JOIN mas_service_category msc 
-                        ON msc.id = bh.service_category_id
-                    JOIN patient p 
-                        ON p.patient_id = bh.patient_id
-                    WHERE LOWER(bh.payment_status) = 'n'
-                      AND msc.service_cate_code = :serviceCategoryCode
+                    JOIN patient p ON p.patient_id = bh.patient_id
                     
-                      AND (:patientName IS NULL OR 
-                           LOWER(CONCAT(p.p_fn,' ',p.p_mn,' ',p.p_ln)) LIKE LOWER(CONCAT('%',:patientName,'%')))
+                    WHERE LOWER(bh.payment_status) 
+                          IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
+                    AND bh.service_category_id = :serviceCategoryId
                     
-                      AND (:mobileNo IS NULL OR 
-                           p.p_mobile_number LIKE CONCAT('%',:mobileNo,'%'))
+                    AND (:patientName IS NULL OR 
+                         LOWER(CONCAT(p.p_fn,' ',p.p_mn,' ',p.p_ln)) 
+                         LIKE LOWER(CONCAT('%',:patientName,'%')))
                     
-                      AND (:registrationNo IS NULL OR 
-                           LOWER(p.uhid_no) LIKE LOWER(CONCAT('%',:registrationNo,'%')))
+                    AND (:mobileNo IS NULL OR 
+                         LOWER(p.p_mobile_number) 
+                         LIKE LOWER(CONCAT('%',:mobileNo,'%')))
+                    
+                    AND (:registrationNo IS NULL OR 
+                         LOWER(p.uhid_no) 
+                         LIKE LOWER(CONCAT('%',:registrationNo,'%')))
                     """,
             nativeQuery = true)
     <T> Page<T> findPendingBillingByCategoryId(
-            @Param("serviceCategoryCode") String serviceCategoryCode,
+            @Param("serviceCategoryId") Long serviceCategoryId,
             @Param("patientName") String patientName,
             @Param("mobileNo") String mobileNo,
             @Param("registrationNo") String registrationNo,
+            @Param("notPaidStatus") String notPaidStatus,
+            @Param("partialStatus") String partialStatus,
             Pageable pageable,
             Class<T> type);
+
+    @Query(value = """
+            SELECT 
+                v.visit_id AS visitId,
+                bh.bill_hd_id AS billinghdid,
+                bh.patient_id AS patientid,
+                bd.billing_dt_id AS billingdtId,
+            
+                p.p_fn AS firstName,
+                p.p_mn AS middleName,
+                p.p_ln AS lastName,
+            
+                p.p_mobile_number AS mobileNo,
+                p.p_dob AS dob,
+                p.uhid_no AS uhidNo,
+                g.gender_name AS gender,
+            
+                r.relation_name AS relation,
+                sc.service_cat_name AS billingType,
+                d.department_name AS department,
+            
+                CONCAT_WS(', ', p.p_address1,p.p_address2,p.p_city,p.p_pincode) AS address,
+            
+                bh.total_amount AS billHdTotalAmount,
+                bh.payment_status AS billingStatus,
+            
+                v.visit_date AS visitDate,
+                v.token_no AS tokenNo,
+            
+                oh.orderhd_id AS orderhdid,
+                oh.payment_status AS orderhdPaymentStatus,
+            
+                bd.item_name AS itemName,
+                bd.quantity,
+                bd.base_price AS basePrice,
+                bd.tariff,
+                bd.discount,
+                bd.amount_after_discount AS amountAfterDiscount,
+                bd.tax_percent AS taxPercent,
+                bd.tax_amount AS taxAmount,
+                bd.net_amount AS netAmount,
+                bd.payment_status AS detailPaymentStatus,
+            
+                bd.investigation_id AS investigationId,
+                inv.investigation_name AS investigationName,
+            
+                bd.package_id AS packageId,
+                pkg.name AS packageName
+            
+            FROM billing_header bh
+            JOIN billing_details bd ON bh.bill_hd_id = bd.bill_hd_id
+            JOIN patient p ON bh.patient_id = p.patient_id
+            
+            LEFT JOIN mas_gender g ON p.p_gender_id = g.id
+            LEFT JOIN mas_relation r ON p.p_relation_id = r.relation_id
+            LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
+            LEFT JOIN visit v ON bh.visit_id = v.visit_id
+            LEFT JOIN mas_department d ON v.department_id = d.department_id
+            LEFT JOIN dg_orderhd oh ON bh.hdorder_id = oh.orderhd_id
+            LEFT JOIN dg_mas_investigation inv ON bd.investigation_id = inv.investigation_id
+            LEFT JOIN dg_investigation_package pkg ON bd.package_id = pkg.id
+            
+            WHERE LOWER(bh.payment_status) IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
+            AND bh.service_category_id = :categoryId
+            AND LOWER(bd.payment_status) = LOWER(:notPaidStatus)
+            AND bh.bill_hd_id = :billinghdId
+            ORDER BY v.visit_date DESC
+            """,
+            nativeQuery = true)
+    List<LabRadioBillingDetailsProjection> getUnpaidBillingDetailsByBillingHdId(
+            @Param("billinghdId") Long billinghdId,
+            @Param("categoryId") Long categoryId,
+            @Param("notPaidStatus") String notPaidStatus,
+            @Param("partialStatus") String partialStatus
+    );
 }

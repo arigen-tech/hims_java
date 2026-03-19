@@ -15,7 +15,7 @@ public class PendingBillingResponse {
     private String patientName;
     private String mobileNo;
     private String age;
-    private String sex;
+    private String gender;
     private String relation;
     private String billingType;
     private String consultedDoctor;

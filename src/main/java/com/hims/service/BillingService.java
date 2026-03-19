@@ -5,6 +5,8 @@ import com.hims.entity.*;
 import com.hims.projection.BillingHeaderResponseProjection;
 import com.hims.request.PaymentUpdateRequest;
 import com.hims.response.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -19,7 +21,7 @@ public interface BillingService {
 
     ApiResponse<PatientAppointmentResponse> getBillingDetails(Long patientId);
 
-    ApiResponse<List<BillingHeaderResponseProjection>> getBillingStatus(String patientName, String phoneNo, String registrationNo);
+    ApiResponse<Page<BillingHeaderResponseProjection>> getBillingStatus(String patientName, String phoneNo, String registrationNo, Pageable pageable);
 
     //Update the Consultation services payment status
     ApiResponse<PaymentResponse> updatePayment(PaymentUpdateRequest opdreq);
@@ -38,4 +40,7 @@ public interface BillingService {
             String registrationNo,
             int page,
             int size);
+
+    ApiResponse<List<PendingBillingResponse>> getPendingBillingLabRadio(Long billingHdId , String serviceCategoryCode);
+
 }
