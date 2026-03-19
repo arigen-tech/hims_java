@@ -15,4 +15,5 @@ public class MasInvestigationPriceDetailsProjectionResponse {
     private LocalDate fromDt;
     private LocalDate toDt;
     private BigDecimal price;
+    private String status;
 }

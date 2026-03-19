@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.MasIcd;
+import com.hims.response.MasIcdResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,6 +33,32 @@ public interface MasIcdRepository extends JpaRepository<MasIcd, Long> {
     )
 """)
     Page<MasIcd> searchICD(int flag, String search, Pageable pageable);
+
+    @Query("""
+SELECT new com.hims.response.MasIcdResponse(
+    m.icdId,
+    m.icdCode,
+    m.icdName
+)
+FROM MasIcd m
+WHERE
+(
+    (:flag = 0 AND LOWER(m.status) IN ('y','n'))
+    OR
+    (:flag = 1 AND LOWER(m.status) = 'y')
+)
+AND
+(
+    :search IS NULL OR :search = '' OR
+    LOWER(m.icdCode) LIKE LOWER(CONCAT('%', :search, '%'))
+    OR LOWER(m.icdName) LIKE LOWER(CONCAT('%', :search, '%'))
+)
+""")
+    Page<MasIcdResponse> findAllIcdWithFilter(
+            int flag,
+            String search,
+            Pageable pageable
+    );
 
 
 }

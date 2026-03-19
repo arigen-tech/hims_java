@@ -127,7 +127,9 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
     @Query("""
     SELECT new com.hims.response.DepartmentDropdownResponse(
         d.id,
-        d.departmentName
+        d.departmentCode,
+        d.departmentName,
+        d.departmentType.departmentTypeCode
     )
     FROM MasDepartment d
     WHERE d.id IN :ids
@@ -141,7 +143,9 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
     @Query("""
     SELECT new com.hims.response.DepartmentDropdownResponse(
         d.id,
-        d.departmentName
+        d.departmentCode,
+        d.departmentName,
+        d.departmentType.departmentTypeCode
     )
     FROM MasDepartment d
     WHERE d.id = :id
@@ -150,6 +154,21 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
     Optional<DepartmentDropdownResponse> findCurrentDeptById(
             @Param("id") Long id
     );
+
+    @Query("""
+SELECT new com.hims.response.DepartmentDropdownResponse(
+    d.id,
+    d.departmentCode,
+    d.departmentName,
+    dt.departmentTypeCode
+)
+FROM MasDepartment d
+LEFT JOIN d.departmentType dt
+WHERE (:departmentTypeCode IS NULL OR dt.departmentTypeCode = :departmentTypeCode)
+ORDER BY d.departmentName ASC
+""")
+    List<DepartmentDropdownResponse> findDepartmentsForDropdown(
+            @Param("departmentTypeCode") String departmentTypeCode);
 
 
 

@@ -513,6 +513,26 @@ private MasCrossMatchTypeService masCrossMatchTypeService;
         return ResponseEntity.ok(masDepartmentService.getAllIndentApplicableDepartments(status));
     }
 
+    /**
+     * Fetch Departments
+
+     * This API retrieves department details from the system.
+
+     * - If no departmentTypeCode is provided, it returns all departments.
+     *   (Used for populating dropdown lists.)
+
+     * - If departmentTypeCode is provided, it filters and returns
+     *   the specific department matching the given code.
+     *   (Note: departmentTypeCode corresponds to departmentTypeCode in MasDepartmentType entity.)
+     *
+     * @param departmentTypeCode (optional) Department code used to filter results
+     * @return List of departments or a specific department based on the code
+     */
+    @GetMapping("/department/allForDropdowns")
+    public  ResponseEntity<?> getAllDepartmentsForDropdown(@RequestParam (required = false) String departmentTypeCode){
+        return ResponseEntity.ok(masDepartmentService.getAllDepartments(departmentTypeCode));
+    }
+
     //    ================================Mas DepartmentType Controller================================//
 
     @PostMapping("/department-type/create")

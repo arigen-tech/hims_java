@@ -371,7 +371,8 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                 projection.getInvestigationName(),
                 projection.getFromDt(),
                 projection.getToDt(),
-                projection.getPrice()
+                projection.getPrice(),
+                projection.getStatus()
         );
     }
 }
