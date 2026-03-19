@@ -73,9 +73,6 @@ public class MasEmployee {
     @Column(name = "id_document_name", length = 200)
     private String idDocumentName;
 
-//    @ManyToOne
-//    @JoinColumn(name = "department_id", referencedColumnName = "department_id")
-//    private MasDepartment departmentId;
 
     @Column(name = "from_dt")
     private Instant fromDate;
@@ -129,4 +126,11 @@ public class MasEmployee {
 
     @Column(name = "profile_description", columnDefinition = "TEXT")
     private String profileDescription;
+
+    @Column(name = "qualification",length=150)
+    private String qualification;
+
+    @Column(name = "medical_registration_no",length=50)
+    private String medicalRegistrationNo;
+
 }
