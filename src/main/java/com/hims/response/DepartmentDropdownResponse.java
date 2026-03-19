@@ -10,5 +10,7 @@ import lombok.Setter;
 public class DepartmentDropdownResponse {
 
     private Long id;
+    private String departmentCode;
     private String departmentName;
+    private String departmentTypeCode;
 }

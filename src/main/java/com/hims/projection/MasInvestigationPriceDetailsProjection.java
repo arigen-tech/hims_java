@@ -10,4 +10,5 @@ public interface MasInvestigationPriceDetailsProjection {
     LocalDate getFromDt();
     LocalDate getToDt();
     BigDecimal getPrice();
+    String getStatus();
 }

@@ -2,10 +2,7 @@ package com.hims.service;
 
 import com.hims.entity.MasUserDepartment;
 import com.hims.request.MasDepartmentRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.MasDepartmentResponse;
-import com.hims.response.MasDeptResponse;
-import com.hims.response.MasUserDepartmentResponse;
+import com.hims.response.*;
 
 import java.util.List;
 
@@ -26,4 +23,7 @@ public interface MasDepartmentService {
     ApiResponse<List<MasDepartmentResponse>> getAllWardDepartmentByWardCategory(Long wardCategory);
 
     ApiResponse<List<MasDeptResponse>> getAllIndentApplicableDepartments(String indentApplicable);
+
+    ApiResponse<List<DepartmentDropdownResponse>> getAllDepartments(String departmentTypeCode);
+
 }

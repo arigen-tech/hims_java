@@ -1,14 +1,12 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasDepartment;
 import com.hims.entity.MasWardCategory;
 import com.hims.entity.repository.*;
 import com.hims.request.MasDepartmentRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.MasDepartmentResponse;
-import com.hims.response.MasDeptResponse;
-import com.hims.response.MasUserDepartmentResponse;
+import com.hims.response.*;
 import com.hims.service.MasDepartmentService;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -258,6 +256,19 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
             return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
 
+    }
+
+    @Override
+    public ApiResponse<List<DepartmentDropdownResponse>> getAllDepartments(String departmentTypeCode) {
+        try {
+            log.info("getAllDepartments methods started...");
+            List<DepartmentDropdownResponse> departments = masDepartmentRepository.findDepartmentsForDropdown(departmentTypeCode);
+            log.info("getAllDepartments methods ended...");
+            return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("getAllDepartments method error :: ",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
     }
 
     private MasDeptResponse mapToResponseForDropDown(MasDepartment department){
