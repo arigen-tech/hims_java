@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="detailed_tat_report" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="6272a27a-47a8-4dac-bb88-ccd42fc899d5">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<parameter name="hospital_id" class="java.lang.Long"/>
+	<parameter name="investigation_id" class="java.lang.Long"/>
+	<parameter name="from_date" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="to_date" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="sub_chargecode_id" class="java.lang.Long"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[select 
+	mh.hospital_name,
+	msc.sub_chargecode_name,
+    dmi.investigation_name,
+    dmi.tat_hours as expected_tat,
+    count(*) as total_tests,
+    floor(avg(
+        floor(
+            extract(epoch from (tat.result_validation_date_time - tat.sample_collection_date_time)) / 3600
+        )::bigint
+    )) as avg_tat,
+	min(
+        floor(
+            extract(epoch from (tat.result_validation_date_time - tat.sample_collection_date_time)) / 3600
+        )::bigint
+    ) as min_tat,
+	max(
+        floor(
+            extract(epoch from (tat.result_validation_date_time - tat.sample_collection_date_time)) / 3600
+        )::bigint
+    ) as max_tat,
+	sum(
+        case
+            when floor(
+                extract(epoch from (tat.result_validation_date_time - tat.sample_collection_date_time)) / 3600
+            )::int < dmi.tat_hours then 1
+            else 0
+        end
+    ) as within_tat,
+	sum(
+        case
+            when floor(
+                extract(epoch from (tat.result_validation_date_time - tat.sample_collection_date_time)) / 3600
+            )::int > dmi.tat_hours then 1
+            else 0
+        end
+    ) as breached_tat,
+	floor(
+        (sum(
+            case
+                when floor(
+                    extract(epoch from (tat.result_validation_date_time - tat.sample_collection_date_time)) / 3600
+                )::int <= dmi.tat_hours then 1
+                else 0
+            end
+        )::numeric * 100.0 / count(*))
+    ) as compliance_percentage
+from lab_turn_around_time tat
+inner join dg_mas_investigation dmi on tat.investigation_id = dmi.investigation_id
+inner join dg_orderhd doh on tat.order_hd_id = doh.orderhd_id
+inner join mas_hospital mh on doh.hospital_id = mh.hospital_id
+inner join mas_sub_chargecode msc on dmi.sub_chargecode_id = msc.sub_chargecode_id
+where tat.result_validation_date_time is not null
+and tat.is_reject = false
+and doh.hospital_id = $P{hospital_id}
+and doh.order_date between $P{from_date} and $P{to_date}
+and ($P{investigation_id} is null or tat.investigation_id = $P{investigation_id})
+and ($P{sub_chargecode_id} is null or dmi.sub_chargecode_id = $P{sub_chargecode_id})
+group by dmi.investigation_name, dmi.tat_hours, mh.hospital_name, msc.sub_chargecode_name
+order by dmi.investigation_name]]>
+	</queryString>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<field name="sub_chargecode_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="sub_chargecode_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="sub_chargecode_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_sub_chargecode"/>
+	</field>
+	<field name="investigation_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="investigation_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="investigation_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_mas_investigation"/>
+	</field>
+	<field name="expected_tat" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="expected_tat"/>
+		<property name="com.jaspersoft.studio.field.label" value="expected_tat"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_mas_investigation"/>
+	</field>
+	<field name="total_tests" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="total_tests"/>
+		<property name="com.jaspersoft.studio.field.label" value="total_tests"/>
+	</field>
+	<field name="avg_tat" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="avg_tat"/>
+		<property name="com.jaspersoft.studio.field.label" value="avg_tat"/>
+	</field>
+	<field name="min_tat" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="min_tat"/>
+		<property name="com.jaspersoft.studio.field.label" value="min_tat"/>
+	</field>
+	<field name="max_tat" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="max_tat"/>
+		<property name="com.jaspersoft.studio.field.label" value="max_tat"/>
+	</field>
+	<field name="within_tat" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="within_tat"/>
+		<property name="com.jaspersoft.studio.field.label" value="within_tat"/>
+	</field>
+	<field name="breached_tat" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="breached_tat"/>
+		<property name="com.jaspersoft.studio.field.label" value="breached_tat"/>
+	</field>
+	<field name="compliance_percentage" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="compliance_percentage"/>
+		<property name="com.jaspersoft.studio.field.label" value="compliance_percentage"/>
+	</field>
+	<variable name="S.No." class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="69" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="36" width="802" height="18" uuid="1a990934-8de6-49c6-850e-2a2c02960bac"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Summary TAT Report]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="10" width="802" height="18" uuid="1867c8d9-ef76-493c-9756-53b35a5b6648"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
+			</textField>
+			<image scaleImage="RealHeight">
+				<reportElement x="10" y="10" width="160" height="51" uuid="4c0ca877-1d01-4a39-acfc-a2e5a10105a7"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="40" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="4" width="103" height="14" uuid="ea569dc4-1449-43f9-8c3f-38fae54bf3a5">
+					<printWhenExpression><![CDATA[$P{investigation_id} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Investigation Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="36" y="22" width="73" height="14" uuid="7a2aae3c-9091-43a7-b80a-fef30e1a3850"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Report Range]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+				<reportElement x="111" y="22" width="52" height="14" uuid="fef6ec6b-8c37-493a-b699-3f71542974d6"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{from_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="111" y="4" width="134" height="14" uuid="f74380a5-7b5d-4281-8fae-cd64eb39d30f">
+					<printWhenExpression><![CDATA[$P{investigation_id} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{investigation_name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="161" y="22" width="14" height="14" uuid="a7d3f454-c04e-43f1-a077-90c1b0ec4332"/>
+				<textElement textAlignment="Center">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[to]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+				<reportElement x="175" y="22" width="70" height="14" uuid="a79523ba-be7c-49af-bf0c-671019e9d551"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="573" y="22" width="73" height="14" uuid="7cee35e7-15ec-4f9f-a1a6-ea0d6dfc9592"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Generated On]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="596" y="4" width="46" height="14" uuid="bdc63d8d-66dc-4bb2-9e6a-30322157b198">
+					<printWhenExpression><![CDATA[$P{sub_chargecode_id} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Modality]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="646" y="4" width="134" height="14" uuid="6b4bde36-cfae-44ec-b5c3-0ee078d60fc3">
+					<printWhenExpression><![CDATA[$P{sub_chargecode_id} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sub_chargecode_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="646" y="22" width="134" height="14" uuid="be55179e-a2ba-43bd-ade1-64a48855223e"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toUpperCase()]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="32" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="31" width="802" height="1" uuid="717be86f-19a7-41d6-b83d-56de6551570e"/>
+			</line>
+			<line>
+				<reportElement x="0" y="3" width="802" height="1" uuid="253769cb-a9e7-43d6-823d-ca3c0743c908"/>
+			</line>
+			<staticText>
+				<reportElement x="3" y="6" width="17" height="25" uuid="072e8524-9a1b-4f2f-aad9-6c9baebb7def"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[S. No.]]></text>
+			</staticText>
+			<line>
+				<reportElement x="23" y="3" width="1" height="29" uuid="e0b4f8ee-44db-4011-a396-c7f8b0999fe5"/>
+			</line>
+			<staticText>
+				<reportElement x="30" y="6" width="116" height="25" uuid="07d11289-4ec2-4eb5-a4e1-e48c92128655"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Investigation Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="234" y="6" width="66" height="25" uuid="69faef64-1a3b-41fa-a235-fa231e7e0060"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Tests]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="307" y="5" width="72" height="25" uuid="e76ef5df-c2e2-4215-bb03-807d71354168"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Average TAT (Hrs)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="470" y="6" width="76" height="25" uuid="3555fa57-4808-4e03-861f-b8ddfa64162b"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Maximum TAT (Hrs)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="553" y="6" width="68" height="25" uuid="65f85beb-89f5-4396-95c2-7aa082fad6ec"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tests Within TAT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="722" y="5" width="80" height="25" uuid="99155f55-12c9-4c1a-bede-5edd22caf12d"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Compliance %]]></text>
+			</staticText>
+			<line>
+				<reportElement x="149" y="3" width="1" height="29" uuid="d51c5b6d-f7cd-45c9-b616-7241ecd6dd21"/>
+			</line>
+			<line>
+				<reportElement x="230" y="3" width="1" height="29" uuid="ce80ccd2-8d46-428b-a986-a7e5ada57ba8"/>
+			</line>
+			<line>
+				<reportElement x="302" y="3" width="1" height="29" uuid="b009e252-0cd9-4e3e-84b6-f132198a45d6"/>
+			</line>
+			<line>
+				<reportElement x="381" y="3" width="1" height="29" uuid="0d0bd136-23b4-4a32-bcd0-172e1d46532c"/>
+			</line>
+			<line>
+				<reportElement x="465" y="3" width="1" height="29" uuid="70cbb202-f5aa-4020-9d49-28d79e53505d"/>
+			</line>
+			<line>
+				<reportElement x="548" y="3" width="1" height="29" uuid="bee267bb-5341-432c-b117-b4e6b13814ab"/>
+			</line>
+			<line>
+				<reportElement x="622" y="3" width="1" height="29" uuid="c2a722c9-e49f-410e-8b12-389805a2ba24"/>
+			</line>
+			<line>
+				<reportElement x="718" y="3" width="1" height="29" uuid="750dd606-64de-4fc8-9c55-4c4356b80d54"/>
+			</line>
+			<line>
+				<reportElement x="0" y="3" width="1" height="29" uuid="123f638d-b0f4-4a99-a2d3-cc99ccb63abd"/>
+			</line>
+			<line>
+				<reportElement x="801" y="3" width="1" height="29" uuid="822140b5-cb12-4746-8381-3c8a534f8763"/>
+			</line>
+			<staticText>
+				<reportElement x="154" y="6" width="74" height="25" uuid="e9dafb4d-52de-471e-aac7-3f7c648633d3"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Expected TAT (Hrs)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="386" y="6" width="78" height="25" uuid="ef1ce551-f5ba-48c9-b7ac-5589cf449d97"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Minimum TAT (Hrs)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="627" y="6" width="88" height="25" uuid="fcc42f36-6737-4d25-b83c-d406927e4b7a"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tests Breached]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="32" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="28" width="802" height="1" uuid="0090d09f-aca2-43c9-ac21-72cce678b9f8"/>
+			</line>
+			<line>
+				<reportElement x="23" y="-5" width="1" height="33" uuid="f5b42cb7-55c7-4854-ad64-737bc29dca19"/>
+			</line>
+			<textField>
+				<reportElement x="3" y="3" width="17" height="25" uuid="f92d7263-26c7-47ba-81aa-74ce9c0dd7aa"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="-5" width="1" height="33" uuid="4c3f56aa-18d4-47ba-b883-451b62554839"/>
+			</line>
+			<line>
+				<reportElement x="801" y="-5" width="1" height="34" uuid="f8b31996-820a-4619-842b-4ccccd017157"/>
+			</line>
+			<textField>
+				<reportElement x="30" y="2" width="116" height="25" uuid="0eebebc9-c331-4bc7-afa1-bd1dd9a70b41"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{investigation_name}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="149" y="-5" width="1" height="33" uuid="caa80f24-221a-4282-946a-619056a17606"/>
+			</line>
+			<textField>
+				<reportElement x="154" y="2" width="74" height="25" uuid="cbf69f40-c339-43b2-8418-604ef0e6b284"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{expected_tat}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="230" y="-5" width="1" height="33" uuid="5e357585-6f63-46cf-831f-a26c06bbcdee"/>
+			</line>
+			<textField>
+				<reportElement x="234" y="2" width="66" height="25" uuid="2601de19-3711-4099-a9cd-42d771fb5858"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{total_tests}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="302" y="-5" width="1" height="33" uuid="c2621cd8-60bb-4ae4-801d-59375b11cf4d"/>
+			</line>
+			<textField>
+				<reportElement x="307" y="1" width="72" height="25" uuid="bb4616bb-eff4-413f-a045-59fb031ab2f7"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{avg_tat}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="381" y="-5" width="1" height="33" uuid="b9f4a797-a73c-4c42-ae79-eefdf9c54f41"/>
+			</line>
+			<textField>
+				<reportElement x="386" y="2" width="78" height="25" uuid="53591b1b-6f33-4daa-a0c4-1c39028765df"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{min_tat}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="465" y="-5" width="1" height="33" uuid="d053b835-7929-4b9c-a850-84c3fc388085"/>
+			</line>
+			<textField>
+				<reportElement x="470" y="2" width="76" height="25" uuid="37f0295d-46c2-48c8-b162-0e3c2904187f"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{max_tat}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="553" y="2" width="68" height="25" uuid="432a00fd-cef0-4480-80a1-43867865de40"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{within_tat}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="622" y="-5" width="1" height="33" uuid="0dc9abf5-a27d-4c67-ab89-a4db0f3e7822"/>
+			</line>
+			<textField>
+				<reportElement x="627" y="2" width="88" height="25" uuid="b4014278-ab74-4c28-9273-25844ecfbc84"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{breached_tat}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="718" y="-5" width="1" height="33" uuid="8dbbbbb1-b2ea-4cb7-b807-5b09752206c9"/>
+			</line>
+			<textField>
+				<reportElement x="722" y="1" width="80" height="25" uuid="78a8162f-3b84-4f96-84f8-db4c11e59581"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{compliance_percentage} + " %"]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="548" y="-4" width="1" height="33" uuid="f2dcdb72-159d-4ff3-9004-bf520118e0d2"/>
+			</line>
+		</band>
+	</detail>
+	<noData>
+		<band height="29">
+			<staticText>
+				<reportElement x="0" y="6" width="802" height="18" uuid="944842e5-613d-4a38-a82f-55840219b84b"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOUND]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Medicine_issue_register" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="782" leftMargin="30" rightMargin="30" topMargin="20" bottomMargin="20" isFloatColumnFooter="true" uuid="eb4a8c83-5ef0-44ac-b2f4-15c559657897">
+	<property name="ireport.scriptlethandling" value="0"/>
+	<property name="ireport.encoding" value="UTF-8"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<import value="net.sf.jasperreports.engine.*"/>
+	<import value="java.util.*"/>
+	<import value="net.sf.jasperreports.engine.data.*"/>
+	<parameter name="from_date" class="java.util.Date"/>
+	<parameter name="to_date" class="java.util.Date"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="drug_id" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[new Long(0)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="indent_type" class="java.lang.String"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/JaspersoftWorkspace/MyReports/Billing/medicine_issue_register/"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="hospital_id" class="java.lang.Long"/>
+	<parameter name="department_id" class="java.lang.Long"/>
+	<queryString>
+		<![CDATA[select distinct
+	mh.hospital_name, 
+	md1.department_name as to_department, 
+	case 
+	    when md.department_name is null then 'All'
+	    else md.department_name
+	end as from_department,
+	sum(cast(sit.issued_qty as bigint)) tot,
+	case siim.indent_type_drug_or_nondrug
+		when 'D' then 'Drug'
+		when 'N' then 'Non Drug'
+	end as indent_type
+from store_issue_t sit
+left join store_issue_m sim on sim.store_issue_m_id = sit.store_issue_m_id
+left join store_internal_indent_m siim on sim.store_issue_m_id = siim.store_issue_m_id
+left join mas_store_item msi on sit.item_id = msi.item_id
+left join mas_department md on sim.from_store_id = md.department_id
+left join mas_department md1 on sim.to_dept_id = md1.department_id
+left join mas_hospital mh on sim.hospital_id = mh.hospital_id
+where(cast($P{from_date} as date) is null or sim.issue_date >= cast($P{from_date} as date))
+and (cast($P{to_date} as date) is null or sim.issue_date <= cast($P{to_date} as date))
+and (sit.item_id = $P{drug_id} or $P{drug_id} = 0)
+and (siim.indent_type_drug_or_nondrug = $P{indent_type} or $P{indent_type} is null)
+and sim.to_dept_id = $P{department_id}
+and sim.hospital_id = $P{hospital_id}
+group by mh.hospital_name, md.department_name, md1.department_name, siim.indent_type_drug_or_nondrug]]>
+	</queryString>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<field name="to_department" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="to_department"/>
+		<property name="com.jaspersoft.studio.field.label" value="to_department"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_department"/>
+	</field>
+	<field name="from_department" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="from_department"/>
+		<property name="com.jaspersoft.studio.field.label" value="from_department"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_department"/>
+	</field>
+	<field name="tot" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="tot"/>
+		<property name="com.jaspersoft.studio.field.label" value="tot"/>
+	</field>
+	<field name="indent_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="indent_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="indent_type"/>
+	</field>
+	<variable name="Sr.no" class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="68" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="1" width="782" height="18" uuid="81f3a65f-5644-48dc-8f6a-37efabd18ddf"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="18" width="782" height="18" uuid="a3d8a582-1237-4354-8587-41be57f9a3ef"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{to_department}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="36" width="782" height="18" uuid="b434157a-c8b8-45c6-8094-f9265fb7e632"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Indent Medicine Issue Register" + " - " + $F{indent_type}]]></textFieldExpression>
+			</textField>
+			<image scaleImage="RealSize">
+				<reportElement x="40" y="10" width="130" height="50" uuid="15e0cee3-8dbf-4550-992f-e1b0785df056"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="27">
+			<staticText>
+				<reportElement x="15" y="11" width="70" height="12" isPrintInFirstWholeBand="true" uuid="4e97be79-9a4b-4d40-9147-c50dd97142d3">
+					<printWhenExpression><![CDATA[$P{from_date} != null && $P{to_date} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Report Range]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement isPrintRepeatedValues="false" x="95" y="11" width="165" height="12" isPrintInFirstWholeBand="true" uuid="19771f22-1510-4d06-84fd-c261a9fc90a1"/>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy").format($P{from_date}) + " - " + new SimpleDateFormat("dd/MM/yyyy").format($P{to_date})]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="570" y="11" width="73" height="12" isPrintInFirstWholeBand="true" uuid="5be4bec8-c94e-4e57-b014-71107c9d3ba5"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Generated On]]></text>
+			</staticText>
+			<textField>
+				<reportElement isPrintRepeatedValues="false" x="649" y="11" width="130" height="12" isPrintInFirstWholeBand="true" uuid="6d2a0255-f2a4-4ccc-831e-a61b2b1188b9"/>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd-MM-yyyy hh:mm a").format(new Date()).toUpperCase()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="85" y="11" width="10" height="12" uuid="83179abc-6120-420a-b759-b0f91dc3a8f3">
+					<printWhenExpression><![CDATA[$P{from_date} != null && $P{to_date} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="641" y="11" width="10" height="12" uuid="b9c03918-77a2-4115-b972-ee0f97f2d335"/>
+				<textElement textAlignment="Center">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<summary>
+		<band height="38">
+			<subreport isUsingCache="true">
+				<reportElement key="subreport-2" positionType="Float" mode="Opaque" x="0" y="21" width="779" height="17" uuid="935e41dc-c62e-4c67-9e89-34388c648c8e"/>
+				<subreportParameter name="from_date">
+					<subreportParameterExpression><![CDATA[$P{from_date}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="to_date">
+					<subreportParameterExpression><![CDATA[$P{to_date}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="drug_id">
+					<subreportParameterExpression><![CDATA[$P{drug_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="indent_type">
+					<subreportParameterExpression><![CDATA[$P{indent_type}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="hospital_id">
+					<subreportParameterExpression><![CDATA[$P{hospital_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="department_id">
+					<subreportParameterExpression><![CDATA[$P{department_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Medicine_issue_register_2.jasper"]]></subreportExpression>
+			</subreport>
+			<subreport isUsingCache="true">
+				<reportElement key="subreport-1" positionType="Float" mode="Opaque" x="1" y="3" width="779" height="17" uuid="75b9fa32-99c8-4458-a2dd-116407f1a18b"/>
+				<subreportParameter name="from_date">
+					<subreportParameterExpression><![CDATA[$P{from_date}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="to_date">
+					<subreportParameterExpression><![CDATA[$P{to_date}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="drug_id">
+					<subreportParameterExpression><![CDATA[$P{drug_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="indent_type">
+					<subreportParameterExpression><![CDATA[$P{indent_type}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="hospital_id">
+					<subreportParameterExpression><![CDATA[$P{hospital_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="department_id">
+					<subreportParameterExpression><![CDATA[$P{department_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Medicine_issue_sub_register.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</summary>
+	<noData>
+		<band height="18" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="782" height="18" uuid="f1b855c2-3b9e-4ea9-9b78-ca085b5e4bc6"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOUND]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>
