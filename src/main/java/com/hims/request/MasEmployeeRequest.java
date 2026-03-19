@@ -37,6 +37,8 @@ public class MasEmployeeRequest {
     private Integer yearOfExperience;
     private Long masDesignationId;
     private String profileDescription;
+    private String qualifications;
+    private String medicalRegistrationNo;
 
     private MultipartFile idDocumentName;
     private MultipartFile  profilePicName;

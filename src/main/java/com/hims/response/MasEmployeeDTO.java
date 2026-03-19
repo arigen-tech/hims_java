@@ -42,6 +42,8 @@ public record MasEmployeeDTO(
         String status,
         Integer yearOfExperience,
         String profileDescription,
+        String qualification,
+        String medicalRegistrationNo,
         Long designationId,
         List<EmployeeQualificationDTO> qualifications,
         List<EmployeeDocumentDTO> documents,
@@ -120,6 +122,8 @@ public record MasEmployeeDTO(
                 .awards(awards)
                 .yearOfExperience(employee.getYearOfExperience())
                 .profileDescription(employee.getProfileDescription())
+                .qualification(employee.getQualification())
+                .medicalRegistrationNo(employee.getMedicalRegistrationNo())
                 .designationId(employee.getDesignationId())
                 .languages(languages)
                 .build();

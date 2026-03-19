@@ -530,6 +530,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (req.getPincode() != null) emp.setPincode(req.getPincode());
         if (req.getRegistrationNo() != null) emp.setRegistrationNo(req.getRegistrationNo());
         if (req.getProfileDescription() != null) emp.setProfileDescription(req.getProfileDescription());
+        if(req.getQualifications()!=null)emp.setQualification(req.getQualifications());
+        if(req.getMedicalRegistrationNo()!=null)emp.setMedicalRegistrationNo(req.getMedicalRegistrationNo());
     }
 
     private void updateMasterReferences(MasEmployee emp, MasEmployeeRequest req) {
@@ -960,6 +962,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setProfileDescription(request.getProfileDescription());
         employee.setMasDesignationId(masDesignation);
         employee.setYearOfExperience(request.getYearOfExperience());
+        employee.setQualification(request.getQualifications());
+        employee.setMedicalRegistrationNo(request.getMedicalRegistrationNo());
         return employee;
     }
 
