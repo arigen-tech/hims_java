@@ -234,7 +234,7 @@ public class InventoryServiceImpl implements InventoryService {
 
             log.info("getStoreStockLedgerReport method started with item id {} and batch number {}",itemId,batchNo);
 
-            Sort sort = Sort.by(Sort.Direction.DESC, "createdDt");
+            Sort sort = Sort.by(Sort.Direction.ASC, "createdDt");
             Pageable pageable = PageRequest.of(page, size, sort);
 
             Page<StoreStockLedgerReportResponse> result =

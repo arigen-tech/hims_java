@@ -58,7 +58,8 @@ public interface MasInvestigationPriceDetailsRepository extends JpaRepository<Ma
         i.investigationName AS investigationName,
         m.fromDate AS fromDt,
         m.toDate AS toDt,
-        m.price AS price
+        m.price AS price,
+        m.status AS status
     FROM MasInvestigationPriceDetails m
     LEFT JOIN m.investigation i
     WHERE LOWER(m.status) = LOWER(:status)
@@ -77,7 +78,8 @@ public interface MasInvestigationPriceDetailsRepository extends JpaRepository<Ma
         i.investigationName AS investigationName,
         m.fromDate AS fromDt,
         m.toDate AS toDt,
-        m.price AS price
+        m.price AS price,
+        m.status AS status
     FROM MasInvestigationPriceDetails m
     LEFT JOIN m.investigation i
     WHERE LOWER(m.status) IN (:statuses)
