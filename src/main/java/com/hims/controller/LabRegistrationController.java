@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -153,13 +155,14 @@ public class LabRegistrationController {
     }
 
     @GetMapping("/billingStatus/search")
-    public ApiResponse<List<BillingHeaderResponseProjection>> searchBillingStatus(
+    public ApiResponse<Page<BillingHeaderResponseProjection>> searchBillingStatus(
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) String phoneNo,
-            @RequestParam(required = false) String registrationNo) {
+            @RequestParam(required = false) String registrationNo,
+            Pageable pageable) {
         log.info("billingStatus search api called, patientName: {}, phoneNo: {}, registrationNo: {}",
                 patientName, phoneNo, registrationNo);
-        return billingService.getBillingStatus(patientName, phoneNo, registrationNo);
+        return billingService.getBillingStatus(patientName, phoneNo, registrationNo, pageable);
     }
 
     @PostMapping("/track-order-status/create")

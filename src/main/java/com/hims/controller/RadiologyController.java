@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @Tag(name = "PatientController", description = "This controller is used for any Patient Related task.")
-@RequestMapping("/radiology")
+    @RequestMapping("/radiology")
 @Slf4j
 public class RadiologyController {
 

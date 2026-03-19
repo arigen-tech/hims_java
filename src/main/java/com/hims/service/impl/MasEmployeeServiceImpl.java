@@ -2052,6 +2052,8 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             return null;
         }
 
+        ZoneId ist = ZoneId.of("Asia/Kolkata");
+
         AppointmentBookingHistoryResponseDetails dto = new AppointmentBookingHistoryResponseDetails();
         dto.setVisitId(projection.getVisitId());
         dto.setPatientId(projection.getPatientId());

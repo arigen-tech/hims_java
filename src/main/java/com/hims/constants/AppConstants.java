@@ -24,6 +24,7 @@ public class AppConstants {
     public static final String STATUS_R = "R";
     public static final String COLUMN_NAME_IS_RETURN = "is_return";
     public static final String STATUS_N = "N";
+    public static final String STATUS_P = "P";
 
     //Visit Status
     public static final String VISIT_STATUS_PENDING = "N";
@@ -90,7 +91,6 @@ public class AppConstants {
     public static  final  String OPENING_BALANCE_ENTRY_SUBMIT_SUCCESS_MSG="Opening balance entry submitted successfully";
     public static final String OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG="Invalid opening balance entry header Id ,Opening balance entry header not found";
     public static final String OPENING_BALANCE_DETAILS_NOT_FOUND_ERR_MSG="Invalid opening balance entry details Id ,Opening balance entry detail not found";
-
 
     private AppConstants() {
     }
