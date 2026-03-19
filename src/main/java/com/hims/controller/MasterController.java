@@ -242,6 +242,10 @@ private MasVaccineMasterService masVaccineMasterService;
 private MasQuestionHeadingService masQuestionHeadingService;
 @Autowired
 private  MasQuestionService questionService;
+@Autowired
+private  MasQuestionOptionValueService masQuestionOptionValueService;
+@Autowired
+private OpdQuestionMasterService opdQuestionMasterService;
 
 @Autowired
 private MasLabResultAmendmentTypeService labResultAmendmentTypeService;
@@ -278,6 +282,8 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
 private RadiologyTemplateService radiologyTemplateService;
 @Autowired
     private MasComponentFailureReasonService masComponentFailureReasonService;
+@Autowired
+private MasCrossMatchTypeService masCrossMatchTypeService;
 
 
 
@@ -4342,4 +4348,108 @@ private RadiologyTemplateService radiologyTemplateService;
     }
 
 
+    //=======================================Cross Match Type Master ====================================================
+
+    @GetMapping("masCrossMatchType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<java.util.List<MasCrossMatchTypeResponse>>> getAllCrossMatchType(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masCrossMatchTypeService.getAll(flag));
+    }
+
+    @GetMapping("masCrossMatchType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasCrossMatchTypeResponse>> getByIdCrossMatchType(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masCrossMatchTypeService.getById(id));
+    }
+
+    @PostMapping("masCrossMatchType/create")
+    public ResponseEntity<ApiResponse<MasCrossMatchTypeResponse>> createCrossMatchType(
+            @Valid @RequestBody MasCrossMatchTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masCrossMatchTypeService.create(request));
+    }
+
+    @PutMapping("masCrossMatchType/update/{id}")
+    public ResponseEntity<ApiResponse<MasCrossMatchTypeResponse>> updateCrossMatchType(
+            @PathVariable Long id,
+            @Valid @RequestBody MasCrossMatchTypeRequest request) {
+        return ResponseEntity.ok(masCrossMatchTypeService.update(id, request));
+    }
+
+    @PutMapping("masCrossMatchType/status/{id}")
+    public ResponseEntity<ApiResponse<MasCrossMatchTypeResponse>> changeStatusCrossMatchType(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masCrossMatchTypeService.changeStatus(id, status));
+    }
+
+    //=======================================Mas Question Option Value ====================================================
+
+
+    @GetMapping("masQuestionOptionValue/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasQuestionOptionValueResponse>>> getAllMasQuestionOptionValue(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masQuestionOptionValueService.getAll(flag));
+    }
+
+    @GetMapping("masQuestionOptionValue/getById/{id}")
+    public ResponseEntity<ApiResponse<MasQuestionOptionValueResponse>> getByIdMasQuestionOptionValue(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masQuestionOptionValueService.getById(id));
+    }
+
+    @PostMapping("masQuestionOptionValue/create")
+    public ResponseEntity<ApiResponse<MasQuestionOptionValueResponse>> createMasQuestionOptionValue(
+            @RequestBody @Valid MasQuestionOptionValueRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masQuestionOptionValueService.create(request));
+    }
+
+    @PutMapping("masQuestionOptionValue/update/{id}")
+    public ResponseEntity<ApiResponse<MasQuestionOptionValueResponse>> updateMasQuestionOptionValue(
+            @PathVariable Long id,
+            @RequestBody @Valid MasQuestionOptionValueRequest request) {
+        return ResponseEntity.ok(masQuestionOptionValueService.update(id, request));
+    }
+
+    @PutMapping("masQuestionOptionValue/status/{id}")
+    public ResponseEntity<ApiResponse<MasQuestionOptionValueResponse>> changeStatusMasQuestionOptionValue(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masQuestionOptionValueService.changeStatus(id, status));
+    }
+    //=======================================Opd Question Master====================================================
+
+    @GetMapping("opdQuestionMaster/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<OpdQuestionMasterResponse>>> getAllOpdQuestionMaster(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(opdQuestionMasterService.getAll(flag));
+    }
+
+    @GetMapping("opdQuestionMaster/getById/{id}")
+    public ResponseEntity<ApiResponse<OpdQuestionMasterResponse>> getByIdOpdQuestionMaster(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(opdQuestionMasterService.getById(id));
+    }
+
+    @PostMapping("opdQuestionMaster/create")
+    public ResponseEntity<ApiResponse<OpdQuestionMasterResponse>> createOpdQuestionMaster(
+            @RequestBody @Valid OpdQuestionMasterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(opdQuestionMasterService.create(request));
+    }
+
+    @PutMapping("opdQuestionMaster/update/{id}")
+    public ResponseEntity<ApiResponse<OpdQuestionMasterResponse>> updateOpdQuestionMaster(
+            @PathVariable Long id,
+            @RequestBody @Valid OpdQuestionMasterRequest request) {
+        return ResponseEntity.ok(opdQuestionMasterService.update(id, request));
+    }
+
+    @PutMapping("opdQuestionMaster/status/{id}")
+    public ResponseEntity<ApiResponse<OpdQuestionMasterResponse>> changeStatusOpdQuestionMaster(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(opdQuestionMasterService.changeStatus(id, status));
+    }
 }
