@@ -28,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -279,18 +281,17 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 
     @Override
-    public ApiResponse<List<PatientProjection>> searchPatient(PatientSearchReq req) {
+    public ApiResponse<Page<PatientProjection>> searchPatient(PatientSearchReq req, Pageable pageable) {
 
         String mobileNo = cleanStringParameter(req.getMobileNo());
         String patientName = cleanStringParameter(req.getPatientName());
 
-        List<PatientProjection> patientList;
-
-        if (patientName != null) {
-            patientList = patientRepository.searchPatients(mobileNo, patientName);
-        } else {
-            patientList = patientRepository.findPatientsByMobile(mobileNo);
-        }
+        // Single unified method handles all scenarios:
+        // - Both mobile and name provided
+        // - Name only provided
+        // - Mobile only provided
+        // - Neither provided (will return empty results)
+        Page<PatientProjection> patientList = patientRepository.searchPatients(mobileNo, patientName, pageable);
 
         return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {});
     }
@@ -722,14 +723,16 @@ public class RegistrationServiceImpl implements RegistrationService {
         Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
         boolean alreadyExists =
-                visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNo(
+                visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(
                         visit.getDepartmentId(),
                         visit.getDoctorId(),
                         startOfDay,
                         endOfDay,
                         visit.getSessionId(),
-                        visit.getTokenNo()
+                        visit.getTokenNo(),
+                        AppConstants.VISIT_STATUS_CANCELLED.toLowerCase()   // "c"
                 );
+
         if (alreadyExists) {
             throw new TokenAlreadyBookedException(
                     "This token has just been booked by another user. Please select a different slot."

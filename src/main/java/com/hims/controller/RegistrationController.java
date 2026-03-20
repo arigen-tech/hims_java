@@ -9,6 +9,8 @@ import com.hims.service.RegistrationService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -83,13 +85,14 @@ public class RegistrationController {
     }
 
     /**
-     * Search patients by mobile number and name
+     * Search patients by mobile number and name with pagination
      */
     @PostMapping("/searchPatient")
-    public ResponseEntity<ApiResponse<List<PatientProjection>>> searchPatient(
-            @RequestBody PatientSearchReq searchRequest) {
-        log.info("POST /registration/searchPatient called");
-        ApiResponse<List<PatientProjection>> response = registrationService.searchPatient(searchRequest);
+    public ResponseEntity<ApiResponse<Page<PatientProjection>>> searchPatient(
+            @RequestBody PatientSearchReq searchRequest,
+            Pageable pageable) {
+        log.info("POST /registration/searchPatient called with page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        ApiResponse<Page<PatientProjection>> response = registrationService.searchPatient(searchRequest, pageable);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

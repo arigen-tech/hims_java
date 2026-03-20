@@ -111,7 +111,7 @@ public class BillingServiceImpl implements BillingService {
     @Transactional
     public ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount) {
         BillingHeader header = new BillingHeader();
-        String orderNum = createInvoices();
+        String orderNum = generateInvoiceNumber();
         OpdBillingPaymentResponse response = new OpdBillingPaymentResponse();
         User currentUser = authUtil.getCurrentUser();
         BigDecimal tax = BigDecimal.ZERO;
@@ -300,7 +300,7 @@ public class BillingServiceImpl implements BillingService {
         });
     }
 
-    public String createInvoices() {
+    public String generateInvoiceNumber() {
         return randomNumGenerator.generateOrderNumber("BILL", true, true);
     }
 
@@ -336,63 +336,10 @@ public class BillingServiceImpl implements BillingService {
         return paidPolicy;
     }
 
-    @Override
-    public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
-        log.info("Fetching pending billing records");
-        try {
-            List<BillingHeader> billingHeaders =
-                    billingHeaderRepository.findPendingBilling();
 
-
-            log.debug("BillingHeader pending count={}", billingHeaders.size());
-            List<DgOrderHd> orderHeaders =
-                    labHdRepository.findByPaymentStatusInAndSource(
-                            List.of("n", "p"),
-                            "OPD PATIENT"
-                    );
-
-            List<PendingBillingResponse> billingResponses = billingHeaders.stream()
-                    .map(this::mapToResponse)
-                    .collect(Collectors.toList());
-            log.debug("Mapped BillingHeader responses count={}",
-                    billingResponses.size());
-
-            List<PendingBillingResponse> orderResponses = orderHeaders.stream()
-                    .map(this::mapOrderToResponse)
-                    .collect(Collectors.toList());
-            log.debug("Mapped OrderHeader responses count={}",
-                    orderResponses.size());
-
-            List<PendingBillingResponse> combinedList = new ArrayList<>();
-
-            combinedList.addAll(billingResponses);
-            combinedList.addAll(orderResponses);
-            log.debug("Combined pending billing list count={}",
-                    combinedList.size());
-
-            combinedList = mergeConsultation(combinedList);
-            log.info("Pending billing records fetched successfully, finalCount={}",
-                    combinedList.size());
-
-            return ResponseUtils.createSuccessResponse(
-                    combinedList,
-                    new TypeReference<List<PendingBillingResponse>>() {
-                    }
-            );
-        } catch (Exception e) {
-            log.error("Error occurred while fetching pending billing data", e);
-
-            System.err.println("Error in getPendingBilling: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseUtils.createFailureResponse(new ArrayList<>(),
-                    new TypeReference<List<PendingBillingResponse>>() {
-                    },
-                    "Error fetching pending billing data", 500);
-        }
-    }
 
     @Override
-    public ApiResponse<?> getBillingPatientsByCatagory(
+    public ApiResponse<?> getPendingBillingsByCategory(
             String serviceCategoryCode,
             String patientName,
             String mobileNo,
@@ -600,8 +547,8 @@ public class BillingServiceImpl implements BillingService {
     }
 
     @Override
-    public ApiResponse<PatientAppointmentResponse> getBillingDetails(Long patientId) {
-        log.info("Fetching billing details for patientId={}", patientId);
+    public ApiResponse<PatientAppointmentResponse> getOPDPatientBillDetails(Long patientId) {
+        log.info("Fetching OPD billing details for patientId={}", patientId);
         String visitStatus = AppConstants.VISIT_STATUS_PENDING;
         String paymentStatusPending = AppConstants.PAYMENT_PARTIAL_PENDING;
         String paymentStatusPartial = AppConstants.PAYMENT_NOT_PAID;
@@ -686,7 +633,7 @@ public class BillingServiceImpl implements BillingService {
     }
 
     @Override
-    public ApiResponse<Page<BillingHeaderResponseProjection>> getBillingStatus(
+    public ApiResponse<Page<BillingHeaderResponseProjection>> searchInvoiceDetails(
             String patientName, String phoneNo, String registrationNo, Pageable pageable) {
         try {
             String patientNameLike = (patientName == null || patientName.trim().isEmpty())
@@ -728,7 +675,7 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     @Transactional
-    public ApiResponse<PaymentResponse> updatePayment(PaymentUpdateRequest request) {
+    public ApiResponse<PaymentResponse> processOpdPayment(PaymentUpdateRequest request) {
         PaymentResponse res = new PaymentResponse();
         BillingHeader header;
         List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
@@ -800,7 +747,7 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ApiResponse paymentStatusReqLab(PaymentUpdateRequest request) {
+    public ApiResponse<PaymentResponse> processLabPayment(PaymentUpdateRequest request) {
 
         log.info("Starting LAB payment update");
         log.debug("Request: {}", request);
@@ -902,7 +849,7 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ApiResponse paymentStatusReq(PaymentUpdateRequest request) {
+    public ApiResponse<PaymentResponse> processRadiologyPayment(PaymentUpdateRequest request) {
 
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
@@ -1404,7 +1351,7 @@ public class BillingServiceImpl implements BillingService {
 
 
     @Override
-    public ApiResponse<List<PendingBillingResponse>> getPendingBillingLabRadio(Long billingHdId, String serviceCategoryCode) {
+    public ApiResponse<List<PendingBillingResponse>> getLabRadiologyBillingDetails(Long billingHdId, String serviceCategoryCode) {
         try {
 
             MasServiceCategory serviceCategory =
@@ -1432,8 +1379,7 @@ public class BillingServiceImpl implements BillingService {
             );
 
         } catch (Exception e) {
-            log.error("Error fetching pending billing for Lab/Radiology", e);
-
+            log.error("Error fetching Lab/Radiology billing details", e);
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {
@@ -1514,3 +1460,4 @@ public class BillingServiceImpl implements BillingService {
         return response;
     }
 }
+

@@ -259,13 +259,14 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("currentVisitId") Long currentVisitId);
 
 
-    boolean existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNo(
+    boolean existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(
             Long departmentId,
             Long doctorId,
             Instant startOfDay,
             Instant endOfDay,
             Long sessionId,
-            Long tokenNo
+            Long tokenNo,
+            String visitStatus
     );
 
 

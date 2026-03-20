@@ -6,6 +6,8 @@ import com.hims.entity.MasRelation;
 import com.hims.entity.Patient;
 //import com.hims.projection.CancellationReportProjection;
 import com.hims.projection.PatientProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -35,12 +37,32 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
             p.patientEmailId AS patientEmailId
             FROM Patient p
             LEFT JOIN p.patientGender g
-            WHERE p.patientMobileNumber = :mobileNo
-            AND LOWER(CONCAT(p.patientFn,' ',p.patientMn,' ',p.patientLn))
-                LIKE LOWER(CONCAT('%', :patientName, '%'))
+            WHERE (:mobileNo IS NULL OR p.patientMobileNumber = :mobileNo)
+            AND (:patientName IS NULL OR LOWER(CONCAT(p.patientFn,' ',p.patientMn,' ',p.patientLn))
+                LIKE LOWER(CONCAT('%', :patientName, '%')))
             """)
     List<PatientProjection> searchPatients(@Param("mobileNo") String mobileNo,
                                            @Param("patientName") String patientName);
+
+    @Query("""
+            SELECT 
+            CONCAT(p.patientFn, ' ', 
+                   COALESCE(p.patientMn, ''), ' ', 
+                   COALESCE(p.patientLn, '')) AS fullName,
+            p.patientMobileNumber AS patientMobileNumber,
+            p.uhidNo AS uhidNo,
+            p.patientAge AS patientAge,
+            g.genderName AS gender,
+            p.patientEmailId AS patientEmailId
+            FROM Patient p
+            LEFT JOIN p.patientGender g
+            WHERE (:mobileNo IS NULL OR p.patientMobileNumber = :mobileNo)
+            AND (:patientName IS NULL OR LOWER(CONCAT(p.patientFn,' ',p.patientMn,' ',p.patientLn))
+                LIKE LOWER(CONCAT('%', :patientName, '%')))
+            """)
+    Page<PatientProjection> searchPatients(@Param("mobileNo") String mobileNo,
+                                           @Param("patientName") String patientName,
+                                           Pageable pageable);
 
 
     @Query(value = """
@@ -74,23 +96,6 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
                                  @Param("patientName") String patientName,
                                  @Param("uhidNo") String uhidNo);
 
-
-    @Query("""
-            SELECT 
-            p.id as id,
-            CONCAT(p.patientFn, ' ', 
-                   COALESCE(p.patientMn, ''), ' ', 
-                   COALESCE(p.patientLn, '')) AS fullName,
-            p.patientMobileNumber AS patientMobileNumber,
-            p.uhidNo AS uhidNo,
-            p.patientAge AS patientAge,
-            g.genderName AS gender,
-            p.patientEmailId AS patientEmailId
-            FROM Patient p
-            LEFT JOIN p.patientGender g
-            WHERE p.patientMobileNumber = :mobileNo
-            """)
-    List<PatientProjection> findPatientsByMobile(@Param("mobileNo") String mobileNo);
 
 
     boolean existsByPatientFnAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(String trim, LocalDate parse, Long gender, String trim1, Long relation);

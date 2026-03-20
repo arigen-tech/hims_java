@@ -3,6 +3,8 @@ package com.hims.service;
 import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,7 +20,7 @@ public interface RegistrationService {
 
     ApiResponse<String> uploadPatientImage(MultipartFile file);
 
-    ApiResponse<List<PatientProjection>> searchPatient(PatientSearchReq substring);
+    ApiResponse<Page<PatientProjection>> searchPatient(PatientSearchReq substring, Pageable pageable);
 
     ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patient);
 

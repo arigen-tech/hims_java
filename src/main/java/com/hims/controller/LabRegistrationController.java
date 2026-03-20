@@ -154,16 +154,16 @@ public class LabRegistrationController {
         return labRegistrationServices.labRegForExistingOrder(labReq);
     }
 
-    @GetMapping("/billingStatus/search")
-    public ApiResponse<Page<BillingHeaderResponseProjection>> searchBillingStatus(
-            @RequestParam(required = false) String patientName,
-            @RequestParam(required = false) String phoneNo,
-            @RequestParam(required = false) String registrationNo,
-            Pageable pageable) {
-        log.info("billingStatus search api called, patientName: {}, phoneNo: {}, registrationNo: {}",
-                patientName, phoneNo, registrationNo);
-        return billingService.getBillingStatus(patientName, phoneNo, registrationNo, pageable);
-    }
+//    @GetMapping("/billingStatus/search")
+//    public ApiResponse<Page<BillingHeaderResponseProjection>> searchBillingStatus(
+//            @RequestParam(required = false) String patientName,
+//            @RequestParam(required = false) String phoneNo,
+//            @RequestParam(required = false) String registrationNo,
+//            Pageable pageable) {
+//        log.info("billingStatus search api called, patientName: {}, phoneNo: {}, registrationNo: {}",
+//                patientName, phoneNo, registrationNo);
+//        return billingService.getBillingStatus(patientName, phoneNo, registrationNo, pageable);
+//    }
 
     @PostMapping("/track-order-status/create")
     public ResponseEntity<?> create(@Valid @RequestBody LabOrderTrackingStatusRequest request) {
