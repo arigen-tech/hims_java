@@ -722,14 +722,16 @@ public class RegistrationServiceImpl implements RegistrationService {
         Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
         boolean alreadyExists =
-                visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNo(
+                visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(
                         visit.getDepartmentId(),
                         visit.getDoctorId(),
                         startOfDay,
                         endOfDay,
                         visit.getSessionId(),
-                        visit.getTokenNo()
+                        visit.getTokenNo(),
+                        AppConstants.VISIT_STATUS_CANCELLED.toLowerCase()   // "c"
                 );
+
         if (alreadyExists) {
             throw new TokenAlreadyBookedException(
                     "This token has just been booked by another user. Please select a different slot."

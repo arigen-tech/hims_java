@@ -210,7 +210,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     @Query("SELECT v.tokenNo FROM Visit v WHERE " +
             "v.department.id = :departmentId AND " +
-            "v.doctor.userid = :doctorId AND " +
+            "v.doctor.userId = :doctorId AND " +
             "v.session.id = :sessionId AND " +
             "v.visitDate >= :startOfDay AND v.visitDate < :endOfDay AND " +
             "v.visitStatus NOT IN ('c')")
@@ -259,13 +259,14 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("currentVisitId") Long currentVisitId);
 
 
-    boolean existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNo(
+    boolean existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(
             Long departmentId,
             Long doctorId,
             Instant startOfDay,
             Instant endOfDay,
             Long sessionId,
-            Long tokenNo
+            Long tokenNo,
+            String visitStatus
     );
 
 

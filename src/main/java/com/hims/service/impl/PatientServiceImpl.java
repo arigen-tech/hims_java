@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
@@ -859,14 +860,16 @@ public class PatientServiceImpl implements PatientService {
         Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
         boolean alreadyExists =
-                visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNo(
+                visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(
                         visit.getDepartmentId(),
                         visit.getDoctorId(),
                         startOfDay,
                         endOfDay,
                         visit.getSessionId(),
-                        visit.getTokenNo()
+                        visit.getTokenNo(),
+                        AppConstants.VISIT_STATUS_CANCELLED.toLowerCase()  // "c"
                 );
+
         if (alreadyExists) {
             throw new TokenAlreadyBookedException(
                     "This token has just been booked by another user. Please select a different slot."
