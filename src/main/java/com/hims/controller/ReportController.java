@@ -36,7 +36,7 @@ public class ReportController {
         return dataSource.getConnection();
     }
 
-    @GetMapping(value = "/labReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    @GetMapping(value = "/labInvoice", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintLabReportPdf(
             @RequestParam String billNo,
             @RequestParam String flag) {
@@ -63,7 +63,7 @@ public class ReportController {
         }
     }
 
-    @GetMapping(value = "/opdReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    @GetMapping(value = "/opdInvoice", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintOpdReportPdf(
             @RequestParam Long visit ,
             @RequestParam String flag) {
