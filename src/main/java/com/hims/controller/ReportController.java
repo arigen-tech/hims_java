@@ -1212,6 +1212,78 @@ public class ReportController {
         }
     }
 
+    @GetMapping(value = "/sampleRejection", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintSampleRejection(
+            @RequestParam Long hospitalId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam String flag) {
+
+        Long safeSubChargeCodeId = subChargeCodeId != null ? subChargeCodeId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("sub_chargecode_id", safeSubChargeCodeId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SAMPLE_REJECTION_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.SAMPLE_REJECTION_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SAMPLE_REJECTION_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/pendingInvestigation", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintPendingInvestigation(
+            @RequestParam Long hospitalId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam String flag) {
+
+        Long safeSubChargeCodeId = subChargeCodeId != null ? subChargeCodeId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("sub_chargecode_id", safeSubChargeCodeId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.PENDING_INVESTIGATION_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.PENDING_INVESTIGATION_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.PENDING_INVESTIGATION_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
 
     private ResponseEntity<byte[]> buildPdfResponse(
             byte[] pdfData,
