@@ -127,5 +127,11 @@ public final class ReportConstants {
     public static final String DAILY_CANCELLATION_REPORT = "DailyCancellationReport";
 
     public static final String RADIOLOGY_INVOICE_JASPER = "Radiology_invoice";
-    public static final String RADIOLOGY_INVOICE_REPORT = "Radiology_invoice";
+    public static final String RADIOLOGY_INVOICE_REPORT = "RadiologyInvoice";
+
+    public static final String SAMPLE_REJECTION_JASPER = "Sample_rejection_report";
+    public static final String SAMPLE_REJECTION_REPORT = "SampleRejectionReport";
+
+    public static final String PENDING_INVESTIGATION_JASPER = "Pending_investigation_report";
+    public static final String PENDING_INVESTIGATION_REPORT = "PendingInvestigationReport";
 }
