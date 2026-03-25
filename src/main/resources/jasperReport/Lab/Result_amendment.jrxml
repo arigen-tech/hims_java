@@ -119,14 +119,14 @@ where
 			<staticText>
 				<reportElement x="0" y="36" width="555" height="18" uuid="93dc9882-dbf7-464d-bf96-2f9afee1c778"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Result Amendment/Update Report]]></text>
 			</staticText>
 			<textField>
 				<reportElement x="0" y="10" width="555" height="18" uuid="81bd5f12-06d8-4eca-8ee1-51deaadec43d"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
@@ -143,7 +143,7 @@ where
 					<printWhenExpression><![CDATA[$P{investigation_id} != 0]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Investigation Name]]></text>
 			</staticText>
@@ -152,7 +152,7 @@ where
 					<printWhenExpression><![CDATA[$P{investigation_id} != 0]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{investigation_name}]]></textFieldExpression>
 			</textField>
@@ -161,7 +161,7 @@ where
 					<printWhenExpression><![CDATA[$P{sub_chargecode_id} != 0]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Modality]]></text>
 			</staticText>
@@ -170,7 +170,7 @@ where
 					<printWhenExpression><![CDATA[$P{sub_chargecode_id} != 0]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{sub_chargecode_name}]]></textFieldExpression>
 			</textField>
@@ -179,16 +179,16 @@ where
 					<printWhenExpression><![CDATA[$P{from_date} != null && $P{to_date} != null]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Report Range]]></text>
 			</staticText>
 			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
 				<reportElement x="234" y="32" width="52" height="14" uuid="7cccbb72-059e-4ecc-b89c-beae85a3c4b1">
-					<printWhenExpression><![CDATA[$P{from_date} != null ]]></printWhenExpression>
+					<printWhenExpression><![CDATA[$P{from_date} != null]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{from_date}]]></textFieldExpression>
 			</textField>
@@ -197,21 +197,21 @@ where
 					<printWhenExpression><![CDATA[$P{to_date} != null]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="364" y="32" width="73" height="14" uuid="2506761e-89c0-47b6-9777-dd679ad22b4a"/>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Generated On]]></text>
 			</staticText>
 			<textField>
 				<reportElement x="440" y="32" width="114" height="14" uuid="4fc7d0e3-e5b2-48bd-aa29-8ae43d8aede4"/>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toUpperCase()]]></textFieldExpression>
 			</textField>
@@ -220,7 +220,7 @@ where
 					<printWhenExpression><![CDATA[$P{from_date} != null && $P{to_date} != null]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Center">
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<text><![CDATA[to]]></text>
 			</staticText>
@@ -229,7 +229,7 @@ where
 					<printWhenExpression><![CDATA[$P{patient_name} != null]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Patient Name]]></text>
 			</staticText>
@@ -238,7 +238,7 @@ where
 					<printWhenExpression><![CDATA[$P{mobile_no} != null]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Mobile No.]]></text>
 			</staticText>
@@ -247,7 +247,7 @@ where
 					<printWhenExpression><![CDATA[$P{patient_name} != null]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
 			</textField>
@@ -256,7 +256,7 @@ where
 					<printWhenExpression><![CDATA[$P{mobile_no} != null]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{mobile_no}]]></textFieldExpression>
 			</textField>
@@ -276,7 +276,7 @@ where
 			<staticText>
 				<reportElement x="3" y="6" width="17" height="25" uuid="a9286af6-e331-482f-bacf-a0cdaf1f474e"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[S. No.]]></text>
 			</staticText>
@@ -286,7 +286,7 @@ where
 			<staticText>
 				<reportElement x="28" y="6" width="52" height="25" uuid="22584121-8133-4818-b02b-c052a0244420"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Sample ID]]></text>
 			</staticText>
@@ -296,42 +296,42 @@ where
 			<staticText>
 				<reportElement x="87" y="5" width="73" height="25" uuid="0d300f83-2319-4c1f-b0ab-c432613afcff"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Patient Name]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="165" y="6" width="84" height="25" uuid="bf4c5543-eb82-4d76-862f-72cafec0fc04"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Investigation Name]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="255" y="6" width="45" height="25" uuid="5f40d89d-5f09-4b09-bbfc-c8ae9b648c56"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Old Result]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="307" y="6" width="40" height="25" uuid="de682928-0113-4f05-b134-cff96712bdc1"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[New Result]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="357" y="6" width="65" height="25" uuid="5d1851c2-433b-4105-8f47-5b910b294240"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Reason for change]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="427" y="5" width="60" height="25" uuid="fd9064b6-8dbe-40f0-9f3f-ad7bd37756ff"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Authorized By]]></text>
 			</staticText>
@@ -353,7 +353,7 @@ where
 			<staticText>
 				<reportElement x="490" y="6" width="65" height="25" uuid="62297585-7060-404e-a050-d2c865226a94"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Date & Time]]></text>
 			</staticText>
@@ -376,21 +376,21 @@ where
 			<textField>
 				<reportElement x="165" y="3" width="84" height="25" uuid="4655c026-7c24-4619-9172-6ee969216fb7"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{investigation_name}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="87" y="2" width="73" height="25" uuid="221316fd-be60-492e-b8df-c3fd40d1578e"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="3" y="3" width="17" height="25" uuid="d283b633-f3bb-45e9-ab9d-92bf1477c7c3"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
 			</textField>
@@ -400,7 +400,7 @@ where
 			<textField>
 				<reportElement x="255" y="3" width="45" height="25" uuid="0fa7ea7f-c79d-46c7-94e9-39ed7d2a5be4"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{old_result}]]></textFieldExpression>
 			</textField>
@@ -410,14 +410,14 @@ where
 			<textField>
 				<reportElement x="307" y="3" width="40" height="25" uuid="83101472-8e88-491f-8449-3787249a50c9"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{new_result}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="357" y="3" width="65" height="25" uuid="6a0e2077-8d24-4d07-b395-14d53e453eee"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{reason_for_change}]]></textFieldExpression>
 			</textField>
@@ -427,14 +427,14 @@ where
 			<textField>
 				<reportElement x="490" y="3" width="65" height="25" uuid="6ff8b1fd-ed79-4769-8c23-8a3ccc7fbd28"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{amended_datetime}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="28" y="3" width="52" height="25" uuid="17cc3b78-fc6e-4b4a-a8e5-1a82e20d050c"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{sample_generated_id}]]></textFieldExpression>
 			</textField>
@@ -447,7 +447,7 @@ where
 			<textField>
 				<reportElement x="427" y="2" width="60" height="25" uuid="0bdeee02-e626-45d8-8d25-caf4d829a70e"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{amended_by}]]></textFieldExpression>
 			</textField>

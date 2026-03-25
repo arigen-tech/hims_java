@@ -84,15 +84,37 @@ order by msi.nomenclature]]>
 	<columnHeader>
 		<band height="44" splitType="Stretch">
 			<staticText>
-				<reportElement key="staticText-1" mode="Opaque" x="0" y="1" width="364" height="16" forecolor="#000000" backcolor="#FFFFFF" uuid="f8631627-96f7-4352-856c-fc9b74323526"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
+				<reportElement x="188" y="25" width="36" height="14" uuid="987c48ac-810e-45bd-bf52-16d6637ad92a"/>
 				<textElement>
-					<font size="8" isBold="true" isUnderline="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Frequency]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="118" y="25" width="29" height="14" uuid="2ae6adb3-674e-46cb-a52f-ee0f1c046479"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Disp unit]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="32" y="25" width="82" height="14" uuid="4084e21a-5896-4556-8d64-06be341962d6"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Drug Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1" y="25" width="29" height="14" uuid="41774155-a040-448d-8718-b9f935234782"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sr.No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1" y="1" width="364" height="16" uuid="daf5341a-17ef-401a-aba3-713217d4df04"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Treatment :]]></text>
 			</staticText>
@@ -102,71 +124,6 @@ order by msi.nomenclature]]>
 			<line>
 				<reportElement key="line-2" x="0" y="43" width="367" height="1" uuid="951b83f1-5ee8-4cb7-a621-d30eacec4478"/>
 			</line>
-			<staticText>
-				<reportElement key="staticText-2" x="288" y="25" width="77" height="15" uuid="32531081-9336-433f-a9aa-0f27d9936215"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement textAlignment="Left">
-					<font size="6" isBold="true" pdfFontName="Helvetica-Bold"/>
-				</textElement>
-				<text><![CDATA[Instruction]]></text>
-			</staticText>
-			<staticText>
-				<reportElement key="staticText-4" x="228" y="25" width="26" height="15" uuid="5be6e5a8-82ee-4073-b975-c9975371e26f"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement>
-					<font size="6" isBold="true" pdfFontName="Helvetica-Bold"/>
-				</textElement>
-				<text><![CDATA[Days]]></text>
-			</staticText>
-			<staticText>
-				<reportElement key="staticText-5" x="188" y="25" width="36" height="15" uuid="c55f7995-a38f-4879-ae8f-e28574511e8e"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement>
-					<font size="6" isBold="true" pdfFontName="Helvetica-Bold"/>
-				</textElement>
-				<text><![CDATA[Frequency]]></text>
-			</staticText>
-			<staticText>
-				<reportElement key="staticText-7" x="154" y="25" width="29" height="15" uuid="83616b4a-2a3e-40bd-9ea9-6068d21f95e0"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement>
-					<font size="6" isBold="true" pdfFontName="Helvetica-Bold"/>
-				</textElement>
-				<text><![CDATA[Dosage]]></text>
-			</staticText>
-			<staticText>
-				<reportElement key="staticText-9" x="32" y="25" width="82" height="14" uuid="b8843fa3-fda8-471b-ab46-81a81ee1da15"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement textAlignment="Left">
-					<font size="6" isBold="true" pdfFontName="Helvetica-Bold"/>
-				</textElement>
-				<text><![CDATA[Drug Name]]></text>
-			</staticText>
 			<line>
 				<reportElement key="line-13" x="115" y="23" width="1" height="21" uuid="79e9c296-d38d-4090-b347-00a7c68ae7c2"/>
 			</line>
@@ -188,50 +145,39 @@ order by msi.nomenclature]]>
 			<line>
 				<reportElement key="line-20" x="30" y="23" width="1" height="21" uuid="c3a1ad17-72f8-4b3a-9a53-c2a3bad859e9"/>
 			</line>
-			<staticText>
-				<reportElement key="staticText-11" x="1" y="25" width="29" height="14" uuid="39a5cbeb-4370-4c01-986a-68351cde4dfb"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement>
-					<font size="6" isBold="true" pdfFontName="Helvetica-Bold"/>
-				</textElement>
-				<text><![CDATA[Sr.No.]]></text>
-			</staticText>
 			<line>
 				<reportElement key="line-22" x="152" y="23" width="1" height="21" uuid="606026d4-ee78-4be0-8bad-820c199ad70b"/>
 			</line>
-			<staticText>
-				<reportElement key="staticText-12" x="117" y="25" width="31" height="15" uuid="4199500e-997a-47d8-b2f5-c750593c4ba6"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement>
-					<font size="6" isBold="true" pdfFontName="Helvetica-Bold"/>
-				</textElement>
-				<text><![CDATA[Disp unit  unit]]></text>
-			</staticText>
 			<line>
 				<reportElement key="line-25" x="255" y="23" width="1" height="21" uuid="a70bb47f-4617-4db3-a2f8-e37d9491445c"/>
 			</line>
 			<staticText>
-				<reportElement key="staticText-13" x="258" y="25" width="26" height="15" uuid="cf244a0b-d6fb-4856-98e0-e45a1bf67e61"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement textAlignment="Left">
-					<font size="6" isBold="true" pdfFontName="Helvetica-Bold"/>
+				<reportElement x="155" y="25" width="29" height="14" uuid="ef37f888-70a4-4eb8-b5bb-01dfb6744cbb"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dosage]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="228" y="25" width="26" height="14" uuid="fa8c1b80-9cd3-4f9e-ab77-0538043519bf"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Days]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="258" y="25" width="26" height="14" uuid="8dd56fe4-4fad-41ec-b3de-fa4e224a0198"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="289" y="25" width="76" height="14" uuid="19dee674-5c01-480c-b798-d9297b7b09ae"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Instruction]]></text>
 			</staticText>
 		</band>
 	</columnHeader>
@@ -246,7 +192,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{nomenclature}]]></textFieldExpression>
 			</textField>
@@ -259,7 +205,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{dosage}]]></textFieldExpression>
 			</textField>
@@ -272,7 +218,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{days}]]></textFieldExpression>
 			</textField>
@@ -285,7 +231,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{instruction}]]></textFieldExpression>
 			</textField>
@@ -310,19 +256,6 @@ order by msi.nomenclature]]>
 			<line>
 				<reportElement key="line-12" positionType="Float" stretchType="RelativeToTallestObject" x="286" y="-3" width="1" height="23" isPrintWhenDetailOverflows="true" uuid="65eadbce-dd74-46cc-9d0a-2e01ca7cae86"/>
 			</line>
-			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement key="textField" x="188" y="1" width="36" height="15" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="507bea6e-aec6-40c3-8849-f9af85d272df"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="6" pdfFontName="Helvetica" pdfEncoding="Cp1252"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{frequency}]]></textFieldExpression>
-			</textField>
 			<line>
 				<reportElement key="line-21" positionType="Float" stretchType="RelativeToTallestObject" x="30" y="-3" width="1" height="23" isPrintWhenDetailOverflows="true" uuid="575c7c7f-0703-4623-90be-06255476fc71"/>
 			</line>
@@ -341,7 +274,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{Srno}]]></textFieldExpression>
 			</textField>
@@ -354,7 +287,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{unit_name}]]></textFieldExpression>
 			</textField>
@@ -367,9 +300,22 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{total}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="188" y="1" width="36" height="15" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="3f193321-659d-43e0-8a2d-793a4698dc32"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{frequency}]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>

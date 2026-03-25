@@ -97,21 +97,21 @@ order by 2]]>
 			<staticText>
 				<reportElement x="5" y="5" width="40" height="17" uuid="5e06340c-01a3-4f8b-b728-6e65005cea5b"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[S. No.]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="53" y="5" width="368" height="16" uuid="4229ddb4-ac2b-4e20-9efb-1f38b1e27ddb"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Investigation Name]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="432" y="5" width="118" height="16" uuid="b4a0a590-98ab-4840-be40-b42de56bd06b"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Count]]></text>
 			</staticText>
@@ -143,7 +143,7 @@ order by 2]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{investigation_name}]]></textFieldExpression>
 			</textField>
@@ -156,7 +156,7 @@ order by 2]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{tot}]]></textFieldExpression>
 			</textField>
@@ -169,7 +169,7 @@ order by 2]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
 			</textField>

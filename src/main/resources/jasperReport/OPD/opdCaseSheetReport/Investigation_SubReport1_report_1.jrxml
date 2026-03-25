@@ -36,7 +36,7 @@ where hd.visit_id=$P{visit_id}]]>
 			<staticText>
 				<reportElement x="6" y="25" width="28" height="10" uuid="a02e8331-1554-46e1-8321-e6d7f274f52f"/>
 				<textElement>
-					<font size="6" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Sr. No.]]></text>
 			</staticText>
@@ -58,7 +58,7 @@ where hd.visit_id=$P{visit_id}]]>
 			<staticText>
 				<reportElement x="3" y="1" width="360" height="16" backcolor="#FFFFFF" uuid="01bba703-2888-44b1-8021-764ec153c99c"/>
 				<textElement>
-					<font size="8" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Investigation :]]></text>
 			</staticText>
@@ -68,7 +68,7 @@ where hd.visit_id=$P{visit_id}]]>
 			<staticText>
 				<reportElement x="43" y="25" width="304" height="10" uuid="235ee35d-4f48-4b41-bd95-01eb03cee441"/>
 				<textElement>
-					<font size="6" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Investigation Name]]></text>
 			</staticText>
@@ -85,7 +85,7 @@ where hd.visit_id=$P{visit_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{investigation_name}]]></textFieldExpression>
 			</textField>
@@ -110,7 +110,7 @@ where hd.visit_id=$P{visit_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{Srno}]]></textFieldExpression>
 			</textField>

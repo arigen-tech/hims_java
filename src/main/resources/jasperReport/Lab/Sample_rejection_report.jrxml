@@ -124,7 +124,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 				<staticText>
 					<reportElement x="393" y="33" width="60" height="13" uuid="aba3dac6-674a-4957-818d-4cdccef1427a"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Mobile]]></text>
 				</staticText>
@@ -134,7 +134,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 				<staticText>
 					<reportElement x="40" y="33" width="74" height="13" uuid="a7459784-a385-4e5d-8dce-3efcf0dc562e"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Order No.]]></text>
 				</staticText>
@@ -150,21 +150,21 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 				<staticText>
 					<reportElement x="726" y="33" width="76" height="13" uuid="cfcb53af-4a9d-4893-b6df-bc557fda1515"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Rejection remarks]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="459" y="33" width="112" height="13" uuid="2ba3759a-0b07-4d6b-b05e-bf4d4396a98f"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Investigation]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="665" y="33" width="54" height="13" uuid="0cbb9f4f-3474-46fa-aaa5-b8cdd8000b42"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Status]]></text>
 				</staticText>
@@ -177,14 +177,14 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 				<staticText>
 					<reportElement x="192" y="33" width="88" height="13" uuid="3c7fb0fc-5555-488b-97d0-a1a29001bd8b"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Patient Name]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="285" y="33" width="100" height="13" uuid="c9741353-3074-4680-a092-5b79ee46da1f"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Age / Gender]]></text>
 				</staticText>
@@ -200,7 +200,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 				<staticText>
 					<reportElement x="119" y="33" width="66" height="13" uuid="998e8aaa-ea0d-459c-9016-741a1e7a3475"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Order Date]]></text>
 				</staticText>
@@ -210,7 +210,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 				<staticText>
 					<reportElement x="4" y="33" width="32" height="13" uuid="44f24a1e-eb05-42f0-94b9-a6525e039a37"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[S. No.]]></text>
 				</staticText>
@@ -220,7 +220,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 				<staticText>
 					<reportElement x="576" y="33" width="84" height="13" uuid="29fa2d89-053d-4926-9818-7ed2f370aef9"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Sample ID]]></text>
 				</staticText>
@@ -233,77 +233,77 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 				<staticText>
 					<reportElement x="7" y="8" width="52" height="14" uuid="6a79d0b0-2178-4795-8f59-67e6debd7578"/>
 					<textElement textAlignment="Left">
-						<font size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Modality]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="60" y="8" width="7" height="14" uuid="cc93077b-cb2a-401b-a780-6d3fdbe80ff9"/>
 					<textElement textAlignment="Center">
-						<font size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[:]]></text>
 				</staticText>
 				<textField>
 					<reportElement x="71" y="8" width="141" height="14" uuid="e5af23f8-c090-4b15-a49a-d339234ca62b"/>
 					<textElement textAlignment="Left">
-						<font size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{sub_chargecode_name}]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement x="579" y="8" width="73" height="14" uuid="dd9d14be-02dd-4176-9d1c-dc23f8b300d7"/>
 					<textElement textAlignment="Left">
-						<font size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Generated on]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="302" y="8" width="80" height="14" uuid="7e90698e-c79d-4b83-8295-4de618e110d4"/>
 					<textElement textAlignment="Left">
-						<font size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Report Range]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="382" y="8" width="7" height="14" uuid="e1f41826-b543-48ad-b851-3a0d7055290b"/>
 					<textElement textAlignment="Center">
-						<font size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[:]]></text>
 				</staticText>
 				<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
 					<reportElement x="393" y="8" width="52" height="14" uuid="4ef9b0d4-a016-4f90-85e5-5efa1cb39be7"/>
 					<textElement textAlignment="Left">
-						<font size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{from_date}]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement x="443" y="8" width="14" height="14" uuid="c4182e0a-759a-4ba2-a1cc-ed8b019ab063"/>
 					<textElement textAlignment="Center">
-						<font size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<text><![CDATA[to]]></text>
 				</staticText>
 				<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
 					<reportElement x="457" y="8" width="70" height="14" uuid="215cd839-e6a5-40f9-a8c0-0412f216c8c6"/>
 					<textElement textAlignment="Left">
-						<font size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement x="652" y="8" width="7" height="14" uuid="8c35d2a8-0b56-4efb-974c-94a7730031f2"/>
 					<textElement textAlignment="Center">
-						<font size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[:]]></text>
 				</staticText>
 				<textField>
 					<reportElement x="661" y="8" width="141" height="14" uuid="fb5d10eb-9df3-4d45-9fe8-c89ebb7ada3c"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toLowerCase()]]></textFieldExpression>
 				</textField>
@@ -316,14 +316,14 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 			<textField>
 				<reportElement x="0" y="3" width="802" height="16" uuid="53c643e2-5aaf-436b-b93f-8cc3098f1068"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="0" y="21" width="802" height="16" uuid="77d76219-55e0-40ef-a207-87aa2b520883"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Sample Rejection Report]]></text>
 			</staticText>
@@ -345,14 +345,14 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 			<textField textAdjust="StretchHeight">
 				<reportElement x="726" y="0" width="76" height="13" uuid="55ab6712-7032-4159-b182-655f26ed3962"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{rejected_reason}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight">
 				<reportElement x="459" y="0" width="112" height="13" uuid="09b17071-2549-4ff6-b23f-e28a6337e5ce"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{investigation_name}]]></textFieldExpression>
 			</textField>
@@ -362,7 +362,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 			<textField textAdjust="StretchHeight">
 				<reportElement x="665" y="0" width="54" height="13" uuid="1441e147-375a-45d3-a618-e3cf908fa53e"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
 			</textField>
@@ -375,14 +375,14 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 			<textField textAdjust="StretchHeight">
 				<reportElement x="192" y="0" width="88" height="13" uuid="a260c4b6-1cf9-492b-a7f4-8f6c1a5669e3"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight">
 				<reportElement x="285" y="0" width="100" height="13" uuid="eaa48c53-cdff-4d01-b28d-c8c9a25ef712"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{p_age} + "/" +$F{gender_name}]]></textFieldExpression>
 			</textField>
@@ -392,7 +392,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 			<textField textAdjust="StretchHeight">
 				<reportElement x="40" y="0" width="74" height="13" uuid="cbb4a3dc-b5d8-4d84-9ae9-5ec0f3f4cc3b"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{order_no}]]></textFieldExpression>
 			</textField>
@@ -414,7 +414,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
 				<reportElement x="119" y="0" width="66" height="13" uuid="548e5d89-4c52-45fe-96a5-7c7c53b98020"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{order_date}]]></textFieldExpression>
 			</textField>
@@ -424,7 +424,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 			<textField textAdjust="StretchHeight">
 				<reportElement x="4" y="0" width="32" height="13" uuid="a7f85c29-9cbb-496a-8075-f8c9f8957304"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
 			</textField>
@@ -434,7 +434,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 			<textField textAdjust="StretchHeight">
 				<reportElement x="576" y="0" width="84" height="13" uuid="6d540efb-11da-445b-aaf6-09308ccc33c2"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{sample_generated_id}]]></textFieldExpression>
 			</textField>
@@ -444,7 +444,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 			<textField textAdjust="StretchHeight">
 				<reportElement x="392" y="0" width="62" height="13" uuid="1d068cda-9e7c-4868-a11b-7aea90febb5f"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{p_mobile_number}]]></textFieldExpression>
 			</textField>
@@ -455,7 +455,7 @@ and (hd.sub_charge_code_id = $P{sub_chargecode_id} or $P{sub_chargecode_id} = 0)
 			<staticText>
 				<reportElement x="0" y="2" width="802" height="16" uuid="20842eee-78e1-47a0-94f2-a697da56f2bc"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[NO DATA FOUND]]></text>
 			</staticText>

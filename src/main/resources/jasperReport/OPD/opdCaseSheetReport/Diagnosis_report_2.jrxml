@@ -45,14 +45,14 @@ where v.visit_id = $P{visit_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{icd_diag}]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="3" y="1" width="256" height="14" backcolor="#FFFFFF" uuid="993007c5-f6b6-4e62-9718-06d8dbdd14db"/>
 				<textElement>
-					<font size="8" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[CD Diagnosis :]]></text>
 			</staticText>

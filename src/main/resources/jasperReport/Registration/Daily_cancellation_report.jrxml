@@ -145,14 +145,14 @@ order by d.department_name, v.cancelled_datetime]]>
 				<staticText>
 					<reportElement x="2" y="36" width="26" height="25" uuid="c2ca60ef-20ab-476d-9492-0b9b8083f5c1"/>
 					<textElement>
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[S. No.]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="231" y="36" width="79" height="25" uuid="944c257e-46e2-41d5-b0e1-c0533e421e95"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Age/Gender]]></text>
 				</staticText>
@@ -162,7 +162,7 @@ order by d.department_name, v.cancelled_datetime]]>
 				<staticText>
 					<reportElement x="461" y="36" width="90" height="25" uuid="db3fe1e7-0203-4dc3-a5a8-97eda58fdaff"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Appointment Date & Time]]></text>
 				</staticText>
@@ -175,7 +175,7 @@ order by d.department_name, v.cancelled_datetime]]>
 				<staticText>
 					<reportElement x="719" y="36" width="80" height="25" uuid="fbc4add7-e529-49da-8df1-0adbd7d79f3c"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Cancellation Reason]]></text>
 				</staticText>
@@ -191,35 +191,35 @@ order by d.department_name, v.cancelled_datetime]]>
 				<staticText>
 					<reportElement x="33" y="36" width="127" height="25" uuid="357e9a45-d208-4ef6-888e-e2434c819d07"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Patient Name]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="661" y="36" width="51" height="25" uuid="e572b093-71d5-4225-82e8-d9ba1838728c"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Cancelled By]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="330" y="36" width="123" height="25" uuid="dac62bd3-1984-44f9-824c-457c6e60b6e5"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Doctor Name]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="560" y="36" width="90" height="25" uuid="b2cfe8d7-7404-4182-adc1-067d9e58b4e9"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Cancellation Date & Time]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="168" y="36" width="60" height="25" uuid="3fe2497b-b33b-4753-83ae-8db8e4e47b4b"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Mobile No.]]></text>
 				</staticText>
@@ -244,56 +244,56 @@ order by d.department_name, v.cancelled_datetime]]>
 				<staticText>
 					<reportElement x="574" y="11" width="80" height="14" uuid="ff03ec30-ee82-4add-a13d-3af890ddb32b"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Report Range]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="654" y="11" width="7" height="14" uuid="f15416c4-81ed-4dce-ba19-547f42f317c4"/>
 					<textElement textAlignment="Center">
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[:]]></text>
 				</staticText>
 				<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
 					<reportElement x="665" y="11" width="52" height="14" uuid="1d875272-4d23-4f96-80f8-7461ad8a4037"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{from_date}]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement x="715" y="11" width="14" height="14" uuid="a704d85c-c31c-49d3-9858-ff5736b37d38"/>
 					<textElement textAlignment="Center">
-						<font fontName="SansSerif" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" isBold="false"/>
 					</textElement>
 					<text><![CDATA[to]]></text>
 				</staticText>
 				<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
 					<reportElement x="729" y="11" width="70" height="14" uuid="cb2eda80-030b-4303-b51d-b4d6e8604bdc"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement x="22" y="11" width="94" height="14" uuid="e88c9ed7-6048-45dd-a87f-b8ba19cda4cf"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Department Name]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="117" y="11" width="7" height="14" uuid="e8756704-30cc-4455-9fb0-4ead25a0e3f8"/>
 					<textElement textAlignment="Center">
-						<font fontName="SansSerif" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[:]]></text>
 				</staticText>
 				<textField>
 					<reportElement x="125" y="11" width="195" height="14" uuid="75200dde-8231-4759-b2b4-a3a619c3fcee"/>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
 				</textField>
@@ -305,14 +305,14 @@ order by d.department_name, v.cancelled_datetime]]>
 			<staticText>
 				<reportElement x="0" y="22" width="802" height="16" uuid="3471b94b-a297-4640-b420-0a0ab077446f"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Daily Cancellation Report]]></text>
 			</staticText>
 			<textField>
 				<reportElement x="1" y="3" width="802" height="16" uuid="a635e0b5-ee0c-464f-acfa-494c887f2539"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
@@ -329,120 +329,120 @@ order by d.department_name, v.cancelled_datetime]]>
 		</band>
 	</title>
 	<detail>
-		<band height="18" splitType="Stretch">
+		<band height="15" splitType="Stretch">
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="551" y="-15" width="1" height="32" uuid="24e7e77c-055c-41d7-a4a6-1893cdd8c154">
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="551" y="-14" width="1" height="28" uuid="24e7e77c-055c-41d7-a4a6-1893cdd8c154">
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement positionType="Float" stretchType="ContainerHeight" x="661" y="-8" width="53" height="13" isRemoveLineWhenBlank="true" uuid="d218e62a-cc06-46a0-bd61-22c52a809cc8"/>
+				<reportElement x="661" y="0" width="53" height="13" isRemoveLineWhenBlank="true" uuid="d218e62a-cc06-46a0-bd61-22c52a809cc8"/>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{cancelled_by}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight" evaluationTime="Band">
-				<reportElement positionType="Float" stretchType="ContainerHeight" x="2" y="-8" width="26" height="13" isRemoveLineWhenBlank="true" uuid="fa25adad-f55e-40d6-bb6d-65a26e75567e"/>
+				<reportElement x="2" y="0" width="26" height="13" isRemoveLineWhenBlank="true" uuid="fa25adad-f55e-40d6-bb6d-65a26e75567e"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement positionType="Float" stretchType="ContainerHeight" x="168" y="-8" width="60" height="13" isRemoveLineWhenBlank="true" uuid="8499450c-b937-493b-8b58-acbcfcb31d8b"/>
+				<reportElement x="168" y="0" width="60" height="13" isRemoveLineWhenBlank="true" uuid="8499450c-b937-493b-8b58-acbcfcb31d8b"/>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mobile_number}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement positionType="Float" stretchType="ContainerHeight" x="233" y="-8" width="87" height="13" isRemoveLineWhenBlank="true" uuid="64e55270-b9bb-44fc-b281-92df267a1793"/>
+				<reportElement x="233" y="0" width="87" height="13" isRemoveLineWhenBlank="true" uuid="64e55270-b9bb-44fc-b281-92df267a1793"/>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_age} + "/" + $F{gender}]]></textFieldExpression>
 			</textField>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="28" y="-15" width="1" height="32" uuid="3926efd1-e5bd-44f7-8268-2dd982b0df34">
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="28" y="-14" width="1" height="28" uuid="3926efd1-e5bd-44f7-8268-2dd982b0df34">
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="454" y="-15" width="1" height="32" uuid="bde52edc-6dd4-43f8-9d69-829defba8208">
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="454" y="-14" width="1" height="28" uuid="bde52edc-6dd4-43f8-9d69-829defba8208">
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="-1" y="-15" width="1" height="33" uuid="7f4a00f4-601f-41ef-b83d-87a84118c799">
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="-1" y="-14" width="1" height="29" uuid="7f4a00f4-601f-41ef-b83d-87a84118c799">
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement positionType="Float" stretchType="ContainerHeight" x="329" y="-8" width="124" height="13" isRemoveLineWhenBlank="true" uuid="93280c1a-19ca-4dd9-9c32-d9a65772bcc7"/>
+				<reportElement x="329" y="0" width="124" height="13" isRemoveLineWhenBlank="true" uuid="93280c1a-19ca-4dd9-9c32-d9a65772bcc7"/>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{doctor_name}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement positionType="Float" stretchType="ContainerHeight" x="719" y="-8" width="80" height="13" isRemoveLineWhenBlank="true" uuid="4e65343f-8102-4ad1-ab24-4e705cb30c91"/>
+				<reportElement x="719" y="0" width="80" height="13" isRemoveLineWhenBlank="true" uuid="4e65343f-8102-4ad1-ab24-4e705cb30c91"/>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{cancellation_reason}]]></textFieldExpression>
 			</textField>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="164" y="-15" width="1" height="32" uuid="06cd4f3d-11e6-40e5-a145-f408d5eb190b">
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="164" y="-14" width="1" height="28" uuid="06cd4f3d-11e6-40e5-a145-f408d5eb190b">
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
 			<line>
-				<reportElement x="0" y="16" width="802" height="1" uuid="5149c2f6-e66b-4a4a-8182-047bd907d8a4"/>
+				<reportElement positionType="Float" x="0" y="14" width="802" height="1" uuid="5149c2f6-e66b-4a4a-8182-047bd907d8a4"/>
 			</line>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="801" y="-15" width="1" height="32" uuid="bc02b8a4-1a5d-4ccd-a634-f5890243b558">
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="801" y="-14" width="1" height="28" uuid="bc02b8a4-1a5d-4ccd-a634-f5890243b558">
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="715" y="-15" width="1" height="32" uuid="ca8c1834-8a76-49d8-941f-0720e48898c8">
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="715" y="-14" width="1" height="28" uuid="ca8c1834-8a76-49d8-941f-0720e48898c8">
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement positionType="Float" stretchType="ContainerHeight" x="33" y="-8" width="127" height="13" isRemoveLineWhenBlank="true" uuid="3bb6bea7-832a-49c7-bc52-6e8539b862ea"/>
+				<reportElement x="33" y="0" width="127" height="13" isRemoveLineWhenBlank="true" uuid="3bb6bea7-832a-49c7-bc52-6e8539b862ea"/>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
 			</textField>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="324" y="-15" width="1" height="32" uuid="43d48965-25ff-477e-ac6b-c5bfd02a1aad">
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="324" y="-14" width="1" height="28" uuid="43d48965-25ff-477e-ac6b-c5bfd02a1aad">
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="656" y="-15" width="1" height="32" uuid="54606bd8-9a2f-40b8-bc12-3fc927aaadf5">
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="656" y="-14" width="1" height="28" uuid="54606bd8-9a2f-40b8-bc12-3fc927aaadf5">
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement positionType="Float" stretchType="ContainerHeight" x="460" y="-8" width="91" height="13" isRemoveLineWhenBlank="true" uuid="384c6b58-6670-4b32-b899-c4f14874717c"/>
+				<reportElement x="460" y="0" width="91" height="13" isRemoveLineWhenBlank="true" uuid="384c6b58-6670-4b32-b899-c4f14874717c"/>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{appointment_date}+ " " + $F{appointment_time}]]></textFieldExpression>
 			</textField>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="229" y="-15" width="1" height="32" uuid="e7eb162a-f1ed-45a0-a470-f134ebd20e08">
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="229" y="-14" width="1" height="28" uuid="e7eb162a-f1ed-45a0-a470-f134ebd20e08">
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
 			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy h:mm a" isBlankWhenNull="true">
-				<reportElement positionType="Float" stretchType="ContainerHeight" x="560" y="-8" width="93" height="13" isRemoveLineWhenBlank="true" uuid="fe5dbba8-3296-4daf-9778-9687261b16f1"/>
+				<reportElement x="560" y="0" width="93" height="13" isRemoveLineWhenBlank="true" uuid="fe5dbba8-3296-4daf-9778-9687261b16f1"/>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{cancellation_datetime}]]></textFieldExpression>
 			</textField>
@@ -453,7 +453,7 @@ order by d.department_name, v.cancelled_datetime]]>
 			<staticText>
 				<reportElement x="0" y="2" width="802" height="16" uuid="b846b8ab-72a6-402d-8e30-684692d4492e"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[NO DATA FOUND]]></text>
 			</staticText>

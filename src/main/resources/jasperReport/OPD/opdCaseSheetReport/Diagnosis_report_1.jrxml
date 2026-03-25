@@ -39,7 +39,7 @@ where v.visit_id = $P{visit_id}]]>
 			<staticText>
 				<reportElement x="3" y="1" width="256" height="14" backcolor="#FFFFFF" uuid="0fe26c31-6b5a-4c45-bbdc-5004cc34b155"/>
 				<textElement>
-					<font size="8" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Working Diagnosis :]]></text>
 			</staticText>
@@ -52,7 +52,7 @@ where v.visit_id = $P{visit_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{working_diag}]]></textFieldExpression>
 			</textField>

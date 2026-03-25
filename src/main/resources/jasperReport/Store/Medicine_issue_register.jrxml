@@ -84,21 +84,21 @@ group by mh.hospital_name, md.department_name, md1.department_name, siim.indent_
 			<textField>
 				<reportElement x="0" y="1" width="782" height="18" uuid="81f3a65f-5644-48dc-8f6a-37efabd18ddf"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="0" y="18" width="782" height="18" uuid="a3d8a582-1237-4354-8587-41be57f9a3ef"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{to_department}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="0" y="36" width="782" height="18" uuid="b434157a-c8b8-45c6-8094-f9265fb7e632"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Indent Medicine Issue Register" + " - " + $F{indent_type}]]></textFieldExpression>
 			</textField>
@@ -115,23 +115,29 @@ group by mh.hospital_name, md.department_name, md1.department_name, siim.indent_
 					<printWhenExpression><![CDATA[$P{from_date} != null && $P{to_date} != null]]></printWhenExpression>
 				</reportElement>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Report Range]]></text>
 			</staticText>
 			<textField isBlankWhenNull="true">
 				<reportElement isPrintRepeatedValues="false" x="95" y="11" width="165" height="12" isPrintInFirstWholeBand="true" uuid="19771f22-1510-4d06-84fd-c261a9fc90a1"/>
-				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy").format($P{from_date}) + " - " + new SimpleDateFormat("dd/MM/yyyy").format($P{to_date})]]></textFieldExpression>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy").format($P{from_date}) + " to " + new SimpleDateFormat("dd/MM/yyyy").format($P{to_date})]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="570" y="11" width="73" height="12" isPrintInFirstWholeBand="true" uuid="5be4bec8-c94e-4e57-b014-71107c9d3ba5"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Generated On]]></text>
 			</staticText>
 			<textField>
 				<reportElement isPrintRepeatedValues="false" x="649" y="11" width="130" height="12" isPrintInFirstWholeBand="true" uuid="6d2a0255-f2a4-4ccc-831e-a61b2b1188b9"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
 				<textFieldExpression><![CDATA[new SimpleDateFormat("dd-MM-yyyy hh:mm a").format(new Date()).toUpperCase()]]></textFieldExpression>
 			</textField>
 			<staticText>
@@ -139,14 +145,14 @@ group by mh.hospital_name, md.department_name, md1.department_name, siim.indent_
 					<printWhenExpression><![CDATA[$P{from_date} != null && $P{to_date} != null]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Center">
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="641" y="11" width="10" height="12" uuid="b9c03918-77a2-4115-b972-ee0f97f2d335"/>
 				<textElement textAlignment="Center">
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
@@ -207,7 +213,7 @@ group by mh.hospital_name, md.department_name, md1.department_name, siim.indent_
 			<staticText>
 				<reportElement x="0" y="0" width="782" height="18" uuid="f1b855c2-3b9e-4ea9-9b78-ca085b5e4bc6"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[NO DATA FOUND]]></text>
 			</staticText>

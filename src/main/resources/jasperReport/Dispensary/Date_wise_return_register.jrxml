@@ -156,7 +156,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="0" y="52" width="802" height="18" uuid="111b44aa-b697-41d6-a139-e83f0ac53f04"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Return Register" + " - " + $F{indent_type}]]></textFieldExpression>
 			</textField>
@@ -167,14 +167,14 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="0" y="31" width="802" height="18" uuid="41286f73-e8eb-464e-baa9-0a236c41db99"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="0" y="10" width="802" height="18" uuid="0b96622e-c8ef-41ff-9644-010f1c5c3bdd"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
@@ -185,42 +185,42 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<staticText>
 				<reportElement x="27" y="8" width="73" height="14" uuid="88e9b1b3-0502-4b98-8f98-5c4eec46c3f1"/>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Report Range]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="583" y="8" width="73" height="14" uuid="0d89a745-795e-46b8-91b7-9a35a0596e36"/>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Generated On]]></text>
 			</staticText>
 			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
 				<reportElement x="103" y="8" width="52" height="14" uuid="1a4a5925-6f30-4b7f-8caf-6c9929c7bc10"/>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{from_date}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
 				<reportElement x="167" y="8" width="70" height="14" uuid="8bf7c728-0373-4440-8bf2-e7d91152e249"/>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="153" y="8" width="14" height="14" uuid="2eea6d9c-b324-441e-9f6e-67b1e1de0ae4"/>
 				<textElement textAlignment="Center">
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<text><![CDATA[to]]></text>
 			</staticText>
 			<textField>
 				<reportElement x="659" y="8" width="134" height="14" uuid="b734585d-6b85-4f32-9fd9-14d251a61faa"/>
 				<textElement textAlignment="Left">
-					<font size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toUpperCase()]]></textFieldExpression>
 			</textField>
@@ -231,7 +231,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<staticText>
 				<reportElement x="365" y="6" width="48" height="25" uuid="f52dca87-5e01-43ee-8a05-f9fb222c1a2e"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Batch No.]]></text>
 			</staticText>
@@ -241,7 +241,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<staticText>
 				<reportElement x="670" y="6" width="48" height="25" uuid="6893618a-2bd8-4326-8730-1ee450de51c4"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Returned qty]]></text>
 			</staticText>
@@ -257,7 +257,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<staticText>
 				<reportElement x="480" y="6" width="105" height="25" uuid="f94b171b-1c9f-4d3d-b8e6-1b0e15c64717"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Brand / Manufacturer]]></text>
 			</staticText>
@@ -276,21 +276,21 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<staticText>
 				<reportElement x="724" y="6" width="76" height="25" uuid="ef714b15-82fa-4f36-a7b2-125230ec0f09"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Remarks]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="630" y="5" width="31" height="25" uuid="f1209a99-74cb-4439-ba12-07a6c8daab30"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Rec. qty]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="420" y="6" width="54" height="25" uuid="543fd9c9-426a-42a8-b8c3-d6f7783bbe74"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[DOE]]></text>
 			</staticText>
@@ -309,7 +309,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<staticText>
 				<reportElement x="3" y="6" width="17" height="25" uuid="b60bd469-a3fa-46ba-aab4-470759f96cf9"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[S. No.]]></text>
 			</staticText>
@@ -319,28 +319,28 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<staticText>
 				<reportElement x="589" y="6" width="34" height="25" uuid="0d67ce3f-5e61-4950-956c-9ec528622200"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Issued qty]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="87" y="6" width="53" height="24" uuid="17b3d493-febb-4285-a227-0163015ca36c"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Return No.]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="29" y="5" width="52" height="25" uuid="c4e2ae6e-a7fd-420f-8c84-2fd1097a7578"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Return Date]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="145" y="6" width="50" height="24" uuid="61e8dbc5-d150-4ae5-922e-f92bee1ba118"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Indent No.]]></text>
 			</staticText>
@@ -350,14 +350,14 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<staticText>
 				<reportElement x="261" y="6" width="98" height="24" uuid="f2e08f33-0258-47e8-9ea8-c6185a73ede2"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Item Name]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="200" y="6" width="56" height="24" uuid="2e128bd2-7fe1-4624-9f4b-044209c5a3f2"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Item Code]]></text>
 			</staticText>
@@ -374,7 +374,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="29" y="3" width="52" height="25" uuid="6446acac-a1f3-4a40-b526-baec3ddfb17b"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{return_date}]]></textFieldExpression>
 			</textField>
@@ -384,7 +384,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="3" y="4" width="17" height="25" uuid="eda0e0a5-9e6d-4524-ab0b-bd400c9fe91e"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
 			</textField>
@@ -394,7 +394,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="87" y="4" width="45" height="24" uuid="f5153dd6-1096-477e-bfbe-8e23b86f255d"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{return_no}]]></textFieldExpression>
 			</textField>
@@ -410,7 +410,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="145" y="4" width="50" height="24" uuid="6dc294b7-ba67-4d77-a8cd-eaffc2058aef"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{indent_no}]]></textFieldExpression>
 			</textField>
@@ -420,7 +420,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="365" y="3" width="48" height="25" uuid="57e8c1d4-a043-4cd2-9a5f-0eb0d5991b54"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{batch_no}]]></textFieldExpression>
 			</textField>
@@ -430,14 +430,14 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="420" y="4" width="54" height="25" uuid="6ee0ecca-ec11-45fa-a3b2-a5f978f54cc6"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{doe}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="480" y="4" width="105" height="25" uuid="aba57bd4-d97f-4ba9-81b0-2cff2426be9b"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{brand_manufacturer}]]></textFieldExpression>
 			</textField>
@@ -447,14 +447,14 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="589" y="4" width="36" height="25" uuid="eddb99e0-2b68-403c-bd57-ebdba29e9a3f"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{issued_qty}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="630" y="4" width="33" height="25" uuid="9c86a589-253e-4c92-880b-a6731d047291"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{received_qty}]]></textFieldExpression>
 			</textField>
@@ -467,7 +467,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="670" y="4" width="48" height="25" uuid="2b9a320c-fef5-4eff-8f1c-908b7786a8ff"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{returned_qty}]]></textFieldExpression>
 			</textField>
@@ -477,7 +477,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="724" y="4" width="76" height="25" uuid="f32c6ce9-9070-4aed-ab2a-b4c900778ec0"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{remarks}]]></textFieldExpression>
 			</textField>
@@ -496,14 +496,14 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<textField>
 				<reportElement x="200" y="4" width="56" height="24" uuid="d6a058db-358e-4797-876c-f7bb923883f6"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{item_id}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="261" y="5" width="98" height="24" uuid="d3930e1c-7430-4544-8c02-077fb5b0ca64"/>
 				<textElement>
-					<font isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{nomenclature}]]></textFieldExpression>
 			</textField>
@@ -514,7 +514,7 @@ and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
 			<staticText>
 				<reportElement x="0" y="5" width="802" height="18" uuid="9c7606f4-7dae-4fa3-be48-1d1f84a03fda"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[NO DATA FOUND]]></text>
 			</staticText>
