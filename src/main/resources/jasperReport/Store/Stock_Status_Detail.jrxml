@@ -177,84 +177,84 @@ order by msi.nomenclature]]>
 				<staticText>
 					<reportElement x="2" y="7" width="27" height="17" uuid="926c2078-6151-49ec-a87b-51ea0b61746f"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[S.No.]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="33" y="7" width="56" height="18" uuid="9699d73e-2614-4562-b9ce-29e8b055ca8b"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Drug Code]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="93" y="7" width="151" height="18" uuid="3bff6e8c-a6e3-4240-8810-706f6febb0e6"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Drug Name]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="250" y="8" width="40" height="18" uuid="4e99e532-3961-4e4d-9894-db78c09b7245"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Unit]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="294" y="8" width="49" height="18" uuid="95f368d5-6653-470b-ac9c-7eed55ea5bc2"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Batch No.]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="348" y="8" width="45" height="18" uuid="98aeede0-96ab-4cc8-99d5-73a26e5007c7"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[DOM]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="405" y="8" width="53" height="18" uuid="350c1b77-88cf-446f-be8f-59c12b2a6276"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[DOE]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="464" y="8" width="56" height="18" uuid="fa2e4ed0-b09f-4af8-a5ff-7bc8c41469a4"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Brand]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="525" y="9" width="88" height="18" uuid="991f5145-d29a-4163-8a0d-0fd22e458882"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Manufacturer]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="616" y="9" width="51" height="18" uuid="f24a9a21-3560-4f65-b8db-fd32d971f8ac"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Stock Qty]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="671" y="10" width="49" height="18" uuid="622df34f-418f-4b43-be70-980f09bcbebf"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Unit Rate]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="724" y="10" width="55" height="18" uuid="b7af5ba6-8735-4583-b468-a65d28644e3f"/>
 					<textElement>
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Total Cost]]></text>
 				</staticText>
@@ -283,21 +283,21 @@ order by msi.nomenclature]]>
 			<staticText>
 				<reportElement x="0" y="41" width="782" height="16" uuid="4a88b1a5-d975-4e65-860c-b0c6186a2b3f"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Stock Status - Details]]></text>
 			</staticText>
 			<textField>
 				<reportElement x="0" y="22" width="782" height="16" uuid="5f7f0b41-98af-4176-bb81-c52eaa8ea5a3"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="0" y="2" width="782" height="16" uuid="97e566f0-e494-44fd-96a2-2d78432c7be6"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
@@ -347,7 +347,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{manufacture_date}]]></textFieldExpression>
 			</textField>
@@ -360,7 +360,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{expiry_date}]]></textFieldExpression>
 			</textField>
@@ -373,7 +373,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{batch_no}]]></textFieldExpression>
 			</textField>
@@ -386,7 +386,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{unit_name}]]></textFieldExpression>
 			</textField>
@@ -399,7 +399,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mas_store_item_pvms_no}]]></textFieldExpression>
 			</textField>
@@ -412,7 +412,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mas_store_item_nomenclature}]]></textFieldExpression>
 			</textField>
@@ -431,7 +431,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{brand_name}]]></textFieldExpression>
 			</textField>
@@ -444,7 +444,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{manufacturer_name}]]></textFieldExpression>
 			</textField>
@@ -457,7 +457,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{Sr.no}]]></textFieldExpression>
 			</textField>
@@ -479,7 +479,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{balance_qty}]]></textFieldExpression>
 			</textField>
@@ -492,7 +492,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{mrp_per_unit}]]></textFieldExpression>
 			</textField>
@@ -505,7 +505,7 @@ order by msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{total_mrp_value}]]></textFieldExpression>
 			</textField>
@@ -525,7 +525,7 @@ order by msi.nomenclature]]>
 			<staticText>
 				<reportElement x="0" y="3" width="782" height="16" uuid="f621d70a-0017-4341-9563-bbf74cff0244"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[NO DATA FOUND]]></text>
 			</staticText>

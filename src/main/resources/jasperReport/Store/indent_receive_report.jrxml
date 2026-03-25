@@ -152,21 +152,21 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 			<textField>
 				<reportElement x="0" y="0" width="782" height="21" uuid="cef2346d-f53a-4d9f-a2c6-0ecd87b3f394"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="0" y="21" width="782" height="21" uuid="55580e03-8673-4a87-b581-51b90281410d"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{from_department}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="0" y="42" width="782" height="21" uuid="ce8bdadc-fbab-4e73-b767-fec9c520e2a0"/>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Indent Receive Report" + " - " + $F{indent_type}]]></textFieldExpression>
 			</textField>
@@ -177,7 +177,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 			<staticText>
 				<reportElement x="3" y="2" width="56" height="19" uuid="ea70b2d0-bd42-487b-94a4-349037c6aa1e"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Indent No.]]></text>
 			</staticText>
@@ -190,7 +190,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{received_date}]]></textFieldExpression>
 			</textField>
@@ -203,7 +203,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{civno}]]></textFieldExpression>
 			</textField>
@@ -222,7 +222,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{indent_date}]]></textFieldExpression>
 			</textField>
@@ -235,7 +235,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{indent_no}]]></textFieldExpression>
 			</textField>
@@ -248,35 +248,35 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{received_by}]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="3" y="25" width="56" height="19" uuid="b51ead34-95c0-441c-8d30-3a6f51ba521f"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Issue No.]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="272" y="3" width="66" height="19" uuid="2dd688fd-746d-4f23-a907-314944514c78"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Indent Date]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="534" y="2" width="92" height="19" uuid="c08a71d7-a146-4c8f-b67b-953a297f79ee"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Received Date]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="272" y="26" width="67" height="15" uuid="240241b3-3036-45b7-a080-3eb86fc0f185"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Received By]]></text>
 			</staticText>
@@ -287,14 +287,14 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 			<staticText>
 				<reportElement x="434" y="8" width="128" height="26" uuid="f8c74d30-898f-4887-839f-d771953c04e5"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Brand/Manufacturer]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="3" y="8" width="66" height="26" uuid="4930d4b7-cc08-4279-b249-34a3839e4be3"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Item Code]]></text>
 			</staticText>
@@ -340,56 +340,56 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 			<staticText>
 				<reportElement x="80" y="8" width="163" height="27" uuid="936a0801-c171-4bb8-9a43-83936dca0b7d"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Item Name]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="253" y="8" width="38" height="26" uuid="53993609-c721-4f5e-baf6-0114d8f0e42e"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Unit]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="576" y="8" width="38" height="26" uuid="827d1005-562f-43f9-be69-d70163992eaa"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Qty Issued]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="624" y="8" width="48" height="26" uuid="899f7e21-044f-4d43-9aaf-353fc2e5ec1b"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Qty Received]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="681" y="8" width="38" height="26" uuid="dd93f845-8def-4818-bb12-8db009cbeea2"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Unit Rate]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="299" y="8" width="69" height="26" uuid="1909817b-b13b-4f7a-a9c9-78056ba2830d"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[DOE]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="373" y="8" width="52" height="26" uuid="63ee5fe7-2d0d-4749-b6b2-f64c58e20299"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Batch No.]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="729" y="8" width="46" height="26" uuid="26f92843-2db6-4384-a8b9-412ba40a9543"/>
 				<textElement>
-					<font isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Total Cost]]></text>
 			</staticText>
@@ -436,7 +436,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{pvms_no}]]></textFieldExpression>
 			</textField>
@@ -449,7 +449,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{nomenclature}]]></textFieldExpression>
 			</textField>
@@ -462,7 +462,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{expiry_date}]]></textFieldExpression>
 			</textField>
@@ -475,7 +475,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{unit_name}]]></textFieldExpression>
 			</textField>
@@ -488,7 +488,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{batch_no}]]></textFieldExpression>
 			</textField>
@@ -504,7 +504,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[new java.text.DecimalFormat("#,##0.00").format($F{total_cost})]]></textFieldExpression>
 			</textField>
@@ -520,12 +520,15 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{issued_qty}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="681" y="2" width="34" height="20" uuid="4f399874-c8a9-447e-be5f-8cd0ee32ebb9"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
 				<textFieldExpression><![CDATA[$F{unit_price}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight" pattern="###0" isBlankWhenNull="true">
@@ -537,7 +540,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{received_qty}]]></textFieldExpression>
 			</textField>
@@ -550,7 +553,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{brand_manufacturer}]]></textFieldExpression>
 			</textField>
@@ -570,7 +573,7 @@ where dt.receive_m_id = $P{receive_m_id}]]>
 			<staticText>
 				<reportElement x="0" y="0" width="782" height="26" uuid="b9a63044-b10d-4db4-a513-fa747ea4236a"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[NO DATA FOUND]]></text>
 			</staticText>

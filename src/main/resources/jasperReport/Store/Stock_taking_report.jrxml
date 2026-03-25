@@ -150,21 +150,21 @@ order by mas_store_item.nomenclature]]>
 			<textField>
 				<reportElement x="0" y="2" width="551" height="16" uuid="3c86c1f7-9b73-4bc6-bf47-ea92c339f6f7"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="0" y="24" width="551" height="16" uuid="57d920ac-ad77-4ffb-a372-433f7449bdfc"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="0" y="45" width="551" height="16" uuid="ff2065fc-2130-4ac4-aedd-f9e30227e2f6"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Stock Taking Report]]></text>
 			</staticText>
@@ -175,7 +175,7 @@ order by mas_store_item.nomenclature]]>
 			<staticText>
 				<reportElement x="3" y="3" width="153" height="18" uuid="b730ff35-b235-4b69-b026-6f1ddb33b460"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Stock Taking No.]]></text>
 			</staticText>
@@ -188,7 +188,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{stock_taking_no}]]></textFieldExpression>
 			</textField>
@@ -201,7 +201,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="7"/>
+					<font fontName="DejaVu Sans Condensed" size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{physical_date}]]></textFieldExpression>
 			</textField>
@@ -214,7 +214,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
 			</textField>
@@ -227,7 +227,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="7"/>
+					<font fontName="DejaVu Sans Condensed" size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{reason}]]></textFieldExpression>
 			</textField>
@@ -240,7 +240,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="7"/>
+					<font fontName="DejaVu Sans Condensed" size="7"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{approved_by}]]></textFieldExpression>
 			</textField>
@@ -253,7 +253,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{created_by}]]></textFieldExpression>
 			</textField>
@@ -272,35 +272,35 @@ order by mas_store_item.nomenclature]]>
 			<staticText>
 				<reportElement x="3" y="26" width="153" height="18" uuid="5bf98b2e-c525-4200-a122-2757c06255f4"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Submitted By]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="3" y="49" width="153" height="20" uuid="07b1fbab-8f3e-4a90-8506-5c62ac0d978e"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Status]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="300" y="2" width="153" height="20" uuid="9ca310b8-f3cd-4364-9bfe-62aa48d61d80"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Stock Taking Date]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="300" y="25" width="153" height="20" uuid="9e87177c-962b-40d8-8aae-de3b2e8c529b"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Approved/Rejected By]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="300" y="49" width="153" height="20" uuid="8f756fa1-c143-428e-901b-0b8e126fe1c6"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Reason]]></text>
 			</staticText>
@@ -350,70 +350,70 @@ order by mas_store_item.nomenclature]]>
 			<staticText>
 				<reportElement x="4" y="7" width="19" height="29" uuid="e626e091-1574-4286-bb0d-3b7f4530c237"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[S. No.]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="28" y="7" width="42" height="29" uuid="a0008de9-b425-46c5-8eac-e0291092fc40"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Drug Code]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="76" y="7" width="99" height="29" uuid="6e78c097-59be-44cb-8514-0f4da3f50dd6"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Drug Name]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="183" y="7" width="42" height="29" uuid="eda7aae1-4e1c-48d3-a0e2-11e2f870dc48"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Batch No.]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="229" y="8" width="51" height="29" uuid="86aa5f57-5479-4926-bcfc-ea09dec6719f"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[DOE]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="285" y="7" width="54" height="29" uuid="29cef69e-8928-4542-9cd2-fd0f5de31751"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Computed Stock]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="345" y="7" width="46" height="29" uuid="6c0b6dae-204a-4330-91c7-7e1604bf211b"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Physical Stock]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="397" y="7" width="43" height="29" uuid="c9c2a1d6-2fcd-4f8f-8cd8-0faac1b9f73c"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Surplus]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="444" y="7" width="49" height="29" uuid="6d1bea3d-7504-49f6-ac9f-d344e78a5f11"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Deficient]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="498" y="7" width="46" height="29" uuid="9c9c2c18-1a6e-48d4-aa84-3bbef1dd8107"/>
 				<textElement>
-					<font fontName="SansSerif" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Remarks]]></text>
 			</staticText>
@@ -457,7 +457,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{pvms_no}]]></textFieldExpression>
 			</textField>
@@ -470,7 +470,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{nomenclature}]]></textFieldExpression>
 			</textField>
@@ -483,7 +483,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{batch_no}]]></textFieldExpression>
 			</textField>
@@ -496,7 +496,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{expiry_date}]]></textFieldExpression>
 			</textField>
@@ -509,7 +509,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{store_stock_service}]]></textFieldExpression>
 			</textField>
@@ -522,7 +522,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{physical_stock}]]></textFieldExpression>
 			</textField>
@@ -535,7 +535,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{stock_deficient}]]></textFieldExpression>
 			</textField>
@@ -548,7 +548,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{remarks}]]></textFieldExpression>
 			</textField>
@@ -567,7 +567,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{computed_stock}]]></textFieldExpression>
 			</textField>
@@ -583,7 +583,7 @@ order by mas_store_item.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{Sr.no}]]></textFieldExpression>
 			</textField>
@@ -603,7 +603,7 @@ order by mas_store_item.nomenclature]]>
 			<staticText>
 				<reportElement x="0" y="5" width="551" height="16" uuid="8a77e419-81ed-4fda-a01f-10e4b9597a4e"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="10" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[NO DATA FOUND]]></text>
 			</staticText>

@@ -135,63 +135,63 @@ order by sim.issue_date, msi.nomenclature]]>
 				<staticText>
 					<reportElement x="8" y="9" width="18" height="24" uuid="c78829d1-304c-48bd-9c51-84d0b2200fd1"/>
 					<textElement textAlignment="Left">
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[S. No.]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="35" y="9" width="66" height="13" uuid="e21e610f-ac1a-496e-98c8-530bba518e94"/>
 					<textElement textAlignment="Left">
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Issue Date]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="105" y="9" width="105" height="24" uuid="5e4c097c-6ff9-4f58-8aee-4df35d60fb6c"/>
 					<textElement textAlignment="Left">
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Indent No. / Dept]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="230" y="9" width="192" height="13" uuid="ead82678-516b-4a7e-871f-e94511129202"/>
 					<textElement textAlignment="Left">
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Item Name]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="434" y="8" width="36" height="25" uuid="5ef8f640-b923-45ed-8fd8-21286fd8f5f4"/>
 					<textElement textAlignment="Left">
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Issued Qty]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="472" y="9" width="64" height="13" uuid="429dd625-31d5-44ae-95ce-56d7321bbd84"/>
 					<textElement textAlignment="Left">
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[DOE]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="537" y="9" width="66" height="13" uuid="b61ef2df-c770-4333-acd5-79071dcb020c"/>
 					<textElement textAlignment="Left">
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Batch No.]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="607" y="9" width="112" height="13" uuid="09d34e53-0fe6-409e-9fb8-32b01b3c4ff7"/>
 					<textElement textAlignment="Left">
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Brand/Manufacturer]]></text>
 				</staticText>
 				<staticText>
 					<reportElement x="722" y="9" width="66" height="13" uuid="969d9a83-44ac-4c98-95c0-35bf42f51cf5"/>
 					<textElement textAlignment="Left">
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Issued By]]></text>
 				</staticText>
@@ -230,7 +230,7 @@ order by sim.issue_date, msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{Sr.no}]]></textFieldExpression>
 			</textField>
@@ -243,7 +243,7 @@ order by sim.issue_date, msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{issue_date}]]></textFieldExpression>
 			</textField>
@@ -256,7 +256,7 @@ order by sim.issue_date, msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{indent_dept}]]></textFieldExpression>
 			</textField>
@@ -269,7 +269,7 @@ order by sim.issue_date, msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{item_name_code}]]></textFieldExpression>
 			</textField>
@@ -282,7 +282,7 @@ order by sim.issue_date, msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{issued_qty}]]></textFieldExpression>
 			</textField>
@@ -295,7 +295,7 @@ order by sim.issue_date, msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{expiry_date}]]></textFieldExpression>
 			</textField>
@@ -311,7 +311,7 @@ order by sim.issue_date, msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{batch_no}]]></textFieldExpression>
 			</textField>
@@ -327,7 +327,7 @@ order by sim.issue_date, msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{brand_manufacturer}]]></textFieldExpression>
 			</textField>
@@ -343,7 +343,7 @@ order by sim.issue_date, msi.nomenclature]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{issued_by}]]></textFieldExpression>
 			</textField>

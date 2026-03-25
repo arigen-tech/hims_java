@@ -141,7 +141,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement>
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Sr. No.]]></text>
 				</staticText>
@@ -195,7 +195,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Date]]></text>
 				</staticText>
@@ -204,7 +204,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Patient Name]]></text>
 				</staticText>
@@ -213,7 +213,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Gender]]></text>
 				</staticText>
@@ -222,7 +222,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Age]]></text>
 				</staticText>
@@ -231,7 +231,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[UHID No.]]></text>
 				</staticText>
@@ -240,7 +240,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Signs and Symptoms]]></text>
 				</staticText>
@@ -249,7 +249,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Diagnosis]]></text>
 				</staticText>
@@ -258,7 +258,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Lab Advice]]></text>
 				</staticText>
@@ -267,7 +267,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Treat. Advice]]></text>
 				</staticText>
@@ -276,7 +276,7 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Referral Advice]]></text>
 				</staticText>
@@ -285,12 +285,12 @@ order by md.department_name, vt.visit_date]]>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Left">
-						<font fontName="SansSerif" size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Doctor Name]]></text>
 				</staticText>
 				<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
-					<reportElement key="textField-16" x="80" y="10" width="220" height="18" uuid="5e1613d0-a34d-4fbc-a79b-1c3e5f5679e3"/>
+					<reportElement key="textField-16" x="80" y="8" width="150" height="18" uuid="5e1613d0-a34d-4fbc-a79b-1c3e5f5679e3"/>
 					<box>
 						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
@@ -298,51 +298,72 @@ order by md.department_name, vt.visit_date]]>
 						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					</box>
 					<textElement>
-						<font fontName="SansSerif" size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
 				</textField>
 				<staticText>
-					<reportElement x="12" y="10" width="68" height="18" uuid="797f8d17-e456-4fbd-a380-59d3bd4f2803"/>
+					<reportElement x="12" y="8" width="68" height="18" uuid="797f8d17-e456-4fbd-a380-59d3bd4f2803"/>
 					<textElement>
-						<font size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Dept Name :]]></text>
 				</staticText>
 				<staticText>
-					<reportElement x="551" y="10" width="80" height="14" uuid="c374443c-cd78-46cc-92b1-9f5e12c2bda4"/>
+					<reportElement x="286" y="8" width="80" height="14" uuid="c374443c-cd78-46cc-92b1-9f5e12c2bda4"/>
 					<textElement textAlignment="Left">
-						<font size="10" isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Report Range]]></text>
 				</staticText>
 				<staticText>
-					<reportElement x="631" y="10" width="7" height="14" uuid="28ed0e59-85fb-47d8-b10c-4d2c25a51166"/>
+					<reportElement x="366" y="8" width="7" height="14" uuid="28ed0e59-85fb-47d8-b10c-4d2c25a51166"/>
 					<textElement textAlignment="Center">
-						<font isBold="true"/>
+						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[:]]></text>
 				</staticText>
 				<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
-					<reportElement x="642" y="10" width="52" height="14" uuid="7f721845-cbd9-4964-b611-a5b9cb5d1541"/>
+					<reportElement x="377" y="8" width="52" height="14" uuid="7f721845-cbd9-4964-b611-a5b9cb5d1541"/>
 					<textElement textAlignment="Left">
-						<font size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{from_date}]]></textFieldExpression>
 				</textField>
 				<staticText>
-					<reportElement x="692" y="10" width="14" height="14" uuid="5a7279da-bffe-41ec-aab2-069ce456a7f5"/>
+					<reportElement x="427" y="8" width="14" height="14" uuid="5a7279da-bffe-41ec-aab2-069ce456a7f5"/>
 					<textElement textAlignment="Center">
-						<font isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" isBold="false"/>
 					</textElement>
 					<text><![CDATA[to]]></text>
 				</staticText>
 				<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
-					<reportElement x="706" y="10" width="70" height="14" uuid="66dd3d63-4bde-4b2b-80cc-c1fc07aabebf"/>
+					<reportElement x="441" y="8" width="70" height="14" uuid="66dd3d63-4bde-4b2b-80cc-c1fc07aabebf"/>
 					<textElement textAlignment="Left">
-						<font size="10" isBold="false"/>
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="554" y="8" width="73" height="14" uuid="5f47a5b2-a6f6-450c-9f49-b29e686e53a0"/>
+					<textElement textAlignment="Left">
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Generated on]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="627" y="8" width="7" height="14" uuid="088eed82-f367-433d-95d8-bd7d5bbd39aa"/>
+					<textElement textAlignment="Center">
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+					</textElement>
+					<text><![CDATA[:]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="636" y="8" width="141" height="14" uuid="8599a642-8009-432b-8fee-79c5ad085925"/>
+					<textElement textAlignment="Left">
+						<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toLowerCase()]]></textFieldExpression>
 				</textField>
 			</band>
 		</groupHeader>
@@ -365,7 +386,7 @@ order by md.department_name, vt.visit_date]]>
 			<textField>
 				<reportElement x="0" y="0" width="782" height="18" uuid="bf114d54-3edb-418e-b7f1-a05233b60487"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
@@ -374,14 +395,14 @@ order by md.department_name, vt.visit_date]]>
 					<printWhenExpression><![CDATA[($P{department_id}.longValue() == 0 ?  Boolean.FALSE: Boolean.TRUE)]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="0" y="38" width="782" height="18" uuid="0b7ec61d-1cf8-41e1-9562-64545782d9bd"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[OPD Register]]></text>
 			</staticText>
@@ -398,7 +419,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
 			</textField>
@@ -411,7 +432,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_signs_symptoms}]]></textFieldExpression>
 			</textField>
@@ -424,7 +445,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{lab_flag}]]></textFieldExpression>
 			</textField>
@@ -437,7 +458,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{doctor_name}]]></textFieldExpression>
 			</textField>
@@ -462,7 +483,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{visit_date}]]></textFieldExpression>
 			</textField>
@@ -478,7 +499,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{gender_name}]]></textFieldExpression>
 			</textField>
@@ -500,7 +521,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{icd_diag}]]></textFieldExpression>
 			</textField>
@@ -522,7 +543,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{p_age}]]></textFieldExpression>
 			</textField>
@@ -535,7 +556,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_type}]]></textFieldExpression>
 			</textField>
@@ -548,7 +569,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{referral_flag}]]></textFieldExpression>
 			</textField>
@@ -561,7 +582,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{madicine_flag}]]></textFieldExpression>
 			</textField>
@@ -580,7 +601,7 @@ order by md.department_name, vt.visit_date]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Left">
-					<font fontName="SansSerif" size="10"/>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
 			</textField>
@@ -594,7 +615,7 @@ order by md.department_name, vt.visit_date]]>
 			<staticText>
 				<reportElement x="0" y="3" width="782" height="18" uuid="fb87c217-f5de-439e-84e6-baa300c99942"/>
 				<textElement textAlignment="Center">
-					<font fontName="SansSerif" size="12" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[NO DATA FOUND]]></text>
 			</staticText>
