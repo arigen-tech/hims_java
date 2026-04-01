@@ -22,7 +22,7 @@ public interface RegistrationService {
 
     ApiResponse<Page<PatientProjection>> searchPatient(PatientSearchReq substring, Pageable pageable);
 
-    ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patient);
+    ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patient, String serviceCategoryCode);
 
     ApiResponse<PaymentResponse> updatePaymentStatus(PaymentUpdateRequest opdreq);
 

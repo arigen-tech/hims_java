@@ -326,65 +326,6 @@ public class PatientServiceImpl implements PatientService {
     }
 
 
-//    @Override
-//    @Transactional
-//    public ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq followUpRequest) {
-//        PatientRegFollowUpResp resp = new PatientRegFollowUpResp();
-//        PatientRequest request = followUpRequest.getPatientDetails().getPatient();
-//        if (request.getId() == null) {
-//            throw new RuntimeException("Patient ID is required for update");
-//        }
-//        Patient patient = updatePatient(request, true);
-//        resp.setPatient(patient);
-//
-//        if (followUpRequest.isAppointmentFlag()) {
-//            List<VisitRequest> visitList = followUpRequest.getPatientDetails().getVisits();
-//            OpdPatientDetailRequest opdReq = followUpRequest.getPatientDetails().getOpdPatientDetail();
-//            List<Visit> updatedVisits = new ArrayList<>();
-//            OpdPatientDetail opdDetails = new OpdPatientDetail();
-//
-//            if (visitList != null && !visitList.isEmpty()) {
-//                for (VisitRequest v : visitList) {
-//                    Visit updatedVisit;
-//
-//                    if (v.getId() != null) {
-//                        updatedVisit = updateExistingVisitById(v, patient);
-//                    } else {
-//                        if (v.getPatientId() == null) {
-//                            v.setPatientId(patient.getId());
-//                        }
-//                        if (v.getHospitalId() == null && patient.getPatientHospital() != null) {
-//                            v.setHospitalId(patient.getPatientHospital().getId());
-//                        }
-//                        if (v.getVisitDate() == null) {
-//                            v.setVisitDate(Instant.now());
-//                        }
-//                        if (v.getVisitType() == null) {
-//                            v.setVisitType("F");
-//                        }
-//                        updatedVisit = createSingleAppointment(v, patient);
-//                    }
-//
-//                    updatedVisits.add(updatedVisit);
-//
-//                    if (updatedVisit.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-//                        opdDetails = addOpdDetails(updatedVisit, opdReq, patient);
-//                    }
-//                }
-//            } else {
-//                List<Visit> existingVisits = visitRepository.findByPatientId(patient.getId());
-//                if (!existingVisits.isEmpty()) {
-//                    updatedVisits.addAll(existingVisits);
-//                }
-//            }
-//            resp.setVisits(updatedVisits);
-//            resp.setOpdPatientDetail(opdDetails);
-//            OPDBillingPatientResponse finalResponse =  buildFinalResponse(patient,updatedVisits);
-//            resp.setOpdBillingPatientResponse(finalResponse);
-//        }
-//
-//        return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {});
-//    }
 
     @Override
     @Transactional
@@ -397,7 +338,7 @@ public class PatientServiceImpl implements PatientService {
         Patient patient;
 
         if (details.getPatient() != null && details.getPatient().getId() != null) {
-            patient = updatePatient(details.getPatient(), true);
+            patient = updatePatientDetails(details.getPatient(), true);
         } else if (followUpRequest.isAppointmentFlag()
                 && details.getVisits() != null
                 && !details.getVisits().isEmpty()
@@ -502,7 +443,7 @@ public class PatientServiceImpl implements PatientService {
         return visitRepository.save(existingVisit);
     }
 
-    private Patient updatePatient(PatientRequest request, boolean followUp) {
+    public Patient updatePatientDetails(PatientRequest request, boolean followUp) {
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
             log.info("current user not found");
@@ -511,8 +452,8 @@ public class PatientServiceImpl implements PatientService {
         Patient patient = patientRepository.findById(request.getId())
                 .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + request.getId()));
 
-        patient.setUhidNo(request.getUhidNo());
         patient.setUpdatedOn(Instant.now());
+        patient.setUhidNo(patient.getUhidNo());
         patient.setLastChgBy(currentUser.getFirstName() + " " +
                 currentUser.getMiddleName() + " " +
                 currentUser.getLastName());

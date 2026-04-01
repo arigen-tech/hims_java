@@ -67,7 +67,8 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 sc.service_cat_name AS billingType,
                 v.doctor_name AS consultingDoctorName,
                 d.department_name AS departmentName,
-                bh.net_amount AS netAmount
+                bh.net_amount AS netAmount,
+                rod.appointment_date AS appointmentDateForRadiology
             FROM billing_header bh
             INNER JOIN visit v ON v.billing_hd_id = bh.bill_hd_id
             INNER JOIN patient p ON v.patient_id = p.patient_id
@@ -75,6 +76,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             LEFT JOIN mas_relation r ON p.p_relation_id = r.relation_id
             LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
             LEFT JOIN mas_department d ON v.department_id = d.department_id
+            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
             WHERE LOWER(bh.payment_status) IN ('n','p')
               AND bh.net_amount > 0
               AND LOWER(v.visit_status) <> 'c'
@@ -296,11 +298,13 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 bh.net_amount AS netAmount,
                 bh.bill_hd_id AS billingHeaderId,
                 bh.patient_id AS patientId,
-                bh.hdorder_id AS orderId
+                bh.hdorder_id AS orderId,
+                rod.appointment_date AS appointmentDateForRadiology
             FROM billing_header bh
             JOIN patient p ON p.patient_id = bh.patient_id
             LEFT JOIN mas_gender g ON g.id = p.p_gender_id
             LEFT JOIN visit v ON v.visit_id = bh.visit_id
+            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id 
             
             WHERE LOWER(bh.payment_status) 
                   IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
@@ -404,7 +408,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             FROM billing_header bh
             JOIN billing_details bd ON bh.bill_hd_id = bd.bill_hd_id
             JOIN patient p ON bh.patient_id = p.patient_id
-            
+            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
             LEFT JOIN mas_gender g ON p.p_gender_id = g.id
             LEFT JOIN mas_relation r ON p.p_relation_id = r.relation_id
             LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id

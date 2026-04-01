@@ -33,7 +33,9 @@ public class FollowUpPatientResponseDetails {
         private LocalDate dob;
         private String age;
         private Long gender;
+        private String genderName;
         private Long relation;
+        private String relationName;
     }
 
     @Data
@@ -41,8 +43,11 @@ public class FollowUpPatientResponseDetails {
         private String address1;
         private String address2;
         private Long country;
+        private String countryName;
         private Long state;
+        private String stateName;
         private Long district;
+        private String districtName;
         private String city;
         private String pinCode;
     }
@@ -57,8 +62,11 @@ public class FollowUpPatientResponseDetails {
         private String address1;
         private String address2;
         private Long country;
+        private String countryName;
         private Long state;
+        private String stateName;
         private Long district;
+        private String districtName;
         private String city;
         private String pinCode;
     }

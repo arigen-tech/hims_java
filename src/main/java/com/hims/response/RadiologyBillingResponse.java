@@ -16,4 +16,5 @@ public class RadiologyBillingResponse {
     private Double billAmount;
     private Long billingHeaderId;
     private Long patientId;
+    private String appointmentDateForRadiology;
 }

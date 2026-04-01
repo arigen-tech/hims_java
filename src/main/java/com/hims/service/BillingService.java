@@ -2,11 +2,12 @@ package com.hims.service;
 
 import com.hims.entity.*;
 import com.hims.projection.BillingHeaderResponseProjection;
-import com.hims.request.PaymentUpdateRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface BillingService {
@@ -55,4 +56,21 @@ public interface BillingService {
     ApiResponse<Page<BillingHeaderResponseProjection>> searchInvoiceDetails(String patientName, String phoneNo, String registrationNo, Pageable pageable);
 
 
+    BillingHeader saveBillingHeader(
+            Object orderHd, Visit vId, User currentUser,
+            BigDecimal sum, BigDecimal tax, BigDecimal disc,
+            String serviceCategoryCode, boolean isRadiology);
+
+    BillingDetail saveBillingDetail(
+            BillingHeader bhdId,
+            Object dtId,
+            LabRadioInvestigationRequest investigation,
+            String serviceCategoryCode,
+            boolean isRadiology);
+
+    BillingDetail saveBillingDetailPackage(
+            BillingHeader bhdId,
+            DgInvestigationPackage pack,
+            LabRadioInvestigationRequest req,
+            String serviceCategoryCode);
 }

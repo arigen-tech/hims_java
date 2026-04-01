@@ -1351,8 +1351,8 @@ private MasCrossMatchTypeService masCrossMatchTypeService;
 
 
     @GetMapping("/masServiceCategory/getGstConfig/{flag}")
-    public ResponseEntity<ApiResponse<GstConfigResponse>> getGstConfig(@PathVariable int flag , @RequestParam(name = "categoryId", required = false) Integer catId) {
-        ApiResponse<GstConfigResponse> response = masServiceCategoryService.getGstConfig(flag , catId);
+    public ResponseEntity<ApiResponse<GstConfigResponse>> getGstConfig(@PathVariable int flag , @RequestParam(name = "categoryCode", required = false) String catCode) {
+        ApiResponse<GstConfigResponse> response = masServiceCategoryService.getGstConfig(flag , catCode);
 
         HttpStatus status = (response.getStatus() == HttpStatus.OK.value()) ? HttpStatus.OK : HttpStatus.NOT_FOUND;
 
