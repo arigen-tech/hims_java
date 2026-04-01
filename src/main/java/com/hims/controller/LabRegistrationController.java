@@ -50,8 +50,38 @@ public class LabRegistrationController {
     public ResponseEntity<ApiResponse<AppsetupResponse>> appSetupResponse(@RequestBody LabRegRequest request) {
         log.info("Lab Registration API called");
         return new ResponseEntity<>(labRegistrationServices.labReg(request), HttpStatus.OK);
-
     }
+
+    //New Method for lab registration
+    @PostMapping("/laboratoryRegistration")
+    public ResponseEntity<ApiResponse<LabRadiologyRegistrationResponse>> registerAndBookingLaboratory(
+            @RequestBody @Valid LabRadioRegistrationRequest request) {
+        log.info("Laboratory registration API called");
+        try {
+            ApiResponse<LabRadiologyRegistrationResponse> response = labRegistrationServices.registerAndBookingLaboratory(request);
+            HttpStatus status = response.getStatus() == 200 ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST;
+            return new ResponseEntity<>(response, status);
+        } catch (IllegalArgumentException e) {
+            log.warn("Validation error in laboratory registration: {}", e.getMessage());
+            ApiResponse<LabRadiologyRegistrationResponse> errorResponse = ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Validation failed: " + e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            log.error("Unexpected error in laboratory registration", e);
+            ApiResponse<LabRadiologyRegistrationResponse> errorResponse = ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    //New Method for lab update and booking investigations for registered patients
+    @PostMapping("/updateDetailsAndBookingLaboratory")
+    public ResponseEntity<ApiResponse<AppsetupResponse>> updateDetailsAndBookingLaboratory(@RequestBody LabRadioUpdateRequest request) {
+        log.info("Lab Registration API called");
+        return new ResponseEntity<>(labRegistrationServices.updateDetailsAndBookingLaboratory(request), HttpStatus.OK);
+    }
+
+
     @PostMapping("/updatepaymentstatus")
     public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
         log.info("Update Payment Status API called");
@@ -60,11 +90,7 @@ public class LabRegistrationController {
                 return new ResponseEntity<>(radiologyService.paymentStatusReq(request), HttpStatus.OK);
         return new ResponseEntity<>(labRegistrationServices.paymentStatusReq(request), HttpStatus.OK);
     }
-//    @GetMapping("/pending")
-//    public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
-//        log.info("Get Pending Billing API called");
-//        return billingService.getPendingBilling();
-//    }
+
 
     @GetMapping("/pending-samples")
     public ResponseEntity<ApiResponse<List<PendingSampleResponse>>> getPendingSamples() {

@@ -2036,8 +2036,8 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setDepartmentId(v.getDepartment().getId());
         dto.setDepartmentName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
         dto.setAppointmentDate(v.getVisitDate());
-        dto.setAppointmentStartTime(v.getStartTime());
-        dto.setAppointmentEndTime(v.getEndTime());
+        dto.setAppointmentStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
+        dto.setAppointmentEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
         dto.setVisitStatus(v.getVisitStatus());
         dto.setReason(v.getReason()!=null? v.getReason().getReasonName():null);
         return dto;
@@ -2052,7 +2052,6 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             return null;
         }
 
-        ZoneId ist = ZoneId.of("Asia/Kolkata");
 
         AppointmentBookingHistoryResponseDetails dto = new AppointmentBookingHistoryResponseDetails();
         dto.setVisitId(projection.getVisitId());
@@ -2065,8 +2064,8 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setDepartmentId(projection.getDepartmentId());
         dto.setDepartmentName(projection.getDepartmentName());
         dto.setAppointmentDate(projection.getAppointmentDate());
-        dto.setAppointmentStartTime(projection.getAppointmentStartTime());
-        dto.setAppointmentEndTime(projection.getAppointmentEndTime());
+        dto.setAppointmentStartTime(HelperUtils.extractTimeFromInstant(projection.getAppointmentStartTime()));
+        dto.setAppointmentEndTime(HelperUtils.extractTimeFromInstant(projection.getAppointmentEndTime()));
         dto.setVisitStatus(projection.getVisitStatus());
         dto.setReason(projection.getReason());
         dto.setPaymentStatus(projection.getPaymentStatus());
