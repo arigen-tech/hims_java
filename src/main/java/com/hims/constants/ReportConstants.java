@@ -21,6 +21,7 @@ public final class ReportConstants {
     public static final String JASPER_BASE_PATH_STORE = "/jasperReport/Store/";
     public static final String JASPER_BASE_PATH_RADIOLOGY = "/jasperReport/Radiology/";
     public static final String JASPER_BASE_PATH_REGISTRATION = "/jasperReport/Registration/";
+    public static final String JASPER_BASE_PATH_BILLING = "/jasperReport/Billing/";
 
     public static final String ASSET_LOGO = "/Assets/arigen_health.png";
 
@@ -134,4 +135,16 @@ public final class ReportConstants {
 
     public static final String PENDING_INVESTIGATION_JASPER = "Pending_investigation_report";
     public static final String PENDING_INVESTIGATION_REPORT = "PendingInvestigationReport";
+
+    public static final String OPD_BILLING_REGISTER_JASPER = "Opd_billing_register";
+    public static final String OPD_BILLING_REGISTER_REPORT = "OpdBillingRegisterReport";
+
+    public static final String LAB_BILLING_REGISTER_JASPER = "Lab_billing_register";
+    public static final String LAB_BILLING_REGISTER_REPORT = "LabBillingRegisterReport";
+
+    public static final String RADIOLOGY_BILLING_REGISTER_JASPER = "Radiology_billing_register";
+    public static final String RADIOLOGY_BILLING_REGISTER_REPORT = "RadiologyBillingRegisterReport";
+
+    public static final String DAILY_CASH_COLLECTION_JASPER = "Daily_cash_collection";
+    public static final String DAILY_CASH_COLLECTION_REPORT = "DailyCashCollectionReport";
 }
