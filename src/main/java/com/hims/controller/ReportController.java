@@ -1284,6 +1284,149 @@ public class ReportController {
         }
     }
 
+    @GetMapping(value = "/opdBillingRegister", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintOpdBillingRegister(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long departmentId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        Long safeDepartmentId = departmentId != null ? departmentId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", safeDepartmentId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.OPD_BILLING_REGISTER_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.OPD_BILLING_REGISTER_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.OPD_BILLING_REGISTER_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/labBillingRegister", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintLabBillingRegister(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        Long safeSubChargeCodeId = subChargeCodeId != null ? subChargeCodeId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("sub_chargecode_id", safeSubChargeCodeId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.LAB_BILLING_REGISTER_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.LAB_BILLING_REGISTER_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.LAB_BILLING_REGISTER_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/radiologyBillingRegister", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintRadioBillingRegister(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        Long safeSubChargeCodeId = subChargeCodeId != null ? subChargeCodeId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("sub_chargecode_id", safeSubChargeCodeId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.RADIOLOGY_BILLING_REGISTER_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.RADIOLOGY_BILLING_REGISTER_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.RADIOLOGY_BILLING_REGISTER_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/dailyCashCollection", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintDailyCashCollection(
+            @RequestParam Long hospitalId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.DAILY_CASH_COLLECTION_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.DAILY_CASH_COLLECTION_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.DAILY_CASH_COLLECTION_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
 
     private ResponseEntity<byte[]> buildPdfResponse(
             byte[] pdfData,
