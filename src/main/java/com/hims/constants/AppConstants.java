@@ -25,6 +25,8 @@ public class AppConstants {
     public static final String COLUMN_NAME_IS_RETURN = "is_return";
     public static final String STATUS_N = "N";
     public static final String STATUS_P = "P";
+    public static final String STATUS_F= "F";
+    public static final String TIME_FORMAT="HH:mm:ss";
 
     //Visit Status
     public static final String VISIT_STATUS_PENDING = "N";
@@ -91,6 +93,14 @@ public class AppConstants {
     public static  final  String OPENING_BALANCE_ENTRY_SUBMIT_SUCCESS_MSG="Opening balance entry submitted successfully";
     public static final String OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG="Invalid opening balance entry header Id ,Opening balance entry header not found";
     public static final String OPENING_BALANCE_DETAILS_NOT_FOUND_ERR_MSG="Invalid opening balance entry details Id ,Opening balance entry detail not found";
+    public static final String SAMPLE_COLLECTION_HEADER_NOT_FOUND_ERR_MSG="Invalid sample header Id , Sample header not found";
+    public static final String SAMPLE_COLLECTION_DETAIL_NOT_FOUND_ERR_MSG="Invalid sample details Id , Sample details not found";
+    public  static final String INVESTIGATION_VALIDATION_SUCCESS_MSG="Investigation validated successfully";
+    public static  final String RESULT_ENTRY_HEADER_NOT_FOUND_ERR_MSG="Invalid result entry header Id , Result entry header not found";
+    public static  final String LAB_ORDER_DETAIL_NOT_FOUND_ERR_MSG="Invalid order detail Id , order detail not found";
+    public static final String RESULT_VALIDATION_SUCCESS_MSG="Result entry validation updated successfully";
+    public  static  final String VISIT_NOT_FOUND_ERR_MSG="Invalid visit Id, Visit not found";
+
 
     private AppConstants() {
     }
