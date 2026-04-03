@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
 import com.hims.exception.patientRegistrationException.InvalidDateException;
 import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
@@ -195,11 +196,10 @@ public class RegistrationServiceImpl implements RegistrationService {
 
             Long patientId = details.getVisits().get(0).getPatientId();
 
-            patient = patientRepository.findById(patientId)
-                    .orElseThrow(() -> new RuntimeException("Patient not found"));
+            patient = patientRepository.findById(patientId).orElseThrow(() -> new SDDException(500,"Patient not found"));
 
         } else {
-            throw new RuntimeException("Patient ID is required");
+            throw new SDDException(500,"Patient ID is required");
         }
 
         resp.setPatient(PatientMapper.mapToDTO(patient));
@@ -222,7 +222,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                         v.setVisitDate(Instant.now());
                     }
                     if (v.getVisitType() == null) {
-                        v.setVisitType("F");
+                        v.setVisitType(AppConstants.VISIT_TYPE_FOLLOW_UP);
                     }
                     Visit visit;
                     if (v.getId() != null) {
@@ -709,16 +709,16 @@ public class RegistrationServiceImpl implements RegistrationService {
         newVisit.setTokenNo(visit.getTokenNo());
         newVisit.setVisitDate(visit.getVisitDate());
         newVisit.setLastChgDate(Instant.now());
-        newVisit.setVisitStatus("n");
-        newVisit.setDisplayPatientStatus("wp");
+        newVisit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase()); // "n"
+        newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS.toLowerCase()); // "wp"
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
         newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
         assert setup != null;
-        if(setup.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
-            newVisit.setBillingStatus("y");
-        }else{
-            newVisit.setBillingStatus("n");
+        if (setup.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+            newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+        } else {
+            newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
         }
         newVisit.setVisitType(visit.getVisitType());
         newVisit.setPatient(patient);
@@ -728,13 +728,13 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         if (visit.getHospitalId() != null) {
-            Optional<MasHospital> hospital=masHospitalRepository.findById(visit.getHospitalId());
-            if(hospital.isPresent()){
+            Optional<MasHospital> hospital = masHospitalRepository.findById(visit.getHospitalId());
+            if (hospital.isPresent()) {
                 newVisit.setHospital(hospital.get());
-                if(hospital.get().getPreConsultationAvailable().equalsIgnoreCase("y")){
-                    newVisit.setPreConsultation("n");
-                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-                    newVisit.setPreConsultation("y");
+                if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_Y.toLowerCase())) {
+                    newVisit.setPreConsultation(AppConstants.STATUS_N.toLowerCase());
+                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+                    newVisit.setPreConsultation(AppConstants.STATUS_Y.toLowerCase());
                 }
             }
         }
