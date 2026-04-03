@@ -837,16 +837,16 @@ public class PatientServiceImpl implements PatientService {
         newVisit.setTokenNo(visit.getTokenNo());
         newVisit.setVisitDate(visit.getVisitDate());
         newVisit.setLastChgDate(Instant.now());
-        newVisit.setVisitStatus("n");
+        newVisit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase());
         newVisit.setDisplayPatientStatus("wp");
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
         newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
         assert setup != null;
         if(setup.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
-            newVisit.setBillingStatus("y");
+            newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
         }else{
-            newVisit.setBillingStatus("n");
+            newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
         }
         newVisit.setVisitType(visit.getVisitType());
         newVisit.setPatient(patient);
@@ -859,10 +859,10 @@ public class PatientServiceImpl implements PatientService {
             Optional<MasHospital> hospital=masHospitalRepository.findById(visit.getHospitalId());
             if(hospital.isPresent()){
                 newVisit.setHospital(hospital.get());
-                if(hospital.get().getPreConsultationAvailable().equalsIgnoreCase("y")){
-                    newVisit.setPreConsultation("n");
-                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-                    newVisit.setPreConsultation("y");
+                if(hospital.get().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_Y.toLowerCase())){
+                    newVisit.setPreConsultation(AppConstants.STATUS_N.toLowerCase());
+                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+                    newVisit.setPreConsultation(AppConstants.STATUS_Y.toLowerCase());
                 }
             }
         }

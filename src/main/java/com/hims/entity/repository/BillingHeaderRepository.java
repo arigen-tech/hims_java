@@ -44,14 +44,6 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
     List<BillingHeader> findPendingBilling();
 
 
-    @Query("""
-            SELECT DISTINCT bh
-            FROM BillingHeader bh
-            WHERE bh.paymentStatus = 'n'
-            AND bh.serviceCategory.id = :serviceCategoryId
-            """)
-    List<BillingHeader> findPendingBillingByServiceCategory(Long serviceCategoryId);
-
     @Query(value = """
             SELECT 
                 v.visit_id AS visitId,
@@ -67,8 +59,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 sc.service_cat_name AS billingType,
                 v.doctor_name AS consultingDoctorName,
                 d.department_name AS departmentName,
-                bh.net_amount AS netAmount,
-                rod.appointment_date AS appointmentDateForRadiology
+                bh.net_amount AS netAmount
             FROM billing_header bh
             INNER JOIN visit v ON v.billing_hd_id = bh.bill_hd_id
             INNER JOIN patient p ON v.patient_id = p.patient_id
@@ -76,11 +67,12 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             LEFT JOIN mas_relation r ON p.p_relation_id = r.relation_id
             LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
             LEFT JOIN mas_department d ON v.department_id = d.department_id
-            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
             WHERE LOWER(bh.payment_status) IN ('n','p')
               AND bh.net_amount > 0
               AND LOWER(v.visit_status) <> 'c'
               AND bh.service_category_id = :serviceCategoryId
+                          
+              AND v.visit_date >= CURRENT_DATE
             
               AND (:patientName IS NULL OR 
                    LOWER(CONCAT(p.p_fn,' ',p.p_mn,' ',p.p_ln)) LIKE LOWER(CONCAT('%',:patientName,'%')))
@@ -358,7 +350,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             Class<T> type);
 
     @Query(value = """
-            SELECT 
+            SELECT\s
                 v.visit_id AS visitId,
                 bh.bill_hd_id AS billinghdid,
                 bh.patient_id AS patientid,
@@ -377,7 +369,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 sc.service_cat_name AS billingType,
                 d.department_name AS department,
             
-                CONCAT_WS(', ', p.p_address1,p.p_address2,p.p_city,p.p_pincode) AS address,
+                CONCAT_WS(', ', p.p_address1,p.p_address2, p.p_city, p.p_pincode) AS address,
             
                 bh.total_amount AS billHdTotalAmount,
                 bh.payment_status AS billingStatus,
@@ -403,12 +395,14 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 inv.investigation_name AS investigationName,
             
                 bd.package_id AS packageId,
-                pkg.name AS packageName
+                pkg.name AS packageName,
+                            
+                COALESCE(oh.appointment_date, rod.appointment_date) AS appointmentDate
             
             FROM billing_header bh
             JOIN billing_details bd ON bh.bill_hd_id = bd.bill_hd_id
             JOIN patient p ON bh.patient_id = p.patient_id
-            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
+            
             LEFT JOIN mas_gender g ON p.p_gender_id = g.id
             LEFT JOIN mas_relation r ON p.p_relation_id = r.relation_id
             LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
@@ -417,11 +411,13 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             LEFT JOIN dg_orderhd oh ON bh.hdorder_id = oh.orderhd_id
             LEFT JOIN dg_mas_investigation inv ON bd.investigation_id = inv.investigation_id
             LEFT JOIN dg_investigation_package pkg ON bd.package_id = pkg.id
+            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
             
-            WHERE LOWER(bh.payment_status) IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
+            WHERE bh.payment_status IN (:notPaidStatus, :partialStatus)
             AND bh.service_category_id = :categoryId
-            AND LOWER(bd.payment_status) = LOWER(:notPaidStatus)
+            AND bd.payment_status = :notPaidStatus
             AND bh.bill_hd_id = :billinghdId
+            
             ORDER BY v.visit_date DESC
             """,
             nativeQuery = true)

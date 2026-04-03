@@ -731,7 +731,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
 
         if (visitDate.isBefore(today) || visitDate.isBefore(tokenStartTime) || visitDate.isBefore(tokenEndTime)) {
-            throw new InvalidDateException("Past dates are not allowed. Please select today or a future date.");
+            throw new InvalidDateException(AppConstants.PAST_DATE_NOT_ALLOWED);
         }
 
         Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
@@ -740,7 +740,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         );
 
         if (alreadyExists) {
-            throw new TokenAlreadyBookedException("This token has just been booked by another user. Please select a different slot.");
+            throw new TokenAlreadyBookedException(AppConstants.TOKEN_ALREADY_BOOKED);
         }
         Visit newVisit = new Visit();
         String todayDayName = visit.getVisitDate().atZone(ZoneId.systemDefault()).getDayOfWeek().name();
@@ -757,16 +757,16 @@ public class RegistrationServiceImpl implements RegistrationService {
         newVisit.setTokenNo(visit.getTokenNo());
         newVisit.setVisitDate(visit.getVisitDate());
         newVisit.setLastChgDate(Instant.now());
-        newVisit.setVisitStatus("n");
+        newVisit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase()); // "n"
         newVisit.setDisplayPatientStatus("wp");
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
         newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
         assert setup != null;
-        if (setup.getHospital().getAppCostApplicable().equalsIgnoreCase("n")) {
-            newVisit.setBillingStatus("y");
+        if (setup.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+            newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
         } else {
-            newVisit.setBillingStatus("n");
+            newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
         }
         newVisit.setVisitType(visit.getVisitType());
         newVisit.setPatient(patient);
@@ -779,10 +779,10 @@ public class RegistrationServiceImpl implements RegistrationService {
             Optional<MasHospital> hospital = masHospitalRepository.findById(visit.getHospitalId());
             if (hospital.isPresent()) {
                 newVisit.setHospital(hospital.get());
-                if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase("y")) {
-                    newVisit.setPreConsultation("n");
-                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-                    newVisit.setPreConsultation("y");
+                if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_Y.toLowerCase())) {
+                    newVisit.setPreConsultation(AppConstants.STATUS_N.toLowerCase());
+                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+                    newVisit.setPreConsultation(AppConstants.STATUS_Y.toLowerCase());
                 }
             }
         }

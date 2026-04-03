@@ -25,6 +25,7 @@ public class AppConstants {
     public static final String COLUMN_NAME_IS_RETURN = "is_return";
     public static final String STATUS_N = "N";
     public static final String STATUS_P = "P";
+    public static final String INVESTIGATION = "I";
 
     //Visit Status
     public static final String VISIT_STATUS_PENDING = "N";
@@ -91,7 +92,8 @@ public class AppConstants {
     public static  final  String OPENING_BALANCE_ENTRY_SUBMIT_SUCCESS_MSG="Opening balance entry submitted successfully";
     public static final String OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG="Invalid opening balance entry header Id ,Opening balance entry header not found";
     public static final String OPENING_BALANCE_DETAILS_NOT_FOUND_ERR_MSG="Invalid opening balance entry details Id ,Opening balance entry detail not found";
-
+    public static final String PAST_DATE_NOT_ALLOWED="Past dates are not allowed. Please select today or a future date.";
+    public static final String TOKEN_ALREADY_BOOKED="This token has just been booked by another user. Please select a different slot.";
     private AppConstants() {
     }
 

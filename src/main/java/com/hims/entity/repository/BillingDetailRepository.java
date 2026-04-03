@@ -13,15 +13,17 @@ public interface BillingDetailRepository extends JpaRepository<BillingDetail, In
     List<BillingDetail> findByBillingHd(BillingHeader objHeader);
 
     @Modifying
-    @Query("UPDATE BillingDetail b SET b.paymentStatus = :payment_status WHERE b.investigation.id = :investigationId AND b.billingHd.id = :billHdId")
+    @Query("UPDATE BillingDetail b SET b.paymentStatus = :payment_status , b.createdBy = :createdBy " + "WHERE b.investigation.id = :investigationId AND b.billingHd.id = :billHdId")
     void updatePaymentStatusInvestigation(@Param("payment_status") String payment_status,
+                                          @Param("createdBy") String createdBy,
                                           @Param("investigationId") int investigationId,
                                           @Param("billHdId") int billHdId);
 
 
     @Modifying
-    @Query("UPDATE BillingDetail b SET b.paymentStatus = :payment_status WHERE b.packageField.id = :pkgId AND b.billingHd.id = :billHdId")
-    void updatePaymentStatuPackeg(@Param("payment_status") String payment_status,
+    @Query("UPDATE BillingDetail b SET b.paymentStatus = :payment_status , b.createdBy = :createdBy " + " WHERE b.packageField.id = :pkgId AND b.billingHd.id = :billHdId")
+    void updatePaymentStatusAndCreator(@Param("payment_status") String payment_status,
+                                       @Param("createdBy") String createdBy,
                                     @Param("pkgId") int pkgId,
                                     @Param("billHdId") int billHdId);
 

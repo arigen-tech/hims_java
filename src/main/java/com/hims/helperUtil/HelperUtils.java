@@ -79,7 +79,7 @@ public class HelperUtils {
     public static String instantTimeToLocalDateTime(Instant instant) {
         return instant.atZone(ZoneId.of("Asia/Kolkata"))
                 .toLocalDateTime()
-                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
     }
 
     public String createInvoices() {

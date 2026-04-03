@@ -16,7 +16,7 @@ public class AppointmentBookingHistoryResponseDetails {
     private String doctorName;
     private Long departmentId;
     private String departmentName;
-    private Instant appointmentDate;
+    private String appointmentDate;
     private String appointmentStartTime;
     private String appointmentEndTime;
     private String visitStatus;

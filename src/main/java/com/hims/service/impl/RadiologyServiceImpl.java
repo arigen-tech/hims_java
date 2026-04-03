@@ -846,6 +846,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         PaymentResponse res = new PaymentResponse();
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
+        String currentUsername = authUtil.getCurrentUser().getFullName();
         try{
 
             //Payment table data inserted
@@ -870,7 +871,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                     int billHdId = request.getBillHeaderId();
                     log.debug("Updating payment status for InvestigationId={}, BillHdId={}",
                             investigationId, billHdId);
-                    billingDetailRepository.updatePaymentStatusInvestigation("y", investigationId, billHdId);
+                    billingDetailRepository.updatePaymentStatusInvestigation("y",currentUsername, investigationId, billHdId);
                     radOrderDtRepository.updatePaymentStatusInvestigationDt("y", investigationId, billHdId);
                 } else {
                     int pkgId = invpkg.getId();
@@ -878,7 +879,8 @@ public class RadiologyServiceImpl implements RadiologyService {
                     log.debug("Updating payment status for PackageId={}, BillHdId={}",
                             pkgId, billHdId);
 
-                    billingDetailRepository.updatePaymentStatuPackeg("y", pkgId, billHdId);
+                    //for package
+                    billingDetailRepository.updatePaymentStatusAndCreator("y",currentUsername, pkgId, billHdId);
                     radOrderDtRepository.updatePaymentStatusPackegDt("y",(long) pkgId,(long) billHdId);
                 }
             }
