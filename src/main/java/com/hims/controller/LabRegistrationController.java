@@ -79,24 +79,24 @@ public class LabRegistrationController {
     }
 
 
-    @GetMapping("/pending-samples")
-    public ResponseEntity<ApiResponse<List<PendingSampleResponse>>> getPendingSamples() {
-        log.info("Get Pending Samples API called");
-        try {
-            List<PendingSampleResponse> data = labRegistrationServices.getPendingSamples();
-            log.info("Pending samples fetched successfully, count={}",
-                    data != null ? data.size() : 0);
-            ApiResponse<List<PendingSampleResponse>> response = ResponseUtils.createSuccessResponse(data, new TypeReference<>() {});
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException ex) {
-            log.warn("Validation error in getPendingSamples: {}", ex.getMessage());
-            ex.printStackTrace();
-
-            ApiResponse<List<PendingSampleResponse>> errorResponse = ResponseUtils.createFailureResponse(
-                    null, new TypeReference<>() {}, ex.getMessage(), HttpStatus.BAD_REQUEST.value());
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-    }
+//    @GetMapping("/pending-samples")
+//    public ResponseEntity<ApiResponse<List<PendingSampleResponse>>> getPendingSamples() {
+//        log.info("Get Pending Samples API called");
+//        try {
+//            List<PendingSampleResponse> data = labRegistrationServices.getPendingSamples();
+//            log.info("Pending samples fetched successfully, count={}",
+//                    data != null ? data.size() : 0);
+//            ApiResponse<List<PendingSampleResponse>> response = ResponseUtils.createSuccessResponse(data, new TypeReference<>() {});
+//            return ResponseEntity.ok(response);
+//        } catch (IllegalArgumentException ex) {
+//            log.warn("Validation error in getPendingSamples: {}", ex.getMessage());
+//            ex.printStackTrace();
+//
+//            ApiResponse<List<PendingSampleResponse>> errorResponse = ResponseUtils.createFailureResponse(
+//                    null, new TypeReference<>() {}, ex.getMessage(), HttpStatus.BAD_REQUEST.value());
+//            return ResponseEntity.badRequest().body(errorResponse);
+//        }
+//    }
 
     @PostMapping("/savesamplecollection")
     public ResponseEntity<ApiResponse<AppsetupResponse>> samplecollectionResponse(@RequestBody SampleCollectionRequest request) {
@@ -110,13 +110,13 @@ public class LabRegistrationController {
         return validationService.getInvestigationsWithOrderStatusNAndP();
     }
 
-    @PostMapping("/validate")
-    public ResponseEntity<ApiResponse<String>> validateInvestigations(@RequestBody List<InvestigationValidationRequest> requests) {
-        log.info("POST /validation/validate called, requestCount={}", requests != null ? requests.size() : 0);
-        ApiResponse<String> stringApiResponse = validationService.validateInvestigations(requests);
-        log.info("POST /validation/validate completed");
-        return   ResponseEntity.ok(stringApiResponse);
-    }
+//    @PostMapping("/validate")
+//    public ResponseEntity<ApiResponse<String>> validateInvestigations(@RequestBody List<InvestigationValidationRequest> requests) {
+//        log.info("POST /validation/validate called, requestCount={}", requests != null ? requests.size() : 0);
+//        ApiResponse<String> stringApiResponse = validationService.validateInvestigations(requests);
+//        log.info("POST /validation/validate completed");
+//        return   ResponseEntity.ok(stringApiResponse);
+//    }
 
     @GetMapping("/resultStatus")
     public ResponseEntity<ApiResponse<List<ResultResponse>>> getValidated() {

@@ -1,8 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Lab_report" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f5067bb0-2893-46f8-a599-4ba330bf259b">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Radiology_invoice" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f5067bb0-2893-46f8-a599-4ba330bf259b">
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<subDataset name="paymentDataset" uuid="6e42c4d6-cd7e-48bf-afa6-9d95366f625e">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+		<parameter name="bill_id" class="java.lang.Long"/>
+		<queryString language="SQL">
+			<![CDATA[select 
+        billing_hd_id,
+        payment_mode,
+        payment_reference_no,
+        payment_date,
+        amount
+    from payment_details
+	where billing_hd_id = $P{bill_id}]]>
+		</queryString>
+		<field name="billing_hd_id" class="java.lang.Long">
+			<property name="com.jaspersoft.studio.field.name" value="billing_hd_id"/>
+			<property name="com.jaspersoft.studio.field.label" value="billing_hd_id"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
+		</field>
+		<field name="payment_mode" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="payment_mode"/>
+			<property name="com.jaspersoft.studio.field.label" value="payment_mode"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
+		</field>
+		<field name="payment_reference_no" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="payment_reference_no"/>
+			<property name="com.jaspersoft.studio.field.label" value="payment_reference_no"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
+		</field>
+		<field name="payment_date" class="java.sql.Timestamp">
+			<property name="com.jaspersoft.studio.field.name" value="payment_date"/>
+			<property name="com.jaspersoft.studio.field.label" value="payment_date"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
+		</field>
+		<field name="amount" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="amount"/>
+			<property name="com.jaspersoft.studio.field.label" value="amount"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
+		</field>
+	</subDataset>
 	<parameter name="Bill_no" class="java.lang.String"/>
 	<parameter name="Pay_status" class="java.lang.String" isForPrompting="false"/>
 	<parameter name="path" class="java.lang.String">
@@ -10,6 +50,7 @@
 	</parameter>
 	<queryString language="SQL">
 		<![CDATA[select
+	bh.bill_hd_id,
     bh.bill_no as invoice_no,
     bh.hospital_name,
     mh.email as hospital_email,
@@ -43,21 +84,13 @@
         else ipd.price
     end as price,
     bh.payment_status,
-    pd.payment_mode,
-    pd.payment_reference_no,
-    to_char(pd.payment_date, 'dd/MM/yyyy HH12:MIAM') as payment_date,
-    coalesce(
-        to_char(
-            (bh.billing_date + (dmi.report_ready_days * interval '1 day')),
-            'DD/MM/YY HH12:MIAM'
-        ),
-        'NA'
-    ) AS estimated_report_by,
+    (rod.appointment_date + (dmi.report_ready_days * interval '1 day')) as estimated_report_by,
     rod.lab_ids as lab_id,
     rod.lab_order_date,
     bh.patient_address,
-    to_char(bh.billing_date, 'dd/MM/yyyy') as bill_date,
-    bh.billing_date
+    bh.billing_date as bill_date,
+    rod.appointment_date,
+    bh.created_by
 from billing_details bd
 join billing_header bh on bd.bill_hd_id = bh.bill_hd_id
 left join mas_hospital mh on bh.hospital_id = mh.hospital_id
@@ -66,29 +99,26 @@ left join billing_payments bp on bh.bill_hd_id = bp.billing_hd_id
 left join mas_service_category msc on bh.service_category_id = msc.id
 left join dg_investigation_package dip on bd.package_id = dip.id
 left join investigation_price_details ipd on bd.investigation_id = ipd.investigation_id
-left join (
-    select 
-        billing_hd_id,
-        max(payment_mode) as payment_mode,
-        max(payment_reference_no) as payment_reference_no,
-        max(payment_date) as payment_date
-    from payment_details
-    group by billing_hd_id
-) pd 
-    on bh.bill_hd_id = pd.billing_hd_id
 left join dg_mas_investigation dmi on bd.investigation_id = dmi.investigation_id
 left join dg_orderhd doh on bh.hdorder_id = doh.orderhd_id
 left join (
     select 
         rad_orderhd_id,
         max(order_accession_no) as lab_ids,
-        max(createdon) as lab_order_date
+        max(createdon) as lab_order_date,
+		appointment_date
     from rad_orderdt
-    group by rad_orderhd_id
+	group by rad_orderhd_id, appointment_date
 ) rod on bh.rad_order_hd_id = rod.rad_orderhd_id
-where bd.payment_status ilike 'y'
+where bd.payment_status = 'y'
+and bh.service_category_id = 4
 and bh.bill_no = $P{Bill_no}]]>
 	</queryString>
+	<field name="bill_hd_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="bill_hd_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="bill_hd_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
 	<field name="invoice_no" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="invoice_no"/>
 		<property name="com.jaspersoft.studio.field.label" value="invoice_no"/>
@@ -203,21 +233,7 @@ and bh.bill_no = $P{Bill_no}]]>
 		<property name="com.jaspersoft.studio.field.label" value="payment_status"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
 	</field>
-	<field name="payment_mode" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="payment_mode"/>
-		<property name="com.jaspersoft.studio.field.label" value="payment_mode"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
-	</field>
-	<field name="payment_reference_no" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="payment_reference_no"/>
-		<property name="com.jaspersoft.studio.field.label" value="payment_reference_no"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
-	</field>
-	<field name="payment_date" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="payment_date"/>
-		<property name="com.jaspersoft.studio.field.label" value="payment_date"/>
-	</field>
-	<field name="estimated_report_by" class="java.lang.String">
+	<field name="estimated_report_by" class="java.sql.Timestamp">
 		<property name="com.jaspersoft.studio.field.name" value="estimated_report_by"/>
 		<property name="com.jaspersoft.studio.field.label" value="estimated_report_by"/>
 	</field>
@@ -236,13 +252,19 @@ and bh.bill_no = $P{Bill_no}]]>
 		<property name="com.jaspersoft.studio.field.label" value="patient_address"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
 	</field>
-	<field name="bill_date" class="java.lang.String">
+	<field name="bill_date" class="java.sql.Timestamp">
 		<property name="com.jaspersoft.studio.field.name" value="bill_date"/>
 		<property name="com.jaspersoft.studio.field.label" value="bill_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
 	</field>
-	<field name="billing_date" class="java.sql.Timestamp">
-		<property name="com.jaspersoft.studio.field.name" value="billing_date"/>
-		<property name="com.jaspersoft.studio.field.label" value="billing_date"/>
+	<field name="appointment_date" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="appointment_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="appointment_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="rad_orderdt"/>
+	</field>
+	<field name="created_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="created_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="created_by"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
 	</field>
 	<variable name="Sr.no" class="java.lang.Integer" calculation="Count">
@@ -279,13 +301,6 @@ and bh.bill_no = $P{Bill_no}]]>
 				<reportElement mode="Transparent" x="0" y="38" width="554" height="126" uuid="2c758f51-073c-4ee5-80c5-a83ba9a8c5ee"/>
 			</rectangle>
 			<staticText>
-				<reportElement x="290" y="88" width="90" height="15" uuid="a0870f7a-aa15-42cc-afd5-727198bae3e5"/>
-				<textElement textAlignment="Left">
-					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
-				</textElement>
-				<text><![CDATA[Order Date]]></text>
-			</staticText>
-			<staticText>
 				<reportElement x="10" y="44" width="92" height="14" uuid="03f5855e-3c38-4e0f-b8d0-4dbd67815dd4"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
@@ -305,13 +320,6 @@ and bh.bill_no = $P{Bill_no}]]>
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Mobile No.]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="290" y="103" width="90" height="15" uuid="a7b8df5b-114e-43e5-910b-9fde063f2ab3"/>
-				<textElement textAlignment="Left">
-					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
-				</textElement>
-				<text><![CDATA[GST No]]></text>
 			</staticText>
 			<textField>
 				<reportElement x="390" y="58" width="160" height="15" uuid="0b8947bf-8d86-41f3-addf-23c07dc3ba87"/>
@@ -340,13 +348,6 @@ and bh.bill_no = $P{Bill_no}]]>
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_contact}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="390" y="103" width="160" height="15" uuid="3e4da309-74e5-431b-8832-a40d114613cb"/>
-				<textElement>
-					<font fontName="DejaVu Sans Condensed" size="10"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{gstn_no}]]></textFieldExpression>
 			</textField>
 			<line>
 				<reportElement x="51" y="143" width="1" height="21" uuid="90b01f50-8255-4fed-bb99-1bd99567c5e5">
@@ -494,8 +495,8 @@ and bh.bill_no = $P{Bill_no}]]>
 				</textElement>
 				<text><![CDATA[Address]]></text>
 			</staticText>
-			<textField isBlankWhenNull="true">
-				<reportElement x="110" y="103" width="162" height="35" uuid="b94e3c48-238b-40e4-a9ec-1e04386aa77c"/>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="110" y="103" width="162" height="15" uuid="b94e3c48-238b-40e4-a9ec-1e04386aa77c"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
@@ -521,13 +522,6 @@ and bh.bill_no = $P{Bill_no}]]>
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{bill_date}]]></textFieldExpression>
-			</textField>
-			<textField pattern="dd/MM/yyyy h:mm a">
-				<reportElement x="390" y="88" width="160" height="15" uuid="266bb709-3346-462e-b779-319dc4fef812"/>
-				<textElement>
-					<font fontName="DejaVu Sans Condensed" size="10"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{lab_order_date}]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="102" y="44" width="8" height="14" uuid="f9b1747a-3997-4886-8c72-782e6653c525"/>
@@ -586,19 +580,68 @@ and bh.bill_no = $P{Bill_no}]]>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="380" y="88" width="10" height="15" uuid="0128a605-3f9b-4fb3-aa51-983825926cec"/>
+				<reportElement x="290" y="88" width="90" height="15" uuid="bb56ae2a-570f-4f95-a2fe-ea7ac55fce6b"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Order Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="105" width="95" height="15" uuid="82be04b2-9883-469a-8b30-1c0e29bc1754"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Appointment Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="88" width="10" height="15" uuid="02768d3d-0131-4d56-98fb-560109348e9a"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="380" y="103" width="10" height="15" uuid="74528f45-9d4e-4663-af4a-50a63df2e13e"/>
+				<reportElement x="386" y="105" width="10" height="15" uuid="cca7fd00-24ba-4e93-9409-4e7e07e3aed2"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
+			<staticText>
+				<reportElement x="290" y="123" width="90" height="15" uuid="89be1c4a-72bf-46f4-bb84-907c8cfa05e7"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GST No]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="123" width="10" height="15" uuid="9e27796f-7c5a-40a2-a773-14220debe7c3"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement x="390" y="88" width="160" height="15" uuid="7304f2bb-1043-4d7a-b232-9f7e0a3e5deb"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{lab_order_date}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement x="395" y="105" width="155" height="15" uuid="fdb1b430-db75-40c0-b560-441845f19737"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{appointment_date}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="390" y="123" width="160" height="15" uuid="00b0a01a-2f63-4f1e-a624-a59b7de6d558"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gstn_no}]]></textFieldExpression>
+			</textField>
 		</band>
 	</pageHeader>
 	<detail>
@@ -676,7 +719,7 @@ and bh.bill_no = $P{Bill_no}]]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{test_code}]]></textFieldExpression>
 			</textField>
-			<textField isBlankWhenNull="true">
+			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
 				<reportElement x="333" y="0" width="137" height="15" uuid="843766e9-55a9-43f7-9de0-6d6297c59a94"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
@@ -686,35 +729,49 @@ and bh.bill_no = $P{Bill_no}]]>
 		</band>
 	</detail>
 	<pageFooter>
-		<band height="93">
+		<band height="154">
 			<rectangle>
-				<reportElement mode="Transparent" x="-1" y="34" width="555" height="59" uuid="c5f37d84-01c3-4dd5-8f01-61659d5f31f7"/>
+				<reportElement mode="Transparent" x="-1" y="95" width="555" height="59" uuid="c5f37d84-01c3-4dd5-8f01-61659d5f31f7"/>
 			</rectangle>
 			<staticText>
-				<reportElement x="12" y="64" width="541" height="15" uuid="ff9d45fb-4fdb-457f-8093-11a5a5012067"/>
+				<reportElement x="12" y="125" width="541" height="15" uuid="ff9d45fb-4fdb-457f-8093-11a5a5012067"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false" isItalic="true"/>
 				</textElement>
 				<text><![CDATA[# Notes may appear here]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="12" y="44" width="100" height="15" uuid="d203f281-173f-4f06-893a-2dca7ad0589a"/>
+				<reportElement x="12" y="105" width="100" height="15" uuid="d203f281-173f-4f06-893a-2dca7ad0589a"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Note :]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="12" y="14" width="544" height="20" uuid="59f98025-4a33-48b1-afd9-e18773d07e7e"/>
+				<reportElement x="12" y="75" width="544" height="20" uuid="59f98025-4a33-48b1-afd9-e18773d07e7e"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<text><![CDATA[This is a computer generated receipt and does not require signature/stamp]]></text>
 			</staticText>
+			<staticText>
+				<reportElement x="450" y="8" width="105" height="16" uuid="1042e8b1-9b51-4d64-8a94-131edde0c46a"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Collected By]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="450" y="24" width="105" height="16" uuid="3e9c2326-7e0d-4693-bda8-06dbf1f1760f"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{created_by}]]></textFieldExpression>
+			</textField>
 		</band>
 	</pageFooter>
 	<summary>
-		<band height="215">
+		<band height="201">
 			<line>
 				<reportElement isPrintRepeatedValues="false" x="91" y="40" width="1" height="20" isPrintInFirstWholeBand="true" uuid="6af19cac-3cf3-4e0e-8347-f18ace8d959c">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
@@ -923,13 +980,6 @@ and bh.bill_no = $P{Bill_no}]]>
 				</textElement>
 				<text><![CDATA[Payment Mode(s)]]></text>
 			</staticText>
-			<textField>
-				<reportElement x="1" y="180" width="551" height="35" uuid="640cad87-d15e-408d-9400-a1eb952338c3"/>
-				<textElement>
-					<font fontName="DejaVu Sans Condensed" size="10"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{payment_mode} + " Payment for Rs." + $F{paid_amount} + " ( Transaction Id : " + $F{payment_reference_no} + ", Date " + $F{payment_date} + " )"]]></textFieldExpression>
-			</textField>
 			<line>
 				<reportElement x="254" y="18" width="1" height="21" uuid="489a9bd7-72cb-41ff-8d96-78e23a6e1614">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
@@ -960,14 +1010,34 @@ and bh.bill_no = $P{Bill_no}]]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{tax_amount}]]></textFieldExpression>
 			</textField>
+			<componentElement>
+				<reportElement x="0" y="181" width="555" height="20" uuid="44807b13-20eb-4469-888e-807cc046113f"/>
+				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
+					<datasetRun subDataset="paymentDataset" uuid="f1c16368-03be-4ff2-bce9-72a3a21376c8">
+						<datasetParameter name="bill_id">
+							<datasetParameterExpression><![CDATA[$F{bill_hd_id}]]></datasetParameterExpression>
+						</datasetParameter>
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:listContents height="20" width="555">
+						<textField textAdjust="StretchHeight">
+							<reportElement x="0" y="0" width="555" height="20" uuid="8328971d-d1d9-4d38-9816-6796e4f39863"/>
+							<textElement>
+								<font fontName="DejaVu Sans Condensed" size="10"/>
+							</textElement>
+							<textFieldExpression><![CDATA[$F{payment_mode} + " Payment for Rs." + $F{amount}  + " (Transaction Id : " + $F{payment_reference_no} + ")"]]></textFieldExpression>
+						</textField>
+					</jr:listContents>
+				</jr:list>
+			</componentElement>
 		</band>
 	</summary>
 	<noData>
-		<band height="27">
+		<band height="20">
 			<staticText>
-				<reportElement x="0" y="0" width="555" height="27" uuid="acfb0be0-25f6-4a30-87cc-6ccac88b9333"/>
+				<reportElement x="0" y="0" width="555" height="20" uuid="acfb0be0-25f6-4a30-87cc-6ccac88b9333"/>
 				<textElement textAlignment="Center">
-					<font fontName="DejaVu Sans Condensed" size="16"/>
+					<font fontName="DejaVu Sans Condensed" size="16" isBold="true"/>
 				</textElement>
 				<text><![CDATA[NO DATA FOUND]]></text>
 			</staticText>

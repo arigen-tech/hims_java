@@ -30,6 +30,8 @@ public class AppConstants {
     public static final String DISPLAY_PATIENT_STATUS = "wp";
 
 
+    public static final String STATUS_F= "F";
+    public static final String TIME_FORMAT="HH:mm:ss";
 
     //Visit Status
     public static final String VISIT_STATUS_PENDING = "N";
@@ -108,6 +110,14 @@ public class AppConstants {
     public static final String APPOINTMENT_CANCELLED = "Appointment cancelled successfully";
 
 
+
+    public static final String SAMPLE_COLLECTION_HEADER_NOT_FOUND_ERR_MSG="Invalid sample header Id , Sample header not found";
+    public static final String SAMPLE_COLLECTION_DETAIL_NOT_FOUND_ERR_MSG="Invalid sample details Id , Sample details not found";
+    public  static final String INVESTIGATION_VALIDATION_SUCCESS_MSG="Investigation validated successfully";
+    public static  final String RESULT_ENTRY_HEADER_NOT_FOUND_ERR_MSG="Invalid result entry header Id , Result entry header not found";
+    public static  final String LAB_ORDER_DETAIL_NOT_FOUND_ERR_MSG="Invalid order detail Id , order detail not found";
+    public static final String RESULT_VALIDATION_SUCCESS_MSG="Result entry validation updated successfully";
+    public  static  final String VISIT_NOT_FOUND_ERR_MSG="Invalid visit Id, Visit not found";
 
 
     private AppConstants() {

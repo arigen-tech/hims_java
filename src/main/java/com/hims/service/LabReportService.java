@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface LabReportService {
 
-    ApiResponse<List<AllLabReportResponse>> getAllLabReports(String phnNum, String patientName, LocalDate fromDate,LocalDate toDate);
+    ApiResponse<List<LabInvestigationsReportResponse>> getAllLabReports(String phnNum, String patientName, LocalDate fromDate, LocalDate toDate);
     ApiResponse<List<LabDetailedTATReportResponse>> getDetailedTatReports(Long investigationId, Long subChargeCodeId, LocalDate fromDate, LocalDate toDate);
     ApiResponse<List<LabSummaryTATReportResponse>> getSummaryTatReports(Long investigationId, Long subChargeCodeId, LocalDate fromDate, LocalDate toDate);
     ApiResponse<List<LabAmenedAuditReportResponse>> getAmendAuditReports(String phnNum,String patientName,Long investigationId,Long subChargeCodeId,LocalDate fromDate,LocalDate toDate);
