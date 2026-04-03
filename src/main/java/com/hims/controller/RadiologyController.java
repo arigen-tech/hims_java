@@ -35,67 +35,29 @@ public class RadiologyController {
     @PostMapping("/radiologyRegistration")
     public ResponseEntity<ApiResponse<LabRadiologyRegistrationResponse>> registerAndBookingRadiology(
             @Valid @RequestBody LabRadioRegistrationRequest request) {
-        try {
-            log.info("Radiology Registration API called for patient: {} {}", 
+
+        log.info("Radiology Registration API called for patient: {} {}",
                 request.getPatient().getPatientFn(), request.getPatient().getPatientLn());
-            
-            ApiResponse<LabRadiologyRegistrationResponse> response = 
-                radiologyService.registerAndBookingRadiology(
-                    request.getPatient(), 
-                    request.getInvestigationReq()
-                );
-            
-            Integer statusCode = response.getStatus();
-            if (statusCode != null && statusCode == 200) {
-                log.info("Radiology Registration successful for patient ID: {}", 
-                    response.getResponse().getPatientId());
-                return new ResponseEntity<>(response, HttpStatus.CREATED);
-            } else if (statusCode != null && statusCode == 409) {
-                log.warn("Patient already registered: {}", response.getMessage());
-                return new ResponseEntity<>(response, HttpStatus.CONFLICT);
-            } else if (statusCode != null && statusCode == 400) {
-                log.warn("Radiology Registration invalid input: {}", response.getMessage());
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            } else {
-                log.warn("Radiology Registration failed: {}", response.getMessage());
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-        } catch (Exception e) {
-            log.error("Unexpected error in Radiology Registration", e);
-            ApiResponse<LabRadiologyRegistrationResponse> errorResponse = 
-                ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, 
-                    "Internal Server Error", 500);
-            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+
+        ApiResponse<LabRadiologyRegistrationResponse> response =
+                radiologyService.registerAndBookingRadiology(request.getPatient(), request.getInvestigationReq());
+
+        HttpStatus status = HttpStatus.resolve(response.getStatus());
+        return ResponseEntity.status(status != null ? status : HttpStatus.OK).body(response);
     }
 
     @PutMapping("/updateDetailsAndBookingRadiology")
     public ResponseEntity<LabRadioUpdateResponse> updateDetailsAndBooking(
             @Valid @RequestBody LabRadioUpdateRequest request) {
-        
-        try {
-            log.info("Patient Details Update and Radiology Booking API called for patient: {} {}", 
+
+        log.info("Updating details and booking radiology for patient: {} {}",
                 request.getPatient().getPatientFn(), request.getPatient().getPatientLn());
 
-            LabRadioUpdateResponse response = radiologyService.updatePatientDetailsAndBooking(request);
+        LabRadioUpdateResponse response = radiologyService.updatePatientDetailsAndBooking(request);
+        log.info("Operation successful for patient. Billings generated: {}",
+                (response.getBillingHeaderIds() != null ? response.getBillingHeaderIds().size() : 0));
 
-            if (response != null && response.getBillingHeaderIds() != null && !response.getBillingHeaderIds().isEmpty()) {
-                log.info("Patient update and radiology booking successful. Total billings: {}", 
-                    response.getBillingHeaderIds().size());
-                return new ResponseEntity<>(response, HttpStatus.OK);
-            } else if (response != null && "Patient updated successfully".equals(response.getMessage())) {
-                log.info("Patient updated successfully without investigations");
-                return new ResponseEntity<>(response, HttpStatus.OK);
-            } else {
-                log.warn("Patient update failed: {}", response != null ? response.getMessage() : "Unknown error");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-        } catch (Exception e) {
-            log.error("Unexpected error in Patient Details Update and Radiology Booking", e);
-            LabRadioUpdateResponse errorResponse = new LabRadioUpdateResponse(null, null, 
-                "Internal Server Error: " + e.getMessage());
-            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/pendingInvestigationForRadiology")

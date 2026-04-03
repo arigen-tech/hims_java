@@ -56,22 +56,9 @@ public class LabRegistrationController {
     @PostMapping("/laboratoryRegistration")
     public ResponseEntity<ApiResponse<LabRadiologyRegistrationResponse>> registerAndBookingLaboratory(
             @RequestBody @Valid LabRadioRegistrationRequest request) {
-        log.info("Laboratory registration API called");
-        try {
-            ApiResponse<LabRadiologyRegistrationResponse> response = labRegistrationServices.registerAndBookingLaboratory(request);
-            HttpStatus status = response.getStatus() == 200 ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST;
-            return new ResponseEntity<>(response, status);
-        } catch (IllegalArgumentException e) {
-            log.warn("Validation error in laboratory registration: {}", e.getMessage());
-            ApiResponse<LabRadiologyRegistrationResponse> errorResponse = ResponseUtils.createFailureResponse(
-                    null, new TypeReference<>() {}, "Validation failed: " + e.getMessage(), HttpStatus.BAD_REQUEST.value());
-            return ResponseEntity.badRequest().body(errorResponse);
-        } catch (Exception e) {
-            log.error("Unexpected error in laboratory registration", e);
-            ApiResponse<LabRadiologyRegistrationResponse> errorResponse = ResponseUtils.createFailureResponse(
-                    null, new TypeReference<>() {}, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR.value());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+        log.info("Processing laboratory registration for request: {}", request);
+        ApiResponse<LabRadiologyRegistrationResponse> response = labRegistrationServices.registerAndBookingLaboratory(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     //New Method for lab update and booking investigations for registered patients
