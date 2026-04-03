@@ -1,16 +1,20 @@
 package com.hims.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class LabDetailedTATReportResponse {
 
     private  Long tatId;
-    private Long orderId;
+    private Integer orderId;
     private String investigationName;
     private  String generatedSampleId;
     private LocalDateTime sampleReceivedDate;
