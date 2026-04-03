@@ -44,14 +44,6 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
     List<BillingHeader> findPendingBilling();
 
 
-    @Query("""
-            SELECT DISTINCT bh
-            FROM BillingHeader bh
-            WHERE bh.paymentStatus = 'n'
-            AND bh.serviceCategory.id = :serviceCategoryId
-            """)
-    List<BillingHeader> findPendingBillingByServiceCategory(Long serviceCategoryId);
-
     @Query(value = """
             SELECT 
                 v.visit_id AS visitId,
@@ -79,6 +71,8 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
               AND bh.net_amount > 0
               AND LOWER(v.visit_status) <> 'c'
               AND bh.service_category_id = :serviceCategoryId
+                          
+              AND v.visit_date >= CURRENT_DATE
             
               AND (:patientName IS NULL OR 
                    LOWER(CONCAT(p.p_fn,' ',p.p_mn,' ',p.p_ln)) LIKE LOWER(CONCAT('%',:patientName,'%')))
@@ -224,7 +218,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
         LEFT JOIN mas_gender g ON p.p_gender_id = g.id
         LEFT JOIN mas_department d ON v.department_id = d.department_id
         LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
-        WHERE LOWER(bh.payment_status) IN (LOWER(:complete), LOWER(:partial))
+        WHERE bh.payment_status IN (:complete, :partial)
           AND (
                 :patientName IS NULL OR
                 LOWER(TRIM(
@@ -249,7 +243,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
         FROM billing_header bh
         LEFT JOIN visit v ON v.billing_hd_id = bh.bill_hd_id
         LEFT JOIN patient p ON p.patient_id = bh.patient_id
-        WHERE LOWER(bh.payment_status) IN (LOWER(:complete), LOWER(:partial))
+        WHERE bh.payment_status IN (:complete, :partial)
           AND (
                 :patientName IS NULL OR
                 LOWER(TRIM(
@@ -296,11 +290,15 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 bh.net_amount AS netAmount,
                 bh.bill_hd_id AS billingHeaderId,
                 bh.patient_id AS patientId,
-                bh.hdorder_id AS orderId
+                bh.hdorder_id AS orderId,
+                COALESCE(rod.appointment_date,oh.appointment_date) AS appointmentDate,
+                COALESCE(oh.order_date, rod.order_date) AS orderDate
             FROM billing_header bh
             JOIN patient p ON p.patient_id = bh.patient_id
             LEFT JOIN mas_gender g ON g.id = p.p_gender_id
             LEFT JOIN visit v ON v.visit_id = bh.visit_id
+            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
+            LEFT JOIN dg_orderhd oh ON bh.hdorder_id = oh.orderhd_id
             
             WHERE LOWER(bh.payment_status) 
                   IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
@@ -354,7 +352,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             Class<T> type);
 
     @Query(value = """
-            SELECT 
+            SELECT\s
                 v.visit_id AS visitId,
                 bh.bill_hd_id AS billinghdid,
                 bh.patient_id AS patientid,
@@ -373,7 +371,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 sc.service_cat_name AS billingType,
                 d.department_name AS department,
             
-                CONCAT_WS(', ', p.p_address1,p.p_address2,p.p_city,p.p_pincode) AS address,
+                CONCAT_WS(', ', p.p_address1,p.p_address2, p.p_city, p.p_pincode) AS address,
             
                 bh.total_amount AS billHdTotalAmount,
                 bh.payment_status AS billingStatus,
@@ -399,7 +397,9 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 inv.investigation_name AS investigationName,
             
                 bd.package_id AS packageId,
-                pkg.name AS packageName
+                pkg.name AS packageName,
+                            
+                COALESCE(oh.appointment_date, rod.appointment_date) AS appointmentDate
             
             FROM billing_header bh
             JOIN billing_details bd ON bh.bill_hd_id = bd.bill_hd_id
@@ -413,11 +413,13 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             LEFT JOIN dg_orderhd oh ON bh.hdorder_id = oh.orderhd_id
             LEFT JOIN dg_mas_investigation inv ON bd.investigation_id = inv.investigation_id
             LEFT JOIN dg_investigation_package pkg ON bd.package_id = pkg.id
+            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
             
-            WHERE LOWER(bh.payment_status) IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
+            WHERE bh.payment_status IN (:notPaidStatus, :partialStatus)
             AND bh.service_category_id = :categoryId
-            AND LOWER(bd.payment_status) = LOWER(:notPaidStatus)
+            AND bd.payment_status = :notPaidStatus
             AND bh.bill_hd_id = :billinghdId
+            
             ORDER BY v.visit_date DESC
             """,
             nativeQuery = true)

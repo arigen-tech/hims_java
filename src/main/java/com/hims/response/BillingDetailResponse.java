@@ -27,7 +27,7 @@ public class BillingDetailResponse {
     private Long investigationId;
     private String investigationName;
 
-
+    private String appointmentDate;
     private Long packageId;
     private String packageName;
 }

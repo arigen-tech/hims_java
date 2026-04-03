@@ -1,11 +1,9 @@
 package com.hims.service;
 
-import com.hims.request.LabInvestigationReq;
-import com.hims.request.PatientRequest;
-import com.hims.request.PaymentUpdateRequest;
-import com.hims.request.RadiologyReportRequest;
+import com.hims.request.*;
 import com.hims.response.ApiResponse;
-import com.hims.response.RadiologyAppSetupResponse;
+import com.hims.response.LabRadioUpdateResponse;
+import com.hims.response.LabRadiologyRegistrationResponse;
 import com.hims.response.RadiologyRequisitionResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +13,12 @@ import java.util.List;
 
 public interface RadiologyService {
 
-    ApiResponse<RadiologyAppSetupResponse> registerPatientWithInv(PatientRequest patient, List<LabInvestigationReq> radInvestigationReq);
+    ApiResponse<LabRadiologyRegistrationResponse> registerPatientWithInv(PatientRequest patient, List<LabInvestigationReq> radInvestigationReq);
+
+    ApiResponse<LabRadiologyRegistrationResponse> registerAndBookingRadiology(PatientRequest patient, List<LabRadioInvestigationRequest> investigationReq);
+
+    LabRadioUpdateResponse updatePatientDetailsAndBooking(LabRadioUpdateRequest request);
+
     @Transactional
     ApiResponse paymentStatusReq(PaymentUpdateRequest request);
 

@@ -114,12 +114,15 @@ public class RegistrationController {
 
     /**
      * Get patient full details for follow-up
+     * @param patientId the unique ID of the patient (required)
+     * @param serviceCategoryCode the service category code (optional - defaults to OPD if not provided)
      */
     @GetMapping("/getPatientDetails/{patientId}")
     public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientDetails(
-            @PathVariable Long patientId) {
-        log.info("GET /registration/getPatientDetails/{} called", patientId);
-        ApiResponse<FollowUpPatientResponseDetails> response = registrationService.getPatientDetails(patientId);
+            @PathVariable Long patientId,
+            @RequestParam(required = false) String serviceCategoryCode) {
+        log.info("GET /registration/getPatientDetails called - patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
+        ApiResponse<FollowUpPatientResponseDetails> response = registrationService.getPatientDetails(patientId, serviceCategoryCode);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

@@ -1,9 +1,13 @@
 package com.hims.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.request.LabRadioRegistrationRequest;
+import com.hims.request.LabRadioUpdateRequest;
 import com.hims.request.RadRegInvReq;
 import com.hims.request.RadiologyReportRequest;
 import com.hims.response.*;
 import com.hims.service.RadiologyService;
+import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -21,11 +25,41 @@ public class RadiologyController {
 
     @Autowired
     RadiologyService radiologyService;
+
     @PostMapping("/registerWithInv")
-    public ResponseEntity<ApiResponse<RadiologyAppSetupResponse>> registerPatient(@RequestBody RadRegInvReq request) {
-        ApiResponse<RadiologyAppSetupResponse> response = radiologyService.registerPatientWithInv(request.getPatient(), request.getRadInvestigationReq());
+    public ResponseEntity<ApiResponse<LabRadiologyRegistrationResponse>> registerPatient(@RequestBody RadRegInvReq request) {
+        ApiResponse<LabRadiologyRegistrationResponse> response = radiologyService.registerPatientWithInv(request.getPatient(), request.getRadInvestigationReq());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PostMapping("/radiologyRegistration")
+    public ResponseEntity<ApiResponse<LabRadiologyRegistrationResponse>> registerAndBookingRadiology(
+            @Valid @RequestBody LabRadioRegistrationRequest request) {
+
+        log.info("Radiology Registration API called for patient: {} {}",
+                request.getPatient().getPatientFn(), request.getPatient().getPatientLn());
+
+        ApiResponse<LabRadiologyRegistrationResponse> response =
+                radiologyService.registerAndBookingRadiology(request.getPatient(), request.getInvestigationReq());
+
+        HttpStatus status = HttpStatus.resolve(response.getStatus());
+        return ResponseEntity.status(status != null ? status : HttpStatus.OK).body(response);
+    }
+
+    @PutMapping("/updateDetailsAndBookingRadiology")
+    public ResponseEntity<LabRadioUpdateResponse> updateDetailsAndBooking(
+            @Valid @RequestBody LabRadioUpdateRequest request) {
+
+        log.info("Updating details and booking radiology for patient: {} {}",
+                request.getPatient().getPatientFn(), request.getPatient().getPatientLn());
+
+        LabRadioUpdateResponse response = radiologyService.updatePatientDetailsAndBooking(request);
+        log.info("Operation successful for patient. Billings generated: {}",
+                (response.getBillingHeaderIds() != null ? response.getBillingHeaderIds().size() : 0));
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/pendingInvestigationForRadiology")
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingRadiology(
             @RequestParam(required = true) Long modality,

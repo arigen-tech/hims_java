@@ -37,7 +37,7 @@ public class PendingBillingResponse {
 
     private Long billingPolicyId;
 
-
+    private String appointmentDateForRadiology;
     private List<Long> billingHeaderIds;
     private List<AppointmentBlock> appointments;
     private List<BillingDetailResponse> details;

@@ -15,5 +15,6 @@ public interface RadiologyBillingProjection {
     Long getPatientId();
     String getAppointmentDate();
     String getServiceCategoryName();
+    String getOrderDate();
 
 }

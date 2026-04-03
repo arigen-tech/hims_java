@@ -45,4 +45,5 @@ public interface LabRadioBillingDetailsProjection {
     String getInvestigationName();
     Long getPackageId();
     String getPackageName();
+    String getAppointmentDate();
 }

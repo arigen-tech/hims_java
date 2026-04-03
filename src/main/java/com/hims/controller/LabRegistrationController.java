@@ -50,8 +50,25 @@ public class LabRegistrationController {
     public ResponseEntity<ApiResponse<AppsetupResponse>> appSetupResponse(@RequestBody LabRegRequest request) {
         log.info("Lab Registration API called");
         return new ResponseEntity<>(labRegistrationServices.labReg(request), HttpStatus.OK);
-
     }
+
+    //New Method for lab registration
+    @PostMapping("/laboratoryRegistration")
+    public ResponseEntity<ApiResponse<LabRadiologyRegistrationResponse>> registerAndBookingLaboratory(
+            @RequestBody @Valid LabRadioRegistrationRequest request) {
+        log.info("Processing laboratory registration for request: {}", request);
+        ApiResponse<LabRadiologyRegistrationResponse> response = labRegistrationServices.registerAndBookingLaboratory(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    //New Method for lab update and booking investigations for registered patients
+    @PostMapping("/updateDetailsAndBookingLaboratory")
+    public ResponseEntity<ApiResponse<AppsetupResponse>> updateDetailsAndBookingLaboratory(@RequestBody LabRadioUpdateRequest request) {
+        log.info("Lab Registration API called");
+        return new ResponseEntity<>(labRegistrationServices.updateDetailsAndBookingLaboratory(request), HttpStatus.OK);
+    }
+
+
     @PostMapping("/updatepaymentstatus")
     public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
         log.info("Update Payment Status API called");
@@ -60,11 +77,7 @@ public class LabRegistrationController {
                 return new ResponseEntity<>(radiologyService.paymentStatusReq(request), HttpStatus.OK);
         return new ResponseEntity<>(labRegistrationServices.paymentStatusReq(request), HttpStatus.OK);
     }
-//    @GetMapping("/pending")
-//    public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
-//        log.info("Get Pending Billing API called");
-//        return billingService.getPendingBilling();
-//    }
+
 
 //    @GetMapping("/pending-samples")
 //    public ResponseEntity<ApiResponse<List<PendingSampleResponse>>> getPendingSamples() {
