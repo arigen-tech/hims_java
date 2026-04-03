@@ -743,11 +743,11 @@ public class RegistrationServiceImpl implements RegistrationService {
             throw new TokenAlreadyBookedException(AppConstants.TOKEN_ALREADY_BOOKED);
         }
         Visit newVisit = new Visit();
-        String todayDayName = visit.getVisitDate().atZone(ZoneId.systemDefault()).getDayOfWeek().name();
+        String dayName = visit.getVisitDate().atZone(ZoneId.systemDefault()).getDayOfWeek().name();
 
-        List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(visit.getDoctorId(), visit.getDepartmentId(), visit.getSessionId(), todayDayName.toLowerCase());
+        List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(visit.getDoctorId(), visit.getDepartmentId(), visit.getSessionId(), dayName.toLowerCase());
         if (optionalSetup.isEmpty()) {
-            throw new AppSetupNotFoundException("AppSetup not configured for today’s session.");
+            throw new AppSetupNotFoundException(AppConstants.SESSION_NOT_CONFIGURED);
         }
 
         AppSetup setup = optionalSetup.stream().filter(s -> s.getSession().getId().equals(visit.getSessionId())).findFirst().orElse(null);
@@ -758,7 +758,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         newVisit.setVisitDate(visit.getVisitDate());
         newVisit.setLastChgDate(Instant.now());
         newVisit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase()); // "n"
-        newVisit.setDisplayPatientStatus("wp");
+        newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS.toLowerCase()); // "wp"
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
         newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());

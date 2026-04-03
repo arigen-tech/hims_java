@@ -116,7 +116,7 @@ public class BillingServiceImpl implements BillingService {
     @Transactional
     public ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount) {
         BillingHeader header = new BillingHeader();
-        String orderNum = generateInvoiceNumber();
+        String orderNum = helperUtils.createInvoices();
         OpdBillingPaymentResponse response = new OpdBillingPaymentResponse();
         String currentUsername = authUtil.getCurrentUser().getFullName();
         BigDecimal tax = BigDecimal.ZERO;
@@ -155,7 +155,7 @@ public class BillingServiceImpl implements BillingService {
             policy = lastVisitOpt
                     .map(lastVisit -> findCorrectBillingPolicy(lastVisit, visit))
                     .orElseGet(() -> billingPolicyRepository.findByBillingPolicyId(opdPaid)
-                            .orElseThrow(() -> new EntityNotFoundException("Policy not found")));
+                            .orElseThrow(() -> new EntityNotFoundException(AppConstants.POLICY_NOT_FOUND)));
 
             header.setBillingPolicy(policy);
 
@@ -194,7 +194,7 @@ public class BillingServiceImpl implements BillingService {
                 header.setTaxTotal(tax);
                 header.setTotalPaid(BigDecimal.valueOf(0));
             } else {
-                throw new BillingException("MasServiceOPD or Tariff is not defined yet");
+                throw new BillingException(AppConstants.SERVICE_TARIFF_NOT_DEFINED);
             }
             header.setDiscountAmount(totalDiscount);
             if (visit.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
@@ -246,7 +246,7 @@ public class BillingServiceImpl implements BillingService {
                     detail.setCreatedBy(currentUsername);
                     detail.setUpdatedDt(OffsetDateTime.now());
                     detail.setBillHd(savedHeader);
-                    BillingDetail savedDetail = billingDetailRepository.save(detail);
+                    billingDetailRepository.save(detail);
                     boolean paymentFlag = false;
                     response.setPaymentFlag(paymentFlag);
                 }
@@ -296,27 +296,24 @@ public class BillingServiceImpl implements BillingService {
                 detail.setUpdatedDt(OffsetDateTime.now());
                 detail.setBillHd(savedHeader);
                 detail.setCreatedBy(currentUsername);
-                BillingDetail savedDetail = billingDetailRepository.save(detail);
+                billingDetailRepository.save(detail);
 
                 boolean paymentFlag = false;
                 response.setPaymentFlag(paymentFlag);
             }
         } catch (Exception ex) {
-            throw new RuntimeException("Billing failed: " + ex.getMessage(), ex);
+            throw new SDDException(500, "Billing failed: " + ex.getMessage());
         }
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
         });
     }
 
-    public String generateInvoiceNumber() {
-        return randomNumGenerator.generateOrderNumber("BILL", true, true);
-    }
 
     private BillingPolicyMaster findCorrectBillingPolicy(Visit lastVisit, Visit currentVisit) {
 
         Map<Long, BillingPolicyMaster> policyMap = Stream.of(opdPaid, opdFollowUp)
                 .map(id -> billingPolicyRepository.findByBillingPolicyId(id)
-                        .orElseThrow(() -> new EntityNotFoundException("Policy not found for ID: " + id)))
+                        .orElseThrow(() -> new EntityNotFoundException( AppConstants.POLICY_NOT_FOUND + " for ID: " + id)))
                 .collect(Collectors.toMap(BillingPolicyMaster::getBillingPolicyId, p -> p));
 
         BillingPolicyMaster paidPolicy = policyMap.get(opdPaid);
@@ -361,7 +358,7 @@ public class BillingServiceImpl implements BillingService {
             Pageable pageable = PageRequest.of(page, size);
 
             if (serviceCategory == null) {
-                return ResponseUtils.createNotFoundResponse("Service category not found", 404);
+                return ResponseUtils.createNotFoundResponse(AppConstants.INVALID_SERVICE_CATEGORY, 404);
             }
             String notPaid = AppConstants.PAYMENT_NOT_PAID.toLowerCase();
             String partialPaid = AppConstants.PAYMENT_PARTIAL_PENDING.toLowerCase();
@@ -537,7 +534,7 @@ public class BillingServiceImpl implements BillingService {
                     null,
                     new TypeReference<Object>() {
                     },
-                    "Invalid service category",
+                    AppConstants.INVALID_SERVICE_CATEGORY,
                     400
             );
 
@@ -545,10 +542,7 @@ public class BillingServiceImpl implements BillingService {
             log.error("Error while fetching billing patients by category: {}", serviceCategoryCode, e);
             return ResponseUtils.createFailureResponse(
                     null,
-                    new TypeReference<Object>() {
-                    },
-                    "Something went wrong while fetching billing patients",
-                    500
+                    new TypeReference<Object>() {},AppConstants.BILLING_RECORDS_NOT_FOUND, 500
             );
         }
     }
@@ -563,9 +557,7 @@ public class BillingServiceImpl implements BillingService {
 
         try {
             PatientProjection patient = billingHeaderRepository.getPatientDetails(patientId);
-
             List<VisitBillingProjection> visits = billingHeaderRepository.getVisitBillingDetails(patientId, opdServiceCategoryCode, visitStatus, paymentStatusPending, paymentStatusPartial, regServiceCategoryCode);
-
             PatientAppointmentResponse response = new PatientAppointmentResponse();
 
             response.setPatientid(patient.getId());
@@ -615,7 +607,7 @@ public class BillingServiceImpl implements BillingService {
                         null,
                         new TypeReference<PatientAppointmentResponse>() {
                         },
-                        "No billing records found for the patient",
+                        AppConstants.BILLING_RECORDS_NOT_FOUND,
                         404
                 );
             }
@@ -633,7 +625,7 @@ public class BillingServiceImpl implements BillingService {
                     null,
                     new TypeReference<PatientAppointmentResponse>() {
                     },
-                    "Error fetching billing details",
+                    AppConstants.BILLING_RECORDS_NOT_FOUND,
                     500
             );
         }
@@ -688,7 +680,7 @@ public class BillingServiceImpl implements BillingService {
         List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
         String currentUsername = authUtil.getCurrentUser().getFullName();
         if (opdPayments == null || opdPayments.isEmpty()) {
-            throw new RuntimeException("OPD payment items missing in request.");
+            throw new SDDException(500,"OPD payment items missing in request.");
         }
 
         List<OpdPaymentItem> paymentItemList = new ArrayList<>();
@@ -701,7 +693,7 @@ public class BillingServiceImpl implements BillingService {
             if (headerOpt.isPresent()) {
                 header = headerOpt.get();
             } else {
-                throw new RuntimeException("BillingHeader not found with id: " + billHeaderId);
+                throw new SDDException(billHeaderId,AppConstants.BILLING_HEADER_NOT_FOUND );
             }
             List<BillingDetail> details = billingDetailRepository.findByBillHdId(Long.valueOf(billHeaderId));
             if (!details.isEmpty()) {
@@ -715,7 +707,7 @@ public class BillingServiceImpl implements BillingService {
 
             Visit visit = header.getVisit();
             if (visit == null) {
-                throw new RuntimeException("Visit not linked with OPD Bill Header " + billHeaderId);
+                throw new SDDException(billHeaderId,"Visit not linked with OPD Bill Header " );
             }
 
             PaymentDetail paymentDetail = new PaymentDetail();
@@ -882,7 +874,8 @@ public class BillingServiceImpl implements BillingService {
             for (Integer billId : billIds) {
                 BillingHeader billingHeader = billingHeaderRepository
                         .findById(billId)
-                        .orElseThrow(() -> new RuntimeException("BillingHeader not found"));
+                        .orElseThrow(() -> new SDDException(
+                                billId,"BillingHeader not found"));
 
                 PaymentDetail paymentDetail = new PaymentDetail();
                 paymentDetail.setPaymentMode(request.getMode());

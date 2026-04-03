@@ -835,7 +835,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         return new LabRadioUpdateResponse(
                 billingId,
                 billingHdIds,
-                "Patient updated and radiology booking done successfully"
+                AppConstants.PATIENT_UPDATED_BOOKING_SUCCESS
         );
     }
 

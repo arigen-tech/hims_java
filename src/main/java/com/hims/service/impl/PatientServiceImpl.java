@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
 import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
 import com.hims.helperUtil.HelperUtils;
@@ -838,12 +839,12 @@ public class PatientServiceImpl implements PatientService {
         newVisit.setVisitDate(visit.getVisitDate());
         newVisit.setLastChgDate(Instant.now());
         newVisit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase());
-        newVisit.setDisplayPatientStatus("wp");
+        newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS);
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
         newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
         assert setup != null;
-        if(setup.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
+        if(setup.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())){
             newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
         }else{
             newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
@@ -987,9 +988,9 @@ public class PatientServiceImpl implements PatientService {
             appt.setVisitType(v.getVisitType());
             appt.setTokenNo(v.getTokenNo());
             appt.setVisitStatus(v.getVisitStatus());
-            if ("Y".equalsIgnoreCase(v.getVisitStatus())) {
+            if (AppConstants.STATUS_Y.equalsIgnoreCase(v.getVisitStatus())) {
                 appt.setVisitStatus("Completed");
-            } else if ("N".equalsIgnoreCase(v.getVisitStatus())) {
+            } else if (AppConstants.STATUS_N.equalsIgnoreCase(v.getVisitStatus())) {
                 appt.setVisitStatus("Pending");
             }
             appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
@@ -1019,21 +1020,21 @@ public class PatientServiceImpl implements PatientService {
         // Get current user
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null || currentUser.getFirstName() == null) {
-            throw new RuntimeException("User authentication failed or user has no first name");
+            throw new SDDException(500,"User authentication failed or user has no first name");
         }
         // Update visit
-        visit.setVisitStatus("c");
+        visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
         visit.setCancelledBy(currentUser.getFirstName());
         visit.setCancelledDateTime(Instant.now());
         if (request.getCancelReasonId() != null) {
             MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId())
-                    .orElseThrow(() -> new RuntimeException("Cancel reason not found with ID: " + request.getCancelReasonId()));
+                    .orElseThrow(() -> new SDDException(500,"Cancel reason not found with ID: "));
             visit.setReason(reason);
         }
-        bill.setPaymentStatus("y");
+        bill.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
         billingHeaderRepository.save(bill);
         Visit savedVisit = visitRepository.save(visit);
-        return new ApiResponse<>(HttpStatus.OK, "Appointment cancelled successfully");
+        return new ApiResponse<>(HttpStatus.OK, AppConstants.APPOINTMENT_CANCELLED);
     }
 
     @Override

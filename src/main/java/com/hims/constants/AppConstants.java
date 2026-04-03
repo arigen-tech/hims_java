@@ -26,6 +26,9 @@ public class AppConstants {
     public static final String STATUS_N = "N";
     public static final String STATUS_P = "P";
     public static final String INVESTIGATION = "I";
+    public static final String DISPLAY_PATIENT_STATUS = "wp";
+
+
 
     //Visit Status
     public static final String VISIT_STATUS_PENDING = "N";
@@ -94,6 +97,18 @@ public class AppConstants {
     public static final String OPENING_BALANCE_DETAILS_NOT_FOUND_ERR_MSG="Invalid opening balance entry details Id ,Opening balance entry detail not found";
     public static final String PAST_DATE_NOT_ALLOWED="Past dates are not allowed. Please select today or a future date.";
     public static final String TOKEN_ALREADY_BOOKED="This token has just been booked by another user. Please select a different slot.";
+    public static final String SESSION_NOT_CONFIGURED= "AppSetup not configured for this session of the day .";
+    public static final String POLICY_NOT_FOUND= "Policy not found";
+    public static final String SERVICE_TARIFF_NOT_DEFINED= "Service OPD or Tariff is not defined yet";
+    public static final String INVALID_SERVICE_CATEGORY = "Service category not found or invalid";
+    public static final String BILLING_RECORDS_NOT_FOUND = "No billing records found";
+    public static final String BILLING_HEADER_NOT_FOUND = "BillingHeader not found with id: ";
+    public static final String PATIENT_UPDATED_BOOKING_SUCCESS = "Patient updated and booking done successfully";
+    public static final String APPOINTMENT_CANCELLED = "Appointment cancelled successfully";
+
+
+
+
     private AppConstants() {
     }
 
