@@ -118,7 +118,7 @@ public class BillingServiceImpl implements BillingService {
         BillingHeader header = new BillingHeader();
         String orderNum = helperUtils.createInvoices();
         OpdBillingPaymentResponse response = new OpdBillingPaymentResponse();
-        String currentUsername = authUtil.getCurrentUser().getFullName();
+        User currentUser = authUtil.getCurrentUser();
         BigDecimal tax = BigDecimal.ZERO;
         BigDecimal registrationCost = BigDecimal.ZERO;
 
@@ -203,7 +203,7 @@ public class BillingServiceImpl implements BillingService {
                 header.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
             }
             header.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
-            header.setCreatedBy(currentUsername);
+            header.setCreatedBy(currentUser.getFullName());
             header.setUpdatedDt(Instant.now());
             header.setCreatedDt(Instant.now());
             header.setInvoiceNo("");
@@ -243,7 +243,6 @@ public class BillingServiceImpl implements BillingService {
                     detail.setCreatedAt(Instant.now());
                     detail.setRegistrationCost(BigDecimal.ZERO);
                     detail.setCreatedDt(OffsetDateTime.now());
-                    detail.setCreatedBy(currentUsername);
                     detail.setUpdatedDt(OffsetDateTime.now());
                     detail.setBillHd(savedHeader);
                     billingDetailRepository.save(detail);
@@ -289,13 +288,11 @@ public class BillingServiceImpl implements BillingService {
                     detail.setTaxAmount(tax);
                     detail.setNetAmount(totalAmount);
                     detail.setCreatedAt(Instant.now());
-                    detail.setCreatedBy(currentUsername);
                 }
                 detail.setInvestigation(null);
                 detail.setCreatedDt(OffsetDateTime.now());
                 detail.setUpdatedDt(OffsetDateTime.now());
                 detail.setBillHd(savedHeader);
-                detail.setCreatedBy(currentUsername);
                 billingDetailRepository.save(detail);
 
                 boolean paymentFlag = false;
@@ -472,6 +469,7 @@ public class BillingServiceImpl implements BillingService {
                             response.setDgOrderHdId(p.getOrderId());
                             response.setBillAmount(p.getNetAmount());
                             response.setPatientId(p.getPatientId());
+                            response.setOrderDate(p.getOrderDate());
 
                             return response;
 
@@ -515,7 +513,7 @@ public class BillingServiceImpl implements BillingService {
                             r.setMobileNo(p.getMobileNumber());
                             r.setAppointmentDate(p.getAppointmentDate());
                             r.setBillAmount(p.getNetAmount());
-                            r.setAppointmentDateForRadiology(p.getAppointmentDateForRadiology());
+                            r.setOrderDate(p.getOrderDate());
 
                             return r;
                         }).toList();
@@ -650,7 +648,7 @@ public class BillingServiceImpl implements BillingService {
             Page<BillingHeaderResponseProjection> response = billingHeaderRepository.searchBillingStatus(
                     patientNameLike,
                     phoneNoLike,
-                    registrationNoLike, AppConstants.STATUS_Y, AppConstants.STATUS_P, pageable
+                    registrationNoLike, AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_P.toLowerCase(), pageable
             );
 
             return ResponseUtils.createSuccessResponse(
@@ -678,7 +676,7 @@ public class BillingServiceImpl implements BillingService {
         PaymentResponse res = new PaymentResponse();
         BillingHeader header;
         List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
-        String currentUsername = authUtil.getCurrentUser().getFullName();
+        User currentUser = authUtil.getCurrentUser();
         if (opdPayments == null || opdPayments.isEmpty()) {
             throw new SDDException(500,"OPD payment items missing in request.");
         }
@@ -700,7 +698,7 @@ public class BillingServiceImpl implements BillingService {
                 for (BillingDetail bdt : details) {
                     bdt.setChargeCost(bdt.getNetAmount());
                     bdt.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-                    bdt.setCreatedBy(currentUsername);
+                    bdt.setCollectedBy(currentUser);
                     billingDetailRepository.save(bdt);
                 }
             }
@@ -716,7 +714,7 @@ public class BillingServiceImpl implements BillingService {
             paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
             paymentDetail.setPaymentDate(Instant.now());
             paymentDetail.setAmount(netAmount);
-            paymentDetail.setCreatedBy(currentUsername);
+            paymentDetail.setCreatedBy(currentUser.getFullName());
             paymentDetail.setCreatedAt(Instant.now());
             paymentDetail.setUpdatedAt(Instant.now());
             paymentDetail.setBillingHd(header);
@@ -725,7 +723,7 @@ public class BillingServiceImpl implements BillingService {
             BigDecimal oldPaid = header.getTotalPaid() == null ? BigDecimal.ZERO : header.getTotalPaid();
             header.setTotalPaid(oldPaid.add(netAmount));
             header.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-            header.setCreatedBy(currentUsername);
+            header.setCreatedBy(currentUser.getFullName());
             billingHeaderRepository.save(header);
 
             visit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -755,7 +753,7 @@ public class BillingServiceImpl implements BillingService {
 
         log.info("Starting LAB payment update");
         log.debug("Request: {}", request);
-        String currentUsername = authUtil.getCurrentUser().getFullName();
+        User currentUser = authUtil.getCurrentUser();
         PaymentResponse res = new PaymentResponse();
         try {
             BillingHeader billingHeader = billingHeaderRepository
@@ -768,7 +766,7 @@ public class BillingServiceImpl implements BillingService {
             paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
             paymentDetail.setPaymentDate(Instant.now());
             paymentDetail.setAmount(request.getAmount());
-            paymentDetail.setCreatedBy(currentUsername);
+            paymentDetail.setCreatedBy(currentUser.getFullName());
             paymentDetail.setCreatedAt(Instant.now());
             paymentDetail.setUpdatedAt(Instant.now());
             paymentDetail.setBillingHd(billingHeader);
@@ -782,15 +780,15 @@ public class BillingServiceImpl implements BillingService {
 
                 if (AppConstants.INVESTIGATION.equalsIgnoreCase(item.getType())) {
                     billingDetailRepository.updatePaymentStatusInvestigation(
-                            AppConstants.PAYMENT_PAID.toLowerCase(),currentUsername, item.getId(), billHdId);
+                            AppConstants.PAYMENT_PAID.toLowerCase(), currentUser, item.getId(), billHdId);
 
                     labDtRepository.updatePaymentStatusInvestigationDt(
                             AppConstants.PAYMENT_PAID.toLowerCase(), item.getId(), billHdId);
 
                 } else {
                     //for package status
-                    billingDetailRepository.updatePaymentStatusAndCreator(
-                            AppConstants.PAYMENT_PAID.toLowerCase(),currentUsername, item.getId(), billHdId);
+                    billingDetailRepository.updatePaymentStatusPackage(
+                            AppConstants.PAYMENT_PAID.toLowerCase(),currentUser, item.getId(), billHdId);
 
                     labDtRepository.updatePaymentStatusPackegDt(
                             AppConstants.PAYMENT_PAID.toLowerCase(), item.getId(), billHdId);
@@ -818,7 +816,7 @@ public class BillingServiceImpl implements BillingService {
                     .orElse(BigDecimal.ZERO);
 
             billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUI));
-            billingHeader.setCreatedBy(currentUsername);
+            billingHeader.setCreatedBy(currentUser.getFullName());
 
             if (fullyPaid) {
                 orderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -858,7 +856,7 @@ public class BillingServiceImpl implements BillingService {
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
         PaymentResponse res = new PaymentResponse();
-        String currentUsername = authUtil.getCurrentUser().getFullName();
+        User currentUser = authUtil.getCurrentUser();
         try {
 
 
@@ -883,7 +881,7 @@ public class BillingServiceImpl implements BillingService {
                 paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
                 paymentDetail.setPaymentDate(Instant.now());
                 paymentDetail.setAmount(request.getAmount());
-                paymentDetail.setCreatedBy(currentUsername);
+                paymentDetail.setCreatedBy(currentUser.getFullName());
                 paymentDetail.setCreatedAt(Instant.now());
                 paymentDetail.setUpdatedAt(Instant.now());
                 paymentDetail.setBillingHd(billingHeader);
@@ -893,16 +891,16 @@ public class BillingServiceImpl implements BillingService {
                 // INVESTIGATION LOOP SAME
                 for (InvestigationandPackegBillStatus invpkg : request.getInvestigationandPackegBillStatus()) {
 
-                    if ("i".equalsIgnoreCase(invpkg.getType())) {
+                    if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(invpkg.getType())) {
                         billingDetailRepository.updatePaymentStatusInvestigation(
-                                AppConstants.PAYMENT_PAID.toLowerCase(),currentUsername, invpkg.getId(), billId);
+                                AppConstants.PAYMENT_PAID.toLowerCase(),currentUser, invpkg.getId(), billId);
 
                         radOrderDtRepository.updatePaymentStatusInvestigationDt(
                                 AppConstants.PAYMENT_PAID.toLowerCase(), invpkg.getId(), billId);
 
                     } else {
-                        billingDetailRepository.updatePaymentStatusAndCreator(
-                                AppConstants.PAYMENT_PAID.toLowerCase(),currentUsername, invpkg.getId(), billId);
+                        billingDetailRepository.updatePaymentStatusPackage(
+                                AppConstants.PAYMENT_PAID.toLowerCase(),currentUser, invpkg.getId(), billId);
 
                         radOrderDtRepository.updatePaymentStatusPackegDt(
                                 AppConstants.PAYMENT_PAID.toLowerCase(),
@@ -929,7 +927,7 @@ public class BillingServiceImpl implements BillingService {
                         .orElse(BigDecimal.ZERO);
 
                 billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
-                billingHeader.setCreatedBy(currentUsername);
+                billingHeader.setCreatedBy(currentUser.getFullName());
 
                 if (fullyPaid) {
                     orderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -1326,7 +1324,6 @@ public class BillingServiceImpl implements BillingService {
             String serviceCategoryCode, boolean isRadiology) {
 
         BillingHeader billingHeader = new BillingHeader();
-
         String orderNum = helperUtils.createInvoices();
         billingHeader.setBillNo(orderNum);
 
@@ -1366,7 +1363,6 @@ public class BillingServiceImpl implements BillingService {
         billingHeader.setUpdatedDt(Instant.now());
         billingHeader.setBillDate(OffsetDateTime.now());
         billingHeader.setUpdatedAt(OffsetDateTime.now());
-
         return billingHeaderRepository.save(billingHeader);
     }
 
@@ -1378,7 +1374,7 @@ public class BillingServiceImpl implements BillingService {
             boolean isRadiology) {
 
         BillingDetail billingDetail = new BillingDetail();
-        String currentUsername = authUtil.getCurrentUser().getFullName();
+        User currentUser = authUtil.getCurrentUser();
         MasServiceCategory sevcat =
                 masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
 
@@ -1398,7 +1394,6 @@ public class BillingServiceImpl implements BillingService {
             billingDetail.setPackageField(dg.getPackageId());
         }
 
-        billingDetail.setCreatedBy(currentUsername);
         billingDetail.setCreatedDt(OffsetDateTime.now());
         billingDetail.setUpdatedDt(OffsetDateTime.now());
         billingDetail.setCreatedAt(Instant.now());
@@ -1453,7 +1448,6 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setPackageField(pack);
         billingDetail.setInvestigation(null); // always null for package
 
-        billingDetail.setCreatedBy(currentUsername);
         billingDetail.setCreatedDt(OffsetDateTime.now());
         billingDetail.setUpdatedDt(OffsetDateTime.now());
         billingDetail.setCreatedAt(Instant.now());

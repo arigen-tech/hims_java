@@ -882,7 +882,6 @@ public class PatientServiceImpl implements PatientService {
         MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
         MasDiscount discount=new MasDiscount();
         ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
-        Visit v = visitRepository.getReferenceById(newVisit.getId());
         newVisit.setBillingHd(resp.getResponse().getHeader());
         visitRepository.save(newVisit);
         return savedVisit;

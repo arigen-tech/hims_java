@@ -424,14 +424,11 @@ public class RadiologyServiceImpl implements RadiologyService {
             PatientRequest patient,
             List<LabRadioInvestigationRequest> investigationReq) {
 
-        // 1. Validation
         if (patient == null || investigationReq == null || investigationReq.isEmpty()) {
             throw new IllegalArgumentException("Patient and investigations are required");
         }
-
         log.info("Starting radiology registration for patient: {}", patient.getPatientFn());
 
-        // 2. Duplicate check
         Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(
                 patient.getPatientFn(),
                 patient.getPatientLn(),
@@ -441,17 +438,14 @@ public class RadiologyServiceImpl implements RadiologyService {
                 patient.getPatientMobileNumber(),
                 null
         );
-
         if (existingPatient.isPresent()) {
             throw new SDDException("patient",409,"Patient already registered");
         }
 
-        // 3. Fetch required master data
         MasServiceCategory serviceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
         if (serviceCategory == null) {
             throw new IllegalArgumentException("Invalid service category");
         }
-
 
         User currentUser = authUtil.getCurrentUser();
         String userName = currentUser.getFirstName() + " " + currentUser.getLastName();
@@ -460,9 +454,9 @@ public class RadiologyServiceImpl implements RadiologyService {
         List<Long> packageIds = new ArrayList<>();
 
         for (LabRadioInvestigationRequest i : investigationReq) {
-            if ("i".equalsIgnoreCase(i.getType())) {
+            if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(i.getType())) {
                 investigationIds.add(i.getId());
-            } else if ("p".equalsIgnoreCase(i.getType())) {
+            } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(i.getType())) {
                 packageIds.add(i.getId());
             } else {
                 throw new SDDException("type", 400, "Invalid investigation type");
@@ -491,16 +485,13 @@ public class RadiologyServiceImpl implements RadiologyService {
 
         try {
             LabRadiologyRegistrationResponse response = new LabRadiologyRegistrationResponse();
-            // 4. Save patient
             Patient savedPatient = patientService.savePatient(patient, false);
             if (savedPatient == null) {
                 throw new SDDException("patient",500,"Failed to save patient");
             }
 
-            // 5. Create visit
             Visit visit = createVisitForLabRadio(savedPatient, radiologyDepartment);
 
-            // 6. Group by date
             Map<LocalDate, List<LabRadioInvestigationRequest>> groupedByDate =
                     investigationReq.stream()
                             .filter(i -> i.getAppointmentDate() != null)
@@ -513,52 +504,37 @@ public class RadiologyServiceImpl implements RadiologyService {
 
                 LocalDate date = entry.getKey();
                 List<LabRadioInvestigationRequest> investigations = entry.getValue();
-
-                // 7. Calculate amount
                 LabRadioCalculateAmountDTO amount = calculateAmount(investigations, serviceCategory);
-
-                // 8. Save order header
                 RadOrderHd orderHd = saveOrderHeader(savedPatient, visit, date, userName, currentUser);
                 if (orderHd == null) {
                     throw new SDDException("RadOrderHeader",500,"Failed to create order header");
                 }
-
-                // 9. Save billing
                 BillingHeader billing = billingService.saveBillingHeader(
                         orderHd, visit, currentUser,
                         amount.getTotal(), amount.getTax(),
                         amount.getDiscount(), serviceCategoryRad, true
                 );
-                response.setBillinghdId(billing.getId());
                 if (billing == null) {
                     throw new SDDException("billing",500,"Failed to create billing");
                 }
+                Visit v = visitRepository.getReferenceById(visit.getId());
+                visit.setBillingHd(billing);
+                visitRepository.save(visit);
 
-                // 10. Collect DTO
+                response.setBillinghdId(billing.getId());
+
                 collectBillingDtos(investigations, billing, billingDtoList);
 
-                // 11. Save order details
                 saveOrderDetailsOptimized(
                         orderHd, billing, investigations,
                         userName, currentUser,
                         investigationsMap, packagesMap, packageMappingsMap
                 );
             }
-
-            // 12. Success response
             response.setPatientId(savedPatient.getId());
             response.setBillingHdIds(billingDtoList);
             response.setMsg("Success");
-
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
-
-        } catch (SDDException e) {
-            log.error("Business error: {}", e.getMessage());
-            throw e; // IMPORTANT → triggers rollback
-
-        } catch (IllegalArgumentException e) {
-            log.error("Validation error: {}", e.getMessage());
-            throw e; //rollback
 
         } catch (Exception e) {
             log.error("Unexpected error in radiology registration", e);
@@ -581,6 +557,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         visit.setVisitDate(Instant.now());
         visit.setLastChgDate(Instant.now());
         visit.setDisplayPatientStatus("wp");
+
 
         return visitRepository.save(visit);
     }
@@ -718,7 +695,6 @@ public class RadiologyServiceImpl implements RadiologyService {
         log.info("Starting patient update and radiology booking for patient ID: {}",
                 request.getPatient().getId());
 
-        // 1. Update patient
         Patient patient = patientService.updatePatientDetails(request.getPatient(), true);
         if (patient == null) {
             throw new SDDException("patient", 500, "Failed to update patient");
@@ -730,10 +706,8 @@ public class RadiologyServiceImpl implements RadiologyService {
             return new LabRadioUpdateResponse(null, null, "Patient updated successfully");
         }
 
-        // 2. Create visit
         Visit visit = createVisitForLabRadio(patient, radiologyDepartment);
 
-        // 3. Fetch master data
         MasServiceCategory serviceCategory = masServiceCategoryRepository
                 .findByServiceCateCode(serviceCategoryRad);
 
@@ -744,21 +718,19 @@ public class RadiologyServiceImpl implements RadiologyService {
         User currentUser = authUtil.getCurrentUser();
         String userName = getCurrentUserName();
 
-        // 4. Prepare IDs
         List<Long> investigationIds = new ArrayList<>();
         List<Long> packageIds = new ArrayList<>();
 
         for (LabRadioInvestigationRequest i : investigations) {
-            if ("i".equalsIgnoreCase(i.getType())) {
+            if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(i.getType())) {
                 investigationIds.add(i.getId());
-            } else if ("p".equalsIgnoreCase(i.getType())) {
+            } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(i.getType())) {
                 packageIds.add(i.getId());
             } else {
                 throw new SDDException("type", 400, "Invalid investigation type");
             }
         }
 
-        // 5. Fetch data
         Map<Long, DgMasInvestigation> investigationsMap = investigationIds.isEmpty()
                 ? new HashMap<>()
                 : dgMasInvestigationRepository.findAllById(investigationIds)
@@ -778,7 +750,6 @@ public class RadiologyServiceImpl implements RadiologyService {
                         .stream()
                         .collect(Collectors.groupingBy(m -> m.getPackageId().getPackId()));
 
-        // 6. Group by date
         Map<LocalDate, List<LabRadioInvestigationRequest>> groupedByDate =
                 investigations.stream()
                         .filter(i -> i.getAppointmentDate() != null)
@@ -793,16 +764,13 @@ public class RadiologyServiceImpl implements RadiologyService {
                 LocalDate date = entry.getKey();
                 List<LabRadioInvestigationRequest> dateInvestigations = entry.getValue();
 
-                // Calculate amount
                 LabRadioCalculateAmountDTO amount = calculateAmount(dateInvestigations, serviceCategory);
 
-                // Save order header
                 RadOrderHd orderHd = saveOrderHeader(patient, visit, date, userName, currentUser);
                 if (orderHd == null) {
                     throw new SDDException("order", 500, "Failed to create order");
                 }
 
-                // Save billing
                 BillingHeader billing = billingService.saveBillingHeader(
                         orderHd, visit, currentUser,
                         amount.getTotal(), amount.getTax(),
@@ -812,18 +780,20 @@ public class RadiologyServiceImpl implements RadiologyService {
                 if (billing == null) {
                     throw new SDDException("billing", 500, "Failed to create billing");
                 }
+                Visit v = visitRepository.getReferenceById(visit.getId());
+                v.setBillingHd(billing);
+                visitRepository.save(v);
 
                 billingId = billing.getId();
                 billingHdIds.add(billingId);
 
-                // Save order details
                 saveOrderDetailsOptimized(orderHd, billing, dateInvestigations,
                         userName, currentUser, investigationsMap, packagesMap, packageMappingsMap);
             }
 
         } catch (SDDException e) {
             log.error("Business error: {}", e.getMessage());
-            throw e; // rollback
+            throw e;
 
         } catch (Exception e) {
             log.error("Unexpected error", e);
@@ -846,7 +816,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         PaymentResponse res = new PaymentResponse();
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
-        String currentUsername = authUtil.getCurrentUser().getFullName();
+        User currentUser = authUtil.getCurrentUser();
         try{
 
             //Payment table data inserted
@@ -871,7 +841,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                     int billHdId = request.getBillHeaderId();
                     log.debug("Updating payment status for InvestigationId={}, BillHdId={}",
                             investigationId, billHdId);
-                    billingDetailRepository.updatePaymentStatusInvestigation("y",currentUsername, investigationId, billHdId);
+                    billingDetailRepository.updatePaymentStatusInvestigation("y",currentUser, investigationId, billHdId);
                     radOrderDtRepository.updatePaymentStatusInvestigationDt("y", investigationId, billHdId);
                 } else {
                     int pkgId = invpkg.getId();
@@ -880,7 +850,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                             pkgId, billHdId);
 
                     //for package
-                    billingDetailRepository.updatePaymentStatusAndCreator("y",currentUsername, pkgId, billHdId);
+                    billingDetailRepository.updatePaymentStatusPackage("y",currentUser, pkgId, billHdId);
                     radOrderDtRepository.updatePaymentStatusPackegDt("y",(long) pkgId,(long) billHdId);
                 }
             }

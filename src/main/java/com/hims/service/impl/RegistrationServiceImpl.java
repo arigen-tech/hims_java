@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
 import com.hims.exception.patientRegistrationException.InvalidDateException;
 import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
@@ -157,7 +158,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                     }
                 }
             }
-            if (savedVisits.get(0).getBillingStatus().equalsIgnoreCase("n")) {
+            if (savedVisits.get(0).getBillingStatus().equalsIgnoreCase(AppConstants.PAYMENT_NOT_PAID.toLowerCase())) {
                 List<OpdVisitResponseDTO> visitResponses = savedVisits.stream().map(visitMapper::mapToDTO).toList();
                 resp.setVisits(visitResponses);
             }
@@ -185,10 +186,10 @@ public class RegistrationServiceImpl implements RegistrationService {
 
             Long patientId = details.getVisits().get(0).getPatientId();
 
-            patient = patientRepository.findById(patientId).orElseThrow(() -> new RuntimeException("Patient not found"));
+            patient = patientRepository.findById(patientId).orElseThrow(() -> new SDDException(500,"Patient not found"));
 
         } else {
-            throw new RuntimeException("Patient ID is required");
+            throw new SDDException(500,"Patient ID is required");
         }
 
         resp.setPatient(PatientMapper.mapToDTO(patient));
@@ -211,7 +212,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                         v.setVisitDate(Instant.now());
                     }
                     if (v.getVisitType() == null) {
-                        v.setVisitType("F");
+                        v.setVisitType(AppConstants.VISIT_TYPE_FOLLOW_UP);
                     }
                     Visit visit;
                     if (v.getId() != null) {

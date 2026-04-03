@@ -16,5 +16,6 @@ public interface LabBillingProjection {
     String getDepartmentName();
     String getAppointmentDate();
     String getServiceCategoryName();
+    String getOrderDate();
 
 }

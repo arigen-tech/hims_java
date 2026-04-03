@@ -218,7 +218,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
         LEFT JOIN mas_gender g ON p.p_gender_id = g.id
         LEFT JOIN mas_department d ON v.department_id = d.department_id
         LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
-        WHERE LOWER(bh.payment_status) IN (LOWER(:complete), LOWER(:partial))
+        WHERE bh.payment_status IN (:complete, :partial)
           AND (
                 :patientName IS NULL OR
                 LOWER(TRIM(
@@ -243,7 +243,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
         FROM billing_header bh
         LEFT JOIN visit v ON v.billing_hd_id = bh.bill_hd_id
         LEFT JOIN patient p ON p.patient_id = bh.patient_id
-        WHERE LOWER(bh.payment_status) IN (LOWER(:complete), LOWER(:partial))
+        WHERE bh.payment_status IN (:complete, :partial)
           AND (
                 :patientName IS NULL OR
                 LOWER(TRIM(
@@ -291,12 +291,14 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 bh.bill_hd_id AS billingHeaderId,
                 bh.patient_id AS patientId,
                 bh.hdorder_id AS orderId,
-                rod.appointment_date AS appointmentDateForRadiology
+                COALESCE(rod.appointment_date,oh.appointment_date) AS appointmentDate,
+                COALESCE(oh.order_date, rod.order_date) AS orderDate
             FROM billing_header bh
             JOIN patient p ON p.patient_id = bh.patient_id
             LEFT JOIN mas_gender g ON g.id = p.p_gender_id
             LEFT JOIN visit v ON v.visit_id = bh.visit_id
-            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id 
+            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
+            LEFT JOIN dg_orderhd oh ON bh.hdorder_id = oh.orderhd_id
             
             WHERE LOWER(bh.payment_status) 
                   IN (LOWER(:notPaidStatus), LOWER(:partialStatus))

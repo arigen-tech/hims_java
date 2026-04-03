@@ -15,4 +15,5 @@ public class LabBillingPatientResponse {
     private Long dgOrderHdId;
     private Long patientId;
     private String billingType;
+    private String orderDate;
 }

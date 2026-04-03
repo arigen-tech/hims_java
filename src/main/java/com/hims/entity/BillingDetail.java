@@ -107,7 +107,7 @@ public class BillingDetail {
     @Column(name = "registration_cost",precision = 10, scale = 2)
     private BigDecimal registrationCost;
 
-    @Column(name= "created_by", length = 150)
-    private String createdBy;
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "collected_by", referencedColumnName = "user_id")
+    private User collectedBy;
 }

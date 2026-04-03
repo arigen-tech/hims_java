@@ -26,6 +26,7 @@ public class AppConstants {
     public static final String STATUS_N = "N";
     public static final String STATUS_P = "P";
     public static final String INVESTIGATION = "I";
+    public static final String PACKAGE = "P";
     public static final String DISPLAY_PATIENT_STATUS = "wp";
 
 

@@ -521,6 +521,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 }
 
                 savedVisit.setBillingHd(billingHeader);
+
                 visitRepository.save(savedVisit);
 
                 for (LabRadioInvestigationRequest inv : investigations) {
@@ -742,7 +743,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 LocalDate date = entry.getKey();
                 List<LabRadioInvestigationRequest> investigations = entry.getValue();
 
-                //  Amount calculation
                 MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
 
                 BigDecimal sum = BigDecimal.ZERO;
@@ -762,7 +762,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     }
                 }
 
-                //  Order header
                 DgOrderHd savedHd = labHdRepository.save(
                         buildOrderHd(patient, savedVisit, currentUser,
                                 date, LocalDate.now(), LocalTime.now())
@@ -853,7 +852,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         PaymentResponse res = new PaymentResponse();
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
-        String currentUsername = authUtil.getCurrentUser().getFullName();
+        User currentUser= authUtil.getCurrentUser();
         try {
 
             //Payment table data inserted
@@ -878,7 +877,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     int billHdId = request.getBillHeaderId();
                     log.debug("Updating payment status for InvestigationId={}, BillHdId={}",
                             investigationId, billHdId);
-                    billingDetailRepository.updatePaymentStatusInvestigation("y",currentUsername, investigationId, billHdId);
+                    billingDetailRepository.updatePaymentStatusInvestigation("y",currentUser, investigationId, billHdId);
                     labDtRepository.updatePaymentStatusInvestigationDt("y", investigationId, billHdId);
                 } else {
                     int pkgId = invpkg.getId();
@@ -886,7 +885,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     log.debug("Updating payment status for PackageId={}, BillHdId={}",
                             pkgId, billHdId);
 
-                    billingDetailRepository.updatePaymentStatusAndCreator("y",currentUsername, pkgId, billHdId);
+                    billingDetailRepository.updatePaymentStatusPackage("y",currentUser, pkgId, billHdId);
                     labDtRepository.updatePaymentStatusPackegDt("y", pkgId, billHdId);
                 }
             }
