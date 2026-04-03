@@ -1,73 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="opd_biling_maxx" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="26e9412c-746d-4df1-be4e-d2f6300f378b">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="opd_biling_maxx" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="26e9412c-746d-4df1-be4e-d2f6300f378b">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
-	<subDataset name="registration_cost" uuid="36c119ad-1844-425a-9501-3549fd795b45">
+	<subDataset name="paymentDataset" uuid="673cfb41-afa1-46f2-82b5-7e41e8d7e804">
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
-		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+		<parameter name="bill_id" class="java.lang.Long"/>
 		<queryString language="SQL">
 			<![CDATA[select 
-    row_number() over (order by bh.visit_id) as row_num,
-    bh.visit_id as visit_no,
-    bh.hospital_address,
-    p.p_mobile_number as patient_contact,
-    bh.patient_display_name as patient_name,
-    concat(bh.patient_age, '/', bh.patient_gender) as age_sex,
-    coalesce(
-        case
-            when p.p_address1 is not null then concat(p.p_address1, ',', p.p_city, ',', p.p_pincode)
-            when p.p_address2 is not null then concat(p.p_address2, ',', p.p_city, ',', p.p_pincode)
-            else 'NA'
-        end, 
-        'NA'
-    ) as patient_address,    
-    coalesce(bh.referred_by, 'Self') as referred_by,
-    bh.billing_date as bill_date,
-    bh.patient_id,
-    bh.bill_no,
-    coalesce(bh.gstn_bill_no, 'NA') as gstn_bill,
-    coalesce(bh.hospital_gstin, 'NA') as gstn_no,
-    coalesce(mso.service_name, 'General Consultation') as opd_service_name,
-    msc.sac_code,
-	count(mso.service_name) as qty,
-    (bh.total_amount + bh.discount_amount - bh.tax_total) as base_price,
-    bh.discount_amount,
-    bh.net_amount,
-    bh.tax_total,
-    bh.total_amount as bill_amount,
-	mh.registration_cost as registration_cost,
-    case
-		when v.visit_type ilike 'n' then bh.total_amount + mh.registration_cost || ' INR'
-		when v.visit_type ilike 'f' then bh.total_amount || ' INR'
-	end as total,
-	case
-		when v.visit_type ilike 'n' then num_to_words (bh.total_amount + mh.registration_cost) || ' only'
-		when v.visit_type ilike 'f' then num_to_words (bh.total_amount) ||  ' only'
-	end as total_in_words,
-    concat(coalesce(bh.total_paid, 0), ' INR') as total_paid,
-    coalesce(pd.payment_mode, 'cash') as payment_mode,
-	coalesce(bp.payment_reference_number, 'NA') as payment_reference_number
-from billing_header as bh
-left join patient as p on bh.patient_id = p.patient_id
-left join billing_details as bd on bh.bill_hd_id = bd.bill_hd_id
-left join mas_service_opd as mso on bd.opd_service_id = mso.id
-left join mas_service_category as msc on bh.service_category_id = msc.id
-left join billing_payments as bp on bh.billing_hd_id = bp.billing_hd_id
-left join payment_details as pd on bp.payment_id = pd.payment_id
-left join mas_hospital as mh on bh.hospital_id = mh.hospital_id
-left join visit as v on bh.visit_id = v.visit_id
-group by 
-    bh.visit_id, bh.hospital_address, p.p_mobile_number, bh.patient_display_name, bh.patient_age,
-    bh.patient_gender, p.p_address1, p.p_address2, p.p_city, p.p_pincode, bh.referred_by, bh.billing_date, 
-    bh.patient_id, bh.bill_no, bh.gstn_bill_no, bh.hospital_gstin, mso.service_name, msc.sac_code, bh.total_amount, 
-    bh.discount_amount, bh.net_amount, bh.tax_total, bh.total_paid, pd.payment_mode, bp.payment_reference_number,
-	v.visit_type, mh.registration_cost]]>
+        billing_hd_id,
+        payment_mode,
+        payment_reference_no,
+        payment_date,
+        amount
+    from payment_details
+	where billing_hd_id = $P{bill_id}]]>
 		</queryString>
-		<field name="registration_cost" class="java.math.BigDecimal">
-			<property name="com.jaspersoft.studio.field.name" value="registration_cost"/>
-			<property name="com.jaspersoft.studio.field.label" value="registration_cost"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+		<field name="billing_hd_id" class="java.lang.Long">
+			<property name="com.jaspersoft.studio.field.name" value="billing_hd_id"/>
+			<property name="com.jaspersoft.studio.field.label" value="billing_hd_id"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
+		</field>
+		<field name="payment_mode" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="payment_mode"/>
+			<property name="com.jaspersoft.studio.field.label" value="payment_mode"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
+		</field>
+		<field name="payment_reference_no" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="payment_reference_no"/>
+			<property name="com.jaspersoft.studio.field.label" value="payment_reference_no"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
+		</field>
+		<field name="payment_date" class="java.sql.Timestamp">
+			<property name="com.jaspersoft.studio.field.name" value="payment_date"/>
+			<property name="com.jaspersoft.studio.field.label" value="payment_date"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
+		</field>
+		<field name="amount" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="amount"/>
+			<property name="com.jaspersoft.studio.field.label" value="amount"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
 		</field>
 	</subDataset>
 	<parameter name="visit_id" class="java.lang.String"/>
@@ -85,7 +58,7 @@ group by
 	)
 )
 select distinct
-	row_number() over (order by bh.visit_id) as row_num,
+	bh.bill_hd_id,
 	bh.visit_id,
 	bh.hospital_address,
     p.p_mobile_number as patient_contact,
@@ -126,7 +99,8 @@ select distinct
 	coalesce(pd.payment_mode, 'cash') as payment_mode,
 	coalesce(pd.payment_reference_no, 'NA') as payment_reference_number,
 	cast(pd.payment_date as date) as payment_date,
-	to_char(vi.visit_date, 'DD/MM/YYYY HH12:MMAM') as appointment_date
+	to_char(vi.visit_date, 'DD/MM/YYYY HH12:MMAM') as appointment_date,
+	bh.created_by
 from billing_details bd
 left join mas_service_category msc on bd.service_category_id = msc.id
 left join billing_header bh on bd.bill_hd_id = bh.bill_hd_id
@@ -143,11 +117,12 @@ group by
 	bh.hospital_address, p.p_mobile_number, bh.patient_display_name,bh.patient_age, bh.patient_gender, bh.patient_address, 
 	vi.doctor_name, bh.billing_date ,p.uhid_no ,bh.bill_no ,bh.gstn_bill_no ,bh.hospital_gstin ,bh.visit_id ,msc.service_cat_name,
 	msc.sac_code ,bd.quantity ,bd.base_price ,bd.discount ,bd.amount_after_discount ,bd.tax_amount ,bd.net_amount ,bh.net_amount, vs.visit_count,
-	bh.total_paid,vs.grand_total, vs.grand_total_paid, pd.payment_mode, pd.payment_reference_no, pd.payment_date, vi.visit_date, md.department_name]]>
+	bh.total_paid,vs.grand_total, vs.grand_total_paid, pd.payment_mode, pd.payment_reference_no, pd.payment_date, vi.visit_date, md.department_name, bh.created_by, bh.bill_hd_id]]>
 	</queryString>
-	<field name="row_num" class="java.lang.Long">
-		<property name="com.jaspersoft.studio.field.name" value="row_num"/>
-		<property name="com.jaspersoft.studio.field.label" value="row_num"/>
+	<field name="bill_hd_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="bill_hd_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="bill_hd_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
 	</field>
 	<field name="visit_id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="visit_id"/>
@@ -276,7 +251,12 @@ group by
 		<property name="com.jaspersoft.studio.field.label" value="appointment_date"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="dg_orderhd"/>
 	</field>
-	<variable name="Sr.no" class="java.lang.Integer" resetType="Column" calculation="Count">
+	<field name="created_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="created_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="created_by"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<variable name="S.No." class="java.lang.Integer" calculation="Count">
 		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
 	</variable>
 	<background>
@@ -688,7 +668,7 @@ group by
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{row_num}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="45" y="7" width="134" height="31" uuid="4a23ad88-f71d-4478-9c57-8e26dc3fb8c3"/>
@@ -781,8 +761,50 @@ group by
 			</line>
 		</band>
 	</detail>
+	<pageFooter>
+		<band height="154">
+			<rectangle>
+				<reportElement mode="Transparent" x="-1" y="95" width="555" height="59" uuid="467857a8-76c9-44c4-b570-5498abdd5430"/>
+			</rectangle>
+			<staticText>
+				<reportElement x="12" y="105" width="100" height="15" uuid="827f4829-9dd3-469f-b774-893029ddaf86"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Note :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="12" y="75" width="544" height="20" uuid="b7dd4037-28ed-44cf-9bc0-b5f3d5d97e94"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<text><![CDATA[This is a computer generated receipt and does not require signature/stamp]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="12" y="125" width="541" height="15" uuid="2deba7b1-c941-4254-b76b-585aee3ad793"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[# Notes may appear here]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="450" y="24" width="105" height="16" uuid="dbd8663a-5fff-4495-8ec0-c8040042d2e9"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{created_by}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="450" y="8" width="105" height="16" uuid="f01ca069-188a-4453-b5fc-88847b4db5a1"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Collected By]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
 	<summary>
-		<band height="278" splitType="Stretch">
+		<band height="185" splitType="Stretch">
 			<staticText>
 				<reportElement x="220" y="20" width="50" height="15" uuid="cb440961-0590-4411-9358-82c42f8cca7a">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
@@ -850,16 +872,6 @@ group by
 				</textElement>
 				<text><![CDATA[Payment Mode(s)]]></text>
 			</staticText>
-			<staticText>
-				<reportElement x="465" y="237" width="74" height="15" uuid="e8fc0bce-3b2f-40ec-acfd-f675edd106e2">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				</reportElement>
-				<textElement textAlignment="Right">
-					<font fontName="DejaVu Sans Condensed" isBold="true"/>
-				</textElement>
-				<text><![CDATA[Signature]]></text>
-			</staticText>
 			<line>
 				<reportElement x="125" y="38" width="147" height="1" uuid="5218ee27-c89b-45e8-b5a2-7fe5e54fc03e"/>
 			</line>
@@ -877,21 +889,34 @@ group by
 				</textElement>
 				<textFieldExpression><![CDATA["sum of Rs." + $F{total_paid} + " received with thanks from  " + $F{patient_name}]]></textFieldExpression>
 			</textField>
-			<textField>
-				<reportElement x="1" y="170" width="552" height="50" uuid="c0ba5c8b-3d1e-495a-8828-244e35d5e355"/>
-				<textElement>
-					<font fontName="DejaVu Sans Condensed" size="10"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{payment_mode} + " Payment for Rs." + $F{total_paid} + " ( Transaction Id : " + $F{payment_reference_number} + ", Date " + $F{payment_date} + " )"]]></textFieldExpression>
-			</textField>
+			<componentElement>
+				<reportElement x="0" y="165" width="555" height="20" uuid="1294d079-ee6f-4323-bf4c-65ee2f6ecc80"/>
+				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="paymentDataset" uuid="4ef98d85-25a1-4f17-ae35-0a3eea90578c">
+						<datasetParameter name="bill_id">
+							<datasetParameterExpression><![CDATA[$F{bill_hd_id}]]></datasetParameterExpression>
+						</datasetParameter>
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:listContents height="20" width="555">
+						<textField textAdjust="StretchHeight">
+							<reportElement x="0" y="0" width="555" height="20" uuid="fe369452-7fb6-461d-adce-ada0683338a7"/>
+							<textElement>
+								<font fontName="DejaVu Sans Condensed" size="10"/>
+							</textElement>
+							<textFieldExpression><![CDATA[$F{payment_mode} + " Payment for Rs." + $F{amount}  + " (Transaction Id : " + $F{payment_reference_no} + ")"]]></textFieldExpression>
+						</textField>
+					</jr:listContents>
+				</jr:list>
+			</componentElement>
 		</band>
 	</summary>
 	<noData>
-		<band height="27">
+		<band height="22">
 			<staticText>
-				<reportElement x="0" y="0" width="555" height="27" uuid="55949cf4-36bf-44fa-b505-f8aaf641aaca"/>
+				<reportElement x="0" y="1" width="555" height="21" uuid="55949cf4-36bf-44fa-b505-f8aaf641aaca"/>
 				<textElement textAlignment="Center">
-					<font fontName="DejaVu Sans Condensed" size="16"/>
+					<font fontName="DejaVu Sans Condensed" size="16" isBold="true"/>
 				</textElement>
 				<text><![CDATA[NO DATA FOUND]]></text>
 			</staticText>
