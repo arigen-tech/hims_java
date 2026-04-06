@@ -664,21 +664,21 @@ and bh.bill_no = $P{Bill_no}]]>
 	</pageHeader>
 	<detail>
 		<band height="21">
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement x="140" y="1" width="131" height="15" uuid="63e56a23-aa07-4f44-ba56-93a9e5c25628"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{test_name}]]></textFieldExpression>
 			</textField>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement x="270" y="1" width="62" height="15" uuid="a4ef14d4-b01c-4bec-921e-b6851f009309"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{sac_code}]]></textFieldExpression>
 			</textField>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement x="471" y="1" width="83" height="15" uuid="f6657fd1-b1fd-4909-844a-b255f5a2da8a"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
@@ -730,14 +730,14 @@ and bh.bill_no = $P{Bill_no}]]>
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 				</reportElement>
 			</line>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement x="52" y="1" width="88" height="15" uuid="e110cb9f-cbe8-4a1f-a45f-bedf1d252e70"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{test_code}]]></textFieldExpression>
 			</textField>
-			<textField pattern="dd/MM/yyyy">
+			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
 				<reportElement x="333" y="0" width="137" height="15" uuid="843766e9-55a9-43f7-9de0-6d6297c59a94"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
@@ -811,35 +811,35 @@ and bh.bill_no = $P{Bill_no}]]>
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 				</reportElement>
 			</line>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement isPrintRepeatedValues="false" x="1" y="42" width="91" height="15" uuid="5c654a4b-2593-4812-ba52-c718f0fb470c"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{order_value}]]></textFieldExpression>
 			</textField>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement isPrintRepeatedValues="false" x="91" y="42" width="69" height="15" uuid="b1150505-e24b-4c95-85af-e110bb5f2ac7"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{discount_amount}]]></textFieldExpression>
 			</textField>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement isPrintRepeatedValues="false" x="256" y="42" width="105" height="15" uuid="eacaee59-37ab-48b4-9dc9-0a44c24f96cf"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{total_amount_value}]]></textFieldExpression>
 			</textField>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement isPrintRepeatedValues="false" x="366" y="42" width="82" height="15" uuid="00d0a702-2c28-406c-b8a9-8588151786ba"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{paid_amount}]]></textFieldExpression>
 			</textField>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement isPrintRepeatedValues="false" x="450" y="42" width="104" height="15" uuid="34accce1-d5e4-4a06-976a-9b2d595db0f9"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
@@ -1021,7 +1021,7 @@ and bh.bill_no = $P{Bill_no}]]>
 				</textElement>
 				<text><![CDATA[Tax Amount]]></text>
 			</staticText>
-			<textField>
+			<textField isBlankWhenNull="true">
 				<reportElement isPrintRepeatedValues="false" x="163" y="42" width="91" height="15" uuid="ad6d9a51-0f97-4002-8088-071d1e7b28e7"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
