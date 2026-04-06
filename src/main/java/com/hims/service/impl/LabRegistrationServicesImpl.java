@@ -1072,159 +1072,159 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     }
 
 
-    @Override
-    public List<PendingSampleResponse> getPendingSamples() {
-        log.info("Fetching pending samples");
-        Long departmentId = authUtil.getCurrentDepartmentId();
-        log.debug("Current DepartmentId={}", departmentId);
-
-        if (departmentId == null) {
-            log.error("Department ID is null");
-            throw new IllegalArgumentException("Current department ID is null");
-        }
-
-        // Include both 'p' and 'y' payment statuses
-        List<String> paymentStatuses = Arrays.asList("p", "y");
-        List<String> orderStatusFilter = Arrays.asList("p", "n");
-//        String orderStatusFilter = "n";
-
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(pendingDays);
-        log.debug("Date range => startDate={}, endDate={}",
-                startDate, endDate);
-
-        // Fetch only records matching both filters in DB
+//    @Override
+//    public List<PendingSampleResponse> getPendingSamples() {
+//        log.info("Fetching pending samples");
+//        Long departmentId = authUtil.getCurrentDepartmentId();
+//        log.debug("Current DepartmentId={}", departmentId);
+//
+//        if (departmentId == null) {
+//            log.error("Department ID is null");
+//            throw new IllegalArgumentException("Current department ID is null");
+//        }
+//
+//        // Include both 'p' and 'y' payment statuses
+//        List<String> paymentStatuses = Arrays.asList("p", "y");
+//        List<String> orderStatusFilter = Arrays.asList("p", "n");
+////        String orderStatusFilter = "n";
+//
+//        LocalDate endDate = LocalDate.now();
+//        LocalDate startDate = endDate.minusDays(pendingDays);
+//        log.debug("Date range => startDate={}, endDate={}",
+//                startDate, endDate);
+//
+//        // Fetch only records matching both filters in DB
+////        List<DgOrderHd> orderHdList = labHdRepository
+////                .findPendingOrdersByDateRange(paymentStatuses, orderStatusFilter,startDate,endDate);
 //        List<DgOrderHd> orderHdList = labHdRepository
-//                .findPendingOrdersByDateRange(paymentStatuses, orderStatusFilter,startDate,endDate);
-        List<DgOrderHd> orderHdList = labHdRepository
-                .findPendingOrdersByDateRange(paymentStatuses, orderStatusFilter, startDate, endDate);
-        log.info("Pending OrderHd count={}",
-                orderHdList != null ? orderHdList.size() : 0);
-        List<PendingSampleResponse> responseList = new ArrayList<>();
-
-        MasDepartment department = masDepartmentRepository.findById(departmentId)
-                .orElseThrow(() -> {
-                    log.error("Invalid department ID={}", departmentId);
-                    return new IllegalArgumentException(
-                            "Invalid department ID: " + departmentId);
-                });
-
-        for (DgOrderHd orderHd : orderHdList) {
-            // Filter details by billingStatus (y) and orderStatus (n)
-            List<DgOrderDt> orderDtList = labDtRepository
-                    .findByOrderhdIdAndBillingStatusAndOrderStatus(orderHd, "y", "n");
-
-            for (DgOrderDt orderDt : orderDtList) {
-                Patient patient = orderHd.getPatientId();
-                Visit visit = orderHd.getVisitId();
-                DgMasInvestigation investigation = orderDt.getInvestigationId();
-
-                PendingSampleResponse response = new PendingSampleResponse();
-                response.setReqDate(orderHd.getOrderDate());
-                response.setVistId(visit != null ? visit.getId() : null);
-                String fullName = "";
-                if (patient != null) {
-                    fullName = Stream.of(
-                                    patient.getPatientFn(),
-                                    patient.getPatientMn(),
-                                    patient.getPatientLn()
-                            )
-                            .filter(name -> name != null && !name.trim().isEmpty())
-                            .collect(Collectors.joining(" "));
-                }
-
-                response.setPatientName(fullName);
-
-//                response.setPatientName(
-//                        patient != null
-//                                ? (patient.getPatientFn() != null ? patient.getPatientFn() : "") +
-//                                " " +
-//                                (patient.getPatientLn() != null ? patient.getPatientLn() : "")
+//                .findPendingOrdersByDateRange(paymentStatuses, orderStatusFilter, startDate, endDate);
+//        log.info("Pending OrderHd count={}",
+//                orderHdList != null ? orderHdList.size() : 0);
+//        List<PendingSampleResponse> responseList = new ArrayList<>();
+//
+//        MasDepartment department = masDepartmentRepository.findById(departmentId)
+//                .orElseThrow(() -> {
+//                    log.error("Invalid department ID={}", departmentId);
+//                    return new IllegalArgumentException(
+//                            "Invalid department ID: " + departmentId);
+//                });
+//
+//        for (DgOrderHd orderHd : orderHdList) {
+//            // Filter details by billingStatus (y) and orderStatus (n)
+//            List<DgOrderDt> orderDtList = labDtRepository
+//                    .findByOrderhdIdAndBillingStatusAndOrderStatus(orderHd, "y", "n");
+//
+//            for (DgOrderDt orderDt : orderDtList) {
+//                Patient patient = orderHd.getPatientId();
+//                Visit visit = orderHd.getVisitId();
+//                DgMasInvestigation investigation = orderDt.getInvestigationId();
+//
+//                PendingSampleResponse response = new PendingSampleResponse();
+//                response.setReqDate(orderHd.getOrderDate());
+//                response.setVistId(visit != null ? visit.getId() : null);
+//                String fullName = "";
+//                if (patient != null) {
+//                    fullName = Stream.of(
+//                                    patient.getPatientFn(),
+//                                    patient.getPatientMn(),
+//                                    patient.getPatientLn()
+//                            )
+//                            .filter(name -> name != null && !name.trim().isEmpty())
+//                            .collect(Collectors.joining(" "));
+//                }
+//
+//                response.setPatientName(fullName);
+//
+////                response.setPatientName(
+////                        patient != null
+////                                ? (patient.getPatientFn() != null ? patient.getPatientFn() : "") +
+////                                " " +
+////                                (patient.getPatientLn() != null ? patient.getPatientLn() : "")
+////                                : ""
+////                );
+//
+//                response.setRelation(
+//                        patient != null && patient.getPatientRelation() != null
+//                                ? patient.getPatientRelation().getRelationName()
 //                                : ""
 //                );
-
-                response.setRelation(
-                        patient != null && patient.getPatientRelation() != null
-                                ? patient.getPatientRelation().getRelationName()
-                                : ""
-                );
-
-                response.setAge(
-                        patient != null && patient.getPatientDob() != null
-                                ? ageCalculator(patient.getPatientDob())
-                                : ""
-                );
-
-                response.setGender(
-                        patient != null && patient.getPatientGender() != null
-                                ? patient.getPatientGender().getGenderName()
-                                : ""
-                );
-
-                response.setMobile(patient != null ? patient.getPatientMobileNumber() : "");
-                response.setDepartment(department.getDepartmentName());
-                response.setDoctorName(visit != null ? visit.getDoctorName() : "");
-                response.setOrderhdId(Long.valueOf(orderHd.getId()));
-                response.setOrderNo(orderHd.getOrderNo());
-
-                response.setOrderTime(
-                        orderHd.getOrderTime() != null
-                                ? getCurrentTimeFormatted(orderHd.getOrderTime())
-                                : null
-                );
-
-                response.setInvestigation(investigation != null ? investigation.getInvestigationName() : "");
-                response.setInvestigationId(investigation != null ? investigation.getInvestigationId() : null);
-
-                response.setSample(
-                        investigation != null && investigation.getSampleId() != null
-                                ? investigation.getSampleId().getSampleDescription()
-                                : ""
-                );
-
-                response.setSampleId(
-                        investigation != null && investigation.getSampleId() != null
-                                ? investigation.getSampleId().getId()
-                                : null
-                );
-
-                response.setMainChargcodeId(
-                        investigation != null && investigation.getMainChargeCodeId() != null
-                                ? investigation.getMainChargeCodeId().getChargecodeId()
-                                : null
-                );
-
-                response.setCollection(
-                        investigation != null && investigation.getCollectionId() != null
-                                ? investigation.getCollectionId().getCollectionName()
-                                : ""
-                );
-
-                response.setCollectionId(
-                        investigation != null && investigation.getCollectionId() != null
-                                ? investigation.getCollectionId().getCollectionId()
-                                : null
-                );
-
-                response.setSubChargeCode(
-                        investigation != null && investigation.getSubChargeCodeId() != null
-                                ? investigation.getSubChargeCodeId().getSubName()
-                                : ""
-                );
-
-                response.setSubChargeCodeId(
-                        investigation != null && investigation.getSubChargeCodeId() != null
-                                ? investigation.getSubChargeCodeId().getSubId()
-                                : null
-                );
-
-                responseList.add(response);
-            }
-        }
-        log.info("Pending samples processing completed, finalCount={}",
-                responseList.size());
-        return responseList;
-    }
+//
+//                response.setAge(
+//                        patient != null && patient.getPatientDob() != null
+//                                ? ageCalculator(patient.getPatientDob())
+//                                : ""
+//                );
+//
+//                response.setGender(
+//                        patient != null && patient.getPatientGender() != null
+//                                ? patient.getPatientGender().getGenderName()
+//                                : ""
+//                );
+//
+//                response.setMobile(patient != null ? patient.getPatientMobileNumber() : "");
+//                response.setDepartment(department.getDepartmentName());
+//                response.setDoctorName(visit != null ? visit.getDoctorName() : "");
+//                response.setOrderhdId(Long.valueOf(orderHd.getId()));
+//                response.setOrderNo(orderHd.getOrderNo());
+//
+//                response.setOrderTime(
+//                        orderHd.getOrderTime() != null
+//                                ? getCurrentTimeFormatted(orderHd.getOrderTime())
+//                                : null
+//                );
+//
+//                response.setInvestigation(investigation != null ? investigation.getInvestigationName() : "");
+//                response.setInvestigationId(investigation != null ? investigation.getInvestigationId() : null);
+//
+//                response.setSample(
+//                        investigation != null && investigation.getSampleId() != null
+//                                ? investigation.getSampleId().getSampleDescription()
+//                                : ""
+//                );
+//
+//                response.setSampleId(
+//                        investigation != null && investigation.getSampleId() != null
+//                                ? investigation.getSampleId().getId()
+//                                : null
+//                );
+//
+//                response.setMainChargcodeId(
+//                        investigation != null && investigation.getMainChargeCodeId() != null
+//                                ? investigation.getMainChargeCodeId().getChargecodeId()
+//                                : null
+//                );
+//
+//                response.setCollection(
+//                        investigation != null && investigation.getCollectionId() != null
+//                                ? investigation.getCollectionId().getCollectionName()
+//                                : ""
+//                );
+//
+//                response.setCollectionId(
+//                        investigation != null && investigation.getCollectionId() != null
+//                                ? investigation.getCollectionId().getCollectionId()
+//                                : null
+//                );
+//
+//                response.setSubChargeCode(
+//                        investigation != null && investigation.getSubChargeCodeId() != null
+//                                ? investigation.getSubChargeCodeId().getSubName()
+//                                : ""
+//                );
+//
+//                response.setSubChargeCodeId(
+//                        investigation != null && investigation.getSubChargeCodeId() != null
+//                                ? investigation.getSubChargeCodeId().getSubId()
+//                                : null
+//                );
+//
+//                responseList.add(response);
+//            }
+//        }
+//        log.info("Pending samples processing completed, finalCount={}",
+//                responseList.size());
+//        return responseList;
+//    }
 
 
 //    @Override
