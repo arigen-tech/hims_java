@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="opd_billing_register" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="ba7c559a-2b83-432e-9a60-94e10333b2e4">
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<parameter name="path" class="java.lang.String">
 		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
 	</parameter>
 	<parameter name="hospital_id" class="java.lang.Long"/>
 	<parameter name="department_id" class="java.lang.Long"/>
+	<parameter name="doctor_id" class="java.lang.Long"/>
 	<parameter name="from_date" class="java.util.Date">
 		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
 	</parameter>
@@ -43,6 +44,7 @@ where bh.payment_status in('y', 'p')
 and bh.service_category_id = 1
 and bh.hospital_id = $P{hospital_id}
 and (v.department_id = $P{department_id} or $P{department_id} = 0)
+and (v.doctor_id  = $P{doctor_id} or $P{doctor_id} = 0)
 and bh.billing_date between $P{from_date} and $P{to_date}]]>
 	</queryString>
 	<field name="hospital_name" class="java.lang.String">

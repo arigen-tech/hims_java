@@ -1290,15 +1290,18 @@ public class ReportController {
             @RequestParam (required = false) Long departmentId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long doctorId,
             @RequestParam String flag) {
 
         Long safeDepartmentId = departmentId != null ? departmentId: 0L;
+        Long safeDoctorId = doctorId != null ? doctorId: 0L;
 
         Map<String, Object> params = new HashMap<>();
         params.put("hospital_id", hospitalId);
         params.put("department_id", safeDepartmentId);
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
+        params.put("doctor_id", safeDoctorId);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -1414,6 +1417,43 @@ public class ReportController {
                 return buildPdfResponse(viewPdf, ReportConstants.DAILY_CASH_COLLECTION_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.DAILY_CASH_COLLECTION_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/cashierWiseCollection", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintCashierWiseCollection(
+            @RequestParam Long hospitalId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long cashierId,
+            @RequestParam String flag) {
+
+        Long safeCashierId = cashierId != null ? cashierId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("cashier_id", safeCashierId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.CASHIER_WISE_COLLECTION_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.CASHIER_WISE_COLLECTION_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.CASHIER_WISE_COLLECTION_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {

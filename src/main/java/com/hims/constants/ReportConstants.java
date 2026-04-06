@@ -147,4 +147,7 @@ public final class ReportConstants {
 
     public static final String DAILY_CASH_COLLECTION_JASPER = "Daily_cash_collection";
     public static final String DAILY_CASH_COLLECTION_REPORT = "DailyCashCollectionReport";
+
+    public static final String CASHIER_WISE_COLLECTION_JASPER = "Cashier_wise_collection";
+    public static final String CASHIER_WISE_COLLECTION_REPORT = "CashierWiseCollection";
 }
