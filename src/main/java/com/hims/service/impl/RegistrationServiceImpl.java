@@ -54,6 +54,8 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Value("${app.opdDepartmentType}")
     private Integer opdDepartmentType;
 
+    @Value("${app.opdDepartmentType}")
+    private Integer opdDepartmentType;
 
     @Autowired
     private PatientRepository patientRepository;
@@ -1362,7 +1364,115 @@ public class RegistrationServiceImpl implements RegistrationService {
             return appt;
         }).toList();
     }
+    /**
+     * Helper method to map personal details
+     */
+    private FollowUpPatientResponseDetails.PersonalDetails mapPersonalDetails(PatientProjectionFollowUpDetails p) {
+        FollowUpPatientResponseDetails.PersonalDetails personal = new FollowUpPatientResponseDetails.PersonalDetails();
+        personal.setFirstName(p.getFirstName());
+        personal.setMiddleName(p.getMiddleName());
+        personal.setLastName(p.getLastName());
+        personal.setMobileNo(p.getMobileNo());
+        personal.setEmail(p.getEmail());
+        personal.setDob(p.getDob());
+        personal.setAge(ConverterUtils.ageCalculator(p.getDob()));
+        personal.setGender(p.getGenderId());
+        personal.setGenderName(p.getGenderName());
+        personal.setRelation(p.getRelationId());
+        personal.setRelationName(p.getRelationName());
+        return personal;
+    }
+    /**
+     * Helper method to map address details
+     */
+    private FollowUpPatientResponseDetails.AddressDetails mapAddressDetails(PatientProjectionFollowUpDetails p) {
+        FollowUpPatientResponseDetails.AddressDetails address = new FollowUpPatientResponseDetails.AddressDetails();
+        address.setAddress1(p.getAddress1());
+        address.setAddress2(p.getAddress2());
+        address.setCity(p.getCity());
+        address.setPinCode(p.getPinCode());
+        address.setCountry(p.getCountryId());
+        address.setCountryName(p.getCountryName());
+        address.setState(p.getStateId());
+        address.setStateName(p.getStateName());
+        address.setDistrict(p.getDistrictId());
+        address.setDistrictName(p.getDistrictName());
+        return address;
+    }
+    /**
+     * Helper method to map NOK (Next of Kin) details
+     */
+    private FollowUpPatientResponseDetails.NokDetails mapNokDetails(PatientProjectionFollowUpDetails p) {
+        FollowUpPatientResponseDetails.NokDetails nok = new FollowUpPatientResponseDetails.NokDetails();
+        nok.setFirstName(p.getNokFirstName());
+        nok.setLastName(p.getNokLastName());
+        nok.setEmail(p.getNokEmail());
+        nok.setMobileNo(p.getNokMobile());
+        nok.setAddress1(p.getNokAddress1());
+        nok.setAddress2(p.getNokAddress2());
+        nok.setCity(p.getNokCity());
+        nok.setPinCode(p.getNokPinCode());
+        nok.setCountry(p.getNokCountryId());
+        nok.setCountryName(p.getNokCountryName());
+        nok.setState(p.getNokStateId());
+        nok.setStateName(p.getNokStateName());
+        nok.setDistrict(p.getNokDistrictId());
+        nok.setDistrictName(p.getNokDistrictName());
+        return nok;
+    }
+    /**
+     * Helper method to map emergency details
+     */
+    private FollowUpPatientResponseDetails.EmergencyDetails mapEmergencyDetails(PatientProjectionFollowUpDetails p) {
+        FollowUpPatientResponseDetails.EmergencyDetails emergency = new FollowUpPatientResponseDetails.EmergencyDetails();
+        emergency.setFirstName(p.getEmerFirstName());
+        emergency.setLastName(p.getEmerLastName());
+        emergency.setMobileNo(p.getEmerMobile());
+        return emergency;
+    }
+    /**
+     * Helper method to map vital details
+     */
+    private FollowUpPatientResponseDetails.VitalDetails mapVitalDetails(PatientVitalsProjection opd) {
+        FollowUpPatientResponseDetails.VitalDetails vitals = new FollowUpPatientResponseDetails.VitalDetails();
+        vitals.setHeight(opd.getHeight());
+        vitals.setWeight(opd.getWeight());
+        vitals.setTemperature(opd.getTemperature());
+        vitals.setBpSys(opd.getBpSystolic());
+        vitals.setBpDia(opd.getBpDiastolic());
+        vitals.setPulse(opd.getPulse());
+        vitals.setRr(opd.getRr());
+        vitals.setSpo2(opd.getSpo2());
+        vitals.setBmi(opd.getBmi());
+        return vitals;
+    }
+    /**
+     * Helper method to map appointment details
+     */
+    private List<FollowUpPatientResponseDetails.AppointmentDetailResponse> mapAppointmentDetails(List<AppointmentProjection> visits) {
+        return visits.stream().map(v -> {
+            FollowUpPatientResponseDetails.AppointmentDetailResponse appt = new FollowUpPatientResponseDetails.AppointmentDetailResponse();
+            appt.setAppointmentId(v.getAppointmentId());
+            appt.setSpecialityId(v.getSpecialityId());
+            appt.setSpecialityName(v.getSpecialityName());
+            appt.setDoctorId(v.getDoctorId());
+            appt.setDoctorName(v.getDoctorName());
+            appt.setSessionId(v.getSessionId());
+            appt.setSessionName(v.getSessionName());
+            appt.setVisitDate(v.getVisitDate());
+            appt.setVisitType(v.getVisitType());
+            appt.setTokenNo(v.getTokenNo());
+            appt.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.equalsIgnoreCase(v.getVisitStatus()) ? "Completed" : "Pending");
 
+            if (v.getStartTime() != null) {
+                appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
+            }
+            if (v.getEndTime() != null) {
+                appt.setTokenEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
+            }
+            return appt;
+        }).toList();
+    }
 
 }
 
