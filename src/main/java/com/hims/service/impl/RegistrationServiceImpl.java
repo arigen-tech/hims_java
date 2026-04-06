@@ -4,16 +4,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.exception.SDDException;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
 import com.hims.exception.patientRegistrationException.InvalidDateException;
 import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
-import com.hims.helperUtil.ConverterUtils;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.OpdPatientDetailMapper;
 import com.hims.mapper.PatientMapper;
 import com.hims.mapper.VisitMapper;
-import com.hims.projection.*;
+import com.hims.projection.AppointmentSummaryDepartmentProjection;
+import com.hims.projection.AppointmentSummaryDoctorProjection;
+import com.hims.projection.CancelledAppointmentProjection;
+import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
@@ -52,12 +53,6 @@ public class RegistrationServiceImpl implements RegistrationService {
     private String baseUrl;
     @Value("${serviceCategoryOPD}")
     private String serviceCategoryOPD;
-
-    @Value("${serviceCategoryLab}")
-    private String serviceCategoryLab;
-
-    @Value("${app.opdDepartmentType}")
-    private Integer opdDepartmentType;
 
     @Autowired
     private PatientRepository patientRepository;
@@ -116,6 +111,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private BillingDetailRepository billingDetailRepository;
 
 
+
     @Autowired
     private PatientLoginService patientLoginService;
 
@@ -132,18 +128,26 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public ApiResponse<PatientRegFollowUpResp> createPatient(PatientRequest patient, OpdPatientDetailRequest opdPatientDetail, List<VisitRequest> visit) {
-        PatientRegFollowUpResp resp = new PatientRegFollowUpResp();
-        Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(patient.getPatientFn(), patient.getPatientLn(), (masGenderRepository.findById(patient.getPatientGenderId())).get(), patient.getPatientDob() != null ? patient.getPatientDob() : null, patient.getPatientAge(), patient.getPatientMobileNumber(), (masRelationRepository.findById(patient.getPatientRelationId())).get());
+        PatientRegFollowUpResp resp=new PatientRegFollowUpResp();
+        Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(
+                patient.getPatientFn(),
+                patient.getPatientLn(),
+                (masGenderRepository.findById(patient.getPatientGenderId())).get(),
+                patient.getPatientDob() != null ? patient.getPatientDob() : null,
+                patient.getPatientAge(),
+                patient.getPatientMobileNumber(),
+                (masRelationRepository.findById(patient.getPatientRelationId())).get());
         if (existingPatient.isPresent()) {
             resp.setPatient(PatientMapper.mapToDTO(existingPatient.get()));
             return ResponseUtils.createFailureResponse(resp, new TypeReference<>() {
-            }, "Patient already Registered", 500);
+                    },
+                    "Patient already Registered", 500);
         }
-        Patient patientObj = savePatient(patient, false);
+        Patient patientObj = savePatient(patient,false);
         patientLoginService.savePatientLogin(patientObj);
         resp.setPatient(PatientMapper.mapToDTO(patientObj));
-        OpdPatientDetail newOpd = new OpdPatientDetail();
-        if (visit != null) {
+        OpdPatientDetail newOpd=new OpdPatientDetail();
+        if(visit!=null){
             List<Visit> savedVisits = new ArrayList<>();
             if (!visit.isEmpty()) {
                 for (VisitRequest v : visit) {
@@ -158,11 +162,13 @@ public class RegistrationServiceImpl implements RegistrationService {
                     }
                 }
             }
-            if (savedVisits.get(0).getBillingStatus().equalsIgnoreCase(AppConstants.PAYMENT_NOT_PAID.toLowerCase())) {
-                List<OpdVisitResponseDTO> visitResponses = savedVisits.stream().map(visitMapper::mapToDTO).toList();
+            if(savedVisits.get(0).getBillingStatus().equalsIgnoreCase("n")){
+                List<OpdVisitResponseDTO> visitResponses = savedVisits.stream()
+                        .map(visitMapper::mapToDTO)
+                        .toList();
                 resp.setVisits(visitResponses);
             }
-            OPDBillingPatientResponse finalResponse = buildFinalResponse(patientObj, savedVisits);
+            OPDBillingPatientResponse finalResponse =  buildFinalResponse(patientObj,savedVisits);
             resp.setOpdBillingPatientResponse(finalResponse);
         }
         resp.setOpdPatientDetail(opdPatientDetailMapper.mapToDTO(newOpd));
@@ -182,14 +188,18 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         if (details.getPatient() != null && details.getPatient().getId() != null) {
             patient = updatePatientDetails(details.getPatient(), true);
-        } else if (followUpRequest.isAppointmentFlag() && details.getVisits() != null && !details.getVisits().isEmpty() && details.getVisits().get(0).getPatientId() != null) {
+        } else if (followUpRequest.isAppointmentFlag()
+                && details.getVisits() != null
+                && !details.getVisits().isEmpty()
+                && details.getVisits().get(0).getPatientId() != null) {
 
             Long patientId = details.getVisits().get(0).getPatientId();
 
-            patient = patientRepository.findById(patientId).orElseThrow(() -> new SDDException(500,"Patient not found"));
+            patient = patientRepository.findById(patientId)
+                    .orElseThrow(() -> new RuntimeException("Patient not found"));
 
         } else {
-            throw new SDDException(500,"Patient ID is required");
+            throw new RuntimeException("Patient ID is required");
         }
 
         resp.setPatient(PatientMapper.mapToDTO(patient));
@@ -212,7 +222,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                         v.setVisitDate(Instant.now());
                     }
                     if (v.getVisitType() == null) {
-                        v.setVisitType(AppConstants.VISIT_TYPE_FOLLOW_UP);
+                        v.setVisitType("F");
                     }
                     Visit visit;
                     if (v.getId() != null) {
@@ -221,21 +231,24 @@ public class RegistrationServiceImpl implements RegistrationService {
                         visit = createSingleAppointment(v, patient);
                     }
                     updatedVisits.add(visit);
-                    if (visit.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
+                    if (visit.getHospital().getPreConsultationAvailable()
+                            .equalsIgnoreCase("n")) {
                         opdDetails = addOpdDetails(visit, opdReq, patient);
                     }
                 }
             }
-            List<OpdVisitResponseDTO> visitResponses = updatedVisits.stream().map(visitMapper::mapToDTO).toList();
+            List<OpdVisitResponseDTO> visitResponses = updatedVisits.stream()
+                    .map(visitMapper::mapToDTO)
+                    .toList();
             resp.setVisits(visitResponses);
             if (opdDetails != null) {
                 resp.setOpdPatientDetail(opdPatientDetailMapper.mapToDTO(opdDetails));
             }
-            OPDBillingPatientResponse finalResponse = buildFinalResponse(patient, updatedVisits);
+            OPDBillingPatientResponse finalResponse =
+                    buildFinalResponse(patient, updatedVisits);
             resp.setOpdBillingPatientResponse(finalResponse);
         }
-        return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {
-        });
+        return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {});
     }
 
 
@@ -280,173 +293,108 @@ public class RegistrationServiceImpl implements RegistrationService {
         // - Neither provided (will return empty results)
         Page<PatientProjection> patientList = patientRepository.searchPatients(mobileNo, patientName, pageable);
 
-        return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {
-        });
+        return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {});
     }
 
     @Override
-    public ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patientId, String serviceCategoryCode) {
-        try {
-            log.info("Fetching patient details for patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
-            
-            // Default to OPD if serviceCategoryCode is null or empty
-            String categoryCode = (serviceCategoryCode == null || serviceCategoryCode.trim().isEmpty()) 
-                    ? serviceCategoryOPD 
-                    : serviceCategoryCode;
-            
-            FollowUpPatientResponseDetails resp = new FollowUpPatientResponseDetails();
-            PatientProjectionFollowUpDetails patientData = patientRepository.findPatientDetails(patientId);
-            
-            if (patientData == null) {
-                log.warn("Patient not found for patientId: {}", patientId);
-                return ResponseUtils.createFailureResponse(
-                        null, new TypeReference<>() {}, 
-                        "Patient not found", 404);
-            }
-            
-            // Map personal details
-            resp.setPatientId(patientData.getPatientId());
-            resp.setPersonal(mapPersonalDetails(patientData));
-            resp.setAddress(mapAddressDetails(patientData));
-            resp.setNok(mapNokDetails(patientData));
-            resp.setEmergency(mapEmergencyDetails(patientData));
-            resp.setPhotoUrl(patientData.getPhotoUrl());
-            
-            // Map OPD-specific details if serviceCategoryCode is OPD
-            if (categoryCode.equalsIgnoreCase(serviceCategoryOPD)) {
-                PatientVitalsProjection vitals = opdPatientDetailRepository.findLatestVitals(patientId);
-                if (vitals != null) {
-                    resp.setVitals(mapVitalDetails(vitals));
-                }
-                
-                List<AppointmentProjection> appointments = visitRepository.findAppointments(patientId , opdDepartmentType);
-                resp.setAppointments(mapAppointmentDetails(appointments));
-            }
-            
-            log.info("Successfully fetched patient details for patientId: {}", patientId);
-            return ResponseUtils.createSuccessResponse(resp, new TypeReference<FollowUpPatientResponseDetails>() {});
-            
-        } catch (Exception e) {
-            log.error("Error fetching patient details for patientId: {}", patientId, e);
-            return ResponseUtils.createFailureResponse(
-                    null, new TypeReference<>() {}, 
-                    "Error fetching patient details: " + e.getMessage(), 500);
-        }
-    }
-    
-    /**
-     * Helper method to map personal details
-     */
-    private FollowUpPatientResponseDetails.PersonalDetails mapPersonalDetails(PatientProjectionFollowUpDetails p) {
+    public ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patientId) {
+        FollowUpPatientResponseDetails resp = new FollowUpPatientResponseDetails();
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("Patient not found: " + patientId));
+
         FollowUpPatientResponseDetails.PersonalDetails personal = new FollowUpPatientResponseDetails.PersonalDetails();
-        personal.setFirstName(p.getFirstName());
-        personal.setMiddleName(p.getMiddleName());
-        personal.setLastName(p.getLastName());
-        personal.setMobileNo(p.getMobileNo());
-        personal.setEmail(p.getEmail());
-        personal.setDob(p.getDob());
-        personal.setAge(ConverterUtils.ageCalculator(p.getDob()));
-        personal.setGender(p.getGenderId());
-        personal.setGenderName(p.getGenderName());
-        personal.setRelation(p.getRelationId());
-        personal.setRelationName(p.getRelationName());
-        return personal;
-    }
-    
-    /**
-     * Helper method to map address details
-     */
-    private FollowUpPatientResponseDetails.AddressDetails mapAddressDetails(PatientProjectionFollowUpDetails p) {
+        personal.setFirstName(patient.getPatientFn());
+        personal.setMiddleName(patient.getPatientMn());
+        personal.setLastName(patient.getPatientLn());
+        personal.setMobileNo(patient.getPatientMobileNumber());
+        personal.setEmail(patient.getPatientEmailId());
+        personal.setDob(patient.getPatientDob());
+        personal.setAge(patient.getPatientAge());
+        personal.setGender(patient.getPatientGender() != null ? patient.getPatientGender().getId() : null);
+        personal.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getId() : null);
+
+        resp.setPersonal(personal);
         FollowUpPatientResponseDetails.AddressDetails address = new FollowUpPatientResponseDetails.AddressDetails();
-        address.setAddress1(p.getAddress1());
-        address.setAddress2(p.getAddress2());
-        address.setCity(p.getCity());
-        address.setPinCode(p.getPinCode());
-        address.setCountry(p.getCountryId());
-        address.setCountryName(p.getCountryName());
-        address.setState(p.getStateId());
-        address.setStateName(p.getStateName());
-        address.setDistrict(p.getDistrictId());
-        address.setDistrictName(p.getDistrictName());
-        return address;
-    }
-    
-    /**
-     * Helper method to map NOK (Next of Kin) details
-     */
-    private FollowUpPatientResponseDetails.NokDetails mapNokDetails(PatientProjectionFollowUpDetails p) {
+        address.setAddress1(patient.getPatientAddress1());
+        address.setAddress2(patient.getPatientAddress2());
+        address.setCity(patient.getPatientCity());
+        address.setPinCode(patient.getPatientPincode());
+        address.setCountry(patient.getPatientCountry() != null ? patient.getPatientCountry().getId() : null);
+        address.setState(patient.getPatientState() != null ? patient.getPatientState().getId() : null);
+        address.setDistrict(patient.getPatientDistrict() != null ? patient.getPatientDistrict().getId() : null);
+
+        resp.setAddress(address);
         FollowUpPatientResponseDetails.NokDetails nok = new FollowUpPatientResponseDetails.NokDetails();
-        nok.setFirstName(p.getNokFirstName());
-        nok.setLastName(p.getNokLastName());
-        nok.setEmail(p.getNokEmail());
-        nok.setMobileNo(p.getNokMobile());
-        nok.setAddress1(p.getNokAddress1());
-        nok.setAddress2(p.getNokAddress2());
-        nok.setCity(p.getNokCity());
-        nok.setPinCode(p.getNokPinCode());
-        nok.setCountry(p.getNokCountryId());
-        nok.setCountryName(p.getNokCountryName());
-        nok.setState(p.getNokStateId());
-        nok.setStateName(p.getNokStateName());
-        nok.setDistrict(p.getNokDistrictId());
-        nok.setDistrictName(p.getNokDistrictName());
-        return nok;
-    }
-    
-    /**
-     * Helper method to map emergency details
-     */
-    private FollowUpPatientResponseDetails.EmergencyDetails mapEmergencyDetails(PatientProjectionFollowUpDetails p) {
+        nok.setFirstName(patient.getNokFn());
+        nok.setLastName(patient.getNokLn());
+        nok.setEmail(patient.getNokEmail());
+        nok.setMobileNo(patient.getNokMobileNumber());
+        nok.setAddress1(patient.getNokAddress1());
+        nok.setAddress2(patient.getNokAddress2());
+        nok.setCity(patient.getNokCity());
+        nok.setPinCode(patient.getNokPincode());
+        //nok.setRelation(patient.getNokRelation() != null ? patient.getNokRelation().getId() : null);
+        nok.setState(patient.getNokState() != null ? patient.getNokState().getId() : null);
+        nok.setDistrict(patient.getNokDistrict() != null ? patient.getNokDistrict().getId() : null);
+        nok.setCountry(patient.getNokCountry() != null ? patient.getNokCountry().getId() : null);
+
+        resp.setNok(nok);
         FollowUpPatientResponseDetails.EmergencyDetails emergency = new FollowUpPatientResponseDetails.EmergencyDetails();
-        emergency.setFirstName(p.getEmerFirstName());
-        emergency.setLastName(p.getEmerLastName());
-        emergency.setMobileNo(p.getEmerMobile());
-        return emergency;
-    }
-    
-    /**
-     * Helper method to map vital details
-     */
-    private FollowUpPatientResponseDetails.VitalDetails mapVitalDetails(PatientVitalsProjection opd) {
-        FollowUpPatientResponseDetails.VitalDetails vitals = new FollowUpPatientResponseDetails.VitalDetails();
-        vitals.setHeight(opd.getHeight());
-        vitals.setWeight(opd.getWeight());
-        vitals.setTemperature(opd.getTemperature());
-        vitals.setBpSys(opd.getBpSystolic());
-        vitals.setBpDia(opd.getBpDiastolic());
-        vitals.setPulse(opd.getPulse());
-        vitals.setRr(opd.getRr());
-        vitals.setSpo2(opd.getSpo2());
-        vitals.setBmi(opd.getBmi());
-        return vitals;
-    }
-    
-    /**
-     * Helper method to map appointment details
-     */
-    private List<FollowUpPatientResponseDetails.AppointmentDetailResponse> mapAppointmentDetails(List<AppointmentProjection> visits) {
-        return visits.stream().map(v -> {
+        emergency.setFirstName(patient.getEmerFn());
+        emergency.setLastName(patient.getEmerLn());
+        emergency.setMobileNo(patient.getEmerMobile());
+
+        resp.setEmergency(emergency);
+        OpdPatientDetail opd = opdPatientDetailRepository.findTopByPatientOrderByOpdPatientDetailsIdDesc(patient);
+
+        if (opd != null) {
+            FollowUpPatientResponseDetails.VitalDetails vitals = new FollowUpPatientResponseDetails.VitalDetails();
+            vitals.setHeight(opd.getHeight());
+            vitals.setWeight(opd.getWeight());
+            vitals.setTemperature(opd.getTemperature());
+            vitals.setBpSys(opd.getBpSystolic());
+            vitals.setBpDia(opd.getBpDiastolic());
+            vitals.setPulse(opd.getPulse());
+            vitals.setRr(opd.getRr());
+            vitals.setSpo2(opd.getSpo2());
+            vitals.setBmi(opd.getBmi());
+
+            resp.setVitals(vitals);
+        }
+        List<Visit> visits = visitRepository.findRelevantVisitsByPatientId(patientId);
+        List<FollowUpPatientResponseDetails.AppointmentDetailResponse> appointmentList = new ArrayList<>();
+
+        for (Visit v : visits) {
             FollowUpPatientResponseDetails.AppointmentDetailResponse appt = new FollowUpPatientResponseDetails.AppointmentDetailResponse();
-            appt.setAppointmentId(v.getAppointmentId());
-            appt.setSpecialityId(v.getSpecialityId());
-            appt.setSpecialityName(v.getSpecialityName());
-            appt.setDoctorId(v.getDoctorId());
+            appt.setAppointmentId(v.getId());
+            appt.setSpecialityId(v.getDepartment() != null ? v.getDepartment().getId() : null);
+            appt.setSpecialityName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
+            appt.setDoctorId(v.getDoctor() != null ? v.getDoctor().getUserId() : null);
             appt.setDoctorName(v.getDoctorName());
-            appt.setSessionId(v.getSessionId());
-            appt.setSessionName(v.getSessionName());
+            appt.setSessionId(v.getSession() != null ? v.getSession().getId() : null);
+            appt.setSessionName(v.getSession() != null ? v.getSession().getSessionName() : null);
             appt.setVisitDate(v.getVisitDate());
             appt.setVisitType(v.getVisitType());
             appt.setTokenNo(v.getTokenNo());
-            appt.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.equalsIgnoreCase(v.getVisitStatus()) ? "Completed" : "Pending");
-            
-            if (v.getStartTime() != null) {
+            appt.setVisitStatus(v.getVisitStatus());
+            if ("Y".equalsIgnoreCase(v.getVisitStatus())) {
+                appt.setVisitStatus("Completed");
+            } else if ("N".equalsIgnoreCase(v.getVisitStatus())) {
+                appt.setVisitStatus("Pending");
+            }
+            if (v != null && v.getStartTime() != null) {
                 appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
             }
-            if (v.getEndTime() != null) {
+
+            if (v != null && v.getEndTime() != null) {
                 appt.setTokenEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
             }
-            return appt;
-        }).toList();
+            appointmentList.add(appt);
+        }
+
+        resp.setAppointments(appointmentList);
+        resp.setPhotoUrl(patient.getPatientImage());
+        return ResponseUtils.createSuccessResponse(resp, new TypeReference<FollowUpPatientResponseDetails>() {});
     }
 
     @Override
@@ -473,7 +421,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
             List<BillingDetail> details = billingDetailRepository.findByBillHdId(Long.valueOf(billHeaderId));
             if (!details.isEmpty()) {
-                for (BillingDetail bdt : details) {
+                for(BillingDetail bdt: details){
                     bdt.setChargeCost(bdt.getNetAmount());
                     bdt.setPaymentStatus("y");
                 }
@@ -516,8 +464,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         res.setMsg("Success");
         res.setPaymentStatus("y");
         res.setBillPayments(paymentItemList);
-        return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {
-        });
+        return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {});
     }
 
     @Override
@@ -544,7 +491,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         visit.setCancelledBy(currentUser.getFirstName());
         visit.setCancelledDateTime(Instant.now());
         if (request.getCancelReasonId() != null) {
-            MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId()).orElseThrow(() -> new RuntimeException("Cancel reason not found with ID: " + request.getCancelReasonId()));
+            MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId())
+                    .orElseThrow(() -> new RuntimeException("Cancel reason not found with ID: " + request.getCancelReasonId()));
             visit.setReason(reason);
         }
         bill.setPaymentStatus("y");
@@ -591,9 +539,10 @@ public class RegistrationServiceImpl implements RegistrationService {
         BookingAppointmentResponse response = new BookingAppointmentResponse();
 
         if (patientId != null) {
-            patient = patientRepository.findById(patientId).orElseThrow(() -> new RuntimeException("Patient not found with id: " + patientId));
+            patient = patientRepository.findById(patientId)
+                    .orElseThrow(() -> new RuntimeException("Patient not found with id: " + patientId));
 
-            if (visitReq != null) {
+            if (visitReq!=null) {
 
                 Instant date = visitReq.getVisitDate();
                 String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), date);
@@ -610,42 +559,55 @@ public class RegistrationServiceImpl implements RegistrationService {
             throw new RuntimeException("Patient Id cannot be null");
         }
 
-        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
-        }, "Appointment Booked");
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {},"Appointment Booked");
     }
 
     @Override
-    public ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate, Long cancellationReasonId) {
+    public ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(Long hospitalId,Long departmentId,Long doctorId,LocalDate fromDate,LocalDate toDate,Long cancellationReasonId
+    ) {
 
-        log.info("Fetching cancelled appointments: hospitalId={}, departmentId={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}", hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId);
+        log.info("Fetching cancelled appointments: hospitalId={}, departmentId={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}",
+                hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId);
 
         try {
             if (hospitalId == null || hospitalId <= 0) {
                 log.warn("Hospital ID is required");
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                }, "Hospital ID is required", org.springframework.http.HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Hospital ID is required",
+                        org.springframework.http.HttpStatus.BAD_REQUEST.value()
+                );
             }
 
 
-            List<CancelledAppointmentProjection> projectionList = visitRepository.findCancelledAppointments(hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId);
+            List<CancelledAppointmentProjection> projectionList = visitRepository.findCancelledAppointments(
+                    hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId
+            );
 
             // Map projections to response DTOs
-            List<CancelledAppointmentResponse> responseList = projectionList.stream().map(this::mapCancelledAppointmentProjectionToDto).collect(Collectors.toList());
+            List<CancelledAppointmentResponse> responseList = projectionList.stream()
+                    .map(this::mapCancelledAppointmentProjectionToDto)
+                    .collect(Collectors.toList());
 
             log.info("Successfully fetched {} cancelled appointment(s)", responseList.size());
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
-            });
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
         } catch (Exception ex) {
-            log.error("Error fetching cancelled appointments for hospitalId={}, departmentId={}, doctorId={}", hospitalId, departmentId, doctorId, ex);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "Failed to fetch cancelled appointments: " + ex.getMessage(), org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR.value());
+            log.error("Error fetching cancelled appointments for hospitalId={}, departmentId={}, doctorId={}",
+                    hospitalId, departmentId, doctorId, ex);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Failed to fetch cancelled appointments: " + ex.getMessage(),
+                    org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
         }
     }
 
     public Patient savePatient(PatientRequest request, boolean followUp) {
         User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        if (currentUser == null){
             log.info("current users not found");
         }
 
@@ -680,49 +642,72 @@ public class RegistrationServiceImpl implements RegistrationService {
         patient.setRegDate(request.getRegDate());
         patient.setCreatedOn(Instant.now());
         patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName());
+        patient.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
         patient.setPatientHospital(currentUser.getHospital());
 
 
-        Optional.ofNullable(request.getPatientGenderId()).flatMap(masGenderRepository::findById).ifPresent(patient::setPatientGender);
+        Optional.ofNullable(request.getPatientGenderId())
+                .flatMap(masGenderRepository::findById)
+                .ifPresent(patient::setPatientGender);
 
-        Optional.ofNullable(request.getPatientRelationId()).flatMap(masRelationRepository::findById).ifPresent(patient::setPatientRelation);
+        Optional.ofNullable(request.getPatientRelationId())
+                .flatMap(masRelationRepository::findById)
+                .ifPresent(patient::setPatientRelation);
 
-        Optional.ofNullable(request.getPatientMaritalStatusId()).flatMap(masMaritalStatusRepository::findById).ifPresent(patient::setPatientMaritalStatus);
+        Optional.ofNullable(request.getPatientMaritalStatusId())
+                .flatMap(masMaritalStatusRepository::findById)
+                .ifPresent(patient::setPatientMaritalStatus);
 
 
-        Optional.ofNullable(request.getPatientReligionId()).flatMap(masReligionRepository::findById).ifPresent(patient::setPatientReligion);
+        Optional.ofNullable(request.getPatientReligionId())
+                .flatMap(masReligionRepository::findById)
+                .ifPresent(patient::setPatientReligion);
 
-        Optional.ofNullable(request.getPatientDistrictId()).flatMap(masDistrictRepository::findById).ifPresent(patient::setPatientDistrict);
+        Optional.ofNullable(request.getPatientDistrictId())
+                .flatMap(masDistrictRepository::findById)
+                .ifPresent(patient::setPatientDistrict);
 
-        Optional.ofNullable(request.getPatientStateId()).flatMap(masStateRepository::findById).ifPresent(patient::setPatientState);
+        Optional.ofNullable(request.getPatientStateId())
+                .flatMap(masStateRepository::findById)
+                .ifPresent(patient::setPatientState);
 
-        Optional.ofNullable(request.getPatientCountryId()).flatMap(masCountryRepository::findById).ifPresent(patient::setPatientCountry);
+        Optional.ofNullable(request.getPatientCountryId())
+                .flatMap(masCountryRepository::findById)
+                .ifPresent(patient::setPatientCountry);
 
-        Optional.ofNullable(request.getNokDistrictId()).flatMap(masDistrictRepository::findById).ifPresent(patient::setNokDistrict);
+        Optional.ofNullable(request.getNokDistrictId())
+                .flatMap(masDistrictRepository::findById)
+                .ifPresent(patient::setNokDistrict);
 
-        Optional.ofNullable(request.getNokStateId()).flatMap(masStateRepository::findById).ifPresent(patient::setNokState);
+        Optional.ofNullable(request.getNokStateId())
+                .flatMap(masStateRepository::findById)
+                .ifPresent(patient::setNokState);
 
-        Optional.ofNullable(request.getNokCountryId()).flatMap(masCountryRepository::findById).ifPresent(patient::setNokCountry);
+        Optional.ofNullable(request.getNokCountryId())
+                .flatMap(masCountryRepository::findById)
+                .ifPresent(patient::setNokCountry);
 
-        Optional.ofNullable(request.getNokRelationId()).flatMap(masRelationRepository::findById).ifPresent(patient::setNokRelation);
+        Optional.ofNullable(request.getNokRelationId())
+                .flatMap(masRelationRepository::findById)
+                .ifPresent(patient::setNokRelation);
 
-        Optional.ofNullable(request.getPatientHospitalId()).flatMap(masHospitalRepository::findById).ifPresent(patient::setPatientHospital);
-        if (followUp) {
+        Optional.ofNullable(request.getPatientHospitalId())
+                .flatMap(masHospitalRepository::findById)
+                .ifPresent(patient::setPatientHospital);
+        if(followUp){
             patient.setUhidNo(request.getUhidNo());
             patient.setId(request.getId());
-        } else {
+        }
+        else{
             patient.setUhidNo(generateUhid(patient));
         }
         patient = patientRepository.save(patient);
         return patient;
     }
-
     private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
         int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
         return count > 0 ? "F" : "N";
     }
-
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
 
         LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
@@ -731,43 +716,59 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
 
-        if (visitDate.isBefore(today) || visitDate.isBefore(tokenStartTime) || visitDate.isBefore(tokenEndTime)) {
-            throw new InvalidDateException(AppConstants.PAST_DATE_NOT_ALLOWED);
+        if (visitDate.isBefore(today)||visitDate.isBefore(tokenStartTime)||visitDate.isBefore(tokenEndTime)) {
+            throw new InvalidDateException("Past dates are not allowed. Please select today or a future date.");
         }
 
         Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
-        boolean alreadyExists = visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(visit.getDepartmentId(), visit.getDoctorId(), startOfDay, endOfDay, visit.getSessionId(), visit.getTokenNo(), AppConstants.VISIT_STATUS_CANCELLED.toLowerCase()   // "c"
-        );
+        boolean alreadyExists =
+                visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(
+                        visit.getDepartmentId(),
+                        visit.getDoctorId(),
+                        startOfDay,
+                        endOfDay,
+                        visit.getSessionId(),
+                        visit.getTokenNo(),
+                        AppConstants.VISIT_STATUS_CANCELLED.toLowerCase()   // "c"
+                );
 
         if (alreadyExists) {
-            throw new TokenAlreadyBookedException(AppConstants.TOKEN_ALREADY_BOOKED);
+            throw new TokenAlreadyBookedException(
+                    "This token has just been booked by another user. Please select a different slot."
+            );
         }
         Visit newVisit = new Visit();
-        String dayName = visit.getVisitDate().atZone(ZoneId.systemDefault()).getDayOfWeek().name();
+        String todayDayName = visit.getVisitDate().atZone(ZoneId.systemDefault()).getDayOfWeek().name();
 
-        List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(visit.getDoctorId(), visit.getDepartmentId(), visit.getSessionId(), dayName.toLowerCase());
+        List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(
+                visit.getDoctorId(), visit.getDepartmentId(), visit.getSessionId(), todayDayName.toLowerCase());
         if (optionalSetup.isEmpty()) {
-            throw new AppSetupNotFoundException(AppConstants.SESSION_NOT_CONFIGURED);
+            throw new AppSetupNotFoundException(
+                    "AppSetup not configured for today’s session."
+            );
         }
 
-        AppSetup setup = optionalSetup.stream().filter(s -> s.getSession().getId().equals(visit.getSessionId())).findFirst().orElse(null);
+        AppSetup setup = optionalSetup.stream()
+                .filter(s -> s.getSession().getId().equals(visit.getSessionId()))
+                .findFirst()
+                .orElse(null);
 
         newVisit.setStartTime(visit.getTokenStartTime());
         newVisit.setEndTime(visit.getTokenEndTime());
         newVisit.setTokenNo(visit.getTokenNo());
         newVisit.setVisitDate(visit.getVisitDate());
         newVisit.setLastChgDate(Instant.now());
-        newVisit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase()); // "n"
-        newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS.toLowerCase()); // "wp"
+        newVisit.setVisitStatus("n");
+        newVisit.setDisplayPatientStatus("wp");
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
         newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
         assert setup != null;
-        if (setup.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
-            newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-        } else {
-            newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        if(setup.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
+            newVisit.setBillingStatus("y");
+        }else{
+            newVisit.setBillingStatus("n");
         }
         newVisit.setVisitType(visit.getVisitType());
         newVisit.setPatient(patient);
@@ -777,13 +778,13 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         if (visit.getHospitalId() != null) {
-            Optional<MasHospital> hospital = masHospitalRepository.findById(visit.getHospitalId());
-            if (hospital.isPresent()) {
+            Optional<MasHospital> hospital=masHospitalRepository.findById(visit.getHospitalId());
+            if(hospital.isPresent()){
                 newVisit.setHospital(hospital.get());
-                if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_Y.toLowerCase())) {
-                    newVisit.setPreConsultation(AppConstants.STATUS_N.toLowerCase());
-                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
-                    newVisit.setPreConsultation(AppConstants.STATUS_Y.toLowerCase());
+                if(hospital.get().getPreConsultationAvailable().equalsIgnoreCase("y")){
+                    newVisit.setPreConsultation("n");
+                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase("n")) {
+                    newVisit.setPreConsultation("y");
                 }
             }
         }
@@ -797,17 +798,16 @@ public class RegistrationServiceImpl implements RegistrationService {
             masOpdSessionRepository.findById(visit.getSessionId()).ifPresent(newVisit::setSession);
         }
 
-        Visit savedVisit = visitRepository.save(newVisit);
+        Visit savedVisit=visitRepository.save(newVisit);
         //create billing header and detail
-        MasServiceCategory serviceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
-        MasDiscount discount = new MasDiscount();
-        ApiResponse<OpdBillingPaymentResponse> resp = billingService.saveBillingForOpd(savedVisit, serviceCategory, null);
+        MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
+        MasDiscount discount=new MasDiscount();
+        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
         Visit v = visitRepository.getReferenceById(newVisit.getId());
         newVisit.setBillingHd(resp.getResponse().getHeader());
         visitRepository.save(newVisit);
         return savedVisit;
     }
-
     private OpdPatientDetail addOpdDetails(Visit savedVisit, OpdPatientDetailRequest opdPatientDetailRequest, Patient patient) {
         OpdPatientDetail opdPatientDetail = new OpdPatientDetail();
         opdPatientDetail.setHeight(opdPatientDetailRequest.getHeight());
@@ -841,17 +841,16 @@ public class RegistrationServiceImpl implements RegistrationService {
         opdPatientDetail.setPoliceName(opdPatientDetailRequest.getPoliceName());
 
         // Fetch related entities using IDs
-        opdPatientDetail.setPatient(patient != null ? patient : patientRepository.findById(opdPatientDetailRequest.getPatientId()).get());
-        opdPatientDetail.setVisit(savedVisit != null ? savedVisit : visitRepository.findById(opdPatientDetailRequest.getVisitId()).get());
-        MasDepartment department = savedVisit != null ? savedVisit.getDepartment() : masDepartmentRepository.findById(opdPatientDetailRequest.getDepartmentId()).get();
+        opdPatientDetail.setPatient(patient!=null?patient:patientRepository.findById(opdPatientDetailRequest.getPatientId()).get());
+        opdPatientDetail.setVisit(savedVisit!=null?savedVisit:visitRepository.findById(opdPatientDetailRequest.getVisitId()).get());
+        MasDepartment department = savedVisit!=null?savedVisit.getDepartment():masDepartmentRepository.findById(opdPatientDetailRequest.getDepartmentId()).get();
         opdPatientDetail.setDepartment(department);
-        opdPatientDetail.setHospital(savedVisit != null ? savedVisit.getHospital() : masHospitalRepository.findById(opdPatientDetailRequest.getHospitalId()).get());
-        opdPatientDetail.setDoctor(savedVisit != null ? savedVisit.getDoctor() : userRepository.findById(opdPatientDetailRequest.getDoctorId()).get());
+        opdPatientDetail.setHospital(savedVisit!=null?savedVisit.getHospital():masHospitalRepository.findById(opdPatientDetailRequest.getHospitalId()).get());
+        opdPatientDetail.setDoctor(savedVisit!=null?savedVisit.getDoctor():userRepository.findById(opdPatientDetailRequest.getDoctorId()).get());
         opdPatientDetail.setLastChgDate(Instant.now());
         opdPatientDetail.setLastChgBy(opdPatientDetailRequest.getLastChgBy());
         return opdPatientDetailRepository.save(opdPatientDetail);
     }
-
     public OPDBillingPatientResponse buildFinalResponse(Patient patient, List<Visit> savedVisits) {
         OPDBillingPatientResponse response = new OPDBillingPatientResponse();
         List<AppointmentBlock> blocks = new ArrayList<>();
@@ -863,7 +862,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         response.setAge(patient.getPatientAge());
         response.setSex(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
         response.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null);
-        response.setAddress((patient.getPatientAddress1() == null ? "" : patient.getPatientAddress1()) + " " + (patient.getPatientAddress2() == null ? "" : patient.getPatientAddress2()));
+        response.setAddress((patient.getPatientAddress1() == null ? "" : patient.getPatientAddress1())
+                + " " + (patient.getPatientAddress2() == null ? "" : patient.getPatientAddress2()));
 
         for (Visit sVisit : savedVisits) {
             BillingHeader billingHeader = sVisit.getBillingHd();
@@ -873,11 +873,11 @@ public class RegistrationServiceImpl implements RegistrationService {
 
             // fetch billing detail safely
             List<BillingDetail> bDetails = billingDetailRepository.findByBillingHd(billingHeader);
-            BillingDetail billingDetail = null;
-            for (BillingDetail bdt : bDetails) {
-                if (bdt.getServiceCategory().getServiceCatName().equalsIgnoreCase("Registration Service")) {
+            BillingDetail billingDetail=null;
+            for(BillingDetail bdt : bDetails){
+                if(bdt.getServiceCategory().getServiceCatName().equalsIgnoreCase("Registration Service")) {
                     response.setRegistrationCost(bdt.getServiceCategory().getRegistrationCost());
-                } else {
+                }else{
                     billingDetail = bdt;
                 }
             }
@@ -921,33 +921,35 @@ public class RegistrationServiceImpl implements RegistrationService {
         return response;
     }
 
-    public ApiResponse<List<AvailableTokenSlotResponse>> getAppointmentSlots(Long deptId, Long doctorId, String appointmentDate, Long sessionId, int flag) {
-        int startToken, intervalToken, totalToken, totalOnlineTokens, timeTakenMin = 0;
-        String startTime, endTime = "";
+    public ApiResponse<List<AvailableTokenSlotResponse>> getAppointmentSlots(Long deptId, Long doctorId, String appointmentDate, Long sessionId,int flag) {
+        int startToken,intervalToken,totalToken,totalOnlineTokens,timeTakenMin=0;
+        String startTime,endTime="";
 
         LocalDate date = LocalDate.parse(appointmentDate);
         String dayName = date.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
 
-        List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(doctorId, deptId, sessionId, dayName);
+        List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(
+                doctorId, deptId, sessionId, dayName);
 
-        ApiResponse<List<DoctorRosterDTO>> checkDoctorRoaster = doctorRosterServices.getDoctorRoster(deptId, doctorId, date, sessionId);
-        if (!checkDoctorRoaster.getMessage().equalsIgnoreCase("success")) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, checkDoctorRoaster.getMessage(), 400);
+        ApiResponse<List<DoctorRosterDTO>> checkDoctorRoaster = doctorRosterServices.getDoctorRoster(deptId,doctorId,date,sessionId);
+        if(!checkDoctorRoaster.getMessage().equalsIgnoreCase("success")){
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},checkDoctorRoaster.getMessage(),400);
 
         }
 
 
         AppSetup appSetup = optionalSetup.get(0);
         if (appSetup == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "App setup not defined for this day", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"App setup not defined for this day",400);
         }
 
-        if (appSetup.getStartToken() == null || appSetup.getTotalInterval() == null || appSetup.getTotalToken() == null || appSetup.getStartTime() == null || appSetup.getEndTime() == null) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "App setup not defined for this day (Missing Token/Interval data)", 400);
-        } else {
+        if (appSetup.getStartToken() == null ||
+                appSetup.getTotalInterval() == null ||
+                appSetup.getTotalToken() == null||
+                appSetup.getStartTime()==null||
+                appSetup.getEndTime()==null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"App setup not defined for this day (Missing Token/Interval data)",400);
+        }else {
             startToken = appSetup.getStartToken();
             intervalToken = appSetup.getTotalInterval();
             totalToken = appSetup.getTotalToken();
@@ -961,48 +963,66 @@ public class RegistrationServiceImpl implements RegistrationService {
         Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
         Set<Long> occupiedTokens = new HashSet<>();
         try {
-            occupiedTokens = visitRepository.findOccupiedTokens(deptId, doctorId, sessionId, startOfDay, endOfDay).stream().collect(Collectors.toSet());
+            occupiedTokens = visitRepository.findOccupiedTokens(
+                            deptId, doctorId, sessionId, startOfDay, endOfDay)
+                    .stream().collect(Collectors.toSet());
         } catch (Exception e) {
             log.error("Error fetching occupied tokens", e);
         }
 
-        List<AvailableTokenSlotResponse> list = generateSlotsWithAvailability(startToken, intervalToken, totalToken, startTime, endTime, timeTakenMin, occupiedTokens, flag);
+        List<AvailableTokenSlotResponse> list = generateSlotsWithAvailability(
+                startToken, intervalToken, totalToken,
+                startTime, endTime, timeTakenMin, occupiedTokens,flag);
 
-        return ResponseUtils.createSuccessResponse(list, new TypeReference<List<AvailableTokenSlotResponse>>() {
-        });
+        return ResponseUtils.createSuccessResponse(list, new TypeReference<List<AvailableTokenSlotResponse>>() {});
     }
 
     @Override
-    public ApiResponse<List<?>> getAppointmentSummaryReport(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate, Integer flag) {
+    public ApiResponse<List<?>> getAppointmentSummaryReport(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate, Integer flag
+    ) {
         try {
-            log.info("Processing appointment summary report with hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}, flag: {}", hospitalId, departmentId, doctorId, fromDate, toDate, flag);
+            log.info("Processing appointment summary report with hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}, flag: {}",
+                    hospitalId, departmentId, doctorId, fromDate, toDate, flag);
             if (flag == 0) {
                 return getAppointmentSummaryDepartmentWiseReport(hospitalId, departmentId, fromDate, toDate);
             }
             if (flag == 1) {
-                log.info("Fetching doctor wise appointment summary report for hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}", hospitalId, departmentId, doctorId, fromDate, toDate);
+                log.info("Fetching doctor wise appointment summary report for hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}",
+                        hospitalId, departmentId, doctorId, fromDate, toDate);
 
-                return getAppointmentSummaryDoctorWiseReport(hospitalId, doctorId, fromDate, toDate);
+                return getAppointmentSummaryDoctorWiseReport(hospitalId,departmentId, doctorId, fromDate, toDate);
             }
 
-            return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {
-            }, "Invalid flag. Use 0 for department summary and 1 for doctor summary", HttpStatus.BAD_REQUEST);
+            return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {}, "Invalid flag. Use 0 for department summary and 1 for doctor summary",
+                    HttpStatus.BAD_REQUEST
+            );
 
         } catch (Exception e) {
             log.error("Error while fetching appointment summary report", e);
-            return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {
-            }, "Something went wrong while fetching appointment summary report", HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseUtils.createFailureResponse(
+                    List.of(),
+                    new TypeReference<>() {},
+                    "Something went wrong while fetching appointment summary report",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
-
     private ApiResponse<List<?>> getAppointmentSummaryDepartmentWiseReport(Long hospitalId, Long departmentId, LocalDate fromDate, LocalDate toDate) {
         try {
-            log.info("Fetching department wise appointment summary report for hospitalId: {}, departmentId: {}, fromDate: {}, toDate: {}", hospitalId, departmentId, fromDate, toDate);
+            log.info("Fetching department wise appointment summary report for hospitalId: {}, departmentId: {}, fromDate: {}, toDate: {}",
+                    hospitalId, departmentId, fromDate, toDate);
             if (hospitalId == null) {
-                return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {
-                }, "hospitalId is required", 400);
+                return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {}, "hospitalId is required", 400
+                );
             }
-            List<AppointmentSummaryDepartmentProjection> list = visitRepository.getAppointmentSummaryDepartmentWiseReport(hospitalId, departmentId, fromDate, toDate, AppConstants.VISIT_STATUS_PENDING, AppConstants.VISIT_STATUS_CANCELLED, AppConstants.VISIT_STATUS_COMPLETED, AppConstants.VISIT_STATUS_CLOSED, AppConstants.VISIT_TYPE_FOLLOW_UP, AppConstants.VISIT_TYPE_NEW);
+            List<AppointmentSummaryDepartmentProjection> list = visitRepository.getAppointmentSummaryDepartmentWiseReport(
+                    hospitalId, departmentId, fromDate, toDate,
+                    AppConstants.VISIT_STATUS_PENDING,
+                    AppConstants.VISIT_STATUS_CANCELLED,
+                    AppConstants.VISIT_STATUS_COMPLETED,
+                    AppConstants.VISIT_STATUS_CLOSED,
+                    AppConstants.VISIT_TYPE_FOLLOW_UP,
+                    AppConstants.VISIT_TYPE_NEW);
 
             List<AppointmentSummaryDepartmentResponse> responseList = list.stream().map(item -> {
                 AppointmentSummaryDepartmentResponse response = new AppointmentSummaryDepartmentResponse();
@@ -1016,26 +1036,37 @@ public class RegistrationServiceImpl implements RegistrationService {
                 return response;
             }).toList();
             log.info("Department wise appointment summary response prepared successfully. Response count: {}", responseList.size());
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
-            });
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
         } catch (Exception e) {
             log.error("Error while fetching doctor wise appointment summary report", e);
-            return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {
-            }, "Something went wrong while fetching doctor wise appointment summary report", HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseUtils.createFailureResponse(
+                    List.of(),
+                    new TypeReference<>() {},
+                    "Something went wrong while fetching doctor wise appointment summary report",
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
-
-    private ApiResponse<List<?>> getAppointmentSummaryDoctorWiseReport(Long hospitalId, Long doctorId, LocalDate fromDate, LocalDate toDate) {
+    private ApiResponse<List<?>> getAppointmentSummaryDoctorWiseReport(Long hospitalId,Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate) {
         try {
-            log.info("Processing doctor wise appointment summary report with hospitalId: {}, doctorId: {}, fromDate: {}, toDate: {}", hospitalId, doctorId, fromDate, toDate);
+            log.info("Processing doctor wise appointment summary report with hospitalId: {}, doctorId: {}, fromDate: {}, toDate: {}",
+                    hospitalId, doctorId, fromDate, toDate);
 
             if (hospitalId == null) {
-                return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {
-                }, "hospitalId is required", 400);
+                return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {}, "hospitalId is required", 400
+                );
             }
 
-            List<AppointmentSummaryDoctorProjection> list = visitRepository.getAppointmentSummaryDoctorWiseReport(hospitalId, doctorId, fromDate, toDate, AppConstants.VISIT_STATUS_PENDING, AppConstants.VISIT_STATUS_CANCELLED, AppConstants.VISIT_STATUS_COMPLETED, AppConstants.VISIT_STATUS_CLOSED, AppConstants.VISIT_TYPE_FOLLOW_UP, AppConstants.VISIT_TYPE_NEW);
+            List<AppointmentSummaryDoctorProjection> list = visitRepository.getAppointmentSummaryDoctorWiseReport(
+                    hospitalId,departmentId, doctorId, fromDate, toDate,
+                    AppConstants.VISIT_STATUS_PENDING,
+                    AppConstants.VISIT_STATUS_CANCELLED,
+                    AppConstants.VISIT_STATUS_COMPLETED,
+                    AppConstants.VISIT_STATUS_CLOSED,
+                    AppConstants.VISIT_TYPE_FOLLOW_UP,
+                    AppConstants.VISIT_TYPE_NEW
+            );
 
             List<AppointmentSummaryDoctorResponse> responseList = list.stream().map(item -> {
                 AppointmentSummaryDoctorResponse response = new AppointmentSummaryDoctorResponse();
@@ -1049,18 +1080,21 @@ public class RegistrationServiceImpl implements RegistrationService {
                 return response;
             }).toList();
             log.info("Doctor wise appointment summary response prepared successfully. Response count: {}", responseList.size());
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
-            });
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
         } catch (Exception e) {
             log.error("Error while fetching doctor wise appointment summary report", e);
-            return ResponseUtils.createFailureResponse(List.of(), new TypeReference<>() {
-            }, "Something went wrong while fetching doctor wise appointment summary report", 500);
+            return ResponseUtils.createFailureResponse(
+                    List.of(),
+                    new TypeReference<>() {},
+                    "Something went wrong while fetching doctor wise appointment summary report",
+                    500
+            );
         }
     }
 
 
-    public static List<AvailableTokenSlotResponse> generateSlotsWithAvailability(int tokenStart, int tokenInterval, int totalTokens, String dayStartTime, String dayEndTime, int timeTakenMin, Set<Long> occupiedTokenNumbers, int flag) {
+    public static List<AvailableTokenSlotResponse> generateSlotsWithAvailability(int tokenStart,int tokenInterval, int totalTokens, String dayStartTime, String dayEndTime, int timeTakenMin, Set<Long> occupiedTokenNumbers, int flag) {
 
         List<AvailableTokenSlotResponse> slots = new ArrayList<>();
 
@@ -1078,23 +1112,28 @@ public class RegistrationServiceImpl implements RegistrationService {
             LocalTime slotStart = start.plusMinutes(slotIndex * timeTakenMin);
             LocalTime slotEnd = slotStart.plusMinutes(timeTakenMin);
 
-            if (slotEnd.isAfter(end)) {
+            if (!slotStart.isBefore(end) || slotEnd.isAfter(end)) {
                 break;
             }
 
             boolean isOnline = tokenInterval > 0 && tokenNum % tokenInterval == 0;
             boolean isAvailable = !occupiedTokenNumbers.contains((long) tokenNum);
 
-            boolean shouldAdd = tokenInterval == 0 || (flag == 0 && !isOnline) || (flag == 1 && isOnline);
+            boolean shouldAdd =
+                    tokenInterval == 0 || (flag == 0 && !isOnline) || (flag == 1 && isOnline);
 
             if (shouldAdd) {
-                slots.add(new AvailableTokenSlotResponse(tokenNum, slotStart, slotEnd, isAvailable));
+                slots.add(new AvailableTokenSlotResponse(
+                        tokenNum,
+                        slotStart,
+                        slotEnd,
+                        isAvailable
+                ));
             }
             slotIndex++;
         }
         return slots;
     }
-
 
 
 
@@ -1104,11 +1143,14 @@ public class RegistrationServiceImpl implements RegistrationService {
             log.info("current user not found");
             throw new RuntimeException("Current user not found");
         }
-        Patient patient = patientRepository.findById(request.getId()).orElseThrow(() -> new RuntimeException("Patient not found with ID: " + request.getId()));
+        Patient patient = patientRepository.findById(request.getId())
+                .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + request.getId()));
 
         patient.setUhidNo(request.getUhidNo());
         patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName());
+        patient.setLastChgBy(currentUser.getFirstName() + " " +
+                currentUser.getMiddleName() + " " +
+                currentUser.getLastName());
         patient.setPatientFn(request.getPatientFn());
         patient.setPatientMn(request.getPatientMn());
         patient.setPatientLn(request.getPatientLn());
@@ -1137,51 +1179,77 @@ public class RegistrationServiceImpl implements RegistrationService {
         patient.setPatientStatus(request.getPatientStatus());
         patient.setRegDate(request.getRegDate());
 
-        Optional.ofNullable(request.getPatientGenderId()).flatMap(masGenderRepository::findById).ifPresent(patient::setPatientGender);
+        Optional.ofNullable(request.getPatientGenderId())
+                .flatMap(masGenderRepository::findById)
+                .ifPresent(patient::setPatientGender);
 
-        Optional.ofNullable(request.getPatientRelationId()).flatMap(masRelationRepository::findById).ifPresent(patient::setPatientRelation);
+        Optional.ofNullable(request.getPatientRelationId())
+                .flatMap(masRelationRepository::findById)
+                .ifPresent(patient::setPatientRelation);
 
-        Optional.ofNullable(request.getPatientMaritalStatusId()).flatMap(masMaritalStatusRepository::findById).ifPresent(patient::setPatientMaritalStatus);
+        Optional.ofNullable(request.getPatientMaritalStatusId())
+                .flatMap(masMaritalStatusRepository::findById)
+                .ifPresent(patient::setPatientMaritalStatus);
 
-        Optional.ofNullable(request.getPatientReligionId()).flatMap(masReligionRepository::findById).ifPresent(patient::setPatientReligion);
+        Optional.ofNullable(request.getPatientReligionId())
+                .flatMap(masReligionRepository::findById)
+                .ifPresent(patient::setPatientReligion);
 
-        Optional.ofNullable(request.getPatientDistrictId()).flatMap(masDistrictRepository::findById).ifPresent(patient::setPatientDistrict);
+        Optional.ofNullable(request.getPatientDistrictId())
+                .flatMap(masDistrictRepository::findById)
+                .ifPresent(patient::setPatientDistrict);
 
-        Optional.ofNullable(request.getPatientStateId()).flatMap(masStateRepository::findById).ifPresent(patient::setPatientState);
+        Optional.ofNullable(request.getPatientStateId())
+                .flatMap(masStateRepository::findById)
+                .ifPresent(patient::setPatientState);
 
-        Optional.ofNullable(request.getPatientCountryId()).flatMap(masCountryRepository::findById).ifPresent(patient::setPatientCountry);
+        Optional.ofNullable(request.getPatientCountryId())
+                .flatMap(masCountryRepository::findById)
+                .ifPresent(patient::setPatientCountry);
 
-        Optional.ofNullable(request.getNokDistrictId()).flatMap(masDistrictRepository::findById).ifPresent(patient::setNokDistrict);
+        Optional.ofNullable(request.getNokDistrictId())
+                .flatMap(masDistrictRepository::findById)
+                .ifPresent(patient::setNokDistrict);
 
-        Optional.ofNullable(request.getNokStateId()).flatMap(masStateRepository::findById).ifPresent(patient::setNokState);
+        Optional.ofNullable(request.getNokStateId())
+                .flatMap(masStateRepository::findById)
+                .ifPresent(patient::setNokState);
 
-        Optional.ofNullable(request.getNokCountryId()).flatMap(masCountryRepository::findById).ifPresent(patient::setNokCountry);
+        Optional.ofNullable(request.getNokCountryId())
+                .flatMap(masCountryRepository::findById)
+                .ifPresent(patient::setNokCountry);
 
-        Optional.ofNullable(request.getNokRelationId()).flatMap(masRelationRepository::findById).ifPresent(patient::setNokRelation);
+        Optional.ofNullable(request.getNokRelationId())
+                .flatMap(masRelationRepository::findById)
+                .ifPresent(patient::setNokRelation);
 
         if (!followUp) {
-            Optional.ofNullable(request.getPatientHospitalId()).flatMap(masHospitalRepository::findById).ifPresent(patient::setPatientHospital);
+            Optional.ofNullable(request.getPatientHospitalId())
+                    .flatMap(masHospitalRepository::findById)
+                    .ifPresent(patient::setPatientHospital);
         }
 
         return patientRepository.save(patient);
     }
-
     private Visit updateExistingVisitById(VisitRequest visit, Patient patient) {
         if (visit.getId() == null) {
             throw new RuntimeException("Visit ID is required for updating existing visit");
         }
 
-        Visit existingVisit = visitRepository.findById(visit.getId()).orElseThrow(() -> new RuntimeException("Visit not found with id: " + visit.getId()));
+        Visit existingVisit = visitRepository.findById(visit.getId())
+                .orElseThrow(() -> new RuntimeException("Visit not found with id: " + visit.getId()));
 
 
-        log.info("Updating existing visit ID: {} for patient: {}", existingVisit.getId(), patient.getId());
+        log.info("Updating existing visit ID: {} for patient: {}",
+                existingVisit.getId(), patient.getId());
 
         existingVisit.setLastChgDate(Instant.now());
         existingVisit.setPriority(visit.getPriority());
         existingVisit.setVisitType(visit.getVisitType());
 
         if (visit.getDepartmentId() != null) {
-            masDepartmentRepository.findById(visit.getDepartmentId()).ifPresent(existingVisit::setDepartment);
+            masDepartmentRepository.findById(visit.getDepartmentId())
+                    .ifPresent(existingVisit::setDepartment);
         }
 
         if (visit.getDoctorId() != null) {
@@ -1192,7 +1260,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         if (visit.getSessionId() != null) {
-            masOpdSessionRepository.findById(visit.getSessionId()).ifPresent(existingVisit::setSession);
+            masOpdSessionRepository.findById(visit.getSessionId())
+                    .ifPresent(existingVisit::setSession);
         }
 
         if (visit.getVisitDate() != null) {
@@ -1210,7 +1279,8 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
 
-    private CancelledAppointmentResponse mapCancelledAppointmentProjectionToDto(com.hims.projection.CancelledAppointmentProjection projection) {
+    private CancelledAppointmentResponse mapCancelledAppointmentProjectionToDto(
+            com.hims.projection.CancelledAppointmentProjection projection) {
 
         if (projection == null) {
             return null;
@@ -1240,6 +1310,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         List<Patient> existing = patientRepository.findByPatientMobileNumberAndPatientRelation(patient.getPatientMobileNumber(), patient.getPatientRelation());
         return (patient.getPatientMobileNumber() + patient.getPatientRelation().getCode() + (existing.size() + 1));
     }
+
 
 
 }

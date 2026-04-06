@@ -4,9 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasQuestion;
 import com.hims.entity.MasQuestionOptionValue;
+import com.hims.entity.OpdQuestionMaster;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasQuestionOptionValueRepository;
 import com.hims.entity.repository.MasQuestionRepository;
+import com.hims.entity.repository.OpdQuestionMasterRepository;
 import com.hims.request.MasQuestionOptionValueRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasQuestionOptionValueResponse;
@@ -27,8 +29,9 @@ import java.util.Optional;
 public class MasQuestionOptionValueServiceImpl implements MasQuestionOptionValueService {
 
     private final MasQuestionOptionValueRepository repository;
-    private final MasQuestionRepository masQuestionRepository;
+
     private final AuthUtil authUtil;
+    private final OpdQuestionMasterRepository opdQuestionMasterRepository;
 
     @Override
     public ApiResponse<List<MasQuestionOptionValueResponse>> getAll(int flag) {
@@ -78,8 +81,8 @@ public class MasQuestionOptionValueServiceImpl implements MasQuestionOptionValue
                         "Current user not found", 404);
             }
 
-            Optional<MasQuestion> masQuestion = masQuestionRepository.findById(request.getQuestionId());
-            if (masQuestion.isEmpty()) {
+            Optional<OpdQuestionMaster> opdQuestionMaster = opdQuestionMasterRepository.findById(request.getQuestionId());
+            if (opdQuestionMaster.isEmpty()) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Invalid Question Id", 400);
@@ -90,7 +93,7 @@ public class MasQuestionOptionValueServiceImpl implements MasQuestionOptionValue
                     .optionCode(request.getOptionCode().trim())
                     .optionValue(request.getOptionValue().trim())
                     .optionScore(request.getOptionScore())
-                    .questionId(masQuestion.get())
+                    .questionId(opdQuestionMaster.get())
                     .status(AppConstants.STATUS_Y.toLowerCase())
                     .createdBy(user.getFirstName())
                     .lastUpdatedBy(user.getFirstName())
@@ -126,7 +129,7 @@ public class MasQuestionOptionValueServiceImpl implements MasQuestionOptionValue
                         "Current user not found", 404);
             }
 
-            Optional<MasQuestion> masQuestion = masQuestionRepository.findById(request.getQuestionId());
+            Optional<OpdQuestionMaster> masQuestion = opdQuestionMasterRepository.findById(request.getQuestionId());
             if (masQuestion.isEmpty()) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},

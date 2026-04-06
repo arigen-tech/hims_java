@@ -33,7 +33,7 @@ public class MasQuestionOptionValue {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
-    private MasQuestion questionId;
+    private OpdQuestionMaster questionId;
 
     @Column(name = "last_update_date")
     private LocalDateTime lastUpdateDate;

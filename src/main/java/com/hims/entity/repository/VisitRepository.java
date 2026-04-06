@@ -519,27 +519,29 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
      * @return List of appointment summary statistics
      */
     @Query(value = """
-                SELECT 
-                    v.doctor_id AS doctorId,
-                    v.doctor_name AS doctorName,
-            
-                    COUNT(v.visit_id) AS totalCount,
-                   COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCompete) THEN 1 END) AS completedCount,
-                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCancel) THEN 1 END) AS cancelledCount,
-                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusClosed) THEN 1 END) AS noShowCount,
-                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusPending) THEN 1 END) AS pendingCount
-                FROM visit v
-                LEFT JOIN mas_department d ON d.department_id = v.department_id
-                WHERE v.hospital_id = :hospitalId
-                  AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
-                  AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
-                  AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
-                  AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
-                GROUP BY v.doctor_id, v.doctor_name
-                ORDER BY  v.doctor_name
-            """, nativeQuery = true)
+    SELECT 
+        v.doctor_id AS doctorId,
+        v.doctor_name AS doctorName,
+       
+        COUNT(v.visit_id) AS totalCount,
+       COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCompete) THEN 1 END) AS completedCount,
+        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCancel) THEN 1 END) AS cancelledCount,
+        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusClosed) THEN 1 END) AS noShowCount,
+        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusPending) THEN 1 END) AS pendingCount
+    FROM visit v
+    LEFT JOIN mas_department d ON d.department_id = v.department_id
+    WHERE v.hospital_id = :hospitalId
+    AND (:departmentId IS NULL OR v.department_id = :departmentId)
+      AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
+      AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
+      AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
+      AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
+    GROUP BY v.doctor_id, v.doctor_name
+    ORDER BY  v.doctor_name
+""", nativeQuery = true)
     List<AppointmentSummaryDoctorProjection> getAppointmentSummaryDoctorWiseReport(
             @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
             @Param("doctorId") Long doctorId,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,

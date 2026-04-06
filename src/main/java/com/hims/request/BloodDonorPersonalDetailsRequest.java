@@ -17,17 +17,14 @@ public class BloodDonorPersonalDetailsRequest{
     private LocalDate dateOfBirth;
     private String mobileNo;
     private Long bloodGroupId;
-    private Long donationTypeId;
-    private String relation;
-    private String donorStatus;
-    private String currentDeferralReason;
-    private LocalDate deferralUptoDate;
+   // private Long donationTypeId;
+    private Long relationId;
     private String addressLine1;
     private String addressLine2;
     private Long countryId;
     private Long stateId;
     private Long districtId;
     private String city;
-    private String pincode;
-    private String remarks;
+    private String pinCode;
+
 }
