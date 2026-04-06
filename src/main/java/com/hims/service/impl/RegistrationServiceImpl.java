@@ -7,14 +7,12 @@ import com.hims.entity.repository.*;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
 import com.hims.exception.patientRegistrationException.InvalidDateException;
 import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
+import com.hims.helperUtil.ConverterUtils;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.OpdPatientDetailMapper;
 import com.hims.mapper.PatientMapper;
 import com.hims.mapper.VisitMapper;
-import com.hims.projection.AppointmentSummaryDepartmentProjection;
-import com.hims.projection.AppointmentSummaryDoctorProjection;
-import com.hims.projection.CancelledAppointmentProjection;
-import com.hims.projection.PatientProjection;
+import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
@@ -53,6 +51,8 @@ public class RegistrationServiceImpl implements RegistrationService {
     private String baseUrl;
     @Value("${serviceCategoryOPD}")
     private String serviceCategoryOPD;
+    @Value("${app.opdDepartmentType}")
+    private Integer opdDepartmentType;
 
     @Autowired
     private PatientRepository patientRepository;
@@ -296,105 +296,53 @@ public class RegistrationServiceImpl implements RegistrationService {
         return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {});
     }
 
-    @Override
-    public ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patientId) {
-        FollowUpPatientResponseDetails resp = new FollowUpPatientResponseDetails();
-        Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found: " + patientId));
+    public ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patientId, String serviceCategoryCode) {
+        try {
+            log.info("Fetching patient details for patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
 
-        FollowUpPatientResponseDetails.PersonalDetails personal = new FollowUpPatientResponseDetails.PersonalDetails();
-        personal.setFirstName(patient.getPatientFn());
-        personal.setMiddleName(patient.getPatientMn());
-        personal.setLastName(patient.getPatientLn());
-        personal.setMobileNo(patient.getPatientMobileNumber());
-        personal.setEmail(patient.getPatientEmailId());
-        personal.setDob(patient.getPatientDob());
-        personal.setAge(patient.getPatientAge());
-        personal.setGender(patient.getPatientGender() != null ? patient.getPatientGender().getId() : null);
-        personal.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getId() : null);
+            // Default to OPD if serviceCategoryCode is null or empty
+            String categoryCode = (serviceCategoryCode == null || serviceCategoryCode.trim().isEmpty())
+                    ? serviceCategoryOPD
+                    : serviceCategoryCode;
 
-        resp.setPersonal(personal);
-        FollowUpPatientResponseDetails.AddressDetails address = new FollowUpPatientResponseDetails.AddressDetails();
-        address.setAddress1(patient.getPatientAddress1());
-        address.setAddress2(patient.getPatientAddress2());
-        address.setCity(patient.getPatientCity());
-        address.setPinCode(patient.getPatientPincode());
-        address.setCountry(patient.getPatientCountry() != null ? patient.getPatientCountry().getId() : null);
-        address.setState(patient.getPatientState() != null ? patient.getPatientState().getId() : null);
-        address.setDistrict(patient.getPatientDistrict() != null ? patient.getPatientDistrict().getId() : null);
+            FollowUpPatientResponseDetails resp = new FollowUpPatientResponseDetails();
+            PatientProjectionFollowUpDetails patientData = patientRepository.findPatientDetails(patientId);
 
-        resp.setAddress(address);
-        FollowUpPatientResponseDetails.NokDetails nok = new FollowUpPatientResponseDetails.NokDetails();
-        nok.setFirstName(patient.getNokFn());
-        nok.setLastName(patient.getNokLn());
-        nok.setEmail(patient.getNokEmail());
-        nok.setMobileNo(patient.getNokMobileNumber());
-        nok.setAddress1(patient.getNokAddress1());
-        nok.setAddress2(patient.getNokAddress2());
-        nok.setCity(patient.getNokCity());
-        nok.setPinCode(patient.getNokPincode());
-        //nok.setRelation(patient.getNokRelation() != null ? patient.getNokRelation().getId() : null);
-        nok.setState(patient.getNokState() != null ? patient.getNokState().getId() : null);
-        nok.setDistrict(patient.getNokDistrict() != null ? patient.getNokDistrict().getId() : null);
-        nok.setCountry(patient.getNokCountry() != null ? patient.getNokCountry().getId() : null);
+            if (patientData == null) {
+                log.warn("Patient not found for patientId: {}", patientId);
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {},
+                        "Patient not found", 404);
+            }
 
-        resp.setNok(nok);
-        FollowUpPatientResponseDetails.EmergencyDetails emergency = new FollowUpPatientResponseDetails.EmergencyDetails();
-        emergency.setFirstName(patient.getEmerFn());
-        emergency.setLastName(patient.getEmerLn());
-        emergency.setMobileNo(patient.getEmerMobile());
+            // Map personal details
+            resp.setPatientId(patientData.getPatientId());
+            resp.setPersonal(mapPersonalDetails(patientData));
+            resp.setAddress(mapAddressDetails(patientData));
+            resp.setNok(mapNokDetails(patientData));
+            resp.setEmergency(mapEmergencyDetails(patientData));
+            resp.setPhotoUrl(patientData.getPhotoUrl());
 
-        resp.setEmergency(emergency);
-        OpdPatientDetail opd = opdPatientDetailRepository.findTopByPatientOrderByOpdPatientDetailsIdDesc(patient);
+            // Map OPD-specific details if serviceCategoryCode is OPD
+            if (categoryCode.equalsIgnoreCase(serviceCategoryOPD)) {
+                PatientVitalsProjection vitals = opdPatientDetailRepository.findLatestVitals(patientId);
+                if (vitals != null) {
+                    resp.setVitals(mapVitalDetails(vitals));
+                }
 
-        if (opd != null) {
-            FollowUpPatientResponseDetails.VitalDetails vitals = new FollowUpPatientResponseDetails.VitalDetails();
-            vitals.setHeight(opd.getHeight());
-            vitals.setWeight(opd.getWeight());
-            vitals.setTemperature(opd.getTemperature());
-            vitals.setBpSys(opd.getBpSystolic());
-            vitals.setBpDia(opd.getBpDiastolic());
-            vitals.setPulse(opd.getPulse());
-            vitals.setRr(opd.getRr());
-            vitals.setSpo2(opd.getSpo2());
-            vitals.setBmi(opd.getBmi());
+                List<AppointmentProjection> appointments = visitRepository.findAppointments(patientId , opdDepartmentType);
+                resp.setAppointments(mapAppointmentDetails(appointments));
+            }
 
-            resp.setVitals(vitals);
+            log.info("Successfully fetched patient details for patientId: {}", patientId);
+            return ResponseUtils.createSuccessResponse(resp, new TypeReference<FollowUpPatientResponseDetails>() {});
+
+        } catch (Exception e) {
+            log.error("Error fetching patient details for patientId: {}", patientId, e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {},
+                    "Error fetching patient details: " + e.getMessage(), 500);
         }
-        List<Visit> visits = visitRepository.findRelevantVisitsByPatientId(patientId);
-        List<FollowUpPatientResponseDetails.AppointmentDetailResponse> appointmentList = new ArrayList<>();
-
-        for (Visit v : visits) {
-            FollowUpPatientResponseDetails.AppointmentDetailResponse appt = new FollowUpPatientResponseDetails.AppointmentDetailResponse();
-            appt.setAppointmentId(v.getId());
-            appt.setSpecialityId(v.getDepartment() != null ? v.getDepartment().getId() : null);
-            appt.setSpecialityName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
-            appt.setDoctorId(v.getDoctor() != null ? v.getDoctor().getUserId() : null);
-            appt.setDoctorName(v.getDoctorName());
-            appt.setSessionId(v.getSession() != null ? v.getSession().getId() : null);
-            appt.setSessionName(v.getSession() != null ? v.getSession().getSessionName() : null);
-            appt.setVisitDate(v.getVisitDate());
-            appt.setVisitType(v.getVisitType());
-            appt.setTokenNo(v.getTokenNo());
-            appt.setVisitStatus(v.getVisitStatus());
-            if ("Y".equalsIgnoreCase(v.getVisitStatus())) {
-                appt.setVisitStatus("Completed");
-            } else if ("N".equalsIgnoreCase(v.getVisitStatus())) {
-                appt.setVisitStatus("Pending");
-            }
-            if (v != null && v.getStartTime() != null) {
-                appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
-            }
-
-            if (v != null && v.getEndTime() != null) {
-                appt.setTokenEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
-            }
-            appointmentList.add(appt);
-        }
-
-        resp.setAppointments(appointmentList);
-        resp.setPhotoUrl(patient.getPatientImage());
-        return ResponseUtils.createSuccessResponse(resp, new TypeReference<FollowUpPatientResponseDetails>() {});
     }
 
     @Override
@@ -1311,7 +1259,115 @@ public class RegistrationServiceImpl implements RegistrationService {
         return (patient.getPatientMobileNumber() + patient.getPatientRelation().getCode() + (existing.size() + 1));
     }
 
+    /**
+     * Helper method to map personal details
+     */
+    private FollowUpPatientResponseDetails.PersonalDetails mapPersonalDetails(PatientProjectionFollowUpDetails p) {
+        FollowUpPatientResponseDetails.PersonalDetails personal = new FollowUpPatientResponseDetails.PersonalDetails();
+        personal.setFirstName(p.getFirstName());
+        personal.setMiddleName(p.getMiddleName());
+        personal.setLastName(p.getLastName());
+        personal.setMobileNo(p.getMobileNo());
+        personal.setEmail(p.getEmail());
+        personal.setDob(p.getDob());
+        personal.setAge(ConverterUtils.ageCalculator(p.getDob()));
+        personal.setGender(p.getGenderId());
+        personal.setGenderName(p.getGenderName());
+        personal.setRelation(p.getRelationId());
+        personal.setRelationName(p.getRelationName());
+        return personal;
+    }
+    /**
+     * Helper method to map address details
+     */
+    private FollowUpPatientResponseDetails.AddressDetails mapAddressDetails(PatientProjectionFollowUpDetails p) {
+        FollowUpPatientResponseDetails.AddressDetails address = new FollowUpPatientResponseDetails.AddressDetails();
+        address.setAddress1(p.getAddress1());
+        address.setAddress2(p.getAddress2());
+        address.setCity(p.getCity());
+        address.setPinCode(p.getPinCode());
+        address.setCountry(p.getCountryId());
+        address.setCountryName(p.getCountryName());
+        address.setState(p.getStateId());
+        address.setStateName(p.getStateName());
+        address.setDistrict(p.getDistrictId());
+        address.setDistrictName(p.getDistrictName());
+        return address;
+    }
+    /**
+     * Helper method to map NOK (Next of Kin) details
+     */
+    private FollowUpPatientResponseDetails.NokDetails mapNokDetails(PatientProjectionFollowUpDetails p) {
+        FollowUpPatientResponseDetails.NokDetails nok = new FollowUpPatientResponseDetails.NokDetails();
+        nok.setFirstName(p.getNokFirstName());
+        nok.setLastName(p.getNokLastName());
+        nok.setEmail(p.getNokEmail());
+        nok.setMobileNo(p.getNokMobile());
+        nok.setAddress1(p.getNokAddress1());
+        nok.setAddress2(p.getNokAddress2());
+        nok.setCity(p.getNokCity());
+        nok.setPinCode(p.getNokPinCode());
+        nok.setCountry(p.getNokCountryId());
+        nok.setCountryName(p.getNokCountryName());
+        nok.setState(p.getNokStateId());
+        nok.setStateName(p.getNokStateName());
+        nok.setDistrict(p.getNokDistrictId());
+        nok.setDistrictName(p.getNokDistrictName());
+        return nok;
+    }
+    /**
+     * Helper method to map emergency details
+     */
+    private FollowUpPatientResponseDetails.EmergencyDetails mapEmergencyDetails(PatientProjectionFollowUpDetails p) {
+        FollowUpPatientResponseDetails.EmergencyDetails emergency = new FollowUpPatientResponseDetails.EmergencyDetails();
+        emergency.setFirstName(p.getEmerFirstName());
+        emergency.setLastName(p.getEmerLastName());
+        emergency.setMobileNo(p.getEmerMobile());
+        return emergency;
+    }
+    /**
+     * Helper method to map vital details
+     */
+    private FollowUpPatientResponseDetails.VitalDetails mapVitalDetails(PatientVitalsProjection opd) {
+        FollowUpPatientResponseDetails.VitalDetails vitals = new FollowUpPatientResponseDetails.VitalDetails();
+        vitals.setHeight(opd.getHeight());
+        vitals.setWeight(opd.getWeight());
+        vitals.setTemperature(opd.getTemperature());
+        vitals.setBpSys(opd.getBpSystolic());
+        vitals.setBpDia(opd.getBpDiastolic());
+        vitals.setPulse(opd.getPulse());
+        vitals.setRr(opd.getRr());
+        vitals.setSpo2(opd.getSpo2());
+        vitals.setBmi(opd.getBmi());
+        return vitals;
+    }
+    /**
+     * Helper method to map appointment details
+     */
+    private List<FollowUpPatientResponseDetails.AppointmentDetailResponse> mapAppointmentDetails(List<AppointmentProjection> visits) {
+        return visits.stream().map(v -> {
+            FollowUpPatientResponseDetails.AppointmentDetailResponse appt = new FollowUpPatientResponseDetails.AppointmentDetailResponse();
+            appt.setAppointmentId(v.getAppointmentId());
+            appt.setSpecialityId(v.getSpecialityId());
+            appt.setSpecialityName(v.getSpecialityName());
+            appt.setDoctorId(v.getDoctorId());
+            appt.setDoctorName(v.getDoctorName());
+            appt.setSessionId(v.getSessionId());
+            appt.setSessionName(v.getSessionName());
+            appt.setVisitDate(v.getVisitDate());
+            appt.setVisitType(v.getVisitType());
+            appt.setTokenNo(v.getTokenNo());
+            appt.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.equalsIgnoreCase(v.getVisitStatus()) ? "Completed" : "Pending");
 
+            if (v.getStartTime() != null) {
+                appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
+            }
+            if (v.getEndTime() != null) {
+                appt.setTokenEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
+            }
+            return appt;
+        }).toList();
+    }
 
 }
 
