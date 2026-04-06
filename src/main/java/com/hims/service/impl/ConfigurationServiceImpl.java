@@ -4,14 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.projection.MasApplicationProjection;
+import com.hims.projection.TemplateAppStatusProjection;
 import com.hims.projection.TemplateApplicationProjection;
 import com.hims.projection.UrlAppProjection;
 import com.hims.request.TemplateApplicationRequest;
 import com.hims.request.UserApplicationRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.TemplateApplicationResponse;
-import com.hims.response.UrlByRoleResponse;
-import com.hims.response.UserApplicationResponse;
+import com.hims.response.*;
 import com.hims.service.ConfigurationService;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -436,7 +436,102 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     }
 
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<MasApplicationResponse>> getAllByParentId(String parentId, Long templateId) {
+        log.info("Fetching application hierarchy for parentId: {} and templateId: {}", parentId, templateId);
+        try {
+        // Parent + all descendants in one query
+        List<MasApplicationProjection> applicationRows = masApplicationRepository.findApplicationByParentId(parentId);
+
+        if (applicationRows == null || applicationRows.isEmpty()) {
+            return ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>() {}, "Parent application not found with id: " + parentId, 404
+            );
+        }
+
+        // Collect all appIds from subtree
+        List<String> appIds = applicationRows.stream()
+                .map(MasApplicationProjection::getAppId)
+                .toList();
+
+        // Fetch template status
+        Map<String, String> templateStatusMap = new HashMap<>();
+        if (templateId != null && !appIds.isEmpty()) {
+            List<TemplateAppStatusProjection> templateStatuses = templateApplicationRepository.findTemplateStatusesByTemplateIdAndAppIds(templateId, appIds);
+
+            for (TemplateAppStatusProjection templateAppStatusProjection : templateStatuses) {
+                templateStatusMap.put(templateAppStatusProjection.getAppId(), templateAppStatusProjection.getStatus());
+            }
+        }
+
+        // Build response map
+        Map<String, MasApplicationResponse> responseMap = new LinkedHashMap<>();
+
+        for (MasApplicationProjection masApplicationProjection : applicationRows) {
+            MasApplicationResponse response = new MasApplicationResponse();
+            response.setAppId(masApplicationProjection.getAppId());
+            response.setName(masApplicationProjection.getName());
+            response.setParentId(masApplicationProjection.getParentId());
+            response.setUrl(masApplicationProjection.getUrl());
+            response.setOrderNo(masApplicationProjection.getOrderNo());
+            response.setLastChgDate(masApplicationProjection.getLastChgDate());
+            response.setAppSequenceNo(masApplicationProjection.getAppSequenceNo());
+            response.setChildren(new ArrayList<>());
+
+            String templateStatus = templateStatusMap.get(masApplicationProjection.getAppId());
+            if (templateStatus != null) {
+                response.setAssigned(true);
+                response.setStatus(templateStatus);// "Y" or "N"
+            } else {
+                response.setAssigned(false);
+                response.setStatus(AppConstants.STATUS_N);//Default to "N" if not assigned
+            }
+            responseMap.put(masApplicationProjection.getAppId(), response);
+        }
+
+        // Build hierarchy
+        for (MasApplicationProjection row : applicationRows) {
+            String currentAppId = row.getAppId();
+            String currentParentId = row.getParentId();
+
+            if (currentParentId != null) {
+                MasApplicationResponse parentResponse = responseMap.get(currentParentId);
+                MasApplicationResponse childResponse = responseMap.get(currentAppId);
+
+                if (parentResponse != null && childResponse != null) {
+                    parentResponse.getChildren().add(childResponse);
+                }
+            }
+        }
+
+        MasApplicationResponse  masApplicationResponse = responseMap.get(parentId);
+
+        if (masApplicationResponse == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Parent application not found with id: " + parentId, 404
+            );
+        }
+
+        List<MasApplicationResponse> responses = new ArrayList<>();
+        responses.add(masApplicationResponse);
+
+        log.info("Successfully fetched application hierarchy for parentId: {} with root children count: {}", parentId,
+                masApplicationResponse.getChildren() != null ? masApplicationResponse.getChildren().size() : 0);
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching application hierarchy for parentId: {} and templateId: {}", parentId, templateId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "An error occurred while fetching application hierarchy",
+                    500
+            );
+        }
+    }
+
+
     // ==================== HELPER METHODS ====================
+
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();

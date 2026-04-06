@@ -2,10 +2,7 @@ package com.hims.service;
 
 import com.hims.request.TemplateApplicationRequest;
 import com.hims.request.UserApplicationRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.TemplateApplicationResponse;
-import com.hims.response.UrlByRoleResponse;
-import com.hims.response.UserApplicationResponse;
+import com.hims.response.*;
 
 import java.util.List;
 
@@ -82,6 +79,9 @@ public interface ConfigurationService {
      * @param roleIds List of role IDs
      */
     ApiResponse<List<UrlByRoleResponse>> getUrlsByRoles(List<Long> roleIds);
+
+
+    ApiResponse<List<MasApplicationResponse>> getAllByParentId(String parentId, Long templateId);
 }
 
 

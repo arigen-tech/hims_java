@@ -46,6 +46,16 @@ public class AppConstants {
     public static final String PAYMENT_PAID = "Y";
     public static final String PAYMENT_NOT_PAID = "N";
 
+    //blood bank status
+    public static final String DONOR_SCREENING_STATUS_PASS = "P";
+    public static final String DONOR_SCREENING_STATUS_FAIL = "F";
+    public static final String DONOR_SCREENING_TEMPORARILY_DEFERRED	 = "T";
+    public static final String DONOR_SCREENING_PERMANENTLY_DEFERRED= "P";
+    public static final String  COMPONENT_PRBC= "prbc";
+    public static final String COMPONENT_PLT= "plt" ;
+    public static final String COMPONENT_PLASMA= "plasma" ;
+    public static final String COMPONENT_CRYO= "cryo" ;
+
 
 
     public static final String INTERNAL_SERVER_ERR_MSG="Internal server error !";
