@@ -47,12 +47,14 @@ FROM LabTurnAroundTime tat
 JOIN tat.orderHd oh
 JOIN tat.investigation inv
 LEFT JOIN inv.subChargeCodeId sub
-WHERE tat.resultValidationTime IS NOT NULL
+WHERE oh.hospitalId=:hospitalId
+AND tat.resultValidationTime IS NOT NULL
 AND oh.orderDate BETWEEN :fromDate AND :toDate
 AND (:investigationId IS NULL OR inv.investigationId = :investigationId)
 AND (:subChargeCodeId IS NULL OR sub.subId = :subChargeCodeId)
 """)
     Page<LabDetailedTATReportResponse> findTatReportWithPagination(
+            @Param("hospitalId") Long hospitalId,
             @Param("investigationId") Long investigationId,
             @Param("subChargeCodeId") Long subChargeCodeId,
             @Param("fromDate") LocalDate fromDate,
@@ -81,7 +83,8 @@ FROM LabTurnAroundTime tat
 JOIN tat.investigation inv
 JOIN tat.orderHd oh
 LEFT JOIN inv.subChargeCodeId sub
-WHERE tat.resultValidationTime IS NOT NULL
+WHERE oh.hospitalId=:hospitalId
+AND tat.resultValidationTime IS NOT NULL
 AND oh.orderDate BETWEEN :fromDate AND :toDate
 AND (:investigationId IS NULL OR inv.investigationId = :investigationId)
 AND (:subChargeCodeId IS NULL OR sub.subId = :subChargeCodeId)
@@ -89,6 +92,7 @@ GROUP BY inv.investigationId, inv.investigationName, inv.tatHours
 ORDER BY inv.investigationName
 """)
     Page<LabSummaryTATReportResponse> getTatSummaryReport(
+            @Param("hospitalId") Long hospitalId,
             @Param("investigationId") Long investigationId,
             @Param("subChargeCodeId") Long subChargeCodeId,
             @Param("fromDate") LocalDate fromDate,

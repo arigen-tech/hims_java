@@ -274,7 +274,7 @@ public class LabServiceImpl implements LabService {
 
                         detail.setSampleCollectionHeader(header);
                         detail.setRemarks(detailReq.getRemarks());
-                        detail.setSampleGeneratedId(sampleId); // 🔥 KEY CHANGE
+                        detail.setSampleGeneratedId(sampleId);
 
                         DgMasInvestigation investigation =
                                 dgMasInvestigationRepository
@@ -373,11 +373,7 @@ public class LabServiceImpl implements LabService {
 
         } catch (Exception e) {
             log.error("Error during sample collection process", e);
-            return ResponseUtils.createFailureResponse(
-                    res, new TypeReference<>() {},
-                    AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
+            throw new RuntimeException(e);
         }
     }
 
@@ -610,13 +606,7 @@ public class LabServiceImpl implements LabService {
         } catch (Exception e) {
 
             log.error("Sample Validate Error :: ", e);
-
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<>() {},
-                    AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
+            throw new RuntimeException(e);
         }
     }
 
@@ -872,10 +862,7 @@ public class LabServiceImpl implements LabService {
         } catch (Exception e) {
             log.error("Error while validating result entry. HeaderId={}",
                     request.getResultEntryHeaderId(), e);
-            return ResponseUtils.createFailureResponse(
-                    null, new TypeReference<>() {},
-                    AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+           throw new RuntimeException(e);
         }
     }
 
@@ -1036,16 +1023,14 @@ public class LabServiceImpl implements LabService {
         } catch (Exception e) {
             log.error("Exception occurred while updating result. HeaderId={}",
                     request.getResultEntryHeaderId(), e);
-            return ResponseUtils.createFailureResponse(
-                    null, new TypeReference<>() {},
-                    AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+            throw new RuntimeException(e);
         }
 
     }
 
     @Override
     public ApiResponse<Page<LabInvestigationsReportResponse>> getAllInvestigationsReport(
+            Long hospitalId,
             String mobileNo,
             String patientName,
             LocalDate fromDate,
@@ -1068,6 +1053,7 @@ public class LabServiceImpl implements LabService {
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "resultEntryId.resultDate", "resultEntryId.resultTime"));
             Page<LabInvestigationsReportResponse> response =
                     dgResultEntryDetailRepository.getLabInvestigationsReport(
+                            hospitalId,
                             mobileNo,
                             patientName,
                             fromDate,
@@ -1092,6 +1078,7 @@ public class LabServiceImpl implements LabService {
 
     @Override
     public ApiResponse<Page<LabDetailedTATReportResponse>> getDetailedTatReports(
+            Long hospitalId,
             Long investigationId,
             Long subChargeCodeId,
             LocalDate fromDate,
@@ -1114,6 +1101,7 @@ public class LabServiceImpl implements LabService {
 
             Page<LabDetailedTATReportResponse> result =
                     labTurnAroundTimeRepository.findTatReportWithPagination(
+                            hospitalId,
                             investigationId,
                             subChargeCodeId,
                             fromDate,
@@ -1137,6 +1125,7 @@ public class LabServiceImpl implements LabService {
 
     @Override
     public ApiResponse<Page<LabSummaryTATReportResponse>> getSummaryTatReports(
+            Long hospitalId,
             Long investigationId,
             Long subChargeCodeId,
             LocalDate fromDate,
@@ -1159,6 +1148,7 @@ public class LabServiceImpl implements LabService {
 
             Page<LabSummaryTATReportResponse> result =
                     labTurnAroundTimeRepository.getTatSummaryReport(
+                            hospitalId,
                             investigationId,
                             subChargeCodeId,
                             fromDate,
@@ -1182,6 +1172,7 @@ public class LabServiceImpl implements LabService {
 
     @Override
     public ApiResponse<Page<LabAmenedAuditReportResponse>> getAmendAuditReports(
+            Long hospitalId,
             String phnNum,
             String patientName,
             Long investigationId,
@@ -1217,6 +1208,7 @@ public class LabServiceImpl implements LabService {
 
             Page<LabAmenedAuditReportResponse> result =
                     labResultAmendAuditRepository.getAmendAuditReport(
+                            hospitalId,
                             phnNum != null ? phnNum.trim() : null,
                             patientName != null ? patientName.trim() : null,
                             investigationId,
@@ -1242,6 +1234,7 @@ public class LabServiceImpl implements LabService {
 
     @Override
     public ApiResponse<Page<OrderTrackingReportResponse>> getOrderTrackingReports(
+            Long hospitalId,
             String patientName,
             String mobileNo,
             LocalDate fromDate,
@@ -1266,6 +1259,7 @@ public class LabServiceImpl implements LabService {
 
             Page<OrderTrackingReportResponse> result =
                     labOrderDtRepository.getOrderTrackingReport(
+                            hospitalId,
                             patientName,
                             mobileNo,
                             fromDate,
@@ -1289,6 +1283,7 @@ public class LabServiceImpl implements LabService {
 
     @Override
     public ApiResponse<Page<LabIncompleteInvestigationsReportResponse>> getIncompleteInvestigationReports(
+            Long hospitalId,
             Long subChargeCodeId,
             LocalDate fromDate,
             LocalDate toDate,
@@ -1306,7 +1301,7 @@ public class LabServiceImpl implements LabService {
 
         Page<LabIncompleteInvestigationsReportResponse> result =
                 labOrderDtRepository.getIncompleteInvestigations(
-                        subChargeCodeId, fromDate, toDate, statuses, pageable
+                        hospitalId,subChargeCodeId, fromDate, toDate, statuses, pageable
                 );
 
         return ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
@@ -1314,6 +1309,7 @@ public class LabServiceImpl implements LabService {
 
      @Override
      public ApiResponse<Page<SampleRejectionInvestigationReportResponse>> getSampleRejectionReport(
+             Long hospitalId,
              Long subChargeCodeId,
              LocalDate fromDate,
              LocalDate toDate,
@@ -1327,7 +1323,7 @@ public class LabServiceImpl implements LabService {
 
              Page<SampleRejectionInvestigationReportResponse> result =
                      dgSampleCollectionDetailsRepository.getRejectedInvestigations(
-                             subChargeCodeId, fromDate, toDate, pageable
+                             hospitalId,subChargeCodeId, fromDate, toDate, pageable
                      );
 
              log.info("getSampleRejectionReport method ended with subChargeCodeId={}, fromDate={}, toDate={}", subChargeCodeId, fromDate, toDate);

@@ -6,6 +6,7 @@ import com.hims.request.ResultValidationUpdateRequest;
 import com.hims.request.SampleCollectionRequest;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -35,7 +36,9 @@ public interface LabService {
     /* *********************************************   Report Section   **********************************************************************/
 
 
-     ApiResponse<Page<LabInvestigationsReportResponse>> getAllInvestigationsReport(String mobileNo,
+     ApiResponse<Page<LabInvestigationsReportResponse>> getAllInvestigationsReport(
+                                                                                         Long hospitalId,
+                                                                                         String mobileNo,
                                                                                          String patientName,
                                                                                          LocalDate fromDate,
                                                                                          LocalDate toDate,
@@ -44,6 +47,7 @@ public interface LabService {
     );
 
     ApiResponse<Page<LabDetailedTATReportResponse>> getDetailedTatReports(
+            Long hospitalId,
             Long investigationId,
             Long subChargeCodeId,
             LocalDate fromDate,
@@ -53,6 +57,7 @@ public interface LabService {
     );
 
     ApiResponse<Page<LabSummaryTATReportResponse>> getSummaryTatReports(
+            Long  hospitalId,
             Long investigationId,
             Long subChargeCodeId,
             LocalDate fromDate,
@@ -61,6 +66,7 @@ public interface LabService {
             int size);
 
     ApiResponse<Page<LabAmenedAuditReportResponse>> getAmendAuditReports(
+            Long hospitalId,
             String phnNum,
             String patientName,
             Long investigationId,
@@ -73,6 +79,7 @@ public interface LabService {
 
 
     ApiResponse<Page<OrderTrackingReportResponse>> getOrderTrackingReports(
+            Long hospitalId,
             String patientName,
             String mobileNo,
             LocalDate fromDate,
@@ -82,6 +89,7 @@ public interface LabService {
     );
 
     ApiResponse<Page<LabIncompleteInvestigationsReportResponse>> getIncompleteInvestigationReports(
+            Long  hospitalId,
             Long subChargeCodeId,
             LocalDate fromDate,
             LocalDate toDate,
@@ -90,6 +98,7 @@ public interface LabService {
 
 
     ApiResponse<Page<SampleRejectionInvestigationReportResponse>> getSampleRejectionReport(
+            Long hospitalId,
             Long subChargeCodeId,
             LocalDate fromDate,
             LocalDate toDate,

@@ -124,7 +124,8 @@ JOIN oh.patientId p
 LEFT JOIN p.patientGender g
 LEFT JOIN od.investigationId inv
 LEFT JOIN od.orderTrackingStatus ots
-WHERE (:mobileNo IS NULL OR p.patientMobileNumber LIKE :mobileNo)
+WHERE oh.hospitalId=:hospitalId
+AND (:mobileNo IS NULL OR p.patientMobileNumber LIKE :mobileNo)
 AND (:patientName IS NULL OR LOWER(TRIM(CONCAT(
         COALESCE(p.patientFn, ''), ' ',
         COALESCE(p.patientMn, ''), ' ',
@@ -134,6 +135,7 @@ AND oh.orderDate >= COALESCE(:fromDate, oh.orderDate)
 AND oh.orderDate <= COALESCE(:toDate, oh.orderDate)
 """)
     Page<OrderTrackingReportResponse> getOrderTrackingReport(
+            Long hospitalId,
             String patientName,
             String mobileNo,
             LocalDate fromDate,
@@ -173,11 +175,13 @@ JOIN oh.patientId p
 LEFT JOIN p.patientGender g
 LEFT JOIN od.investigationId inv
 LEFT JOIN od.orderTrackingStatus ots
-WHERE oh.orderDate BETWEEN :fromDate AND :toDate
+WHERE oh.hospitalId=:hospitalId
+AND oh.orderDate BETWEEN :fromDate AND :toDate
 AND (:subChargeCodeId IS NULL OR od.subChargeid = :subChargeCodeId)
 AND ots.orderStatusId IN :statuses
 """)
     Page<LabIncompleteInvestigationsReportResponse> getIncompleteInvestigations(
+            Long hospitalId,
             Long subChargeCodeId,
             LocalDate fromDate,
             LocalDate toDate,

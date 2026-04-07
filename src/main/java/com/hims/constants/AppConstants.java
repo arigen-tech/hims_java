@@ -129,6 +129,8 @@ public class AppConstants {
     public static final String RESULT_VALIDATION_SUCCESS_MSG="Result entry validation updated successfully";
     public  static  final String VISIT_NOT_FOUND_ERR_MSG="Invalid visit Id, Visit not found";
 
+    public  static  final  String STATUS_S="S";
+
 
     private AppConstants() {
     }

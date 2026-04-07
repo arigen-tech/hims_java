@@ -29,6 +29,7 @@ import java.time.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hims.helperUtil.ConverterUtils.ageCalculator;
 
@@ -967,7 +968,8 @@ public class RadiologyServiceImpl implements RadiologyService {
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdon"));
-            Page<RadiologyProjection> paged = radOrderDtRepository.getPendingReportRadiologyProjection(masHospital.getId(), AppConstants.STATUS_Y,AppConstants.STATUS_N , modality, patientLike, phoneLike, pageable);
+            List<String> reportStatues = Stream.of(AppConstants.STATUS_N, AppConstants.STATUS_S).map(String::toLowerCase).toList();
+            Page<RadiologyProjection> paged = radOrderDtRepository.getPendingReportRadiologyProjection(masHospital.getId(), AppConstants.STATUS_Y,reportStatues , modality, patientLike, phoneLike, pageable);
             Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
             return ResponseUtils.createSuccessResponse(
                     response, new TypeReference<Page<RadiologyRequisitionResponse>>() {}
@@ -1008,6 +1010,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             orderDt.setReportStatus(status.toLowerCase().trim());
             orderDt.setLastChgDate(Instant.now());
             orderDt.setLastChgBy(currentUser.getFullName());
+            orderDt.setReportDate(LocalDate.now());
             return ResponseUtils.createSuccessResponse(
                     "Radiology result saved successfully", new TypeReference<>() {});
         } catch (Exception e) {

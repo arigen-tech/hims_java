@@ -199,12 +199,14 @@ JOIN sch.patientId p
 LEFT JOIN p.patientGender g
 LEFT JOIN scd.investigationId inv
 LEFT JOIN sch.subChargeCode scc
-WHERE scd.oldSampleCollectionHdIdForReject IS NOT NULL
+WHERE oh.hospitalId = :hospitalId
+AND scd.oldSampleCollectionHdIdForReject IS NOT NULL
 AND oh.orderDate BETWEEN :fromDate AND :toDate
 AND (:subChargeCodeId IS NULL OR scc.subId = :subChargeCodeId)
 ORDER BY oh.orderDate DESC
 """)
     Page<SampleRejectionInvestigationReportResponse> getRejectedInvestigations(
+            Long hospitalId,
             Long subChargeCodeId,
             LocalDate fromDate,
             LocalDate toDate,
