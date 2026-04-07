@@ -54,6 +54,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Value("${app.opdDepartmentType}")
     private Integer opdDepartmentType;
 
+
     @Autowired
     private PatientRepository patientRepository;
 
@@ -109,7 +110,6 @@ public class RegistrationServiceImpl implements RegistrationService {
     private BillingHeaderRepository billingHeaderRepository;
     @Autowired
     private BillingDetailRepository billingDetailRepository;
-
 
 
     @Autowired
@@ -344,6 +344,8 @@ public class RegistrationServiceImpl implements RegistrationService {
                     "Error fetching patient details: " + e.getMessage(), 500);
         }
     }
+
+
 
     @Override
     @Transactional
@@ -876,8 +878,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         LocalDate date = LocalDate.parse(appointmentDate);
         String dayName = date.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
 
-        List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(
-                doctorId, deptId, sessionId, dayName);
+        List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(doctorId, deptId, sessionId, dayName);
 
         ApiResponse<List<DoctorRosterDTO>> checkDoctorRoaster = doctorRosterServices.getDoctorRoster(deptId,doctorId,date,sessionId);
         if(!checkDoctorRoaster.getMessage().equalsIgnoreCase("success")){
@@ -955,6 +956,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             );
         }
     }
+
     private ApiResponse<List<?>> getAppointmentSummaryDepartmentWiseReport(Long hospitalId, Long departmentId, LocalDate fromDate, LocalDate toDate) {
         try {
             log.info("Fetching department wise appointment summary report for hospitalId: {}, departmentId: {}, fromDate: {}, toDate: {}",
@@ -1006,15 +1008,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 );
             }
 
-            List<AppointmentSummaryDoctorProjection> list = visitRepository.getAppointmentSummaryDoctorWiseReport(
-                    hospitalId,departmentId, doctorId, fromDate, toDate,
-                    AppConstants.VISIT_STATUS_PENDING,
-                    AppConstants.VISIT_STATUS_CANCELLED,
-                    AppConstants.VISIT_STATUS_COMPLETED,
-                    AppConstants.VISIT_STATUS_CLOSED,
-                    AppConstants.VISIT_TYPE_FOLLOW_UP,
-                    AppConstants.VISIT_TYPE_NEW
-            );
+            List<AppointmentSummaryDoctorProjection> list = visitRepository.getAppointmentSummaryDoctorWiseReport(hospitalId,departmentId, doctorId, fromDate, toDate, AppConstants.VISIT_STATUS_PENDING, AppConstants.VISIT_STATUS_CANCELLED, AppConstants.VISIT_STATUS_COMPLETED, AppConstants.VISIT_STATUS_CLOSED, AppConstants.VISIT_TYPE_FOLLOW_UP, AppConstants.VISIT_TYPE_NEW);
 
             List<AppointmentSummaryDoctorResponse> responseList = list.stream().map(item -> {
                 AppointmentSummaryDoctorResponse response = new AppointmentSummaryDoctorResponse();
@@ -1368,6 +1362,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             return appt;
         }).toList();
     }
+
 
 }
 

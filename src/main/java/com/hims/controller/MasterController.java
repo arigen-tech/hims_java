@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -1288,32 +1289,45 @@ private MasCrossMatchTypeService masCrossMatchTypeService;
 
     //    ================================Mas Opd Service Controller================================//
 
-    @GetMapping("/masServiceOpd/getByHospitalId/{id}")
-    public ResponseEntity<ApiResponse<List<MasServiceOpd>>> getMasServiceOpdByHospitalId(@PathVariable Long id) {
-        ApiResponse<List<MasServiceOpd>> response = masServiceOpdService.findByHospitalId(id);
+    @GetMapping("/masServiceOpd/getByHospitalId/{hospitalId}")
+    public ResponseEntity<ApiResponse<Page<MasServiceOpdResponse>>> getOpdTariffByDepartmentAndDoctor(
+            @PathVariable Long hospitalId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) String doctorName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        log.info("Fetching OPD Tariff | hospitalId: {}, departmentId: {}, doctorId: {}, page: {}, size: {}",
+                hospitalId, departmentId, doctorId, page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        ApiResponse<Page<MasServiceOpdResponse>> response = masServiceOpdService.getOpdTariffByDepartmentAndDoctor(hospitalId, departmentId, doctorId,doctorName, pageable);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/masServiceOpd/save")
-    public ResponseEntity<ApiResponse<MasServiceOpd>> saveMasServiceOpd(@RequestBody MasServiceOpdRequest request) {
-        ApiResponse<MasServiceOpd> response = masServiceOpdService.save(request);
+    public ResponseEntity<ApiResponse<String>> saveMasServiceOpd(@RequestBody MasServiceOpdRequest request) {
+        log.info("Saving MasServiceOpd request: {}", request);
+        ApiResponse<String> response = masServiceOpdService.save(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PutMapping("/masServiceOpd/update/{id}")
-    public ResponseEntity<ApiResponse<MasServiceOpd>> updateMasServiceOpd(
+    public ResponseEntity<ApiResponse<String>> updateMasServiceOpd(
             @PathVariable Long id,
             @RequestBody MasServiceOpdRequest request) {
-        ApiResponse<MasServiceOpd> response = masServiceOpdService.edit(id, request);
+        log.info("Updating MasServiceOpd | id: {}, request: {}", id, request);
+        ApiResponse<String> response = masServiceOpdService.edit(id, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 
     @PutMapping("/masServiceOpd/updateStatus/{id}")
-    public ResponseEntity<ApiResponse<MasServiceOpd>> updateMasServiceOpdStatusById(
+    public ResponseEntity<ApiResponse<String>> updateMasServiceOpdStatusById(
             @PathVariable Long id,
             @RequestParam String status) {
-        ApiResponse<MasServiceOpd> response = masServiceOpdService.updateStatus(id, status);
+        log.info("Updating status | id: {}, status: {}", id, status);
+        ApiResponse<String> response = masServiceOpdService.updateStatus(id, status);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
