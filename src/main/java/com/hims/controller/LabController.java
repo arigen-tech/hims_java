@@ -646,7 +646,8 @@ public class LabController {
 
     @GetMapping("/investigationsReport/all")
     public ResponseEntity<?> searchLabReports(
-            @RequestParam(required = false) String mobileNo,
+            @RequestParam Long hospitalId,
+            @RequestParam(required = false) String patientMobileNumber,
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
@@ -655,7 +656,8 @@ public class LabController {
     ) {
         return ResponseEntity.ok(
                 labService.getAllInvestigationsReport(
-                        mobileNo,
+                        hospitalId,
+                        patientMobileNumber,
                         patientName,
                         fromDate,
                         toDate,
@@ -667,6 +669,7 @@ public class LabController {
 
     @GetMapping("/lab-tat/details")
     public ResponseEntity<?> getAllLabReports(
+            @RequestParam Long  hospitalId,
             @RequestParam(required = false) Long investigationId,
             @RequestParam(required = false) Long subChargeCodeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
@@ -676,15 +679,16 @@ public class LabController {
     ) {
         return ResponseEntity.ok(
                 labService.getDetailedTatReports(
-                        investigationId, subChargeCodeId, fromDate, toDate, page, size
+                        hospitalId,investigationId, subChargeCodeId, fromDate, toDate, page, size
                 )
         );
     }
 
     @GetMapping("/lab-tat/summary")
     public ResponseEntity<?> getTatSummaryLabReports(
+            @RequestParam Long  hospitalId,
             @RequestParam(required = false) Long investigationId,
-            @RequestParam(required = false) Long subchargeCodeId,
+            @RequestParam(required = false) Long subChargeCodeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(defaultValue = "0") int page,
@@ -692,13 +696,14 @@ public class LabController {
     ) {
         return ResponseEntity.ok(
                 labService.getSummaryTatReports(
-                        investigationId, subchargeCodeId, fromDate, toDate, page, size
+                        hospitalId,investigationId, subChargeCodeId, fromDate, toDate, page, size
                 )
         );
     }
 
-    @GetMapping("/AmendAudit/result")
+    @GetMapping("/amendAudit/result")
     public ResponseEntity<?> getAmendAuditReports(
+            @RequestParam Long  hospitalId,
             @RequestParam(required = false) String phnNum,
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) Long investigationId,
@@ -710,16 +715,17 @@ public class LabController {
     ) {
         return ResponseEntity.ok(
                 labService.getAmendAuditReports(
-                        phnNum, patientName, investigationId,
+                        hospitalId,phnNum, patientName, investigationId,
                         subChargeCodeId, fromDate, toDate, page, size
                 )
         );
     }
 
-    @GetMapping("/orderTrackingReport")
+    @GetMapping("/orderTracking")
     public ResponseEntity<?> getOrderTrackingReport(
+            @RequestParam Long  hospitalId,
             @RequestParam(required = false) String patientName,
-            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) String patientMobileNumber,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(defaultValue = "0") int page,
@@ -727,8 +733,9 @@ public class LabController {
     ) {
         return ResponseEntity.ok(
                 labService.getOrderTrackingReports(
+                        hospitalId,
                         patientName,
-                        mobileNo,
+                        patientMobileNumber,
                         fromDate,
                         toDate,
                         page,
@@ -738,8 +745,9 @@ public class LabController {
     }
 
 
-    @GetMapping("/incompleteInvestigation/report")
+    @GetMapping("/incompleteInvestigations")
     public ResponseEntity<?> getIncompleteInvestigationsReport(
+            @RequestParam Long  hospitalId,
             @RequestParam(required = false) Long subChargeCodeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
@@ -748,13 +756,14 @@ public class LabController {
     ) {
         return ResponseEntity.ok(
                 labService.getIncompleteInvestigationReports(
-                        subChargeCodeId, fromDate, toDate, page, size
+                        hospitalId,subChargeCodeId, fromDate, toDate, page, size
                 )
         );
     }
 
-    @GetMapping("/rejectedInvestigation/report")
+    @GetMapping("/rejectedInvestigations")
     public ResponseEntity<?> getRejectInvestigationReport(
+            @RequestParam Long  hospitalId,
             @RequestParam(required = false) Long subChargeCodeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
@@ -763,7 +772,7 @@ public class LabController {
     ) {
         return ResponseEntity.ok(
                 labService.getSampleRejectionReport(
-                        subChargeCodeId, fromDate, toDate, page, size
+                        hospitalId,subChargeCodeId, fromDate, toDate, page, size
                 )
         );
     }

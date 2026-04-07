@@ -114,7 +114,7 @@ join dt.subChargecode sc
 join dt.investigation inv
 where hd.hospital.id = :hospitalId
   and lower(dt.studyStatus) = lower(:studyStatus)
-  and lower(dt.reportStatus) = lower(:reportStatus)
+  and lower(dt.reportStatus) in (:reportStatuses)
   and (:modalityId is null or sc.subId = :modalityId)
   and (
         :patientName is null
@@ -137,7 +137,7 @@ where hd.hospital.id = :hospitalId
     Page<RadiologyProjection> getPendingReportRadiologyProjection(
             @Param("hospitalId") Long hospitalId,
             @Param("studyStatus") String studyStatus,
-            @Param("reportStatus") String reportStatus,
+            @Param("reportStatuses") List<String> reportStatuses,
             @Param("modalityId") Long modalityId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,

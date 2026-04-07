@@ -198,7 +198,8 @@ LEFT JOIN d.investigationId inv
 LEFT JOIN d.uomId uom
 LEFT JOIN h.orderHd oh
 LEFT JOIN User u ON u.userId = h.resultVerifiedBy
-WHERE LOWER(d.validated) = LOWER(:resultValidationStatus)
+WHERE h.hospitalId.id= :hospitalId
+AND LOWER(d.validated) = LOWER(:resultValidationStatus)
             AND h.resultDate >= COALESCE(:fromDate, h.resultDate)
             AND h.resultDate <= COALESCE(:toDate, h.resultDate)
 
@@ -211,6 +212,7 @@ AND ( :patientName IS NULL OR LOWER(CONCAT(
     )) LIKE :patientName )
 """)
     Page<LabInvestigationsReportResponse> getLabInvestigationsReport(
+            @Param("hospitalId") Long hospitalId,
             @Param("mobileNo") String mobileNo,
             @Param("patientName") String patientName,
             @Param("fromDate") LocalDate fromDate,

@@ -1,6 +1,5 @@
 package com.hims.service.impl;
 
-import com.beust.ah.A;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
@@ -594,6 +593,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<StoreInternalIndentResponse> approveRejectIndent(StoreInternalIndentApprovalRequest request) {
         try {
             StoreInternalIndentM indentM = indentMRepository.findById(request.getIndentMId())
@@ -669,9 +669,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         } catch (Exception e) {
             log.error("approveRejectIndent method error :: ",e);
-            return ResponseUtils.createFailureResponse(null,
-                    new TypeReference<StoreInternalIndentResponse>() {},
-                    AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+            throw  new RuntimeException(e);
         }
     }
 
@@ -791,12 +789,8 @@ public class InventoryServiceImpl implements InventoryService {
             );
 
         } catch (Exception e) {
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<StoreInternalIndentResponse>() {},
-                    AppConstants.INTERNAL_SERVER_ERR_MSG,
-                     HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
+            log.error("approveIndentByIssueDept method error :: ",e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -1221,12 +1215,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         } catch (Exception e) {
             log.error("issueIndent method error :: ",e);
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<StoreInternalIndentResponse>() {},
-                   AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
+            throw new RuntimeException(e);
         }
     }
 
@@ -1491,13 +1480,8 @@ public class InventoryServiceImpl implements InventoryService {
             );
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<StoreIndentReceiveResponse>() {},
-                    AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
+            log.error("saveReceiving method error :: ",e);
+            throw  new RuntimeException(e);
         }
     }
 
@@ -1739,6 +1723,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<String> createOpeningBalanceEntryAndUpdateStatus(OpeningBalanceEntryRequest request) {
         StoreBalanceHd hd = new StoreBalanceHd();
         MasDepartment depObj = masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found"));

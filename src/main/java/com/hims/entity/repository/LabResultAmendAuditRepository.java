@@ -36,8 +36,10 @@ LEFT JOIN a.patient p
 LEFT JOIN a.investigation inv
 LEFT JOIN inv.uomId uom
 LEFT JOIN inv.subChargeCodeId sub
+LEFT JOIN p.patientHospital h
 
-WHERE (:phnNum IS NULL OR p.patientMobileNumber LIKE :phnNum)
+WHERE h.id=:hospitalId
+AND (:phnNum IS NULL OR p.patientMobileNumber LIKE :phnNum)
 
 AND (
     :patientName IS NULL OR
@@ -56,6 +58,7 @@ AND a.amendedDatetime >= COALESCE(:fromDate, a.amendedDatetime)
 AND a.amendedDatetime <= COALESCE(:toDate, a.amendedDatetime)
 """)
     Page<LabAmenedAuditReportResponse> getAmendAuditReport(
+            Long hospitalId,
             String phnNum,
             String patientName,
             Long investigationId,

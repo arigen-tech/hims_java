@@ -10,6 +10,7 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -101,5 +102,9 @@ public class RadOrderDt {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "billing_hd_id")
     private BillingHeader billingHd;
+
+
+    @Column(name = "report_date")
+    private LocalDate reportDate;
 
 }
