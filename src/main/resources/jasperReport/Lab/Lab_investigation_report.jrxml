@@ -287,7 +287,9 @@ WHERE dred.validated = 'y'
 		</field>
 	</subDataset>
 	<parameter name="orderhd_id" class="java.lang.Integer"/>
-	<parameter name="path" class="java.lang.String"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[with selected_order as (
     select 
@@ -295,7 +297,7 @@ WHERE dred.validated = 'y'
     from dg_result_entry_header dreh
     where dreh.order_hd_id = $P{orderhd_id} ),
 last_five_collection_dates as (
-    select distinct
+    select
         dreh.hin_id,
         DATE(dsch.collection_time) as collection_date
     from dg_result_entry_header dreh
@@ -555,7 +557,7 @@ order by msc.sub_chargecode_name,investigation_sample, sub_investigation_name, d
 							</cellContents>
 						</crosstabTotalRowHeader>
 					</rowGroup>
-					<columnGroup name="collection_date" height="20">
+					<columnGroup name="collection_date" height="20" mergeHeaderCells="false">
 						<bucket order="Descending" class="java.lang.String">
 							<bucketExpression><![CDATA[$F{collection_date}]]></bucketExpression>
 						</bucket>

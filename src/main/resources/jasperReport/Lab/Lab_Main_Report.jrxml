@@ -1,19 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Lab_Main_Report" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="535" leftMargin="30" rightMargin="30" topMargin="20" bottomMargin="20" uuid="b36e4c85-8d3f-4b77-af41-ad4e977e0476">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Lab_Main_Report" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b36e4c85-8d3f-4b77-af41-ad4e977e0476">
 	<property name="ireport.scriptlethandling" value="0"/>
 	<property name="ireport.encoding" value="UTF-8"/>
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
-	<property name="com.jaspersoft.studio.unit." value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
 	<import value="net.sf.jasperreports.engine.*"/>
 	<import value="java.util.*"/>
 	<import value="net.sf.jasperreports.engine.data.*"/>
@@ -119,21 +110,21 @@ and dt.result is not null
 				<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="309" y="78" width="73" height="14" uuid="22b4491f-bef2-47ac-bc16-0bf9a2a2a5cf"/>
+				<reportElement x="329" y="78" width="73" height="14" uuid="22b4491f-bef2-47ac-bc16-0bf9a2a2a5cf"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Generated on]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="382" y="78" width="7" height="14" uuid="3b4f2358-4ed7-4f8e-ba78-90d00084c029"/>
+				<reportElement x="402" y="78" width="7" height="14" uuid="3b4f2358-4ed7-4f8e-ba78-90d00084c029"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<textField>
-				<reportElement x="391" y="78" width="141" height="14" uuid="88b2e909-9c85-425d-a7d2-447a10568ca3"/>
+				<reportElement x="411" y="78" width="141" height="14" uuid="88b2e909-9c85-425d-a7d2-447a10568ca3"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
@@ -147,33 +138,16 @@ and dt.result is not null
 	<columnHeader>
 		<band splitType="Stretch"/>
 	</columnHeader>
-	<detail>
-		<band height="49" splitType="Stretch">
-			<subreport isUsingCache="true">
-				<reportElement key="subreport-1" positionType="Float" mode="Opaque" x="0" y="3" width="535" height="16" uuid="8bdd2b20-5eba-4cf4-ae3e-0d4fe2c001dd"/>
-				<subreportParameter name="from_date">
-					<subreportParameterExpression><![CDATA[$P{from_date}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="to_date">
-					<subreportParameterExpression><![CDATA[$P{to_date}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="gender_id">
-					<subreportParameterExpression><![CDATA[$P{gender_id}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="investigation_id">
-					<subreportParameterExpression><![CDATA[$P{investigation_id}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="from_age">
-					<subreportParameterExpression><![CDATA[$P{from_age}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="to_age">
-					<subreportParameterExpression><![CDATA[$P{to_age}]]></subreportParameterExpression>
-				</subreportParameter>
-				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
-				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Lab_Sub_Summary_Report.jasper"]]></subreportExpression>
-			</subreport>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch">
 			<subreport isUsingCache="true" overflowType="Stretch">
-				<reportElement key="subreport-2" positionType="Float" mode="Opaque" x="0" y="28" width="529" height="16" uuid="8f4bf47f-18f9-49d6-a340-e494271574df"/>
+				<reportElement key="subreport-2" positionType="Float" mode="Opaque" x="0" y="26" width="555" height="16" uuid="8da2240e-9446-4b0d-b61a-234c3c1e1c15"/>
 				<subreportParameter name="from_date">
 					<subreportParameterExpression><![CDATA[$P{from_date}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -195,16 +169,30 @@ and dt.result is not null
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Lab_Sub_Detail_Report.jasper"]]></subreportExpression>
 			</subreport>
+			<subreport isUsingCache="true">
+				<reportElement key="subreport-1" positionType="Float" mode="Opaque" x="0" y="8" width="555" height="16" uuid="2ff35182-3879-4f28-ae1a-2b9ebf4edbb5"/>
+				<subreportParameter name="from_date">
+					<subreportParameterExpression><![CDATA[$P{from_date}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="to_date">
+					<subreportParameterExpression><![CDATA[$P{to_date}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="gender_id">
+					<subreportParameterExpression><![CDATA[$P{gender_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="investigation_id">
+					<subreportParameterExpression><![CDATA[$P{investigation_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="from_age">
+					<subreportParameterExpression><![CDATA[$P{from_age}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="to_age">
+					<subreportParameterExpression><![CDATA[$P{to_age}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Lab_Sub_Summary_Report.jasper"]]></subreportExpression>
+			</subreport>
 		</band>
-	</detail>
-	<columnFooter>
-		<band splitType="Stretch"/>
-	</columnFooter>
-	<pageFooter>
-		<band splitType="Stretch"/>
-	</pageFooter>
-	<summary>
-		<band splitType="Stretch"/>
 	</summary>
 	<noData>
 		<band height="26" splitType="Stretch">

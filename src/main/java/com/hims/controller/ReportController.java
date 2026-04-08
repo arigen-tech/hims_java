@@ -380,10 +380,10 @@ public class ReportController {
 
     @GetMapping(value = "/labInvestigationReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintLabInvestigationReport(
-            @RequestParam Integer orderhd_id,
+            @RequestParam Integer orderHdId,
             @RequestParam String flag){
         Map<String , Object> params = new HashMap<>();
-        params.put("orderhd_id", orderhd_id);
+        params.put("orderhd_id", orderHdId);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -837,7 +837,7 @@ public class ReportController {
             @RequestParam (required = false) String patientName,
             @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
-            @RequestParam (required = false) String mobileNumber,
+            @RequestParam (required = false) String patientMobileNumber,
             @RequestParam String flag) {
         Long safeInvestigationId = (investigationId == null ? 0L : investigationId);
         Long safeSubChargeCodeId = (subChargeCodeId == null ? 0L : subChargeCodeId);
@@ -851,7 +851,7 @@ public class ReportController {
         params.put("patient_name", patientName);
         params.put("from_date", safeFromDate);
         params.put("to_date", safeToDate);
-        params.put("mobile_no", mobileNumber);
+        params.put("mobile_no", patientMobileNumber);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{

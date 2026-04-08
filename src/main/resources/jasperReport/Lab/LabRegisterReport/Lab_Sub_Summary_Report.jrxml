@@ -77,7 +77,7 @@ order by 2]]>
 	<pageHeader>
 		<band height="24" splitType="Stretch">
 			<line>
-				<reportElement key="line-1" x="1" y="2" width="550" height="1" isRemoveLineWhenBlank="true" uuid="fe6ee755-1416-4930-b5f4-234f0d449a98"/>
+				<reportElement key="line-1" x="1" y="2" width="549" height="1" isRemoveLineWhenBlank="true" uuid="fe6ee755-1416-4930-b5f4-234f0d449a98"/>
 			</line>
 			<line>
 				<reportElement key="line-2" x="1" y="23" width="549" height="1" isRemoveLineWhenBlank="true" uuid="96540910-f3d2-4ae8-938d-4661ad0a1b7b"/>
@@ -121,12 +121,12 @@ order by 2]]>
 		<band splitType="Stretch"/>
 	</columnHeader>
 	<detail>
-		<band height="24" splitType="Stretch">
+		<band height="25" splitType="Stretch">
 			<line>
 				<reportElement key="line-10" positionType="Float" stretchType="RelativeToTallestObject" x="1" y="-2" width="1" height="25" uuid="43f84ed4-dd3e-4edc-80b0-36b3d7974eba"/>
 			</line>
 			<line>
-				<reportElement key="line-11" positionType="Float" stretchType="RelativeToTallestObject" x="550" y="-1" width="1" height="25" isRemoveLineWhenBlank="true" uuid="63dffeb7-8957-4fa0-8b1c-ae7adeaadcac"/>
+				<reportElement key="line-11" positionType="Float" stretchType="RelativeToTallestObject" x="550" y="-2" width="1" height="25" isRemoveLineWhenBlank="true" uuid="63dffeb7-8957-4fa0-8b1c-ae7adeaadcac"/>
 			</line>
 			<line>
 				<reportElement key="line-12" positionType="Float" stretchType="RelativeToTallestObject" x="47" y="-4" width="1" height="27" isRemoveLineWhenBlank="true" uuid="505308c2-8fbd-4173-a078-4eb56c57ccb0"/>
@@ -174,7 +174,7 @@ order by 2]]>
 				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
 			</textField>
 			<line>
-				<reportElement key="line-17" positionType="Float" x="1" y="22" width="550" height="1" isRemoveLineWhenBlank="true" uuid="0ae70a20-128a-43c1-a0c9-71bbfb6dffaa"/>
+				<reportElement key="line-17" positionType="Float" x="1" y="23" width="549" height="1" isRemoveLineWhenBlank="true" uuid="0ae70a20-128a-43c1-a0c9-71bbfb6dffaa"/>
 			</line>
 		</band>
 	</detail>
