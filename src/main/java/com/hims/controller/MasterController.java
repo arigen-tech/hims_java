@@ -285,6 +285,10 @@ private RadiologyTemplateService radiologyTemplateService;
     private MasComponentFailureReasonService masComponentFailureReasonService;
 @Autowired
 private MasCrossMatchTypeService masCrossMatchTypeService;
+@Autowired
+private IpdConsultationTariffService ipdConsultationTariffService;
+@Autowired
+private MasVisitTypeService masVisitTypeService;
 
 
 
@@ -4485,5 +4489,52 @@ private MasCrossMatchTypeService masCrossMatchTypeService;
             @PathVariable Long id,
             @RequestParam String status) {
         return ResponseEntity.ok(opdQuestionMasterService.changeStatus(id, status));
+    }
+
+    //=======================================Ipd Consultation Tariff====================================================
+
+    @GetMapping("ipdConsultationTariff/getAll")
+    public ResponseEntity<ApiResponse<Page<IpdConsultationTariffResponse>>> getAllIpdConsultationTariff(
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        return ResponseEntity.ok(
+                ipdConsultationTariffService.getAllIpdConsultationTariff(
+                       departmentId, doctorId, page, size
+                )
+        );
+    }
+
+    @GetMapping("ipdConsultationTariff/getById/{id}")
+    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> getByIdIpdConsultationTariff(@PathVariable Long id) {
+        return ResponseEntity.ok(ipdConsultationTariffService.getByIdIpdConsultationTariff(id));
+    }
+
+    @PostMapping("ipdConsultationTariff/create")
+    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> createIpdConsultationTariff(
+            @RequestBody IpdConsultationTariffRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ipdConsultationTariffService.createIpdConsultationTariff(request));
+    }
+
+    @PutMapping("ipdConsultationTariff/update/{id}")
+    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> updateIpdConsultationTariff(
+            @PathVariable Long id,
+            @RequestBody IpdConsultationTariffRequest request) {
+        return ResponseEntity.ok(ipdConsultationTariffService.updateIpdConsultationTariff(id, request));
+    }
+
+    @PutMapping("ipdConsultationTariff/status/{id}")
+    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> changeStatusIpdConsultationTariff(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(ipdConsultationTariffService.changeStatusIpdConsultationTariff(id, status));
+    }
+    //=======================================Mas Visit Type ====================================================
+
+    @GetMapping("masVisitType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasVisitTypeResponse>>> getAllVisitType(@PathVariable int flag) {
+        return ResponseEntity.ok(masVisitTypeService.getAll(flag));
     }
 }
