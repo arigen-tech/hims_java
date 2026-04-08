@@ -3,7 +3,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Medical_Store_Indent_Issue_report_1" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="535" leftMargin="30" rightMargin="30" topMargin="20" bottomMargin="20" uuid="78f22eb3-b83a-473e-a91d-8674698dc7ac">
 	<property name="ireport.scriptlethandling" value="0"/>
 	<property name="ireport.encoding" value="UTF-8"/>
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.unit." value="pixel"/>
 	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
@@ -20,10 +20,7 @@
 	<parameter name="path" class="java.lang.String">
 		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
 	</parameter>
-	<parameter name="hospital_id" class="java.lang.Long"/>
-	<parameter name="department_id" class="java.lang.Long"/>
 	<parameter name="issue_m_id" class="java.lang.Long"/>
-	<parameter name="indent_type" class="java.lang.String"/>
 	<queryString>
 		<![CDATA[select distinct
 	siim.indent_no,
@@ -60,10 +57,7 @@ left join mas_store_unit msu on msi.unit_au = msu.unit_id
 left join store_internal_indent_m siim on sim.store_issue_m_id = siim.store_issue_m_id
 left join mas_hospital mh on sim.hospital_id = mh.hospital_id
 left join store_internal_indent_t siit on siim.indent_m_id = siit.indent_m_id and siit.item_id = sit.item_id
-where sim.store_issue_m_id = $P{issue_m_id}
-and sim.to_dept_id = $P{department_id}
-and sim.hospital_id = $P{hospital_id}
-and siim.indent_type_drug_or_nondrug = $P{indent_type}]]>
+where sim.store_issue_m_id = $P{issue_m_id}]]>
 	</queryString>
 	<field name="indent_no" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="indent_no"/>

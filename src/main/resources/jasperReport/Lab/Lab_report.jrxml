@@ -640,21 +640,21 @@ and bh.bill_no = $P{Bill_no}]]>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="290" y="105" width="95" height="15" uuid="a9dcc0c9-96af-49c9-831d-5349b5518258"/>
+				<reportElement x="290" y="105" width="90" height="15" uuid="a9dcc0c9-96af-49c9-831d-5349b5518258"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
-				<text><![CDATA[Appointment Date]]></text>
+				<text><![CDATA[Appointment Dt]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="386" y="105" width="10" height="15" uuid="57853722-1b7b-4bbf-bec6-e46b5afdf7c7"/>
+				<reportElement x="380" y="105" width="10" height="15" uuid="57853722-1b7b-4bbf-bec6-e46b5afdf7c7"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
-				<reportElement x="395" y="105" width="155" height="15" uuid="879cc7e5-69d4-4fdd-ab77-4fac5885978f"/>
+				<reportElement x="389" y="105" width="161" height="15" uuid="879cc7e5-69d4-4fdd-ab77-4fac5885978f"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
