@@ -48,11 +48,12 @@ public class BloodDonor {
     @JoinColumn(name = "donation_type_id", referencedColumnName = "donation_type_id")
     private MasBloodDonationType donationType;
 
-    @Column(name = "relation", length = 50)
-    private String relation;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "relation",referencedColumnName = "relation_id")
+    private MasRelation relation;
 
-    @Column(name = "donor_status", columnDefinition = "char(1)")
-    private String donorStatus;
+    @Column(name = "donor_screening_status", columnDefinition = "char(1)")
+    private String donorScreeningStatus;
 
     @Column(name = "current_deferral_reason", length = 300)
     private String currentDeferralReason;

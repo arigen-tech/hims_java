@@ -9,9 +9,6 @@ import java.time.Instant;
 @Getter
 @Setter
 public class MasServiceOpdRequest {
-
-    private String serviceCode;
-    private String serviceName;
     private BigDecimal baseTariff;
     private Long serviceCategory;
     private Long hospitalId;

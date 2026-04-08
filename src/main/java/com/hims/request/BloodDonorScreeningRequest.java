@@ -10,7 +10,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class BloodDonorScreeningRequest {
-    private LocalDate screeningDate;
     private BigDecimal hemoglobin;
     private BigDecimal weightKg;
     private BigDecimal heightCm;
@@ -20,7 +19,5 @@ public class BloodDonorScreeningRequest {
     private String screeningResult;
     private String deferralType;
     private String deferralReason;
-    private LocalDate deferralUptoDate;
-    private String remarks;
 }
 

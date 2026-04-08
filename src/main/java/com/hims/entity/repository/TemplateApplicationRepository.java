@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.MasApplication;
 import com.hims.entity.TemplateApplication;
+import com.hims.projection.TemplateAppStatusProjection;
 import com.hims.projection.TemplateApplicationProjection;
 import com.hims.projection.UrlAppProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -130,4 +131,17 @@ public interface TemplateApplicationRepository extends JpaRepository<TemplateApp
     """)
     List<UrlAppProjection> findActiveAppDetailsByTemplateIds(@Param("templateIds") Set<Long> templateIds,
                                                              @Param("status") String status);
+
+    @Query("""
+            SELECT
+                ta.app.appId AS appId,
+                ta.status AS status
+            FROM TemplateApplication ta
+            WHERE ta.template.id = :templateId
+              AND ta.app.appId IN :appIds
+            """)
+    List<TemplateAppStatusProjection> findTemplateStatusesByTemplateIdAndAppIds(
+            @Param("templateId") Long templateId,
+            @Param("appIds") List<String> appIds
+    );
 }
