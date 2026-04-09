@@ -293,10 +293,6 @@ private MasVisitTypeService masVisitTypeService;
 private MasIpdPackageService masIpdPackageService;
 @Autowired
 private MasIpdServiceCategoryService masIpdServiceCategoryService;
-@Autowired
-private IpdConsultationTariffService ipdConsultationTariffService;
-@Autowired
-private MasVisitTypeService masVisitTypeService;
 
 
 
