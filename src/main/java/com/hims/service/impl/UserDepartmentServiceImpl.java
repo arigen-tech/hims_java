@@ -1,15 +1,18 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.UserDepartment;
 import com.hims.entity.repository.UserDepartmentRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.User;
 import com.hims.entity.MasDepartment;
+import com.hims.projection.UserDepartmentProjection;
 import com.hims.request.UserDepartmentRequest;
 import com.hims.request.UserDepartmentRequestOne;
 import com.hims.response.ApiResponse;
+import com.hims.response.UserDepartmentProjectionResponse;
 import com.hims.response.UserDepartmentResponse;
 import com.hims.service.UserDepartmentService;
 import com.hims.utils.ResponseUtils;
@@ -242,15 +245,39 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
+//    @Override
+//    public ApiResponse<List<UserDepartmentResponse>> getAllUserDepartmentsByUserUserName(String userName) {
+//        List<UserDepartment> userDepartments = userDepartmentRepository.findByUser_UserNameAndUser_StatusAndStatusOrderByDepartment_DepartmentNameAsc(userName, "y","y");
+//
+//        List<UserDepartmentResponse> responses = userDepartments.stream()
+//                .map(this::convertToResponse)
+//                .collect(Collectors.toList());
+//
+//        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+//    }
     @Override
-    public ApiResponse<List<UserDepartmentResponse>> getAllUserDepartmentsByUserUserName(String userName) {
-        List<UserDepartment> userDepartments = userDepartmentRepository.findByUser_UserNameAndUser_StatusAndStatusOrderByDepartment_DepartmentNameAsc(userName, "y","y");
+    public ApiResponse<List<UserDepartmentProjectionResponse>> getAllUserDepartmentsByUserUserName(String userName) {
+try{
+        List<UserDepartmentProjection> projections = userDepartmentRepository.findAllUserDepartments(userName, AppConstants.STATUS_Y.toLowerCase());
 
-        List<UserDepartmentResponse> responses = userDepartments.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        List<UserDepartmentProjectionResponse> responses = projections.stream().map(p -> {
+            UserDepartmentProjectionResponse res = new UserDepartmentProjectionResponse();
+            res.setId(p.getId());
+            res.setUserId(p.getUserId());
+            res.setUsername(p.getUsername());
+            res.setDepartmentId(p.getDepartmentId());
+            res.setDepartmentName(p.getDepartmentName());
+            res.setLastChgBy(p.getLastChgBy());
 
-        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+            return res;
+        }).toList();
+
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
+        });
+    } catch (Exception e) {
+            e.printStackTrace(); // IMPORTANT
+        }
+return null;
     }
 
 

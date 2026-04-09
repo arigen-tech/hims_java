@@ -39,31 +39,6 @@ public class MasIpdPackage {
     @Column(name = "max_stay_days")
     private Integer maxStayDays;
 
-    @Column(name = "icu_included", length = 1)
-    private String icuIncluded;
-
-    @Column(name = "consumables_included", length = 1)
-    private String consumablesIncluded;
-
-    @Column(name = "investigation_included", length = 1)
-    private String investigationIncluded;
-
-    @Column(name = "drugs_included", length = 1)
-    private String drugsIncluded;
-
-    @Column(name = "procedure_included", length = 1)
-    private String procedureIncluded;
-
-    @Column(name = "room_charges_included", length = 1)
-    private String roomChargesIncluded;
-
-    @Column(name = "nursing_included", length = 1)
-    private String nursingIncluded;
-
-
-    @Column(name = "consultation_included", length = 1)
-    private String consultationIncluded;
-
     @Column(name = "description")
     private String description;
 
@@ -75,5 +50,11 @@ public class MasIpdPackage {
 
     @Column(name = "status", length = 1)
     private String status;
+
+    @Column(name = "generated_inclusions")
+    private String generatedInclusions;
+
+    @Column(name = "generated_exclusions")
+    private String generatedExclusions;
 
 }
