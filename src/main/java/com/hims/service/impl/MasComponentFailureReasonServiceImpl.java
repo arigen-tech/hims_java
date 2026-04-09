@@ -190,4 +190,5 @@ public class MasComponentFailureReasonServiceImpl implements MasComponentFailure
         response.setLastUpdateDate(entity.getLastUpdateDate());
         return response;
     }
+
 }
