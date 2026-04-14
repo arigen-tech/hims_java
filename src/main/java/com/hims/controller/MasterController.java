@@ -293,6 +293,17 @@ private MasVisitTypeService masVisitTypeService;
 private MasIpdPackageService masIpdPackageService;
 @Autowired
 private MasIpdServiceCategoryService masIpdServiceCategoryService;
+@Autowired
+private PackageRateConfigService packageRateConfigService;
+@Autowired
+private MasIpdBillingTypeService masIpdBillingTypeService;
+@Autowired
+private MasInsuranceService masInsuranceService;
+@Autowired
+private MasTpaService masTpaService;
+@Autowired
+private MasCorporateService masCorporateService;
+
 
 
 
@@ -1140,7 +1151,7 @@ private MasIpdServiceCategoryService masIpdServiceCategoryService;
     }
 
     @GetMapping("/user-departments/getByUserName/{userName}")
-    public ApiResponse<List<UserDepartmentResponse>> getAllUserDepartmentsByUserUserName(@PathVariable String userName) {
+    public ApiResponse<List<UserDepartmentProjectionResponse>> getAllUserDepartmentsByUserUserName(@PathVariable String userName) {
         return userDepartmentServiceImpl.getAllUserDepartmentsByUserUserName(userName);
     }
 
@@ -4542,53 +4553,6 @@ private MasIpdServiceCategoryService masIpdServiceCategoryService;
         return ResponseEntity.ok(masVisitTypeService.getAll(flag));
     }
 
-    //=======================================Ipd Consultation Tariff====================================================
-
-    @GetMapping("ipdConsultationTariff/getAll")
-    public ResponseEntity<ApiResponse<Page<IpdConsultationTariffResponse>>> getAllIpdConsultationTariff(
-            @RequestParam(required = false) Long departmentId,
-            @RequestParam(required = false) Long doctorId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size
-    ) {
-        return ResponseEntity.ok(
-                ipdConsultationTariffService.getAllIpdConsultationTariff(
-                       departmentId, doctorId, page, size
-                )
-        );
-    }
-
-    @GetMapping("ipdConsultationTariff/getById/{id}")
-    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> getByIdIpdConsultationTariff(@PathVariable Long id) {
-        return ResponseEntity.ok(ipdConsultationTariffService.getByIdIpdConsultationTariff(id));
-    }
-
-    @PostMapping("ipdConsultationTariff/create")
-    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> createIpdConsultationTariff(
-            @RequestBody IpdConsultationTariffRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ipdConsultationTariffService.createIpdConsultationTariff(request));
-    }
-
-    @PutMapping("ipdConsultationTariff/update/{id}")
-    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> updateIpdConsultationTariff(
-            @PathVariable Long id,
-            @RequestBody IpdConsultationTariffRequest request) {
-        return ResponseEntity.ok(ipdConsultationTariffService.updateIpdConsultationTariff(id, request));
-    }
-
-    @PutMapping("ipdConsultationTariff/status/{id}")
-    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> changeStatusIpdConsultationTariff(
-            @PathVariable Long id,
-            @RequestParam String status) {
-        return ResponseEntity.ok(ipdConsultationTariffService.changeStatusIpdConsultationTariff(id, status));
-    }
-    //=======================================Mas Visit Type ====================================================
-
-    @GetMapping("masVisitType/getAll/{flag}")
-    public ResponseEntity<ApiResponse<List<MasVisitTypeResponse>>> getAllVisitType(@PathVariable int flag) {
-        return ResponseEntity.ok(masVisitTypeService.getAll(flag));
-    }
-
     //======================================= mas Ipd Package  ====================================================
 
     @PostMapping("ipdPackage/create")
@@ -4625,5 +4589,69 @@ public ResponseEntity<ApiResponse<List<IpdServiceCategoryResponse>>> getAllIpdSe
     return ResponseEntity.ok(masIpdServiceCategoryService.getAll(flag));
 }
 
+//======================================= Package Rate Config  ====================================================
+@PostMapping("packageRateConfig/create")
+public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateConfig(
+        @RequestBody PackageRateConfigRequest request) {
+        ApiResponse<PackageRateConfigResponse> response = packageRateConfigService.savePackageRateConfig(request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+}
+    @PutMapping("packageRateConfig/update/{id}")
+    public ResponseEntity<ApiResponse<PackageRateConfigResponse>> updatePackageRateConfig(
+            @PathVariable Long id,
+            @RequestBody PackageRateConfigRequest request) {
+        return ResponseEntity.ok(packageRateConfigService.updatePackageRateConfig(id, request));
+    }
+    @PutMapping("packageRateConfig/status/{id}")
+    public ResponseEntity<ApiResponse<PackageRateConfigResponse>> changeStatusPackageRateConfig(
+            @PathVariable Long id, @RequestParam String status) {
+        return ResponseEntity.ok(packageRateConfigService.changeStatus(id, status));
+
+    }
+    @GetMapping("packageRateConfig/getById/{id}")
+    public ResponseEntity<ApiResponse<PackageRateConfigResponse>> getByIdPackageRateConfig(@PathVariable Long id) {
+        return ResponseEntity.ok(packageRateConfigService.getByIdPackageRateConfig(id));
+
+    }
+    @GetMapping("packageRateConfig/getAll")
+    public ResponseEntity<ApiResponse<Page<PackageRateConfigResponse>>> getAllPackageRateConfig(
+            @RequestParam(required = false) Long billingTypeId,
+            @RequestParam(required = false) Long corporateId,
+            @RequestParam(required = false) Long insuranceId,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+
+    ) {
+
+        return ResponseEntity.ok(packageRateConfigService.getByAllPackageRateConfigId(billingTypeId, corporateId, insuranceId, search, page, size));
+
+    }
+
+    //======================================= Mas Ipd Billing Type ====================================================
+    @GetMapping("masIpdBillingType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasIpdBillingTypeResponse>>> getAllMasIpdBillingType(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masIpdBillingTypeService.getAllMasIpdBillingType(flag));
+    }
+
+    //======================================= Mas Insurance ====================================================
+    @GetMapping("masInsurance/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasInsuranceResponse>>> getAllMasInsurance(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masInsuranceService.getAllMasInsurance(flag));
+    }
+    //======================================= Mas Tpa ====================================================
+    @GetMapping("masTpa/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasTpaResponse>>> getAllMasTpa(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masTpaService.getAllMasTpa(flag));
+    }
+    //======================================= Mas Tpa ====================================================
+    @GetMapping("masCorporate/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasCorporateResponse>>> getAllMasCorporate(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masCorporateService.getAllMasCorporate(flag));
+    }
 
 }

@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-@Table(name = "mas_ipd_bill", schema = "public")
+@Table(name = "mas_ipd_billing_type", schema = "public")
 public class MasIpdBillingType {
 
     @Id
