@@ -63,7 +63,7 @@ public class PackageRateConfig {
     @Column(name = "last_updated_by", length = 100)
     private String lastUpdatedBy;
 
-    @Column(name = "last_updated_date")
+    @Column(name = "last_update_date")
     private LocalDateTime lastUpdatedDate;
 
 }
