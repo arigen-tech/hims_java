@@ -25,29 +25,28 @@ public class MasProcedure {
     @Column(name = "procedure_name", length = 30)
     private String procedureName;
 
-    @Column(name = "defaultstatus", length = 1, nullable = false)
-    private String defaultStatus;
-
-    @Column(name = "status", length = 1, nullable = false)
+    @Column(name = "status", length = 1)
     private String status;
 
-    @Column(name = "last_chg_by", length = 12)
-    private String lastChangedBy;
+    @Column(name = "last_chg_by", length = 250)
+    private String lastChgBy;
 
     @Column(name = "last_chg_date")
-    private LocalDateTime lastChangedDate;
-
-    @Column(name = "last_chg_time", length = 20)
-    private String lastChangedTime;
-
-    @Column(name = "procedure_group", length = 2)
-    private String procedureGroup;
+    private LocalDateTime lastChgDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private MasDepartment department;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "procedure_type_id")
-    private MasProcedureType procedureType;
+    @Column(name = "opd_allowed", length = 1)
+    private String opdAllowed;
+
+    @Column(name = "ipd_allowed", length = 1)
+    private String ipdAllowed;
+
+    @Column(name = "is_nursing", length = 1)
+    private String isNursing;
+
+    @Column(name = "procedure_level", length = 3)
+    private String procedureLevel;
 }
