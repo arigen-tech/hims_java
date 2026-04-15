@@ -64,7 +64,8 @@ left join mas_manufacturer on store_balance_t.manufacturer_id = mas_manufacturer
 left join mas_hospital on store_balance_m.hospital_id = mas_hospital.hospital_id
 where store_balance_m.hospital_id = $P{HOSPITAL_ID}
 and store_balance_m.department_id = $P{department_id}
-and (store_balance_m.entered_dt between $P{FromDate} and $P{ToDate})
+and store_balance_m.entered_dt >= $P{FromDate} 
+and (store_balance_m.entered_dt < $P{ToDate}::timestamp + interval '1 day')
 and store_balance_m.balance_type_drug_or_nondrug = $P{balance_type}
 order by mas_store_item.nomenclature]]>
 	</queryString>
