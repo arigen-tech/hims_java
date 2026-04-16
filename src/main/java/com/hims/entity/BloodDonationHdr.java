@@ -1,6 +1,7 @@
 package com.hims.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -48,18 +49,22 @@ public class BloodDonationHdr {
 
     @Column(name = "donation_datetime")
     private LocalDateTime donationDatetime;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collection_type_id")
     private MasBloodCollectionType collectionTypeId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bag_type_id")
     private MasBloodBagType bagTypeId;
 
     @Column(name = "total_collected_volume_ml")
     private Integer totalCollectedVolumeMl;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "donation_status_id")
     private MasBloodDonationStatus donationStatusId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "component_failure_reason")
     private MasComponentFailureReason componentFailureReason;

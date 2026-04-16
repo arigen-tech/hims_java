@@ -18,6 +18,6 @@ public class BloodDonorPriviousScreening {
     private String screeningResult;
     private String deferralType;
     private  String deferralReason;
-   private String conductedBy;
+    private String conductedBy;
 
 }

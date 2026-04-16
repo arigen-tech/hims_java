@@ -62,17 +62,35 @@ public class BloodBankServiceImpl implements BloodBankService{
     private MasBloodCollectionTypeRepository bloodCollectionTypeRepository;
     @Autowired
     private MasBloodBagTypeRepository masBloodBagTypeRepository;
+
     @Autowired MasBloodDonationStatusRepository masBloodDonationStatusRepository;
+    @Autowired
+    private MasBloodInventoryStatusRepository masBloodInventoryStatusRepository;
+
     @Value("${bloodDonationStatusCollected}")
     private Long bloodDonationStatusCollected;
+
     @Value("${bloodDonationStatusComponent_Failed}")
     private Long bloodDonationStatusComponent_Failed;
+
     @Value("${bloodDonationStatusComponent_Generated}")
     private Long bloodDonationStatusComponent_Generated;
+
     @Value("${bloodDonationStatus_TEST_FAILED}")
     private  Long bloodDonationStatus_TEST_FAILED;
+
     @Value("${bloodDonationStatus_AVAILABLE}")
     private Long bloodDonationStatus_AVAILABLE;
+
+    @Value("${donor.screening.temp-fail.cooldown-days}")
+    private int tempFailDays;
+
+    @Value("${donor.screening.pass.cooldown-days}")
+    private int passDays;
+
+    @Value("${inventoryStatusAvailable}")
+    private Long inventoryStatusAvailable;
+
     @Autowired
     private BloodComponentInventoryRepository bloodComponentInventoryRepository;
 
@@ -240,7 +258,39 @@ public class BloodBankServiceImpl implements BloodBankService{
                     })
                     .toList();
 
-            response.setBloodDonorPriviousScreenings(screeningList);
+            LocalDate nextEligibleDate = null;
+            boolean eligible = true;
+
+            if (!screeningList.isEmpty()) {
+
+                BloodDonorPriviousScreening latest = screeningList.get(0);
+
+                if (AppConstants.DONOR_SCREENING_STATUS_FAIL
+                        .equalsIgnoreCase(latest.getScreeningResult())
+                        && AppConstants.DONOR_SCREENING_PERMANENTLY_DEFERRED
+                        .equalsIgnoreCase(latest.getDeferralType())) {
+
+                    eligible = false;
+                }
+                else if (AppConstants.DONOR_SCREENING_STATUS_FAIL
+                        .equalsIgnoreCase(latest.getScreeningResult())
+                        && AppConstants.DONOR_SCREENING_TEMPORARILY_DEFERRED
+                        .equalsIgnoreCase(latest.getDeferralType())) {
+
+                    nextEligibleDate = latest.getScreeningDate().plusDays(tempFailDays);
+                    eligible = nextEligibleDate.isBefore(LocalDate.now());
+
+                } else if (AppConstants.DONOR_SCREENING_STATUS_PASS
+                        .equalsIgnoreCase(latest.getScreeningResult())) {
+
+                    nextEligibleDate = latest.getScreeningDate().plusDays(passDays);
+                    eligible = nextEligibleDate.isBefore(LocalDate.now());
+                }
+            }
+
+            response.setEligibleForDonation(eligible);
+            response.setNextEligibleDonationDate(nextEligibleDate);
+            response.setBloodDonorPreviousScreenings(screeningList);
 
             log.info("Successfully fetched donor screening details for donorId: {}", donorId);
 
@@ -382,6 +432,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             log.info("Pending component generation list fetched successfully. Total records: {}",
                     pendingComponentGenerationList != null ? pendingComponentGenerationList.size() : 0);
 
+
             return ResponseUtils.createSuccessResponse(pendingComponentGenerationList, new TypeReference<>() {}
             );
 
@@ -469,15 +520,38 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Override
     public ApiResponse<List<PendingForMandatoryTestingResponse>> pendingForMandatoryTestingList() {
         try {
-            List<PendingForMandatoryTestingResponse> list =
-                    bloodDonationHdrRepository.pendingForMandatoryTestingList(bloodDonationStatusComponent_Generated);
+            List<PendingForMandatoryTestingProjection> projectionList =
+                    bloodDonationHdrRepository
+                            .pendingForMandatoryTestingList(bloodDonationStatusComponent_Generated);
 
-            return ResponseUtils.createSuccessResponse(list, new TypeReference<>() {});
+            List<PendingForMandatoryTestingResponse> responseList =
+                    projectionList.stream()
+                            .map(p -> new PendingForMandatoryTestingResponse(
+                                    p.getDonationId(),
+                                    p.getDonorId(),
+                                    p.getBagNumber(),
+                                    p.getDonorResNo(),
+                                    p.getFullName(),
+                                    p.getBloodGroup(),
+                                    p.getCollectionDateTime(),
+                                    p.getCollectionType(),
+                                    p.getNoOfComponent(),
+                                    p.getCurrentStatus(),
+                                    p.getBagType(),
+                                    p.getComponentGenerationDateTime()
+                            ))
+                            .toList();
+
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
         } catch (Exception e) {
             log.error("Error while fetching pending mandatory testing list", e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
     }
@@ -535,7 +609,7 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Override
     public ApiResponse<?> getBloodStock(BloodStockFilterRequest req) {
 
-        if ("S".equalsIgnoreCase(req.getViewType())) {
+        if (AppConstants.SUMMARY.equalsIgnoreCase(req.getViewType())) {
             List<BloodStockSummaryProjection> list = bloodComponentInventoryRepository.getSummary(
                             req.getBloodGroupId(),
                             req.getComponentId(),
@@ -634,8 +708,8 @@ public class BloodBankServiceImpl implements BloodBankService{
 
                 screening.setScreeningResult(donorScreeningRequest.getScreeningResult().toLowerCase());
                 donor.setDonorScreeningStatus(donorScreeningRequest.getScreeningResult().toLowerCase());
-               donor.setCurrentDeferralReason(donorScreeningRequest.getDeferralReason());
-               donor.setDeferralUptoDate(LocalDate.now());
+                donor.setCurrentDeferralReason(donorScreeningRequest.getDeferralReason());
+                donor.setDeferralUptoDate(LocalDate.now());
                 screening.setDeferralType(donorScreeningRequest.getDeferralType().toLowerCase());
                 screening.setDeferralReason(donorScreeningRequest.getDeferralReason().toLowerCase());
                 screening.setDeferralUptoDate(LocalDate.now());
@@ -719,7 +793,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             }
             inventory.setVolumeMl(dt.getVolumeMl());
             inventory.setExpiryDate(dt.getExpiryDate());
-            inventory.setInventoryStatus(availableStatus);
+            inventory.setInventoryStatus(masBloodInventoryStatusRepository.findById(inventoryStatusAvailable).orElseThrow());
             inventory.setCreatedDate(LocalDateTime.now());
             inventory.setCreatedBy(authUtil.getCurrentUser().getFullName());
 

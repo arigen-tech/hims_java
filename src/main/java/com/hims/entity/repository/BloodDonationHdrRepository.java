@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.BloodDonationHdr;
+import com.hims.projection.PendingForMandatoryTestingProjection;
 import com.hims.response.PendingComponentGenerationResponse;
 import com.hims.response.PendingForMandatoryTestingResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -53,33 +54,34 @@ public interface BloodDonationHdrRepository extends JpaRepository<BloodDonationH
 
 
     @Query("""
-    SELECT new com.hims.response.PendingForMandatoryTestingResponse(
-        bd.donationId,
-        d.donorId,
-        bd.bagNumber,
-        d.donorCode,
-        d.firstName,
-        d.lastName,
-        bg.bloodGroupCode,
-        bd.donationDatetime,
-        mct.collectionTypeName,
+            SELECT 
+                bd.donationId AS donationId,
+                d.donorId AS donorId,
+                bd.bagNumber AS bagNumber,
+                d.donorCode AS donorResNo,
+            
+                CONCAT(d.firstName, ' ', d.lastName) AS fullName,
+            
+                bg.bloodGroupCode AS bloodGroup,
+                bd.donationDatetime AS collectionDateTime,
+                mct.collectionTypeName AS collectionType,
+            
+                (SELECT COUNT(dt.donationDtId) 
+                 FROM BloodDonationDt dt 
+                 WHERE dt.donationHdId.donationId = bd.donationId) AS noOfComponent,
+            
+                mds.donationStatusCode AS currentStatus,
+                mbt.bagTypeCode AS bagType,
+                bd.componentGenerationDatetime AS componentGenerationDateTime
 
-        (SELECT COUNT(dt.donationDtId) 
-         FROM BloodDonationDt dt 
-         WHERE dt.donationHdId.donationId = bd.donationId),
-
-        mds.donationStatusCode,
-        mbt.bagTypeCode,
-        bd.componentGenerationDatetime
-    )
-    FROM BloodDonationHdr bd
-    LEFT JOIN bd.donorId d
-    LEFT JOIN d.bloodGroup bg
-    LEFT JOIN bd.collectionTypeId mct
-    LEFT JOIN bd.bagTypeId mbt
-    LEFT JOIN bd.donationStatusId mds
-
-    WHERE mds.donationStatusId = :bloodDonationStatusComponentGenerated
-""")
-    List<PendingForMandatoryTestingResponse> pendingForMandatoryTestingList(@Param("bloodDonationStatusComponentGenerated") Long bloodDonationStatusComponentGenerated);
-}
+            FROM BloodDonationHdr bd
+            LEFT JOIN bd.donorId d
+            LEFT JOIN d.bloodGroup bg
+            LEFT JOIN bd.collectionTypeId mct
+            LEFT JOIN bd.bagTypeId mbt
+            LEFT JOIN bd.donationStatusId mds
+            
+            WHERE mds.donationStatusId = :bloodDonationStatusComponentGenerated
+            """)
+    List<PendingForMandatoryTestingProjection> pendingForMandatoryTestingList(
+            @Param("bloodDonationStatusComponentGenerated") Long bloodDonationStatusComponentGenerated);}
