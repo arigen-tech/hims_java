@@ -53,14 +53,9 @@ public class LabReportServiceImpl implements LabReportService {
 
 
     @Override
-    public ApiResponse<List<AllLabReportResponse>> getAllLabReports(String phnNum, String patientName, LocalDate fromDate,LocalDate toDate) {
+    public ApiResponse<List<LabInvestigationsReportResponse>> getAllLabReports(String phnNum, String patientName, LocalDate fromDate, LocalDate toDate) {
         try {
             log.info("getAllLabReports() Started..." );
-//            if (fromDate == null || toDate == null) {
-//                throw new IllegalArgumentException("From Date and To Date are mandatory");
-//            }
-
-//            Sort sort=Sort.by(Sort.Direction.DESC,"resultEntryId.resultDate");
             Specification<DgResultEntryDetail> spec =
                     filterLabReports(
                             phnNum,
@@ -234,14 +229,6 @@ public class LabReportServiceImpl implements LabReportService {
 
         try {
             log.info("getOrderTrackingReports() method started...");
-//            if ((patientName == null || patientName.isBlank()) &&
-//                    (phnNum == null || phnNum.isBlank())) {
-//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Patient Name or Mobile Number is mandatory",HttpStatus.BAD_REQUEST.value());
-//            }
-
-//            if (fromDate == null || toDate == null) {
-//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"From Date and To Date are mandatory",HttpStatus.BAD_REQUEST.value());
-//            }
 
             Specification<DgOrderDt> spec = filterOrderTrackReport(patientName, phnNum, fromDate, toDate);
 
@@ -662,11 +649,12 @@ public class LabReportServiceImpl implements LabReportService {
     }
 
 
-    private AllLabReportResponse mapToResponse(DgResultEntryDetail entity){
+    private LabInvestigationsReportResponse mapToResponse(DgResultEntryDetail entity){
         User resultVerifiedBy = userRepo.findById(Long.valueOf(entity.getResultEntryId().getResultVerifiedBy())).orElseThrow(() -> new RuntimeException("User Not Found"));
-        AllLabReportResponse response= new AllLabReportResponse();
+        LabInvestigationsReportResponse response= new LabInvestigationsReportResponse();
         Patient patient = entity.getResultEntryId().getHinId();
-        response.setOrderHdId((long) entity.getResultEntryId().getOrderHd().getId());
+//        response.setOrderHdId((long) entity.getResultEntryId().getOrderHd().getId());
+        response.setOrderHdId(entity.getResultEntryId().getOrderHd().getId());
         response.setResultEntryHeaderId(entity.getResultEntryId().getResultEntryId());
         response.setResultEntryDetailsId(entity.getResultEntryDetailId());
         response.setAge(patient.getPatientAge());
@@ -674,13 +662,13 @@ public class LabReportServiceImpl implements LabReportService {
         response.setGender(patient.getPatientGender().getGenderName());
         response.setRange(entity.getNormalRange());
         response.setResult(entity.getResult());
-        response.setResultValidatedBy(resultVerifiedBy.getFullName());
+//        response.setResultValidatedBy(resultVerifiedBy.getFullName());
         response.setPhnNum(patient.getPatientMobileNumber());
         response.setPatientName(patient.getPatientMn().trim().isBlank() ? patient.getPatientFn()+" "+patient.getPatientLn() : patient.getPatientFn()+" "+patient.getPatientMn()+" "+patient.getPatientLn());
         response.setUnit(entity.getUomId().getName());
         response.setInvestigationName(entity.getInvestigationId().getInvestigationName());
         response.setResultEnteredBy(entity.getResultEntryId().getResultEnteredBy());
-        response.setInRange(isResultWithinRange(entity.getResult(), entity.getNormalRange()));
+//        response.setInRange(isResultWithinRange(entity.getResult(), entity.getNormalRange()));
         return response;
     }
 
@@ -692,7 +680,7 @@ public class LabReportServiceImpl implements LabReportService {
         int expectedTatHour=entity.getInvestigation().getTatHours();
         long delay=actualTatHour-expectedTatHour;
         response.setTatId(entity.getTurnAroundTimeId());
-        response.setOrderId((long) entity.getOrderHd().getId());
+        response.setOrderId(entity.getOrderHd().getId());
         response.setInvestigationName(entity.getInvestigation().getInvestigationName());
         response.setGeneratedSampleId(entity.getGeneratedSampleId()!=null?entity.getGeneratedSampleId():null);
         response.setSampleReceivedDate(entity.getSampleCollectionDateTime());
@@ -741,7 +729,7 @@ public class LabReportServiceImpl implements LabReportService {
             }
         }
         Patient patient = entity.getOrderhdId().getPatientId();
-        response.setDgOrderHdId((long) entity.getOrderhdId().getId());
+        response.setDgOrderHdId(entity.getOrderhdId().getId());
         response.setOrderNum(entity.getOrderhdId().getOrderNo());
         response.setAge(patient.getPatientAge());
         response.setGender(patient.getPatientGender().getGenderName());

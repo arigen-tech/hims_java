@@ -36,14 +36,12 @@ public class ReportController {
         return dataSource.getConnection();
     }
 
-    @GetMapping(value = "/labReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    @GetMapping(value = "/labInvoice", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintLabReportPdf(
             @RequestParam String billNo,
-            @RequestParam String paymentStatus,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
         params.put("Bill_no", billNo);
-        params.put("Pay_status", paymentStatus);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
@@ -65,7 +63,7 @@ public class ReportController {
         }
     }
 
-    @GetMapping(value = "/opdReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    @GetMapping(value = "/opdInvoice", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintOpdReportPdf(
             @RequestParam Long visit ,
             @RequestParam String flag) {
@@ -382,10 +380,10 @@ public class ReportController {
 
     @GetMapping(value = "/labInvestigationReport", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintLabInvestigationReport(
-            @RequestParam Integer orderhd_id,
+            @RequestParam Integer orderHdId,
             @RequestParam String flag){
         Map<String , Object> params = new HashMap<>();
-        params.put("orderhd_id", orderhd_id);
+        params.put("orderhd_id", orderHdId);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -442,17 +440,20 @@ public class ReportController {
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
             @RequestParam (required = false) Long itemId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam (required = false) String indentType,
             @RequestParam String flag ) {
         Long safeItemId = (itemId == null ? 0L : itemId);
+        Date safeFromDate = (fromDate != null) ? new Date(fromDate.getTime()) : null;
+        Date safeToDate = (toDate != null) ? new Date(toDate.getTime()) : null;
+
         Map<String, Object> params = new HashMap<>();
         params.put("hospital_id", hospitalId);
         params.put("department_id", departmentId);
         params.put("drug_id", safeItemId);
-        params.put("from_date", fromDate);
-        params.put("to_date", toDate);
+        params.put("from_date", safeFromDate);
+        params.put("to_date", safeToDate);
         params.put("indent_type", indentType);
         params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_STORE + ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_SUBREPORT_DIR)).toString());
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
@@ -506,16 +507,10 @@ public class ReportController {
 
     @GetMapping(value = "/indentReceiving", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewDownloadIndentReceiving(
-            @RequestParam Long hospitalId,
-            @RequestParam Long departmentId,
-            @RequestParam Long indentMId,
-            @RequestParam String indentType,
+            @RequestParam Long receiveMId,
             @RequestParam String flag ) {
         Map<String, Object> params = new HashMap<>();
-        params.put("hospital_id", hospitalId);
-        params.put("department_id", departmentId);
-        params.put("indent_m_id", indentMId);
-        params.put("indent_type", indentType);
+        params.put("receive_m_id", receiveMId);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -586,16 +581,20 @@ public class ReportController {
     public ResponseEntity<?> viewDownloadItemWiseReceiving(
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam Long itemId,
             @RequestParam String flag) {
+
+        Date safeFromDate = (fromDate != null) ? new Date(fromDate.getTime()) : null;
+        Date safeToDate = (toDate != null) ? new Date(toDate.getTime()) : null;
+
         Map<String, Object> params = new HashMap<>();
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         params.put("hospital_id", hospitalId);
         params.put("department_id", departmentId);
-        params.put("from_date", fromDate);
-        params.put("to_date", toDate);
+        params.put("from_date", safeFromDate);
+        params.put("to_date", safeToDate);
         params.put("item_id", itemId);
 
         try{
@@ -687,15 +686,19 @@ public class ReportController {
             @RequestParam Long hospitalId,
             @RequestParam Long departmentId,
             @RequestParam Long itemId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam String flag) {
+
+        Date safeFromDate = (fromDate != null) ? new Date(fromDate.getTime()) : null;
+        Date safeToDate = (toDate != null) ? new Date(toDate.getTime()) : null;
+
         Map<String, Object> params = new HashMap<>();
         params.put("hospital_id", hospitalId);
         params.put("department_id", departmentId);
         params.put("item_id", itemId);
-        params.put("from_date", fromDate);
-        params.put("to_date", toDate);
+        params.put("from_date", safeFromDate);
+        params.put("to_date", safeToDate);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -834,7 +837,7 @@ public class ReportController {
             @RequestParam (required = false) String patientName,
             @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
-            @RequestParam (required = false) String mobileNumber,
+            @RequestParam (required = false) String patientMobileNumber,
             @RequestParam String flag) {
         Long safeInvestigationId = (investigationId == null ? 0L : investigationId);
         Long safeSubChargeCodeId = (subChargeCodeId == null ? 0L : subChargeCodeId);
@@ -848,7 +851,7 @@ public class ReportController {
         params.put("patient_name", patientName);
         params.put("from_date", safeFromDate);
         params.put("to_date", safeToDate);
-        params.put("mobile_no", mobileNumber);
+        params.put("mobile_no", patientMobileNumber);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -860,6 +863,600 @@ public class ReportController {
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/stockMovement", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadStockMovement(
+            @RequestParam Long hospitalId,
+            @RequestParam Long departmentId,
+            @RequestParam Long itemId,
+            @RequestParam String batchNo,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", departmentId);
+        params.put("item_id", itemId);
+        params.put("batch_no", batchNo);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_MOVEMENT_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.STOCK_MOVEMENT_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_MOVEMENT_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/radiologyReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadRadioLogy(
+            @RequestParam Long radOrderDtId,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("rad_orderdt_id", radOrderDtId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.RADIOLOGY_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/appointSummaryDept", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadAppointmentSummaryDept(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long departmentId,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long doctorId,
+            @RequestParam String flag) {
+
+        Long safeDepartmentId = departmentId != null ? departmentId: 0L;
+        Long safeDoctorId = doctorId != null ? doctorId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", safeDepartmentId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("doctor_id", safeDoctorId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/appointSummaryDeptDash", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadAppointmentSummaryDeptDashed(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long departmentId,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long doctorId,
+            @RequestParam String flag) {
+
+        Long safeDepartmentId = departmentId != null ? departmentId: 0L;
+        Long safeDoctorId = doctorId != null ? doctorId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", safeDepartmentId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("doctor_id", safeDoctorId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER_DASHED, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_REPORT_DASHED);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER_DASHED, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/appointSummaryDoctor", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadAppointmentSummaryDoctor(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long departmentId,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long doctorId,
+            @RequestParam String flag) {
+
+        Long safeDepartmentId = departmentId != null ? departmentId: 0L;
+        Long safeDoctorId = doctorId != null ? doctorId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", safeDepartmentId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("doctor_id", safeDoctorId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/appointSummaryDoctorDash", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadAppointmentSummaryDoctorDash(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long departmentId,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long doctorId,
+            @RequestParam String flag) {
+
+        Long safeDepartmentId = departmentId != null ? departmentId: 0L;
+        Long safeDoctorId = doctorId != null ? doctorId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", safeDepartmentId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("doctor_id", safeDoctorId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER_DASHED, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_REPORT_DASHED);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER_DASHED, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/opdRegister", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadOpdRegister(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long departmentId,
+            @RequestParam  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long genderId,
+            @RequestParam (required = false) Long doctorId,
+            @RequestParam (required = false) Long icdId,
+            @RequestParam String flag) {
+
+        Long safeDepartmentId = departmentId != null ? departmentId: 0L;
+        Long safeGenderId = genderId != null ? genderId: 0L;
+        Long safeDoctorId = doctorId != null ? doctorId: 0L;
+        Long safeIcdId = icdId != null ? icdId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", safeDepartmentId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("gender_id", safeGenderId);
+        params.put("doctor_id", safeDoctorId);
+        params.put("icd_id", safeIcdId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_REGISTER_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.OPD_REGISTER_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_REGISTER_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/dailyCancellation", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewDownloadDailyCancellation(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long departmentId,
+            @RequestParam  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long doctorId,
+            @RequestParam (required = false) Long cancellationId,
+            @RequestParam String flag) {
+
+        Long safeDepartmentId = departmentId != null ? departmentId: 0L;
+        Long safeDoctorId = doctorId != null ? doctorId: 0L;
+        Long safeCancellationId = cancellationId != null ? cancellationId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", safeDepartmentId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("doctor_id", safeDoctorId);
+        params.put("cancellation_reason_id", safeCancellationId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.DAILY_CANCELLATION_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.DAILY_CANCELLATION_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.DAILY_CANCELLATION_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/radiologyInvoice", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintRadiologyInvoice(
+            @RequestParam String billNo,
+            @RequestParam String flag) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("Bill_no", billNo);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_INVOICE_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.RADIOLOGY_INVOICE_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_INVOICE_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/sampleRejection", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintSampleRejection(
+            @RequestParam Long hospitalId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam String flag) {
+
+        Long safeSubChargeCodeId = subChargeCodeId != null ? subChargeCodeId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("sub_chargecode_id", safeSubChargeCodeId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SAMPLE_REJECTION_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.SAMPLE_REJECTION_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SAMPLE_REJECTION_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/pendingInvestigation", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintPendingInvestigation(
+            @RequestParam Long hospitalId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam String flag) {
+
+        Long safeSubChargeCodeId = subChargeCodeId != null ? subChargeCodeId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("sub_chargecode_id", safeSubChargeCodeId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.PENDING_INVESTIGATION_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.PENDING_INVESTIGATION_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.PENDING_INVESTIGATION_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/opdBillingRegister", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintOpdBillingRegister(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long departmentId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long doctorId,
+            @RequestParam String flag) {
+
+        Long safeDepartmentId = departmentId != null ? departmentId: 0L;
+        Long safeDoctorId = doctorId != null ? doctorId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("department_id", safeDepartmentId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("doctor_id", safeDoctorId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.OPD_BILLING_REGISTER_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.OPD_BILLING_REGISTER_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.OPD_BILLING_REGISTER_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/labBillingRegister", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintLabBillingRegister(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        Long safeSubChargeCodeId = subChargeCodeId != null ? subChargeCodeId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("sub_chargecode_id", safeSubChargeCodeId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.LAB_BILLING_REGISTER_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.LAB_BILLING_REGISTER_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.LAB_BILLING_REGISTER_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/radiologyBillingRegister", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintRadioBillingRegister(
+            @RequestParam Long hospitalId,
+            @RequestParam (required = false) Long subChargeCodeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        Long safeSubChargeCodeId = subChargeCodeId != null ? subChargeCodeId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("sub_chargecode_id", safeSubChargeCodeId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.RADIOLOGY_BILLING_REGISTER_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.RADIOLOGY_BILLING_REGISTER_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.RADIOLOGY_BILLING_REGISTER_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/dailyCashCollection", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintDailyCashCollection(
+            @RequestParam Long hospitalId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.DAILY_CASH_COLLECTION_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.DAILY_CASH_COLLECTION_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.DAILY_CASH_COLLECTION_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/cashierWiseCollection", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintCashierWiseCollection(
+            @RequestParam Long hospitalId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long cashierId,
+            @RequestParam String flag) {
+
+        Long safeCashierId = cashierId != null ? cashierId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("hospital_id", hospitalId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("cashier_id", safeCashierId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.CASHIER_WISE_COLLECTION_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf, ReportConstants.CASHIER_WISE_COLLECTION_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.CASHIER_WISE_COLLECTION_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
                                 ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));

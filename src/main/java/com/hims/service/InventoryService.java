@@ -18,7 +18,6 @@ import java.util.Optional;
 import com.hims.request.*;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
-
 import java.time.LocalDate;
 import java.util.List;
 
@@ -94,5 +93,18 @@ public interface InventoryService {
 
 
 
+     ApiResponse<String> saveOpeningBalanceEntry(OpeningBalanceEntryRequest openingBalanceEntryRequest);
+
+     ApiResponse<Page<OpeningBalanceEntryHeaderResponse>> getOpeningBalanceEntryHeaderListWrtDept(Integer pageNo,Integer pageSize,Long hospitalId, Long deptId,LocalDate fromDate,LocalDate toDate);
+
+     ApiResponse<List<OpeningBalanceEntryDetailResponse>> getOpeningBalanceEntryDetailsWrtHeader(Long balanceMId);
+
+     ApiResponse<List<OpeningBalanceEntryHeaderResponse>> getAllOpeningBalanceEntryHeadersWrtDeptWithOutPagination(Long hospitalId, Long deptId);
+
+    ApiResponse<String> createOpeningBalanceEntryAndUpdateStatus(OpeningBalanceEntryRequest request);
+
+    ApiResponse<String> updateOpeningBalanceById(Long id, OpeningBalanceEntryRequest openingBalanceEntryRequest);
+
+    ApiResponse<String> approveOpeningBalance(Long id, OpeningBalanceRequestForApprove request);
 
 }

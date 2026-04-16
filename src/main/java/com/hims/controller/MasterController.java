@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -242,6 +243,10 @@ private MasVaccineMasterService masVaccineMasterService;
 private MasQuestionHeadingService masQuestionHeadingService;
 @Autowired
 private  MasQuestionService questionService;
+@Autowired
+private  MasQuestionOptionValueService masQuestionOptionValueService;
+@Autowired
+private OpdQuestionMasterService opdQuestionMasterService;
 
 @Autowired
 private MasLabResultAmendmentTypeService labResultAmendmentTypeService;
@@ -278,6 +283,35 @@ private  MasBloodDonationTypeService masBloodDonationTypeService;
 private RadiologyTemplateService radiologyTemplateService;
 @Autowired
     private MasComponentFailureReasonService masComponentFailureReasonService;
+@Autowired
+private MasCrossMatchTypeService masCrossMatchTypeService;
+@Autowired
+private IpdConsultationTariffService ipdConsultationTariffService;
+@Autowired
+private MasVisitTypeService masVisitTypeService;
+@Autowired
+private MasIpdPackageService masIpdPackageService;
+@Autowired
+private MasIpdServiceCategoryService masIpdServiceCategoryService;
+@Autowired
+private PackageRateConfigService packageRateConfigService;
+@Autowired
+private MasIpdBillingTypeService masIpdBillingTypeService;
+@Autowired
+private MasInsuranceService masInsuranceService;
+@Autowired
+private MasTpaService masTpaService;
+@Autowired
+private MasCorporateService masCorporateService;
+@Autowired
+private MasProcedurePricingService masProcedurePricingService;
+@Autowired
+    private  MasSurgeryService masSurgeryService;
+@Autowired
+private MasSurgeryPricingService masSurgeryPricingService;
+@Autowired
+private MasAdmissionCategoryService masAdmissionCategoryService;
+
 
 
 
@@ -505,6 +539,26 @@ private RadiologyTemplateService radiologyTemplateService;
     @GetMapping("/indent-department/getAll")
     public ResponseEntity<?> getAllIndentDepartment(@RequestParam String status) {
         return ResponseEntity.ok(masDepartmentService.getAllIndentApplicableDepartments(status));
+    }
+
+    /**
+     * Fetch Departments
+
+     * This API retrieves department details from the system.
+
+     * - If no departmentTypeCode is provided, it returns all departments.
+     *   (Used for populating dropdown lists.)
+
+     * - If departmentTypeCode is provided, it filters and returns
+     *   the specific department matching the given code.
+     *   (Note: departmentTypeCode corresponds to departmentTypeCode in MasDepartmentType entity.)
+     *
+     * @param departmentTypeCode (optional) Department code used to filter results
+     * @return List of departments or a specific department based on the code
+     */
+    @GetMapping("/department/allForDropdowns")
+    public  ResponseEntity<?> getAllDepartmentsForDropdown(@RequestParam (required = false) String departmentTypeCode){
+        return ResponseEntity.ok(masDepartmentService.getAllDepartments(departmentTypeCode));
     }
 
     //    ================================Mas DepartmentType Controller================================//
@@ -1105,7 +1159,7 @@ private RadiologyTemplateService radiologyTemplateService;
     }
 
     @GetMapping("/user-departments/getByUserName/{userName}")
-    public ApiResponse<List<UserDepartmentResponse>> getAllUserDepartmentsByUserUserName(@PathVariable String userName) {
+    public ApiResponse<List<UserDepartmentProjectionResponse>> getAllUserDepartmentsByUserUserName(@PathVariable String userName) {
         return userDepartmentServiceImpl.getAllUserDepartmentsByUserUserName(userName);
     }
 
@@ -1262,32 +1316,45 @@ private RadiologyTemplateService radiologyTemplateService;
 
     //    ================================Mas Opd Service Controller================================//
 
-    @GetMapping("/masServiceOpd/getByHospitalId/{id}")
-    public ResponseEntity<ApiResponse<List<MasServiceOpd>>> getMasServiceOpdByHospitalId(@PathVariable Long id) {
-        ApiResponse<List<MasServiceOpd>> response = masServiceOpdService.findByHospitalId(id);
+    @GetMapping("/masServiceOpd/getByHospitalId/{hospitalId}")
+    public ResponseEntity<ApiResponse<Page<MasServiceOpdResponse>>> getOpdTariffByDepartmentAndDoctor(
+            @PathVariable Long hospitalId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) String doctorName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        log.info("Fetching OPD Tariff | hospitalId: {}, departmentId: {}, doctorId: {}, page: {}, size: {}",
+                hospitalId, departmentId, doctorId, page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        ApiResponse<Page<MasServiceOpdResponse>> response = masServiceOpdService.getOpdTariffByDepartmentAndDoctor(hospitalId, departmentId, doctorId,doctorName, pageable);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/masServiceOpd/save")
-    public ResponseEntity<ApiResponse<MasServiceOpd>> saveMasServiceOpd(@RequestBody MasServiceOpdRequest request) {
-        ApiResponse<MasServiceOpd> response = masServiceOpdService.save(request);
+    public ResponseEntity<ApiResponse<String>> saveMasServiceOpd(@RequestBody MasServiceOpdRequest request) {
+        log.info("Saving MasServiceOpd request: {}", request);
+        ApiResponse<String> response = masServiceOpdService.save(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PutMapping("/masServiceOpd/update/{id}")
-    public ResponseEntity<ApiResponse<MasServiceOpd>> updateMasServiceOpd(
+    public ResponseEntity<ApiResponse<String>> updateMasServiceOpd(
             @PathVariable Long id,
             @RequestBody MasServiceOpdRequest request) {
-        ApiResponse<MasServiceOpd> response = masServiceOpdService.edit(id, request);
+        log.info("Updating MasServiceOpd | id: {}, request: {}", id, request);
+        ApiResponse<String> response = masServiceOpdService.edit(id, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 
     @PutMapping("/masServiceOpd/updateStatus/{id}")
-    public ResponseEntity<ApiResponse<MasServiceOpd>> updateMasServiceOpdStatusById(
+    public ResponseEntity<ApiResponse<String>> updateMasServiceOpdStatusById(
             @PathVariable Long id,
             @RequestParam String status) {
-        ApiResponse<MasServiceOpd> response = masServiceOpdService.updateStatus(id, status);
+        log.info("Updating status | id: {}, status: {}", id, status);
+        ApiResponse<String> response = masServiceOpdService.updateStatus(id, status);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -1325,8 +1392,8 @@ private RadiologyTemplateService radiologyTemplateService;
 
 
     @GetMapping("/masServiceCategory/getGstConfig/{flag}")
-    public ResponseEntity<ApiResponse<GstConfigResponse>> getGstConfig(@PathVariable int flag , @RequestParam(name = "categoryId", required = false) Integer catId) {
-        ApiResponse<GstConfigResponse> response = masServiceCategoryService.getGstConfig(flag , catId);
+    public ResponseEntity<ApiResponse<GstConfigResponse>> getGstConfig(@PathVariable int flag , @RequestParam(name = "categoryCode", required = false) String catCode) {
+        ApiResponse<GstConfigResponse> response = masServiceCategoryService.getGstConfig(flag , catCode);
 
         HttpStatus status = (response.getStatus() == HttpStatus.OK.value()) ? HttpStatus.OK : HttpStatus.NOT_FOUND;
 
@@ -2008,13 +2075,9 @@ private RadiologyTemplateService radiologyTemplateService;
             @RequestParam int flag,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String search
-    ) {
+            @RequestParam(required = false) String search) {
         return masProcedureService.getAllProceduresWIthFilter(flag, page, size, search);
     }
-
-
-
 
     @GetMapping("masProcedure/getById/{id}")
     public ResponseEntity<ApiResponse<MasProcedureResponse>> getByIdProcedure(@PathVariable Long id) {
@@ -4341,5 +4404,409 @@ private RadiologyTemplateService radiologyTemplateService;
         return ResponseEntity.ok(radiologyTemplateService.getByIdTemplateList(modalityId));
     }
 
+
+    //=======================================Cross Match Type Master ====================================================
+
+    @GetMapping("masCrossMatchType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<java.util.List<MasCrossMatchTypeResponse>>> getAllCrossMatchType(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masCrossMatchTypeService.getAll(flag));
+    }
+
+    @GetMapping("masCrossMatchType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasCrossMatchTypeResponse>> getByIdCrossMatchType(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masCrossMatchTypeService.getById(id));
+    }
+
+    @PostMapping("masCrossMatchType/create")
+    public ResponseEntity<ApiResponse<MasCrossMatchTypeResponse>> createCrossMatchType(
+            @Valid @RequestBody MasCrossMatchTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masCrossMatchTypeService.create(request));
+    }
+
+    @PutMapping("masCrossMatchType/update/{id}")
+    public ResponseEntity<ApiResponse<MasCrossMatchTypeResponse>> updateCrossMatchType(
+            @PathVariable Long id,
+            @Valid @RequestBody MasCrossMatchTypeRequest request) {
+        return ResponseEntity.ok(masCrossMatchTypeService.update(id, request));
+    }
+
+    @PutMapping("masCrossMatchType/status/{id}")
+    public ResponseEntity<ApiResponse<MasCrossMatchTypeResponse>> changeStatusCrossMatchType(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masCrossMatchTypeService.changeStatus(id, status));
+    }
+
+    //=======================================Mas Question Option Value ====================================================
+
+
+    @GetMapping("masQuestionOptionValue/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasQuestionOptionValueResponse>>> getAllMasQuestionOptionValue(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masQuestionOptionValueService.getAll(flag));
+    }
+
+    @GetMapping("masQuestionOptionValue/getById/{id}")
+    public ResponseEntity<ApiResponse<MasQuestionOptionValueResponse>> getByIdMasQuestionOptionValue(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masQuestionOptionValueService.getById(id));
+    }
+
+    @PostMapping("masQuestionOptionValue/create")
+    public ResponseEntity<ApiResponse<MasQuestionOptionValueResponse>> createMasQuestionOptionValue(
+            @RequestBody @Valid MasQuestionOptionValueRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masQuestionOptionValueService.create(request));
+    }
+
+    @PutMapping("masQuestionOptionValue/update/{id}")
+    public ResponseEntity<ApiResponse<MasQuestionOptionValueResponse>> updateMasQuestionOptionValue(
+            @PathVariable Long id,
+            @RequestBody @Valid MasQuestionOptionValueRequest request) {
+        return ResponseEntity.ok(masQuestionOptionValueService.update(id, request));
+    }
+
+    @PutMapping("masQuestionOptionValue/status/{id}")
+    public ResponseEntity<ApiResponse<MasQuestionOptionValueResponse>> changeStatusMasQuestionOptionValue(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masQuestionOptionValueService.changeStatus(id, status));
+    }
+    //=======================================Opd Question Master====================================================
+
+    @GetMapping("opdQuestionMaster/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<OpdQuestionMasterResponse>>> getAllOpdQuestionMaster(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(opdQuestionMasterService.getAll(flag));
+    }
+
+    @GetMapping("opdQuestionMaster/getById/{id}")
+    public ResponseEntity<ApiResponse<OpdQuestionMasterResponse>> getByIdOpdQuestionMaster(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(opdQuestionMasterService.getById(id));
+    }
+
+    @PostMapping("opdQuestionMaster/create")
+    public ResponseEntity<ApiResponse<OpdQuestionMasterResponse>> createOpdQuestionMaster(
+            @RequestBody @Valid OpdQuestionMasterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(opdQuestionMasterService.create(request));
+    }
+
+    @PutMapping("opdQuestionMaster/update/{id}")
+    public ResponseEntity<ApiResponse<OpdQuestionMasterResponse>> updateOpdQuestionMaster(
+            @PathVariable Long id,
+            @RequestBody @Valid OpdQuestionMasterRequest request) {
+        return ResponseEntity.ok(opdQuestionMasterService.update(id, request));
+    }
+
+    @PutMapping("opdQuestionMaster/status/{id}")
+    public ResponseEntity<ApiResponse<OpdQuestionMasterResponse>> changeStatusOpdQuestionMaster(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(opdQuestionMasterService.changeStatus(id, status));
+    }
+
+    //=======================================Ipd Consultation Tariff====================================================
+
+    @GetMapping("ipdConsultationTariff/getAll")
+    public ResponseEntity<ApiResponse<Page<IpdConsultationTariffResponse>>> getAllIpdConsultationTariff(
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        return ResponseEntity.ok(
+                ipdConsultationTariffService.getAllIpdConsultationTariff(
+                       departmentId, doctorId, page, size
+                )
+        );
+    }
+
+    @GetMapping("ipdConsultationTariff/getById/{id}")
+    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> getByIdIpdConsultationTariff(@PathVariable Long id) {
+        return ResponseEntity.ok(ipdConsultationTariffService.getByIdIpdConsultationTariff(id));
+    }
+
+    @PostMapping("ipdConsultationTariff/create")
+    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> createIpdConsultationTariff(
+            @RequestBody IpdConsultationTariffRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ipdConsultationTariffService.createIpdConsultationTariff(request));
+    }
+
+    @PutMapping("ipdConsultationTariff/update/{id}")
+    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> updateIpdConsultationTariff(
+            @PathVariable Long id,
+            @RequestBody IpdConsultationTariffRequest request) {
+        return ResponseEntity.ok(ipdConsultationTariffService.updateIpdConsultationTariff(id, request));
+    }
+
+    @PutMapping("ipdConsultationTariff/status/{id}")
+    public ResponseEntity<ApiResponse<IpdConsultationTariffResponse>> changeStatusIpdConsultationTariff(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(ipdConsultationTariffService.changeStatusIpdConsultationTariff(id, status));
+    }
+    //=======================================Mas Visit Type ====================================================
+
+    @GetMapping("masVisitType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasVisitTypeResponse>>> getAllVisitType(@PathVariable int flag) {
+        return ResponseEntity.ok(masVisitTypeService.getAll(flag));
+    }
+
+    //======================================= mas Ipd Package  ====================================================
+
+    @PostMapping("ipdPackage/create")
+    public ResponseEntity<ApiResponse<String>> savePackage(@RequestBody IpdPackageRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masIpdPackageService.savePackage(request));
+    }
+    @GetMapping("ipdPackage/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<IpdPackageResponse>>> getAllIpdPackages(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masIpdPackageService.getAllIpdPackages(flag));
+    }
+    @PutMapping("ipdPackage/status/{id}")
+    public ResponseEntity<ApiResponse<IpdPackageResponse>> changeStatusIpdPackage(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masIpdPackageService.changeStatus(id, status));
+    }
+    @GetMapping("ipdPackage/getById/{id}")
+    public ResponseEntity<ApiResponse<IpdPackageDetailsResponse>> getIpdPackageById(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(masIpdPackageService.getById(id));
+    }
+    @PutMapping("ipdPackage/update/{id}")
+    public ResponseEntity<ApiResponse<String>> updatePackage(
+            @PathVariable Long id,
+            @RequestBody IpdPackageRequest request) {
+        return ResponseEntity.ok(masIpdPackageService.updatePackage(id, request));
+    }
+
+//======================================= Mas Ipd Service Category  ====================================================
+@GetMapping("ipdServiceCategory/getAll/{flag}")
+public ResponseEntity<ApiResponse<List<IpdServiceCategoryResponse>>> getAllIpdServiceCategory(
+        @PathVariable int flag) {
+    return ResponseEntity.ok(masIpdServiceCategoryService.getAll(flag));
+}
+
+//======================================= Package Rate Config  ====================================================
+@PostMapping("packageRateConfig/create")
+public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateConfig(
+        @RequestBody PackageRateConfigRequest request) {
+        ApiResponse<PackageRateConfigResponse> response = packageRateConfigService.savePackageRateConfig(request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+}
+    @PutMapping("packageRateConfig/update/{id}")
+    public ResponseEntity<ApiResponse<PackageRateConfigResponse>> updatePackageRateConfig(
+            @PathVariable Long id,
+            @RequestBody PackageRateConfigRequest request) {
+        return ResponseEntity.ok(packageRateConfigService.updatePackageRateConfig(id, request));
+    }
+    @PutMapping("packageRateConfig/status/{id}")
+    public ResponseEntity<ApiResponse<PackageRateConfigResponse>> changeStatusPackageRateConfig(
+            @PathVariable Long id, @RequestParam String status) {
+        return ResponseEntity.ok(packageRateConfigService.changeStatus(id, status));
+
+    }
+    @GetMapping("packageRateConfig/getById/{id}")
+    public ResponseEntity<ApiResponse<PackageRateConfigResponse>> getByIdPackageRateConfig(@PathVariable Long id) {
+        return ResponseEntity.ok(packageRateConfigService.getByIdPackageRateConfig(id));
+
+    }
+    @GetMapping("packageRateConfig/getAll")
+    public ResponseEntity<ApiResponse<Page<PackageRateConfigResponse>>> getAllPackageRateConfig(
+            @RequestParam(required = false) Long billingTypeId,
+            @RequestParam(required = false) Long corporateId,
+            @RequestParam(required = false) Long insuranceId,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+
+    ) {
+
+        return ResponseEntity.ok(packageRateConfigService.getByAllPackageRateConfigId(billingTypeId, corporateId, insuranceId, search, page, size));
+
+    }
+
+    //======================================= Mas Ipd Billing Type ====================================================
+    @GetMapping("masIpdBillingType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasIpdBillingTypeResponse>>> getAllMasIpdBillingType(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masIpdBillingTypeService.getAllMasIpdBillingType(flag));
+    }
+
+    //======================================= Mas Insurance ====================================================
+    @GetMapping("masInsurance/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasInsuranceResponse>>> getAllMasInsurance(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masInsuranceService.getAllMasInsurance(flag));
+    }
+    //======================================= Mas Tpa ====================================================
+    @GetMapping("masTpa/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasTpaResponse>>> getAllMasTpa(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masTpaService.getAllMasTpa(flag));
+    }
+    //======================================= Mas Tpa ====================================================
+    @GetMapping("masCorporate/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasCorporateResponse>>> getAllMasCorporate(
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masCorporateService.getAllMasCorporate(flag));
+    }
+
+    //======================================= Mas Procedure Pricing====================================================
+    @PostMapping("masProcedurePricing/create")
+    public ResponseEntity<ApiResponse<String>> addMasProcedurePricing(
+            @RequestBody MasProcedurePricingRequest request) {
+
+        ApiResponse<String> response = masProcedurePricingService.addMasProcedurePricing(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    @PutMapping("masProcedurePricing/update/{id}")
+    public ResponseEntity<ApiResponse<String>> updateMasProcedurePricing(
+            @PathVariable Long id,
+            @RequestBody MasProcedurePricingRequest request) {
+
+        ApiResponse<String> response = masProcedurePricingService.updateMasProcedurePricing(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PutMapping("masProcedurePricing/status/{id}")
+    public ResponseEntity<ApiResponse<String>> changeStatusMasProcedurePricing(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        ApiResponse<String> response = masProcedurePricingService.changeStatusMasProcedurePricing(id, status);
+        return  ResponseEntity.ok(response);
+    }
+    @GetMapping("masProcedurePricing/getById/{id}")
+    public ResponseEntity<ApiResponse<MasProcedurePricingResponse>> getByIdMasProcedurePricing(@PathVariable Long id) {
+
+        return ResponseEntity.ok(masProcedurePricingService.getByIdMasProcedurePricing(id));
+    }
+    @GetMapping("masProcedurePricing/getAll")
+    public ResponseEntity<ApiResponse<Page<MasProcedurePricingResponse>>> getAllMasProcedurePricing(
+            @RequestParam(required = false) Long billingTypeId,
+            @RequestParam(required = false) String procedureName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        return ResponseEntity.ok(
+                masProcedurePricingService.getAllMasProcedurePricing(billingTypeId, procedureName, page, size)
+        );
+    }
+    //======================================= Mas Surgery====================================================
+
+    @GetMapping("masSurgery/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasSurgeryResponse>>> getAllMasSurgery(@PathVariable int flag) {
+        return ResponseEntity.ok(masSurgeryService.getAllMasSurgery(flag));
+    }
+
+    @GetMapping("masSurgery/getById/{id}")
+    public ResponseEntity<ApiResponse<MasSurgeryResponse>> getByIdMasSurgery(@PathVariable Long id) {
+        return ResponseEntity.ok(masSurgeryService.getByIdMasSurgery(id));
+    }
+
+    @PostMapping("masSurgery/create")
+    public ResponseEntity<ApiResponse<MasSurgeryResponse>> createMasSurgery(
+            @RequestBody @Valid MasSurgeryRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masSurgeryService.createMasSurgery(request));
+    }
+
+    @PutMapping("masSurgery/update/{id}")
+    public ResponseEntity<ApiResponse<MasSurgeryResponse>> updateMasSurgery(
+            @PathVariable Long id,
+            @RequestBody @Valid MasSurgeryRequest request) {
+        return ResponseEntity.ok(masSurgeryService.updateMasSurgery(id, request));
+    }
+
+    @PutMapping("masSurgery/status/{id}")
+    public ResponseEntity<ApiResponse<MasSurgeryResponse>> changeStatusMasSurgery(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masSurgeryService.changeStatusMasSurgery(id, status));
+    }
+
+    //======================================= Mas Surgery Pricing====================================================
+
+    @PostMapping("masSurgeryPricing/create")
+    public ResponseEntity<ApiResponse<String>> addMasSurgeryPricing(
+            @RequestBody MasSurgeryPricingRequest request) {
+
+        log.info("Request received to create surgery pricing: {}", request);
+
+        ApiResponse<String> response = masSurgeryPricingService.addMasSurgeryPricing(request);
+
+        log.info("Response from create surgery pricing: {}", response.getMessage());
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PutMapping("masSurgeryPricing/update/{id}")
+    public ResponseEntity<ApiResponse<String>> updateMasSurgeryPricing(
+            @PathVariable Long id,
+            @RequestBody MasSurgeryPricingRequest request) {
+
+        log.info("Request to update surgery pricing with id: {}, data: {}", id, request);
+
+        ApiResponse<String> response = masSurgeryPricingService.updateMasSurgeryPricing(id, request);
+
+        log.info("Update response for id {}: {}", id, response.getMessage());
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PutMapping("masSurgeryPricing/status/{id}")
+    public ResponseEntity<ApiResponse<String>> changeStatusMasSurgeryPricing(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        log.info("Request to change status for id: {} to {}", id, status);
+
+        ApiResponse<String> response = masSurgeryPricingService.changeStatusMasSurgeryPricing(id, status);
+
+        log.info("Status updated for id {}: {}", id, response.getMessage());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("masSurgeryPricing/getById/{id}")
+    public ResponseEntity<ApiResponse<MasSurgeryPricingResponse>> getByIdMasSurgeryPricing(
+            @PathVariable Long id) {
+
+        log.info("Fetching surgery pricing by id: {}", id);
+
+        ApiResponse<MasSurgeryPricingResponse> response =
+                masSurgeryPricingService.getByIdMasSurgeryPricing(id);
+
+        log.info("Fetched surgery pricing for id: {}", id);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("masSurgeryPricing/getAll")
+    public ResponseEntity<ApiResponse<Page<MasSurgeryPricingResponse>>> getAllMasSurgeryPricing(
+            @RequestParam(required = false) Long billingTypeId,
+            @RequestParam(required = false) String surgeryName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        log.info("Fetching all surgery pricing with filters -> billingTypeId: {}, surgeryName: {}, page: {}, size: {}",
+                billingTypeId, surgeryName, page, size);
+
+        ApiResponse<Page<MasSurgeryPricingResponse>> response =
+                masSurgeryPricingService.getAllMasSurgeryPricing(billingTypeId, surgeryName, page, size);
+
+        return ResponseEntity.ok(response);
+    }
+    //======================================= Mas Admission Category====================================================
+
+    @GetMapping("masAdmissionCategory/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasAdmissionCategoryResponse>>> getAllMasAdmissionCategory(@PathVariable int flag) {
+        return ResponseEntity.ok(masAdmissionCategoryService.getAllMasAdmissionCategory(flag));
+    }
 
 }

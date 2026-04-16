@@ -18,7 +18,7 @@ public interface PatientService {
     ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq request);
     ApiResponse<String> uploadImage(MultipartFile file);
 
-    ApiResponse<List<PatientProjection>> searchPatient(PatientSearchReq substring);
+    ApiResponse<List<Patient>> searchPatient(PatientSearchReq substring);
 
     ApiResponse<List<OpdPreConsultationResponse>> getPendingPreConsultations();
 

@@ -20,13 +20,13 @@ public class MasServiceOpd {
     private Long id;
 
     @Size(max = 20)
-    @NotNull
-    @Column(name = "service_code", nullable = false, length = 20)
+
+    @Column(name = "service_code", length = 20)
     private String serviceCode;
 
     @Size(max = 400)
-    @NotNull
-    @Column(name = "service_name", nullable = false, length = 400)
+
+    @Column(name = "service_name", length = 400)
     private String serviceName;
 
     @NotNull

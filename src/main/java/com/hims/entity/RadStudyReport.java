@@ -45,7 +45,7 @@ public class RadStudyReport {
     @NotBlank(message = "createdBy is required")
     @Size(max = 200, message = "createdBy max length is 200")
     @Column(name = "createdby", length = 200, nullable = false)
-    private String createdBy;
+    private Long createdBy;
 
     @NotNull(message = "createdOn is required")
     @Column(name = "createdon", nullable = false)

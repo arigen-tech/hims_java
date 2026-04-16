@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Appointment_summary_report" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="096df346-e64c-4067-85da-0437ec5f074d">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="hospital_id" class="java.lang.Long"/>
+	<parameter name="from_date" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="to_date" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="department_id" class="java.lang.Long"/>
+	<parameter name="doctor_id" class="java.lang.Long"/>
+	<queryString>
+		<![CDATA[select 
+	h.hospital_name,
+    d.department_name as department_name,
+    count(v.visit_id) as total_count,
+    count(case when lower(v.visit_status) = 'y' then 1 end) as completed_count,
+    count(case when lower(v.visit_status) = 'c' then 1 end) as cancelled_count,
+    count(case when lower(v.visit_status) = 'x' then 1 end) as no_show_count,
+    count(case when lower(v.visit_status) = 'n' then 1 end) as pending_count
+from visit v
+left join mas_department d on d.department_id = v.department_id
+left join mas_hospital h on v.hospital_id = h.hospital_id
+where v.visit_type in ('F', 'N')
+and v.hospital_id = $P{hospital_id}
+and (v.department_id = $P{department_id} or $P{department_id} = 0)
+and (v.doctor_id = $P{doctor_id} or $P{doctor_id} = 0)
+and v.visit_date between $P{from_date} and $P{to_date}
+group by h.hospital_name,v.department_id, d.department_name
+order by d.department_name;]]>
+	</queryString>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<field name="department_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="department_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="department_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_department"/>
+	</field>
+	<field name="total_count" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="total_count"/>
+		<property name="com.jaspersoft.studio.field.label" value="total_count"/>
+	</field>
+	<field name="completed_count" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="completed_count"/>
+		<property name="com.jaspersoft.studio.field.label" value="completed_count"/>
+	</field>
+	<field name="cancelled_count" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="cancelled_count"/>
+		<property name="com.jaspersoft.studio.field.label" value="cancelled_count"/>
+	</field>
+	<field name="no_show_count" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="no_show_count"/>
+		<property name="com.jaspersoft.studio.field.label" value="no_show_count"/>
+	</field>
+	<field name="pending_count" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="pending_count"/>
+		<property name="com.jaspersoft.studio.field.label" value="pending_count"/>
+	</field>
+	<variable name="S.No." class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
+	</variable>
+	<variable name="total_booked" class="java.lang.Long" calculation="Sum">
+		<variableExpression><![CDATA[$F{total_count}]]></variableExpression>
+	</variable>
+	<variable name="total_pending" class="java.lang.Long" calculation="Sum">
+		<variableExpression><![CDATA[$F{pending_count}]]></variableExpression>
+	</variable>
+	<variable name="total_completed" class="java.lang.Long" calculation="Sum">
+		<variableExpression><![CDATA[$F{completed_count}]]></variableExpression>
+	</variable>
+	<variable name="total_cancelled" class="java.lang.Long" calculation="Sum">
+		<variableExpression><![CDATA[$F{cancelled_count}]]></variableExpression>
+	</variable>
+	<variable name="total_no_show" class="java.lang.Long" calculation="Sum">
+		<variableExpression><![CDATA[$F{no_show_count}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="55" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="3" width="555" height="16" uuid="8ce941ff-2df5-4a68-9941-1e373f886a09"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="22" width="555" height="16" uuid="5e658fd8-6445-441c-8718-77ba316d7d00"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Appoitment Summary Report]]></text>
+			</staticText>
+			<image>
+				<reportElement key="image-1" x="4" y="3" width="100" height="51" uuid="d3ba456c-c57c-49e6-b200-7d4741abf31d"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="26" splitType="Stretch">
+			<staticText>
+				<reportElement x="7" y="9" width="80" height="14" uuid="38aa58d5-44fc-4efe-89bb-d8b9e5175ba2"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Report Range]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+				<reportElement x="98" y="9" width="52" height="14" uuid="4294ef9a-6108-4b9b-88f2-2a32eb8dfd32"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{from_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="148" y="9" width="14" height="14" uuid="f5c4c1be-c070-44c9-8d37-8f34aa56aeef"/>
+				<textElement textAlignment="Center">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[to]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+				<reportElement x="162" y="9" width="70" height="14" uuid="eb084c2e-7911-417b-b563-cbec414ad01a"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="87" y="9" width="7" height="14" uuid="07a6fa15-b599-4097-8f1d-dac7104a2457"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="318" y="10" width="80" height="14" uuid="7f321e41-1044-474a-9b77-6cd4e2e95791"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Generated On]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="398" y="10" width="7" height="14" uuid="46b7a45a-3a04-4499-b8a2-5d4922a68470"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="409" y="10" width="141" height="14" uuid="9f85d074-e0b5-4b0c-92b6-550bfef9fb46"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toUpperCase()]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="25" splitType="Stretch">
+			<staticText>
+				<reportElement x="4" y="7" width="32" height="13" uuid="5ce4607f-5604-4c1a-9651-7be4a007c88d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S. No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="40" y="7" width="110" height="13" uuid="e4fef2d0-fd80-4aed-b7dc-af533b67ea45"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Department Name]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-1" x="0" y="3" width="1" height="21" uuid="449e04ef-c2f8-4ddd-a026-5cee410134b9"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="38" y="3" width="1" height="21" uuid="b18eb55d-8abc-4dfd-b530-d3c89e4a932d"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="154" y="3" width="1" height="21" uuid="fed991e8-2249-4552-b3e4-ccb1c5e0ed8b"/>
+			</line>
+			<staticText>
+				<reportElement x="238" y="7" width="68" height="13" uuid="efd4f531-4673-4d08-8fbd-d175ec7761fd"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pending]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="319" y="7" width="68" height="13" uuid="365c4e57-d85f-417d-aadb-6d1a50c58182"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Completed]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="400" y="7" width="68" height="13" uuid="e798b43a-a7ba-4c8b-b86a-b9a503a38bbf"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cancelled]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="157" y="7" width="68" height="13" uuid="fad66ffa-35c3-4b01-97f0-ad543ca112a0"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Booked]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="482" y="7" width="68" height="13" uuid="c84a1995-45bd-48a0-938b-650f0e13a5f8"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No-Show]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="231" y="3" width="1" height="21" uuid="ccd7a6ef-0c62-44e0-b373-63fadb189297"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="311" y="3" width="1" height="21" uuid="1a2e4837-7cbc-42de-94d9-b36df07258e4"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="391" y="3" width="1" height="21" uuid="60edc3d0-61c5-4fc7-b1f8-6f5da5851995"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="472" y="3" width="1" height="21" uuid="c29c6560-6dee-4577-87cc-6c3bbbff33d3"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="554" y="4" width="1" height="21" uuid="2228156b-803f-44ef-ae65-3a086dd175c8"/>
+			</line>
+			<line>
+				<reportElement x="0" y="24" width="555" height="1" uuid="954aa545-aa41-43f8-8e20-8de9f7dac9f7"/>
+			</line>
+			<line>
+				<reportElement x="0" y="3" width="555" height="1" uuid="17c732e4-7c24-4a4f-97f7-1c05ae19d649"/>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="21" splitType="Stretch">
+			<textField>
+				<reportElement x="319" y="3" width="68" height="13" uuid="e488b6d4-e384-4562-a23a-d9c980a4e458"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{completed_count}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="472" y="-5" width="1" height="25" uuid="dca05137-7d27-420e-a56e-f555b112e62c"/>
+			</line>
+			<line>
+				<reportElement key="line-1" x="0" y="-5" width="1" height="25" uuid="062bde32-2fa8-40ab-b6c0-c740c6ccecda"/>
+			</line>
+			<textField>
+				<reportElement x="400" y="3" width="68" height="13" uuid="f374441c-6bea-472f-b023-59adcf3155d4"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cancelled_count}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="157" y="3" width="68" height="13" uuid="61b5c7f1-f7bf-4baf-a612-86f0ac8d7c64"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{total_count}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="238" y="3" width="68" height="13" uuid="46968fa7-96ad-4f01-bc5b-8f9d7880fcee"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pending_count}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="231" y="-5" width="1" height="25" uuid="8d2398af-8c57-41ff-9330-ec4954d9522c"/>
+			</line>
+			<textField>
+				<reportElement x="40" y="3" width="110" height="13" uuid="b7939e97-61e6-4641-a0d9-5cd9b288a312"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="311" y="-5" width="1" height="25" uuid="6d75fc41-81c8-4bd2-b404-1dafb0466891"/>
+			</line>
+			<textField>
+				<reportElement x="4" y="3" width="32" height="13" uuid="5135ed9d-57b4-4ba1-916f-5fe48da9593c"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="554" y="-4" width="1" height="25" uuid="3f530177-9a3c-4e45-a013-34b494cf5020"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="391" y="-5" width="1" height="25" uuid="33677d95-922f-43c2-b14c-46bbea590bec"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="38" y="-5" width="1" height="25" uuid="a18c2e77-424a-4bd5-b358-3d97ffdd46dc"/>
+			</line>
+			<line>
+				<reportElement x="0" y="20" width="555" height="1" uuid="a459ed7c-cf99-4a2d-9f2c-bad78b61ceda"/>
+			</line>
+			<textField>
+				<reportElement x="482" y="3" width="68" height="13" uuid="fa89df0b-b247-498e-8131-6d95f027a59d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{no_show_count}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="154" y="-5" width="1" height="25" uuid="fc50051f-b23d-494b-9114-2588cca0045f"/>
+			</line>
+		</band>
+	</detail>
+	<summary>
+		<band height="50">
+			<textField>
+				<reportElement x="157" y="3" width="68" height="13" uuid="51796c88-fa3a-4b4c-9759-6ac7aca5b233"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{total_booked}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="4" y="3" width="145" height="13" uuid="cbed69bd-2663-45fb-98b8-4475f477d6a4"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="238" y="3" width="68" height="13" uuid="83351fe9-304d-4d69-b18f-9bac3b50271b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{total_pending}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="319" y="3" width="68" height="13" uuid="5da0ba61-4ce9-4ac4-9568-1bc2ae01e887"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{total_completed}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="400" y="3" width="68" height="13" uuid="b78d6c14-cb74-4235-be4a-f15b0f853895"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{total_cancelled}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="482" y="3" width="68" height="13" uuid="2a55d9d6-d08a-4f86-be8f-22c11847da93"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{total_no_show}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="20" width="555" height="1" uuid="fa162ccc-12e5-4687-bf2a-8e97ca4a941d"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="154" y="-5" width="1" height="25" uuid="7d58afa4-bcbc-427a-9c05-1faa26ef64a0"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="231" y="-5" width="1" height="25" uuid="69ef948c-5588-462d-a6e6-e30b06c757b1"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="311" y="-5" width="1" height="25" uuid="9b1d23a7-a0e6-4111-a688-abda9415a204"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="391" y="-5" width="1" height="25" uuid="1ef48a67-c67e-4789-a65f-04c898cea9c9"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="472" y="-5" width="1" height="25" uuid="fc5dad4b-df0f-49dc-a6e0-edc9399d27dc"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="554" y="-4" width="1" height="25" uuid="e3697ab6-4d60-4953-98c8-86c7125aa892"/>
+			</line>
+			<line>
+				<reportElement key="line-1" x="0" y="-5" width="1" height="25" uuid="667ddb4d-8b0c-4c1f-ae23-26031fecbc26"/>
+			</line>
+		</band>
+	</summary>
+	<noData>
+		<band height="18">
+			<staticText>
+				<reportElement x="0" y="2" width="555" height="16" uuid="15052dd6-7520-4b8c-8d10-5665a4f05020"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOUND]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

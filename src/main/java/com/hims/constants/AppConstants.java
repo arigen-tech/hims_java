@@ -35,6 +35,16 @@ public class AppConstants {
     public static final String PAYMENT_PAID = "Y";
     public static final String PAYMENT_NOT_PAID = "N";
 
+    //blood bank status
+    public static final String DONOR_SCREENING_STATUS_PASS = "P";
+    public static final String DONOR_SCREENING_STATUS_FAIL = "F";
+    public static final String DONOR_SCREENING_TEMPORARILY_DEFERRED	 = "T";
+    public static final String DONOR_SCREENING_PERMANENTLY_DEFERRED= "P";
+    public static final String  COMPONENT_PRBC= "prbc";
+    public static final String COMPONENT_PLT= "plt" ;
+    public static final String COMPONENT_PLASMA= "plasma" ;
+    public static final String COMPONENT_CRYO= "cryo" ;
+
 
 
     public static final String INTERNAL_SERVER_ERR_MSG="Internal server error !";
@@ -87,6 +97,28 @@ public class AppConstants {
     public static  final  String OPENING_BALANCE_ENTRY_SUBMIT_SUCCESS_MSG="Opening balance entry submitted successfully";
     public static final String OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG="Invalid opening balance entry header Id ,Opening balance entry header not found";
     public static final String OPENING_BALANCE_DETAILS_NOT_FOUND_ERR_MSG="Invalid opening balance entry details Id ,Opening balance entry detail not found";
+    public static final String PAST_DATE_NOT_ALLOWED="Past dates are not allowed. Please select today or a future date.";
+    public static final String TOKEN_ALREADY_BOOKED="This token has just been booked by another user. Please select a different slot.";
+    public static final String SESSION_NOT_CONFIGURED= "AppSetup not configured for this session of the day .";
+    public static final String POLICY_NOT_FOUND= "Policy not found";
+    public static final String SERVICE_TARIFF_NOT_DEFINED= "Service OPD or Tariff is not defined yet";
+    public static final String INVALID_SERVICE_CATEGORY = "Service category not found or invalid";
+    public static final String BILLING_RECORDS_NOT_FOUND = "No billing records found";
+    public static final String BILLING_HEADER_NOT_FOUND = "BillingHeader not found with id: ";
+    public static final String PATIENT_UPDATED_BOOKING_SUCCESS = "Patient updated and booking done successfully";
+    public static final String APPOINTMENT_CANCELLED = "Appointment cancelled successfully";
+
+
+
+    public static final String SAMPLE_COLLECTION_HEADER_NOT_FOUND_ERR_MSG="Invalid sample header Id , Sample header not found";
+    public static final String SAMPLE_COLLECTION_DETAIL_NOT_FOUND_ERR_MSG="Invalid sample details Id , Sample details not found";
+    public  static final String INVESTIGATION_VALIDATION_SUCCESS_MSG="Investigation validated successfully";
+    public static  final String RESULT_ENTRY_HEADER_NOT_FOUND_ERR_MSG="Invalid result entry header Id , Result entry header not found";
+    public static  final String LAB_ORDER_DETAIL_NOT_FOUND_ERR_MSG="Invalid order detail Id , order detail not found";
+    public static final String RESULT_VALIDATION_SUCCESS_MSG="Result entry validation updated successfully";
+    public  static  final String VISIT_NOT_FOUND_ERR_MSG="Invalid visit Id, Visit not found";
+
+    public  static  final  String STATUS_S="S";
 
 
     private AppConstants() {

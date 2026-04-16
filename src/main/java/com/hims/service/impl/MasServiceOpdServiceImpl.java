@@ -1,15 +1,21 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.projection.MasServiceOpdProjection;
 import com.hims.request.MasServiceOpdRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.MasServiceOpdResponse;
 import com.hims.service.MasServiceOpdService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -35,26 +41,42 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
     private  MasServiceCategoryRepository masServiceCategoryRepository;
 
     @Override
-    public ApiResponse<List<MasServiceOpd>> findByHospitalId(Long id) {
+    public ApiResponse<Page<MasServiceOpdResponse>> getOpdTariffByDepartmentAndDoctor(Long hospitalId, Long departmentId, Long doctorId,String doctorName, Pageable pageable) {
+
         try {
-            boolean exists = masHospitalRepository.existsById(id);
+            boolean exists = masHospitalRepository.existsById(hospitalId);
             if (!exists) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Hospital not found with ID: " + id, 404);
+                        "Hospital not found with ID: " + hospitalId, 404);
             }
 
-            List<MasServiceOpd> response = masServiceOpdRepository.findByHospitalIdId(id);
+            Page<MasServiceOpdProjection> pageData = masServiceOpdRepository.getOpdTariffByDepartmentAndDoctor(hospitalId, departmentId, doctorId,doctorName, pageable);
+
+            Page<MasServiceOpdResponse> response = pageData.map(p -> {
+                MasServiceOpdResponse dto = new MasServiceOpdResponse();
+                dto.setId(p.getId());
+                dto.setServiceName(p.getServiceName());
+                dto.setBaseTariff(p.getBaseTariff());
+                dto.setServiceCategory(p.getServiceCategory());
+                dto.setDepartmentName(p.getDepartmentName());
+                dto.setDoctorFirstName(p.getDoctorFirstName());
+                dto.setDoctorMiddleName(p.getDoctorMiddleName());
+                dto.setDoctorLastName(p.getDoctorLastName());
+                dto.setFromDate(p.getFromDate());
+                dto.setToDate(p.getToDate());
+                dto.setStatus(p.getStatus());
+                return dto;
+            });
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Error fetching data by hospital ID", 500);
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,  HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-
-
     @Override
-    public ApiResponse<MasServiceOpd> save(MasServiceOpdRequest req) {
+    public ApiResponse<String> save(MasServiceOpdRequest req) {
         try {
             User currentUser = getCurrentUser();
             if (currentUser == null) {
@@ -62,38 +84,27 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
                         "Current user not found", 401);
             }
 
-            log.warn("id 1: {}", req.getServiceCategory());
-            log.warn("id 1: {}", req.getDepartmentId());
-            log.warn("id 1: {}", req.getDoctorId());
-
             MasServiceOpd opd = new MasServiceOpd();
-            opd.setServiceCode(req.getServiceCode());
-            opd.setServiceName(req.getServiceName());
             opd.setBaseTariff(req.getBaseTariff());
-
             opd.setServiceCategory(masServiceCategoryRepository.findById(req.getServiceCategory()).orElse(null));
             opd.setHospitalId(masHospitalRepository.findById(req.getHospitalId()).orElse(null));
             opd.setDepartmentId(masDepartmentRepository.findById(req.getDepartmentId()).orElse(null));
             opd.setDoctorId(userRepo.findById(req.getDoctorId()).orElse(null));
-
             opd.setFromDt(req.getFromDate());
             opd.setToDt(req.getToDate());
-            opd.setStatus("y");
-
+            opd.setStatus(AppConstants.STATUS_Y.toLowerCase());
             opd.setLastChgBy(currentUser.getUsername());
             opd.setLastChgDt(Instant.now());
-
-            MasServiceOpd saved = masServiceOpdRepository.save(opd);
-
-            return ResponseUtils.createSuccessResponse(saved, new TypeReference<>() {});
+            masServiceOpdRepository.save(opd);
+            return ResponseUtils.createSuccessResponse(" doctor tariff create successfully ", new TypeReference<>() {});
         } catch (Exception e) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Error saving data", 500);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,  HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
 
     @Override
-    public ApiResponse<MasServiceOpd> edit(Long id, MasServiceOpdRequest req) {
+    public ApiResponse<String> edit(Long id, MasServiceOpdRequest req) {
         try {
             MasServiceOpd existing = masServiceOpdRepository.findById(id).orElse(null);
             if (existing == null) {
@@ -111,9 +122,6 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
             MasDepartment department = masDepartmentRepository.findById(req.getDepartmentId()).orElse(null);
             MasHospital hospital = masHospitalRepository.findById(req.getHospitalId()).orElse(null);
             User doctor = userRepo.findById(req.getDoctorId()).orElse(null);
-
-            existing.setServiceCode(req.getServiceCode());
-            existing.setServiceName(req.getServiceName());
             existing.setBaseTariff(req.getBaseTariff());
             existing.setServiceCategory(category);
             existing.setDepartmentId(department);
@@ -121,21 +129,21 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
             existing.setHospitalId(hospital);
             existing.setFromDt(req.getFromDate());
             existing.setToDt(req.getToDate());
-            existing.setStatus("y");
+            existing.setStatus(AppConstants.STATUS_Y.toLowerCase());
             existing.setLastChgBy(currentUser.getUsername());
             existing.setLastChgDt(java.time.Instant.now());
 
             MasServiceOpd updated = masServiceOpdRepository.save(existing);
-            return ResponseUtils.createSuccessResponse(updated, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(" doctor tariff update successfully", new TypeReference<>() {});
         } catch (Exception e) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Error Updating Data", 500);
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,  HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
 
     @Override
-    public ApiResponse<MasServiceOpd> updateStatus(Long id, String status) {
+    public ApiResponse<String> updateStatus(Long id, String status) {
         try {
             MasServiceOpd entity = masServiceOpdRepository.findById(id).orElse(null);
             if (entity == null) {
@@ -149,15 +157,15 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
                         "Current user not found", 401);
             }
 
-            entity.setStatus(status);
+            entity.setStatus(status.toLowerCase());
             entity.setLastChgBy(currentUser.getUsername());
             entity.setLastChgDt(Instant.now());
 
             MasServiceOpd updated = masServiceOpdRepository.save(entity);
-            return ResponseUtils.createSuccessResponse(updated, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("status update successfully", new TypeReference<>() {});
         } catch (Exception e) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Error updating status", 500);
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,  HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 

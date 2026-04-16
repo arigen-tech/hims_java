@@ -1,5 +1,7 @@
 package com.hims.helperUtil;
 
+import com.hims.utils.RandomNumGenerator;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -15,6 +17,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 @Service
 public class HelperUtils {
+
+    @Autowired
+    public RandomNumGenerator randomNumGenerator;
 
     // FOR dev  D:\BmsBackend\webapps\bmsreport
     public static String LASTFOLDERPATH = "D:/payroll/webapps/bmsreport";
@@ -66,9 +71,23 @@ public class HelperUtils {
     }
 
     public static String extractTimeFromInstant(Instant instant) {
-        return instant.atZone(ZoneOffset.UTC)
+        return instant.atZone(ZoneId.of("Asia/Kolkata"))
                 .toLocalTime()
                 .format(DateTimeFormatter.ofPattern("HH:mm"));
+    }
+
+    public static String instantTimeToLocalDateTime(Instant instant) {
+        return instant.atZone(ZoneId.of("Asia/Kolkata"))
+                .toLocalDateTime()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    public String createInvoices() {
+        return randomNumGenerator.generateOrderNumber("BILL",true,true);
+    }
+
+    public String createInvoice() {
+        return randomNumGenerator.generateOrderNumber("HIMS", true, true);
     }
 
 }

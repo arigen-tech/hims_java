@@ -1,8 +1,10 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
 import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
 import com.hims.helperUtil.HelperUtils;
@@ -325,65 +327,6 @@ public class PatientServiceImpl implements PatientService {
     }
 
 
-//    @Override
-//    @Transactional
-//    public ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq followUpRequest) {
-//        PatientRegFollowUpResp resp = new PatientRegFollowUpResp();
-//        PatientRequest request = followUpRequest.getPatientDetails().getPatient();
-//        if (request.getId() == null) {
-//            throw new RuntimeException("Patient ID is required for update");
-//        }
-//        Patient patient = updatePatient(request, true);
-//        resp.setPatient(patient);
-//
-//        if (followUpRequest.isAppointmentFlag()) {
-//            List<VisitRequest> visitList = followUpRequest.getPatientDetails().getVisits();
-//            OpdPatientDetailRequest opdReq = followUpRequest.getPatientDetails().getOpdPatientDetail();
-//            List<Visit> updatedVisits = new ArrayList<>();
-//            OpdPatientDetail opdDetails = new OpdPatientDetail();
-//
-//            if (visitList != null && !visitList.isEmpty()) {
-//                for (VisitRequest v : visitList) {
-//                    Visit updatedVisit;
-//
-//                    if (v.getId() != null) {
-//                        updatedVisit = updateExistingVisitById(v, patient);
-//                    } else {
-//                        if (v.getPatientId() == null) {
-//                            v.setPatientId(patient.getId());
-//                        }
-//                        if (v.getHospitalId() == null && patient.getPatientHospital() != null) {
-//                            v.setHospitalId(patient.getPatientHospital().getId());
-//                        }
-//                        if (v.getVisitDate() == null) {
-//                            v.setVisitDate(Instant.now());
-//                        }
-//                        if (v.getVisitType() == null) {
-//                            v.setVisitType("F");
-//                        }
-//                        updatedVisit = createSingleAppointment(v, patient);
-//                    }
-//
-//                    updatedVisits.add(updatedVisit);
-//
-//                    if (updatedVisit.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-//                        opdDetails = addOpdDetails(updatedVisit, opdReq, patient);
-//                    }
-//                }
-//            } else {
-//                List<Visit> existingVisits = visitRepository.findByPatientId(patient.getId());
-//                if (!existingVisits.isEmpty()) {
-//                    updatedVisits.addAll(existingVisits);
-//                }
-//            }
-//            resp.setVisits(updatedVisits);
-//            resp.setOpdPatientDetail(opdDetails);
-//            OPDBillingPatientResponse finalResponse =  buildFinalResponse(patient,updatedVisits);
-//            resp.setOpdBillingPatientResponse(finalResponse);
-//        }
-//
-//        return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {});
-//    }
 
     @Override
     @Transactional
@@ -396,7 +339,7 @@ public class PatientServiceImpl implements PatientService {
         Patient patient;
 
         if (details.getPatient() != null && details.getPatient().getId() != null) {
-            patient = updatePatient(details.getPatient(), true);
+            patient = updatePatientDetails(details.getPatient(), true);
         } else if (followUpRequest.isAppointmentFlag()
                 && details.getVisits() != null
                 && !details.getVisits().isEmpty()
@@ -501,7 +444,7 @@ public class PatientServiceImpl implements PatientService {
         return visitRepository.save(existingVisit);
     }
 
-    private Patient updatePatient(PatientRequest request, boolean followUp) {
+    public Patient updatePatientDetails(PatientRequest request, boolean followUp) {
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
             log.info("current user not found");
@@ -510,8 +453,8 @@ public class PatientServiceImpl implements PatientService {
         Patient patient = patientRepository.findById(request.getId())
                 .orElseThrow(() -> new RuntimeException("Patient not found with ID: " + request.getId()));
 
-        patient.setUhidNo(request.getUhidNo());
         patient.setUpdatedOn(Instant.now());
+        patient.setUhidNo(patient.getUhidNo());
         patient.setLastChgBy(currentUser.getFirstName() + " " +
                 currentUser.getMiddleName() + " " +
                 currentUser.getLastName());
@@ -625,17 +568,19 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public ApiResponse<List<PatientProjection>> searchPatient(PatientSearchReq req) {
+    public ApiResponse<List<Patient>> searchPatient(PatientSearchReq req) {
 
         String mobileNo = cleanStringParameter(req.getMobileNo());
         String patientName = cleanStringParameter(req.getPatientName());
+        String uhidNo = cleanStringParameter(req.getUhidNo());
+        LocalDate appointmentDate = req.getAppointmentDate();
 
-        List<PatientProjection> patientList;
+        List<Patient> patientList;
 
         if (patientName != null) {
-            patientList = patientRepository.searchPatients(mobileNo, patientName);
+            patientList = patientRepository.searchPatients(mobileNo, patientName, uhidNo, appointmentDate);
         } else {
-            patientList = patientRepository.findPatientsByMobile(mobileNo);
+            patientList = patientRepository.searchPatients(mobileNo,patientName, uhidNo);
         }
 
         return ResponseUtils.createSuccessResponse(patientList, new TypeReference<>() {});
@@ -857,14 +802,16 @@ public class PatientServiceImpl implements PatientService {
         Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
         boolean alreadyExists =
-                visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNo(
+                visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(
                         visit.getDepartmentId(),
                         visit.getDoctorId(),
                         startOfDay,
                         endOfDay,
                         visit.getSessionId(),
-                        visit.getTokenNo()
+                        visit.getTokenNo(),
+                        AppConstants.VISIT_STATUS_CANCELLED.toLowerCase()  // "c"
                 );
+
         if (alreadyExists) {
             throw new TokenAlreadyBookedException(
                     "This token has just been booked by another user. Please select a different slot."
@@ -891,16 +838,16 @@ public class PatientServiceImpl implements PatientService {
         newVisit.setTokenNo(visit.getTokenNo());
         newVisit.setVisitDate(visit.getVisitDate());
         newVisit.setLastChgDate(Instant.now());
-        newVisit.setVisitStatus("n");
-        newVisit.setDisplayPatientStatus("wp");
+        newVisit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase());
+        newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS);
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
         newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
         assert setup != null;
-        if(setup.getHospital().getAppCostApplicable().equalsIgnoreCase("n")){
-            newVisit.setBillingStatus("y");
+        if(setup.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())){
+            newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
         }else{
-            newVisit.setBillingStatus("n");
+            newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
         }
         newVisit.setVisitType(visit.getVisitType());
         newVisit.setPatient(patient);
@@ -913,10 +860,10 @@ public class PatientServiceImpl implements PatientService {
             Optional<MasHospital> hospital=masHospitalRepository.findById(visit.getHospitalId());
             if(hospital.isPresent()){
                 newVisit.setHospital(hospital.get());
-                if(hospital.get().getPreConsultationAvailable().equalsIgnoreCase("y")){
-                    newVisit.setPreConsultation("n");
-                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase("n")) {
-                    newVisit.setPreConsultation("y");
+                if(hospital.get().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_Y.toLowerCase())){
+                    newVisit.setPreConsultation(AppConstants.STATUS_N.toLowerCase());
+                } else if (hospital.get().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+                    newVisit.setPreConsultation(AppConstants.STATUS_Y.toLowerCase());
                 }
             }
         }
@@ -935,7 +882,6 @@ public class PatientServiceImpl implements PatientService {
         MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
         MasDiscount discount=new MasDiscount();
         ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
-        Visit v = visitRepository.getReferenceById(newVisit.getId());
         newVisit.setBillingHd(resp.getResponse().getHeader());
         visitRepository.save(newVisit);
         return savedVisit;
@@ -1041,9 +987,9 @@ public class PatientServiceImpl implements PatientService {
             appt.setVisitType(v.getVisitType());
             appt.setTokenNo(v.getTokenNo());
             appt.setVisitStatus(v.getVisitStatus());
-            if ("Y".equalsIgnoreCase(v.getVisitStatus())) {
+            if (AppConstants.STATUS_Y.equalsIgnoreCase(v.getVisitStatus())) {
                 appt.setVisitStatus("Completed");
-            } else if ("N".equalsIgnoreCase(v.getVisitStatus())) {
+            } else if (AppConstants.STATUS_N.equalsIgnoreCase(v.getVisitStatus())) {
                 appt.setVisitStatus("Pending");
             }
             appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
@@ -1073,21 +1019,21 @@ public class PatientServiceImpl implements PatientService {
         // Get current user
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null || currentUser.getFirstName() == null) {
-            throw new RuntimeException("User authentication failed or user has no first name");
+            throw new SDDException(500,"User authentication failed or user has no first name");
         }
         // Update visit
-        visit.setVisitStatus("c");
+        visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
         visit.setCancelledBy(currentUser.getFirstName());
         visit.setCancelledDateTime(Instant.now());
         if (request.getCancelReasonId() != null) {
             MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId())
-                    .orElseThrow(() -> new RuntimeException("Cancel reason not found with ID: " + request.getCancelReasonId()));
+                    .orElseThrow(() -> new SDDException(500,"Cancel reason not found with ID: "));
             visit.setReason(reason);
         }
-        bill.setPaymentStatus("y");
+        bill.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
         billingHeaderRepository.save(bill);
         Visit savedVisit = visitRepository.save(visit);
-        return new ApiResponse<>(HttpStatus.OK, "Appointment cancelled successfully");
+        return new ApiResponse<>(HttpStatus.OK, AppConstants.APPOINTMENT_CANCELLED);
     }
 
     @Override

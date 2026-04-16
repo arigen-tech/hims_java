@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.DgOrderDt;
 import com.hims.entity.RadOrderDt;
+import com.hims.projection.RadiologyBillingProjection;
 import com.hims.projection.RadiologyProjection;
 import io.netty.handler.codec.http2.Http2Connection;
 import org.springframework.data.domain.Page;
@@ -23,7 +24,7 @@ public interface RadOrderDtRepository extends JpaRepository<RadOrderDt, Long> {
             UPDATE RadOrderDt b 
             SET b.billingStatus = :billingStatus
             WHERE b.packageId.packId = :pkgId
-            AND b.billingHd.billingHdId = :billHdId
+            AND b.billingHd.id = :billHdId
             """)
     void updatePaymentStatusPackegDt(
             @Param("billingStatus") String billingStatus,
@@ -33,7 +34,7 @@ public interface RadOrderDtRepository extends JpaRepository<RadOrderDt, Long> {
 
     @Query("""
             select b from RadOrderDt b
-            WHERE b.billingHd.billingHdId = :billHdId
+            WHERE b.billingHd.id = :billHdId
             AND b.billingStatus = 'n'
             """)
     List<RadOrderDt> findUnbilledByBillingHdId(
@@ -112,8 +113,8 @@ left join hd.patient p
 join dt.subChargecode sc
 join dt.investigation inv
 where hd.hospital.id = :hospitalId
-  and lower(dt.studyStatus) = lower(:status)
-  and lower(dt.reportStatus) = lower(:statuss)
+  and lower(dt.studyStatus) = lower(:studyStatus)
+  and lower(dt.reportStatus) in (:reportStatuses)
   and (:modalityId is null or sc.subId = :modalityId)
   and (
         :patientName is null
@@ -135,8 +136,8 @@ where hd.hospital.id = :hospitalId
 """)
     Page<RadiologyProjection> getPendingReportRadiologyProjection(
             @Param("hospitalId") Long hospitalId,
-            @Param("status") String status,
-            @Param("statuss") String statuss,
+            @Param("studyStatus") String studyStatus,
+            @Param("reportStatuses") List<String> reportStatuses,
             @Param("modalityId") Long modalityId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,
@@ -167,7 +168,7 @@ left join hd.patient p
 join dt.subChargecode sc
 join dt.investigation inv
 where hd.hospital.id = :hospitalId
-  and lower(dt.studyStatus) = lower(:status)
+  and lower(dt.studyStatus) = lower(:studyStatus)
   and (:modalityId is null or sc.subId = :modalityId)
   and (
         :patientName is null
@@ -189,10 +190,11 @@ where hd.hospital.id = :hospitalId
 """)
     Page<RadiologyProjection> getRadiologyPACSStudyList(
             @Param("hospitalId") Long hospitalId,
-            @Param("status") String status,
+            @Param("studyStatus") String studyStatus,
             @Param("modalityId") Long modalityId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,
             Pageable pageable
     );
+
 }

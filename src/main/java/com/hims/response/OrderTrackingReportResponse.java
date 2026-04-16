@@ -1,14 +1,18 @@
 package com.hims.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class OrderTrackingReportResponse {
-    private Long dgOrderHdId;
+    private Integer dgOrderHdId;
     private  String orderNum;
     private String patientName;
     private String mobileNum;

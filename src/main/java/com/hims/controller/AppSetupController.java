@@ -24,14 +24,14 @@ import java.util.stream.Collectors;
 @RequestMapping("/app")
 @Slf4j
 public class AppSetupController {
-
-    @Autowired
-    AppSetupServices appSetupServices;
-    @PostMapping("/setup")
-    public ResponseEntity<ApiResponse<AppsetupResponse>> appSetupResponse(@RequestBody AppointmentReq request) {
-        return new ResponseEntity<>(appSetupServices.appSetup(request), HttpStatus.OK);
-
-    }
+//
+//    @Autowired
+//    AppSetupServices appSetupServices;
+//    @PostMapping("/setup")
+//    public ResponseEntity<ApiResponse<AppsetupResponse>> appSetupResponse(@RequestBody AppointmentReq request) {
+//        return new ResponseEntity<>(appSetupServices.appSetup(request), HttpStatus.OK);
+//
+//    }
 
 
 //    @GetMapping("/getappsetup/{departmentId}/{doctorId}/{sessionId}/")
@@ -40,14 +40,14 @@ public class AppSetupController {
 //        return new ResponseEntity<>(appSetupServices.getappsetupData(departmentId,doctorId,sessionId), HttpStatus.OK);
 //    }
 
-    @GetMapping("/find")
-    public ResponseEntity<ApiResponse<AppSetupDTO>> findAppSetups(
-            @RequestParam Long deptId,
-            @RequestParam Long doctorId,
-            @RequestParam Long sessionId) {
-
-        return ResponseEntity.ok(appSetupServices.getAppSetupDTO(deptId, doctorId, sessionId));
-    }
+//    @GetMapping("/find")
+//    public ResponseEntity<ApiResponse<AppSetupDTO>> findAppSetups(
+//            @RequestParam Long deptId,
+//            @RequestParam Long doctorId,
+//            @RequestParam Long sessionId) {
+//
+//        return ResponseEntity.ok(appSetupServices.getAppSetupDTO(deptId, doctorId, sessionId));
+//    }
 
 
 

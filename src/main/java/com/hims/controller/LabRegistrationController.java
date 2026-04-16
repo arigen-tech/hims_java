@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,8 +50,25 @@ public class LabRegistrationController {
     public ResponseEntity<ApiResponse<AppsetupResponse>> appSetupResponse(@RequestBody LabRegRequest request) {
         log.info("Lab Registration API called");
         return new ResponseEntity<>(labRegistrationServices.labReg(request), HttpStatus.OK);
-
     }
+
+    //New Method for lab registration
+    @PostMapping("/laboratoryRegistration")
+    public ResponseEntity<ApiResponse<LabRadiologyRegistrationResponse>> registerAndBookingLaboratory(
+            @RequestBody @Valid LabRadioRegistrationRequest request) {
+        log.info("Processing laboratory registration for request: {}", request);
+        ApiResponse<LabRadiologyRegistrationResponse> response = labRegistrationServices.registerAndBookingLaboratory(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    //New Method for lab update and booking investigations for registered patients
+    @PostMapping("/updateDetailsAndBookingLaboratory")
+    public ResponseEntity<ApiResponse<AppsetupResponse>> updateDetailsAndBookingLaboratory(@RequestBody LabRadioUpdateRequest request) {
+        log.info("Lab Registration API called");
+        return new ResponseEntity<>(labRegistrationServices.updateDetailsAndBookingLaboratory(request), HttpStatus.OK);
+    }
+
+
     @PostMapping("/updatepaymentstatus")
     public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
         log.info("Update Payment Status API called");
@@ -58,30 +77,26 @@ public class LabRegistrationController {
                 return new ResponseEntity<>(radiologyService.paymentStatusReq(request), HttpStatus.OK);
         return new ResponseEntity<>(labRegistrationServices.paymentStatusReq(request), HttpStatus.OK);
     }
-    @GetMapping("/pending")
-    public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
-        log.info("Get Pending Billing API called");
-        return billingService.getPendingBilling();
-    }
 
-    @GetMapping("/pending-samples")
-    public ResponseEntity<ApiResponse<List<PendingSampleResponse>>> getPendingSamples() {
-        log.info("Get Pending Samples API called");
-        try {
-            List<PendingSampleResponse> data = labRegistrationServices.getPendingSamples();
-            log.info("Pending samples fetched successfully, count={}",
-                    data != null ? data.size() : 0);
-            ApiResponse<List<PendingSampleResponse>> response = ResponseUtils.createSuccessResponse(data, new TypeReference<>() {});
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException ex) {
-            log.warn("Validation error in getPendingSamples: {}", ex.getMessage());
-            ex.printStackTrace();
 
-            ApiResponse<List<PendingSampleResponse>> errorResponse = ResponseUtils.createFailureResponse(
-                    null, new TypeReference<>() {}, ex.getMessage(), HttpStatus.BAD_REQUEST.value());
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
-    }
+//    @GetMapping("/pending-samples")
+//    public ResponseEntity<ApiResponse<List<PendingSampleResponse>>> getPendingSamples() {
+//        log.info("Get Pending Samples API called");
+//        try {
+//            List<PendingSampleResponse> data = labRegistrationServices.getPendingSamples();
+//            log.info("Pending samples fetched successfully, count={}",
+//                    data != null ? data.size() : 0);
+//            ApiResponse<List<PendingSampleResponse>> response = ResponseUtils.createSuccessResponse(data, new TypeReference<>() {});
+//            return ResponseEntity.ok(response);
+//        } catch (IllegalArgumentException ex) {
+//            log.warn("Validation error in getPendingSamples: {}", ex.getMessage());
+//            ex.printStackTrace();
+//
+//            ApiResponse<List<PendingSampleResponse>> errorResponse = ResponseUtils.createFailureResponse(
+//                    null, new TypeReference<>() {}, ex.getMessage(), HttpStatus.BAD_REQUEST.value());
+//            return ResponseEntity.badRequest().body(errorResponse);
+//        }
+//    }
 
     @PostMapping("/savesamplecollection")
     public ResponseEntity<ApiResponse<AppsetupResponse>> samplecollectionResponse(@RequestBody SampleCollectionRequest request) {
@@ -95,13 +110,13 @@ public class LabRegistrationController {
         return validationService.getInvestigationsWithOrderStatusNAndP();
     }
 
-    @PostMapping("/validate")
-    public ResponseEntity<ApiResponse<String>> validateInvestigations(@RequestBody List<InvestigationValidationRequest> requests) {
-        log.info("POST /validation/validate called, requestCount={}", requests != null ? requests.size() : 0);
-        ApiResponse<String> stringApiResponse = validationService.validateInvestigations(requests);
-        log.info("POST /validation/validate completed");
-        return   ResponseEntity.ok(stringApiResponse);
-    }
+//    @PostMapping("/validate")
+//    public ResponseEntity<ApiResponse<String>> validateInvestigations(@RequestBody List<InvestigationValidationRequest> requests) {
+//        log.info("POST /validation/validate called, requestCount={}", requests != null ? requests.size() : 0);
+//        ApiResponse<String> stringApiResponse = validationService.validateInvestigations(requests);
+//        log.info("POST /validation/validate completed");
+//        return   ResponseEntity.ok(stringApiResponse);
+//    }
 
     @GetMapping("/resultStatus")
     public ResponseEntity<ApiResponse<List<ResultResponse>>> getValidated() {
@@ -152,15 +167,16 @@ public class LabRegistrationController {
         return labRegistrationServices.labRegForExistingOrder(labReq);
     }
 
-    @GetMapping("/billingStatus/search")
-    public ApiResponse<List<BillingHeaderResponseProjection>> searchBillingStatus(
-            @RequestParam(required = false) String patientName,
-            @RequestParam(required = false) String phoneNo,
-            @RequestParam(required = false) String registrationNo) {
-        log.info("billingStatus search api called, patientName: {}, phoneNo: {}, registrationNo: {}",
-                patientName, phoneNo, registrationNo);
-        return billingService.getBillingStatus(patientName, phoneNo, registrationNo);
-    }
+//    @GetMapping("/billingStatus/search")
+//    public ApiResponse<Page<BillingHeaderResponseProjection>> searchBillingStatus(
+//            @RequestParam(required = false) String patientName,
+//            @RequestParam(required = false) String phoneNo,
+//            @RequestParam(required = false) String registrationNo,
+//            Pageable pageable) {
+//        log.info("billingStatus search api called, patientName: {}, phoneNo: {}, registrationNo: {}",
+//                patientName, phoneNo, registrationNo);
+//        return billingService.getBillingStatus(patientName, phoneNo, registrationNo, pageable);
+//    }
 
     @PostMapping("/track-order-status/create")
     public ResponseEntity<?> create(@Valid @RequestBody LabOrderTrackingStatusRequest request) {

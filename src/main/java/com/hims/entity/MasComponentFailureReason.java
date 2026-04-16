@@ -40,6 +40,5 @@ public class MasComponentFailureReason {
     @Column(name = "last_updated_by", length = 200)
     private String lastUpdatedBy;
 
-    @Column(name = "orderhd_id")
-    private Long orderhdId;
+
 }

@@ -11,6 +11,7 @@ package com.hims.entity.repository;
 import com.hims.entity.MasDepartment;
 import com.hims.entity.User;
 import com.hims.entity.UserDepartment;
+import com.hims.projection.UserDepartmentProjection;
 import com.hims.response.SpecialitiesResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -58,4 +59,24 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
 
     List<UserDepartment> findByDepartment_IdIn(List<Long> departmentIds);
 
+    @Query(value = """
+    SELECT 
+        ud.user_department_id AS id,
+        u.user_id AS userId,
+        u.user_name AS username,
+        d.department_id AS departmentId,
+        d.department_name AS departmentName,
+        ud.last_chg_by AS lastChgBy
+       
+    FROM user_department ud
+    JOIN users u ON u.user_id = ud.user_id
+    JOIN mas_department d ON d.department_id = ud.department_id
+    WHERE u.user_name = :userName
+      AND u.status = :status
+      AND ud.status = :status
+    ORDER BY d.department_name ASC
+""", nativeQuery = true)
+    List<UserDepartmentProjection> findAllUserDepartments(@Param("userName") String userName,
+                                                          @Param("status") String status
+    );
 }

@@ -9,6 +9,8 @@ import com.hims.service.RegistrationService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -83,13 +85,14 @@ public class RegistrationController {
     }
 
     /**
-     * Search patients by mobile number and name
+     * Search patients by mobile number and name with pagination
      */
     @PostMapping("/searchPatient")
-    public ResponseEntity<ApiResponse<List<PatientProjection>>> searchPatient(
-            @RequestBody PatientSearchReq searchRequest) {
-        log.info("POST /registration/searchPatient called");
-        ApiResponse<List<PatientProjection>> response = registrationService.searchPatient(searchRequest);
+    public ResponseEntity<ApiResponse<Page<PatientProjection>>> searchPatient(
+            @RequestBody PatientSearchReq searchRequest,
+            Pageable pageable) {
+        log.info("POST /registration/searchPatient called with page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        ApiResponse<Page<PatientProjection>> response = registrationService.searchPatient(searchRequest, pageable);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -111,12 +114,15 @@ public class RegistrationController {
 
     /**
      * Get patient full details for follow-up
+     * @param patientId the unique ID of the patient (required)
+     * @param serviceCategoryCode the service category code (optional - defaults to OPD if not provided)
      */
     @GetMapping("/getPatientDetails/{patientId}")
     public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientDetails(
-            @PathVariable Long patientId) {
-        log.info("GET /registration/getPatientDetails/{} called", patientId);
-        ApiResponse<FollowUpPatientResponseDetails> response = registrationService.getPatientDetails(patientId);
+            @PathVariable Long patientId,
+            @RequestParam(required = false) String serviceCategoryCode) {
+        log.info("GET /registration/getPatientDetails called - patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
+        ApiResponse<FollowUpPatientResponseDetails> response = registrationService.getPatientDetails(patientId, serviceCategoryCode);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -201,6 +207,31 @@ public class RegistrationController {
                 );
         return ResponseEntity.ok(response);
     }
+    /**
+     * Appointment Summary Report - Department-wise and Doctor-wise
+     * Shows appointment statistics grouped by doctor and department
+     *
+     * @param hospitalId Hospital ID (required)
+     * @param departmentId Department ID (optional - null for all departments)
+     * @param doctorId Doctor ID (optional - null for all doctors)
+     * @param fromDate Start date
+     * @param toDate End date
+     * @return List of appointment summary statistics
+     * flag=0 use for department and flag=1  use for doctor
+     */
+    @GetMapping("/getAppointmentSummaryReport")
+    public ApiResponse<List<?>> getAppointmentSummaryReport(
+            @RequestParam Long hospitalId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam Integer flag) {
+        log.info("Received getAppointmentSummaryReport request with hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}, flag: {}",
+                hospitalId, departmentId, doctorId, fromDate, toDate, flag);
+        return registrationService.getAppointmentSummaryReport(hospitalId, departmentId, doctorId, fromDate, toDate,flag);
+    }
+
 }
-
-

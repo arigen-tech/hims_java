@@ -19,6 +19,9 @@ public final class ReportConstants {
     public static final String JASPER_BASE_PATH_LAB = "/jasperReport/Lab/";
     public static final String JASPER_BASE_PATH_OPD = "/jasperReport/OPD/";
     public static final String JASPER_BASE_PATH_STORE = "/jasperReport/Store/";
+    public static final String JASPER_BASE_PATH_RADIOLOGY = "/jasperReport/Radiology/";
+    public static final String JASPER_BASE_PATH_REGISTRATION = "/jasperReport/Registration/";
+    public static final String JASPER_BASE_PATH_BILLING = "/jasperReport/Billing/";
 
     public static final String ASSET_LOGO = "/Assets/arigen_health.png";
 
@@ -100,4 +103,51 @@ public final class ReportConstants {
     public static final String RESULT_AMENDMENT_JASPER = "Result_amendment";
     public static final String RESULT_AMENDMENT_REPORT = "ResultAmendmentReport";
 
+    public static final String STOCK_MOVEMENT_JASPER = "Item_stock_moment_history";
+    public static final String STOCK_MOVEMENT_REPORT = "ItemStockMomentHistory";
+
+    public static final String RADIOLOGY_JASPER = "radiology_report";
+    public static final String RADIOLOGY_REPORT = "RadiologyReport";
+
+    public static final String OPD_REGISTER_JASPER = "OPD_register_report";
+    public static final String OPD_REGISTER_REPORT = "OPDRegisterReport";
+
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_JASPER = "Appointment_summary_department";
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_REPORT = "AppointmentSummaryDepartment";
+
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_JASPER_DASHED = "Appointment_summary_department_dashed";
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_REPORT_DASHED = "AppointmentSummaryDepartmentDashed";
+
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_JASPER = "Appointment_summary_doctor";
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_REPORT = "AppointmentSummaryDoctor";
+
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_JASPER_DASHED = "Appointment_summary_doctor_dashed";
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_REPORT_DASHED = "AppointmentSummaryDoctorDashed";
+
+    public static final String DAILY_CANCELLATION_JASPER = "Daily_cancellation_report";
+    public static final String DAILY_CANCELLATION_REPORT = "DailyCancellationReport";
+
+    public static final String RADIOLOGY_INVOICE_JASPER = "Radiology_invoice";
+    public static final String RADIOLOGY_INVOICE_REPORT = "RadiologyInvoice";
+
+    public static final String SAMPLE_REJECTION_JASPER = "Sample_rejection_report";
+    public static final String SAMPLE_REJECTION_REPORT = "SampleRejectionReport";
+
+    public static final String PENDING_INVESTIGATION_JASPER = "Pending_investigation_report";
+    public static final String PENDING_INVESTIGATION_REPORT = "PendingInvestigationReport";
+
+    public static final String OPD_BILLING_REGISTER_JASPER = "Opd_billing_register";
+    public static final String OPD_BILLING_REGISTER_REPORT = "OpdBillingRegisterReport";
+
+    public static final String LAB_BILLING_REGISTER_JASPER = "Lab_billing_register";
+    public static final String LAB_BILLING_REGISTER_REPORT = "LabBillingRegisterReport";
+
+    public static final String RADIOLOGY_BILLING_REGISTER_JASPER = "Radiology_billing_register";
+    public static final String RADIOLOGY_BILLING_REGISTER_REPORT = "RadiologyBillingRegisterReport";
+
+    public static final String DAILY_CASH_COLLECTION_JASPER = "Daily_cash_collection";
+    public static final String DAILY_CASH_COLLECTION_REPORT = "DailyCashCollectionReport";
+
+    public static final String CASHIER_WISE_COLLECTION_JASPER = "Cashier_wise_collection";
+    public static final String CASHIER_WISE_COLLECTION_REPORT = "CashierWiseCollection";
 }

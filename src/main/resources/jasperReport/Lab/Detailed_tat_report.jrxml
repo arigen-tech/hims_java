@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="detailed_tat_report" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="6272a27a-47a8-4dac-bb88-ccd42fc899d5">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<parameter name="hospital_id" class="java.lang.Long"/>
+	<parameter name="investigation_id" class="java.lang.Long"/>
+	<parameter name="from_date" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="to_date" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="sub_chargecode_id" class="java.lang.Long"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[select 
+	mh.hospital_name,
+	msc.sub_chargecode_name,
+	dmi.investigation_name,
+	coalesce(tat.generated_sample_id, ' ') as generated_sample_id,
+	to_char(tat.sample_collection_date_time, 'dd/MM/yyyy HH24:MI') as sample_collection_date_time,
+	to_char(tat.result_validation_date_time, 'dd/MM/yyyy HH24:MI') as result_validation_date_time,
+	dmi.tat_hours as expected_tat,
+	floor(extract(
+	  epoch from (tat.result_validation_date_time - tat.sample_collection_date_time)) / 3600
+	)::int as actual_tat,	   
+	lpad(greatest(
+	  floor(extract(epoch from (tat.result_validation_date_time - tat.sample_collection_date_time)) / 3600)::int - dmi.tat_hours,0
+	)::text,2,'0') as delay,
+	case
+	when floor(
+		extract(epoch from (tat.result_validation_date_time - tat.sample_collection_date_time)) / 3600
+	)::int > dmi.tat_hours then 'breached'
+	else 'within'
+	end as iau_status,
+	tat.result_validated_by
+from lab_turn_around_time tat
+left join dg_mas_investigation dmi on tat.investigation_id = dmi.investigation_id
+left join dg_orderhd doh on tat.order_hd_id = doh.orderhd_id
+left join mas_hospital mh on doh.hospital_id = mh.hospital_id
+left join mas_sub_chargecode msc on dmi.sub_chargecode_id = msc.sub_chargecode_id
+where tat.result_validation_date_time is not null
+and tat.is_reject = false
+and doh.hospital_id = $P{hospital_id}
+and doh.order_date between $P{from_date} and $P{to_date}
+and ($P{investigation_id} is null or tat.investigation_id = $P{investigation_id})
+and ($P{sub_chargecode_id} is null or dmi.sub_chargecode_id = $P{sub_chargecode_id})]]>
+	</queryString>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<field name="sub_chargecode_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="sub_chargecode_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="sub_chargecode_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_sub_chargecode"/>
+	</field>
+	<field name="investigation_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="investigation_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="investigation_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_mas_investigation"/>
+	</field>
+	<field name="generated_sample_id" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="generated_sample_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="generated_sample_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="lab_turn_around_time"/>
+	</field>
+	<field name="sample_collection_date_time" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="sample_collection_date_time"/>
+		<property name="com.jaspersoft.studio.field.label" value="sample_collection_date_time"/>
+	</field>
+	<field name="result_validation_date_time" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="result_validation_date_time"/>
+		<property name="com.jaspersoft.studio.field.label" value="result_validation_date_time"/>
+	</field>
+	<field name="expected_tat" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="expected_tat"/>
+		<property name="com.jaspersoft.studio.field.label" value="expected_tat"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_mas_investigation"/>
+	</field>
+	<field name="actual_tat" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="actual_tat"/>
+		<property name="com.jaspersoft.studio.field.label" value="actual_tat"/>
+	</field>
+	<field name="delay" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="delay"/>
+		<property name="com.jaspersoft.studio.field.label" value="delay"/>
+	</field>
+	<field name="iau_status" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="iau_status"/>
+		<property name="com.jaspersoft.studio.field.label" value="iau_status"/>
+	</field>
+	<field name="result_validated_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="result_validated_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="result_validated_by"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="lab_turn_around_time"/>
+	</field>
+	<variable name="S.No." class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="69" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="36" width="802" height="18" uuid="1a990934-8de6-49c6-850e-2a2c02960bac"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Detailed TAT Report]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="10" width="802" height="18" uuid="1867c8d9-ef76-493c-9756-53b35a5b6648"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
+			</textField>
+			<image scaleImage="RealHeight">
+				<reportElement x="10" y="10" width="160" height="51" uuid="4c0ca877-1d01-4a39-acfc-a2e5a10105a7"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="40" splitType="Stretch">
+			<staticText>
+				<reportElement x="36" y="22" width="73" height="14" uuid="e64cf206-c224-4b90-bf02-8874ceaa2879"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Report Range]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+				<reportElement x="111" y="22" width="52" height="14" uuid="27d08d5c-c92a-48e3-864a-556146c6178a"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{from_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="161" y="22" width="14" height="14" uuid="bf42cb73-ec56-4e61-94cc-6aa42e255817"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<text><![CDATA[to]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+				<reportElement x="175" y="22" width="70" height="14" uuid="6cc67fa2-1325-4c2f-8500-2159d1aab3ea"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="573" y="22" width="73" height="14" uuid="7b259fcf-233b-49d9-8d48-7ef7f022c015"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Generated On]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="646" y="22" width="134" height="14" uuid="cbcb03b2-4fa7-4dcd-b4e3-7a6dba5287d9"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toUpperCase()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="10" y="4" width="103" height="14" uuid="fac1d0ea-ff96-4223-86cb-e95210c95bf2">
+					<printWhenExpression><![CDATA[$P{investigation_id} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Investigation Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="596" y="4" width="46" height="14" uuid="9e94c785-4dec-4a83-bd22-5883a37b4f77">
+					<printWhenExpression><![CDATA[$P{sub_chargecode_id} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Modality]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="111" y="4" width="134" height="14" uuid="e46d2657-2047-4363-892d-0dbeb45a9d39">
+					<printWhenExpression><![CDATA[$P{investigation_id} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{investigation_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="646" y="4" width="134" height="14" uuid="82adc86c-ec76-43bc-a562-e21b0944269a">
+					<printWhenExpression><![CDATA[$P{sub_chargecode_id} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sub_chargecode_name}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="32" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="31" width="802" height="1" uuid="717be86f-19a7-41d6-b83d-56de6551570e"/>
+			</line>
+			<line>
+				<reportElement x="0" y="3" width="802" height="1" uuid="253769cb-a9e7-43d6-823d-ca3c0743c908"/>
+			</line>
+			<staticText>
+				<reportElement x="3" y="6" width="17" height="25" uuid="072e8524-9a1b-4f2f-aad9-6c9baebb7def"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S. No.]]></text>
+			</staticText>
+			<line>
+				<reportElement x="23" y="3" width="1" height="29" uuid="e0b4f8ee-44db-4011-a396-c7f8b0999fe5"/>
+			</line>
+			<staticText>
+				<reportElement x="27" y="6" width="100" height="25" uuid="07d11289-4ec2-4eb5-a4e1-e48c92128655"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Investigation Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="133" y="6" width="64" height="25" uuid="78580552-60ec-4654-b8f3-7fcf4df4abfe"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sample ID]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="202" y="6" width="90" height="25" uuid="69faef64-1a3b-41fa-a235-fa231e7e0060"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sample Received Date & Time]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="6" width="100" height="25" uuid="e76ef5df-c2e2-4215-bb03-807d71354168"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Report Authorized Date & Time]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="407" y="6" width="74" height="25" uuid="7383dfcf-3cac-4f3e-83aa-7ee0b3557000"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Expected TAT (Hrs)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="487" y="6" width="60" height="25" uuid="3555fa57-4808-4e03-861f-b8ddfa64162b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Actual TAT (Hrs)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="552" y="6" width="60" height="25" uuid="65f85beb-89f5-4396-95c2-7aa082fad6ec"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Delay (Hrs)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="617" y="6" width="100" height="25" uuid="fd693c2f-0b75-4d8f-b1e5-a315584c0d69"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[IAU Status (Within / Breach)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="722" y="5" width="80" height="25" uuid="99155f55-12c9-4c1a-bede-5edd22caf12d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Technician Name]]></text>
+			</staticText>
+			<line>
+				<reportElement x="129" y="3" width="1" height="29" uuid="d51c5b6d-f7cd-45c9-b616-7241ecd6dd21"/>
+			</line>
+			<line>
+				<reportElement x="198" y="3" width="1" height="29" uuid="ce80ccd2-8d46-428b-a986-a7e5ada57ba8"/>
+			</line>
+			<line>
+				<reportElement x="293" y="3" width="1" height="29" uuid="b009e252-0cd9-4e3e-84b6-f132198a45d6"/>
+			</line>
+			<line>
+				<reportElement x="401" y="3" width="1" height="29" uuid="0d0bd136-23b4-4a32-bcd0-172e1d46532c"/>
+			</line>
+			<line>
+				<reportElement x="482" y="3" width="1" height="29" uuid="70cbb202-f5aa-4020-9d49-28d79e53505d"/>
+			</line>
+			<line>
+				<reportElement x="548" y="3" width="1" height="29" uuid="bee267bb-5341-432c-b117-b4e6b13814ab"/>
+			</line>
+			<line>
+				<reportElement x="613" y="3" width="1" height="29" uuid="c2a722c9-e49f-410e-8b12-389805a2ba24"/>
+			</line>
+			<line>
+				<reportElement x="718" y="3" width="1" height="29" uuid="750dd606-64de-4fc8-9c55-4c4356b80d54"/>
+			</line>
+			<line>
+				<reportElement x="0" y="3" width="1" height="29" uuid="123f638d-b0f4-4a99-a2d3-cc99ccb63abd"/>
+			</line>
+			<line>
+				<reportElement x="801" y="3" width="1" height="29" uuid="822140b5-cb12-4746-8381-3c8a534f8763"/>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="29" splitType="Stretch">
+			<printWhenExpression><![CDATA[$F{result_validation_date_time} != null]]></printWhenExpression>
+			<textField>
+				<reportElement x="300" y="3" width="100" height="25" uuid="c717f2c7-f505-4602-aff5-869ace5b97bd"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{result_validation_date_time}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="722" y="2" width="80" height="25" uuid="c3a17084-dff6-4dd9-8c90-b5ce91a0c34e"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{result_validated_by}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="548" y="-5" width="1" height="33" uuid="7ce79fb1-9547-48fc-9750-87557f353e5a"/>
+			</line>
+			<line>
+				<reportElement x="613" y="-5" width="1" height="33" uuid="1806bd93-55c6-4d6b-a839-d4dc44e07449"/>
+			</line>
+			<line>
+				<reportElement x="0" y="28" width="802" height="1" uuid="0090d09f-aca2-43c9-ac21-72cce678b9f8"/>
+			</line>
+			<textField>
+				<reportElement x="487" y="3" width="60" height="25" uuid="f8c0d851-2495-42c9-87e6-09a26772d11b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{actual_tat}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="23" y="-5" width="1" height="33" uuid="f5b42cb7-55c7-4854-ad64-737bc29dca19"/>
+			</line>
+			<line>
+				<reportElement x="482" y="-5" width="1" height="33" uuid="38ca4038-511e-4202-800e-ce577479b420"/>
+			</line>
+			<textField>
+				<reportElement x="202" y="3" width="90" height="25" uuid="b8b1cd85-1da3-473f-9f86-122cda4410b5"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sample_collection_date_time}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="617" y="3" width="100" height="25" uuid="6468defa-e208-43cd-8139-d5b417ad0957"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{iau_status}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="407" y="3" width="74" height="25" uuid="cc225ec1-8901-497c-984e-7aa964142db9"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{expected_tat}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="293" y="-5" width="1" height="33" uuid="c37f3005-5488-41a8-8652-899d0e9b9073"/>
+			</line>
+			<line>
+				<reportElement x="198" y="-5" width="1" height="33" uuid="d175dc40-c280-4ea8-9b2f-e38183bc9d4d"/>
+			</line>
+			<textField>
+				<reportElement x="27" y="3" width="100" height="25" uuid="7cb61f95-7eed-48a3-87e1-c47cbfb2fc18"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{investigation_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="3" y="3" width="17" height="25" uuid="f92d7263-26c7-47ba-81aa-74ce9c0dd7aa"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="552" y="3" width="60" height="25" uuid="b6cdbf9f-cd31-455d-8142-129a51661035"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{delay}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="133" y="3" width="64" height="25" uuid="fd2f50d8-9830-4887-b1f6-9ef3211d0885"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{generated_sample_id}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="-5" width="1" height="33" uuid="4c3f56aa-18d4-47ba-b883-451b62554839"/>
+			</line>
+			<line>
+				<reportElement x="129" y="-5" width="1" height="33" uuid="fa4f0f82-842b-4475-9e74-aa5c59d40ae4"/>
+			</line>
+			<line>
+				<reportElement x="401" y="-5" width="1" height="33" uuid="3b4b81dd-969b-4e4e-a297-901f73e1abd6"/>
+			</line>
+			<line>
+				<reportElement x="718" y="-5" width="1" height="33" uuid="9e95a20e-c31f-497d-8904-00d0c2756b78"/>
+			</line>
+			<line>
+				<reportElement x="801" y="-5" width="1" height="34" uuid="f8b31996-820a-4619-842b-4ccccd017157"/>
+			</line>
+		</band>
+	</detail>
+	<noData>
+		<band height="29">
+			<staticText>
+				<reportElement x="0" y="6" width="802" height="18" uuid="944842e5-613d-4a38-a82f-55840219b84b"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOUND]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

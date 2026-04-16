@@ -1,5 +1,6 @@
 package com.hims.controller;
 
+import com.hims.projection.BillingHeaderResponseProjection;
 import com.hims.request.PaymentUpdateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.PatientAppointmentResponse;
@@ -9,6 +10,9 @@ import com.hims.service.BillingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,45 +24,90 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class BillingController {
+
+    @Value("${serviceCategoryRad}")
+    private String radioServiceCategoryCode;
+
     @Autowired
     private final BillingService billingService;
 
 
-    //consultation Services
-    @PostMapping("/payment")
-    public ResponseEntity<ApiResponse<PaymentResponse>> updatePaymentStatus(@RequestBody PaymentUpdateRequest request) {
-        return new ResponseEntity<>(billingService.updatePayment(request), HttpStatus.OK);
+    /**
+     * Process OPD Consultation payment
+     */
+    @PostMapping("/processOpdPayment")
+    public ResponseEntity<ApiResponse<PaymentResponse>> processOpdPayment(
+            @RequestBody PaymentUpdateRequest request) {
+        return new ResponseEntity<>(billingService.processOpdPayment(request), HttpStatus.OK);
     }
 
-    //Lab or Radiology Services
-    @PostMapping("/updatePaymentStatus")
-    public ResponseEntity<ApiResponse<PaymentResponse>> paymentStatusResponse(@RequestBody PaymentUpdateRequest request) {
-        log.info("Update Payment Status API called");
-        if(request.getBillingType()!=null)
-            if(request.getBillingType().equalsIgnoreCase("Radiology Services"))
-                return new ResponseEntity<>(billingService.paymentStatusReq(request), HttpStatus.OK);
-        return new ResponseEntity<>(billingService.paymentStatusReqLab(request), HttpStatus.OK);
+    /**
+     * Process Lab payment
+     */
+    @PostMapping("/processLabPayment")
+    public ResponseEntity<ApiResponse<PaymentResponse>> processLabPayment(
+            @RequestBody PaymentUpdateRequest request) {
+        log.info("Process Lab Payment API called");
+        return new ResponseEntity<>(billingService.processLabPayment(request), HttpStatus.OK);
     }
 
-    @GetMapping("/pendingBillingPatients")
-    public ApiResponse<List<PendingBillingResponse>> getPendingBilling() {
-        log.info("Get Pending Billing API called");
-        return billingService.getPendingBilling();
+    /**
+     * Process Radiology payment
+     */
+    @PostMapping("/processRadiologyPayment")
+    public ResponseEntity<ApiResponse<PaymentResponse>> processRadiologyPayment(
+            @RequestBody PaymentUpdateRequest request) {
+        log.info("Process Radiology Payment API called");
+        return new ResponseEntity<>(billingService.processRadiologyPayment(request), HttpStatus.OK);
     }
 
-    @GetMapping("/CatagoryWiseBilling/{serviceCategoryCode}")
-    public ApiResponse<?> getBillingPatientsByCatagory(
-            @PathVariable String serviceCategoryCode,
+    /**
+     * Get pending billing patients filtered by service category
+     */
+    @GetMapping("/pendingBillingsByCategory/{categoryCode}")
+    public ApiResponse<?> getPendingBillingsByCategory(
+            @PathVariable String categoryCode,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) String registrationNo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
-        log.info("Get Pending Billing API called");
-        return billingService.getBillingPatientsByCatagory(serviceCategoryCode, page, size);
+        return billingService.getPendingBillingsByCategory(
+                categoryCode, patientName, mobileNo, registrationNo, page, size);
     }
 
-    @GetMapping("/patientBillingDetails/{patientId}")
-    public ApiResponse<PatientAppointmentResponse> getBillingDetails(@PathVariable Long patientId) {
-        log.info("Get Pending Billing API called");
-        return billingService.getBillingDetails(patientId);
+    /**
+     * Get OPD billing details for a specific patient
+     */
+    @GetMapping("/OPDPatientBillDetails/{patientId}")
+    public ApiResponse<PatientAppointmentResponse> getOPDPatientBillDetails(
+            @PathVariable Long patientId) {
+        log.info("Get OPD Patient Bill Details API called for patientId={}", patientId);
+        return billingService.getOPDPatientBillDetails(patientId);
     }
 
+    /**
+     * Get Lab/Radiology billing details by billing header ID
+     */
+    @GetMapping("/getLabRadiologyBillingDetails/{billingHdId}")
+    public ApiResponse<List<PendingBillingResponse>> getLabRadiologyBillingDetails(
+            @PathVariable Long billingHdId,
+            @RequestParam String serviceCategoryCode) {
+        log.info("Get Lab/Radiology Billing Details API called for billingHdId={}", billingHdId);
+        return billingService.getLabRadiologyBillingDetails(billingHdId, serviceCategoryCode);
+    }
+
+    /**
+     * Search invoice details by patient name, phone or registration number
+     */
+    @GetMapping("/searchInvoiceDetails")
+    public ApiResponse<Page<BillingHeaderResponseProjection>> searchInvoiceDetails(
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String phoneNo,
+            @RequestParam(required = false) String registrationNo,
+            Pageable pageable) {
+        log.info("Search Invoice Details API called - patientName={}, phoneNo={}, registrationNo={}",
+                patientName, phoneNo, registrationNo);
+        return billingService.searchInvoiceDetails(patientName, phoneNo, registrationNo, pageable);
+    }
 }

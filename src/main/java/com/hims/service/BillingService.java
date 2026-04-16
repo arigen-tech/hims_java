@@ -1,35 +1,76 @@
 package com.hims.service;
 
-import com.beust.ah.A;
 import com.hims.entity.*;
 import com.hims.projection.BillingHeaderResponseProjection;
-import com.hims.request.PaymentUpdateRequest;
+import com.hims.request.*;
 import com.hims.response.*;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface BillingService {
     ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount);
 
-    ApiResponse<List<PendingBillingResponse>> getPendingBilling();
+    /**
+     * Process OPD consultation payment
+     */
+    ApiResponse<PaymentResponse> processOpdPayment(PaymentUpdateRequest request);
 
-    
+    /**
+     * Process Lab payment and update order/billing status
+     */
+    ApiResponse<PaymentResponse> processLabPayment(PaymentUpdateRequest request);
 
-    ApiResponse<PatientAppointmentResponse> getBillingDetails(Long patientId);
+    /**
+     * Process Radiology payment and update order/billing status
+     */
+    ApiResponse<PaymentResponse> processRadiologyPayment(PaymentUpdateRequest request);
 
-    ApiResponse<List<BillingHeaderResponseProjection>> getBillingStatus(String patientName, String phoneNo, String registrationNo);
 
-    //Update the Consultation services payment status
-    ApiResponse<PaymentResponse> updatePayment(PaymentUpdateRequest opdreq);
+    /**
+     * Get pending billing patients filtered by service category (OPD / Lab / Radiology)
+     */
+    ApiResponse<?> getPendingBillingsByCategory(
+            String categoryCode,
+            String patientName,
+            String mobileNo,
+            String registrationNo,
+            int page,
+            int size);
 
-    //Radiology Services
-    @Transactional
-    ApiResponse paymentStatusReq(PaymentUpdateRequest request);
+    /**
+     * Get OPD billing details for a specific patient
+     */
+    ApiResponse<PatientAppointmentResponse> getOPDPatientBillDetails(Long patientId);
 
-    //Laboratory
-    ApiResponse<PaymentResponse> paymentStatusReqLab(PaymentUpdateRequest labreq);
+    /**
+     * Get Lab/Radiology billing details by billing header ID
+     */
+    ApiResponse<List<PendingBillingResponse>> getLabRadiologyBillingDetails(Long billingHdId, String serviceCategoryCode);
 
-    ApiResponse<?> getBillingPatientsByCatagory(String serviceCategoryCode, int page, int size);
+    /**
+     * Search invoice details by patient name, phone or registration number
+     */
+    ApiResponse<Page<BillingHeaderResponseProjection>> searchInvoiceDetails(String patientName, String phoneNo, String registrationNo, Pageable pageable);
+
+
+    BillingHeader saveBillingHeader(
+            Object orderHd, Visit vId, User currentUser,
+            BigDecimal sum, BigDecimal tax, BigDecimal disc,
+            String serviceCategoryCode, boolean isRadiology);
+
+    BillingDetail saveBillingDetail(
+            BillingHeader bhdId,
+            Object dtId,
+            LabRadioInvestigationRequest investigation,
+            String serviceCategoryCode,
+            boolean isRadiology);
+
+    BillingDetail saveBillingDetailPackage(
+            BillingHeader bhdId,
+            DgInvestigationPackage pack,
+            LabRadioInvestigationRequest req,
+            String serviceCategoryCode);
 }

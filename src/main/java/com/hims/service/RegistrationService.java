@@ -3,7 +3,8 @@ package com.hims.service;
 import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
-import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,9 +20,9 @@ public interface RegistrationService {
 
     ApiResponse<String> uploadPatientImage(MultipartFile file);
 
-    ApiResponse<List<PatientProjection>> searchPatient(PatientSearchReq substring);
+    ApiResponse<Page<PatientProjection>> searchPatient(PatientSearchReq substring, Pageable pageable);
 
-    ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patient);
+    ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patient, String serviceCategoryCode);
 
     ApiResponse<PaymentResponse> updatePaymentStatus(PaymentUpdateRequest opdreq);
 
@@ -35,6 +36,7 @@ public interface RegistrationService {
 
     ApiResponse<List<AvailableTokenSlotResponse>> getAppointmentSlots(Long deptId, Long doctorId, String appointmentDate, Long sessionId, int flag);
 
+    ApiResponse<List<?>> getAppointmentSummaryReport(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate,Integer flag);
 }
 
 

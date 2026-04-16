@@ -1,14 +1,17 @@
 package com.hims.projection;
 
+import java.time.Instant;
+import java.time.LocalDate;
+
 public interface OpdBillingProjection {
     Long getPatientId();
     Long getVisitId();
     String getRegistrationNo();
     String getMobileNo();
-    String getAppointmentDate();
+    Instant getAppointmentDate();
     Long getBillingHdId();
     String getPatientName();
-    String getAge();
+    LocalDate getAge();
     String getGender();
     String getRelation();
     String getBillingType();

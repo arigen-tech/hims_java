@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Lab_Main_Report" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b36e4c85-8d3f-4b77-af41-ad4e977e0476">
+	<property name="ireport.scriptlethandling" value="0"/>
+	<property name="ireport.encoding" value="UTF-8"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<import value="net.sf.jasperreports.engine.*"/>
+	<import value="java.util.*"/>
+	<import value="net.sf.jasperreports.engine.data.*"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="from_date" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="to_date" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="gender_id" class="java.lang.Long"/>
+	<parameter name="investigation_id" class="java.lang.Long"/>
+	<parameter name="from_age" class="java.lang.Long"/>
+	<parameter name="to_age" class="java.lang.Long"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/JaspersoftWorkspace/MyReports/Billing/lab_register_report/"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[select distinct 
+	mh.hospital_name
+from dg_result_entry_header hd
+left join dg_result_entry_detail dt on hd.result_entry_id = dt.result_entry_id
+left join patient pt on hd.hin_id = pt.patient_id
+left join mas_gender mg on pt.p_gender_id = mg.id
+left join dg_mas_investigation dmi on dt.investigation_id = dmi.investigation_id
+left join mas_hospital mh on hd.hospital_id = mh.hospital_id
+left join dg_sub_mas_investigation dsmi on dt.result_type = 'm' 
+	and dsmi.sub_investigation_id = dt.sub_investigation_id
+where hd.main_chargecode_id = 12 
+and dt.validated = 'y'
+and hd.result_status = 'y'
+and dt.result is not null
+	and hd.result_date between $P{from_date} and $P{to_date}
+	and (dt.investigation_id = $P{investigation_id} or $P{investigation_id} = 0)
+	and (pt.p_gender_id = $P{gender_id} or $P{gender_id} = 0)
+	and cast(date_part('years', age(hd.result_date, pt.p_dob)) as bigint) 
+    between $P{from_age} 
+    	and (case when $P{to_age} = 0 then 125 else $P{to_age} end)]]>
+	</queryString>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="96" splitType="Stretch">
+			<image scaleImage="RealHeight">
+				<reportElement x="10" y="10" width="160" height="51" uuid="3d21b161-f336-4f61-a839-6eece8528fe9"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="0" y="10" width="535" height="18" uuid="41fdb6e1-8bd0-48e2-8ce2-4fe6ae69ac7f"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="30" width="535" height="18" uuid="b3ae1eb8-ff10-441b-b579-18a29b91ac5d"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Lab Register]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="12" y="78" width="80" height="14" uuid="9ac6400b-f15c-46a8-a98f-5ef7bdff6fe2"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Report Range]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="92" y="78" width="7" height="14" uuid="4535edcb-427f-4f5c-bf27-ff48a083fb13"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+				<reportElement x="103" y="78" width="52" height="14" uuid="33cca443-71f9-43ec-8377-9651fac3af36"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{from_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="153" y="78" width="14" height="14" uuid="00604ebf-e107-417b-ad73-41169303d0e6"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[to]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+				<reportElement x="167" y="78" width="70" height="14" uuid="85c4b283-ffe6-47dd-811c-b88092628148"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="329" y="78" width="73" height="14" uuid="22b4491f-bef2-47ac-bc16-0bf9a2a2a5cf"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Generated on]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="402" y="78" width="7" height="14" uuid="3b4f2358-4ed7-4f8e-ba78-90d00084c029"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="411" y="78" width="141" height="14" uuid="88b2e909-9c85-425d-a7d2-447a10568ca3"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toLowerCase()]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch">
+			<subreport isUsingCache="true" overflowType="Stretch">
+				<reportElement key="subreport-2" positionType="Float" mode="Opaque" x="0" y="26" width="555" height="16" uuid="8da2240e-9446-4b0d-b61a-234c3c1e1c15"/>
+				<subreportParameter name="from_date">
+					<subreportParameterExpression><![CDATA[$P{from_date}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="to_date">
+					<subreportParameterExpression><![CDATA[$P{to_date}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="gender_id">
+					<subreportParameterExpression><![CDATA[$P{gender_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="investigation_id">
+					<subreportParameterExpression><![CDATA[$P{investigation_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="from_age">
+					<subreportParameterExpression><![CDATA[$P{from_age}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="to_age">
+					<subreportParameterExpression><![CDATA[$P{to_age}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Lab_Sub_Detail_Report.jasper"]]></subreportExpression>
+			</subreport>
+			<subreport isUsingCache="true">
+				<reportElement key="subreport-1" positionType="Float" mode="Opaque" x="0" y="8" width="555" height="16" uuid="2ff35182-3879-4f28-ae1a-2b9ebf4edbb5"/>
+				<subreportParameter name="from_date">
+					<subreportParameterExpression><![CDATA[$P{from_date}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="to_date">
+					<subreportParameterExpression><![CDATA[$P{to_date}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="gender_id">
+					<subreportParameterExpression><![CDATA[$P{gender_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="investigation_id">
+					<subreportParameterExpression><![CDATA[$P{investigation_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="from_age">
+					<subreportParameterExpression><![CDATA[$P{from_age}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="to_age">
+					<subreportParameterExpression><![CDATA[$P{to_age}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Lab_Sub_Summary_Report.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</summary>
+	<noData>
+		<band height="26" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="1" width="535" height="21" uuid="8fd68437-1344-4f3b-984c-19a965d715ae"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOUND]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>
