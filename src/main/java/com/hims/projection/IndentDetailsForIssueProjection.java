@@ -24,6 +24,7 @@ public interface IndentDetailsForIssueProjection {
 
     String getBatchNo();
     BigDecimal getBatchAvailableStock();
+    Long getManufacturerId();
     LocalDate getMfgDate();
     LocalDate getExpDate();
 }

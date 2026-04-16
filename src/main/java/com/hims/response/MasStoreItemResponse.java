@@ -1,6 +1,5 @@
 package com.hims.response;
 
-import com.hims.entity.MasStoreUnit;
 import lombok.Getter;
 import lombok.Setter;
 
