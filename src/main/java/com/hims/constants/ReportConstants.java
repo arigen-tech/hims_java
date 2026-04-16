@@ -22,6 +22,7 @@ public final class ReportConstants {
     public static final String JASPER_BASE_PATH_RADIOLOGY = "/jasperReport/Radiology/";
     public static final String JASPER_BASE_PATH_REGISTRATION = "/jasperReport/Registration/";
     public static final String JASPER_BASE_PATH_BILLING = "/jasperReport/Billing/";
+    public static final String JASPER_BASE_PATH_BLOOD_BANK = "/jasperReport/BloodBank/";
 
     public static final String ASSET_LOGO = "/Assets/arigen_health.png";
 
@@ -150,4 +151,13 @@ public final class ReportConstants {
 
     public static final String CASHIER_WISE_COLLECTION_JASPER = "Cashier_wise_collection";
     public static final String CASHIER_WISE_COLLECTION_REPORT = "CashierWiseCollection";
+
+    public static final String BLOOD_INVENTORY_STOCK_SUMMARY_JASPER = "Blood_inventory_stock_summary";
+    public static final String BLOOD_INVENTORY_STOCK_SUMMARY_REPORT = "BloodInventoryStockSummary";
+
+    public static final String BLOOD_INVENTORY_STOCK_DETAIL_JASPER = "Blood_inventory_stock_detail";
+    public static final String BLOOD_INVENTORY_STOCK_DETAIL_REPORT = "BloodInventoryStockDetail";
+
+    public static final String COMPONENT_WISE_STOCK_JASPER = "Component_wise_stock_report";
+    public static final String COMPONENT_WISE_STOCK_REPORT = "ComponentWiseStockReport";
 }
