@@ -119,6 +119,16 @@ public class AppConstants {
     public  static  final String VISIT_NOT_FOUND_ERR_MSG="Invalid visit Id, Visit not found";
 
     public  static  final  String STATUS_S="S";
+    public static final String STATUS_P="P";
+    public static final String STATUS_F="F";
+    public static final String TIME_FORMAT="HH:mm:ss";
+    public static final String VISIT_TYPE_FOLLOW_UP= "F";
+    public static final String VISIT_TYPE_NEW = "N";
+    public static final String INVESTIGATION = "I";
+    public static final String DISPLAY_PATIENT_STATUS = "wp";
+    public static final String PAYMENT_PARTIAL_PENDING = "P";
+    public static final String PACKAGE = "P";
+
 
 
     private AppConstants() {
