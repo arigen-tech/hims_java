@@ -182,7 +182,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             }
 
             // Handle deleted items
-            handleDeletedItemsForApproval(request.getDeletedT(), indentM);
+//            handleDeletedItemsForApproval(request.getDeletedT(), indentM);
 
             // Save the updated indent
             indentM = indentMRepository.save(indentM);
@@ -1225,18 +1225,27 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 BigDecimal qtyRejected = nvl(itemReq.getQtyRejected());
 
                 // Get the corresponding issue transaction
-                List<StoreIssueT> issueTs = storeIssueTRepository.findByIndentTIdAndBatchNo(
+//                List<StoreIssueT> issueTs = storeIssueTRepository.findByIndentTIdAndBatchNo(
+//                        indentT,
+//                        itemReq.getBatchNo()
+//                );
+//
+//                if (issueTs.isEmpty()) {
+//                    throw new RuntimeException("No issue transaction found for item: " +
+//                            indentT.getItemId().getNomenclature() + ", Batch: " + itemReq.getBatchNo());
+//                }
+//
+//                // Get the specific batch issue transaction
+//                StoreIssueT issueT = issueTs.get(0);
+                Optional<StoreIssueT> issueTOptional = storeIssueTRepository.findByIndentTIdAndBatchNo(
                         indentT,
                         itemReq.getBatchNo()
                 );
-
-                if (issueTs.isEmpty()) {
+                if(issueTOptional.isEmpty()){
                     throw new RuntimeException("No issue transaction found for item: " +
                             indentT.getItemId().getNomenclature() + ", Batch: " + itemReq.getBatchNo());
                 }
-
-                // Get the specific batch issue transaction
-                StoreIssueT issueT = issueTs.get(0);
+                StoreIssueT issueT=issueTOptional.get();
 
                 // ==============================================
                 // 3. Create Store Indent Receive Transaction

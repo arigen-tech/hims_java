@@ -28,6 +28,7 @@ public class IndentDetailsForIssueResponse {
     private Long unitAUid;
     private String batchNo;
     private BigDecimal batchAvailableStock;
+    private Long manufacturerId;
     private LocalDate mfgDate;
     private LocalDate expDate;
 }

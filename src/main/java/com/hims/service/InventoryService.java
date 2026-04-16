@@ -36,13 +36,13 @@ public interface InventoryService {
     ApiResponse<List<MasCommonStatusResponse>> getStatusMapForIndentTracking();
 
     ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(Long sectionId,String keyword, int page, int size) ;
-    ApiResponse<List<String>> getBatchesFromItemId(Long itemId);
+    ApiResponse<List<BatchNameForStockResponse>> getBatchesFromItemId(Long itemId,Long hospitalId,Long departmentId);
     ApiResponse<Long> getIssueMIdFromIndentMId(Long indentMId);
     ApiResponse<Long> getReceiveMIdFromIndentMId(Long indentMId);
     ApiResponse<Long> getReturnMIdFromIndentMId(Long indentMId);
     List<DepartmentDropdownResponse> fetchIndentApplicableDepartmentsExceptCurrent();
     ApiResponse<DepartmentDropdownResponse> getCurrentDepartmentById(Long id);
-    ApiResponse<MasStoreItemResponse> getItemById(Long hospitalId,Long itemId);
+    ApiResponse<MasStoreItemDetails> getItemById(Long hospitalId,Long itemId,Long requestedDeptId,Long currentDeptId);
     ApiResponse<StoreInternalIndentResponse> saveIndent(StoreInternalIndentRequest request);
     ApiResponse<StoreInternalIndentResponse> submitIndent(StoreInternalIndentRequest request);
 
@@ -75,7 +75,7 @@ public interface InventoryService {
 
      ApiResponse<StoreIndentReceiveResponse> saveReceiving(StoreIndentReceiveRequest request);
 
-     ApiResponse<List<IndentDetailsResponseForRequestDept>> getIndentDetailsForRequestingDept(Long indentMId, Long deptId);
+     ApiResponse<List<IndentDetailsResponseForRequestDept>> getIndentDetailsForRequestingDept(Long indentMId, Long currentDeptId,Long requestedDeptId);
 
      ApiResponse<String> saveOpeningBalanceEntry(OpeningBalanceEntryRequest openingBalanceEntryRequest);
 

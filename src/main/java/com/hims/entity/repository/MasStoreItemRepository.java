@@ -169,26 +169,18 @@ SELECT
     m.reOrderLevelStore as reOrderLevelStore,
 
     COALESCE(SUM(CASE
-        WHEN sb.departmentId.id = :storeDeptId
+        WHEN sb.departmentId.id = :requestedDeptId
          AND sb.hospitalId.id = :hospitalId
          AND sb.closingStock > 0
-         AND sb.expiryDate >= :storeExpiry
-        THEN sb.closingStock ELSE 0 END),0) as storestocks,
+         AND sb.expiryDate >= :drugExpDay
+        THEN sb.closingStock ELSE 0 END),0) as requestedDeptStocks,
 
     COALESCE(SUM(CASE
-        WHEN sb.departmentId.id = :dispDeptId
+        WHEN sb.departmentId.id = :currentDeptId
          AND sb.hospitalId.id = :hospitalId
          AND sb.closingStock > 0
-         AND sb.expiryDate >= :dispExpiry
-        THEN sb.closingStock ELSE 0 END),0) as dispstocks,
-
-    COALESCE(SUM(CASE
-        WHEN sb.departmentId.id = :wardDeptId
-         AND sb.hospitalId.id = :hospitalId
-         AND sb.closingStock > 0
-         AND sb.expiryDate >= :wardExpiry
-        THEN sb.closingStock ELSE 0 END),0) as wardstocks
-
+         AND sb.expiryDate >= :drugExpDay
+        THEN sb.closingStock ELSE 0 END),0) as currentDeptStocks
 FROM MasStoreItem m
 LEFT JOIN m.groupId g
 LEFT JOIN m.itemClassId ic
@@ -215,12 +207,12 @@ GROUP BY
     Optional<MasStoreItemProjection> findItemWithStock(
             @Param("itemId") Long itemId,
             @Param("hospitalId") Long hospitalId,
-            @Param("storeDeptId") Long storeDeptId,
-            @Param("dispDeptId") Long dispDeptId,
-            @Param("wardDeptId") Long wardDeptId,
-            @Param("storeExpiry") LocalDate storeExpiry,
-            @Param("dispExpiry") LocalDate dispExpiry,
-            @Param("wardExpiry") LocalDate wardExpiry
+            @Param("requestedDeptId") Long requestedDeptId,
+            @Param("currentDeptId") Long currentDeptId,
+            @Param(("drugExpDay")) LocalDate drugExpDay
+//            @Param("storeExpiry") LocalDate storeExpiry,
+//            @Param("dispExpiry") LocalDate dispExpiry,
+//            @Param("wardExpiry") LocalDate wardExpiry
     );
 
 
