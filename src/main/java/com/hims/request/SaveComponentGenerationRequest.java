@@ -7,6 +7,5 @@ import java.util.List;
 @Data
 public class SaveComponentGenerationRequest {
     private Long donationId;
-
     private List<ComponentGenerationRequest> components;
 }

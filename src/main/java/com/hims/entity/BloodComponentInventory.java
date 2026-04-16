@@ -35,7 +35,7 @@ public class BloodComponentInventory {
     private LocalDate expiryDate;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inventory_status")
-    private MasBloodDonationStatus inventoryStatus;
+    private MasBloodInventoryStatus inventoryStatus;
 
     @Column(name = "reserved_for_patient_id")
     private Long reservedForPatientId;

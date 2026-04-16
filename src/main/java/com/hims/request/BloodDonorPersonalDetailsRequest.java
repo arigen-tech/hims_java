@@ -11,13 +11,11 @@ import java.time.LocalDate;
 @Builder
 public class BloodDonorPersonalDetailsRequest{
     private String firstName;
-    private String middleName;
     private String lastName;
     private Long genderId;
     private LocalDate dateOfBirth;
     private String mobileNo;
     private Long bloodGroupId;
-   // private Long donationTypeId;
     private Long relationId;
     private String addressLine1;
     private String addressLine2;

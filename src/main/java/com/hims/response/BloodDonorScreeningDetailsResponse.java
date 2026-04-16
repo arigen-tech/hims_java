@@ -38,5 +38,8 @@ public class BloodDonorScreeningDetailsResponse {
 
     private LocalDateTime createdDate;
     private String createdBy;
-    List<BloodDonorPriviousScreening> bloodDonorPriviousScreenings;
+    private boolean isEligibleForDonation;
+    private LocalDate nextEligibleDonationDate;
+
+    List<BloodDonorPriviousScreening> bloodDonorPreviousScreenings;
 }

@@ -1,5 +1,7 @@
 package com.hims.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -7,50 +9,21 @@ import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class PendingForMandatoryTestingResponse {
 
     private Long donationId;
     private Long donorId;
     private String bagNumber;
     private String donorResNo;
-    private String firstname;
-    private String lastName;
+    private String fullName;
     private String bloodGroup;
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm", timezone = "Asia/Kolkata")
     private LocalDateTime collectionDateTime;
     private String collectionType;
     private Long noOfComponent;
     private String currentStatus;
     private String bagType;
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm", timezone = "Asia/Kolkata")
     private LocalDateTime componentGenerationDateTime;
-
-
-    public PendingForMandatoryTestingResponse(
-            Long donationId,
-            Long donorId,
-            String bagNumber,
-            String donorResNo,
-            String firstname,
-            String lastName,
-            String bloodGroup,
-            LocalDateTime collectionDateTime,
-            String collectionType,
-            Long noOfComponent,
-            String currentStatus,
-            String bagType,
-            LocalDateTime componentGenerationDateTime
-    ) {
-        this.donationId = donationId;
-        this.donorId = donorId;
-        this.bagNumber = bagNumber;
-        this.donorResNo = donorResNo;
-        this.firstname = firstname;
-        this.lastName = lastName;
-        this.bloodGroup = bloodGroup;
-        this.collectionDateTime = collectionDateTime;
-        this.collectionType = collectionType;
-        this.noOfComponent = noOfComponent;
-        this.currentStatus = currentStatus;
-        this.bagType = bagType;
-        this.componentGenerationDateTime = componentGenerationDateTime;
-    }
 }

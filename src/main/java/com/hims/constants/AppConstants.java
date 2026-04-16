@@ -55,6 +55,8 @@ public class AppConstants {
     public static final String COMPONENT_PLT= "plt" ;
     public static final String COMPONENT_PLASMA= "plasma" ;
     public static final String COMPONENT_CRYO= "cryo" ;
+    public static final String SUMMARY = "S";
+    public static final String REACTIVE = "REACTIVE";
 
 
 
