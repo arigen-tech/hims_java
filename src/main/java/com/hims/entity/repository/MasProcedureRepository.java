@@ -4,6 +4,7 @@ import com.hims.entity.MasProcedure;
 import com.hims.projection.MasProcedureProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Range;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -79,6 +80,16 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
 """)
     List<MasProcedureProjection> findAllMasProcedure(@Param("flag") int flag,
                                                      @Param("status") String status);
+
+
+    @Query("""
+    SELECT p FROM MasProcedure p
+    WHERE p.status = :status
+    AND (:search IS NULL OR 
+         LOWER(p.procedureName) LIKE LOWER(CONCAT('%', :search, '%')))
+""")
+    Page<MasProcedure> searchMasProcedure( @Param("status") String status,
+            @Param("search") String search, Pageable pageable);
 
 
 }
