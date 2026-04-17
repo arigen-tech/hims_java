@@ -195,19 +195,34 @@ public class PackageRateConfigServiceImpl implements PackageRateConfigService {
     private PackageRateConfigResponse mapToResponse(PackageRateConfig entity) {
 
         PackageRateConfigResponse res = new PackageRateConfigResponse();
+
         res.setConfigId(entity.getConfigId());
-        res.setPackageId(entity.getIpdPackage().getPackageId());
-        res.setPackageName(entity.getIpdPackage().getPackageName());
-        res.setBillingTypeId(entity.getBillingType().getBillingTypeId());
-        res.setBillingTypeName(entity.getBillingType().getBillingTypeName());
-        res.setInsuranceId(entity.getInsuranceId().getInsuranceId());
-        res.setInsuranceName(entity.getInsuranceId().getInsuranceName());
-        res.setTpaId(entity.getTpa().getTpaId());
-        res.setTpaName(entity.getTpa().getTpaName());
-        res.setCorporateId(entity.getCorporate().getCorporateId());
-        res.setCorporateName(entity.getCorporate().getCorporateName());
-        res.setRoomCategoryId(entity.getMasRoomCategory().getRoomCategoryId());
-        res.setRoomCategoryName(entity.getMasRoomCategory().getRoomCategoryName());
+
+        // Package
+        res.setPackageId(entity.getIpdPackage() != null ? entity.getIpdPackage().getPackageId() : null);
+        res.setPackageName(entity.getIpdPackage() != null ? entity.getIpdPackage().getPackageName() : null);
+
+        // Billing Type
+        res.setBillingTypeId(entity.getBillingType() != null ? entity.getBillingType().getBillingTypeId() : null);
+        res.setBillingTypeName(entity.getBillingType() != null ? entity.getBillingType().getBillingTypeName() : null);
+
+        // Insurance
+        res.setInsuranceId(entity.getInsuranceId() != null ? entity.getInsuranceId().getInsuranceId() : null);
+        res.setInsuranceName(entity.getInsuranceId() != null ? entity.getInsuranceId().getInsuranceName() : null);
+
+        // TPA
+        res.setTpaId(entity.getTpa() != null ? entity.getTpa().getTpaId() : null);
+        res.setTpaName(entity.getTpa() != null ? entity.getTpa().getTpaName() : null);
+
+        // Corporate
+        res.setCorporateId(entity.getCorporate() != null ? entity.getCorporate().getCorporateId() : null);
+        res.setCorporateName(entity.getCorporate() != null ? entity.getCorporate().getCorporateName() : null);
+
+        // Room Category
+        res.setRoomCategoryId(entity.getMasRoomCategory() != null ? entity.getMasRoomCategory().getRoomCategoryId() : null);
+        res.setRoomCategoryName(entity.getMasRoomCategory() != null ? entity.getMasRoomCategory().getRoomCategoryName() : null);
+
+        // Direct fields
         res.setAmount(entity.getAmount());
         res.setEffectiveFrom(entity.getEffectiveFrom());
         res.setEffectiveTo(entity.getEffectiveTo());
@@ -215,6 +230,7 @@ public class PackageRateConfigServiceImpl implements PackageRateConfigService {
         res.setCopayPercent(entity.getCopayPercent());
         res.setMaxClaimAmount(entity.getMaxClaimAmount());
         res.setStatus(entity.getStatus());
+
         return res;
     }
     private PackageRateConfigResponse convertToResponse(PackageRateConfigProjection p) {

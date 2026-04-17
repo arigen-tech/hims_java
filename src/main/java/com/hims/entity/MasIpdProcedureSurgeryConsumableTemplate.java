@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-@Table(name = "mas_ipd_procedure_surgery_consmble_template", schema = "public")
+@Table(name = "mas_ipd_procedure_surgey_consmble_template")
 public class MasIpdProcedureSurgeryConsumableTemplate {
 
     @Id
@@ -17,7 +17,7 @@ public class MasIpdProcedureSurgeryConsumableTemplate {
     private Long templateId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "procedure_id", insertable = false, updatable = false)
+    @JoinColumn(name = "procedure_id")
     private MasProcedure procedure;
 
     @Column(name = "template_name", length = 200)
