@@ -257,6 +257,25 @@ GROUP BY
             @Param("keyword") String keyword,
             Pageable pageable
     );
+    @Query("""
+    SELECT new com.hims.response.ItemStockLedgerWithBatchResponse(
+        m.itemId,
+        m.pvmsNo,
+        m.nomenclature
+    )
+    FROM MasStoreItem m
+    WHERE m.status = 'y'
+      
+   AND (
+            LOWER(m.nomenclature) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(m.pvmsNo) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          )
+    ORDER BY m.nomenclature ASC
+""")
+    Page<ItemStockLedgerWithBatchResponse> searchItems(
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
 
 
 }
