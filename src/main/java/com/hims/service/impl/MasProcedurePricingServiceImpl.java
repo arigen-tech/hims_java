@@ -17,6 +17,7 @@ import com.hims.response.MasProcedurePricingResponse;
 import com.hims.service.MasProcedurePricingService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 @Service
+@Slf4j
 public class MasProcedurePricingServiceImpl implements MasProcedurePricingService {
     @Autowired
     private MasIpdBillingTypeRepository masIpdBillingTypeRepository;
@@ -62,6 +64,7 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
             );
 
         } catch (Exception e) {
+            log.error("Mas Procedure Pricing error",e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -91,6 +94,7 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
             );
 
         } catch (Exception e) {
+            log.error("Mas Procedure Pricing error",e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -111,6 +115,7 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
             );
 
         } catch (Exception e) {
+            log.error("Mas Procedure Pricing error",e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -126,6 +131,7 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
             );
 
         } catch (Exception e) {
+            log.error("Mas Procedure Pricing error",e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
@@ -142,7 +148,7 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Mas Procedure Pricing error",e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -152,16 +158,16 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
 
         MasProcedurePricingResponse res = new MasProcedurePricingResponse();
         res.setProcedurePricingId(entity.getProcedurePricingId());
-        res.setProcedureId(entity.getProcedure().getProcedureId());
-        res.setProcedureName(entity.getProcedure().getProcedureName());
+        res.setProcedureId(entity.getProcedure()!=null?entity.getProcedurePricingId():null);
+        res.setProcedureName(entity.getProcedure()!=null?entity.getProcedure().getProcedureName():null);
         res.setBasePrice(entity.getBasePrice());
         res.setDiscountAllowed(entity.getDiscountAllowed());
         res.setEffectiveFrom(entity.getEffectiveFrom());
         res.setEffectiveTo(entity.getEffectiveTo());
         res.setDiscount(entity.getDiscount());
         res.setStatus(entity.getStatus());
-        res.setBillingTypeId(entity.getBillingTypeId().getBillingTypeId());
-        res.setBillingTypeName(entity.getBillingTypeId().getBillingTypeName());
+        res.setBillingTypeId(entity.getBillingTypeId()!=null?entity.getBillingTypeId().getBillingTypeId():null);
+        res.setBillingTypeName(entity.getBillingTypeId()!=null?entity.getBillingTypeId().getBillingTypeName():null);
         return res;
     }
     private MasProcedurePricingResponse toResponse(MasProcedurePricingProjection p) {

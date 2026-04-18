@@ -27,7 +27,8 @@ public interface BloodComponentInventoryRepository extends JpaRepository<BloodCo
             JOIN mas_blood_component bc ON bc.component_id = bci.component_id
             
             WHERE 
-            (:bloodGroupId IS NULL OR bci.blood_group_id = :bloodGroupId)
+            bci.hospital_id=:hospitalId 
+            AND (:bloodGroupId IS NULL OR bci.blood_group_id = :bloodGroupId)
             AND (:componentId IS NULL OR bci.component_id = :componentId)
             AND (:inventoryStatus IS NULL OR bci.inventory_status = :inventoryStatus)
             AND (:collectionType IS NULL )
@@ -56,6 +57,7 @@ public interface BloodComponentInventoryRepository extends JpaRepository<BloodCo
             Long inventoryStatus,
             Long collectionType,
             String expiryFilter,
+            Long hospitalId,
             String component_cryo,
             String component_plasma,
             String  component_plt,

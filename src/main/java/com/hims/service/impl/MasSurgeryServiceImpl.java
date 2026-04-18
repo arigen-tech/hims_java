@@ -66,6 +66,7 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
                     .orElse(ResponseUtils.createNotFoundResponse(
                             "Surgery not found", HttpStatus.INTERNAL_SERVER_ERROR.value()));
         } catch (Exception e) {
+            log.error("mas surgery error", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -120,6 +121,7 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
             return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {});
 
         } catch (Exception e) {
+            log.error("mas surgery error", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Update failed", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -145,8 +147,9 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
             return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {});
 
         } catch (Exception e) {
+            log.error("mas surgery error", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Status update failed", 500);
+                    "Status update failed", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
@@ -156,8 +159,8 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
         res.setSurgeryId(e.getSurgeryId());
         res.setSurgeryCode(e.getSurgeryCode());
         res.setSurgeryName(e.getSurgeryName());
-        res.setDepartmentId(e.getDepartment().getId());
-        res.setDepartmentName(e.getDepartment().getDepartmentName());
+        res.setDepartmentId(e.getDepartment()!=null?e.getDepartment().getId():null);
+        res.setDepartmentName(e.getDepartment()!=null?e.getDepartment().getDepartmentName():null);
         res.setSurgeryLevel(e.getSurgeryLevel());
         res.setIsAnesthesiaRequired(e.getIsAnesthesiaRequired());
         res.setStatus(e.getStatus());

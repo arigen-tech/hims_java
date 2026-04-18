@@ -57,9 +57,10 @@ public interface BloodDonorScreeningRepository extends JpaRepository<BloodDonorS
         ON md.id = bd.district_id
       LEFT JOIN mas_blood_group bg
                    ON bg.blood_group_id = bd.blood_group_id
-    WHERE bd.donor_id = :donorId
+    WHERE bd.donor_id = :donorId AND bd.hospital_id=:hospitalId
     """, nativeQuery = true)
-    BloodDonorDetailsProjection getDonorBasicDetails(@Param("donorId") Long donorId);
+    BloodDonorDetailsProjection getDonorBasicDetails(@Param("donorId") Long donorId,
+                                                     @Param("hospitalId") Long hospitalId);
     @Query(value = """
     SELECT
         bds.screening_id AS screeningId,
@@ -75,8 +76,9 @@ public interface BloodDonorScreeningRepository extends JpaRepository<BloodDonorS
         bds.deferral_reason AS deferralReason,
         bds.created_by AS conductedBy
     FROM blood_donor_screening bds
-    WHERE bds.donor_id = :donorId
+    WHERE bds.donor_id = :donorId AND bds.hospital_id=:hospitalId
     ORDER BY bds.screening_date DESC, bds.screening_id DESC
     """, nativeQuery = true)
-    List<BloodDonorPreviousScreeningProjection> getDonorPreviousScreenings(@Param("donorId") Long donorId);
+    List<BloodDonorPreviousScreeningProjection> getDonorPreviousScreenings(@Param("donorId") Long donorId,
+                                                                           @Param("hospitalId") Long hospitalId   );
 }

@@ -14,6 +14,7 @@ import com.hims.response.MasSurgeryPricingResponse;
 import com.hims.service.MasSurgeryPricingService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 @Service
+@Slf4j
 public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
 
     @Autowired
@@ -61,6 +63,7 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             return ResponseUtils.createSuccessResponse("Surgery pricing added successfully", new TypeReference<>() {});
 
         } catch (Exception e) {
+            log.error("Create Mas Surgery Pricing",e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -91,6 +94,7 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             return ResponseUtils.createSuccessResponse("Updated successfully", new TypeReference<>() {});
 
         } catch (Exception e) {
+            log.error("Create Mas Surgery Pricing",e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -114,6 +118,7 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             return ResponseUtils.createSuccessResponse("Status updated", new TypeReference<>() {});
 
         } catch (Exception e) {
+            log.error("Create Mas Surgery Pricing",e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -129,6 +134,7 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             return ResponseUtils.createSuccessResponse(mapToResponse(entity), new TypeReference<>() {});
 
         } catch (Exception e) {
+            log.error("Create Mas Surgery Pricing",e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -151,6 +157,7 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             });
 
         } catch (Exception e) {
+            log.error("Create Mas Surgery Pricing",e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
@@ -165,8 +172,8 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
         res.setEffectiveFrom(entity.getEffectiveFrom());
         res.setEffectiveTo(entity.getEffectiveTo());
         res.setStatus(entity.getStatus());
-        res.setBillingTypeId(entity.getBillingType().getBillingTypeId());
-        res.setBillingTypeName(entity.getBillingType().getBillingTypeName());
+        res.setBillingTypeId(entity.getBillingType()!=null?entity.getBillingType().getBillingTypeId():null);
+        res.setBillingTypeName(entity.getBillingType()!=null?entity.getBillingType().getBillingTypeName():null);
 
         return res;
     }

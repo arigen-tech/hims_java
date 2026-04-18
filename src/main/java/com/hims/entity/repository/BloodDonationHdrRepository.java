@@ -34,9 +34,11 @@ public interface BloodDonationHdrRepository extends JpaRepository<BloodDonationH
     LEFT JOIN bdh.bagTypeId bt
     LEFT JOIN bdh.donationStatusId ds
     WHERE ds.donationStatusId = :donationStatusId
+    AND bdh.hospital.id=:hospitalId
     ORDER BY bdh.donationId DESC
 """)
-    List<PendingComponentGenerationResponse> pendingComponentGenerationList(@Param("donationStatusId") Long bloodDonationStatusCollected);
+    List<PendingComponentGenerationResponse> pendingComponentGenerationList(@Param("donationStatusId") Long bloodDonationStatusCollected,
+                                                                            @Param("hospitalId") Long hospitalId);
 
     @Query(value = """
     SELECT donor_code FROM blood_donor 
@@ -82,6 +84,8 @@ public interface BloodDonationHdrRepository extends JpaRepository<BloodDonationH
             LEFT JOIN bd.donationStatusId mds
             
             WHERE mds.donationStatusId = :bloodDonationStatusComponentGenerated
+            AND bd.hospital.id=:hospitalId
             """)
     List<PendingForMandatoryTestingProjection> pendingForMandatoryTestingList(
-            @Param("bloodDonationStatusComponentGenerated") Long bloodDonationStatusComponentGenerated);}
+            @Param("bloodDonationStatusComponentGenerated") Long bloodDonationStatusComponentGenerated,
+            @Param("hospitalId") Long hospitalId);}
