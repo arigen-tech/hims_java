@@ -4869,6 +4869,14 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
         log.info("Search Procedure/Surgery | type={}, search={}, page={}, size={}", templateType, search, page, size);
         return billingTemplateService.searchProcedureAndSurgery(templateType, page, size, search);
     }
+    @GetMapping("masStoreItem/search")
+    public ResponseEntity<?> getStockLedger(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        return ResponseEntity.ok(masStoreItemService.getStoreItems(keyword, page, size));
+    }
 
 
 }
