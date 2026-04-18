@@ -179,37 +179,44 @@ public class BloodBankServiceImpl implements BloodBankService{
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<DonorResponse>> getAllDonor(Pageable pageable, String donorName, String mobileNo) {
+    public ApiResponse<Page<DonorResponse>> getAllDonor(Long hospitalId,Pageable pageable, String donorName, String mobileNo) {
+        try {
 
-        Page<DonorProjection> projections = bloodDonorRepository.getAllDonor(pageable, donorName, mobileNo);
+            Page<DonorProjection> projections = bloodDonorRepository.getAllDonor(hospitalId,pageable, donorName, mobileNo);
 
-        Page<DonorResponse> responsePage = projections.map(p -> {
-            DonorResponse response = new DonorResponse();
-            response.setDonorId(p.getDonorId());
-            response.setScreeningId(p.getScreeningId());
-            response.setDonorCode(p.getDonorCode());
-            response.setName(p.getName());
-            response.setGender(p.getGender());
-            response.setMobileNo(p.getMobileNo());
-            response.setBloodGroup(p.getBloodGroup());
-            response.setRegistrationDate(p.getRegistrationDate());
-            response.setScreeningResult(p.getScreeningResult());
-            return response;
-        });
+            Page<DonorResponse> responsePage = projections.map(p -> {
+                DonorResponse response = new DonorResponse();
+                response.setDonorId(p.getDonorId());
+                response.setScreeningId(p.getScreeningId());
+                response.setDonorCode(p.getDonorCode());
+                response.setName(p.getName());
+                response.setGender(p.getGender());
+                response.setMobileNo(p.getMobileNo());
+                response.setBloodGroup(p.getBloodGroup());
+                response.setRegistrationDate(p.getRegistrationDate());
+                response.setScreeningResult(p.getScreeningResult());
+                return response;
+            });
 
-        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {}
-        );
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error occurred while fetching donor list. donorName: {}, mobileNo: {}", donorName, mobileNo, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<BloodDonorScreeningDetailsResponse> getDonorScreeningDetails(Long donorId) {
+    public ApiResponse<BloodDonorScreeningDetailsResponse> getDonorScreeningDetails(Long donorId,Long hospitalId) {
         log.info("Fetching donor screening details for donorId: {}", donorId);
 
         try {
-            BloodDonorDetailsProjection donor = bloodDonorScreeningRepository.getDonorBasicDetails(donorId);
+            BloodDonorDetailsProjection donor = bloodDonorScreeningRepository.getDonorBasicDetails(donorId,hospitalId);
 
-            List<BloodDonorPreviousScreeningProjection> screeningProjections = bloodDonorScreeningRepository.getDonorPreviousScreenings(donorId);
+            List<BloodDonorPreviousScreeningProjection> screeningProjections = bloodDonorScreeningRepository.getDonorPreviousScreenings(donorId,hospitalId);
 
             BloodDonorScreeningDetailsResponse response = new BloodDonorScreeningDetailsResponse();
             response.setDonorId(donor.getDonorId());
@@ -305,11 +312,11 @@ public class BloodBankServiceImpl implements BloodBankService{
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<List<BloodDonorCollectionResponse>> pendingBloodCollection() {
+    public ApiResponse<List<BloodDonorCollectionResponse>> pendingBloodCollection(Long hospitalId) {
         log.info("Fetching pending blood collection donors");
 
         try {
-            List<BloodDonorCollectionProjection> projections = bloodDonorRepository.findPendingBloodCollection(AppConstants.DONOR_SCREENING_STATUS_PASS);
+            List<BloodDonorCollectionProjection> projections = bloodDonorRepository.findPendingBloodCollection(AppConstants.DONOR_SCREENING_STATUS_PASS,hospitalId);
 
             List<BloodDonorCollectionResponse> responseList = projections.stream().map(projection -> {
                 BloodDonorCollectionResponse response = new BloodDonorCollectionResponse();
@@ -339,11 +346,11 @@ public class BloodBankServiceImpl implements BloodBankService{
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<BloodDonorCollectionDetailsResponse> pendingBloodCollectionDetails(Long donorId) {
+    public ApiResponse<BloodDonorCollectionDetailsResponse> pendingBloodCollectionDetails(Long donorId,Long hospitalId) {
         log.info("Fetching pending blood collection details for donorId: {}", donorId);
 
         try {
-            Optional<BloodDonorCollectionDetailsProjection> optional = bloodDonorRepository.findPendingBloodCollectionDetails(donorId);
+            Optional<BloodDonorCollectionDetailsProjection> optional = bloodDonorRepository.findPendingBloodCollectionDetails(donorId,hospitalId);
 
             BloodDonorCollectionDetailsProjection p = optional.get();
 
@@ -406,6 +413,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         bloodDonationHdr.setCreatedDate(LocalDate.now());
         bloodDonationHdr.setCreatedBy(authUtil.getCurrentUser().getFullName());
         bloodDonationHdr.setDonationDatetime(LocalDateTime.now());
+        bloodDonationHdr.setHospital(authUtil.getCurrentUser().getHospital());
         bloodDonationHdr.setDonationStatusId(masBloodDonationStatusRepository.findById(bloodDonationStatusCollected).orElseThrow());
 
         bloodDonationHdrRepository.save(bloodDonationHdr);
@@ -424,10 +432,10 @@ public class BloodBankServiceImpl implements BloodBankService{
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<List<PendingComponentGenerationResponse>> pendingComponentGenerationList() {
+    public ApiResponse<List<PendingComponentGenerationResponse>> pendingComponentGenerationList(Long hospitalId) {
         log.info("Fetching pending component generation list from repository");
         try {
-            List<PendingComponentGenerationResponse> pendingComponentGenerationList = bloodDonationHdrRepository.pendingComponentGenerationList(bloodDonationStatusCollected);
+            List<PendingComponentGenerationResponse> pendingComponentGenerationList = bloodDonationHdrRepository.pendingComponentGenerationList(bloodDonationStatusCollected,hospitalId);
 
             log.info("Pending component generation list fetched successfully. Total records: {}",
                     pendingComponentGenerationList != null ? pendingComponentGenerationList.size() : 0);
@@ -496,6 +504,7 @@ public class BloodBankServiceImpl implements BloodBankService{
                 dt.setExpiryDate(row.getExpiryDate());
                 dt.setCreatedDate(LocalDateTime.now());
                 dt.setCreatedBy(authUtil.getCurrentUser().getFullName());
+                dt.setHospital(authUtil.getCurrentUser().getHospital());
                 donationDtList.add(dt);
             }
 
@@ -518,11 +527,11 @@ public class BloodBankServiceImpl implements BloodBankService{
     }
 
     @Override
-    public ApiResponse<List<PendingForMandatoryTestingResponse>> pendingForMandatoryTestingList() {
+    public ApiResponse<List<PendingForMandatoryTestingResponse>> pendingForMandatoryTestingList(Long hospitalId) {
         try {
             List<PendingForMandatoryTestingProjection> projectionList =
                     bloodDonationHdrRepository
-                            .pendingForMandatoryTestingList(bloodDonationStatusComponent_Generated);
+                            .pendingForMandatoryTestingList(bloodDonationStatusComponent_Generated,hospitalId);
 
             List<PendingForMandatoryTestingResponse> responseList =
                     projectionList.stream()
@@ -574,6 +583,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             entity.setRemarks(dto.getRemarks());
             entity.setCreatedDate(LocalDateTime.now());
             entity.setCreatedBy(authUtil.getCurrentUser().getFullName());
+            entity.setHospital(authUtil.getCurrentUser().getHospital());
 
             bloodDonationTestResultRepository.save(entity);
 
@@ -616,6 +626,7 @@ public class BloodBankServiceImpl implements BloodBankService{
                             req.getInventoryStatus(),
                             req.getCollectionType(),
                             req.getExpiryFilter(),
+                    req.getHospitalId(),
                     AppConstants.COMPONENT_CRYO,
                     AppConstants.COMPONENT_PLASMA,
                     AppConstants.COMPONENT_PLT,
@@ -677,6 +688,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             donor.setPincode(personalDetailsRequest.getPinCode());
             donor.setCreatedDate(LocalDateTime.now());
             donor.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+            donor.setHospital(authUtil.getCurrentUser().getHospital());
 
             return bloodDonorRepository.save(donor);
         }catch (Exception ex){
@@ -719,6 +731,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             }
             screening.setCreatedDate(LocalDateTime.now());
             screening.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+            screening.setHospital(authUtil.getCurrentUser().getHospital());
             return bloodDonorScreeningRepository.save(screening);
         }catch (Exception ex){
             throw new ScreeningSaveException("Failed to save screening details", ex);
@@ -796,6 +809,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             inventory.setInventoryStatus(masBloodInventoryStatusRepository.findById(inventoryStatusAvailable).orElseThrow());
             inventory.setCreatedDate(LocalDateTime.now());
             inventory.setCreatedBy(authUtil.getCurrentUser().getFullName());
+            inventory.setHospital(authUtil.getCurrentUser().getHospital());
 
             bloodDonationDtRepository.save(dt);
             bloodComponentInventoryRepository.save(inventory);
