@@ -34,5 +34,7 @@ public interface MasStoreItemService {
             int size);
 
     ApiResponse<List<ItemProjection>> getAllDrugs(Integer sectionId);
+
+    ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String keyword, int page, int size);
 }
 

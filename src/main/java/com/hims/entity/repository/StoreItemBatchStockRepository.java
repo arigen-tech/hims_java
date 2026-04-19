@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.*;
+import com.hims.response.BatchNameForStockResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -67,8 +68,7 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
 
     List<StoreItemBatchStock> findByItemId(MasStoreItem itemId);
 
-
-
+    List<StoreItemBatchStock> findByItemIdAndHospitalId_IdAndDepartmentId_Id(MasStoreItem itemId,Long hospitalId, Long departmentId);
 
 
     @Query("""
@@ -120,5 +120,71 @@ WHERE s.itemId.itemId = :itemId
             @Param("hospitalId") Long hospitalId,
             @Param("departmentId") Long departmentId,
             @Param("threshold") LocalDate threshold
+    );
+
+    @Query("""
+    SELECT s FROM StoreItemBatchStock s
+    WHERE s.itemId = :itemId
+        AND s.departmentId.id = :departmentId
+        AND s.hospitalId.id = :hospitalId
+        AND UPPER(TRIM(s.batchNo)) = UPPER(TRIM(:batchNo))
+        AND s.manufacturerId.manufacturerId = :manufacturerId
+        AND s.expiryDate = :expiryDate
+      
+""")
+    Optional<StoreItemBatchStock> findExistingBatchStockForDrug(
+            @Param("itemId") MasStoreItem itemId,
+            @Param("departmentId") Long departmentId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("batchNo") String batchNo,
+            @Param("manufacturerId") Long manufacturerId,
+            @Param("expiryDate") LocalDate expiryDate
+
+    );
+
+    @Query("""
+    SELECT s FROM StoreItemBatchStock s
+    WHERE s.itemId = :itemId
+        AND s.departmentId.id = :departmentId
+        AND s.hospitalId.id = :hospitalId
+        AND UPPER(TRIM(s.batchNo)) = UPPER(TRIM(:batchNo))
+        AND s.manufacturerId.manufacturerId = :manufacturerId
+""")
+    Optional<StoreItemBatchStock> findExistingBatchStockForNonDrug(
+            @Param("itemId") MasStoreItem itemId,
+            @Param("departmentId") Long departmentId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("batchNo") String batchNo,
+            @Param("manufacturerId") Long manufacturerId
+
+    );
+
+    @Query("""
+SELECT new com.hims.response.BatchNameForStockResponse(
+    s.batchNo,
+    s.manufactureDate,
+    s.expiryDate,
+    s.closingStock,
+    (
+        SELECT COALESCE(SUM(s2.closingStock), 0)
+        FROM StoreItemBatchStock s2
+        WHERE s2.itemId.itemId = :itemId
+          AND s2.hospitalId.id = :hospitalId
+          AND s2.departmentId.id = :departmentId
+          AND COALESCE(:expDate, s2.expiryDate) <= s2.expiryDate
+    ),
+    s.manufacturerId.manufacturerId
+)
+FROM StoreItemBatchStock s
+WHERE s.itemId.itemId = :itemId
+  AND s.hospitalId.id = :hospitalId
+  AND s.departmentId.id = :departmentId
+  AND COALESCE(:expDate, s.expiryDate) <= s.expiryDate
+""")
+    List<BatchNameForStockResponse> findBatchNameForStockWithOptionalExpiry(
+            @Param("itemId") Long itemId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("expDate") LocalDate expDate
     );
 }

@@ -65,6 +65,7 @@ public interface BloodDonorRepository extends JpaRepository<BloodDonor,Long> {
       AND
         (:mobileNo IS NULL OR TRIM(:mobileNo) = '' 
          OR bd.mobile_no LIKE CONCAT('%', :mobileNo, '%'))
+      AND bd.hospital_id=:hospitalId
     ORDER BY bd.donor_id DESC
     """,
             countQuery = """
@@ -80,9 +81,10 @@ public interface BloodDonorRepository extends JpaRepository<BloodDonor,Long> {
          OR bd.mobile_no LIKE CONCAT('%', :mobileNo, '%'))
     """,
             nativeQuery = true)
-    Page<DonorProjection> getAllDonor(Pageable pageable,
-                                      @Param("donorName") String donorName,
-                                      @Param("mobileNo") String mobileNo);
+    Page<DonorProjection> getAllDonor(@Param("hospitalId") Long hospitalId,
+            Pageable pageable,
+            @Param("donorName") String donorName,
+            @Param("mobileNo") String mobileNo);
 
 @Query(value = """
         SELECT
@@ -118,9 +120,10 @@ public interface BloodDonorRepository extends JpaRepository<BloodDonor,Long> {
                ON d.screening_id = bs.screening_id
         WHERE LOWER(bd.donor_screening_status) = LOWER(:donorScreeningStatus)
           AND LOWER(bs.screening_result) = LOWER(:donorScreeningStatus)
-          AND d.donation_id IS NULL
+          AND d.donation_id IS NULL AND bd.hospital_id=:hospitalId
         """, nativeQuery = true)
-    List<BloodDonorCollectionProjection> findPendingBloodCollection(@Param("donorScreeningStatus") String donorScreeningStatusPass);
+    List<BloodDonorCollectionProjection> findPendingBloodCollection(@Param("donorScreeningStatus") String donorScreeningStatusPass,
+                                                                    @Param("hospitalId") Long hospitalId);
 
     @Query(value = """
         SELECT
@@ -182,8 +185,9 @@ public interface BloodDonorRepository extends JpaRepository<BloodDonor,Long> {
         ) bs
                ON bs.donor_id = bd.donor_id
               AND bs.rn = 1
-        WHERE bd.donor_id = :donorId
+        WHERE bd.donor_id = :donorId AND bd.hospital_id=:hospitalId
         """, nativeQuery = true)
-    Optional<BloodDonorCollectionDetailsProjection> findPendingBloodCollectionDetails(@Param("donorId") Long donorId);
+    Optional<BloodDonorCollectionDetailsProjection> findPendingBloodCollectionDetails(@Param("donorId") Long donorId,
+                                                                                      @Param("hospitalId") Long hospitalId);
 }
 

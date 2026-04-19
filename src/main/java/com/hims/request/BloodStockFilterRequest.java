@@ -11,4 +11,5 @@ public class BloodStockFilterRequest {
    private Long collectionType; // optional
     private String viewType;
     // "SUMMARY" or "DETAILED"
+    private Long hospitalId;
 }

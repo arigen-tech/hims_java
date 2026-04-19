@@ -24,25 +24,14 @@ public class AppConstants {
     public static final String STATUS_R = "R";
     public static final String COLUMN_NAME_IS_RETURN = "is_return";
     public static final String STATUS_N = "N";
-    public static final String STATUS_P = "P";
-    public static final String INVESTIGATION = "I";
-    public static final String PACKAGE = "P";
-    public static final String DISPLAY_PATIENT_STATUS = "wp";
-
-
-    public static final String STATUS_F= "F";
-    public static final String TIME_FORMAT="HH:mm:ss";
 
     //Visit Status
     public static final String VISIT_STATUS_PENDING = "N";
     public static final String VISIT_STATUS_COMPLETED = "Y";
     public static final String VISIT_STATUS_CANCELLED = "C";
     public static final String VISIT_STATUS_CLOSED = "X";
-    public static final String VISIT_TYPE_FOLLOW_UP= "F";
-    public static final String VISIT_TYPE_NEW = "N";
-
     //billing status
-    public static final String PAYMENT_PARTIAL_PENDING = "P";
+    public static final String PAYMENT_PENDING = "P";
     public static final String PAYMENT_PAID = "Y";
     public static final String PAYMENT_NOT_PAID = "N";
 
@@ -132,6 +121,20 @@ public class AppConstants {
     public  static  final String VISIT_NOT_FOUND_ERR_MSG="Invalid visit Id, Visit not found";
 
     public  static  final  String STATUS_S="S";
+    public static final String STATUS_P="P";
+    public static final String STATUS_F="F";
+    public static final String TIME_FORMAT="HH:mm:ss";
+    public static final String VISIT_TYPE_FOLLOW_UP= "F";
+    public static final String VISIT_TYPE_NEW = "N";
+    public static final String INVESTIGATION = "I";
+    public static final String DISPLAY_PATIENT_STATUS = "wp";
+    public static final String PAYMENT_PARTIAL_PENDING = "P";
+    public static final String PACKAGE = "P";
+
+
+    // Billing Template
+    public  static  final String PROCEDURE="PROCEDURE";
+    public  static  final String SURGERY="SURGERY";
 
 
     private AppConstants() {

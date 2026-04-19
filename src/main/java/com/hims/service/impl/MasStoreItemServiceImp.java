@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.projection.ItemProjection;
@@ -592,6 +593,27 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         } catch (Exception e) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Internal server error", 500);
+        }
+    }
+
+    @Override
+    public ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String keyword, int page, int size) {
+        try {
+            log.info("getStoreItems with item contains name {} ,method started...",keyword);
+
+            Pageable pageable=PageRequest.of(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.ASC,"nomenclature")
+            );
+            Page<ItemStockLedgerWithBatchResponse> responses ;
+
+                responses=masStoreItemRepository.searchItems( keyword, pageable);
+                    log.info("getStoreItems with item contains name {} ,method ended...",keyword);
+            return  ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+        }catch (Exception e) {
+            log.error("getStoreItems method error :: ",e);
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 

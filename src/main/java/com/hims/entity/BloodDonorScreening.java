@@ -66,4 +66,7 @@ public class BloodDonorScreening {
 
     @Column(name = "created_by", length = 200)
     private String createdBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hospital_id")
+    private MasHospital hospital;
 }

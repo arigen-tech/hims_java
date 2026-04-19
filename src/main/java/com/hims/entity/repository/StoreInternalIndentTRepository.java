@@ -139,6 +139,7 @@ SELECT
 
     bs2.batch_no AS batchNo,
     bs2.closing_stock AS batchAvailableStock,
+    mm.manufacturer_id AS manufacturerId,
     bs2.manufacture_date AS mfgDate,
     bs2.expiry_date AS expDate
 
@@ -156,10 +157,12 @@ LEFT JOIN store_item_batch_stock bs2
         WHERE bs3.item_id = i.item_id
         AND bs3.department_id = :deptId
         AND bs3.expiry_date >= :expiryDate
+        AND bs3.closing_stock>0
         ORDER BY bs3.expiry_date
         LIMIT 1
     )
-
+LEFT JOIN mas_manufacturer mm
+ON bs2.manufacturer_id=mm.manufacturer_id
 WHERE t.indent_m_id = :indentMId
 """, nativeQuery = true)
     List<IndentDetailsForIssueProjection> findIndentDetailsForIssue(
@@ -190,8 +193,8 @@ LEFT JOIN mas_store_unit u ON u.unit_id = i.unit_au
 LEFT JOIN (
     SELECT item_id, SUM(closing_stock) AS store_available_stock
     FROM store_item_batch_stock
-    WHERE department_id = :storeDeptId
-    AND expiry_date >= :storeItemExpDate
+    WHERE department_id = :requestedDeptId
+    AND expiry_date >= :inventoryDrugExpDate
     GROUP BY item_id
 ) store_stock
 ON store_stock.item_id = t.item_id
@@ -200,7 +203,7 @@ LEFT JOIN (
     SELECT item_id, SUM(closing_stock) AS dept_available_stock
     FROM store_item_batch_stock
     WHERE department_id = :currentDeptId
-    AND expiry_date >= :currentDeptItemExpDate
+    AND expiry_date >= :inventoryDrugExpDate
     GROUP BY item_id
 ) dept_stock
 ON dept_stock.item_id = t.item_id
@@ -209,10 +212,16 @@ WHERE t.indent_m_id = :indentMId
 """, nativeQuery = true)
     List<IndentDetailsResponseForRequestDeptProjection> getIndentDetailsForRequestDept(
             Long indentMId,
-            Long storeDeptId,
+            Long requestedDeptId,
             Long currentDeptId,
-            LocalDate storeItemExpDate,
-            LocalDate currentDeptItemExpDate
+            LocalDate inventoryDrugExpDate
+
     );
 
+    @Query(value = """
+    SELECT DISTINCT s.indentM.indentType from StoreInternalIndentT s
+    WHERE s.indentM.indentMId = :indentMId
+    """)
+
+    String getIndentTypeWrtIndentMId(Long indentMId);
 }

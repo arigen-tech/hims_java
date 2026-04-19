@@ -32,9 +32,10 @@ public interface MasStoreItemProjection {
     String getHsnCode();
     BigDecimal getHsnGstPercent();
 
-    Long getStorestocks();
-    Long getDispstocks();
-    Long getWardstocks();
+
+
+    Long getRequestedDeptStocks();
+    Long getCurrentDeptStocks();
 
     Integer getReOrderLevelDispensary();
     Integer getReOrderLevelStore();

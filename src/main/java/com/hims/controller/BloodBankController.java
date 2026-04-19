@@ -80,11 +80,12 @@ public class BloodBankController {
     public ApiResponse<Page<DonorResponse>> getAllDonor(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
+            @RequestParam Long hospitalId,
             @RequestParam(required = false) String donorName,
             @RequestParam(required = false) String mobileNo) {
         log.info("Received request to fetch donors. page: {}, size: {}, donorName: {}, mobileNo: {}", page, size, donorName, mobileNo);
         Pageable pageable = PageRequest.of(page, size);
-        return bloodBankService.getAllDonor(pageable, donorName, mobileNo);
+        return bloodBankService.getAllDonor(hospitalId,pageable, donorName, mobileNo);
     }
 
     /**
@@ -95,9 +96,10 @@ public class BloodBankController {
      * @return ApiResponse containing BloodDonorScreeningDetailsResponse with donor's complete information
      */
     @GetMapping("/getDonorAndScreeningDetails")
-    public ApiResponse<BloodDonorScreeningDetailsResponse> getDonorScreeningDetails(@RequestParam Long donorId) {
+    public ApiResponse<BloodDonorScreeningDetailsResponse> getDonorScreeningDetails(@RequestParam Long donorId,
+                                                                                    @RequestParam Long hospitalId ) {
         log.info("Received request to fetch donor screening details for donorId: {}", donorId);
-        ApiResponse<BloodDonorScreeningDetailsResponse> response = bloodBankService.getDonorScreeningDetails(donorId);
+        ApiResponse<BloodDonorScreeningDetailsResponse> response = bloodBankService.getDonorScreeningDetails(donorId,hospitalId);
         log.info("Successfully fetched donor screening details for donorId: {}", donorId);
         return response;
     }
@@ -109,9 +111,9 @@ public class BloodBankController {
      * @return ApiResponse containing a List of BloodDonorCollectionResponse with pending collection donors
      */
     @GetMapping("/pendingBloodCollectionList")
-    public ApiResponse<List<BloodDonorCollectionResponse>> pendingBloodCollection() {
+    public ApiResponse<List<BloodDonorCollectionResponse>> pendingBloodCollection( @RequestParam Long hospitalId) {
         log.info("Received request to fetch pending blood collection");
-        return bloodBankService.pendingBloodCollection();
+        return bloodBankService.pendingBloodCollection(hospitalId);
     }
 
     /**
@@ -122,9 +124,10 @@ public class BloodBankController {
      * @return ApiResponse containing BloodDonorCollectionDetailsResponse with donor's collection details
      */
     @GetMapping("/pendingBloodCollectionDetails")
-    public ApiResponse<BloodDonorCollectionDetailsResponse> pendingBloodCollectionDetails(@RequestParam Long donorId) {
+    public ApiResponse<BloodDonorCollectionDetailsResponse> pendingBloodCollectionDetails(@RequestParam Long donorId,
+                                                                                          @RequestParam Long hospitalId) {
         log.info("Received request to fetch pending blood collection details for donorId: {}", donorId);
-        return bloodBankService.pendingBloodCollectionDetails(donorId);
+        return bloodBankService.pendingBloodCollectionDetails(donorId,hospitalId);
     }
 
     /**
@@ -150,9 +153,9 @@ public class BloodBankController {
      * @return ApiResponse containing a List of PendingComponentGenerationResponse objects
      */
     @GetMapping("/pendingComponentGenerationList")
-    public ApiResponse<List<PendingComponentGenerationResponse>> pendingComponentGenerationList() {
+    public ApiResponse<List<PendingComponentGenerationResponse>> pendingComponentGenerationList(@RequestParam Long hospitalId) {
         log.info("Received request for pending component generation list");
-        return bloodBankService.pendingComponentGenerationList();
+        return bloodBankService.pendingComponentGenerationList(hospitalId);
     }
 
     /**
@@ -195,9 +198,9 @@ public class BloodBankController {
      * @return ApiResponse containing a List of PendingForMandatoryTestingResponse objects
      */
     @GetMapping("/pendingForMandatoryTestingList")
-    public ApiResponse<List<PendingForMandatoryTestingResponse>> pendingForMandatoryTestingList() {
+    public ApiResponse<List<PendingForMandatoryTestingResponse>> pendingForMandatoryTestingList(@RequestParam Long hospitalId) {
         log.info("Fetching pending mandatory testing list");
-        return bloodBankService.pendingForMandatoryTestingList();
+        return bloodBankService.pendingForMandatoryTestingList(hospitalId);
     }
 
     /**
@@ -241,7 +244,8 @@ public class BloodBankController {
             @RequestParam(required = false) Long inventoryStatus,
             @RequestParam(required = false) String expiryFilter,
             @RequestParam(required = false) Long collectionType,
-            @RequestParam String viewType)
+            @RequestParam Long hospitalId,
+                                        @RequestParam String viewType)
     {
         log.info("Request Params -> bloodGroupId: {}, componentId: {}, inventoryStatus: {}, expiryFilter: {}, collectionType: {}, viewType: {}",
                 bloodGroupId, componentId, inventoryStatus, expiryFilter, collectionType, viewType);
@@ -252,6 +256,7 @@ public class BloodBankController {
         req.setInventoryStatus(inventoryStatus);
         req.setExpiryFilter(expiryFilter);
         req.setCollectionType(collectionType);
+        req.setHospitalId(hospitalId);
         req.setViewType(viewType);
         return bloodBankService.getBloodStock(req);
     }

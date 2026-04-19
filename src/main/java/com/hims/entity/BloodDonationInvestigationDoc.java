@@ -44,4 +44,8 @@ public class BloodDonationInvestigationDoc {
 
     @Column(name = "uploaded_by", length = 200)
     private String uploadedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hospital_id")
+    private MasHospital hospital;
 }

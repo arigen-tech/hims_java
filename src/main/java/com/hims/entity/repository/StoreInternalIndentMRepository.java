@@ -82,8 +82,8 @@ public interface StoreInternalIndentMRepository extends JpaRepository<StoreInter
         AND cs.columnName = 'M'
         AND cs.statusCode = m.status
     LEFT JOIN MasCommonStatus cs2
-        ON cs2.entityName = 'STORE_INTERNAL_INDENT_M'
-        AND cs2.columnName = 'INDENT_TYPE'
+        ON cs2.entityName = 'StoreInternalIndentM'
+        AND cs2.columnName = 'indent_type_drug_or_nondrug'
         AND cs2.statusCode = m.indentType
     WHERE (:deptIds IS NULL OR f.id IN :deptIds)
 """)
