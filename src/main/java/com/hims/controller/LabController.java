@@ -643,7 +643,42 @@ public class LabController {
 
     /* *************************************  Report Section ************************************************** */
 
-
+    /**
+     * Fetch All Laboratory Investigations Report
+     *
+     * This API retrieves a comprehensive report of all laboratory investigations/tests
+     * that have been completed and validated for a specific hospital. It provides
+     * detailed information about each investigation including patient details,
+     * test results, and timestamps. The report supports optional filtering by
+     * patient mobile number, patient name, and date range.
+     *
+     * Query Filters:
+     * - Hospital ID: Filters records for the specified hospital
+     * - Patient Mobile Number: Optional partial search filter for patient mobile number
+     * - Patient Name: Optional partial search filter for patient name (case-insensitive)
+     * - From Date: Optional start date filter for result entry date
+     * - To Date: Optional end date filter for result entry date
+     * - Result Validation Status: Fixed filter for validated results ('Y')
+     *
+     * Data Retrieved:
+     * - Patient information (name, mobile number, gender, age)
+     * - Investigation/test details (ID, name, code)
+     * - Result entry information (result value, units, normal range)
+     * - Sample collection details (sample ID, collection date/time)
+     * - Result entry timestamps and user information
+     * - Referring doctor and department information
+     *
+     * Sorting: Results are sorted by result entry date (descending) and result entry time (descending)
+     *
+     * @param hospitalId ID of the hospital (required)
+     * @param patientMobileNumber Patient mobile number for search (optional, supports partial match)
+     * @param patientName Patient name for search (optional, supports partial match, case-insensitive)
+     * @param fromDate Start date for result entry search (optional, ISO date format)
+     * @param toDate End date for result entry search (optional, ISO date format)
+     * @param page Page number for pagination (optional, default: 0)
+     * @param size Number of records per page (optional, default: 5)
+     * @return Paginated list of laboratory investigations report with complete test details
+     */
     @GetMapping("/investigationsReport/all")
     public ResponseEntity<?> searchLabReports(
             @RequestParam Long hospitalId,
@@ -667,6 +702,46 @@ public class LabController {
         );
     }
 
+    /**
+     * Fetch Detailed Laboratory Turn Around Time (TAT) Report
+     *
+     * This API retrieves a detailed report of laboratory turn around times for
+     * investigations/tests performed within a specified date range. TAT is calculated
+     * as the time difference between sample collection and result validation.
+     * The report provides granular TAT information for each investigation.
+     *
+     * Query Filters:
+     * - Hospital ID: Filters records for the specified hospital
+     * - Investigation ID: Optional filter for specific investigation/test
+     * - Sub Charge Code ID: Optional filter for specific test category/sub-group
+     * - From Date: Mandatory start date for TAT calculation period
+     * - To Date: Mandatory end date for TAT calculation period
+     *
+     * Data Retrieved:
+     * - Investigation details (ID, name, code)
+     * - Patient information (name, UHID/PHN)
+     * - Sample collection timestamps
+     * - Result entry and validation timestamps
+     * - Calculated TAT duration (in hours/minutes)
+     * - TAT status (within normal limits or delayed)
+     * - Department and referring doctor information
+     *
+     * Validation Rules:
+     * - From Date and To Date are mandatory parameters
+     * - To Date cannot be before From Date
+     * - Throws IllegalArgumentException for invalid date ranges
+     *
+     * Sorting: Results are sorted by TAT record ID (ascending)
+     *
+     * @param hospitalId ID of the hospital (required)
+     * @param investigationId Investigation ID for filtering (optional)
+     * @param subChargeCodeId Sub charge code ID for category filtering (optional)
+     * @param fromDate Start date for TAT report (required, ISO date format)
+     * @param toDate End date for TAT report (required, ISO date format)
+     * @param page Page number for pagination (optional, default: 0)
+     * @param size Number of records per page (optional, default: 5)
+     * @return Paginated list of detailed TAT reports with investigation-level TAT metrics
+     */
     @GetMapping("/lab-tat/details")
     public ResponseEntity<?> getAllLabReports(
             @RequestParam Long  hospitalId,
@@ -684,6 +759,46 @@ public class LabController {
         );
     }
 
+    /**
+     * Fetch Summary Laboratory Turn Around Time (TAT) Report
+     *
+     * This API retrieves a summarized report of laboratory turn around times,
+     * providing aggregated TAT metrics grouped by investigation type and time periods.
+     * The summary report gives an overview of laboratory performance and efficiency.
+     *
+     * Query Filters:
+     * - Hospital ID: Filters records for the specified hospital
+     * - Investigation ID: Optional filter for specific investigation/test
+     * - Sub Charge Code ID: Optional filter for specific test category/sub-group
+     * - From Date: Mandatory start date for TAT calculation period
+     * - To Date: Mandatory end date for TAT calculation period
+     *
+     * Data Retrieved:
+     * - Investigation/test category summaries
+     * - Average TAT duration per investigation type
+     * - TAT performance metrics (within normal limits, delayed, etc.)
+     * - Total number of tests performed
+     * - TAT distribution statistics (min, max, average)
+     * - Time period groupings (daily, weekly, monthly summaries)
+     *
+     * Validation Rules:
+     * - From Date and To Date are mandatory parameters
+     * - To Date cannot be before From Date
+     * - Throws IllegalArgumentException for invalid date ranges
+     *
+     * Use Case:
+     * This report is used by laboratory management to monitor overall laboratory
+     * performance, identify bottlenecks, and track efficiency improvements over time.
+     *
+     * @param hospitalId ID of the hospital (required)
+     * @param investigationId Investigation ID for filtering (optional)
+     * @param subChargeCodeId Sub charge code ID for category filtering (optional)
+     * @param fromDate Start date for TAT summary report (required, ISO date format)
+     * @param toDate End date for TAT summary report (required, ISO date format)
+     * @param page Page number for pagination (optional, default: 0)
+     * @param size Number of records per page (optional, default: 5)
+     * @return Paginated list of summarized TAT reports with aggregated performance metrics
+     */
     @GetMapping("/lab-tat/summary")
     public ResponseEntity<?> getTatSummaryLabReports(
             @RequestParam Long  hospitalId,
@@ -701,6 +816,48 @@ public class LabController {
         );
     }
 
+    /**
+     * Fetch Laboratory Result Amendment Audit Report
+     *
+     * This API retrieves an audit trail report of all laboratory result amendments
+     * and modifications performed within a specified time period. It tracks changes
+     * made to test results, including who made the changes, when, and what was changed.
+     *
+     * Query Filters:
+     * - Hospital ID: Filters records for the specified hospital
+     * - Patient Phone Number (PHN): Optional partial search filter for patient phone number
+     * - Patient Name: Optional partial search filter for patient name (case-insensitive)
+     * - Investigation ID: Optional filter for specific investigation/test
+     * - Sub Charge Code ID: Optional filter for specific test category/sub-group
+     * - From Date: Optional start date filter for amendment date/time
+     * - To Date: Optional end date filter for amendment date/time
+     *
+     * Data Retrieved:
+     * - Amendment details (amendment type, reason, timestamp)
+     * - Original and amended result values
+     * - User information (who made the amendment)
+     * - Patient information (name, PHN, demographics)
+     * - Investigation/test details
+     * - Audit trail information (before/after values, timestamps)
+     *
+     * Sorting: Results are sorted by amendment date/time (descending)
+     *
+     * Use Case:
+     * This report is crucial for regulatory compliance, quality assurance, and
+     * tracking result modifications for audit purposes. It helps identify
+     * patterns in result corrections and ensures accountability.
+     *
+     * @param hospitalId ID of the hospital (required)
+     * @param phnNum Patient phone number for search (optional, supports partial match)
+     * @param patientName Patient name for search (optional, supports partial match, case-insensitive)
+     * @param investigationId Investigation ID for filtering (optional)
+     * @param subChargeCodeId Sub charge code ID for category filtering (optional)
+     * @param fromDate Start date for amendment search (optional, ISO date format)
+     * @param toDate End date for amendment search (optional, ISO date format)
+     * @param page Page number for pagination (optional, default: 0)
+     * @param size Number of records per page (optional, default: 5)
+     * @return Paginated list of result amendment audit reports with complete change history
+     */
     @GetMapping("/amendAudit/result")
     public ResponseEntity<?> getAmendAuditReports(
             @RequestParam Long  hospitalId,
@@ -721,6 +878,45 @@ public class LabController {
         );
     }
 
+    /**
+     * Fetch Laboratory Order Tracking Report
+     *
+     * This API retrieves a comprehensive report of laboratory order tracking,
+     * showing the complete lifecycle of laboratory orders from placement to completion.
+     * It provides visibility into order status, processing times, and workflow efficiency.
+     *
+     * Query Filters:
+     * - Hospital ID: Filters records for the specified hospital
+     * - Patient Name: Optional partial search filter for patient name (case-insensitive)
+     * - Patient Mobile Number: Optional exact match filter for patient mobile number
+     * - From Date: Optional start date filter for order date
+     * - To Date: Optional end date filter for order date
+     *
+     * Data Retrieved:
+     * - Order header information (order number, date, status)
+     * - Patient information (name, mobile number, demographics)
+     * - Investigation/test details with current status
+     * - Order lifecycle timestamps (ordered, collected, validated, completed)
+     * - Department and referring doctor information
+     * - Order priority and urgency indicators
+     * - Current processing stage and next steps
+     *
+     * Sorting: Results are sorted by order date (descending)
+     *
+     * Use Case:
+     * This report helps laboratory staff and clinicians track order progress,
+     * identify bottlenecks in the testing process, and improve turnaround times.
+     * It's essential for managing laboratory workflow and patient care coordination.
+     *
+     * @param hospitalId ID of the hospital (required)
+     * @param patientName Patient name for search (optional, supports partial match, case-insensitive)
+     * @param patientMobileNumber Patient mobile number for search (optional, exact match)
+     * @param fromDate Start date for order search (optional, ISO date format)
+     * @param toDate End date for order search (optional, ISO date format)
+     * @param page Page number for pagination (optional, default: 0)
+     * @param size Number of records per page (optional, default: 5)
+     * @return Paginated list of order tracking reports with complete order lifecycle information
+     */
     @GetMapping("/orderTracking")
     public ResponseEntity<?> getOrderTrackingReport(
             @RequestParam Long  hospitalId,
@@ -744,7 +940,48 @@ public class LabController {
         );
     }
 
-
+    /**
+     * Fetch Incomplete Investigations Report
+     *
+     * This API retrieves a report of laboratory investigations that are incomplete
+     * or pending completion. It identifies tests that have been started but not
+     * yet finalized, helping laboratory staff prioritize and complete outstanding work.
+     *
+     * Query Filters:
+     * - Hospital ID: Filters records for the specified hospital
+     * - Sub Charge Code ID: Optional filter for specific test category/sub-group
+     * - From Date: Mandatory start date for order date range
+     * - To Date: Mandatory end date for order date range
+     * - Status Filters: Automatically filters for orders in intermediate statuses:
+     *   - Sample Collected (sampleCollectStatusId)
+     *   - Sample Rejected (sampleRejectStatusId)
+     *   - Sample Validated (sampleValidateStatusId)
+     *   - Result Entered (resultEnteredStatusId)
+     *
+     * Data Retrieved:
+     * - Order header information (order number, date)
+     * - Patient information (name, UHID/PHN)
+     * - Investigation/test details with current status
+     * - Current processing stage (collected, validated, result entered, etc.)
+     * - Time since last status update
+     * - Department and referring doctor information
+     * - Priority indicators for urgent cases
+     *
+     * Sorting: Results are sorted by order date (descending)
+     *
+     * Use Case:
+     * This report is essential for laboratory quality management and workflow
+     * optimization. It helps identify tests that may be delayed, stuck in process,
+     * or require immediate attention to meet turnaround time commitments.
+     *
+     * @param hospitalId ID of the hospital (required)
+     * @param subChargeCodeId Sub charge code ID for category filtering (optional)
+     * @param fromDate Start date for incomplete investigations search (required, ISO date format)
+     * @param toDate End date for incomplete investigations search (required, ISO date format)
+     * @param page Page number for pagination (optional, default: 0)
+     * @param size Number of records per page (optional, default: 5)
+     * @return Paginated list of incomplete investigations with current status and processing details
+     */
     @GetMapping("/incompleteInvestigations")
     public ResponseEntity<?> getIncompleteInvestigationsReport(
             @RequestParam Long  hospitalId,
@@ -761,6 +998,47 @@ public class LabController {
         );
     }
 
+    /**
+     * Fetch Rejected Investigations Report
+     *
+     * This API retrieves a report of laboratory investigations that have been
+     * rejected during the sample collection or validation process. It provides
+     * detailed information about rejections including reasons and patterns.
+     *
+     * Query Filters:
+     * - Hospital ID: Filters records for the specified hospital
+     * - Sub Charge Code ID: Optional filter for specific test category/sub-group
+     * - From Date: Mandatory start date for rejection date range
+     * - To Date: Mandatory end date for rejection date range
+     *
+     * Data Retrieved:
+     * - Sample collection details (sample ID, collection date/time)
+     * - Patient information (name, UHID/PHN, demographics)
+     * - Investigation/test details that were rejected
+     * - Rejection reason and comments
+     * - User who performed the rejection
+     * - Rejection timestamp
+     * - Department and referring doctor information
+     * - Rejection stage (collection vs validation)
+     *
+     * Use Case:
+     * This report is crucial for quality improvement initiatives. It helps identify:
+     * - Common rejection reasons and patterns
+     * - Training needs for sample collection staff
+     * - Quality issues in the pre-analytical phase
+     * - Areas for process improvement to reduce rejections
+     *
+     * The data supports root cause analysis and helps implement corrective actions
+     * to improve sample quality and reduce unnecessary rejections.
+     *
+     * @param hospitalId ID of the hospital (required)
+     * @param subChargeCodeId Sub charge code ID for category filtering (optional)
+     * @param fromDate Start date for rejected investigations search (required, ISO date format)
+     * @param toDate End date for rejected investigations search (required, ISO date format)
+     * @param page Page number for pagination (optional, default: 0)
+     * @param size Number of records per page (optional, default: 5)
+     * @return Paginated list of rejected investigations with rejection details and reasons
+     */
     @GetMapping("/rejectedInvestigations")
     public ResponseEntity<?> getRejectInvestigationReport(
             @RequestParam Long  hospitalId,
@@ -778,3 +1056,4 @@ public class LabController {
     }
 
 }
+

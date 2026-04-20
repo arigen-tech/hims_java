@@ -2,6 +2,8 @@ package com.hims.entity.repository;
 
 import com.hims.entity.*;
 import com.hims.response.BatchNameForStockResponse;
+import com.hims.response.OpeningBalanceStockResponse;
+import com.hims.response.OpeningBalanceStockResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -186,5 +188,92 @@ WHERE s.itemId.itemId = :itemId
             @Param("hospitalId") Long hospitalId,
             @Param("departmentId") Long departmentId,
             @Param("expDate") LocalDate expDate
+    );
+
+    @Query("""
+SELECT new com.hims.response.OpeningBalanceStockResponseDto(
+    s.stockId,
+    i.itemId,
+    i.nomenclature,
+    i.pvmsNo,
+    s.openingBalanceQty,
+    u.unitName,
+    s.batchNo,
+    s.manufactureDate,
+    s.expiryDate,
+    m.manufacturerName,
+    sec.sectionName,
+    sec.sectionId,
+    cls.itemClassId,
+    cls.itemClassName,
+    b.brandName,
+    s.mrpPerUnit,
+    s.closingStock
+)
+FROM StoreItemBatchStock s
+JOIN s.itemId i
+JOIN i.unitAU u
+JOIN i.itemClassId cls
+JOIN cls.masStoreSection sec
+LEFT JOIN s.manufacturerId m
+LEFT JOIN s.brandId b
+
+WHERE s.hospitalId.id = :hospitalId
+AND s.departmentId.id = :departmentId
+AND s.expiryDate >= CURRENT_DATE
+
+AND (:sectionId IS NULL OR sec.sectionId = :sectionId)
+AND (:classId IS NULL OR cls.itemClassId = :classId)
+AND (:itemId IS NULL OR i.itemId = :itemId)
+ORDER BY i.nomenclature ASC
+""")
+    List<OpeningBalanceStockResponseDto> getStockDetails(
+            Long hospitalId,
+            Long departmentId,
+            Long sectionId,
+            Long classId,
+            Long itemId
+    );
+
+    @Query("""
+SELECT new com.hims.response.OpeningBalanceStockResponse(
+    MIN(s.stockId),
+    i.itemId,
+    i.nomenclature,
+    i.pvmsNo,
+    COALESCE(SUM(s.openingBalanceQty),0),
+    COALESCE(SUM(s.closingStock),0),
+    u.unitName,
+    sec.sectionId,
+    sec.sectionName,
+    cls.itemClassId,
+    cls.itemClassName
+)
+FROM StoreItemBatchStock s
+JOIN s.itemId i
+JOIN i.unitAU u
+JOIN i.itemClassId cls
+JOIN cls.masStoreSection sec
+WHERE s.hospitalId.id = :hospitalId
+AND s.departmentId.id = :departmentId
+AND s.expiryDate >= CURRENT_DATE
+
+AND (:sectionId IS NULL OR sec.sectionId = :sectionId)
+AND (:classId IS NULL OR cls.itemClassId = :classId)
+AND (:itemId IS NULL OR i.itemId = :itemId)
+
+GROUP BY
+i.itemId, i.nomenclature, i.pvmsNo,
+u.unitName,
+sec.sectionId, sec.sectionName,
+cls.itemClassId, cls.itemClassName
+ORDER BY i.nomenclature ASC
+""")
+    List<OpeningBalanceStockResponse> getStockSummary(
+            Long hospitalId,
+            Long departmentId,
+            Long sectionId,
+            Long classId,
+            Long itemId
     );
 }

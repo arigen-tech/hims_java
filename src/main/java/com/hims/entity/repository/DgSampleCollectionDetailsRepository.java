@@ -168,6 +168,8 @@ JOIN d.investigationId i
 LEFT JOIN i.sampleId s
 LEFT JOIN i.uomId u
 WHERE d.sampleCollectionHeader.sampleCollectionHeaderId = :sampleCollectionHeaderId
+AND d.validated='y'
+AND d.result_status='n'
 """)
     List<InvestigationResultResponse> getInvestigationsForResultEntry(@Param("sampleCollectionHeaderId") Long sampleCollectionHeaderId);
 

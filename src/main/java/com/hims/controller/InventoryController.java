@@ -190,7 +190,7 @@ public class InventoryController {
      * Used to track the receiving transaction created from this indent.
      *
      * @param indentMId The indent master ID
-     * @return Receive master ID if a receive transaction exists for this indent
+     * @return Receive master ID if a received transaction exists for this indent
      */
     @GetMapping("/indent/getReceiveMId")
     public ResponseEntity<?> getReceiveMIdWrtIndentMId(@RequestParam Long indentMId){
@@ -656,6 +656,31 @@ public class InventoryController {
     ) {
 
         return  ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.approveOpeningBalance(id,request));
+    }
+
+
+    /**
+     * Retrieves stock information for a department and hospital, either in summary or detailed format.
+     * Supports optional filtering by section, class, and specific item.
+     * Returns summarized stock data or detailed batch-level information based on the type parameter.
+     *
+     * @param type The type of stock data to retrieve ("summary" for aggregated data or "details" for batch-level details)
+     * @param hospitalId The hospital ID for scope filtering
+     * @param departmentId The department ID to filter stock records
+     * @param sectionId The store section ID to filter items (optional, null for all sections)
+     * @param classId The item class ID to filter items (optional, null for all classes)
+     * @param itemId The specific item ID to filter (optional, null for all items)
+     * @return List of stock responses containing either OpeningBalanceStockResponse (summary) or OpeningBalanceStockResponseDto (details)
+     */
+    @GetMapping("/getAllStocks")
+    public ResponseEntity<ApiResponse<List<?>>>  getAllStocks(@RequestParam String type,
+                                                            @RequestParam Long hospitalId,
+                                                            @RequestParam Long departmentId,
+                                                            @RequestParam(required = false) Long sectionId,
+                                                            @RequestParam(required = false) Long classId,
+                                                            @RequestParam(required = false) Long itemId) {
+        return ResponseEntity.ok(inventoryService.getAllStock(type, hospitalId, departmentId, sectionId, classId, itemId));
+
     }
 
 }
