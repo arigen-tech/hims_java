@@ -2012,7 +2012,51 @@ public class InventoryServiceImpl implements InventoryService {
         storeStockLedgerRepository.save(ledger);
         return "success";
     }
+    @Override
+    public ApiResponse<List<?>> getAllStock(
+            String type,
+            Long hospitalId,
+            Long departmentId,
+            Long sectionId,
+            Long classId,
+            Long itemId
+    ) {
 
+        try {
+            if ("summary".equalsIgnoreCase(type)) {
+
+                List<OpeningBalanceStockResponse> dtos =
+                        storeItemBatchStockRepository.getStockSummary(
+                                hospitalId, departmentId, sectionId, classId, itemId
+                        );
+
+                return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+
+            } else if ("details".equalsIgnoreCase(type)) {
+
+                List<OpeningBalanceStockResponseDto> dtos =
+                        storeItemBatchStockRepository.getStockDetails(
+                                hospitalId, departmentId, sectionId, classId, itemId
+                        );
+
+                return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+            }
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Invalid type. Expected 'summary' or 'details'",
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        } catch (Exception e) {
+            log.error("getAllStock method error :: ", e);
+            return  ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
 
     public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
         for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {
