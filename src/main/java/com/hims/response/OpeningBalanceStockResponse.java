@@ -1,14 +1,17 @@
 package com.hims.response;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class OpeningBalanceStockResponse {
     private Long stockId;
     private Long itemId;
     private String itemName;
     private String itemCode;
-    private Long OpeningQty;
+    private Long openingQty;
     private Long closingQty;
     private String unitAu;
     private Integer sectionId;
