@@ -41,6 +41,44 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                                                                  @Param("billingStatus") String billingStatus);
 
     @Query(value = """
+            SELECT 
+                v.visit_id AS visitId,
+                p.patient_id AS patientId,
+                TRIM(CONCAT(
+                    COALESCE(p.p_fn, ''), ' ',
+                    COALESCE(p.p_mn, ''), ' ',
+                    COALESCE(p.p_ln, '')
+                )) AS patientName,
+                p.p_age AS patientAge,
+                p.p_mobile_number AS mobileNumber,
+                p.p_dob AS dob,
+                g.gender_name AS gender,
+                mr.relation_name AS relation,
+                
+                CASE
+                    WHEN v.visit_type = 'F' THEN 'Follow Up'
+                    WHEN v.visit_type = 'N' THEN 'New'
+                    WHEN v.visit_type = 'W' THEN 'Walk In'
+                END AS visitType,
+                v.doctor_id AS doctorId,
+                v.doctor_name AS doctorName,
+                v.token_no AS tokenNo
+            FROM visit v
+            LEFT JOIN patient p ON p.patient_id = v.patient_id
+            LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+            LEFT JOIN mas_relation mr ON mr.relation_id = p.p_relation_id
+            WHERE v.hospital_id = :hospitalId
+              AND v.pre_consultation = :preConsultation
+              AND v.billing_status = :billingStatus
+            ORDER BY v.visit_date ASC, v.start_time ASC
+            """, nativeQuery = true)
+    List<PatientWaitingListProjection> findWaitingPatientsByHospital(
+            @Param("hospitalId") Long hospitalId,
+            @Param("preConsultation") String preConsultation,
+            @Param("billingStatus") String billingStatus
+    );
+
+    @Query(value = """
             SELECT
                 v.visit_id AS visitId,
                 p.patient_id AS patientId,
@@ -249,9 +287,9 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                 LEFT JOIN mas_department d ON v.department_id = d.department_id
                 LEFT JOIN mas_opd_session s ON v.session_id = s.id
                 WHERE v.patient_id = :patientId
-                              
+            
                 AND d.department_type_id = :opdDepartmentType
-                              
+            
                 AND (
                     (v.visit_date >= CURRENT_DATE AND v.visit_status = 'n')
                     OR 
@@ -260,7 +298,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                 )
                 ORDER BY v.visit_date ASC, v.visit_status DESC
             """, nativeQuery = true)
-    List<AppointmentProjection> findAppointments(Long patientId ,Integer opdDepartmentType);
+    List<AppointmentProjection> findAppointments(Long patientId, Integer opdDepartmentType);
 
     List<Visit> findByVisitStatusIgnoreCase(String n);
 
@@ -519,26 +557,26 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
      * @return List of appointment summary statistics
      */
     @Query(value = """
-    SELECT 
-        v.doctor_id AS doctorId,
-        v.doctor_name AS doctorName,
-       
-        COUNT(v.visit_id) AS totalCount,
-       COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCompete) THEN 1 END) AS completedCount,
-        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCancel) THEN 1 END) AS cancelledCount,
-        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusClosed) THEN 1 END) AS noShowCount,
-        COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusPending) THEN 1 END) AS pendingCount
-    FROM visit v
-    LEFT JOIN mas_department d ON d.department_id = v.department_id
-    WHERE v.hospital_id = :hospitalId
-    AND (:departmentId IS NULL OR v.department_id = :departmentId)
-      AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
-      AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
-      AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
-      AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
-    GROUP BY v.doctor_id, v.doctor_name
-    ORDER BY  v.doctor_name
-""", nativeQuery = true)
+                SELECT 
+                    v.doctor_id AS doctorId,
+                    v.doctor_name AS doctorName,
+            
+                    COUNT(v.visit_id) AS totalCount,
+                   COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCompete) THEN 1 END) AS completedCount,
+                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusCancel) THEN 1 END) AS cancelledCount,
+                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusClosed) THEN 1 END) AS noShowCount,
+                    COUNT(CASE WHEN LOWER(v.visit_status) = lower(:statusPending) THEN 1 END) AS pendingCount
+                FROM visit v
+                LEFT JOIN mas_department d ON d.department_id = v.department_id
+                WHERE v.hospital_id = :hospitalId
+                AND (:departmentId IS NULL OR v.department_id = :departmentId)
+                  AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
+                  AND (CAST(:fromDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST(:fromDate AS DATE))
+                  AND (CAST(:toDate AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST(:toDate AS DATE))
+                  AND LOWER(v.visit_type) IN (LOWER(:followUpStatus), LOWER(:newStatus))
+                GROUP BY v.doctor_id, v.doctor_name
+                ORDER BY  v.doctor_name
+            """, nativeQuery = true)
     List<AppointmentSummaryDoctorProjection> getAppointmentSummaryDoctorWiseReport(
             @Param("hospitalId") Long hospitalId,
             @Param("departmentId") Long departmentId,
