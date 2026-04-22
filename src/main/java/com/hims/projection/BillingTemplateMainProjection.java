@@ -6,4 +6,5 @@ public interface BillingTemplateMainProjection {
     String getTemplateName();
     String getProcedure();
     Long getItemCount();
+    String getStatus();
 }

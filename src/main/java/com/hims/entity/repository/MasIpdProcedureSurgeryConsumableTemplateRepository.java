@@ -18,7 +18,7 @@ public interface MasIpdProcedureSurgeryConsumableTemplateRepository extends JpaR
         t.template_type AS templateType,
         t.template_name AS templateName,
         CASE 
-            WHEN Upper(t.template_type) = :procedure: THEN p.procedure_name
+            WHEN Upper(t.template_type) = :procedure THEN p.procedure_name
             WHEN Upper(t.template_type) = :surgery THEN s.surgery_name
         END AS procedureName
     FROM mas_ipd_procedure_surgey_consmble_template t
@@ -35,6 +35,7 @@ public interface MasIpdProcedureSurgeryConsumableTemplateRepository extends JpaR
         t.template_id AS templateId,
         t.template_type AS templateType,
         t.template_name AS templateName,
+        t.status As status,
         CASE 
             WHEN Upper(t.template_type) = :procedure THEN p.procedure_name
             WHEN Upper(t.template_type )=  :surgery THEN s.surgery_name

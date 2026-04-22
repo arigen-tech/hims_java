@@ -217,7 +217,7 @@ public class BillingTemplateServiceImpl implements BillingTemplateService {
 
             BillingTemplateProjection template = templateRepo.getTemplateById(id, AppConstants.PROCEDURE, AppConstants.SURGERY);
             if (template == null) {
-                throw new RuntimeException("Template not found");
+                return ResponseUtils.createNotFoundResponse("billing template id not found", HttpStatus.BAD_REQUEST.value());
             }
             BillingTemplateResponse res = new BillingTemplateResponse();
             res.setTemplateId(template.getTemplateId());
@@ -261,6 +261,7 @@ public class BillingTemplateServiceImpl implements BillingTemplateService {
                         res.setTemplateName(p.getTemplateName());
                         res.setProcedure(p.getProcedure());
                         res.setItemCount(p.getItemCount());
+                        res.setStatus(p.getStatus());
                         return res;
                     });
 
