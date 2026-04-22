@@ -9,4 +9,5 @@ public class BillingTemplateSearchResponse {
     private String procedure;
     private String templateName;
     private Long itemCount;
+    private  String status;
 }
