@@ -1,27 +1,31 @@
 package com.hims.response;
 
-import lombok.Data;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class OpeningBalanceStockResponseDto {
+
     private Long stockId;
     private Long itemId;
     private String itemName;
     private String itemCode;
-    private Long OpeningQty;
-    private Long closingQty;
+    private Long openingQty;
     private String unitAu;
     private String batchNo;
     private LocalDate dom;
     private LocalDate doe;
     private String manufacturerName;
-    private String medicineSource;
-    private Integer sectionId;
     private String sectionName;
+    private Integer sectionId;
     private Integer classId;
     private String className;
+    private String medicineSource;
     private BigDecimal mrpPerUnit;
+    private Long closingQty;
 }
