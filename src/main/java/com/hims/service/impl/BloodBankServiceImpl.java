@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.RecordNotFoundException;
 import com.hims.exception.bloodBankException.DonorSaveException;
 import com.hims.exception.bloodBankException.ScreeningSaveException;
 import com.hims.projection.*;
@@ -146,7 +147,7 @@ public class BloodBankServiceImpl implements BloodBankService{
 
         if (exists) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Donor already registered with same details", HttpStatus.BAD_REQUEST.value()
+                    AppConstants.DONOR_ALREADY_REGISTERED_MSG, HttpStatus.BAD_REQUEST.value()
             );
         }
         log.info("Saving donor personal details");
@@ -158,7 +159,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         log.info("Donor screening details saved successfully with screeningId: {}", screening.getScreeningId());
 
         log.info("Donor registration completed successfully");
-        return ResponseUtils.createSuccessResponse("Donor Registration successfully", new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(AppConstants.DONOR_REGISTRATION_SUCCESS_MSG, new TypeReference<>() {});
 
     }
 
@@ -166,7 +167,7 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Transactional
     @Override
     public ApiResponse<String> updateDonor(Long donorId, DonorRegistrationRequest request) {
-        BloodDonor donor = bloodDonorRepository.findById(donorId).orElseThrow(() -> new DonorSaveException("Donor not found"));
+        BloodDonor donor = bloodDonorRepository.findById(donorId).orElseThrow(() -> new DonorSaveException(AppConstants.DONOR_NOT_FOUND_ERR_MSG));
 
         updateDonorDetails(donor,request.getBloodDonorPersonalDetailsRequest());
 
@@ -174,7 +175,7 @@ public class BloodBankServiceImpl implements BloodBankService{
 
         BloodDonorScreeningDetailsResponse response = mapToResponse(donor, screening);
 
-        return ResponseUtils.createSuccessResponse("Donor update successfully and add new screening", new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(AppConstants.DONOR_UPDATE_AND_SCREENING_SUCCESS_MSG, new TypeReference<>() {});
     }
 
     @Override
@@ -403,24 +404,24 @@ public class BloodBankServiceImpl implements BloodBankService{
                     bloodCollectionRequest.getScreeningId());
 
         BloodDonationHdr bloodDonationHdr=new BloodDonationHdr();
-        bloodDonationHdr.setDonorId(bloodDonorRepository.findById(bloodCollectionRequest.getDonorId()).orElseThrow(()-> new RuntimeException("donorId not found")));
-        bloodDonationHdr.setScreeningId(bloodDonorScreeningRepository.findById(bloodCollectionRequest.getScreeningId()).orElseThrow(()-> new RuntimeException("screeningId not found")));
-        bloodDonationHdr.setDonationTypeId(masBloodDonationTypeRepository.findById(bloodCollectionRequest.getDonationTypeId()).orElseThrow(()-> new RuntimeException("donationTypeId not found")));
+        bloodDonationHdr.setDonorId(bloodDonorRepository.findById(bloodCollectionRequest.getDonorId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.DONOR_ID_NOT_FOUND_ERR_MSG)));
+        bloodDonationHdr.setScreeningId(bloodDonorScreeningRepository.findById(bloodCollectionRequest.getScreeningId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.SCREENING_ID_NOT_FOUND_ERR_MSG)));
+        bloodDonationHdr.setDonationTypeId(masBloodDonationTypeRepository.findById(bloodCollectionRequest.getDonationTypeId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.DONATION_TYPE_NOT_FOUND_ERR_MSG)));
         bloodDonationHdr.setBagNumber(generateBagNumber());
-        bloodDonationHdr.setCollectionTypeId(bloodCollectionTypeRepository.findById(bloodCollectionRequest.getCollectionTypeId()).orElseThrow(()-> new RuntimeException("collectionTypeId not found")));
-        bloodDonationHdr.setBagTypeId(masBloodBagTypeRepository.findById(bloodCollectionRequest.getBagTypeId()).orElseThrow(()-> new RuntimeException("bagTypeId not found")));
+        bloodDonationHdr.setCollectionTypeId(bloodCollectionTypeRepository.findById(bloodCollectionRequest.getCollectionTypeId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.COLLECTION_TYPE_NOT_FOUND_ERR_MSG)));
+        bloodDonationHdr.setBagTypeId(masBloodBagTypeRepository.findById(bloodCollectionRequest.getBagTypeId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.BAG_TYPE_NOT_FOUND_ERR_MSG)));
         bloodDonationHdr.setTotalCollectedVolumeMl(bloodCollectionRequest.getTotalCollectedVolume());
         bloodDonationHdr.setCreatedDate(LocalDate.now());
         bloodDonationHdr.setCreatedBy(authUtil.getCurrentUser().getFullName());
         bloodDonationHdr.setDonationDatetime(LocalDateTime.now());
         bloodDonationHdr.setHospital(authUtil.getCurrentUser().getHospital());
-        bloodDonationHdr.setDonationStatusId(masBloodDonationStatusRepository.findById(bloodDonationStatusCollected).orElseThrow());
+            bloodDonationHdr.setDonationStatusId(masBloodDonationStatusRepository.findById(bloodDonationStatusCollected).orElseThrow());
 
-        bloodDonationHdrRepository.save(bloodDonationHdr);
+            bloodDonationHdrRepository.save(bloodDonationHdr);
 
             log.info("Blood collection saved successfully with bagNumber: {}", bloodDonationHdr.getBagNumber());
 
-        return ResponseUtils.createSuccessResponse("blood collection save successfully", new TypeReference<>() {} );
+        return ResponseUtils.createSuccessResponse(AppConstants.BLOOD_COLLECTION_SAVE_SUCCESS_MSG, new TypeReference<>() {} );
         } catch (Exception e) {
             log.error("Unexpected exception occurred while saving blood collection", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
@@ -461,17 +462,17 @@ public class BloodBankServiceImpl implements BloodBankService{
 
         try {
             BloodDonationHdr bloodDonationHdr = bloodDonationHdrRepository.findById(donationId)
-                    .orElseThrow(() -> new RuntimeException("Blood donation record not found with id: " + donationId));
+                    .orElseThrow(() -> new RecordNotFoundException(AppConstants.BLOOD_DONATION_NOT_FOUND_ERR_MSG + donationId));
 
             MasComponentFailureReason failureReason = masComponentFailureReasonRepository.findById(componentFailureReasonId)
-                    .orElseThrow(() -> new RuntimeException("Component failure reason not found with id: " + componentFailureReasonId));
+                    .orElseThrow(() -> new RecordNotFoundException(AppConstants.COMPONENT_FAILURE_REASON_NOT_FOUND_ERR_MSG + componentFailureReasonId));
 
             bloodDonationHdr.setComponentFailureReason(failureReason);
             bloodDonationHdr.setDonationStatusId(masBloodDonationStatusRepository.findById(bloodDonationStatusComponent_Failed).orElseThrow());
             bloodDonationHdrRepository.save(bloodDonationHdr);
             log.info("Component failure reason updated successfully for donationId: {}", donationId);
 
-            return ResponseUtils.createSuccessResponse("Component failure reason updated successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(AppConstants.COMPONENT_FAILURE_REASON_UPDATE_SUCCESS_MSG, new TypeReference<>() {});
 
         } catch (Exception e) {
             log.error("Error while failing component generation for donationId: {}", donationId, e);
@@ -488,13 +489,13 @@ public class BloodBankServiceImpl implements BloodBankService{
 
         try {
             BloodDonationHdr donationHdr = bloodDonationHdrRepository.findById(request.getDonationId())
-                    .orElseThrow(() -> new RuntimeException("Blood donation record not found with id: " + request.getDonationId()));
+                    .orElseThrow(() -> new RecordNotFoundException(AppConstants.BLOOD_DONATION_NOT_FOUND_ERR_MSG + request.getDonationId()));
 
             List<BloodDonationDt> donationDtList = new ArrayList<>();
             for (ComponentGenerationRequest row : request.getComponents()) {
 
                 MasBloodComponent component = masBloodComponentRepository.findById(row.getComponentId())
-                        .orElseThrow(() -> new RuntimeException("Component not found with id: " + row.getComponentId()));
+                        .orElseThrow(() -> new RecordNotFoundException(AppConstants.COMPONENT_NOT_FOUND_ERR_MSG + row.getComponentId()));
 
                 BloodDonationDt dt = new BloodDonationDt();
                 dt.setDonationHdId(donationHdr);
@@ -514,7 +515,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             donationHdr.setDonationStatusId(masBloodDonationStatusRepository.findById(bloodDonationStatusComponent_Generated).orElseThrow());
             bloodDonationHdrRepository.save(donationHdr);
             log.info("Component generation saved successfully for donationId: {}", request.getDonationId());
-            return ResponseUtils.createSuccessResponse("Component generation saved successfully", new TypeReference<>() {}
+            return ResponseUtils.createSuccessResponse(AppConstants.COMPONENT_GENERATION_SAVE_SUCCESS_MSG, new TypeReference<>() {}
             );
 
         } catch (Exception e) {
@@ -587,7 +588,7 @@ public class BloodBankServiceImpl implements BloodBankService{
 
             bloodDonationTestResultRepository.save(entity);
 
-            if ("REACTIVE".equalsIgnoreCase(dto.getResult())) {
+            if (AppConstants.REACTIVE.equalsIgnoreCase(dto.getResult())) {
                 isFailed = true;
             }
         }
@@ -595,7 +596,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         uploadMultipleDocs(bloodDonationHdr, files);
 
         if (isFailed) {
-            var availableStatus = masBloodDonationStatusRepository.findById(bloodDonationStatus_TEST_FAILED).orElseThrow(() -> new RuntimeException("Status not found"));
+            var availableStatus = masBloodDonationStatusRepository.findById(bloodDonationStatus_TEST_FAILED).orElseThrow(() -> new RecordNotFoundException(AppConstants.STATUS_NOT_FOUND_ERR_MSG));
             bloodDonationHdr.setDonationStatusId(availableStatus);
             List<BloodDonationDt> components = bloodDonationDtRepository.findByDonationHdId(bloodDonationHdr);
 
@@ -613,7 +614,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         bloodDonationHdrRepository.save(bloodDonationHdr);
 
         return ResponseUtils.createSuccessResponse(
-                "test entry create successfully", new TypeReference<>() {});
+                AppConstants.MANDATORY_TEST_ENTRY_SUCCESS_MSG, new TypeReference<>() {});
     }
 
     @Override
@@ -692,7 +693,7 @@ public class BloodBankServiceImpl implements BloodBankService{
 
             return bloodDonorRepository.save(donor);
         }catch (Exception ex){
-            throw new DonorSaveException("Failed to save donor details", ex);
+            throw new DonorSaveException(AppConstants.DONOR_SAVE_FAILED_ERR_MSG, ex);
         }
     }
     @Transactional
@@ -734,7 +735,8 @@ public class BloodBankServiceImpl implements BloodBankService{
             screening.setHospital(authUtil.getCurrentUser().getHospital());
             return bloodDonorScreeningRepository.save(screening);
         }catch (Exception ex){
-            throw new ScreeningSaveException("Failed to save screening details", ex);
+            ex.printStackTrace();
+            throw ex;
         }
     }
 
@@ -791,7 +793,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         List<BloodDonationDt> components = bloodDonationDtRepository.findByDonationHdId(hdr);
 
         //Fetch status only once
-        var availableStatus = masBloodDonationStatusRepository.findById(bloodDonationStatus_AVAILABLE).orElseThrow(() -> new RuntimeException("Status not found"));
+        var availableStatus = masBloodDonationStatusRepository.findById(bloodDonationStatus_AVAILABLE).orElseThrow(() -> new RecordNotFoundException(AppConstants.STATUS_NOT_FOUND_ERR_MSG));
 
         for (BloodDonationDt dt : components) {
             dt.setComponentStatus(availableStatus);
@@ -843,7 +845,7 @@ public class BloodBankServiceImpl implements BloodBankService{
                 bloodDonationInvestigationDocRepository.save(doc);
 
             } catch (IOException e) {
-                throw new RuntimeException("File upload failed", e);
+                throw new RuntimeException(AppConstants.FILE_UPLOAD_FAILED_ERR_MSG, e);
             }
         }
     }

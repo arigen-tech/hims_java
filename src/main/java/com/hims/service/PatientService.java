@@ -20,9 +20,9 @@ public interface PatientService {
 
     ApiResponse<List<Patient>> searchPatient(PatientSearchReq substring);
 
-    ApiResponse<List<OpdPreConsultationResponse>> getPendingPreConsultations();
+//    ApiResponse<List<OpdPreConsultationResponse>> getPendingPreConsultations();
 
-    ApiResponse<List<Visit>> getWaitingList();
+//    ApiResponse<List<PatientWaitingListResponse>> getWaitingList();
 
     ApiResponse<String> saveVitalDetails(OpdPatientDetailRequest request);
 

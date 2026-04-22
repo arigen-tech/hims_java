@@ -9,6 +9,7 @@ import com.hims.response.*;
 import com.hims.service.BloodBankService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -39,7 +40,7 @@ public class BloodBankController {
      * @return ResponseEntity with HTTP status OK containing ApiResponse with confirmation message
      */
     @PostMapping("/registerDonor")
-    public ResponseEntity<ApiResponse<String>> registerDonor(@RequestBody DonorRegistrationRequest donorRegistrationRequest) {
+    public ResponseEntity<ApiResponse<String>> registerDonor(@Valid @RequestBody DonorRegistrationRequest donorRegistrationRequest) {
         log.info("Received request to register donor with mobileNo: {}, firstName: {}",
                 donorRegistrationRequest.getBloodDonorPersonalDetailsRequest().getMobileNo(),
                 donorRegistrationRequest.getBloodDonorPersonalDetailsRequest().getFirstName());

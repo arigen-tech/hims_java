@@ -90,11 +90,12 @@ public class PatientController {
         ApiResponse<List<Patient>> response = patientService.searchPatient(searchRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    @GetMapping("/getPendingPreConsultations")
-    public ResponseEntity<ApiResponse<List<OpdPreConsultationResponse>>> getPendingPreConsultations(){
-        ApiResponse<List<OpdPreConsultationResponse>> response = patientService.getPendingPreConsultations();
-        return new ResponseEntity<>(response,HttpStatus.OK);
-    }
+//    @GetMapping("/getPendingPreConsultations")
+//    public ResponseEntity<ApiResponse<List<OpdPreConsultationResponse>>> getPendingPreConsultations(){
+//        ApiResponse<List<OpdPreConsultationResponse>> response = patientService.getPendingPreConsultations();
+//        return new ResponseEntity<>(response,HttpStatus.OK);
+//    }
+
     @PostMapping("/saveVitalDetails")
     public ResponseEntity<ApiResponse<String>> saveVitalDetails(@RequestBody OpdPatientDetailRequest request){
         ApiResponse<String> response=patientService.saveVitalDetails(request);
@@ -120,11 +121,11 @@ public class PatientController {
 
 
 
-    @GetMapping("/getWaitingList")
-    public ResponseEntity<ApiResponse<List<Visit>>> getWaitingList(){
-        ApiResponse<List<Visit>> response = patientService.getWaitingList();
-        return new ResponseEntity<>(response,HttpStatus.OK);
-    }
+//    @GetMapping("/getWaitingList")
+//    public ResponseEntity<ApiResponse<List<PatientWaitingListResponse>>> getWaitingList(){
+//        ApiResponse<List<PatientWaitingListResponse>> response = patientService.getWaitingList();
+//        return new ResponseEntity<>(response,HttpStatus.OK);
+//    }
 
 
 

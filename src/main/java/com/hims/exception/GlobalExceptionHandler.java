@@ -11,6 +11,7 @@ import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -40,14 +41,14 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGeneric(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ResponseUtils.createNotFoundResponse(
-                        "Internal server error",
-                        500
-                ));
-    }
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<?> handleGeneric(Exception ex) {
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                .body(ResponseUtils.createNotFoundResponse(
+//                        "Internal server error",
+//                        500
+//                ));
+//    }
 
     @ExceptionHandler(DonorSaveException.class)
     public ResponseEntity<ApiResponse<Object>> handleDonorError(DonorSaveException ex) {
@@ -118,6 +119,21 @@ public class GlobalExceptionHandler {
                 );
 
         return new ResponseEntity<>(response,HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<String> handleValidation(MethodArgumentNotValidException ex) {
+        String error = ex.getBindingResult()
+                .getFieldErrors()
+                .get(0)
+                .getDefaultMessage();
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleGeneric(Exception ex) {
+        return ResponseEntity.status(500).body("Something went wrong");
     }
 
 }
