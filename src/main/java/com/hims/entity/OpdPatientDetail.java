@@ -16,7 +16,6 @@ import java.time.Instant;
 @Table(name = "opd_patient_details")
 public class OpdPatientDetail {
     @Id
-    @NotNull
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "opd_patient_details_id", nullable = false)
     private Long opdPatientDetailsId;

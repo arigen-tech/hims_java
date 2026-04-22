@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.RecordNotFoundException;
 import com.hims.exception.SDDException;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
 import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
@@ -14,6 +15,7 @@ import com.hims.mapper.VisitMapper;
 import com.hims.projection.CancelledAppointmentProjection;
 import com.hims.projection.OpdPreConsultationProjection;
 import com.hims.projection.PatientProjection;
+import com.hims.projection.PatientWaitingListProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
@@ -592,52 +594,72 @@ public class PatientServiceImpl implements PatientService {
         }
         return param.trim();
     }
-    @Override
-    public ApiResponse<List<OpdPreConsultationResponse>> getPendingPreConsultations() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User current_user=userRepository.findByUserName(username);
-        List<OpdPreConsultationProjection> projections = visitRepository.findPendingPreConsultationsByHospital(current_user.getHospital().getId(),"n","y");
-
-        // Convert projections to response objects
-        List<OpdPreConsultationResponse> response = projections.stream().map(proj -> {
-            OpdPreConsultationResponse resp = new OpdPreConsultationResponse();
-            resp.setVisitId(proj.getVisitId());
-            resp.setPatientId(proj.getPatientId());
-            resp.setPatientName(proj.getPatientName());
-            resp.setAge(proj.getPatientAge());
-            resp.setGender(proj.getGender());
-            resp.setDepartmentId(String.valueOf(proj.getDepartmentId()));
-            resp.setDepartmentName(proj.getDepartmentName());
-            resp.setMobleNumber(proj.getMobileNumber());
-            resp.setVisitType(proj.getVisitType());
-            resp.setDoctorId(proj.getDoctorId());
-            resp.setDoctorName(proj.getDoctorName());
-            resp.setAppointmentDate(proj.getAppointmentDate() != null ? proj.getAppointmentDate().toString() : "");
-            resp.setAppointmentTime(proj.getAppointmentTime());
-            resp.setTokenNumber(String.valueOf(proj.getTokenNumber()));
-            return resp;
-        }).collect(Collectors.toList());
-
-        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
-        });
-    }
-
-
+//    @Override
+//    public ApiResponse<List<OpdPreConsultationResponse>> getPendingPreConsultations() {
+//        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+//        User current_user=userRepository.findByUserName(username);
+//        List<OpdPreConsultationProjection> projections = visitRepository.findPendingPreConsultationsByHospital(current_user.getHospital().getId(),"n","y");
+//
+//        // Convert projections to response objects
+//        List<OpdPreConsultationResponse> response = projections.stream().map(proj -> {
+//            OpdPreConsultationResponse resp = new OpdPreConsultationResponse();
+//            resp.setVisitId(proj.getVisitId());
+//            resp.setPatientId(proj.getPatientId());
+//            resp.setPatientName(proj.getPatientName());
+//            resp.setAge(proj.getPatientAge());
+//            resp.setGender(proj.getGender());
+//            resp.setDepartmentId(String.valueOf(proj.getDepartmentId()));
+//            resp.setDepartmentName(proj.getDepartmentName());
+//            resp.setMobleNumber(proj.getMobileNumber());
+//            resp.setVisitType(proj.getVisitType());
+//            resp.setDoctorId(proj.getDoctorId());
+//            resp.setDoctorName(proj.getDoctorName());
+//            resp.setAppointmentDate(proj.getAppointmentDate() != null ? proj.getAppointmentDate().toString() : "");
+//            resp.setAppointmentTime(proj.getAppointmentTime());
+//            resp.setTokenNumber(String.valueOf(proj.getTokenNumber()));
+//            return resp;
+//        }).collect(Collectors.toList());
+//
+//        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
+//        });
+//    }
 
 
-    @Override
-    public ApiResponse<List<Visit>> getWaitingList() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User current_user=userRepository.findByUserName(username);
-        List<Visit> response=visitRepository.findByHospitalAndPreConsultationAndBillingStatus(current_user.getHospital(),"y","y");
-        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
-        });
-    }
+
+
+//    @Override
+//    public ApiResponse<List<PatientWaitingListResponse>> getWaitingList() {
+//
+//        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+//        User currentUser = userRepository.findByUserName(username);
+//
+//        List<PatientWaitingListResponse> responseList =
+//                visitRepository.findWaitingPatientsByHospital(
+//                        currentUser.getHospital().getId(),
+//                        AppConstants.STATUS_Y.toLowerCase(),
+//                        AppConstants.STATUS_Y.toLowerCase()
+//                ).stream().map(p -> {
+//                    PatientWaitingListResponse resp = new PatientWaitingListResponse();
+//                    resp.setTokenNo(String.valueOf(p.getTokenNo()));
+//                    resp.setPatientNo(p.getMobileNumber());
+//                    resp.setPatientName(p.getPatientName());
+//                    resp.setRelation(p.getRelation());
+//                    resp.setAge(p.getDob());
+//                    resp.setGender(p.getGender());
+//                    resp.setVisitType(p.getVisitType());
+//                    return resp;
+//                }).collect(Collectors.toList());
+//
+//        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+//    }
 
     @Override
     public ApiResponse<String> saveVitalDetails(OpdPatientDetailRequest request) {
-        OpdPatientDetail savedDetails=addOpdDetails(null,request,null);
-        Visit visit=visitRepository.findById(request.getVisitId()).get();
+        Patient patient = patientRepository.getReferenceById(request.getPatientId());
+
+        Visit visit = visitRepository.getReferenceById(request.getVisitId());
+
+        OpdPatientDetail savedDetails=addOpdDetails(visit,request,patient);
         visit.setPreConsultation("y");
         visitRepository.save(visit);
         if(savedDetails!=null){
