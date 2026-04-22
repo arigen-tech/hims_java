@@ -132,6 +132,10 @@ public class AppConstants {
     public static final String PACKAGE = "P";
 
 
+    // Billing Template
+    public  static  final String PROCEDURE="PROCEDURE";
+    public  static  final String SURGERY="SURGERY";
+
 
     private AppConstants() {
     }
