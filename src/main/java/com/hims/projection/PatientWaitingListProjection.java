@@ -1,5 +1,7 @@
 package com.hims.projection;
 
+import java.time.LocalDate;
+
 public interface PatientWaitingListProjection {
 
     Long getVisitId();
@@ -13,5 +15,5 @@ public interface PatientWaitingListProjection {
     String getTokenNo();
     String getRelation();
     String getGender();
-    String getDob();
+    LocalDate getDob();
 }

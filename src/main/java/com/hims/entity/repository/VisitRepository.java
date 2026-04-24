@@ -2,6 +2,8 @@ package com.hims.entity.repository;
 
 import com.hims.entity.*;
 import com.hims.projection.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -124,6 +126,61 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("hospitalId") Long hospitalId,
             @Param("preConsultation") String preConsultation,
             @Param("billingStatus") String billingStatus
+    );
+
+    @Query(value = """
+                SELECT 
+                    v.visit_id AS visitId,
+                    p.patient_id AS patientId,
+                    TRIM(CONCAT(
+                        COALESCE(p.p_fn, ''), ' ',
+                        COALESCE(p.p_mn, ''), ' ',
+                        COALESCE(p.p_ln, '')
+                    )) AS patientName,
+                    p.p_age AS patientAge,
+                    g.gender_name AS gender,
+                    d.department_id AS departmentId,
+                    d.department_name AS departmentName,
+                    p.p_mobile_number AS mobileNumber,
+                    CASE
+                        WHEN v.visit_type = 'N' THEN 'New'
+                        WHEN v.visit_type = 'F' THEN 'Follow Up'
+                        ELSE 'Walk In'
+                    END AS visitType,
+                    v.doctor_id AS doctorId,
+                    v.doctor_name AS doctorName,
+                
+                    CONCAT(
+                        TO_CHAR(v.start_time, 'HH24:MI'),
+                        ' - ',
+                        TO_CHAR(v.end_time, 'HH24:MI')
+                    ) AS appointmentTime,
+                
+                    v.token_no AS tokenNumber,
+                    CAST(v.visit_date AS DATE) AS appointmentDate
+                
+                FROM visit v
+                LEFT JOIN patient p ON p.patient_id = v.patient_id
+                LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+                LEFT JOIN mas_department d ON d.department_id = v.department_id
+                
+                WHERE v.hospital_id = :hospitalId
+                  AND v.pre_consultation = :preConsultation
+                  AND v.billing_status = :billingStatus
+                
+                ORDER BY v.visit_date ASC, v.start_time ASC
+                """, nativeQuery = true,
+            countQuery = """
+                SELECT COUNT(v.visit_id) FROM visit v
+                WHERE v.hospital_id = :hospitalId
+                AND v.pre_consultation = :preConsultation
+                AND v.billing_status = :billingStatus
+                """)
+    Page<OpdPreConsultationProjection> findPendingPreConsultationsByHospitalPaged(
+            @Param("hospitalId") Long hospitalId,
+            @Param("preConsultation") String preConsultation,
+            @Param("billingStatus") String billingStatus,
+            Pageable pageable
     );
 
 
