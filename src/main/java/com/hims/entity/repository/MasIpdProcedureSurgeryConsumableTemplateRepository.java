@@ -20,7 +20,9 @@ public interface MasIpdProcedureSurgeryConsumableTemplateRepository extends JpaR
         CASE 
             WHEN Upper(t.template_type) = :procedure THEN p.procedure_name
             WHEN Upper(t.template_type) = :surgery THEN s.surgery_name
-        END AS procedureName
+        END AS procedureName,
+        p.procedure_id AS procedureId,
+        s.surgery_id AS surgeryId
     FROM mas_ipd_procedure_surgey_consmble_template t
     LEFT JOIN mas_procedure p ON t.procedure_id = p.procedure_id
     LEFT JOIN mas_surgery s ON t.surgery_id = s.surgery_id

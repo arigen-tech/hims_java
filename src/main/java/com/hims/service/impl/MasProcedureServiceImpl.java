@@ -72,15 +72,13 @@ public class MasProcedureServiceImpl implements MasProcedureService {
     @Override
     public ApiResponse<Page<MasProcedureResponse>> getAllProceduresWIthFilter(
             int flag, int page, int size, String search) {
+        try {
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<MasProcedure> procedurePage;
-
+        Pageable pageable = PageRequest.of(page, size);Page<MasProcedure> procedurePage;
         boolean hasSearch = (search != null && !search.trim().isEmpty());
         String searchPattern = "%" + search.toLowerCase() + "%";
 
         if (hasSearch) {
-
             //  If flag = 1 → Only status = 'Y'
             if (flag == 1) {
                 procedurePage = repository.searchProcedure(
@@ -103,6 +101,11 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         Page<MasProcedureResponse> responsePage = procedurePage.map(this::toResponse);
 
         return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+        } catch (Exception ex) {
+            log.error("Error while fetching procedures. flag={}, page={}, size={}, search={}", flag, page, size, search, ex);
+
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
     }
 
 

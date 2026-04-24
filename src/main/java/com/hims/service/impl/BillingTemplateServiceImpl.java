@@ -214,18 +214,25 @@ public class BillingTemplateServiceImpl implements BillingTemplateService {
 
     public ApiResponse<BillingTemplateResponse> getByIdBillingTemplate(Long id) {
         try {
-
             BillingTemplateProjection template = templateRepo.getTemplateById(id, AppConstants.PROCEDURE, AppConstants.SURGERY);
             if (template == null) {
                 return ResponseUtils.createNotFoundResponse("billing template id not found", HttpStatus.BAD_REQUEST.value());
             }
+
             BillingTemplateResponse res = new BillingTemplateResponse();
             res.setTemplateId(template.getTemplateId());
             res.setTemplateType(template.getTemplateType());
             res.setTemplateName(template.getTemplateName());
             res.setProcedureName(template.getProcedureName());
+
+            // Set the appropriate ID based on template type
+            if (AppConstants.PROCEDURE.equalsIgnoreCase(template.getTemplateType())) {
+                res.setProcedureId(template.getProcedureId());
+            } else if (AppConstants.SURGERY.equalsIgnoreCase(template.getTemplateType())) {
+                res.setProcedureId(template.getSurgeryId());
+            }
+
             List<BillingTemplateDetailProjection> details = detailRepo.getTemplateDetails(id);
-            // Map to response
             List<BillingTemplateDetailItemResponse> itemList = details.stream().map(d -> {
                 BillingTemplateDetailItemResponse item = new BillingTemplateDetailItemResponse();
                 item.setTemplateDetailsId(d.getTemplateDetailsId());
@@ -236,17 +243,18 @@ public class BillingTemplateServiceImpl implements BillingTemplateService {
                 item.setQty(d.getQty());
                 return item;
             }).toList();
+
             res.setBillingTemplateDetailItemResponseList(itemList);
-            return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {
-            });
+            return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {});
 
         } catch (Exception e) {
             log.error("Error in getByIdBillingTemplate", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
 
     public ApiResponse<Page<BillingTemplateSearchResponse>> searchTemplates(String templateType, String templateName, int page, int size) {
         try {

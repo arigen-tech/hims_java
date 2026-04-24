@@ -3,10 +3,7 @@ package com.hims.controller;
 import com.hims.request.DgMasInvestigationMultiRequest;
 import com.hims.request.DgMasInvestigationRequest;
 import com.hims.request.DgMasInvestigationSingleReqest;
-import com.hims.response.ApiResponse;
-import com.hims.response.DgMasInvestigationRes;
-import com.hims.response.DgMasInvestigationResponse;
-import com.hims.response.DgMasInvestigationSingleResponse;
+import com.hims.response.*;
 import com.hims.service.DgMasInvestigationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -53,6 +50,13 @@ public class DgMasInvestigationController {
         return dgMasInvestigationService
                 .getAllInvestigationsDynamic(flag, page, size, search, mainChargeCodeId);
     }
+    @GetMapping("/dgMasInvestigationByMainChargeCodeId")
+    public ApiResponse<List<MasInvestigationByMainChargeCodeResponse>> dgMasInvestigationByMainChargeCodeId(
+            @RequestParam Long mainChargeCodeId
+    ) {
+        return dgMasInvestigationService.dgMasInvestigationByMainChargeCodeId( mainChargeCodeId);
+    }
+
 
 
     @GetMapping("/uniqueInvestigation/types")

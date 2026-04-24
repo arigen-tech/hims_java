@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.*;
@@ -1032,7 +1033,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 
     @Override
     public List<Map<String, Object>> getInvestigationTypes() {
-
+        try {
         return dgMasInvestigationRepo.findUniqueInvestigationTypes()
                 .stream()
                 .map(p -> {
@@ -1046,6 +1047,10 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                     return map;
                 })
                 .toList();
+        } catch (Exception ex) {
+            log.error("Error in getInvestigationTypes service", ex);
+            return Collections.emptyList();
+        }
     }
 
     @Override
@@ -1058,6 +1063,22 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error",HttpStatus.INTERNAL_SERVER_ERROR.value());
        }
     }
+
+    @Override
+    public ApiResponse<List<MasInvestigationByMainChargeCodeResponse>>
+    dgMasInvestigationByMainChargeCodeId(Long mainChargeCodeId) {
+        try {
+            List<MasInvestigationByMainChargeCodeResponse> list = dgMasInvestigationRepo.dgMasInvestigationByMainChargeCodeId(mainChargeCodeId);
+
+            return ResponseUtils.createSuccessResponse(list, new TypeReference<>() {});
+        } catch (Exception ex) {
+            log.error("Error while fetching investigations for mainChargeCodeId: {}", mainChargeCodeId, ex);
+
+            return ResponseUtils.createFailureResponse(
+                    null, AppConstants.INTERNAL_SERVER_ERR_MSG,HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
     private DgMasInvestigationRes mapToRes(DgMasInvestigation entity){
         DgMasInvestigationRes response= new DgMasInvestigationRes();
         response.setInvestigationId(entity.getInvestigationId());

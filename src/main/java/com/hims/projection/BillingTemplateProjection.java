@@ -4,4 +4,6 @@ public interface BillingTemplateProjection {
     String getTemplateType();
     String getTemplateName();
     String getProcedureName();
+    Long getProcedureId();
+    Long getSurgeryId();
 }

@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.DgMasInvestigation;
+import com.hims.response.MasInvestigationByMainChargeCodeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -102,4 +103,17 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
         """)
     List<InvestigationTypeProjection> findUniqueInvestigationTypes();
 
+    @Query("""
+    SELECT new com.hims.response.MasInvestigationByMainChargeCodeResponse(
+        m.investigationId,
+        m.investigationName,
+        m.mainChargeCodeId.chargecodeId
+    )
+    FROM DgMasInvestigation m
+    WHERE LOWER(m.status) = 'y'
+    AND (:mainChargeCodeId IS NULL 
+         OR m.mainChargeCodeId.chargecodeId = :mainChargeCodeId)
+""")
+    List<MasInvestigationByMainChargeCodeResponse>
+    dgMasInvestigationByMainChargeCodeId(@Param("mainChargeCodeId") Long mainChargeCodeId);
 }
