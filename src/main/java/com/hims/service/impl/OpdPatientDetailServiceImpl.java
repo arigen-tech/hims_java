@@ -1,9 +1,11 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.RecordNotFoundException;
+import com.hims.projection.OpdPatientDetailsWaitingProjection;
 import com.hims.request.ActiveVisitSearchRequest;
 import com.hims.request.OpdPatientDetailFinalRequest;
 import com.hims.response.*;
@@ -15,6 +17,7 @@ import com.hims.utils.StockFound;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -1075,99 +1078,52 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     @Override
     public ApiResponse<List<OpdPatientDetailsWaitingresponce>> getActiveVisitsWithFilters(ActiveVisitSearchRequest req) {
+        try {
+            LocalDate visitDate = req.getDate() != null ? req.getDate().atZone(ZoneId.systemDefault()).toLocalDate() : LocalDate.now();
 
-        LocalDate visitDate = req.getDate() != null
-                ? req.getDate().atZone(ZoneId.systemDefault()).toLocalDate()
-                : LocalDate.now();
+            List<OpdPatientDetailsWaitingProjection> projections = visitRepository.findActiveVisitsWithFilters(req.getDoctorId(), req.getSessionId(), req.getEmployeeNo(), req.getPatientName(), visitDate,
+                    AppConstants.STATUS_N.toLowerCase(), AppConstants.STATUS_Y.toLowerCase());
 
-        List<Visit> activeVisits = visitRepository.findActiveVisitsWithFilters(
-                req.getDoctorId(),
-                req.getSessionId(),
-                req.getEmployeeNo(),
-                req.getPatientName(),
-                visitDate
-        );
+            List<OpdPatientDetailsWaitingresponce> responseList = projections.stream()
+                    .map(p -> {
+                        OpdPatientDetailsWaitingresponce res = new OpdPatientDetailsWaitingresponce();
+                        res.setPatientId(p.getPatientId());
+                        res.setEmployeeNo(p.getEmployeeNo());
+                        res.setMobileNo(p.getMobileNo());
+                        res.setDob(p.getDob());
+                        res.setAge(p.getAge());
+                        res.setDisplayPatientStatus(p.getDisplayPatientStatus());
+                        res.setVisitDate(p.getVisitDate());
+                        res.setPatientName(p.getPatientName());
+                        res.setGender(p.getGender());
+                        res.setRelation(p.getRelation());
+                        res.setVisitId(p.getVisitId());
+                        res.setTokenNo(p.getTokenNo());
+                        res.setDeptId(p.getDeptId());
+                        res.setDeptName(p.getDeptName());
+                        res.setDocterId(p.getDocterId());
+                        res.setDocterName(p.getDocterName());
+                        res.setHospitalId(p.getHospitalId());
+                        res.setSessionId(p.getSessionId());
+                        res.setSessionName(p.getSessionName());
+                        return res;
+                    })
+                    .collect(Collectors.toList());
 
-        List<OpdPatientDetailsWaitingresponce> responseList = new ArrayList<>();
+            // Sorting
+            responseList.sort(Comparator.comparingInt(res -> {
+                try {
+                    return res.getTokenNo() != null ? Integer.parseInt(res.getTokenNo()) : Integer.MAX_VALUE;
+                } catch (Exception e) {
+                    return Integer.MAX_VALUE;
+                }
+            }));
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
-        for (Visit v : activeVisits) {
-            OpdPatientDetailsWaitingresponce res = new OpdPatientDetailsWaitingresponce();
-
-            // Patient Info
-            if (v.getPatient() != null) {
-                res.setPatientId(v.getPatient().getId());
-                res.setEmployeeNo(v.getPatient().getUhidNo());
-                res.setMobileNo(v.getPatient().getPatientMobileNumber());
-                res.setDob(v.getPatient().getPatientDob());
-                res.setAge(v.getPatient().getPatientAge());
-                res.setDisplayPatientStatus(v.getDisplayPatientStatus());
-                res.setVisitDate(v.getVisitDate());
-                res.setPatientName(
-                        buildFullName(
-                                v.getPatient().getPatientFn(),
-                                v.getPatient().getPatientMn(),
-                                v.getPatient().getPatientLn()
-                        )
-                );
-
-                res.setGender(
-                        v.getPatient().getPatientGender() != null
-                                ? v.getPatient().getPatientGender().getGenderName()
-                                : null
-                );
-
-                res.setRelation(
-                        v.getPatient().getPatientRelation() != null
-                                ? v.getPatient().getPatientRelation().getRelationName()
-                                : null
-                );
-            }
-
-            // Visit Info
-            res.setVisitId(v.getId());
-            res.setTokenNo(v.getTokenNo() != null ? String.valueOf(v.getTokenNo()) : null);
-
-            if (v.getDepartment() != null) {
-                res.setDeptId(v.getDepartment().getId());
-                res.setDeptName(v.getDepartment().getDepartmentName());
-            }
-
-            if (v.getDoctor() != null) {
-                res.setDocterId(v.getDoctor().getUserId());
-                res.setDocterName(
-                        buildFullName(
-                                v.getDoctor().getFirstName(),
-                                v.getDoctor().getMiddleName(),
-                                v.getDoctor().getLastName()
-                        )
-                );
-            }
-
-            if (v.getHospital() != null) {
-                res.setHospitalId(v.getHospital().getId());
-            }
-
-            if (v.getSession() != null) {
-                res.setSessionId(v.getSession().getId());
-                res.setSessionName(v.getSession().getSessionName());
-            }
-
-            responseList.add(res);
+        } catch (Exception ex) {
+            log.error("Error while fetching active visits. req={}", req, ex);
+            return ResponseUtils.createFailureResponse(Collections.emptyList(), "Failed to fetch active visits", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
-
-        // Sort responseList by tokenNo numerically (ascending)
-        responseList.sort(Comparator.comparingInt(res -> {
-            try {
-                return res.getTokenNo() != null ? Integer.parseInt(res.getTokenNo()) : Integer.MAX_VALUE;
-            } catch (NumberFormatException e) {
-                return Integer.MAX_VALUE; // invalid tokenNo goes to the end
-            }
-        }));
-
-        return ResponseUtils.createSuccessResponse(
-                responseList,
-                new TypeReference<>() {}
-        );
     }
 
 

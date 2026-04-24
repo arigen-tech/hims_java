@@ -2072,7 +2072,7 @@ private BillingTemplateService billingTemplateService;
         return ResponseEntity.ok(masProcedureService.getAllMasProcedure(flag));
     }
 
-    @GetMapping("masProcedureFilter/getAll")
+    @GetMapping("masProcedures/getAll")
     public ApiResponse<Page<MasProcedureResponse>> getAllProceduresWIthFilter(
             @RequestParam int flag,
             @RequestParam(defaultValue = "0") int page,

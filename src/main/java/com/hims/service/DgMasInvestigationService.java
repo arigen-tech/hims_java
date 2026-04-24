@@ -3,10 +3,7 @@ package com.hims.service;
 import com.hims.request.DgMasInvestigationMultiRequest;
 import com.hims.request.DgMasInvestigationRequest;
 import com.hims.request.DgMasInvestigationSingleReqest;
-import com.hims.response.ApiResponse;
-import com.hims.response.DgMasInvestigationRes;
-import com.hims.response.DgMasInvestigationResponse;
-import com.hims.response.DgMasInvestigationSingleResponse;
+import com.hims.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,4 +33,6 @@ public interface DgMasInvestigationService {
     List<Map<String, Object>> getInvestigationTypes();
 
     ApiResponse<List<DgMasInvestigationRes>> getAllInvestigations();
+
+    ApiResponse<List<MasInvestigationByMainChargeCodeResponse>> dgMasInvestigationByMainChargeCodeId(Long mainChargeCodeId);
 }

@@ -10,5 +10,6 @@ public class BillingTemplateResponse {
     private String templateType;
     private String procedureName;
     private String templateName;
+    private Long procedureId;
     List<BillingTemplateDetailItemResponse> billingTemplateDetailItemResponseList;
 }

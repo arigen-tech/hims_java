@@ -192,31 +192,63 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
 
     @Query(value = """
-            SELECT v.* FROM visit v
-            JOIN patient p ON p.patient_id = v.patient_id
-            WHERE v.visit_status = 'n'
-              AND v.billing_status = 'y'
-              AND DATE(v.visit_date) = :visitDate   -- match only the date part
-              AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
-              AND (:sessionId IS NULL OR v.session_id = :sessionId)
-              AND (:employeeNo IS NULL OR p.uhid_no = :employeeNo)
-              AND (
-                    :patientName IS NULL OR
-                    LOWER(
-                        CAST(p.p_fn AS VARCHAR) || ' ' ||
-                        CAST(p.p_mn AS VARCHAR) || ' ' ||
-                        CAST(p.p_ln AS VARCHAR)
-                    ) LIKE LOWER(CONCAT('%', :patientName, '%'))
-                  )
-            """, nativeQuery = true)
-    List<Visit> findActiveVisitsWithFilters(
+    SELECT 
+        v.visit_id AS visitId,
+        v.token_no AS tokenNo,
+        v.visit_date AS visitDate,
+        v.display_patient_status AS displayPatientStatus,
+
+        p.patient_id AS patientId,
+        p.uhid_no AS employeeNo,
+        p.p_mobile_number AS mobileNo,
+        p.p_dob AS dob,
+        p.p_age AS age,
+        CONCAT(p.p_fn, ' ', p.p_mn, ' ', p.p_ln) AS patientName,
+
+        g.gender_name AS gender,
+        r.relation_name AS relation,
+
+        d.department_id AS deptId,
+        d.department_name AS deptName,
+
+        doc.user_id AS docterId,
+        CONCAT(doc.first_name, ' ', doc.middle_name, ' ', doc.last_name) AS docterName,
+
+        v.hospital_id AS hospitalId,
+
+        s.id AS sessionId,
+        s.session_name AS sessionName
+
+    FROM visit v
+    LEFT JOIN patient p ON p.patient_id = v.patient_id
+    LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+    LEFT JOIN mas_relation r ON r.relation_id = p.p_relation_id
+    LEFT JOIN mas_department d ON d.department_id = v.department_id
+    LEFT JOIN users doc ON doc.user_id = v.doctor_id
+    LEFT JOIN mas_opd_session s ON s.id = v.session_id
+
+    WHERE LOWER(v.visit_status) = :visitStatus
+      AND LOWER(v.billing_status) = :billingStatus
+      AND DATE(v.visit_date) = :visitDate
+      AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
+      AND (:sessionId IS NULL OR v.session_id = :sessionId)
+      AND (:employeeNo IS NULL OR p.uhid_no = :employeeNo)
+      AND (
+            :patientName IS NULL OR :patientName = '' OR
+            LOWER(CONCAT(p.p_fn, ' ', p.p_mn, ' ', p.p_ln))
+            LIKE LOWER(CONCAT('%', :patientName, '%'))
+          )
+    """, nativeQuery = true)
+    List<OpdPatientDetailsWaitingProjection> findActiveVisitsWithFilters(
             @Param("doctorId") Long doctorId,
             @Param("sessionId") Long sessionId,
             @Param("employeeNo") String employeeNo,
             @Param("patientName") String patientName,
-            @Param("visitDate") LocalDate visitDate
-    );
+            @Param("visitDate") LocalDate visitDate,
+            @Param("visitStatus") String visitStatus,
+            @Param("billingStatus") String billingStatus
 
+    );
 
     @Query("""
                 SELECT v FROM Visit v 

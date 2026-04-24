@@ -136,30 +136,6 @@ public class AppConstants {
     public  static  final String PROCEDURE="PROCEDURE";
     public  static  final String SURGERY="SURGERY";
 
-    // Blood Bank Messages
-    public static final String DONOR_ALREADY_REGISTERED_MSG = "Donor already registered with same details";
-    public static final String DONOR_REGISTRATION_SUCCESS_MSG = "Donor Registration successfully";
-    public static final String DONOR_UPDATE_AND_SCREENING_SUCCESS_MSG = "Donor update successfully and add new screening";
-    public static final String BLOOD_COLLECTION_SAVE_SUCCESS_MSG = "blood collection save successfully";
-    public static final String COMPONENT_FAILURE_REASON_UPDATE_SUCCESS_MSG = "Component failure reason updated successfully";
-    public static final String COMPONENT_GENERATION_SAVE_SUCCESS_MSG = "Component generation saved successfully";
-    public static final String MANDATORY_TEST_ENTRY_SUCCESS_MSG = "test entry create successfully";
-
-    // Blood Bank Not Found Messages
-    public static final String DONOR_NOT_FOUND_ERR_MSG = "Donor not found";
-    public static final String DONOR_ID_NOT_FOUND_ERR_MSG = "donorId not found";
-    public static final String SCREENING_ID_NOT_FOUND_ERR_MSG = "screeningId not found";
-    public static final String DONATION_TYPE_NOT_FOUND_ERR_MSG = "donationTypeId not found";
-    public static final String COLLECTION_TYPE_NOT_FOUND_ERR_MSG = "collectionTypeId not found";
-    public static final String BAG_TYPE_NOT_FOUND_ERR_MSG = "bagTypeId not found";
-    public static final String BLOOD_DONATION_NOT_FOUND_ERR_MSG = "Blood donation record not found with id: ";
-    public static final String COMPONENT_NOT_FOUND_ERR_MSG = "Component not found with id: ";
-    public static final String COMPONENT_FAILURE_REASON_NOT_FOUND_ERR_MSG = "Component failure reason not found with id: ";
-
-    // Blood Bank Exception Messages
-    public static final String DONOR_SAVE_FAILED_ERR_MSG = "Failed to save donor details";
-    public static final String FILE_UPLOAD_FAILED_ERR_MSG = "File upload failed";
-
 
     private AppConstants() {
     }
