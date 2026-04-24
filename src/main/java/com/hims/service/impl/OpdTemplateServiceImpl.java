@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.*;
@@ -538,15 +539,14 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
 
             // Filter based on flag
             if (flag == 1) {
-                templates = opdTempRepo.findByStatusIgnoreCase("Y");
+                templates = opdTempRepo.findByStatusIgnoreCase(AppConstants.STATUS_Y);
             } else if (flag == 0) {
-                templates = opdTempRepo.findByStatusInIgnoreCase(List.of("Y", "N"));
+                templates = opdTempRepo.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y, AppConstants.STATUS_N));
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid flag value. Use 0 or 1.", 400);
             }
 
-            // ✅ Filter templates whose type = 'p'
             templates = templates.stream()
                     .filter(t -> t.getOpdTemplateType() != null && t.getOpdTemplateType().equalsIgnoreCase("P"))
                     .collect(Collectors.toList());

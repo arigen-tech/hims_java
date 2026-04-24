@@ -14,12 +14,17 @@ import com.hims.service.OPDService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.hims.helperUtil.ConverterUtils.ageCalculator;
 
 /**
  * OPD Service Implementation
@@ -36,40 +41,49 @@ public class OpdServiceImpl implements OPDService {
     private final VisitRepository visitRepository;
 
     /**
-     * Retrieves pending pre-consultations for the current hospital.
+     * Retrieves pending pre-consultations with database-level pagination.
      *
-     * @return ApiResponse containing list of pending pre-consultation responses
+     * @param pageable pagination information including page, size, and sort
+     * @return ApiResponse containing paginated pending pre-consultation responses
      */
     @Override
-    public ApiResponse<List<OpdPreConsultationResponse>> getPendingPreConsultations() {
-        log.info("Fetching pending pre-consultations for current hospital");
+    public ApiResponse<Page<OpdPreConsultationResponse>> getPendingPreConsultations(Pageable pageable) {
+        log.info("Fetching pending pre-consultations with pagination - page: {}, size: {}",
+                pageable.getPageNumber(), pageable.getPageSize());
         try {
             User currentUser = getCurrentUser();
             if (currentUser == null || currentUser.getHospital() == null) {
                 log.warn("Current user or hospital not found");
-                return ResponseUtils.createSuccessResponse(new ArrayList<>(), new TypeReference<>() {});
+                Page<OpdPreConsultationResponse> emptyPage = new PageImpl<>(new ArrayList<>(), pageable, 0);
+                return ResponseUtils.createSuccessResponse(emptyPage, new TypeReference<>() {});
             }
 
             Long hospitalId = currentUser.getHospital().getId();
-            log.debug("Fetching pre-consultations for hospital ID: {}", hospitalId);
+            log.debug("Fetching pre-consultations for hospital ID: {} with pagination", hospitalId);
 
-            List<OpdPreConsultationProjection> projections = visitRepository
-                    .findPendingPreConsultationsByHospital(
+            // Call repository method with Pageable for database-level pagination
+            Page<OpdPreConsultationProjection> projectionPage = visitRepository
+                    .findPendingPreConsultationsByHospitalPaged(
                             hospitalId,
                             AppConstants.STATUS_N.toLowerCase(),
-                            AppConstants.STATUS_Y.toLowerCase()
+                            AppConstants.STATUS_Y.toLowerCase(),
+                            pageable
                     );
 
-            List<OpdPreConsultationResponse> response = projections.stream()
-                    .map(this::mapOpdPreConsultationProjectionToResponse)
-                    .collect(Collectors.toList());
+            // Map projections to responses
+            Page<OpdPreConsultationResponse> responsePage = projectionPage
+                    .map(this::mapOpdPreConsultationProjectionToResponse);
 
-            log.info("Successfully fetched {} pending pre-consultations", response.size());
-            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+            log.info("Successfully fetched {} pre-consultations for page {}, total records: {}",
+                    responsePage.getNumberOfElements(),
+                    pageable.getPageNumber(),
+                    responsePage.getTotalElements());
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
         } catch (Exception e) {
-            log.error("Error fetching pending pre-consultations", e);
+            log.error("Error fetching pending pre-consultations with pagination", e);
             return ResponseUtils.createFailureResponse(
-                    new ArrayList<>(),
+                    new PageImpl<>(new ArrayList<>(), pageable, 0),
                     new TypeReference<>() {},
                     "Error fetching pending pre-consultations: " + e.getMessage(),
                     500
@@ -89,7 +103,12 @@ public class OpdServiceImpl implements OPDService {
             User currentUser = getCurrentUser();
             if (currentUser == null || currentUser.getHospital() == null) {
                 log.warn("Current user or hospital not found");
-                return ResponseUtils.createSuccessResponse(new ArrayList<>(), new TypeReference<>() {});
+                return ResponseUtils.createFailureResponse(
+                        new ArrayList<>(),
+                        new TypeReference<>() {},
+                        "User or hospital not found",
+                        400
+                );
             }
 
             Long hospitalId = currentUser.getHospital().getId();
@@ -175,11 +194,14 @@ public class OpdServiceImpl implements OPDService {
     private PatientWaitingListResponse mapPatientWaitingListProjectionToResponse(
             PatientWaitingListProjection projection) {
         PatientWaitingListResponse response = new PatientWaitingListResponse();
+        response.setPatientId(projection.getPatientId());
+        response.setVisitId(projection.getVisitId());
         response.setTokenNo(String.valueOf(projection.getTokenNo()));
-        response.setPatientNo(projection.getMobileNumber());
+        response.setMobileNo(projection.getMobileNumber());
         response.setPatientName(projection.getPatientName());
         response.setRelation(projection.getRelation());
-        response.setAge(projection.getDob());
+        response.setAge(ageCalculator(projection.getDob()));
+        response.setDob(projection.getDob());
         response.setGender(projection.getGender());
         response.setVisitType(projection.getVisitType());
         return response;
