@@ -1068,7 +1068,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     public ApiResponse<List<MasInvestigationByMainChargeCodeResponse>>
     dgMasInvestigationByMainChargeCodeId(Long mainChargeCodeId) {
         try {
-            List<MasInvestigationByMainChargeCodeResponse> list = dgMasInvestigationRepo.dgMasInvestigationByMainChargeCodeId(mainChargeCodeId,AppConstants.STATUS_Y.toLowerCase());
+            List<MasInvestigationByMainChargeCodeResponse> list = dgMasInvestigationRepo.dgMasInvestigationByMainChargeCodeId(mainChargeCodeId);
 
             return ResponseUtils.createSuccessResponse(list, new TypeReference<>() {});
         } catch (Exception ex) {
