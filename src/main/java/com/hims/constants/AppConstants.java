@@ -160,6 +160,13 @@ public class AppConstants {
     public static final String DONOR_SAVE_FAILED_ERR_MSG = "Failed to save donor details";
     public static final String FILE_UPLOAD_FAILED_ERR_MSG = "File upload failed";
 
+    // Opd template
+    public static final String TEMPLATE_TYPE_INVESTIGATION = "I";
+    public static final String TEMPLATE_TYPE_PRESCRIPTION = "P";
+
+
+
+
 
     private AppConstants() {
     }

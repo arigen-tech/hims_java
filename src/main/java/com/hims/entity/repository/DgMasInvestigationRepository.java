@@ -110,10 +110,11 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
         m.mainChargeCodeId.chargecodeId
     )
     FROM DgMasInvestigation m
-    WHERE LOWER(m.status) = 'y'
+    WHERE LOWER(m.status) = :status
     AND (:mainChargeCodeId IS NULL 
          OR m.mainChargeCodeId.chargecodeId = :mainChargeCodeId)
 """)
     List<MasInvestigationByMainChargeCodeResponse>
-    dgMasInvestigationByMainChargeCodeId(@Param("mainChargeCodeId") Long mainChargeCodeId);
+    dgMasInvestigationByMainChargeCodeId(@Param("mainChargeCodeId") Long mainChargeCodeId,
+                                         @Param("status") String status              );
 }
