@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.MasDepartment;
 import com.hims.response.DepartmentDropdownResponse;
+import com.hims.response.MasDepartmentResponse;
 import com.hims.response.SpecialitiesResponse;
 import com.hims.response.DepartmentDropdownResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,17 +21,45 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
 
     List<MasDepartment> findByStatusIgnoreCaseOrderByDepartmentNameAsc(String y);
 
-    @Query("""
-        SELECT m
-        FROM MasDepartment m
-        WHERE m.departmentType.id = :departmentTypeId
-          AND m.wardCategory.id = :wardCategoryId
-          AND LOWER(m.status) = 'y'
-    """)
-    List<MasDepartment> findActiveWardDepartments(
-            @Param("departmentTypeId") Long departmentTypeId,
-            @Param("wardCategoryId") Long wardCategoryId
-    );
+//    @Query("""
+//        SELECT m
+//        FROM MasDepartment m
+//        WHERE m.departmentType.id = :departmentTypeId
+//          AND m.wardCategory.id = :wardCategoryId
+//          AND LOWER(m.status) = 'y'
+//    """)
+//    List<MasDepartment> findActiveWardDepartments(
+//            @Param("departmentTypeId") Long departmentTypeId,
+//            @Param("wardCategoryId") Long wardCategoryId
+//    );
+@Query("""
+    SELECT new com.hims.response.MasDepartmentResponse(
+        m.id,
+        m.departmentCode,
+        m.departmentName,
+        m.status,
+        m.lastChgBy,
+        m.lastChgDate,
+        m.lastChgTime,
+        m.departmentType.id,
+        m.departmentType.departmentTypeName,
+        m.hospital.id,
+        m.hospital.hospitalName,
+        m.departmentNo,
+        m.wardCategory.id,
+        m.wardCategory.categoryName,
+        m.indentApplicable
+    )
+    FROM MasDepartment m
+    WHERE m.departmentType.id = :departmentTypeId
+      AND m.wardCategory.id = :wardCategoryId
+      AND LOWER(m.status) = :status
+""")
+List<MasDepartmentResponse> findActiveWardDepartments(
+        @Param("departmentTypeId") Long departmentTypeId,
+        @Param("wardCategoryId") Long wardCategoryId,
+        @Param("status") String status
+);
 
     List<MasDepartment> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
 

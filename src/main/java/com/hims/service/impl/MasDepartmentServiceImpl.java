@@ -228,19 +228,20 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
     @Override
     public ApiResponse<List<MasDepartmentResponse>> getAllWardDepartmentByWardCategory(Long wardCategory) {
 
-        Long departmentTypeId = WARD_ID;
+        try {
+            Long departmentTypeId = WARD_ID;
+            List<MasDepartmentResponse> departments = masDepartmentRepository.findActiveWardDepartments(departmentTypeId,
+                            wardCategory,AppConstants.STATUS_Y.toLowerCase()
+                    );
 
-        List<MasDepartment> departments =
-                masDepartmentRepository.findActiveWardDepartments(
-                        departmentTypeId,
-                        wardCategory
-                );
+            return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {}
+            );
 
-        List<MasDepartmentResponse> responses = departments.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-
-        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Failed to fetch ward departments",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to fetch ward departments: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
     }
 
     @Override
@@ -277,5 +278,6 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         response.setDeptName(department.getDepartmentName());
         return  response;
     }
+
 
 }
