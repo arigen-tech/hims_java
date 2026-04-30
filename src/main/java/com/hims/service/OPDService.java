@@ -16,7 +16,9 @@ public interface OPDService {
      * @param pageable the pagination information (page number, size, sorting)
      * @return ApiResponse containing paginated pending pre-consultations
      */
-    ApiResponse<Page<OpdPreConsultationResponse>> getPendingPreConsultations(Pageable pageable);
 
-    ApiResponse<List<PatientWaitingListResponse>> getWaitingList();
+    ApiResponse<Page<OpdPreConsultationResponse>> getPendingPreConsultations(Pageable pageable, String patientName, String mobileNumber);
+
+
+    ApiResponse<Page<PatientWaitingListResponse>> getWaitingList(Pageable pageable, String patientName, String mobileNumber);
 }
