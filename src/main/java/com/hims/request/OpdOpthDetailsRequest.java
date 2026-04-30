@@ -30,8 +30,8 @@ public class OpdOpthDetailsRequest {
     private String leNearBestCorrected;
 
     // -------- Fundus --------
-    private String reFundusGlow;
-    private String leFundusGlow;
+    private String fundusGlow;
+
 
     // -------- Retinoscopy --------
     private String reRetinoscopyAxis;
