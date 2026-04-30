@@ -130,11 +130,9 @@ public class PatientController {
 
 
     @PostMapping("/patient-details")
-    public ResponseEntity<ApiResponse<OpdPatientDetail>> createOpdPatientDetail(
+    public ResponseEntity<ApiResponse<OpdPatientDetailResponseDTO>> createOpdPatientDetail(
             @Valid @RequestBody OpdPatientDetailFinalRequest request) {
-
-        ApiResponse<OpdPatientDetail> response = opdPatientDetailService.createOpdPatientDetail(request);
-
+        ApiResponse<OpdPatientDetailResponseDTO> response = opdPatientDetailService.createOpdPatientDetail(request);
         return ResponseEntity.ok(response);
     }
 

@@ -40,8 +40,8 @@ public class AppSetup {
     @Column(name = "last_chg_date")
     private LocalDate lastChgDate;
 
-    @Size(max = 10)
-    @Column(name = "last_chg_time", length = 10)
+    @Size(max = 20)
+    @Column(name = "last_chg_time", length = 20)
     private String lastChgTime;
 
     @Size(max = 45)

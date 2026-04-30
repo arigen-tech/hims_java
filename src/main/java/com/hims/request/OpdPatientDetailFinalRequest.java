@@ -16,42 +16,36 @@ import java.util.List;
 @Setter
 public class OpdPatientDetailFinalRequest {
 
-    // ======================== Vital Details ====================
+    // ======================== Mapping IDs ======================
+    private Long patientId;
+    private Long visitId;
+    private Long departmentId;
+    private Long hospitalId;
+    private Long doctorId;
+    private Long opdPatientDetailId;
+
+
     @Size(max = 40)
     private String height;
-
     @Size(max = 40)
     private String idealWeight;
-
     @Size(max = 40)
     private String weight;
-
     @Size(max = 40)
     private String pulse;
-
     @Size(max = 48)
     private String temperature;
-
     @Size(max = 12)
     private String rr;
-
     private String bmi;
-
     @Size(max = 120)
     private String spo2;
-
     @Size(max = 3)
     private String bpSystolic;
-
     @Size(max = 3)
     private String bpDiastolic;
-
     @Size(max = 1)
     private String mlcFlag;
-
-    // ======================== Diagnosis ========================
-    private String workingDiag;
-    private List<IcdDiagnosis> icdDiag;
 
     // ======================== Clinical History =================
     private String pastMedicalHistory;
@@ -60,28 +54,29 @@ public class OpdPatientDetailFinalRequest {
     private String patientSignsSymptoms;
     private String clinicalExamination;
 
+    // ======================== Diagnosis ========================
+    private String workingDiagnosis;
+    private List<IcdDiagnosis> icdDiagnosis;
+
     // ======================== Investigation ====================
     @Size(max = 1)
     private String labFlag;
-
     @Size(max = 1)
     private String radioFlag;
-
     private List<Investigation> investigation;
 
 
     // ============================== Treatment ======================
     private List<Treatment> treatment;
-
     private String treatmentAdvice;
-
-
-    // ============================== Procedure Care =============================
-//    private List<ProcedureCare> procedureCare;
 
 
     // ============================== final medicine advice =============================
     private String doctorRemarks;
+
+    // ============================== Procedure Care =============================
+//    private List<ProcedureCare> procedureCare;
+
 
     // ========================= Admission Advice =====================================
     private String admissionFlag;
@@ -103,13 +98,8 @@ public class OpdPatientDetailFinalRequest {
     private Instant followUpDate;
     private Long followUpDays;
 
-    // ======================== Mapping IDs ======================
-    private Long patientId;
-    private Long visitId;
-    private Long departmentId;
-    private Long hospitalId;
-    private Long doctorId;
-    private Long opdPatientDetailId;
+
+
 
     // ======================== Inner Class ======================
 
@@ -117,7 +107,7 @@ public class OpdPatientDetailFinalRequest {
     @Setter
     public static class IcdDiagnosis{
         private Long icdId;
-        private String icdDiagName;
+        private String icdDiagnosisName;
     }
 
     @Getter
@@ -126,6 +116,7 @@ public class OpdPatientDetailFinalRequest {
         private Long id;
         private String investigationName;
         private LocalDate investigationDate;
+        private String CategoryCode;
     }
 
     @Getter
@@ -137,16 +128,15 @@ public class OpdPatientDetailFinalRequest {
         private Integer days;
         private BigDecimal total;
         private String instraction;
-
     }
 
-    @Getter
-    @Setter
-    public static class ProcedureCare{
-        private Long procedureId;
-        private String procedureName;
-        private Long frequencyId;
-        private Long noOfDays;
-        private String remarks;
-    }
+//    @Getter
+//    @Setter
+//    public static class ProcedureCare{
+//        private Long procedureId;
+//        private String procedureName;
+//        private Long frequencyId;
+//        private Long noOfDays;
+//        private String remarks;
+//    }
 }

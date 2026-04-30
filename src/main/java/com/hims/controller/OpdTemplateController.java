@@ -7,7 +7,10 @@ import com.hims.response.ApiResponse;
 import com.hims.response.InvestigationByTemplateResponse;
 import com.hims.response.OpdTemplateResponse;
 import com.hims.service.OpdTemplateService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +21,7 @@ import java.util.List;
 @RestController
 @Tag(name = "OpdTemplate")
 @RequestMapping("/opdTemplate")
+@Slf4j
 public class OpdTemplateController {
 
     @Autowired
@@ -28,8 +32,24 @@ public class OpdTemplateController {
         return new ResponseEntity<>(opdTempService.getByTemplateId(templateId), HttpStatus.OK);
     }
 
-    @GetMapping("/getAllTemplateInvestigations/{flag}")
-    public ResponseEntity<ApiResponse<List<OpdTemplateResponse>>> getByOpdTemplateType (@PathVariable int flag){
+    /**
+     * Retrieves all OPD template investigations filtered by status flag.
+     *
+     * This endpoint returns a list of OPD templates containing investigations based on the provided flag.
+     * Flag values: 0 = All templates, 1 = Active templates only
+     *
+     * @param flag status filter flag (0 for all templates, 1 for active templates only)
+     * @return ResponseEntity containing ApiResponse with list of OpdTemplateResponse containing investigation details
+     */
+    @GetMapping("/getInvestigationsTemplates/{flag}")
+    @Operation(
+            summary = "Get All OPD Template Investigations by Status",
+            description = "Retrieves all OPD templates with their associated investigations filtered by status flag. " +
+                    "Flag 0 returns all templates, Flag 1 returns only active templates."
+    )
+    public ResponseEntity<ApiResponse<List<OpdTemplateResponse>>> getTemplateInvestigations(
+            @PathVariable int flag) {
+        log.info("Fetching OPD template investigations with flag: {}", flag);
         return new ResponseEntity<>(opdTempService.getAllTemplateInvestigations(flag), HttpStatus.OK);
     }
 

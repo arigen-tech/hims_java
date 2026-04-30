@@ -88,7 +88,7 @@ public class HelperUtils {
         return randomNumGenerator.generateOrderNumber("BILL",true,true);
     }
 
-    public String createInvoice() {
+    public String createInvoiceNumber() {
         return randomNumGenerator.generateOrderNumber("HIMS", true, true);
     }
 

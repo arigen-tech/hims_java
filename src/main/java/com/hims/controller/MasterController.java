@@ -1646,7 +1646,7 @@ private BillingTemplateService billingTemplateService;
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @GetMapping("/MasSymptoms/getAllSymptoms/{flag}")
+        @GetMapping("/MasSymptoms/getAllSymptoms/{flag}")
     public  ApiResponse<List<MasSymptomsResponse>> getAllSymptomsByFlag(
             @PathVariable int flag
     ) {
