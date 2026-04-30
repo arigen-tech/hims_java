@@ -201,6 +201,7 @@ public class OpdServiceImpl implements OPDService {
         response.setGender(projection.getGender());
         response.setVisitType(projection.getVisitType());
         response.setDepartmentName(projection.getDepartmentName());
+        response.setOpdDate(projection.getOpdDate());
         return response;
     }
 }

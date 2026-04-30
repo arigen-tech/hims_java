@@ -57,6 +57,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             p.p_dob AS dob,
             g.gender_name AS gender,
             d.department_name AS departmentName,
+            v.visit_date AS opdDate,
             mr.relation_name AS relation,
             
             CASE
