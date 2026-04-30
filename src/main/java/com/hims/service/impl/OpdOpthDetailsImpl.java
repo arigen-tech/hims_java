@@ -63,9 +63,7 @@ public class OpdOpthDetailsImpl implements OpdOpthDetailsService {
             entity.setLeNearPinhole(req.getLeNearPinhole());
             entity.setLeNearBestCorrected(req.getLeNearBestCorrected());
 
-            entity.setReFundusGlow(req.getReFundusGlow());
-            entity.setLeFundusGlow(req.getLeFundusGlow());
-
+            entity.setFundusGlow(req.getFundusGlow());
             entity.setReRetinoscopyAxis(req.getReRetinoscopyAxis());
             entity.setReRetinoscopyV(req.getReRetinoscopyV());
             entity.setReRetinoscopyH(req.getReRetinoscopyH());

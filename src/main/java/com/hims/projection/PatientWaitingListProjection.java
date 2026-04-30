@@ -17,4 +17,5 @@ public interface PatientWaitingListProjection {
     String getGender();
     LocalDate getDob();
     String getDepartmentName();
+    LocalDate getOpdDate();
 }

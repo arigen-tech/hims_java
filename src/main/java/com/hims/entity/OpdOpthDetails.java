@@ -70,11 +70,10 @@ public class OpdOpthDetails {
     private String leNearBestCorrected;
 
     // -------- Fundus --------
-    @Column(name = "re_fundus_glow",length = 10)
-    private String reFundusGlow;
+    @Column(name = "fundus_glow",length = 10)
+    private String fundusGlow;
 
-    @Column(name = "le_fundus_glow",length =10)
-    private String leFundusGlow;
+
 
     // -------- Retinoscopy --------
     @Column(name = "re_retinoscopy_axis",length = 10)
