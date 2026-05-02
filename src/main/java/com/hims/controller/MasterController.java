@@ -1975,7 +1975,7 @@ private BillingTemplateService billingTemplateService;
 
     @GetMapping("/masMedicalHistory/getAll/{flag}")
     public ResponseEntity<?> getMasMedicalHistory(@PathVariable int flag) {
-        return ResponseEntity.ok(masMedicalHistoryService.getAllMas(flag));
+        return ResponseEntity.ok(masMedicalHistoryService.getMasMedicalHistory(flag));
     }
 
     @PostMapping("/masMedicalHistory/create")

@@ -21,4 +21,6 @@ public class PatientWaitingListResponse {
     private String gender;
     private String visitType;
     private String action;
+    private String departmentName;
+    private LocalDate opdDate;
 }

@@ -1,11 +1,13 @@
 package com.hims.response;
 
 import com.hims.entity.MasUserType;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserResponse {
     Long userId;
     private String firstName;

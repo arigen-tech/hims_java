@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.access.method.P;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -43,41 +44,96 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                                                                  @Param("billingStatus") String billingStatus);
 
     @Query(value = """
-            SELECT 
-                v.visit_id AS visitId,
-                p.patient_id AS patientId,
-                TRIM(CONCAT(
-                    COALESCE(p.p_fn, ''), ' ',
-                    COALESCE(p.p_mn, ''), ' ',
-                    COALESCE(p.p_ln, '')
-                )) AS patientName,
-                p.p_age AS patientAge,
-                p.p_mobile_number AS mobileNumber,
-                p.p_dob AS dob,
-                g.gender_name AS gender,
-                mr.relation_name AS relation,
-                
-                CASE
-                    WHEN v.visit_type = 'F' THEN 'Follow Up'
-                    WHEN v.visit_type = 'N' THEN 'New'
-                    WHEN v.visit_type = 'W' THEN 'Walk In'
-                END AS visitType,
-                v.doctor_id AS doctorId,
-                v.doctor_name AS doctorName,
-                v.token_no AS tokenNo
-            FROM visit v
-            LEFT JOIN patient p ON p.patient_id = v.patient_id
-            LEFT JOIN mas_gender g ON g.id = p.p_gender_id
-            LEFT JOIN mas_relation mr ON mr.relation_id = p.p_relation_id
-            WHERE v.hospital_id = :hospitalId
-              AND v.pre_consultation = :preConsultation
-              AND v.billing_status = :billingStatus
-            ORDER BY v.visit_date ASC, v.start_time ASC
-            """, nativeQuery = true)
-    List<PatientWaitingListProjection> findWaitingPatientsByHospital(
+        SELECT 
+            v.visit_id AS visitId,
+            p.patient_id AS patientId,
+            TRIM(CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            )) AS patientName,
+            p.p_age AS patientAge,
+            p.p_mobile_number AS mobileNumber,
+            p.p_dob AS dob,
+            g.gender_name AS gender,
+            d.department_name AS departmentName,
+            v.visit_date AS opdDate,
+            mr.relation_name AS relation,
+            
+            CASE
+                WHEN v.visit_type = 'F' THEN 'Follow Up'
+                WHEN v.visit_type = 'N' THEN 'New'
+                WHEN v.visit_type = 'W' THEN 'Walk In'
+            END AS visitType,
+            v.doctor_id AS doctorId,
+            v.doctor_name AS doctorName,
+            v.token_no AS tokenNo
+
+        FROM visit v
+        LEFT JOIN patient p ON p.patient_id = v.patient_id
+        LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+        LEFT JOIN mas_relation mr ON mr.relation_id = p.p_relation_id
+        LEFT JOIN mas_department d ON d.department_id = v.department_id
+
+        WHERE v.hospital_id = :hospitalId
+        AND v.department_id = :departmentId
+        AND v.pre_consultation = :preConsultation
+        AND v.billing_status = :billingStatus
+        AND v.visit_status = :visitStatus
+
+        
+        AND (
+            :patientName IS NULL OR :patientName = '' OR
+            LOWER(CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            )) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        )
+
+       
+        AND (
+            :mobileNumber IS NULL OR :mobileNumber = '' OR
+            p.p_mobile_number LIKE CONCAT('%', :mobileNumber, '%')
+        )
+
+        ORDER BY v.visit_date ASC, v.start_time ASC
+        """,
+            countQuery = """
+        SELECT COUNT(v.visit_id)
+        FROM visit v
+        LEFT JOIN patient p ON p.patient_id = v.patient_id
+
+        WHERE v.hospital_id = :hospitalId
+        AND v.department_id = :departmentId
+        AND v.pre_consultation = :preConsultation
+        AND v.billing_status = :billingStatus
+        AND v.visit_status = :visitStatus
+
+        AND (
+            :patientName IS NULL OR :patientName = '' OR
+            LOWER(CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            )) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        )
+
+        AND (
+            :mobileNumber IS NULL OR :mobileNumber = '' OR
+            p.p_mobile_number LIKE CONCAT('%', :mobileNumber, '%')
+        )
+        """,
+            nativeQuery = true)
+    Page<PatientWaitingListProjection> findWaitingPatientsByHospital(
             @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
             @Param("preConsultation") String preConsultation,
-            @Param("billingStatus") String billingStatus
+            @Param("billingStatus") String billingStatus,
+            @Param("visitStatus") String visitStatus,
+            @Param("patientName") String patientName,
+            @Param("mobileNumber") String mobileNumber,
+            Pageable pageable
     );
 
     @Query(value = """
@@ -127,62 +183,101 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("preConsultation") String preConsultation,
             @Param("billingStatus") String billingStatus
     );
-
     @Query(value = """
-                SELECT 
-                    v.visit_id AS visitId,
-                    p.patient_id AS patientId,
-                    TRIM(CONCAT(
-                        COALESCE(p.p_fn, ''), ' ',
-                        COALESCE(p.p_mn, ''), ' ',
-                        COALESCE(p.p_ln, '')
-                    )) AS patientName,
-                    p.p_age AS patientAge,
-                    g.gender_name AS gender,
-                    d.department_id AS departmentId,
-                    d.department_name AS departmentName,
-                    p.p_mobile_number AS mobileNumber,
-                    CASE
-                        WHEN v.visit_type = 'N' THEN 'New'
-                        WHEN v.visit_type = 'F' THEN 'Follow Up'
-                        ELSE 'Walk In'
-                    END AS visitType,
-                    v.doctor_id AS doctorId,
-                    v.doctor_name AS doctorName,
-                
-                    CONCAT(
-                        TO_CHAR(v.start_time, 'HH24:MI'),
-                        ' - ',
-                        TO_CHAR(v.end_time, 'HH24:MI')
-                    ) AS appointmentTime,
-                
-                    v.token_no AS tokenNumber,
-                    CAST(v.visit_date AS DATE) AS appointmentDate
-                
-                FROM visit v
-                LEFT JOIN patient p ON p.patient_id = v.patient_id
-                LEFT JOIN mas_gender g ON g.id = p.p_gender_id
-                LEFT JOIN mas_department d ON d.department_id = v.department_id
-                
-                WHERE v.hospital_id = :hospitalId
-                  AND v.pre_consultation = :preConsultation
-                  AND v.billing_status = :billingStatus
-                
-                ORDER BY v.visit_date ASC, v.start_time ASC
-                """, nativeQuery = true,
+        SELECT 
+            v.visit_id AS visitId,
+            p.patient_id AS patientId,
+            TRIM(CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            )) AS patientName,
+            p.p_age AS patientAge,
+            g.gender_name AS gender,
+            d.department_id AS departmentId,
+            d.department_name AS departmentName,
+            p.p_mobile_number AS mobileNumber,
+            CASE
+                WHEN v.visit_type = 'N' THEN 'New'
+                WHEN v.visit_type = 'F' THEN 'Follow Up'
+                ELSE 'Walk In'
+            END AS visitType,
+            v.doctor_id AS doctorId,
+            v.doctor_name AS doctorName,
+
+            CONCAT(
+                TO_CHAR(v.start_time, 'HH24:MI'),
+                ' - ',
+                TO_CHAR(v.end_time, 'HH24:MI')
+            ) AS appointmentTime,
+
+            v.token_no AS tokenNumber,
+            CAST(v.visit_date AS DATE) AS appointmentDate
+
+        FROM visit v
+        LEFT JOIN patient p ON p.patient_id = v.patient_id
+        LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+        LEFT JOIN mas_department d ON d.department_id = v.department_id
+
+        WHERE v.hospital_id = :hospitalId
+        AND v.department_id = :departmentId
+        AND v.pre_consultation = :preConsultation
+        AND v.billing_status = :billingStatus
+        AND v.visit_status = :visitStatus
+
+        
+        AND (
+            :patientName IS NULL OR :patientName = '' OR
+            LOWER(CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            )) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        )
+
+        AND (
+            :mobileNumber IS NULL OR :mobileNumber = '' OR
+            p.p_mobile_number LIKE CONCAT('%', :mobileNumber, '%')
+        )
+
+        ORDER BY v.visit_date ASC, v.start_time ASC
+        """,
             countQuery = """
-                SELECT COUNT(v.visit_id) FROM visit v
-                WHERE v.hospital_id = :hospitalId
-                AND v.pre_consultation = :preConsultation
-                AND v.billing_status = :billingStatus
-                """)
+        SELECT COUNT(v.visit_id)
+        FROM visit v
+        LEFT JOIN patient p ON p.patient_id = v.patient_id
+
+        WHERE v.hospital_id = :hospitalId
+        AND v.department_id = :departmentId
+        AND v.pre_consultation = :preConsultation
+        AND v.billing_status = :billingStatus
+        AND v.visit_status = :visitStatus
+
+        AND (
+            :patientName IS NULL OR :patientName = '' OR
+            LOWER(CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            )) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        )
+
+        AND (
+            :mobileNumber IS NULL OR :mobileNumber = '' OR
+            p.p_mobile_number LIKE CONCAT('%', :mobileNumber, '%')
+        )
+        """,
+            nativeQuery = true)
     Page<OpdPreConsultationProjection> findPendingPreConsultationsByHospitalPaged(
             @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
             @Param("preConsultation") String preConsultation,
             @Param("billingStatus") String billingStatus,
+            @Param("visitStatus") String visitStatus,
+            @Param("patientName") String patientName,
+            @Param("mobileNumber") String mobileNumber,
             Pageable pageable
     );
-
 
     @Query(value = "SELECT COUNT(v.token_no) FROM visit v " +
             "WHERE v.hospital_id = :hospitalId " +

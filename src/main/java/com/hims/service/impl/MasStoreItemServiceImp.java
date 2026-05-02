@@ -25,9 +25,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -517,7 +519,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         long convertStart = System.currentTimeMillis();
 
         List<MasStoreItemResponseWithStock> responses = masStoreItems.stream()
-                .map(item -> convertToResponsefast(item, stockMap))
+                .map(item -> convertToResponseFast(item, stockMap))
                 .collect(Collectors.toList());
 
         long convertEnd = System.currentTimeMillis();
@@ -529,59 +531,101 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
+//
+//    @Override
+//    public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(
+//            int flag,
+//            String search,
+//            int page,
+//            int size) {
+//        try {
+//        long apiStart = System.currentTimeMillis();
+//        Pageable pageable = PageRequest.of(page, size, Sort.by("nomenclature").ascending());
+//        Page<MasStoreItem> masStoreItems;
+//
+//        // Dynamic filtering
+//        if ((search != null && !search.isBlank()) || sectionId != null) {
+//            masStoreItems = masStoreItemRepository.dynamicSearch(flag, Long.valueOf(sectionId), search.toLowerCase(), pageable);
+//        } else {
+//            if (flag == 1) {
+//                masStoreItems = masStoreItemRepository.findByStatusIgnoreCase(AppConstants.STATUS_Y.toLowerCase(), pageable);
+//            } else if (flag == 0) {
+//                masStoreItems = masStoreItemRepository.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y.toLowerCase(),AppConstants.STATUS_N.toLowerCase()), pageable);
+//            } else {
+//                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+//                        "Invalid flag value. Use 0 or 1.", HttpStatus.BAD_REQUEST.value());
+//            }
+//        }
+//
+//        // No data
+//        if (masStoreItems.isEmpty()) {
+//            return ResponseUtils.createSuccessResponse(Page.empty(pageable), new TypeReference<>() {});
+//        }
+//
+//        // Preload stocks efficiently
+//        List<Long> itemIds = masStoreItems.getContent().stream()
+//                .map(MasStoreItem::getItemId)
+//                .toList();
+//
+//        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemId(itemIds);
+//
+//        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
+//                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
+//
+//        // Map to response
+//        Page<MasStoreItemResponseWithStock> responsePage = masStoreItems.map(item ->
+//                convertToResponsefast(item, stockMap)
+//        );
+//        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+//        } catch (Exception ex) {
+//            log.error("Something went wrong while fetching store items: ", ex);
+//            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
+//            );
+//        }
+//    }
+@Override
+public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(int flag, String search, int page, int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("nomenclature").ascending());
+            Page<MasStoreItem> masStoreItems;
 
-    @Override
-    public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(
-            int flag,
-            String search,
-            int page,
-            int size) {
-
-        long apiStart = System.currentTimeMillis();
-        System.out.println("⏳ API START: getMasStoreItemDynamic");
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by("nomenclature").ascending());
-        Page<MasStoreItem> masStoreItems;
-
-        // 🔹 Dynamic filtering
+        // Dynamic filtering
         if ((search != null && !search.isBlank()) || sectionId != null) {
             masStoreItems = masStoreItemRepository.dynamicSearch(flag, Long.valueOf(sectionId), search.toLowerCase(), pageable);
         } else {
             if (flag == 1) {
-                masStoreItems = masStoreItemRepository.findByStatusIgnoreCase("y", pageable);
+                masStoreItems = masStoreItemRepository.findByStatusIgnoreCase(AppConstants.STATUS_Y.toLowerCase(), pageable);
             } else if (flag == 0) {
-                masStoreItems = masStoreItemRepository.findByStatusInIgnoreCase(List.of("y","n"), pageable);
+                masStoreItems = masStoreItemRepository.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase()), pageable);
             } else {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Invalid flag value. Use 0 or 1.", 400);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", HttpStatus.BAD_REQUEST.value()
+                );
             }
         }
 
-        // No data
+        // No data case
         if (masStoreItems.isEmpty()) {
             return ResponseUtils.createSuccessResponse(Page.empty(pageable), new TypeReference<>() {});
         }
 
-        // Preload stocks efficiently
-        List<Long> itemIds = masStoreItems.getContent().stream()
-                .map(MasStoreItem::getItemId)
-                .toList();
+        // Fetch all stocks in one query
+        List<Long> itemIds = masStoreItems.getContent().stream().map(MasStoreItem::getItemId).toList();
 
         List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemId(itemIds);
 
-        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
-                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
-
+        // Group stock by itemId
+        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream().collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
         // Map to response
-        Page<MasStoreItemResponseWithStock> responsePage = masStoreItems.map(item ->
-                convertToResponsefast(item, stockMap)
+        Page<MasStoreItemResponseWithStock> responsePage = masStoreItems.map(item -> convertToResponseFast(item, stockMap));
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {}
         );
 
-        long apiEnd = System.currentTimeMillis();
-        System.out.println("✅ TOTAL API TIME: " + (apiEnd - apiStart) + " ms");
-
-        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+        }
+        catch (Exception ex) {
+        log.error("Something went wrong while fetching store items: ", ex);
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
+}
 
     @Override
     public ApiResponse<List<ItemProjection>> getAllDrugs(Integer sectionId) {
@@ -618,7 +662,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     }
 
 
-    private MasStoreItemResponseWithStock convertToResponsefast(MasStoreItem item,
+    private MasStoreItemResponseWithStock convertToResponseFast(MasStoreItem item,
                                                                 Map<Long, List<StoreItemBatchStock>> stockMap) {
 
         long start = System.currentTimeMillis();
@@ -636,7 +680,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
         response.setUnitAU(item.getUnitAU() != null ? item.getUnitAU().getUnitId() : null);
         response.setUnitAuName(item.getUnitAU() != null ? item.getUnitAU().getUnitName() : null);
-        // ✅ Use preloaded stock
+        // Use preloaded stock
         List<StoreItemBatchStock> stockList = stockMap.getOrDefault(item.getItemId(), List.of());
         long hospitalId = getCurrentUser().getHospital().getId();
 

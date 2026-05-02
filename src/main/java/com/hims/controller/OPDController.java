@@ -1,9 +1,13 @@
 package com.hims.controller;
 
+import com.hims.request.OpdOpthDetailsRequest;
+import com.hims.request.OpdTemplateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpdPreConsultationResponse;
+import com.hims.response.OpdTemplateResponse;
 import com.hims.response.PatientWaitingListResponse;
 import com.hims.service.OPDService;
+import com.hims.service.OpdOpthDetailsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,10 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -37,6 +38,9 @@ public class OPDController {
 
     @Autowired
     private OPDService opdService;
+    @Autowired
+    private OpdOpthDetailsService opdOpthDetailsService;
+
 
     /**
      * Retrieves a list of pending pre-consultations for the current hospital with pagination.
@@ -61,24 +65,16 @@ public class OPDController {
     )
     public ResponseEntity<ApiResponse<Page<OpdPreConsultationResponse>>> getPendingPreConsultations(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNumber
     ) {
-        log.info("Fetching pending pre-consultations - page: {}, size: {}, sortBy: {}", page, size);
-        try {
-            Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size);
 
-            ApiResponse<Page<OpdPreConsultationResponse>> response =
-                    opdService.getPendingPreConsultations(pageable);
-            Page<OpdPreConsultationResponse> responseData = response.getResponse();
-            log.info("Successfully fetched {} pending pre-consultations from page {}, total records: {}",
-                    responseData != null ? responseData.getNumberOfElements() : 0,
-                    page,
-                    responseData != null ? responseData.getTotalElements() : 0);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            log.error("Error fetching pending pre-consultations: ", e);
-            throw e;
-        }
+        ApiResponse<Page<OpdPreConsultationResponse>> response =
+                opdService.getPendingPreConsultations(pageable, patientName, mobileNumber);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     /**
@@ -97,16 +93,28 @@ public class OPDController {
                     "Returns essential patient information including token number, patient name, contact number, age, gender, " +
                     "visit type (New/Follow-up/Walk-in), and relation. This list helps manage patient flow and queue management in real-time."
     )
-    public ResponseEntity<ApiResponse<List<PatientWaitingListResponse>>> getWaitingList() {
-        log.info("Fetching OPD patient waiting list");
-        try {
-            ApiResponse<List<PatientWaitingListResponse>> response = opdService.getWaitingList();
-            log.info("Successfully fetched {} patients from waiting list",
-                    response.getResponse() != null ? response.getResponse().size() : 0);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            log.error("Error fetching patient waiting list: ", e);
-            throw e;
-        }
+    public ResponseEntity<ApiResponse<Page<PatientWaitingListResponse>>> getWaitingList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNumber
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        ApiResponse<Page<PatientWaitingListResponse>> response =
+                opdService.getWaitingList(pageable, patientName, mobileNumber);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PostMapping("/opdVisionExaminationDetailsSave")
+    @Operation(
+            summary = "Save OPD Vision Examination Details",
+            description = "Saves detailed ophthalmology (vision examination) data for a patient visit. " +
+                    "This includes distance and near vision, retinoscopy, keratometry, tonometry, " +
+                    "anterior and posterior segment findings, IOL power, spectacle details, and other eye examination parameters " +
+                    "for both right eye (RE) and left eye (LE)."
+    )
+    public ApiResponse<String> opdVisionExaminationDetailsSave(@RequestBody OpdOpthDetailsRequest request) {
+        return opdOpthDetailsService.opdVisionExaminationDetailsSave(request);
     }
 }

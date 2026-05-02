@@ -51,8 +51,8 @@ public class OpdTemplateController {
         return new ResponseEntity<>(opdTempService.multiInvestigationTemplate(investByTempReq), HttpStatus.OK);
     }
 
-    @PostMapping("/save")
-    public ApiResponse<OpdTemplateResponse> save(@RequestBody OpdTemplateRequest request) {
+    @PostMapping("/saveOpdTemplateTreatment")
+    public ApiResponse<OpdTemplateResponse> saveOpdTemplateTreatment(@RequestBody OpdTemplateRequest request) {
         return opdTempService.saveOpdTemplateTreatment(request);
     }
 
