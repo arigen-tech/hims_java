@@ -57,6 +57,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             p.p_dob AS dob,
             g.gender_name AS gender,
             d.department_name AS departmentName,
+            v.visit_date AS opdDate,
             mr.relation_name AS relation,
             
             CASE
@@ -431,7 +432,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     @Query("SELECT v.tokenNo FROM Visit v WHERE " +
             "v.department.id = :departmentId AND " +
-            "v.doctor.userId = :doctorId AND " +
+            "v.doctor.userid = :doctorId AND " +
             "v.session.id = :sessionId AND " +
             "v.visitDate >= :startOfDay AND v.visitDate < :endOfDay AND " +
             "v.visitStatus NOT IN ('c')")

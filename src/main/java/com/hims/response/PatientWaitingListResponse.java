@@ -22,4 +22,5 @@ public class PatientWaitingListResponse {
     private String visitType;
     private String action;
     private String departmentName;
+    private LocalDate opdDate;
 }
