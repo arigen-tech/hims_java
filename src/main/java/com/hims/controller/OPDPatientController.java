@@ -36,6 +36,7 @@ public class OPDPatientController {
     @Autowired
     private OpdOpthDetailsService opdOpthDetailsService;
 
+    @Autowired
     private OpdPatientDetailService opdPatientDetailService;
 
     /**
@@ -81,7 +82,7 @@ public class OPDPatientController {
      *
      * @return ResponseEntity containing ApiResponse with list of PatientWaitingListResponse
      */
-    @GetMapping("/getWaitingList")
+    @GetMapping("/getOpdWaitingList")
     @Operation(
             summary = "Get Patient Waiting List",
             description = "Fetches the complete list of all patients currently waiting for OPD consultation in the current hospital. " +

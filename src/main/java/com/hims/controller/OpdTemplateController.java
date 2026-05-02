@@ -59,7 +59,7 @@ public class OpdTemplateController {
     }
 
 
-    @PutMapping("/update-opdTemplate/{templateId}")
+    @PutMapping("/updateOpdTemplateInvestigation/{templateId}")
     public ResponseEntity<ApiResponse<String>> updatingOpdTemplate (
             @RequestBody OpdTempInvReq opdTempInvReq ) {
         return new ResponseEntity<>(opdTempService.updateOpdTemplate(opdTempInvReq), HttpStatus.OK);

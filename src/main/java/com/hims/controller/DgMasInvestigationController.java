@@ -59,7 +59,7 @@ public class DgMasInvestigationController {
 
 
 
-    @GetMapping("/uniqueInvestigation/types")
+    @GetMapping("/investigationCategoryTypes")
     public ResponseEntity<?> getInvestigationTypes() {
 
         Map<String, Object> response = new HashMap<>();

@@ -18,7 +18,6 @@ import com.hims.utils.ResponseUtils;
 import com.hims.utils.StockFound;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -107,7 +106,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     @Override
-    public ApiResponse<OpdPatientVitalResponce> getOpdPatientByVisit(Long visitId) {
+    public ApiResponse<OpdPatientVitalResponse> getOpdPatientByVisit(Long visitId) {
         if (visitId == null) {
             throw new IllegalArgumentException("Visit ID must not be null");
         }
@@ -115,13 +114,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (opdPObj == null) {
             return ResponseUtils.createNotFoundResponse("OPD details not found for visitId: " + visitId, 404);
         }
-        OpdPatientVitalResponce responseDto = mapToVitalResponse(opdPObj);
+        OpdPatientVitalResponse responseDto = mapToVitalResponse(opdPObj);
         return ResponseUtils.createSuccessResponse(responseDto, new TypeReference<>() {});
     }
 
-    private OpdPatientVitalResponce mapToVitalResponse(OpdPatientDetail opd) {
+    private OpdPatientVitalResponse mapToVitalResponse(OpdPatientDetail opd) {
 
-        OpdPatientVitalResponce res = new OpdPatientVitalResponce();
+        OpdPatientVitalResponse res = new OpdPatientVitalResponse();
 
         res.setOpdPatientDetailsId(opd.getOpdPatientDetailsId());
         res.setHeight(opd.getHeight());

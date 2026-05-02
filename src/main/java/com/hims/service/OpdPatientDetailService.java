@@ -7,7 +7,6 @@ import com.hims.request.OpdPatientDetailFinalRequest;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -15,7 +14,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface OpdPatientDetailService {
-    ApiResponse<OpdPatientVitalResponce> getOpdPatientByVisit(Long visitId);
+    ApiResponse<OpdPatientVitalResponse> getOpdPatientByVisit(Long visitId);
 
     @Transactional
     ApiResponse<OpdPatientDetailResponseDTO> createOpdPatientDetail(OpdPatientDetailFinalRequest request);
