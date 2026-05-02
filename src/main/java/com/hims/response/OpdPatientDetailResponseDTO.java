@@ -13,8 +13,8 @@ public class OpdPatientDetailResponseDTO {
 
     private String height;
     private String weight;
-    private String pulse;
     private String temperature;
+    private String pulse;
     private String bmi;
     private String bpSystolic;
     private String bpDiastolic;
@@ -41,4 +41,7 @@ public class OpdPatientDetailResponseDTO {
     private Instant followUpDate;
 
     private String admissionFlag;
+
+    private Long orderId;
+    private Long billingHeaderId;
 }

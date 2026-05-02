@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class OpdPatientVitalResponce {
+public class OpdPatientVitalResponse {
 
     private Long opdPatientDetailsId;
     private String height;
