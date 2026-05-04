@@ -1,8 +1,8 @@
 package com.hims.controller;
 
 import com.hims.request.OpdOpthDetailsRequest;
-import com.hims.request.OpdPatientDetailFinalRequest;
 import com.hims.response.*;
+import com.hims.request.OpdPatientDetailFinalRequest;
 import com.hims.service.OpdOpthDetailsService;
 import com.hims.service.OpdPatientDetailService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,8 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * OPD (Out-Patient Department) Controller
@@ -102,7 +100,7 @@ public class OPDPatientController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    @PostMapping("/opdVisionExaminationDetailsSave")
+    @PostMapping("/saveOphthalmologyExaminationDetails")
     @Operation(
             summary = "Save OPD Vision Examination Details",
             description = "Saves detailed ophthalmology (vision examination) data for a patient visit. " +
@@ -153,4 +151,10 @@ public class OPDPatientController {
             throw e;
         }
     }
+
+    @GetMapping("/getOphthalmologyExaminationDetail")
+    public ApiResponse<OphthalmologyExaminationDetailResponse> getOphthalmologyExaminationDetail(@RequestParam Long visitId) {
+        return opdOpthDetailsService.getOphthalmologyExaminationDetail(visitId);
+    }
+
 }
