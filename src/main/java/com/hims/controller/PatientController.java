@@ -2,16 +2,13 @@ package com.hims.controller;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.MasAppointmentChangeReason;
 import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.PatientRepository;
-import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.DoctorRosterServices;
-import com.hims.service.MasAppointmentChangeReasonService;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.service.PatientService;
 import com.hims.utils.ResponseUtils;
@@ -29,9 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @Tag(name = "PatientController", description = "This controller is used for any Patient Related task.")
@@ -57,10 +52,9 @@ public class PatientController {
 
 
     @GetMapping("/getOpdByVisit")
-    public ResponseEntity<ApiResponse<OpdPatientVitalResponce>> getOpdPatientByVisit(
+    public ResponseEntity<ApiResponse<OpdPatientVitalResponse>> getOpdPatientByVisit(
             @RequestParam Long visitId) {
-
-        ApiResponse<OpdPatientVitalResponce> response = opdPatientDetailService.getOpdPatientByVisit(visitId);
+        ApiResponse<OpdPatientVitalResponse> response = opdPatientDetailService.getOpdPatientByVisit(visitId);
         return ResponseEntity.ok(response);
     }
 
@@ -130,11 +124,9 @@ public class PatientController {
 
 
     @PostMapping("/patient-details")
-    public ResponseEntity<ApiResponse<OpdPatientDetail>> createOpdPatientDetail(
+    public ResponseEntity<ApiResponse<OpdPatientDetailResponseDTO>> createOpdPatientDetail(
             @Valid @RequestBody OpdPatientDetailFinalRequest request) {
-
-        ApiResponse<OpdPatientDetail> response = opdPatientDetailService.createOpdPatientDetail(request);
-
+        ApiResponse<OpdPatientDetailResponseDTO> response = opdPatientDetailService.createOpdPatientDetail(request);
         return ResponseEntity.ok(response);
     }
 

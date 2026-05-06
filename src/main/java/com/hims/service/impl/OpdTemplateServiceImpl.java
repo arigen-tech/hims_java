@@ -251,8 +251,8 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
                 hd.setOrderStatus("n");
                 hd.setCollectionStatus("n");
                 hd.setPaymentStatus("n");
-                hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
-                hd.setDepartmentId(departmentId.intValue());
+                hd.setHospitalId(authUtil.getCurrentUser().getHospital().getId());
+                hd.setDepartmentId(departmentId);
                 hd.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
                 hd.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
                 hd.setCreatedOn(LocalDate.now());

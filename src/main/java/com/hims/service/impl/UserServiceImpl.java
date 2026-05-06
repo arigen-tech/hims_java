@@ -160,7 +160,7 @@ public class UserServiceImpl implements UserService {
             );
         }
        // Fetch users by department
-        List<UserResponse> users = userDepartmentRepository.getUsersByDepartment(doctorRoleOpt.get().getId());
+        List<UserResponse> users = userDepartmentRepository.getUsersByDepartment(currDeptId);
 
         List<UserResponse> response = users.stream()
                 .filter(user -> user.getRoleId() != null)

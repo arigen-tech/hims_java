@@ -115,22 +115,19 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     @Value("${sample.collection.display.days}")
     private int pendingDays;
 
-    // Cached values to avoid N+1 queries
     private MasServiceCategory cachedServiceCategory;
     private LabOrderTrackingStatus cachedOrderedStatus;
-    private LabOrderTrackingStatus cachedCollectedStatus;
 
-    private void initializeCachedValues() {
-        log.debug("Initializing cached values for optimization");
-        try {
-            cachedServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
-            cachedOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElse(null);
-            cachedCollectedStatus = labOrderTrackingStatusRepository.findById(collectedStatusId).orElse(null);
-            log.info("Cached values initialized successfully");
-        } catch (Exception e) {
-            log.warn("Failed to initialize cached values", e);
+
+    private LabOrderTrackingStatus getOrderedStatus() {
+        if (cachedOrderedStatus == null) {
+                cachedOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId)
+                        .orElseThrow(() -> new SDDException("status", 500,
+                                "Ordered status not found with id: " + orderedStatusId));
         }
+        return cachedOrderedStatus;
     }
+
 
     private String getCurrentTimeFormatted(Instant instant) {
         LocalTime time = instant
@@ -153,16 +150,16 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         DgOrderDt dt = new DgOrderDt();
         dt.setInvestigationId(invEntity);
         dt.setOrderhdId(savedHd);
+        dt.setAppointmentDate(inv.getAppointmentDate());
+        dt.setOrderQty(1);
+        dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        dt.setCreatedBy(currentUser.getFullName());
+        dt.setLastChgBy(currentUser.getFullName());
+        dt.setLastChgDate(today);
         dt.setMainChargecodeId(invEntity.getMainChargeCodeId().getChargecodeId());
         dt.setSubChargeid(invEntity.getSubChargeCodeId().getSubId());
-        dt.setAppointmentDate(inv.getAppointmentDate());
-        dt.setOrderTrackingStatus(cachedOrderedStatus);
-        dt.setLastChgBy(currentUser.getFullName());
-        dt.setCreatedBy(currentUser.getFullName());
-        dt.setLastChgDate(today);
-        dt.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
-        dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
-        dt.setOrderQty(1);
+        dt.setOrderTrackingStatus(getOrderedStatus());
         dt.setCreatedon(Instant.now());
         dt.setLastChgTime(LocalTime.now().toString());
 
@@ -391,12 +388,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         return visitRepository.save(visit);
     }
 
-    private DgOrderHd buildOrderHd(Patient patient,
-                                   Visit visit,
-                                   User currentUser,
-                                   LocalDate appointmentDate,
-                                   LocalDate today,
-                                   LocalTime now) {
+    private DgOrderHd buildOrderHd(Patient patient, Visit visit, User currentUser, LocalDate appointmentDate, LocalDate today, LocalTime now) {
 
         if (patient == null || visit == null || currentUser == null) {
             throw new SDDException("order", 400, "Invalid data for creating order header");
@@ -408,12 +400,12 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             hd.setAppointmentDate(appointmentDate);
             hd.setOrderDate(today);
             hd.setOrderTime(Instant.now());
-            hd.setOrderNo(helperUtils.createInvoice());
+            hd.setOrderNo(helperUtils.createInvoiceNumber());
             hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
             hd.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
-            hd.setHospitalId(currentUser.getHospital().getId().intValue());
-            hd.setDepartmentId(visit.getDepartment().getId().intValue());
+            hd.setHospitalId(currentUser.getHospital().getId());
+            hd.setDepartmentId(visit.getDepartment().getId());
             hd.setPatientId(patient);
             hd.setVisitId(visit);
             hd.setSource("lab source");
@@ -431,13 +423,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         }
     }
 
-    private DgOrderDt buildOrderDetailForPackage(DgOrderHd hd,
-                                                 DgMasInvestigation invest,
-                                                 DgInvestigationPackage pkg,
-                                                 LabRadioInvestigationRequest inv,
-                                                 String userFullName,
-                                                 LocalDate today,
-                                                 LocalTime now) {
+    private DgOrderDt buildOrderDetailForPackage(DgOrderHd hd, DgMasInvestigation invest, DgInvestigationPackage pkg, LabRadioInvestigationRequest inv, String userFullName, LocalDate today, LocalTime now) {
 
         if (hd == null || invest == null || pkg == null) {
             throw new SDDException("orderDetail", 400, "Invalid data for package order detail");
@@ -459,7 +445,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
             dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             dt.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
-            dt.setOrderTrackingStatus(cachedOrderedStatus);
+            dt.setOrderTrackingStatus(getOrderedStatus());
 
             dt.setCreatedBy(userFullName);
             dt.setLastChgBy(userFullName);

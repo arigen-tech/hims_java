@@ -103,7 +103,13 @@ public class MasIcdServiceImpl implements MasIcdService {
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC,"icdName"));
 
             Page<MasIcdResponse> responsePage =
-                    masIcdRepository.findAllIcdWithFilter(flag, search, pageable);
+                    masIcdRepository.findAllIcdWithFilter(
+                            flag,
+                            search,
+                            AppConstants.STATUS_Y,
+                            AppConstants.STATUS_N,
+                            pageable
+                    );
 
 
             log.info("getAllIcd method ended with keyword - {}",search);
