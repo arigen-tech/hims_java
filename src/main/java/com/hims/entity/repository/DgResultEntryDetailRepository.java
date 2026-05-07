@@ -199,6 +199,7 @@ LEFT JOIN d.uomId uom
 LEFT JOIN h.orderHd oh
 LEFT JOIN User u ON u.userId = h.resultVerifiedBy
 WHERE h.hospitalId.id= :hospitalId
+AND (:patientId IS NULL OR p.id = :patientId)
 AND LOWER(d.validated) = LOWER(:resultValidationStatus)
             AND h.resultDate >= COALESCE(:fromDate, h.resultDate)
             AND h.resultDate <= COALESCE(:toDate, h.resultDate)
@@ -215,6 +216,8 @@ AND ( :patientName IS NULL OR LOWER(CONCAT(
             @Param("hospitalId") Long hospitalId,
             @Param("mobileNo") String mobileNo,
             @Param("patientName") String patientName,
+            @Param("patientId") Long patientId,
+
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("resultValidationStatus") String resultValidationStatus,

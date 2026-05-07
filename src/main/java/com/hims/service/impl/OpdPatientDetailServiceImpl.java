@@ -6,9 +6,7 @@ import com.hims.entity.*;
 import com.hims.entity.projection.PrescriptionDetailProjection;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
-import com.hims.projection.OpdPatientDetailsWaitingProjection;
-import com.hims.projection.OpdPreConsultationProjection;
-import com.hims.projection.PatientWaitingListProjection;
+import com.hims.projection.*;
 import com.hims.request.ActiveVisitSearchRequest;
 import com.hims.request.OpdPatientDetailFinalRequest;
 import com.hims.response.*;
@@ -20,9 +18,7 @@ import com.hims.utils.StockFound;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -35,7 +31,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.hims.helperUtil.ConverterUtils.ageCalculator;
-
 import java.util.Optional;
 
 @Service
@@ -252,9 +247,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     Collectors.groupingBy(OpdPatientDetailFinalRequest.Investigation::getInvestigationDate)
             ));
 
-//            if(1==1){
-//                throw new RuntimeException("break program manually");
-//            }
             log.info("Investigation categories found: {}", groupedByCategory.keySet());
 //
 //            investigationId -> subChargeId
@@ -1890,6 +1882,73 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+    @Override
+    public ApiResponse<Page<PriviousHistoryByPatientResponse>> getPriviousHistoryByPatient(
+            Long patientId, Long hospitalId, int page, int size) {
+
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("visitDate").descending());
+            Page<PriviousHistoryByPatientProjectionResponse> projectionPage = visitRepository.getPreviousHistory(patientId, hospitalId,radiologyDepartment, pageable);
+
+            //Projection → DTO
+            Page<PriviousHistoryByPatientResponse> responsePage =
+                    projectionPage.map(p -> {
+                        PriviousHistoryByPatientResponse res = new PriviousHistoryByPatientResponse();
+                        res.setVisitDate(p.getVisitDate());
+                        res.setDoctorName(p.getDoctorName());
+                        res.setDepartment(p.getDepartment());
+                        res.setIcdDiag(p.getIcdDiag());
+                        res.setWorkingDiag(p.getWorkingDiag());
+                        return res;
+                    });
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<PriviousHistoryByPatientResponse>>() {
+            });
+
+        } catch (Exception ex) {
+            log.error("Error fetching getPriviousHistoryByPatient: ",ex);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<Page<PriviousVitalsDetailsByPatientResponse>> getPriviousVitalsDetailsByPatient(Long patientId, Long hospitalId, int page, int size) {
+
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("visitDate").descending());
+            Page<PriviousVitalsDetailsByPatientProjectionResponse> projectionPage = visitRepository.getPriviousVitalsDetailsByPatient(patientId, hospitalId, pageable);
+
+            //Projection → DTO
+            Page<PriviousVitalsDetailsByPatientResponse> responsePage =
+                    projectionPage.map(p -> {
+                        PriviousVitalsDetailsByPatientResponse res = new PriviousVitalsDetailsByPatientResponse();
+                        res.setVisitDate(p.getVisitDate());
+                        res.setBmi(p.getBmi());
+                        res.setRr(p.getRr());
+                        res.setTemperature(p.getTemperature());
+                        res.setHeight(p.getHeight());
+                        res.setWeight(p.getWeight());
+                        res.setSpo2(p.getSpo2());
+                        res.setBpDiastolic(p.getBpDiastolic());
+                        res.setBpSystolic(p.getBpSystolic());
+                        res.setPulse(p.getPulse());
+                        return res;
+                    });
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<PriviousVitalsDetailsByPatientResponse>>() {
+            });
+
+        } catch (Exception ex) {
+            log.error("Error fetching getPriviousHistoryByPatient: ",ex);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
 
     /**
      * Retrieves the currently authenticated user from the security context.
@@ -1954,6 +2013,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         response.setGender(projection.getGender());
         response.setVisitType(projection.getVisitType());
         response.setDepartmentName(projection.getDepartmentName());
+        response.setOpdDate(projection.getOpdDate());
         return response;
     }
 

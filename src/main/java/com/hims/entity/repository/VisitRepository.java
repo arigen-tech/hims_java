@@ -776,6 +776,52 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     );
 
+    @Query("""
+        SELECT 
+            FUNCTION('DATE', v.visitDate) AS visitDate,
+            v.doctorName AS doctorName,
+            v.department.departmentName AS department,
+            opd.icdDiag AS icdDiag,
+            opd.workingDiag AS workingDiag
+
+        FROM Visit v
+        LEFT JOIN OpdPatientDetail opd ON opd.visit.id = v.id
+
+        WHERE v.patient.id = :patientId
+        AND v.hospital.id = :hospitalId
+         AND v.department.id <> :radiologyDepartmentId
+
+        ORDER BY v.visitDate DESC
+    """)
+    Page<PriviousHistoryByPatientProjectionResponse> getPreviousHistory(
+            @Param("patientId") Long patientId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("radiologyDepartmentId") Integer radiologyDepartmentId,
+              Pageable pageable
+    );
+    @Query("""
+        SELECT 
+            FUNCTION('DATE', v.visitDate) AS visitDate,
+           opd.height AS height,
+           opd.weight AS weight,
+           opd.pulse AS pulse,
+           opd.temperature AS temperature,
+           opd.rr AS rr,
+           opd.bmi AS bmi,
+           opd.spo2 AS spo2,
+           opd.bpSystolic AS bpSystolic,
+           opd.bpDiastolic AS bpDiastolic 
+           
+            FROM Visit v
+        LEFT JOIN OpdPatientDetail opd ON opd.visit.id = v.id
+
+        WHERE v.patient.id = :patientId
+        AND v.hospital.id = :hospitalId
+
+        ORDER BY v.visitDate DESC
+    """)
+    Page<PriviousVitalsDetailsByPatientProjectionResponse> getPriviousVitalsDetailsByPatient(Long patientId, Long hospitalId, Pageable pageable);
+
     @Query(value = """
         SELECT 
             v.visit_id AS visitId,

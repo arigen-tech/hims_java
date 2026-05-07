@@ -264,4 +264,10 @@ public class OpdOpthDetails {
 
     @Column(name = "last_updated_by",length = 200)
     private String lastUpdatedBy;
+
+    @Column(name = "le_colour_vision",length = 50)
+    private String leColourVision;
+
+    @Column(name = "re_colour_vision",length = 50)
+    private String reColourVision;
 }

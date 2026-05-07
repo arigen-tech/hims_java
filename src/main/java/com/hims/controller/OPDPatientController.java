@@ -120,10 +120,53 @@ public class OPDPatientController {
             return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
         }
     }
-
+    /**
+     * Fetch ophthalmology examination details for a specific visit.
+     *
+     * @param visitId Unique ID of the visit
+     * @return ApiResponse containing ophthalmology examination details
+     */
     @GetMapping("/getOphthalmologyExaminationDetail")
     public ApiResponse<OphthalmologyExaminationDetailResponse> getOphthalmologyExaminationDetail(@RequestParam Long visitId) {
         return opdOpthDetailsService.getOphthalmologyExaminationDetail(visitId);
     }
+    /**
+     * Fetch previous OPD history of a patient with pagination.
+     *
+     * @param patientId  Unique ID of the patient
+     * @param hospitalId Unique ID of the hospital
+     * @param page       Page number (default = 0)
+     * @param size       Number of records per page (default = 5)
+     * @return ApiResponse containing paginated list of patient history
+     */
+    @GetMapping("/getPriviousHistoryByPatient")
+    public ApiResponse<Page<PriviousHistoryByPatientResponse>> getPriviousHistoryByPatient(
+            @RequestParam Long patientId,
+            @RequestParam Long hospitalId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        return opdPatientDetailService.getPriviousHistoryByPatient(patientId, hospitalId, page, size);
+    }
+    /**
+     * Fetch previous vitals details of a patient with pagination.
+     *
+     * @param patientId  Unique ID of the patient
+     * @param hospitalId Unique ID of the hospital
+     * @param page       Page number for pagination (default = 0 → first page)
+     * @param size       Number of records per page (default = 5)
+     * @return ApiResponse containing paginated list of previous vitals details
+     */
+    @GetMapping("/getPriviousVitalsDetailsByPatient")
+    public ApiResponse<Page<PriviousVitalsDetailsByPatientResponse>> getPriviousVitalsDetailsByPatient(
+            @RequestParam Long patientId,
+            @RequestParam Long hospitalId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        return opdPatientDetailService.getPriviousVitalsDetailsByPatient(patientId, hospitalId, page, size);
+    }
+
+
 
 }

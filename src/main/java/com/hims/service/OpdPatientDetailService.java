@@ -7,12 +7,13 @@ import com.hims.request.OpdPatientDetailFinalRequest;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-
+@Service
 public interface OpdPatientDetailService {
     ApiResponse<OpdPatientVitalResponse> getOpdPatientByVisit(Long visitId);
 
@@ -60,4 +61,10 @@ public interface OpdPatientDetailService {
     ApiResponse<Page<PatientWaitingListResponse>> getWaitingList(Pageable pageable, String patientName, String mobileNumber, Long doctorId, Long sessionId);
 
     ApiResponse<List<PrescriptionDetailResponse>> getPrescriptionDetailsByPatientId(Long patientId);
+
+
+    ApiResponse<Page<PriviousHistoryByPatientResponse>> getPriviousHistoryByPatient(
+            Long patientId, Long hospitalId, int page, int size);
+
+    ApiResponse<Page<PriviousVitalsDetailsByPatientResponse>> getPriviousVitalsDetailsByPatient(Long patientId, Long hospitalId, int page, int size);
 }
