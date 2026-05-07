@@ -65,7 +65,6 @@ public class BillingDetail {
     @Column(name = "created_at")
     private Instant createdAt;
 
-    @NotNull
     @Column(name = "detail_id")//, nullable = false)
     private Integer detailId;
 

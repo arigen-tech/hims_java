@@ -39,6 +39,9 @@ public class MasHospital {
     @Column(name = "lab_billing", nullable = false, length = 1)
     private String labBilling;
 
+    @Column(name = "radio_billing", nullable = false, length = 1)
+    private String radioBilling;
+
 
     @Size(max = 50)
     @Column(name = "address", length = 50)

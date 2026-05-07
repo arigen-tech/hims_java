@@ -123,12 +123,12 @@ public class PatientController {
 
 
 
-    @PostMapping("/patient-details")
-    public ResponseEntity<ApiResponse<OpdPatientDetailResponseDTO>> createOpdPatientDetail(
-            @Valid @RequestBody OpdPatientDetailFinalRequest request) {
-        ApiResponse<OpdPatientDetailResponseDTO> response = opdPatientDetailService.createOpdPatientDetail(request);
-        return ResponseEntity.ok(response);
-    }
+//    @PostMapping("/patient-details")
+//    public ResponseEntity<ApiResponse<OpdPatientDetailResponseDTO>> createOpdPatientDetail(
+//            @Valid @RequestBody OpdPatientDetailFinalRequest request) {
+//        ApiResponse<OpdPatientDetailResponseDTO> response = opdPatientDetailService.createOpdPatientDetail(request);
+//        return ResponseEntity.ok(response);
+//    }
 
 
     @PutMapping("/update-recall-patient")

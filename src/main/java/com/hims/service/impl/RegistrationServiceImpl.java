@@ -912,9 +912,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
         Set<Long> occupiedTokens = new HashSet<>();
         try {
-            occupiedTokens = visitRepository.findOccupiedTokens(
-                            deptId, doctorId, sessionId, startOfDay, endOfDay)
-                    .stream().collect(Collectors.toSet());
+            occupiedTokens = new HashSet<>(visitRepository.findOccupiedTokens(deptId, doctorId, sessionId, startOfDay, endOfDay));
         } catch (Exception e) {
             log.error("Error fetching occupied tokens", e);
         }

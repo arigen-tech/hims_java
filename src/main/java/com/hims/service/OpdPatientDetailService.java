@@ -16,8 +16,6 @@ import java.util.List;
 public interface OpdPatientDetailService {
     ApiResponse<OpdPatientVitalResponse> getOpdPatientByVisit(Long visitId);
 
-    @Transactional
-    ApiResponse<OpdPatientDetailResponseDTO> createOpdPatientDetail(OpdPatientDetailFinalRequest request);
 
     /**
      * Creates OPD patient detail with comprehensive billing structure.
@@ -30,7 +28,11 @@ public interface OpdPatientDetailService {
      * @return ApiResponse containing the created OpdPatientDetailResponseDTO with order and billing IDs
      */
     @Transactional
-    ApiResponse<OpdPatientDetailResponseDTO> createOpdPatientDetailWithBilling(OpdPatientDetailFinalRequest request);
+    ApiResponse<OpdPatientDetailResponseDTO> createOpdPatientDetail(OpdPatientDetailFinalRequest request);
+
+
+//    @Transactional
+//    ApiResponse<OpdPatientDetailResponseDTO> createOpdPatientDetailWithBilling(OpdPatientDetailFinalRequest request);
 
     @Transactional
     ApiResponse<OpdPatientDetail> recallOpdPatientDetail(RecallOpdPatientDetailRequest request);
@@ -55,5 +57,7 @@ public interface OpdPatientDetailService {
     ApiResponse<Page<OpdPreConsultationResponse>> getPendingPreConsultations(Pageable pageable, String patientName, String mobileNumber);
 
 
-    ApiResponse<Page<PatientWaitingListResponse>> getWaitingList(Pageable pageable, String patientName, String mobileNumber);
+    ApiResponse<Page<PatientWaitingListResponse>> getWaitingList(Pageable pageable, String patientName, String mobileNumber, Long doctorId, Long sessionId);
+
+    ApiResponse<List<PrescriptionDetailResponse>> getPrescriptionDetailsByPatientId(Long patientId);
 }

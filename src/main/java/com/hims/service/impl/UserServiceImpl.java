@@ -167,7 +167,7 @@ public class UserServiceImpl implements UserService {
                 .filter(user -> Arrays.stream(user.getRoleId().split(","))
                         .map(String::trim)
                         .map(Long::valueOf)
-                        .anyMatch(roleId -> roleId.equals(roleId)))
+                        .anyMatch(roleId -> roleId.equals(doctorRoleOpt.get().getId())))
                 .map(user -> {
                     UserResponse doctor = new UserResponse();
                     doctor.setUserId(user.getUserId());

@@ -432,7 +432,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     @Query("SELECT v.tokenNo FROM Visit v WHERE " +
             "v.department.id = :departmentId AND " +
-            "v.doctor.userid = :doctorId AND " +
+            "v.doctor.userId = :doctorId AND " +
             "v.session.id = :sessionId AND " +
             "v.visitDate >= :startOfDay AND v.visitDate < :endOfDay AND " +
             "v.visitStatus NOT IN ('c')")
@@ -774,5 +774,114 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("followUpStatus") String followUpStatus,
             @Param("newStatus") String newStatus
 
+    );
+
+    @Query(value = """
+        SELECT 
+            v.visit_id AS visitId,
+            p.patient_id AS patientId,
+            TRIM(CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            )) AS patientName,
+            p.p_age AS patientAge,
+            p.p_mobile_number AS mobileNumber,
+            p.p_dob AS dob,
+            g.gender_name AS gender,
+            d.department_name AS departmentName,
+            v.visit_date AS opdDate,
+            mr.relation_name AS relation,
+            
+            CASE
+                WHEN v.visit_type = 'F' THEN 'Follow Up'
+                WHEN v.visit_type = 'N' THEN 'New'
+                WHEN v.visit_type = 'W' THEN 'Walk In'
+            END AS visitType,
+            v.doctor_id AS doctorId,
+            v.doctor_name AS doctorName,
+            v.token_no AS tokenNo
+
+        FROM visit v
+        LEFT JOIN patient p ON p.patient_id = v.patient_id
+        LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+        LEFT JOIN mas_relation mr ON mr.relation_id = p.p_relation_id
+        LEFT JOIN mas_department d ON d.department_id = v.department_id
+
+        WHERE v.hospital_id = :hospitalId
+        AND v.department_id = :departmentId
+        AND v.pre_consultation = :preConsultation
+        AND v.billing_status = :billingStatus
+        AND v.visit_status = :visitStatus
+
+        AND (
+            :patientName IS NULL OR :patientName = '' OR
+            LOWER(CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            )) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        )
+
+        AND (
+            :mobileNumber IS NULL OR :mobileNumber = '' OR
+            p.p_mobile_number LIKE CONCAT('%', :mobileNumber, '%')
+        )
+
+        AND (
+            :doctorId IS NULL OR v.doctor_id = :doctorId
+        )
+
+        AND (
+            :sessionId IS NULL OR v.session_id = :sessionId
+        )
+
+        ORDER BY v.visit_date ASC, v.start_time ASC
+        """,
+            countQuery = """
+        SELECT COUNT(v.visit_id)
+        FROM visit v
+        LEFT JOIN patient p ON p.patient_id = v.patient_id
+
+        WHERE v.hospital_id = :hospitalId
+        AND v.department_id = :departmentId
+        AND v.pre_consultation = :preConsultation
+        AND v.billing_status = :billingStatus
+        AND v.visit_status = :visitStatus
+
+        AND (
+            :patientName IS NULL OR :patientName = '' OR
+            LOWER(CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            )) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        )
+
+        AND (
+            :mobileNumber IS NULL OR :mobileNumber = '' OR
+            p.p_mobile_number LIKE CONCAT('%', :mobileNumber, '%')
+        )
+
+        AND (
+            :doctorId IS NULL OR v.doctor_id = :doctorId
+        )
+
+        AND (
+            :sessionId IS NULL OR v.session_id = :sessionId
+        )
+        """,
+            nativeQuery = true)
+    Page<PatientWaitingListProjection> findWaitingPatientsByHospitalWithFilters(
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("preConsultation") String preConsultation,
+            @Param("billingStatus") String billingStatus,
+            @Param("visitStatus") String visitStatus,
+            @Param("patientName") String patientName,
+            @Param("mobileNumber") String mobileNumber,
+            @Param("doctorId") Long doctorId,
+            @Param("sessionId") Long sessionId,
+            Pageable pageable
     );
 }
