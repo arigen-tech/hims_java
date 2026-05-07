@@ -202,4 +202,10 @@ public class OpdPatientDetail {
     @Column(name = "referral_remark", length = 500)
     private String referralRemarks;
 
+    @Column(name = "referred_hospital_name")
+    private String referredHospitalName;
+
+    @Column(name = "refer_to")
+    private String referTo;
+
 }
