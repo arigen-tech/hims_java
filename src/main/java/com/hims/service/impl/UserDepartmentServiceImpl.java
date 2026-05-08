@@ -63,6 +63,7 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
         if (userDepartment.getUser() != null) {
             response.setUserId(userDepartment.getUser().getUserId());
             response.setUsername(userDepartment.getUser().getUsername());
+            response.setUserFullName(userDepartment.getUser().getFullName());
         }
         if (userDepartment.getDepartment() != null) {
             response.setDepartmentId(userDepartment.getDepartment().getId());

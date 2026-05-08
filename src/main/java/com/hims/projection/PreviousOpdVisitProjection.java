@@ -2,7 +2,7 @@ package com.hims.projection;
 
 import java.time.LocalDate;
 
-public interface PriviousHistoryByPatientProjectionResponse {
+public interface PreviousOpdVisitProjection {
     LocalDate getVisitDate();
     String getDoctorName();
     String getDepartment();

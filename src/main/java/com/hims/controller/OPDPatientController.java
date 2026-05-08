@@ -139,14 +139,14 @@ public class OPDPatientController {
      * @param size       Number of records per page (default = 5)
      * @return ApiResponse containing paginated list of patient history
      */
-    @GetMapping("/getPriviousHistoryByPatient")
-    public ApiResponse<Page<PriviousHistoryByPatientResponse>> getPriviousHistoryByPatient(
+    @GetMapping("/getPreviousOpdVisitHistory")
+    public ApiResponse<Page<PreviousOpdVisitResponse>> getPreviousOpdVisitHistory(
             @RequestParam Long patientId,
             @RequestParam Long hospitalId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
 
-        return opdPatientDetailService.getPriviousHistoryByPatient(patientId, hospitalId, page, size);
+        return opdPatientDetailService.getPreviousOpdVisit(patientId, hospitalId, page, size);
     }
     /**
      * Fetch previous vitals details of a patient with pagination.
@@ -157,14 +157,14 @@ public class OPDPatientController {
      * @param size       Number of records per page (default = 5)
      * @return ApiResponse containing paginated list of previous vitals details
      */
-    @GetMapping("/getPriviousVitalsDetailsByPatient")
-    public ApiResponse<Page<PriviousVitalsDetailsByPatientResponse>> getPriviousVitalsDetailsByPatient(
+    @GetMapping("/getPriviousOpdVitalsDetailsHistory")
+    public ApiResponse<Page<PriviousOpdVitalsDetailsResponse>> getPriviousOpdVitalsDetailsHistory(
             @RequestParam Long patientId,
             @RequestParam Long hospitalId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
 
-        return opdPatientDetailService.getPriviousVitalsDetailsByPatient(patientId, hospitalId, page, size);
+        return opdPatientDetailService.getPriviousOpdVitalsDetails(patientId, hospitalId, page, size);
     }
 
 

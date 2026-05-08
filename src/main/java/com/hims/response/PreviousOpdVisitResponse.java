@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class PriviousHistoryByPatientResponse {
+public class PreviousOpdVisitResponse {
    private LocalDate visitDate;
    private String doctorName;
    private String department;

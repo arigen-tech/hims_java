@@ -111,6 +111,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     @Value("${app.laboratoryDepartment}")
     private Integer laboratoryDepartment;
+    @Value("${app.opdDepartmentType}")
+    private Long departmentTypeOpd;
+
 
 
 
@@ -1883,17 +1886,17 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
     }
     @Override
-    public ApiResponse<Page<PriviousHistoryByPatientResponse>> getPriviousHistoryByPatient(
+    public ApiResponse<Page<PreviousOpdVisitResponse>> getPreviousOpdVisit(
             Long patientId, Long hospitalId, int page, int size) {
 
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("visitDate").descending());
-            Page<PriviousHistoryByPatientProjectionResponse> projectionPage = visitRepository.getPreviousHistory(patientId, hospitalId,radiologyDepartment, pageable);
+            Page<PreviousOpdVisitProjection> projectionPage = visitRepository.getPreviousOpdVisit(patientId, hospitalId, pageable);
 
             //Projection → DTO
-            Page<PriviousHistoryByPatientResponse> responsePage =
+            Page<PreviousOpdVisitResponse> responsePage =
                     projectionPage.map(p -> {
-                        PriviousHistoryByPatientResponse res = new PriviousHistoryByPatientResponse();
+                        PreviousOpdVisitResponse res = new PreviousOpdVisitResponse();
                         res.setVisitDate(p.getVisitDate());
                         res.setDoctorName(p.getDoctorName());
                         res.setDepartment(p.getDepartment());
@@ -1902,7 +1905,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                         return res;
                     });
 
-            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<PriviousHistoryByPatientResponse>>() {
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<PreviousOpdVisitResponse>>() {
             });
 
         } catch (Exception ex) {
@@ -1915,16 +1918,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     @Override
-    public ApiResponse<Page<PriviousVitalsDetailsByPatientResponse>> getPriviousVitalsDetailsByPatient(Long patientId, Long hospitalId, int page, int size) {
+    public ApiResponse<Page<PriviousOpdVitalsDetailsResponse>> getPriviousOpdVitalsDetails(Long patientId, Long hospitalId, int page, int size) {
 
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("visitDate").descending());
-            Page<PriviousVitalsDetailsByPatientProjectionResponse> projectionPage = visitRepository.getPriviousVitalsDetailsByPatient(patientId, hospitalId, pageable);
+            Page<PriviousOpdVitalsDetailsProjection> projectionPage = visitRepository.getPriviousOpdVitalsDetails(patientId, hospitalId, pageable);
 
             //Projection → DTO
-            Page<PriviousVitalsDetailsByPatientResponse> responsePage =
+            Page<PriviousOpdVitalsDetailsResponse> responsePage =
                     projectionPage.map(p -> {
-                        PriviousVitalsDetailsByPatientResponse res = new PriviousVitalsDetailsByPatientResponse();
+                        PriviousOpdVitalsDetailsResponse res = new PriviousOpdVitalsDetailsResponse();
                         res.setVisitDate(p.getVisitDate());
                         res.setBmi(p.getBmi());
                         res.setRr(p.getRr());
@@ -1938,7 +1941,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                         return res;
                     });
 
-            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<PriviousVitalsDetailsByPatientResponse>>() {
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<PriviousOpdVitalsDetailsResponse>>() {
             });
 
         } catch (Exception ex) {

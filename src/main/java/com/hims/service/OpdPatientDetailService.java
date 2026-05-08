@@ -63,8 +63,10 @@ public interface OpdPatientDetailService {
     ApiResponse<List<PrescriptionDetailResponse>> getPrescriptionDetailsByPatientId(Long patientId);
 
 
-    ApiResponse<Page<PriviousHistoryByPatientResponse>> getPriviousHistoryByPatient(
+    ApiResponse<Page<PreviousOpdVisitResponse>> getPreviousOpdVisit(
             Long patientId, Long hospitalId, int page, int size);
 
-    ApiResponse<Page<PriviousVitalsDetailsByPatientResponse>> getPriviousVitalsDetailsByPatient(Long patientId, Long hospitalId, int page, int size);
+    ApiResponse<Page<PriviousOpdVitalsDetailsResponse>> getPriviousOpdVitalsDetails(Long patientId, Long hospitalId, int page, int size);
+
+
 }
