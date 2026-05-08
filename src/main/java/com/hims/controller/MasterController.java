@@ -1969,7 +1969,12 @@ private BillingTemplateService billingTemplateService;
     public ResponseEntity<?> getAllMasBed(@PathVariable int flag) {
         return ResponseEntity.ok(masBedService.getAll(flag));
     }
+    @GetMapping("/masBedCount/{departmentId}")
+    public ResponseEntity<?> getBedStatusCount(
+            @PathVariable Long departmentId) {
+        return ResponseEntity.ok(masBedService.getBedStatusCount(departmentId));
 
+    }
 
     //    =============================== Mas Medical History =====================================
 

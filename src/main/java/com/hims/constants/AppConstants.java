@@ -163,6 +163,10 @@ public class AppConstants {
     // Opd template
     public static final String TEMPLATE_TYPE_INVESTIGATION = "I";
     public static final String TEMPLATE_TYPE_PRESCRIPTION = "P";
+    // Mas Bed
+    public static final String BED_STATUS_AVAILABLE = "available";
+    public static final String  BED_STATUS_CLEANING_BED= "cleaning";
+    public static final String BED_STATUS_OCCUPIED_BED= "occupied";
 
 
 
