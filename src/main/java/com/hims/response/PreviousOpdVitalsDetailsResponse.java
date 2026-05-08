@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class PriviousOpdVitalsDetailsResponse {
+public class PreviousOpdVitalsDetailsResponse {
     private LocalDate visitDate;
     private String pulse;
     private String height;
