@@ -102,7 +102,10 @@ SELECT
     o.leFoveaMacula AS leFoveaMacula,
     o.leVitreousPosterior AS leVitreousPosterior,
     o.leBloodVessels AS leBloodVessels,
-    o.leRetina AS leRetina
+    o.leRetina AS leRetina,
+    o.leColourVision As   leColourVision,
+     o.reColourVision As   reColourVision
+    
 
 FROM OpdOpthDetails o
 JOIN o.visit v

@@ -40,6 +40,7 @@ public interface LabService {
                                                                                          Long hospitalId,
                                                                                          String mobileNo,
                                                                                          String patientName,
+                                                                                         Long patientId,
                                                                                          LocalDate fromDate,
                                                                                          LocalDate toDate,
                                                                                          int page,

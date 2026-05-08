@@ -113,5 +113,8 @@ public class OpdOpthDetailsRequest {
     private String leVitreousPosterior;
     private String leBloodVessels;
     private String leRetina;
+    private String leColourVision;
+    private String reColourVision;
+
 
 }

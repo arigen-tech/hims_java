@@ -147,6 +147,8 @@ public class OpdOpthDetailsImpl implements OpdOpthDetailsService {
                 entity.setLastUpdateDate(LocalDateTime.now());
                 entity.setCreatedBy(user.getFullName());
                 entity.setLastUpdatedBy(user.getFullName());
+                entity.setReColourVision(req.getReColourVision());
+                entity.setLeColourVision(req.getLeColourVision());
             }else{
                 entity = new OpdOpthDetails();
                 entity.setPatient(patientRepository.getReferenceById(req.getPatientId()));
@@ -244,6 +246,8 @@ public class OpdOpthDetailsImpl implements OpdOpthDetailsService {
                 entity.setLastUpdateDate(LocalDateTime.now());
                 entity.setCreatedBy(user.getFullName());
                 entity.setLastUpdatedBy(user.getFullName());
+                entity.setReColourVision(req.getReColourVision());
+                entity.setLeColourVision(req.getLeColourVision());
 
             }
             repository.save(entity);
@@ -374,6 +378,8 @@ public class OpdOpthDetailsImpl implements OpdOpthDetailsService {
         r.setLeVitreousPosterior(p.getLeVitreousPosterior());
         r.setLeBloodVessels(p.getLeBloodVessels());
         r.setLeRetina(p.getLeRetina());
+        r.setReColourVision(p.getReColourVision());
+        r.setLeColourVision(p.getLeColourVision());
 
         return r;
     }
