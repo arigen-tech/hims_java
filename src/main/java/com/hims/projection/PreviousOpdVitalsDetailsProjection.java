@@ -2,7 +2,7 @@ package com.hims.projection;
 
 import java.time.LocalDate;
 
-public interface PriviousOpdVitalsDetailsProjection {
+public interface PreviousOpdVitalsDetailsProjection {
      LocalDate getVisitDate();
      String getHeight();
      String getPulse();
