@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.security.access.method.P;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -775,6 +774,51 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("newStatus") String newStatus
 
     );
+
+    @Query("""
+        SELECT 
+            FUNCTION('DATE', v.visitDate) AS visitDate,
+            v.doctorName AS doctorName,
+            v.department.departmentName AS department,
+            opd.icdDiag AS icdDiag,
+            opd.workingDiag AS workingDiag
+
+        FROM Visit v
+        INNER JOIN OpdPatientDetail opd ON opd.visit.id = v.id
+
+        WHERE v.patient.id = :patientId
+        AND v.hospital.id = :hospitalId
+       
+
+        ORDER BY v.visitDate DESC
+    """)
+    Page<PreviousOpdVisitProjection> getPreviousOpdVisit(
+            @Param("patientId") Long patientId,
+            @Param("hospitalId") Long hospitalId,
+              Pageable pageable
+    );
+    @Query("""
+        SELECT 
+            FUNCTION('DATE', v.visitDate) AS visitDate,
+           opd.height AS height,
+           opd.weight AS weight,
+           opd.pulse AS pulse,
+           opd.temperature AS temperature,
+           opd.rr AS rr,
+           opd.bmi AS bmi,
+           opd.spo2 AS spo2,
+           opd.bpSystolic AS bpSystolic,
+           opd.bpDiastolic AS bpDiastolic 
+           
+            FROM Visit v
+        INNER JOIN OpdPatientDetail opd ON opd.visit.id = v.id
+
+        WHERE v.patient.id = :patientId
+        AND v.hospital.id = :hospitalId
+
+        ORDER BY v.visitDate DESC
+    """)
+    Page<PriviousOpdVitalsDetailsProjection> getPriviousOpdVitalsDetails(Long patientId, Long hospitalId, Pageable pageable);
 
     @Query(value = """
         SELECT 

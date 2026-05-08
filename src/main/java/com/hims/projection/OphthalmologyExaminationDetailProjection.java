@@ -104,4 +104,6 @@ public interface OphthalmologyExaminationDetailProjection {
     String getLeVitreousPosterior();
     String getLeBloodVessels();
     String getLeRetina();
+    String getLeColourVision();
+     String getReColourVision();
 }
