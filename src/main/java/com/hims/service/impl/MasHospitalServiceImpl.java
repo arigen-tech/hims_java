@@ -122,6 +122,8 @@ public class MasHospitalServiceImpl implements MasHospitalService {
         response.setLongitude(hospital.getLongitude());
         response.setExecutive1Contact(hospital.getExecutive1Contact());
         response.setExecutive2Contact(hospital.getExecutive2Contact());
+        response.setLabStatus(hospital.getLabBilling());
+        response.setRadioStatus(hospital.getRadioBilling());
 
         return response;
     }
@@ -175,6 +177,8 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             }else{
                 hospital.setRegistrationCost(BigDecimal.valueOf(0));
             }
+            hospital.setLabBilling(hospitalRequest.getLabStatus());
+            hospital.setRadioBilling(hospitalRequest.getRadioStatus());
             MasHospital savedHospital = masHospitalRepository.save(hospital);
             return ResponseUtils.createSuccessResponse(convertToResponse(savedHospital), new TypeReference<>() {
             });
@@ -239,7 +243,8 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 }else{
                     existingHospital.setRegistrationCost(BigDecimal.valueOf(0));
                 }
-
+                existingHospital.setLabBilling(hospitalRequest.getLabStatus());
+                existingHospital.setRadioBilling(hospitalRequest.getRadioStatus());
                 MasHospital updatedHospital = masHospitalRepository.save(existingHospital);
                 return ResponseUtils.createSuccessResponse(convertToResponse(updatedHospital), new TypeReference<>() {
                 });

@@ -2,6 +2,7 @@ package com.hims.service;
 
 import com.hims.request.MasBedRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.BedStatusCountResponse;
 import com.hims.response.MasBedResponse;
 import org.springframework.stereotype.Service;
 
@@ -17,4 +18,7 @@ public interface MasBedService {
     ApiResponse<?> getById(Long id);
 
     ApiResponse<?> getAll(int flag);
+
+
+    ApiResponse<?> getBedStatusCount(Long departmentId);
 }

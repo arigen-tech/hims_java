@@ -157,14 +157,14 @@ public class OPDPatientController {
      * @param size       Number of records per page (default = 5)
      * @return ApiResponse containing paginated list of previous vitals details
      */
-    @GetMapping("/getPriviousOpdVitalsDetailsHistory")
-    public ApiResponse<Page<PriviousOpdVitalsDetailsResponse>> getPriviousOpdVitalsDetailsHistory(
+    @GetMapping("/getPreviousOpdVitalsDetailsHistory")
+    public ApiResponse<Page<PreviousOpdVitalsDetailsResponse>> getPreviousOpdVitalsDetailsHistory(
             @RequestParam Long patientId,
             @RequestParam Long hospitalId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
 
-        return opdPatientDetailService.getPriviousOpdVitalsDetails(patientId, hospitalId, page, size);
+        return opdPatientDetailService.getPreviousOpdVitalsDetailsHistory(patientId, hospitalId, page, size);
     }
 
 

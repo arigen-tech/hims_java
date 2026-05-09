@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.hims.helperUtil.ConverterUtils.ageCalculator;
+
 import java.util.Optional;
 
 @Service
@@ -1918,16 +1919,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     @Override
-    public ApiResponse<Page<PriviousOpdVitalsDetailsResponse>> getPriviousOpdVitalsDetails(Long patientId, Long hospitalId, int page, int size) {
+    public ApiResponse<Page<PreviousOpdVitalsDetailsResponse>> getPreviousOpdVitalsDetailsHistory(Long patientId, Long hospitalId, int page, int size) {
 
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("visitDate").descending());
-            Page<PriviousOpdVitalsDetailsProjection> projectionPage = visitRepository.getPriviousOpdVitalsDetails(patientId, hospitalId, pageable);
+            Page<PreviousOpdVitalsDetailsProjection> projectionPage = visitRepository.getPriviousOpdVitalsDetails(patientId, hospitalId, pageable);
 
             //Projection → DTO
-            Page<PriviousOpdVitalsDetailsResponse> responsePage =
+            Page<PreviousOpdVitalsDetailsResponse> responsePage =
                     projectionPage.map(p -> {
-                        PriviousOpdVitalsDetailsResponse res = new PriviousOpdVitalsDetailsResponse();
+                        PreviousOpdVitalsDetailsResponse res = new PreviousOpdVitalsDetailsResponse();
                         res.setVisitDate(p.getVisitDate());
                         res.setBmi(p.getBmi());
                         res.setRr(p.getRr());
@@ -1941,7 +1942,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                         return res;
                     });
 
-            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<PriviousOpdVitalsDetailsResponse>>() {
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<PreviousOpdVitalsDetailsResponse>>() {
             });
 
         } catch (Exception ex) {

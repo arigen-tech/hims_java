@@ -26,4 +26,7 @@ public class MasHospitalRequest {
     private BigDecimal longitude;
     private String executive1Contact;
     private String executive2Contact;
+    private String labStatus;
+    private String radioStatus;
+
 }
