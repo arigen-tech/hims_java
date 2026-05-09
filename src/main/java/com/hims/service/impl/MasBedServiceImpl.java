@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.MasBedRepository;
 import com.hims.entity.repository.MasBedStatusRepo;
 import com.hims.entity.repository.MasBedTypeRepository;
 import com.hims.entity.repository.MasRoomRepo;
+import com.hims.projection.BedStatusCountProjection;
 import com.hims.request.MasBedRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.BedStatusCountResponse;
 import com.hims.response.MasBedResponse;
 import com.hims.service.MasBedService;
 import com.hims.utils.AuthUtil;
@@ -221,6 +224,34 @@ public class MasBedServiceImpl implements MasBedService {
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
+    }
+
+    @Override
+    public ApiResponse<?> getBedStatusCount(Long departmentId) {
+
+        BedStatusCountProjection projection = masBedRepository.getBedStatusCount(departmentId, AppConstants.BED_STATUS_AVAILABLE,AppConstants.BED_STATUS_CLEANING_BED,AppConstants.BED_STATUS_OCCUPIED_BED);
+
+        BedStatusCountResponse response =
+                BedStatusCountResponse.builder().available(projection.getAvailable() != null
+                                        ? projection.getAvailable()
+                                        : 0L
+                        )
+                        .cleaning(
+                                projection.getCleaning() != null
+                                        ? projection.getCleaning()
+                                        : 0L
+                        )
+                        .occupied(
+                                projection.getOccupied() != null
+                                        ? projection.getOccupied()
+                                        : 0L
+                        )
+                        .build();
+
+        return ResponseUtils.createSuccessResponse(
+                response,
+                new TypeReference<BedStatusCountResponse>() {}
+        );
     }
 
     private MasBedResponse mapToResponse(MasBed masBed) {
