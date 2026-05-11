@@ -53,9 +53,9 @@ public class OpdTemplateController {
         return new ResponseEntity<>(opdTempService.getAllTemplateInvestigations(flag), HttpStatus.OK);
     }
 
-    @PostMapping("/create-opdTemplate")
+    @PostMapping("/saveInvestigationTemplate")
     public ResponseEntity<ApiResponse<OpdTemplateResponse>> creatingOpdTemplate (@RequestBody OpdTemplateRequest opdTempReq){
-        return new ResponseEntity<>(opdTempService.createOpdTemplate(opdTempReq), HttpStatus.CREATED);
+        return new ResponseEntity<>(opdTempService.saveInvestigationTemplate(opdTempReq), HttpStatus.CREATED);
     }
 
 

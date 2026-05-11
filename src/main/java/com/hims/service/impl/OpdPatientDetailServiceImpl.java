@@ -167,20 +167,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Request body cannot be null", 400);
         }
-
         log.info("Starting createOpdPatientDetail process...");
         log.info("Request Data: {}", request);
-
         Long deptId = authUtil.getCurrentDepartmentId();
         User useObj = authUtil.getCurrentUser();
-
         if (useObj == null || useObj.getHospital() == null) {
             throw new SDDException("user", 401, "Authenticated user or hospital not found");
         }
 
         // ===================== CREATE OR UPDATE =====================
         OpdPatientDetail opdPatientDetail;
-
         if (request.getOpdPatientDetailId() == null) {
             opdPatientDetail = new OpdPatientDetail();
             log.info("Creating new OpdPatientDetail...");
@@ -225,20 +221,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         // ====================== INVESTIGATION ======================
         if (request.getInvestigation() != null && !request.getInvestigation().isEmpty()) {
-
             if (request.getInvestigation().stream().anyMatch(i -> i == null || i.getInvestigationDate() == null)) {
                 throw new SDDException("investigation", 400, "Investigation date cannot be null");
             }
-
             opdPatientDetail.setLabFlag(request.getLabFlag());
             opdPatientDetail.setRadioFlag(request.getRadioFlag());
 
             String orderNumOPD = createOrderNum();
             Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new SDDException("patient", 404, "Patient not found"));
             Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new SDDException("visit", 404, "Visit not found"));
-
             LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
-
             // Separate investigations by category and date
             Map<Long, Map<LocalDate, List<OpdPatientDetailFinalRequest.Investigation>>> groupedByCategory = request.getInvestigation().stream().collect(Collectors.groupingBy(
                     inv -> {
@@ -252,10 +244,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             ));
 
             log.info("Investigation categories found: {}", groupedByCategory.keySet());
-//
-//            investigationId -> subChargeId
-//            subChargeId -> Department
-//            if Department -> radiology then entry in radioLogy
+
 
         // Process LAB investigations
             if (laboratoryDepartment != null && groupedByCategory.containsKey(Long.valueOf(laboratoryDepartment))) {
@@ -2212,6 +2201,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 .status(projection.getStatus())
                 .batchNo(projection.getBatchNo())
                 .expiryDate(projection.getExpiryDate())
+                .itemName(projection.getItemName())
                 .build();
     }
 }
