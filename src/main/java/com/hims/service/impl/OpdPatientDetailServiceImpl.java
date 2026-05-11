@@ -244,7 +244,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             ));
 
             log.info("Investigation categories found: {}", groupedByCategory.keySet());
-
+//
+//            investigationId -> subChargeId
+//            subChargeId -> Department
+//            if Department -> radiology then entry in radioLogy
 
         // Process LAB investigations
             if (laboratoryDepartment != null && groupedByCategory.containsKey(Long.valueOf(laboratoryDepartment))) {
@@ -1892,7 +1895,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                         res.setDepartment(p.getDepartment());
                         res.setIcdDiag(p.getIcdDiag());
                         res.setWorkingDiag(p.getWorkingDiag());
-                        res.setVisitId(p.getVisitId());
                         return res;
                     });
 
@@ -2182,12 +2184,14 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }, "Error retrieving prescription details: " + e.getMessage(), 500);
         }
     }
+    private PrescriptionDetailResponse mapPrescriptionDetailProjectionToResponse(
+            PrescriptionDetailProjection projection) {
 
-    private PrescriptionDetailResponse mapPrescriptionDetailProjectionToResponse(PrescriptionDetailProjection projection) {
         return PrescriptionDetailResponse.builder()
                 .prescriptionDtId(projection.getPrescriptionDtId())
                 .prescriptionHdId(projection.getPrescriptionHdId())
-                .itemId(projection.getItemId()).itemName("")
+                .drugId(projection.getItemId())
+                .drugName(projection.getItemName())
                 .dosage(projection.getDosage())
                 .frequency(projection.getFrequency())
                 .days(projection.getDays())
@@ -2202,7 +2206,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 .status(projection.getStatus())
                 .batchNo(projection.getBatchNo())
                 .expiryDate(projection.getExpiryDate())
-                .itemName(projection.getItemName())
+                .doctorName(projection.getDoctorName())
+                .departmentName(projection.getDepartmentName())
+                .prescribedDate(projection.getPrescribedDate())
                 .build();
     }
 }

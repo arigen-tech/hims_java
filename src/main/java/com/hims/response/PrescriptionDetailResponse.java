@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Response DTO for prescription detail line items
@@ -22,9 +23,9 @@ public class PrescriptionDetailResponse {
 
     private Long prescriptionHdId;
 
-    private Long itemId;
+    private Long drugId;
 
-    private String itemName;
+    private String drugName;
 
     private String dosage;
 
@@ -53,5 +54,11 @@ public class PrescriptionDetailResponse {
     private String batchNo;
 
     private LocalDate expiryDate;
+
+    private String doctorName;
+
+    private String departmentName;
+
+    private LocalDateTime prescribedDate;
 }
 
