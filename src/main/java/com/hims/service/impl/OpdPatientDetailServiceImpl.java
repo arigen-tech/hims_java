@@ -2192,12 +2192,14 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }, "Error retrieving prescription details: " + e.getMessage(), 500);
         }
     }
+    private PrescriptionDetailResponse mapPrescriptionDetailProjectionToResponse(
+            PrescriptionDetailProjection projection) {
 
-    private PrescriptionDetailResponse mapPrescriptionDetailProjectionToResponse(PrescriptionDetailProjection projection) {
         return PrescriptionDetailResponse.builder()
                 .prescriptionDtId(projection.getPrescriptionDtId())
                 .prescriptionHdId(projection.getPrescriptionHdId())
-                .itemId(projection.getItemId()).itemName("")
+                .drugId(projection.getItemId())
+                .drugName(projection.getItemName())
                 .dosage(projection.getDosage())
                 .frequency(projection.getFrequency())
                 .days(projection.getDays())
@@ -2212,6 +2214,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 .status(projection.getStatus())
                 .batchNo(projection.getBatchNo())
                 .expiryDate(projection.getExpiryDate())
+                .doctorName(projection.getDoctorName())
+                .departmentName(projection.getDepartmentName())
+                .prescribedDate(projection.getPrescribedDate())
                 .build();
     }
 }
