@@ -780,6 +780,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             FUNCTION('DATE', v.visitDate) AS visitDate,
             v.doctorName AS doctorName,
             v.department.departmentName AS department,
+            v.id AS visitId,
             opd.icdDiag AS icdDiag,
             opd.workingDiag AS workingDiag
 

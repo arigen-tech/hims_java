@@ -11,6 +11,7 @@ public class PreviousOpdVisitResponse {
    private String department;
    private String icdDiag;
    private String workingDiag;
+   private Long visitId;
 
 
 }

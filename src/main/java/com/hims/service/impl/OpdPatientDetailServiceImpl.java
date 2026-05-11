@@ -1892,6 +1892,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                         res.setDepartment(p.getDepartment());
                         res.setIcdDiag(p.getIcdDiag());
                         res.setWorkingDiag(p.getWorkingDiag());
+                        res.setVisitId(p.getVisitId());
                         return res;
                     });
 
