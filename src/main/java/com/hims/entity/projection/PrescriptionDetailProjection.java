@@ -2,6 +2,7 @@ package com.hims.entity.projection;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Projection interface for prescription details within 30 days
@@ -14,6 +15,8 @@ public interface PrescriptionDetailProjection {
     Long getPrescriptionHdId();
 
     Long getItemId();
+
+    String  getItemName();
 
     String getDosage();
 
@@ -42,5 +45,11 @@ public interface PrescriptionDetailProjection {
     String getBatchNo();
 
     LocalDate getExpiryDate();
+
+    String getDoctorName();
+
+    String getDepartmentName();
+
+    LocalDateTime getPrescribedDate();
 }
 
