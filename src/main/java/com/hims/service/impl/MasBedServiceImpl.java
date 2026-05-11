@@ -228,30 +228,22 @@ public class MasBedServiceImpl implements MasBedService {
 
     @Override
     public ApiResponse<?> getBedStatusCount(Long departmentId) {
-
+        try {
         BedStatusCountProjection projection = masBedRepository.getBedStatusCount(departmentId, AppConstants.BED_STATUS_AVAILABLE,AppConstants.BED_STATUS_CLEANING_BED,AppConstants.BED_STATUS_OCCUPIED_BED);
 
-        BedStatusCountResponse response =
-                BedStatusCountResponse.builder().available(projection.getAvailable() != null
-                                        ? projection.getAvailable()
-                                        : 0L
-                        )
-                        .cleaning(
-                                projection.getCleaning() != null
-                                        ? projection.getCleaning()
-                                        : 0L
-                        )
-                        .occupied(
-                                projection.getOccupied() != null
-                                        ? projection.getOccupied()
-                                        : 0L
-                        )
+        BedStatusCountResponse response = BedStatusCountResponse.builder()
+                        .available(projection.getAvailable() != null ? projection.getAvailable() : 0L)
+                        .cleaning(projection.getCleaning() != null ? projection.getCleaning() : 0L)
+                        .occupied(projection.getOccupied() != null ? projection.getOccupied() : 0L)
                         .build();
 
-        return ResponseUtils.createSuccessResponse(
-                response,
-                new TypeReference<BedStatusCountResponse>() {}
-        );
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<BedStatusCountResponse>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching bed status count for departmentId : {}", departmentId, e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
     }
 
     private MasBedResponse mapToResponse(MasBed masBed) {
