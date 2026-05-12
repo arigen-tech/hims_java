@@ -224,8 +224,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             if (request.getInvestigation().stream().anyMatch(i -> i == null || i.getInvestigationDate() == null)) {
                 throw new SDDException("investigation", 400, "Investigation date cannot be null");
             }
-            opdPatientDetail.setLabFlag(request.getLabFlag());
-            opdPatientDetail.setRadioFlag(request.getRadioFlag());
 
             String orderNumOPD = createOrderNum();
             Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new SDDException("patient", 404, "Patient not found"));
@@ -253,6 +251,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             if (laboratoryDepartment != null && groupedByCategory.containsKey(Long.valueOf(laboratoryDepartment))) {
                 log.info("Processing LAB investigations");
                 processLabInvestigations(groupedByCategory.get(Long.valueOf(laboratoryDepartment)), patient, visit, useObj, deptId, orderNumOPD, labOrderedStatus);
+                opdPatientDetail.setLabFlag(AppConstants.STATUS_Y.toLowerCase());
+
             } else {
                 log.warn("Laboratory department {} not found in investigation categories. Available: {}",
                         laboratoryDepartment, groupedByCategory.keySet());
@@ -262,6 +262,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             if (radiologyDepartment != null && groupedByCategory.containsKey(Long.valueOf(radiologyDepartment))) {
                 log.info("Processing RADIOLOGY investigations");
                 processRadiologyInvestigations(groupedByCategory.get(Long.valueOf(radiologyDepartment)), patient, visit, useObj);
+                opdPatientDetail.setRadioFlag(request.getRadioFlag());
+
             } else {
                 log.warn("Radiology department {} not found in investigation categories. Available: {}",
                         radiologyDepartment, groupedByCategory.keySet());
@@ -1421,7 +1423,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             List<DgOrderHd> dgOrderHdList = safeList(dgOrderHdRepo.findAllByVisitId(visitObj));
 
-            PatientPrescriptionHd prescHdObj = patientPrescriptionHdRepository.findByPatientId(patientObj.getId());
+            PatientPrescriptionHd prescHdObj = patientPrescriptionHdRepository.findByPatientIdAndDate(patientObj.getId(),visitDate);
 
             List<PatientPrescriptionDt> prescDtList = prescHdObj != null ? safeList(patientPrescriptionDtRepository.findByPrescriptionHdId(prescHdObj.getPrescriptionHdId())) : Collections.emptyList();
 
@@ -1895,6 +1897,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                         res.setDepartment(p.getDepartment());
                         res.setIcdDiag(p.getIcdDiag());
                         res.setWorkingDiag(p.getWorkingDiag());
+                        res.setVisitId(p.getVisitId());
                         return res;
                     });
 
@@ -2209,6 +2212,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 .doctorName(projection.getDoctorName())
                 .departmentName(projection.getDepartmentName())
                 .prescribedDate(projection.getPrescribedDate())
+                .dispUnit(projection.getDispUnit())
                 .build();
     }
 }
