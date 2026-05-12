@@ -929,4 +929,93 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("sessionId") Long sessionId,
             Pageable pageable
     );
-}
+
+
+
+    @Query("""
+    SELECT v.id AS visitId,
+          p.id AS patientId,
+
+       CONCAT(
+            COALESCE(p.patientFn, ''),
+            ' ',
+            COALESCE(p.patientMn, ''),
+            ' ',
+            COALESCE(p.patientLn, '')
+        ) AS patientName,
+
+        p.patientMobileNumber AS mobileNo,
+
+        g.genderName AS gender,
+
+        r.relationName AS relation,
+
+        p.patientAge AS age,
+
+        d.departmentName AS deptName,
+
+        CONCAT(
+            COALESCE(doc.firstName, ''),
+            ' ',
+            COALESCE(doc.middleName, ''),
+            ' ',
+            COALESCE(doc.lastName, '')
+        ) AS doctorName
+
+    FROM Visit v
+
+    LEFT JOIN v.patient p
+    LEFT JOIN p.patientGender g
+    LEFT JOIN p.patientRelation r
+    LEFT JOIN p.patientHospital h
+    LEFT JOIN v.department d
+    LEFT JOIN v.doctor doc
+
+    WHERE
+
+        d.id = :departmentId 
+        AND v.visitStatus=:visitStatus
+
+        AND (
+            :dateFilter = false
+            OR (
+                v.visitDate >= :startDate
+                AND v.visitDate < :endDate
+            )
+        )
+
+        AND (
+            :mobile = ''
+            OR p.patientMobileNumber
+                LIKE CONCAT('%', :mobile, '%')
+        )
+
+        AND (
+            :name = ''
+            OR LOWER(
+                CONCAT(
+                    COALESCE(p.patientFn, ''),
+                    ' ',
+                    COALESCE(p.patientMn, ''),
+                    ' ',
+                    COALESCE(p.patientLn, '')
+                )
+            )
+            LIKE LOWER(CONCAT('%', :name, '%'))
+        )
+
+    ORDER BY v.id DESC
+""")
+    Page<OpdRecallVisitProjection> getOpdRecallVisit(
+
+            @Param("name") String name,
+            @Param("mobile") String mobile,
+            @Param("dateFilter") Boolean dateFilter,
+            @Param("startDate") Instant startDate,
+            @Param("endDate") Instant endDate,
+            @Param("departmentId") Long departmentId,
+            @Param("visitStatus") String visitStatus,
+            Pageable pageable);
+
+    }
+
