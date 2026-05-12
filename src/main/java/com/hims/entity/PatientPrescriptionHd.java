@@ -77,4 +77,9 @@ public class PatientPrescriptionHd {
     @JoinColumn(name = "department_id", insertable = false, updatable = false)
     private MasDepartment department;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "visit_id", insertable = false, updatable = false)
+    private Visit  visit;
+
+
 }

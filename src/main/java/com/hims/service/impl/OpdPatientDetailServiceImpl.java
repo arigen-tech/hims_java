@@ -1948,6 +1948,38 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             );
         }
     }
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<OpdRecallVisitResponse>> getRecallOpdVisit(String name, String mobile, LocalDate visitDate, int page, int size) {
+
+        try {
+        Long departmentId = authUtil.getCurrentDepartmentId();
+        name = name == null ? "" : name.trim();
+        mobile = mobile == null ? "" : mobile.trim();
+
+        boolean dateFilter = visitDate != null;
+
+        Instant startDate = null;
+        Instant endDate = null;
+
+        if (dateFilter) {
+            startDate = visitDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+            endDate = visitDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+        Page<OpdRecallVisitProjection> projectionPage = visitRepository.getOpdRecallVisit(name, mobile, dateFilter, startDate, endDate, departmentId, AppConstants.VISIT_STATUS_CANCELLED.toLowerCase(), pageable);
+
+        Page<OpdRecallVisitResponse> responsePage = projectionPage.map(this::mapToResponse);
+
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching OPD recall visit data : {}", e.getMessage(), e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
 
     /**
      * Retrieves the currently authenticated user from the security context.
@@ -2214,6 +2246,28 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 .prescribedDate(projection.getPrescribedDate())
                 .dispUnit(projection.getDispUnit())
                 .build();
+    }
+    private OpdRecallVisitResponse mapToResponse(OpdRecallVisitProjection projection) {
+
+        OpdRecallVisitResponse response = new OpdRecallVisitResponse();
+
+        response.setVisitId(projection.getVisitId());
+
+        response.setPatientId(projection.getPatientId());
+
+        response.setPatientName(projection.getPatientName());
+
+        response.setMobileNo(projection.getMobileNo());
+
+        response.setGender(projection.getGender());
+
+        response.setAge(projection.getAge());
+
+        response.setDeptName(projection.getDeptName());
+
+        response.setDoctorName(projection.getDoctorName());
+
+        return response;
     }
 }
 
