@@ -11,45 +11,26 @@ import java.time.LocalDateTime;
 public interface PrescriptionDetailProjection {
 
     Long getPrescriptionDtId();
-
     Long getPrescriptionHdId();
-
     Long getItemId();
-
     String  getItemName();
-
     String getDosage();
-
     String getFrequency();
-
     Integer getDays();
-
     BigDecimal getTotal();
-
     BigDecimal getIssuedQty();
-
     String getRoute();
-
     String getInstruction();
-
     BigDecimal getUnitPrice();
-
     BigDecimal getDiscount();
-
     BigDecimal getGstRate();
-
     BigDecimal getLineCost();
-
     String getStatus();
-
     String getBatchNo();
-
     LocalDate getExpiryDate();
-
     String getDoctorName();
-
     String getDepartmentName();
-
     LocalDateTime getPrescribedDate();
+    String getDispUnit();
 }
 

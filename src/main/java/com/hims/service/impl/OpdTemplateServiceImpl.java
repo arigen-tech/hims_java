@@ -134,7 +134,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
 
 
     @Override
-    public ApiResponse<OpdTemplateResponse> createOpdTemplate(OpdTemplateRequest opdTempReq) {
+    public ApiResponse<OpdTemplateResponse> saveInvestigationTemplate(OpdTemplateRequest opdTempReq) {
         try{
             Long depId = authUtil.getCurrentDepartmentId();
             OpdTemplate opdt = new OpdTemplate();

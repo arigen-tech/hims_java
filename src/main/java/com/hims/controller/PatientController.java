@@ -167,18 +167,6 @@ public class PatientController {
 
         return ResponseEntity.ok(response);
     }
-    @GetMapping("/getRecallOpdVisit")
-    public ResponseEntity<ApiResponse<Page<OpdRecallVisitResponse>>> getRecallOpdVisit(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String mobile,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate visitDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
-
-        ApiResponse<Page<OpdRecallVisitResponse>> response = opdPatientDetailService.getRecallOpdVisit(name, mobile, visitDate, page, size);
-        return ResponseEntity.ok(response);
-    }
 
 
     @PutMapping("/changeStatusForClose/{visitId}/{status}")

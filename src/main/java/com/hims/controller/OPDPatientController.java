@@ -13,10 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -168,5 +170,17 @@ public class OPDPatientController {
     }
 
 
+    @GetMapping("/getRecallOpdPatientVisitList")
+    public ResponseEntity<ApiResponse<Page<OpdRecallVisitResponse>>> getRecallOpdVisit(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String mobile,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate visitDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        ApiResponse<Page<OpdRecallVisitResponse>> response = opdPatientDetailService.getRecallOpdVisit(name, mobile, visitDate, page, size);
+        return ResponseEntity.ok(response);
+    }
 
 }
