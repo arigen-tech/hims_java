@@ -176,6 +176,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             throw new SDDException("user", 401, "Authenticated user or hospital not found");
         }
 
+        Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new SDDException("patient", 404, "Patient not found"));
+        Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new SDDException("visit", 404, "Visit not found"));
+
+
         // ===================== CREATE OR UPDATE =====================
         OpdPatientDetail opdPatientDetail;
         if (request.getOpdPatientDetailId() == null) {
@@ -227,8 +231,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }
 
             String orderNumOPD = createOrderNum();
-            Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new SDDException("patient", 404, "Patient not found"));
-            Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new SDDException("visit", 404, "Visit not found"));
             LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
             // Separate investigations by category and date
             Map<Long, Map<LocalDate, List<OpdPatientDetailFinalRequest.Investigation>>> groupedByCategory = request.getInvestigation().stream().collect(Collectors.groupingBy(
@@ -274,7 +276,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         // ======================== TREATMENT ========================
         opdPatientDetail.setTreatmentAdvice(request.getTreatmentAdvice());
         if (request.getTreatment() != null && !request.getTreatment().isEmpty()) {
-            Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new SDDException("patient", 404, "Patient not found"));
 
             PatientPrescriptionHd hd = new PatientPrescriptionHd();
             hd.setHospitalId(useObj.getHospital().getId());
@@ -289,6 +290,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             hd.setTotalGst(BigDecimal.ZERO);
             hd.setTotalDiscount(BigDecimal.ZERO);
             hd.setNetAmount(BigDecimal.ZERO);
+            hd.setVisit(visit);
 
             PatientPrescriptionHd savedHd = patientPrescriptionHdRepository.save(hd);
 
@@ -311,8 +313,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         // ====================== GENERAL DETAILS =====================
         opdPatientDetail.setOpdDate(Instant.now());
-        opdPatientDetail.setPatient(patientRepository.findById(request.getPatientId()).orElseThrow(() -> new SDDException("patient", 404, "Patient not found")));
-        opdPatientDetail.setVisit(visitRepository.findById(request.getVisitId()).orElseThrow(() -> new SDDException("visit", 404, "Visit not found")));
+        opdPatientDetail.setPatient(patient);
+        opdPatientDetail.setVisit(visit);
         opdPatientDetail.setDepartment(departmentRepository.findById(deptId).orElseThrow(() -> new SDDException("department", 404, "Department not found")));
         opdPatientDetail.setHospital(hospitalRepository.findById(useObj.getHospital().getId()).orElseThrow(() -> new SDDException("hospital", 404, "Hospital not found")));
         opdPatientDetail.setDoctor(userRepository.findById(useObj.getUserId()).orElseThrow(() -> new SDDException("doctor", 404, "Doctor not found")));
@@ -433,8 +435,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 //        }
 //
         // ====================== VISIT CLOSE =========================
-        Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new SDDException("visit", 404, "Visit not found"));
-        visit.setVisitStatus(AppConstants.VISIT_STATUS_CLOSED.toLowerCase());
+        visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
         visitRepository.save(visit);
 
         return ResponseUtils.createSuccessResponse(null, new TypeReference<>() {
@@ -2270,7 +2271,7 @@ public ApiResponse<OpdPatientRecallResponce> getRecallVisit(Long visitId) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
 
-        Page<OpdRecallVisitProjection> projectionPage = visitRepository.getOpdRecallVisit(name, mobile, dateFilter, startDate, endDate, departmentId, AppConstants.VISIT_STATUS_CANCELLED.toLowerCase(), pageable);
+        Page<OpdRecallVisitProjection> projectionPage = visitRepository.getOpdRecallVisit(name, mobile, dateFilter, startDate, endDate, departmentId, AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), pageable);
 
         Page<OpdRecallVisitResponse> responsePage = projectionPage.map(this::mapToResponse);
 
