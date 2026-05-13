@@ -26,7 +26,9 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
 
     List<DgOrderHd> findByPaymentStatusInAndOrderStatusIn(List<String> paymentStatuses, List<String> orderStatusFilter);
 
+
     List<DgOrderHd> findAllByVisitId(Visit visit);
+
 
 
 //    @Query("SELECT h FROM DgOrderHd h " +
@@ -157,4 +159,7 @@ AND LOWER(h.orderStatus) IN :orderStatuses
     );
 
 
+
+
+    List<DgOrderHd> findAllByVisitId_Id(Long visitId);
 }

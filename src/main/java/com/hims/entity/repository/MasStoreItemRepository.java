@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -278,4 +279,14 @@ GROUP BY
     );
 
 
+    @Query("""
+    SELECT m
+    FROM MasStoreItem m
+    LEFT JOIN FETCH m.dispUnit
+    LEFT JOIN FETCH m.itemClassId
+    WHERE m.itemId IN :itemIds
+""")
+    List<MasStoreItem> findAllByItemIds(
+            @Param("itemIds") List<Long> itemIds
+    );
 }

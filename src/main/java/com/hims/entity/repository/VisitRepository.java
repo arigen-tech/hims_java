@@ -306,30 +306,45 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     List<Visit> findByVisitStatusAndBillingStatus(String visitStatus, String billingStatus);
 
     List<Visit> findByVisitStatus(String visitStatus);
+    @Query("""
+        SELECT
+            p.id AS patientId,
+            v.id AS visitId,
 
-    @Query(value = """
-                SELECT v.* FROM visit v
-                JOIN patient p ON p.patient_id = v.patient_id
-                WHERE v.visit_status = 'c'
-                  AND (
-                        CAST(:visitDate AS DATE) IS NULL
-                        OR DATE(v.visit_date) = CAST(:visitDate AS DATE)
-                  )
-                  AND (
-                        :mobile = '' 
-                        OR p.p_mobile_number = :mobile
-                  )
-                  AND (
-                        :name = '' 
-                        OR LOWER(p.p_fn) LIKE '%' || LOWER(:name) || '%'
-                        OR LOWER(p.p_mn) LIKE '%' || LOWER(:name) || '%'
-                        OR LOWER(p.p_ln) LIKE '%' || LOWER(:name) || '%'
-                  )
-            """, nativeQuery = true)
-    List<Visit> searchRecallVisits(
-            @Param("visitDate") LocalDate visitDate,
-            @Param("mobile") String mobile,
-            @Param("name") String name
+            p.patientFn AS patientFn,
+            p.patientMn AS patientMn,
+            p.patientLn AS patientLn,
+
+            p.patientMobileNumber AS patientMobileNumber,
+            p.patientDob AS patientDob,
+            p.patientAge AS patientAge,
+
+            g.genderName AS genderName,
+            r.relationName AS relationName,
+
+            d.id AS departmentId,
+            d.departmentName AS departmentName,
+
+            u.userId AS doctorId,
+            u.firstName AS doctorFirstName,
+            u.middleName AS doctorMiddleName,
+            u.lastName AS doctorLastName,
+
+            h.id AS hospitalId
+
+        FROM Visit v
+
+        LEFT JOIN v.patient p
+        LEFT JOIN p.patientGender g
+        LEFT JOIN p.patientRelation r
+        LEFT JOIN v.department d
+        LEFT JOIN v.doctor u
+        LEFT JOIN p.patientHospital h
+
+        WHERE v.id = :visitId
+    """)
+    RecallPatientProjection getRecallBasicDetails(
+            @Param("visitId") Long visitId
     );
 
     List<Visit> findByBillingStatusIn(List<String> billingStatus);
