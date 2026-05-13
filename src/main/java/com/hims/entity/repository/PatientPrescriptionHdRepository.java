@@ -10,12 +10,14 @@ import java.util.Optional;
 
 public interface PatientPrescriptionHdRepository extends JpaRepository<PatientPrescriptionHd, Long> {
     PatientPrescriptionHd findByPatientId(Long id);
-    @Query("SELECT p FROM PatientPrescriptionHd p " +
-            "WHERE p.patientId = :patientId " +
-            "AND DATE(p.prescriptionDate) = :date")
-    PatientPrescriptionHd findByPatientIdAndDate(
-            @Param("patientId") Long patientId,
-            @Param("date") LocalDate date);
+    @Query("""
+       SELECT p
+       FROM PatientPrescriptionHd p
+       WHERE p.visit.id = :visitId
+      
+       """)
+    PatientPrescriptionHd findByPatientIdAndVisitId(
+            @Param("visitId") Long visitId);
 
     Optional<PatientPrescriptionHd> findLatestByPatientId(Long patientId);
 }
