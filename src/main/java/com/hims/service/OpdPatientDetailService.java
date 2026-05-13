@@ -42,7 +42,7 @@ public interface OpdPatientDetailService {
 
     ApiResponse<List<OpdPatientDetailsWaitingresponce>> getActiveVisitsWithFilters(ActiveVisitSearchRequest req);
 
-    ApiResponse<List<OpdPatientRecallResponce>> getRecallVisit(String name, String mobile, LocalDate visitDate);
+    ApiResponse<OpdPatientRecallResponce> getRecallVisit(Long visitId);
 
     ApiResponse<String> updateVisitStatus(Long visitId, String status);
 

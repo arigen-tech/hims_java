@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 public interface OpdPatientDetailRepository extends JpaRepository<OpdPatientDetail, Long> {
-    OpdPatientDetail findByVisitId(Long id);
 
     OpdPatientDetail findTopByPatientOrderByOpdPatientDetailsIdDesc(Patient patient);
 
@@ -28,4 +27,8 @@ public interface OpdPatientDetailRepository extends JpaRepository<OpdPatientDeta
     LIMIT 1
 """, nativeQuery = true)
     PatientVitalsProjection findLatestVitals(Long patientId);
+
+    OpdPatientDetail findByVisit_Id(Long visitId);
+
+    OpdPatientDetail findByVisitId(Long visitId);
 }

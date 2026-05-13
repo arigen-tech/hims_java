@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.DgOrderDt;
 import com.hims.entity.RadOrderDt;
+import com.hims.entity.RadOrderHd;
 import com.hims.projection.RadiologyBillingProjection;
 import com.hims.projection.RadiologyProjection;
 import io.netty.handler.codec.http2.Http2Connection;
@@ -197,4 +198,5 @@ where hd.hospital.id = :hospitalId
             Pageable pageable
     );
 
+    List<RadOrderDt> findByRadOrderhd(RadOrderHd hdObj);
 }

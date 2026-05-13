@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.*;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hims.helperUtil.ConverterUtils.ageCalculator;
@@ -230,7 +231,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }
 
             String orderNumOPD = createOrderNum();
-                        LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
+            LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
             // Separate investigations by category and date
             Map<Long, Map<LocalDate, List<OpdPatientDetailFinalRequest.Investigation>>> groupedByCategory = request.getInvestigation().stream().collect(Collectors.groupingBy(
                     inv -> {
@@ -1393,186 +1394,434 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
 
 //    Recall Api
+//
+//    @Override
+//    public ApiResponse<OpdPatientRecallResponce> getRecallVisit(Long visitId) {
+//
+//        Visit visitObj = visitRepository.searchRecallVisits(visitId);
+//        Patient patientObj = visitObj.getPatient();
+//        User docObj = visitObj.getDoctor();
+//        MasDepartment deptObj = visitObj.getDepartment();
+//        MasGender genderObj = patientObj.getPatientGender();
+//        MasRelation relationObj = patientObj.getPatientRelation();
+//
+//        OpdPatientDetail opdPatientObj = opdPatientDetailRepository.findByVisitId(visitObj.getId());
+//
+//        List<DgOrderHd> dgOrderHdList = safeList(dgOrderHdRepo.findAllByVisitId(visitObj));
+//
+//        PatientPrescriptionHd prescHdObj = patientPrescriptionHdRepository.findByPatientIdAndVisitId(patientObj.getId(),visitId);
+//
+//        List<PatientPrescriptionDt> prescDtList = prescHdObj != null ? safeList(patientPrescriptionDtRepository
+//                        .findByPrescriptionHdId(prescHdObj.getPrescriptionHdId()))
+//                        : Collections.emptyList();
+//
+//        OpdPatientRecallResponce response = new OpdPatientRecallResponce();
+//
+//        // ---------------- BASIC INFO ----------------
+//        response.setPatientId(patientObj.getId());
+//        response.setVisitId(visitObj.getId());
+//
+//        response.setPatientName(
+//                buildFullName(
+//                        patientObj.getPatientFn(),
+//                        patientObj.getPatientMn(),
+//                        patientObj.getPatientLn()
+//                )
+//        );
+//
+//        response.setMobileNo(patientObj.getPatientMobileNumber());
+//
+//        response.setGender(
+//                genderObj != null ? genderObj.getGenderName() : null
+//        );
+//
+//        response.setRelation(
+//                relationObj != null ? relationObj.getRelationName() : null
+//        );
+//
+//        response.setDob(patientObj.getPatientDob());
+//        response.setAge(patientObj.getPatientAge());
+//
+//        response.setDeptId(
+//                deptObj != null ? deptObj.getId() : null
+//        );
+//
+//        response.setDeptName(
+//                deptObj != null ? deptObj.getDepartmentName() : null
+//        );
+//
+//        response.setDocterId(
+//                docObj != null ? docObj.getUserId() : null
+//        );
+//
+//        if (docObj != null) {
+//            response.setDocterName(
+//                    buildFullName(
+//                            docObj.getFirstName(),
+//                            docObj.getMiddleName(),
+//                            docObj.getLastName()
+//                    )
+//            );
+//        }
+//
+//        response.setHospitalId(
+//                patientObj.getPatientHospital() != null
+//                        ? patientObj.getPatientHospital().getId()
+//                        : null
+//        );
+//
+//        // ---------------- OPD DETAILS ----------------
+//        if (opdPatientObj != null) {
+//            mapOpdDetails(response, opdPatientObj);
+//            response.setTreatmentAdvice(opdPatientObj.getTreatmentAdvice());
+//        }
+//
+//        // ---------------- DG ORDER ----------------
+//        response.setDgOrderHdList(buildDgOrderHdList(dgOrderHdList));
+//
+//        // ---------------- PRESCRIPTION HD ----------------
+//        if (prescHdObj != null) {
+//
+//            OpdPatientRecallResponce.NewDPatientPrescriptionHd hd =
+//                    new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
+//
+//            hd.setPrescriptionHdId(prescHdObj.getPrescriptionHdId());
+//            hd.setStatus(prescHdObj.getStatus());
+//            hd.setPrescriptionDate(prescHdObj.getPrescriptionDate());
+//
+//            response.setPatientPrescriptionHd(hd);
+//        }
+//
+//        // ---------------- PRESCRIPTION DT ----------------
+//        List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newDtList =
+//                new ArrayList<>();
+//
+//        Long hospitalId =
+//                authUtil.getCurrentUser() != null
+//                        && authUtil.getCurrentUser().getHospital() != null
+//                        ? authUtil.getCurrentUser().getHospital().getId()
+//                        : null;
+//
+//        for (PatientPrescriptionDt dt : prescDtList) {
+//
+//            if (dt == null) continue;
+//
+//            OpdPatientRecallResponce.NewDPatientPrescriptionDt newDt =
+//                    new OpdPatientRecallResponce.NewDPatientPrescriptionDt();
+//
+//            newDt.setPrescriptionDtId(dt.getPrescriptionDtId());
+//            newDt.setPrescriptionHdId(dt.getPrescriptionHdId());
+//            newDt.setStatus(dt.getStatus());
+//            newDt.setDosage(dt.getDosage());
+//            newDt.setFrequency(dt.getFrequency());
+//            newDt.setDays(dt.getDays());
+//            newDt.setTotal(dt.getTotal());
+//            newDt.setInstraction(dt.getInstruction());
+//            newDt.setItemId(dt.getItemId());
+//            newDt.setFrequencyId(dt.getFrequency());
+//
+//            Optional<MasStoreItem> itemOpt =
+//                    masStoreItemRepository.findById(dt.getItemId());
+//
+//            itemOpt.ifPresent(item -> {
+//
+//                newDt.setItemName(item.getNomenclature());
+//                newDt.setAdispQty(item.getAdispQty());
+//
+//                if (item.getDispUnit() != null) {
+//                    newDt.setDispUnit(item.getDispUnit().getUnitName());
+//                    newDt.setDepUnit(item.getDispUnit().getUnitName());
+//                }
+//
+//                if (item.getItemClassId() != null) {
+//                    newDt.setItemClassId(
+//                            item.getItemClassId().getItemClassId()
+//                    );
+//                }
+//            });
+//
+//            Long stocks = 0L;
+//
+//            if (hospitalId != null && dt.getItemId() != null) {
+//
+//                Long stockVal = stockFound.getAvailableStocks(
+//                        hospitalId,
+//                        deptIdStore,
+//                        dt.getItemId(),
+//                        hospDefinedDays
+//                );
+//
+//                stocks = stockVal != null ? stockVal : 0L;
+//            }
+//
+//            newDt.setStocks(stocks);
+//
+//            newDtList.add(newDt);
+//        }
+//
+//        response.setPatientPrescriptionDts(newDtList);
+//
+//        // ---------------- FOLLOW UP / REFERRAL / ADMISSION ----------------
+//        if (opdPatientObj != null) {
+//
+//            response.setFollowUpFlag(opdPatientObj.getFollowUpFlag());
+//
+//            if (isYes(opdPatientObj.getFollowUpFlag())) {
+//                response.setFollowUpDays(opdPatientObj.getFollowUpDays());
+//                response.setFollowUpDate(opdPatientObj.getFollowUpDate());
+//            }
+//
+//            response.setReferralFlag(opdPatientObj.getReferralFlag());
+//
+//            if (isYes(opdPatientObj.getReferralFlag())) {
+//                response.setReferralRemarks(opdPatientObj.getReferralRemarks());
+//                response.setReferralDate(opdPatientObj.getReferralDate());
+//            }
+//
+//            response.setAdmissionFlag(opdPatientObj.getAdmissionFlag());
+//
+//            if (isYes(opdPatientObj.getAdmissionFlag())) {
+//
+//                response.setAdmissionRemarks(
+//                        opdPatientObj.getAdmissionRemarks()
+//                );
+//
+//                response.setAdmissionAdvisedDate(
+//                        opdPatientObj.getAdmissionAdvisedDate()
+//                );
+//
+//                response.setAdmissionPriority(
+//                        opdPatientObj.getAdmissionPriority()
+//                );
+//
+//                if (opdPatientObj.getAdmissionCareLevel() != null) {
+//
+//                    response.setAdmissionCareLevel(
+//                            opdPatientObj.getAdmissionCareLevel().getCareId()
+//                    );
+//
+//                    response.setAdmissionCareLevelName(
+//                            opdPatientObj.getAdmissionCareLevel()
+//                                    .getCareLevelName()
+//                    );
+//                }
+//
+//                if (opdPatientObj.getAdmissionWardCategory() != null) {
+//
+//                    response.setAdmissionWardCategory(
+//                            opdPatientObj.getAdmissionWardCategory().getId()
+//                    );
+//
+//                    response.setAdmissionWardCategoryName(
+//                            opdPatientObj.getAdmissionWardCategory()
+//                                    .getCategoryName()
+//                    );
+//                }
+//
+//                if (opdPatientObj.getAdmissionWard() != null) {
+//
+//                    response.setAdmissionWard(
+//                            opdPatientObj.getAdmissionWard().getId()
+//                    );
+//
+//                    response.setAdmissionWardName(
+//                            opdPatientObj.getAdmissionWard()
+//                                    .getDepartmentName()
+//                    );
+//                }
+//
+//                response.setVacantBed(0);
+//                response.setOccupiedBed(0);
+//            }
+//        }
+//
+//        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+//    }
+@Override
+@Transactional(readOnly = true)
+public ApiResponse<OpdPatientRecallResponce> getRecallVisit(Long visitId) {
+    try {
 
-    @Override
-    public ApiResponse<List<OpdPatientRecallResponce>> getRecallVisit(String name, String mobile, LocalDate visitDate) {
+    OpdPatientRecallResponce response = new OpdPatientRecallResponce();
+    RecallPatientProjection basicData = visitRepository.getRecallBasicDetails(visitId);
 
-        if (visitDate == null && isEmpty(mobile) && isEmpty(name)) {
-            visitDate = LocalDate.now();
-        }
+    mapBasicDetails(response, basicData);
 
-        mobile = safeString(mobile);
-        name = safeString(name);
+    OpdPatientDetail opdPatientObj = opdPatientDetailRepository.findByVisit_Id(visitId);
 
-        List<Visit> recallVisit = safeList(visitRepository.searchRecallVisits(visitDate, mobile, name));
+    List<DgOrderHd> dgOrderHdList = safeList(dgOrderHdRepo.findAllByVisitId_Id(visitId));
 
-        List<OpdPatientRecallResponce> responseList = new ArrayList<>();
+    List<RadOrderHd> orderHdList = safeList(radOrderHdRepository.findAllByVisit_Id(visitId));
 
-        for (Visit visitObj : recallVisit) {
+    PatientPrescriptionHd prescriptionHdObj = patientPrescriptionHdRepository.findByPatientIdAndVisitId( visitId);
 
-            if (visitObj == null || visitObj.getPatient() == null) {
-                continue;
-            }
+    List<PatientPrescriptionDt> prescDtList = prescriptionHdObj != null ? safeList(patientPrescriptionDtRepository.findByPrescriptionHdId(
+            prescriptionHdObj.getPrescriptionHdId())) : Collections.emptyList();
 
-            Patient patientObj = visitObj.getPatient();
-            User docObj = visitObj.getDoctor();
-            MasDepartment deptObj = visitObj.getDepartment();
-            MasGender genderObj = patientObj.getPatientGender();
-            MasRelation relationObj = patientObj.getPatientRelation();
+    // ================= ITEM IDS =================
+    List<Long> itemIds = prescDtList.stream()
+            .filter(Objects::nonNull)
+            .map(PatientPrescriptionDt::getItemId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
 
-            OpdPatientDetail opdPatientObj = opdPatientDetailRepository.findByVisitId(visitObj.getId());
+    // ================= BULK FETCH ITEMS =================
+    Map<Long, MasStoreItem> itemMap = itemIds.isEmpty() ? Collections.emptyMap() : masStoreItemRepository.findAllByItemIds(itemIds)
+                    .stream()
+                    .collect(Collectors.toMap(
+                            MasStoreItem::getItemId,
+                            Function.identity()
+                    ));
+    // ================= OPD DETAILS =================
+    if (opdPatientObj != null) {
 
-            List<DgOrderHd> dgOrderHdList = safeList(dgOrderHdRepo.findAllByVisitId(visitObj));
-
-            PatientPrescriptionHd prescHdObj = patientPrescriptionHdRepository.findByPatientIdAndDate(patientObj.getId(),visitDate);
-
-            List<PatientPrescriptionDt> prescDtList = prescHdObj != null ? safeList(patientPrescriptionDtRepository.findByPrescriptionHdId(prescHdObj.getPrescriptionHdId())) : Collections.emptyList();
-
-            OpdPatientRecallResponce response = new OpdPatientRecallResponce();
-
-            // ---------------- BASIC INFO ----------------
-            response.setPatientId(patientObj.getId());
-            response.setVisitId(visitObj.getId());
-            response.setPatientName(buildFullName(patientObj.getPatientFn(), patientObj.getPatientMn(), patientObj.getPatientLn()));
-            response.setMobileNo(patientObj.getPatientMobileNumber());
-            response.setGender(genderObj != null ? genderObj.getGenderName() : null);
-            response.setRelation(relationObj != null ? relationObj.getRelationName() : null);
-            response.setDob(patientObj.getPatientDob());
-            response.setAge(patientObj.getPatientAge());
-            response.setDeptId(deptObj != null ? deptObj.getId() : null);
-            response.setDeptName(deptObj != null ? deptObj.getDepartmentName() : null);
-            response.setDocterId(docObj != null ? docObj.getUserId() : null);
-
-            if (docObj != null) {
-                response.setDocterName(buildFullName(docObj.getFirstName(), docObj.getMiddleName(), docObj.getLastName()));
-            }
-
-            response.setHospitalId(patientObj.getPatientHospital() != null ? patientObj.getPatientHospital().getId() : null);
-
-            // ---------------- OPD DETAILS ----------------
-            if (opdPatientObj != null) {
-                mapOpdDetails(response, opdPatientObj);
-                response.setTreatmentAdvice(opdPatientObj.getTreatmentAdvice());
-            }
-
-            // ---------------- DG ORDER ----------------
-            response.setDgOrderHdList(buildDgOrderHdList(dgOrderHdList));
-
-            // ---------------- PRESCRIPTION HD ----------------
-            if (prescHdObj != null) {
-                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd = new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
-
-                hd.setPrescriptionHdId(prescHdObj.getPrescriptionHdId());
-                hd.setStatus(prescHdObj.getStatus());
-                hd.setPrescriptionDate(prescHdObj.getPrescriptionDate());
-
-                response.setPatientPrescriptionHd(hd);
-            }
-
-            // ---------------- PRESCRIPTION DT ----------------
-            List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newDtList = new ArrayList<>();
-
-            Long hospitalId = authUtil.getCurrentUser() != null && authUtil.getCurrentUser().getHospital() != null ? authUtil.getCurrentUser().getHospital().getId() : null;
-
-            for (PatientPrescriptionDt dt : prescDtList) {
-
-                if (dt == null) continue;
-
-                OpdPatientRecallResponce.NewDPatientPrescriptionDt newDt = new OpdPatientRecallResponce.NewDPatientPrescriptionDt();
-
-                newDt.setPrescriptionDtId(dt.getPrescriptionDtId());
-                newDt.setPrescriptionHdId(dt.getPrescriptionHdId());
-                newDt.setStatus(dt.getStatus());
-                newDt.setDosage(dt.getDosage());
-                newDt.setFrequency(dt.getFrequency());
-                newDt.setDays(dt.getDays());
-                newDt.setTotal(dt.getTotal());
-                newDt.setInstraction(dt.getInstruction());
-                newDt.setItemId(dt.getItemId());
-                newDt.setFrequencyId(dt.getFrequency());
-
-                Optional<MasStoreItem> itemOpt = masStoreItemRepository.findById(dt.getItemId());
-
-                itemOpt.ifPresent(item -> {
-                    newDt.setItemName(item.getNomenclature());
-                    newDt.setAdispQty(item.getAdispQty());
-
-                    if (item.getDispUnit() != null) {
-                        newDt.setDispUnit(item.getDispUnit().getUnitName());
-                        newDt.setDepUnit(item.getDispUnit().getUnitName());
-                    }
-
-                    if (item.getItemClassId() != null) {
-                        newDt.setItemClassId(item.getItemClassId().getItemClassId());
-                    }
-                });
-
-                Long stocks = 0L;
-
-                if (hospitalId != null && dt.getItemId() != null) {
-                    Long stockVal = stockFound.getAvailableStocks(hospitalId, deptIdStore, dt.getItemId(), hospDefinedDays);
-                    stocks = stockVal != null ? stockVal : 0L;
-                }
-
-                newDt.setStocks(stocks);
-
-                newDtList.add(newDt);
-            }
-
-            response.setPatientPrescriptionDts(newDtList);
-
-            // ---------------- FOLLOW UP / REFERRAL / ADMISSION ----------------
-            if (opdPatientObj != null) {
-
-                // Follow up
-                response.setFollowUpFlag(opdPatientObj.getFollowUpFlag());
-                if (isYes(opdPatientObj.getFollowUpFlag())) {
-                    response.setFollowUpDays(opdPatientObj.getFollowUpDays());
-                    response.setFollowUpDate(opdPatientObj.getFollowUpDate());
-                }
-
-                // Referral
-                response.setReferralFlag(opdPatientObj.getReferralFlag());
-                if (isYes(opdPatientObj.getReferralFlag())) {
-                    response.setReferralRemarks(opdPatientObj.getReferralRemarks());
-                    response.setReferralDate(opdPatientObj.getReferralDate());
-                }
-
-                // Admission
-                response.setAdmissionFlag(opdPatientObj.getAdmissionFlag());
-                if (isYes(opdPatientObj.getAdmissionFlag())) {
-
-                    response.setAdmissionRemarks(opdPatientObj.getAdmissionRemarks());
-                    response.setAdmissionAdvisedDate(opdPatientObj.getAdmissionAdvisedDate());
-                    response.setAdmissionPriority(opdPatientObj.getAdmissionPriority());
-
-                    if (opdPatientObj.getAdmissionCareLevel() != null) {
-                        response.setAdmissionCareLevel(opdPatientObj.getAdmissionCareLevel().getCareId());
-                        response.setAdmissionCareLevelName(opdPatientObj.getAdmissionCareLevel().getCareLevelName());
-                    }
-
-                    if (opdPatientObj.getAdmissionWardCategory() != null) {
-                        response.setAdmissionWardCategory(opdPatientObj.getAdmissionWardCategory().getId());
-                        response.setAdmissionWardCategoryName(opdPatientObj.getAdmissionWardCategory().getCategoryName());
-                    }
-
-                    if (opdPatientObj.getAdmissionWard() != null) {
-                        response.setAdmissionWard(opdPatientObj.getAdmissionWard().getId());
-                        response.setAdmissionWardName(opdPatientObj.getAdmissionWard().getDepartmentName());
-                    }
-
-                    response.setVacantBed(0);
-                    response.setOccupiedBed(0);
-                }
-            }
-
-            responseList.add(response);
-        }
-
-        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
-        });
+        mapOpdDetails(response, opdPatientObj);
+        response.setTreatmentAdvice(opdPatientObj.getTreatmentAdvice());
     }
 
+    // ================= DG / RADIO =================
+    response.setLabOrderHds(buildDgOrderHdList(dgOrderHdList));
+
+    response.setRadOrderHds(buildRadOrderHdList(orderHdList));
+
+    // ================= PRESCRIPTION HD =================
+    if (prescriptionHdObj != null) {
+
+        OpdPatientRecallResponce.NewDPatientPrescriptionHd hd = new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
+
+        hd.setPrescriptionHdId(prescriptionHdObj.getPrescriptionHdId());
+
+        hd.setStatus(prescriptionHdObj.getStatus());
+
+        hd.setPrescriptionDate(prescriptionHdObj.getPrescriptionDate());
+
+        response.setPatientPrescriptionHd(hd);
+    }
+
+    // ================= PRESCRIPTION DT =================
+    List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newDtList = new ArrayList<>();
+
+    Long hospitalId = authUtil.getCurrentUser() != null && authUtil.getCurrentUser().getHospital() != null
+                    ? authUtil.getCurrentUser()
+                    .getHospital()
+                    .getId()
+                    : null;
+
+    for (PatientPrescriptionDt dt : prescDtList) {
+
+        if (dt == null) continue;
+
+        OpdPatientRecallResponce.NewDPatientPrescriptionDt newDt = new OpdPatientRecallResponce.NewDPatientPrescriptionDt();
+        newDt.setPrescriptionDtId(dt.getPrescriptionDtId());
+        newDt.setPrescriptionHdId(dt.getPrescriptionHdId());
+        newDt.setStatus(dt.getStatus());
+        newDt.setDosage(dt.getDosage());
+        newDt.setFrequency(dt.getFrequency());
+        newDt.setDays(dt.getDays());
+        newDt.setTotal(dt.getTotal());
+        newDt.setInstraction(dt.getInstruction());
+        newDt.setItemId(dt.getItemId());
+        newDt.setFrequencyId(dt.getFrequency());
+
+        // ================= ITEM DETAILS =================
+        MasStoreItem item = itemMap.get(dt.getItemId());
+        if (item != null) {
+            newDt.setItemName(item.getNomenclature());
+            newDt.setAdispQty(item.getAdispQty());
+
+            if (item.getDispUnit() != null) {
+                newDt.setDispUnit(item.getDispUnit().getUnitName());
+                newDt.setDepUnit(item.getDispUnit().getUnitName());
+            }
+            if (item.getItemClassId() != null) {
+                newDt.setItemClassId(item.getItemClassId().getItemClassId());
+            }
+        }
+
+        // ================= STOCK =================
+        Long stocks = 0L;
+        if (hospitalId != null && dt.getItemId() != null) {
+            Long stockVal = stockFound.getAvailableStocks(
+                            hospitalId,
+                            deptIdStore,
+                            dt.getItemId(),
+                            hospDefinedDays
+                    );
+
+            stocks = stockVal != null ? stockVal : 0L;
+        }
+
+        newDt.setStocks(stocks);
+        newDtList.add(newDt);
+    }
+
+    response.setPatientPrescriptionDts(newDtList);
+
+    // ================= FOLLOW UP =================
+    if (opdPatientObj != null) {
+        response.setFollowUpFlag(opdPatientObj.getFollowUpFlag());
+        if (isYes(opdPatientObj.getFollowUpFlag())) {
+            response.setFollowUpDays(opdPatientObj.getFollowUpDays());
+            response.setFollowUpDate(opdPatientObj.getFollowUpDate());
+        }
+
+        // ================= REFERRAL =================
+        response.setReferralFlag(opdPatientObj.getReferralFlag());
+
+        if (isYes(opdPatientObj.getReferralFlag())) {
+            response.setReferralRemarks(opdPatientObj.getReferralRemarks());
+            response.setReferralDate(opdPatientObj.getReferralDate());
+        }
+
+        // ================= ADMISSION =================
+        response.setAdmissionFlag(opdPatientObj.getAdmissionFlag());
+        if (isYes(opdPatientObj.getAdmissionFlag())) {
+
+            response.setAdmissionRemarks(opdPatientObj.getAdmissionRemarks());
+            response.setAdmissionAdvisedDate(opdPatientObj.getAdmissionAdvisedDate());
+            response.setAdmissionPriority(opdPatientObj.getAdmissionPriority());
+
+            if (opdPatientObj.getAdmissionCareLevel() != null) {
+                response.setAdmissionCareLevel(opdPatientObj.getAdmissionCareLevel().getCareId());
+                response.setAdmissionCareLevelName(opdPatientObj.getAdmissionCareLevel().getCareLevelName());
+            }
+
+            if (opdPatientObj.getAdmissionWardCategory() != null) {
+                response.setAdmissionWardCategory(opdPatientObj.getAdmissionWardCategory().getId());
+                response.setAdmissionWardCategoryName(opdPatientObj.getAdmissionWardCategory().getCategoryName());
+            }
+
+            if (opdPatientObj.getAdmissionWard() != null) {
+                response.setAdmissionWard(opdPatientObj.getAdmissionWard().getId());
+                response.setAdmissionWardName(opdPatientObj.getAdmissionWard().getDepartmentName());
+            }
+        }
+    }
+    return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    } catch (Exception ex) {
+        log.error("Error while fetching data : ", ex);
+        return ResponseUtils.createFailureResponse( null,AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+}
+    private void mapBasicDetails(OpdPatientRecallResponce response, RecallPatientProjection data) {
+        if (data == null) {
+            return;
+        }
+        response.setPatientId(data.getPatientId());
+        response.setVisitId(data.getVisitId());
+        response.setPatientName(buildFullName(data.getPatientFn(), data.getPatientMn(), data.getPatientLn()));
+        response.setMobileNo(data.getPatientMobileNumber());
+        response.setGender(data.getGenderName());
+        response.setRelation(data.getRelationName());
+        response.setDob(data.getPatientDob());
+        response.setAge(data.getPatientAge());
+        response.setDeptId(data.getDepartmentId());
+        response.setDeptName(data.getDepartmentName());
+        response.setDocterId(data.getDoctorId());
+        response.setDocterName(buildFullName(data.getDoctorFirstName(), data.getDoctorMiddleName(), data.getDoctorLastName()));
+        response.setHospitalId(data.getHospitalId());
+    }
 
     private boolean isEmpty(String v) {
         return v == null || v.trim().isEmpty();
@@ -1682,17 +1931,17 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         response.setRadioFlag(opd.getRadioFlag());
     }
 
-    private List<OpdPatientRecallResponce.NewDgOrderHd> buildDgOrderHdList(List<DgOrderHd> hdList) {
+    private List<OpdPatientRecallResponce.LabOrderHd> buildDgOrderHdList(List<DgOrderHd> hdList) {
 
-        List<OpdPatientRecallResponce.NewDgOrderHd> newHdList = new ArrayList<>();
+        List<OpdPatientRecallResponce.LabOrderHd> newHdList = new ArrayList<>();
 
         for (DgOrderHd hdObj : safeList(hdList)) {
 
             if (hdObj == null) continue;
 
-            OpdPatientRecallResponce.NewDgOrderHd hd = new OpdPatientRecallResponce.NewDgOrderHd();
+            OpdPatientRecallResponce.LabOrderHd hd = new OpdPatientRecallResponce.LabOrderHd();
 
-            hd.setDgOrderHdId(hdObj.getId());
+            hd.setOrderHdId(hdObj.getId());
             hd.setOrderDate(hdObj.getOrderDate());
             hd.setOrderNo(hdObj.getOrderNo());
             hd.setOrderStatus(hdObj.getOrderStatus());
@@ -1702,15 +1951,15 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             List<DgOrderDt> dtList = safeList(dgOrderDtRepo.findByOrderhdId(hdObj));
 
-            List<OpdPatientRecallResponce.NewDgOrderDt> newDtList = new ArrayList<>();
+            List<OpdPatientRecallResponce.LabOrderDt> newDtList = new ArrayList<>();
 
             for (DgOrderDt dt : dtList) {
 
                 if (dt == null) continue;
 
-                OpdPatientRecallResponce.NewDgOrderDt nd = new OpdPatientRecallResponce.NewDgOrderDt();
+                OpdPatientRecallResponce.LabOrderDt nd = new OpdPatientRecallResponce.LabOrderDt();
 
-                nd.setDgOrderDtId(dt.getId());
+                nd.setOrderDtId(dt.getId());
                 nd.setOrderQty(dt.getOrderQty());
                 nd.setOrderStatus(dt.getOrderStatus());
                 nd.setAppointmentDate(dt.getAppointmentDate());
@@ -1731,12 +1980,64 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 newDtList.add(nd);
             }
 
-            hd.setDgOrderDts(newDtList);
+            hd.setLabOrderDts(newDtList);
             newHdList.add(hd);
         }
 
         return newHdList;
     }
+
+    private List<OpdPatientRecallResponce.RadOrderHd> buildRadOrderHdList(List<RadOrderHd> hdList) {
+
+        List<OpdPatientRecallResponce.RadOrderHd> newHdList = new ArrayList<>();
+
+        for (RadOrderHd hdObj : safeList(hdList)) {
+
+            if (hdObj == null) continue;
+
+            OpdPatientRecallResponce.RadOrderHd hd = new OpdPatientRecallResponce.RadOrderHd();
+
+            hd.setOrderHdId(Math.toIntExact(hdObj.getId()));
+            hd.setOrderDate(hdObj.getOrderDate());
+
+            hd.setPaymentStatus(hdObj.getPaymentStatus());
+            hd.setAppointmentDate(hdObj.getAppointmentDate());
+
+            List<RadOrderDt> dtList = safeList(radOrderDtRepository.findByRadOrderhd(hdObj));
+
+            List<OpdPatientRecallResponce.RadOrderDt> newDtList = new ArrayList<>();
+
+            for (RadOrderDt dt : dtList) {
+                if (dt == null) continue;
+                OpdPatientRecallResponce.RadOrderDt nd = new OpdPatientRecallResponce.RadOrderDt();
+                nd.setOrderDtId(Math.toIntExact(dt.getId()));
+
+                nd.setOrderStatus(dt.getOrderStatus());
+                nd.setAppointmentDate(dt.getAppointmentDate());
+                nd.setBillingStatus(dt.getBillingStatus());
+
+                // Investigation
+                if (dt.getInvestigation()!= null) {
+                    nd.setInvestigationId(dt.getInvestigation().getInvestigationId());
+                    nd.setInvestigationName(dt.getInvestigation().getInvestigationName());
+                }
+
+                // Package
+                nd.setPackageId(dt.getPackageId() != null ? dt.getPackageId().getPackId() : null);
+
+                // Billing
+                nd.setBillingHd(dt.getBillingHd() != null ? dt.getBillingHd().getBillingHdId() : null);
+
+                newDtList.add(nd);
+            }
+
+            hd.setRadOrderDts(newDtList);
+            newHdList.add(hd);
+        }
+
+        return newHdList;
+    }
+
 
 
     //    update status

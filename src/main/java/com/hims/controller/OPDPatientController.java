@@ -182,5 +182,14 @@ public class OPDPatientController {
         ApiResponse<Page<OpdRecallVisitResponse>> response = opdPatientDetailService.getRecallOpdVisit(name, mobile, visitDate, page, size);
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/recallPatientDetailsByVisit")
+    public ResponseEntity<ApiResponse<OpdPatientRecallResponce>> getRecallVisits(
+            @RequestParam Long visitId) {
+        log.info("Received request for recall visit details. visitId={}", visitId);
+        ApiResponse<OpdPatientRecallResponce> response = opdPatientDetailService.getRecallVisit(visitId);
+        log.info("Successfully fetched recall visit details. visitId={}", visitId);
+        return ResponseEntity.ok(response);
+    }
+
 
 }
