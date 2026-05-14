@@ -313,6 +313,8 @@ private MasSurgeryPricingService masSurgeryPricingService;
 private MasAdmissionCategoryService masAdmissionCategoryService;
 @Autowired
 private BillingTemplateService billingTemplateService;
+@Autowired
+private OpdHolidayService opdHolidayService;
 
 
 
@@ -4652,11 +4654,69 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
             @PathVariable int flag) {
         return ResponseEntity.ok(masInsuranceService.getAllMasInsurance(flag));
     }
+    @GetMapping("masInsurance/getById/{id}")
+    public ResponseEntity<ApiResponse<MasInsuranceResponse>> getByIdInsurance(@PathVariable Long id) {
+        return ResponseEntity.ok(masInsuranceService.getByIdInsurance(id));
+    }
+
+    @PostMapping("masInsurance/create")
+    public ResponseEntity<ApiResponse<MasInsuranceResponse>> createInsurance(@RequestBody @Valid MasInsuranceRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(masInsuranceService.createInsurance(request));
+    }
+
+    @PutMapping("masInsurance/update/{id}")
+    public ResponseEntity<ApiResponse<MasInsuranceResponse>> updateInsurance(@PathVariable Long id, @RequestBody @Valid MasInsuranceRequest request) {
+
+        return ResponseEntity.ok(masInsuranceService.updateInsurance(id, request));
+    }
+
+    @PutMapping("masInsurance/status/{id}")
+    public ResponseEntity<ApiResponse<MasInsuranceResponse>> changeStatusInsurance(@PathVariable Long id, @RequestParam String status) {
+
+        return ResponseEntity.ok(masInsuranceService.changeStatusInsurance(id, status));
+    }
     //======================================= Mas Tpa ====================================================
     @GetMapping("masTpa/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasTpaResponse>>> getAllMasTpa(
             @PathVariable int flag) {
         return ResponseEntity.ok(masTpaService.getAllMasTpa(flag));
+    }
+    @GetMapping("masTpa/getById/{id}")
+    public ResponseEntity<ApiResponse<MasTpaResponse>> getByIdTpa(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                masTpaService.getByIdTpa(id)
+        );
+    }
+
+    @PostMapping("masTpa/create")
+    public ResponseEntity<ApiResponse<MasTpaResponse>> createTpa(
+            @RequestBody @Valid MasTpaRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masTpaService.createTpa(request));
+    }
+
+    @PutMapping("masTpa/update/{id}")
+    public ResponseEntity<ApiResponse<MasTpaResponse>> updateTpa(
+            @PathVariable Long id,
+            @RequestBody @Valid MasTpaRequest request) {
+
+        return ResponseEntity.ok(
+                masTpaService.updateTpa(id, request)
+        );
+    }
+
+    @PutMapping("masTpa/status/{id}")
+    public ResponseEntity<ApiResponse<MasTpaResponse>> changeStatusTpa(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(
+                masTpaService.changeStatusTpa(id, status)
+        );
     }
     //======================================= Mas Tpa ====================================================
     @GetMapping("masCorporate/getAll/{flag}")
@@ -4881,6 +4941,41 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
             @RequestParam(defaultValue = "5") int size
     ) {
         return ResponseEntity.ok(masStoreItemService.getStoreItems(keyword, page, size));
+    }
+
+    //======================================= Opd Holiday ==================================
+
+    @GetMapping("opdHoliday/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<OpdHolidayMasterResponse>>> getAllHoliday(@PathVariable int flag) {
+        return ResponseEntity.ok(opdHolidayService.getAllHoliday(flag));
+    }
+
+    @GetMapping("opdHoliday/getById/{id}")
+    public ResponseEntity<ApiResponse<OpdHolidayMasterResponse>> getByIdHoliday(@PathVariable Long id) {
+        return ResponseEntity.ok(opdHolidayService.getHolidayById(id));
+    }
+
+    @PostMapping("opdHoliday/create")
+    public ResponseEntity<ApiResponse<OpdHolidayMasterResponse>> createHoliday(
+            @RequestBody @Valid OpdHolidayMasterRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(opdHolidayService.createHoliday(request));
+    }
+
+    @PutMapping("opdHoliday/update/{id}")
+    public ResponseEntity<ApiResponse<OpdHolidayMasterResponse>> updateHoliday(
+            @PathVariable Long id,
+            @RequestBody @Valid OpdHolidayMasterRequest request) {
+
+        return ResponseEntity.ok(opdHolidayService.updateHoliday(id, request));
+    }
+
+    @PutMapping("opdHoliday/status/{id}")
+    public ResponseEntity<ApiResponse<OpdHolidayMasterResponse>> changeStatusHoliday(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(opdHolidayService.changeStatus(id, status));
     }
 
 

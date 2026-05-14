@@ -11,6 +11,8 @@ public class MasTpaResponse {
     private String tpaCode;
     private String contactPerson;
     private String contactNo;
+    private String email;
+    private String address;
 
     private LocalDateTime lastChgDate;
     private String status;
