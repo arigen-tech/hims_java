@@ -11,6 +11,8 @@ public class MasCorporateResponse {
     private String corporateCode;
     private String contactPerson;
     private String contactNo;
+    private String address;
+    private String email;
     private String creditAllowed;
     private Integer creditDays;
     private LocalDateTime lastChgDate;
