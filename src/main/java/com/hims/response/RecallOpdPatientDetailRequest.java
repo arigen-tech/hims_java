@@ -22,30 +22,25 @@ public class RecallOpdPatientDetailRequest {
     private String bmi;
     private String rr;
     private String spo2;
-
     private String patientSymptoms;
     private String clinicalExamination;
     private String pastHistory;
     private String familyHistory;
-
     private String mlcCase;
     private String workingDiagnosis;
     private String icdDiagnosis;   // Comma-separated values: "J06.9,Mh.01,srg,sdsf"
-
     private List<IcdDiagnosis> icdObj;
     private List<TreatmentRequest> treatments;
     private String treatmentAdvice;
     private List<InvestigationRequest> investigations;
     private String labFlag;
     private String radioFlag;
-//    private List<ProcedureCare> procedureCare;
+//  private List<ProcedureCare> procedureCare;
     private String doctorRemarks;
     private List<Long>removeIcdIds;
-    private List<Long>removeprocedureCareIds;
+    private List<Long>removeProcedureCareIds;
     private List<Long> removedTreatmentIds;
     private List<Integer> removedInvestigationIds;
-
-
     private String admissionFlag;
     private Instant admissionAdvisedDate;
     private String admissionRemarks;
@@ -59,8 +54,6 @@ public class RecallOpdPatientDetailRequest {
     private String followUpFlag;
     private Instant followUpDate;
     private Long followUpDays;
-
-
     private Long opdPatientId;
     private Long patientId;
     private Long visitId;
@@ -95,6 +88,7 @@ public class RecallOpdPatientDetailRequest {
         private Long investigationId;
         private String templateSource;
     }
+
 
     @Getter
     @Setter
