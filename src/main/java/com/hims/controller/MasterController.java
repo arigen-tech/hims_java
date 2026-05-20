@@ -4656,51 +4656,75 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
             @PathVariable int flag) {
         return ResponseEntity.ok(masInsuranceService.getAllMasInsurance(flag));
     }
+    @GetMapping("masInsurance/getById/{id}")
+    public ResponseEntity<ApiResponse<MasInsuranceResponse>> getByIdInsurance(@PathVariable Long id) {
+        return ResponseEntity.ok(masInsuranceService.getByIdInsurance(id));
+    }
+
+    @PostMapping("masInsurance/create")
+    public ResponseEntity<ApiResponse<MasInsuranceResponse>> createInsurance(@RequestBody @Valid MasInsuranceRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(masInsuranceService.createInsurance(request));
+    }
+
+    @PutMapping("masInsurance/update/{id}")
+    public ResponseEntity<ApiResponse<MasInsuranceResponse>> updateInsurance(@PathVariable Long id, @RequestBody @Valid MasInsuranceRequest request) {
+
+        return ResponseEntity.ok(masInsuranceService.updateInsurance(id, request));
+    }
+
+    @PutMapping("masInsurance/status/{id}")
+    public ResponseEntity<ApiResponse<MasInsuranceResponse>> changeStatusInsurance(@PathVariable Long id, @RequestParam String status) {
+
+        return ResponseEntity.ok(masInsuranceService.changeStatusInsurance(id, status));
+    }
     //======================================= Mas Tpa ====================================================
     @GetMapping("masTpa/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasTpaResponse>>> getAllMasTpa(
             @PathVariable int flag) {
         return ResponseEntity.ok(masTpaService.getAllMasTpa(flag));
     }
+    @GetMapping("masTpa/getById/{id}")
+    public ResponseEntity<ApiResponse<MasTpaResponse>> getByIdTpa(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                masTpaService.getByIdTpa(id)
+        );
+    }
+
+    @PostMapping("masTpa/create")
+    public ResponseEntity<ApiResponse<MasTpaResponse>> createTpa(
+            @RequestBody @Valid MasTpaRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masTpaService.createTpa(request));
+    }
+
+    @PutMapping("masTpa/update/{id}")
+    public ResponseEntity<ApiResponse<MasTpaResponse>> updateTpa(
+            @PathVariable Long id,
+            @RequestBody @Valid MasTpaRequest request) {
+
+        return ResponseEntity.ok(
+                masTpaService.updateTpa(id, request)
+        );
+    }
+
+    @PutMapping("masTpa/status/{id}")
+    public ResponseEntity<ApiResponse<MasTpaResponse>> changeStatusTpa(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(
+                masTpaService.changeStatusTpa(id, status)
+        );
+    }
     //======================================= Mas Tpa ====================================================
     @GetMapping("masCorporate/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasCorporateResponse>>> getAllMasCorporate(
             @PathVariable int flag) {
         return ResponseEntity.ok(masCorporateService.getAllMasCorporate(flag));
-    }
-    @GetMapping("masCorporate/getById/{id}")
-    public ResponseEntity<ApiResponse<MasCorporateResponse>> getByIdCorporate(
-            @PathVariable Long id) {
-
-        return ResponseEntity.ok(masCorporateService.getByIdCorporate(id));
-    }
-
-    @PostMapping("masCorporate/create")
-    public ResponseEntity<ApiResponse<MasCorporateResponse>> createCorporate(
-            @RequestBody @Valid MasCorporateRequest request) {
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(masCorporateService.createCorporate(request));
-    }
-
-    @PutMapping("masCorporate/update/{id}")
-    public ResponseEntity<ApiResponse<MasCorporateResponse>> updateCorporate(
-            @PathVariable Long id,
-            @RequestBody @Valid MasCorporateRequest request) {
-
-        return ResponseEntity.ok(
-                masCorporateService.updateCorporate(id, request)
-        );
-    }
-
-    @PutMapping("masCorporate/status/{id}")
-    public ResponseEntity<ApiResponse<MasCorporateResponse>> changeStatusCorporate(
-            @PathVariable Long id,
-            @RequestParam String status) {
-
-        return ResponseEntity.ok(
-                masCorporateService.changeStatusCorporate(id, status)
-        );
     }
 
     //======================================= Mas Procedure Pricing====================================================
@@ -4984,7 +5008,6 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
                 .body(insuranceTpaMappingService.createInsuranceTpaMapping(request));
     }
 
-
     @PutMapping("insuranceTpaMapping/update/{id}")
     public ResponseEntity<ApiResponse<InsuranceTpaMappingResponse>>
     updateInsuranceTpaMapping(
@@ -5006,8 +5029,6 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
                 insuranceTpaMappingService.changeStatusInsuranceTpaMapping(id, status)
         );
     }
-
-
 
 
 }
