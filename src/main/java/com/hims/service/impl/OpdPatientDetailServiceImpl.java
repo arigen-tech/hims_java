@@ -95,6 +95,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final PatientPrescriptionDtRepository prescriptionDtRepository;
 
     private final MasSubChargeCodeRepository subChargeCodeRepository;
+    private final MasHospitalRepository masHospitalRepository;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -455,274 +456,391 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return subChargeCode.getMasDepartment().getId();
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
-    public ApiResponse<OpdPatientDetail> recallOpdPatientDetail(RecallOpdPatientDetailRequest request) {
+    public ApiResponse<String> recallOpdPatientDetail(RecallOpdPatientDetailRequest request) {
+        log.info("==== START recallOpdPatientDetail ====");
+        try {
 
-        // ===================== BASIC VALIDATION =====================
-        if (request == null) {
-            throw new IllegalArgumentException("Request cannot be null");
-        }
+            // ===================== BASIC VALIDATION =====================
 
-        Objects.requireNonNull(request.getOpdPatientId(), "OPD Patient ID is required");
-        Objects.requireNonNull(request.getPatientId(), "Patient ID is required");
-        Objects.requireNonNull(request.getVisitId(), "Visit ID is required");
-        Objects.requireNonNull(request.getDepartmentId(), "Department ID is required");
-        Objects.requireNonNull(request.getHospitalId(), "Hospital ID is required");
-
-        User useObj = authUtil.getCurrentUser();
-        if (useObj == null || useObj.getHospital() == null) {
-            throw new RuntimeException("Authenticated user or hospital not found");
-        }
-
-        // ===================== FETCH OPD =====================
-        OpdPatientDetail opdObj = opdPatientDetailRepository.findById(request.getOpdPatientId()).orElseThrow(() -> new RuntimeException("OPD record not found: " + request.getOpdPatientId()));
-
-        // ===================== UPDATE VITALS =====================
-        opdObj.setHeight(request.getHeight());
-        opdObj.setWeight(request.getWeight());
-        opdObj.setTemperature(request.getTemperature());
-        opdObj.setBpDiastolic(request.getDiastolicBP());
-        opdObj.setBpSystolic(request.getSystolicBP());
-        opdObj.setPulse(request.getPulse());
-        opdObj.setBmi(request.getBmi());
-        opdObj.setRr(request.getRr());
-        opdObj.setSpo2(request.getSpo2());
-        opdObj.setPatientSignsSymptoms(request.getPatientSymptoms());
-        opdObj.setClinicalExamination(request.getClinicalExamination());
-        opdObj.setPastMedicalHistory(request.getPastHistory());
-        opdObj.setFamilyHistory(request.getFamilyHistory());
-        opdObj.setMlcFlag(request.getMlcCase());
-        opdObj.setWorkingDiag(request.getWorkingDiagnosis());
-        opdObj.setIcdDiag(request.getIcdDiagnosis());
-        opdObj.setFinalMedicalAdvice(request.getDoctorRemarks());
-
-        // ===================== ADMISSION =====================
-        if (isYes(request.getAdmissionFlag())) {
-
-            opdObj.setAdmissionFlag("y");
-
-            if (request.getAdmissionCareLevel() != null) {
-                masCareLevelRepository.findById(request.getAdmissionCareLevel()).ifPresent(opdObj::setAdmissionCareLevel);
+            if (request == null) {
+                throw new IllegalArgumentException("Request cannot be null");
             }
 
-            if (request.getAdmissionWardCategory() != null) {
-                masWardCategoryRepository.findById(request.getAdmissionWardCategory()).ifPresent(opdObj::setAdmissionWardCategory);
+            Objects.requireNonNull(request.getOpdPatientId(), "OPD Patient ID is required");
+            Objects.requireNonNull(request.getPatientId(), "Patient ID is required");
+            Objects.requireNonNull(request.getVisitId(), "Visit ID is required");
+            Objects.requireNonNull(request.getDepartmentId(), "Department ID is required");
+            Objects.requireNonNull(request.getHospitalId(), "Hospital ID is required");
+
+            User useObj = authUtil.getCurrentUser();
+            if (useObj == null || useObj.getHospital() == null) {
+                throw new RuntimeException("Authenticated user or hospital not found");
             }
 
-            if (request.getAdmissionWard() != null) {
-                masDepartmentRepository.findById(request.getAdmissionWard()).ifPresent(opdObj::setAdmissionWard);
-            }
+            // ===================== FETCH OPD =====================
 
-            opdObj.setAdmissionAdvisedDate(request.getAdmissionAdvisedDate());
-            opdObj.setAdmissionRemarks(request.getAdmissionRemarks());
-            opdObj.setAdmissionPriority(request.getAdmissionPriority());
+            OpdPatientDetail opdObj = opdPatientDetailRepository.findById(request.getOpdPatientId()).orElseThrow(() -> new RuntimeException("OPD record not found: " + request.getOpdPatientId()));
 
-        } else {
-            opdObj.setAdmissionFlag("n");
+            log.info("Fetched OPD record successfully");
 
-            opdObj.setAdmissionCareLevel(null);
-            opdObj.setAdmissionWardCategory(null);
-            opdObj.setAdmissionWard(null);
-            opdObj.setAdmissionAdvisedDate(null);
-            opdObj.setAdmissionRemarks(null);
-            opdObj.setAdmissionPriority(null);
-        }
+            // ===================== UPDATE VITALS =====================
 
+            opdObj.setHeight(request.getHeight());
+            opdObj.setWeight(request.getWeight());
+            opdObj.setTemperature(request.getTemperature());
+            opdObj.setBpDiastolic(request.getDiastolicBP());
+            opdObj.setBpSystolic(request.getSystolicBP());
+            opdObj.setPulse(request.getPulse());
+            opdObj.setBmi(request.getBmi());
+            opdObj.setRr(request.getRr());
+            opdObj.setSpo2(request.getSpo2());
+            opdObj.setPatientSignsSymptoms(request.getPatientSymptoms());
+            opdObj.setClinicalExamination(request.getClinicalExamination());
+            opdObj.setPastMedicalHistory(request.getPastHistory());
+            opdObj.setFamilyHistory(request.getFamilyHistory());
+            opdObj.setMlcFlag(request.getMlcCase());
+            opdObj.setWorkingDiag(request.getWorkingDiagnosis());
+            opdObj.setIcdDiag(request.getIcdDiagnosis());
+            opdObj.setFinalMedicalAdvice(request.getDoctorRemarks());
 
-        // ===================== FOLLOW UP =====================
-        if (isYes(request.getFollowUpFlag())) {
+            OpdPatientDetail saved = opdPatientDetailRepository.save(opdObj);
 
-            opdObj.setFollowUpFlag("y");
-            opdObj.setFollowUpDays(request.getFollowUpDays());
-            opdObj.setFollowUpDate(request.getFollowUpDate());
+            // ===================== ICD =====================
 
-        } else {
-            opdObj.setFollowUpFlag("n");
-            opdObj.setFollowUpDays(null);
-            opdObj.setFollowUpDate(null);
-        }
+            if (request.getIcdObj() != null) {
 
+                for (RecallOpdPatientDetailRequest.IcdDiagnosis icd : request.getIcdObj()) {
 
-        // ===================== Rrferral =====================
+                    if (icd == null) continue;
 
-        if (isYes(request.getReferralFlag())) {
-
-            opdObj.setReferralFlag("y");
-            opdObj.setReferralRemarks(request.getReferralRemarks());
-            opdObj.setReferralDate(request.getReferralDate());
-
-        } else {
-            opdObj.setReferralFlag("n");
-            opdObj.setReferralRemarks(null);
-            opdObj.setReferralDate(null);
-        }
-
-
-        OpdPatientDetail saved = opdPatientDetailRepository.save(opdObj);
-
-        // ===================== INVESTIGATIONS =====================
-        opdObj.setLabFlag(request.getLabFlag());
-        opdObj.setRadioFlag(request.getRadioFlag());
-        List<RecallOpdPatientDetailRequest.InvestigationRequest> invList = request.getInvestigations();
-
-        if (invList != null && !invList.isEmpty()) {
-
-            String orderNumOPD = createOrderNum();
-
-            Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new RuntimeException("Patient not found"));
-
-            Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new RuntimeException("Visit not found"));
-
-            Map<LocalDate, DgOrderHd> existingHdByDate = new HashMap<>();
-
-            List<DgOrderHd> existingHdList = dgOrderHdRepo.findAllByVisitId(visit);
-            if (existingHdList != null) {
-                for (DgOrderHd hd : existingHdList) {
-                    if (hd != null && hd.getAppointmentDate() != null) {
-                        existingHdByDate.put(hd.getAppointmentDate(), hd);
+                    if (icd.getId() == null) {
+                        DischargeIcdCode newIcd = new DischargeIcdCode();
+                        newIcd.setIcdId(icd.getIcdId());
+                        newIcd.setOpdPatientDetailsId(saved.getOpdPatientDetailsId());
+                        newIcd.setVisitId(request.getVisitId());
+                        newIcd.setAddEditById(useObj.getUserId());
+                        newIcd.setAddEditDate(LocalDate.now());
+                        newIcd.setAddEditTime(LocalTime.now().toString());
+                        dischargeIcdCodeRepository.save(newIcd);
+                    } else {
+                        DischargeIcdCode existing = dischargeIcdCodeRepository.findById(icd.getId()).orElseThrow(() -> new RuntimeException("ICD not found"));
+                        existing.setIcdId(icd.getIcdId());
+                        existing.setAddEditById(useObj.getUserId());
+                        existing.setAddEditDate(LocalDate.now());
+                        existing.setAddEditTime(LocalTime.now().toString());
+                        dischargeIcdCodeRepository.save(existing);
                     }
                 }
             }
 
-            Map<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> grouped = invList.stream().filter(Objects::nonNull).filter(i -> i.getId() == null).filter(i -> i.getDate() != null).collect(Collectors.groupingBy(RecallOpdPatientDetailRequest.InvestigationRequest::getDate));
+            // ===================== INVESTIGATIONS =====================
 
-            for (Map.Entry<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> entry : grouped.entrySet()) {
+            opdObj.setLabFlag(request.getLabFlag());
 
-                DgOrderHd dgOrderHd = existingHdByDate.computeIfAbsent(entry.getKey(), date -> {
-                    DgOrderHd hd = new DgOrderHd();
-                    hd.setOrderDate(LocalDate.now());
-                    hd.setAppointmentDate(date);
-                    hd.setOrderNo(orderNumOPD);
-                    hd.setOrderStatus("n");
-                    hd.setCollectionStatus("n");
-                    hd.setPaymentStatus("n");
-                    hd.setSource("OPD PATIENT");
-                    hd.setDiscountId(1);
-                    hd.setPatientId(patient);
-                    hd.setDepartmentId(request.getDepartmentId());
-                    hd.setHospitalId(request.getHospitalId());
-                    hd.setVisitId(visit);
-                    hd.setCreatedBy(useObj.getFirstName());
-                    hd.setLastChgBy(useObj.getFirstName());
-                    hd.setCreatedOn(LocalDate.now());
-                    hd.setLastChgDate(LocalDate.now());
-                    hd.setLastChgTime(LocalTime.now().toString());
-                    return dgOrderHdRepo.save(hd);
-                });
+            List<RecallOpdPatientDetailRequest.InvestigationRequest> invList = request.getInvestigations();
 
-                for (RecallOpdPatientDetailRequest.InvestigationRequest inv : entry.getValue()) {
+            if (invList != null && !invList.isEmpty()) {
 
-                    if (inv.getInvestigationId() == null) continue;
+                log.info("Processing investigations");
 
-                    DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(inv.getInvestigationId()).orElseThrow(() -> new RuntimeException("Investigation not found: " + inv.getInvestigationId()));
-
-                    DgOrderDt dt = new DgOrderDt();
-                    dt.setOrderhdId(dgOrderHd);
-                    dt.setInvestigationId(invEntity);
-                    dt.setAppointmentDate(inv.getDate());
-                    dt.setOrderQty(1);
-                    dt.setOrderStatus("n");
-                    dt.setBillingStatus("n");
-                    dt.setCreatedBy(useObj.getFirstName());
-                    dt.setLastChgBy(useObj.getFirstName());
-                    dt.setCreatedon(Instant.now());
-                    dt.setLastChgDate(LocalDate.now());
-                    dt.setLastChgTime(LocalTime.now().toString());
-
-                    if (invEntity.getMainChargeCodeId() != null) {
-                        dt.setMainChargecodeId(invEntity.getMainChargeCodeId().getChargecodeId());
-                    }
-                    if (invEntity.getSubChargeCodeId() != null) {
-                        dt.setSubChargeid(invEntity.getSubChargeCodeId().getSubId());
-                    }
-
-                    dgOrderDtRepo.save(dt);
-                }
-            }
-        }
-
-        // ===================== TREATMENT =====================
-        opdObj.setTreatmentAdvice(request.getTreatmentAdvice());
-        List<RecallOpdPatientDetailRequest.TreatmentRequest> treatments = request.getTreatments();
-
-        if (treatments != null && !treatments.isEmpty()) {
-
-            Long prescriptionHdId;
-
-            Optional<RecallOpdPatientDetailRequest.TreatmentRequest> existing = treatments.stream().filter(t -> t != null && t.getTreatmentId() != null).findFirst();
-
-            if (existing.isPresent()) {
-                PatientPrescriptionDt dt = patientPrescriptionDtRepository.findById(existing.get().getTreatmentId()).orElseThrow(() -> new RuntimeException("Treatment not found"));
-                prescriptionHdId = dt.getPrescriptionHdId();
-            } else {
-
-                patientPrescriptionHdRepository.findLatestByPatientId(request.getPatientId()).ifPresent(hd -> {
-                    patientPrescriptionDtRepository.deleteByPrescriptionHdId(hd.getPrescriptionHdId());
-                    patientPrescriptionHdRepository.deleteById(hd.getPrescriptionHdId());
-                });
+                String orderNumOPD = createOrderNum();
 
                 Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new RuntimeException("Patient not found"));
 
-                PatientPrescriptionHd hd = new PatientPrescriptionHd();
-                hd.setHospitalId(useObj.getHospital().getId());
-                hd.setPatientId(patient.getId());
-                hd.setDepartmentId(request.getDepartmentId());
-                hd.setDoctorName(useObj.getFirstName());
-                hd.setPrescriptionDate(LocalDateTime.now());
-                hd.setStatus("n");
-                hd.setCreatedBy(useObj.getFirstName());
-                hd.setTotalCost(BigDecimal.ZERO);
-                hd.setTotalGst(BigDecimal.ZERO);
-                hd.setTotalDiscount(BigDecimal.ZERO);
-                hd.setNetAmount(BigDecimal.ZERO);
+                Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new RuntimeException("Visit not found"));
 
-                prescriptionHdId = patientPrescriptionHdRepository.save(hd).getPrescriptionHdId();
-            }
+                Map<LocalDate, DgOrderHd> existingHdByDate = new HashMap<>();
 
-            Long finalHdId = prescriptionHdId;
+                List<DgOrderHd> existingHdList = dgOrderHdRepo.findAllByVisitId(visit);
+                if (existingHdList != null) {
+                    for (DgOrderHd hd : existingHdList) {
+                        if (hd != null && hd.getAppointmentDate() != null) {
+                            existingHdByDate.put(hd.getAppointmentDate(), hd);
+                        }
+                    }
+                }
 
-            treatments.stream().filter(t -> t != null && t.getTreatmentId() == null).forEach(trt -> {
-                PatientPrescriptionDt dt = new PatientPrescriptionDt();
-                dt.setPrescriptionHdId(finalHdId);
-                dt.setItemId(trt.getDrugId());
-                dt.setDosage(trt.getDosage());
-                dt.setFrequency(trt.getFrequency());
-                dt.setDays(trt.getDays());
-                dt.setTotal(trt.getTotal() == null ? BigDecimal.ZERO : BigDecimal.valueOf(trt.getTotal()));
-                dt.setInstruction(trt.getInstruction());
-                dt.setStatus("n");
-                patientPrescriptionDtRepository.save(dt);
-            });
-        }
+                Map<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> grouped = invList.stream().filter(Objects::nonNull).filter(i -> i.getId() == null).filter(i -> i.getDate() != null).collect(Collectors.groupingBy(RecallOpdPatientDetailRequest.InvestigationRequest::getDate));
 
-        // ===================== ICD =====================
-        if (request.getIcdObj() != null) {
-            for (RecallOpdPatientDetailRequest.IcdDiagnosis icd : request.getIcdObj()) {
-                if (icd == null) continue;
+                for (Map.Entry<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> entry : grouped.entrySet()) {
 
-                if (icd.getId() == null) {
-                    DischargeIcdCode newIcd = new DischargeIcdCode();
-                    newIcd.setIcdId(icd.getIcdId());
-                    newIcd.setOpdPatientDetailsId(saved.getOpdPatientDetailsId());
-                    newIcd.setVisitId(request.getVisitId());
-                    newIcd.setAddEditById(useObj.getUserId());
-                    newIcd.setAddEditDate(LocalDate.now());
-                    newIcd.setAddEditTime(LocalTime.now().toString());
-                    dischargeIcdCodeRepository.save(newIcd);
-                } else {
-                    DischargeIcdCode existing = dischargeIcdCodeRepository.findById(icd.getId()).orElseThrow(() -> new RuntimeException("ICD not found"));
-                    existing.setIcdId(icd.getIcdId());
-                    existing.setAddEditById(useObj.getUserId());
-                    existing.setAddEditDate(LocalDate.now());
-                    existing.setAddEditTime(LocalTime.now().toString());
-                    dischargeIcdCodeRepository.save(existing);
+                    DgOrderHd dgOrderHd = existingHdByDate.computeIfAbsent(entry.getKey(), date -> {
+                        DgOrderHd hd = new DgOrderHd();
+                        hd.setOrderDate(LocalDate.now());
+                        hd.setAppointmentDate(date);
+                        hd.setOrderNo(orderNumOPD);
+                        hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+                        hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
+                        hd.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
+                        hd.setSource(AppConstants.OPD_PATIENT);
+                        hd.setDiscountId(1);
+                        hd.setPatientId(patient);
+                        hd.setDepartmentId(request.getDepartmentId());
+                        hd.setHospitalId(request.getHospitalId());
+                        hd.setVisitId(visit);
+                        hd.setCreatedBy(useObj.getFirstName());
+                        hd.setLastChgBy(useObj.getFirstName());
+                        hd.setCreatedOn(LocalDate.now());
+                        hd.setLastChgDate(LocalDate.now());
+                        hd.setLastChgTime(LocalTime.now().toString());
+                        return dgOrderHdRepo.save(hd);
+                    });
+
+                    for (RecallOpdPatientDetailRequest.InvestigationRequest inv : entry.getValue()) {
+
+                        if (inv.getInvestigationId() == null) continue;
+
+                        DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(inv.getInvestigationId()).orElseThrow(() -> new RuntimeException("Investigation not found: " + inv.getInvestigationId()));
+
+                        DgOrderDt dt = new DgOrderDt();
+                        dt.setOrderhdId(dgOrderHd);
+                        dt.setInvestigationId(invEntity);
+                        dt.setAppointmentDate(inv.getDate());
+                        dt.setOrderQty(1);
+                        dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setBillingStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setCreatedBy(useObj.getFirstName());
+                        dt.setLastChgBy(useObj.getFirstName());
+                        dt.setCreatedon(Instant.now());
+                        dt.setLastChgDate(LocalDate.now());
+                        dt.setLastChgTime(LocalTime.now().toString());
+
+                        if (invEntity.getMainChargeCodeId() != null) {
+                            dt.setMainChargecodeId(invEntity.getMainChargeCodeId().getChargecodeId());
+                        }
+                        if (invEntity.getSubChargeCodeId() != null) {
+                            dt.setSubChargeid(invEntity.getSubChargeCodeId().getSubId());
+                        }
+
+                        dgOrderDtRepo.save(dt);
+                    }
                 }
             }
-        }
+            // ===================== RADIOLOGY =====================
+
+            opdObj.setRadioFlag(request.getRadioFlag());
+
+            List<RecallOpdPatientDetailRequest.InvestigationRequest> radioList = request.getInvestigations();
+
+            if (radioList != null && !radioList.isEmpty()) {
+
+                log.info("Processing radiology investigations");
+
+                String orderNumRAD = createOrderNum();
+
+                Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new RuntimeException("Patient not found"));
+
+                Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new RuntimeException("Visit not found"));
+
+                Map<LocalDate, RadOrderHd> existingRadHdByDate = new HashMap<>();
+
+                List<RadOrderHd> existingRadHdList =
+                        radOrderHdRepository.findAllByVisitId(visit.getId());
+
+                if (existingRadHdList != null) {
+                    for (RadOrderHd hd : existingRadHdList) {
+
+                        if (hd != null && hd.getAppointmentDate() != null) {
+                            existingRadHdByDate.put(hd.getAppointmentDate(), hd);
+                        }
+                    }
+                }
+
+                Map<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> grouped =
+                        radioList.stream()
+                                .filter(Objects::nonNull)
+                                .filter(i -> i.getId() == null)
+                                .filter(i -> i.getDate() != null)
+                                .collect(Collectors.groupingBy(
+                                        RecallOpdPatientDetailRequest.InvestigationRequest::getDate
+                                ));
+
+                for (Map.Entry<LocalDate,
+                        List<RecallOpdPatientDetailRequest.InvestigationRequest>> entry
+                        : grouped.entrySet()) {
+
+                    RadOrderHd radOrderHd = existingRadHdByDate.computeIfAbsent(entry.getKey(),
+                            date -> {
+
+                                RadOrderHd hd = new RadOrderHd();
+                                hd.setOrderDate(LocalDate.now());
+                                hd.setAppointmentDate(date);
+                                hd.setOrderTime(Instant.now());
+                                hd.setPatient(patient);hd.setVisit(visit);
+
+                                hd.setHospital(masHospitalRepository.findById(request.getHospitalId())
+                                        .orElseThrow(() ->
+                                                        new RuntimeException("Hospital not found")));
+
+                                hd.setDepartment(masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow(() ->
+                                                        new RuntimeException("Department not found")));
+
+                                hd.setPrescribedBy(useObj.getFirstName());
+                                hd.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
+                                hd.setCreatedby(useObj.getFirstName());
+                                hd.setCreatedon(Instant.now());
+                                hd.setLastChgBy(useObj.getFirstName());
+                                hd.setLastChgDate(Instant.now());
+                                return radOrderHdRepository.save(hd);
+                            });
+
+                    for (RecallOpdPatientDetailRequest.InvestigationRequest inv
+                            : entry.getValue()) {
+
+                        if (inv.getInvestigationId() == null) {
+                            continue;
+                        }
+
+                        DgMasInvestigation invEntity = dgMasInvestigationRepository
+                                .findById(inv.getInvestigationId()).orElseThrow(() -> new RuntimeException("Radiology Investigation not found : " + inv.getInvestigationId()));
+
+                        RadOrderDt dt = new RadOrderDt();
+                        dt.setRadOrderhd(radOrderHd);
+                        dt.setInvestigation(invEntity);
+                        if (invEntity.getSubChargeCodeId() != null) {
+                            dt.setSubChargecode(invEntity.getSubChargeCodeId());
+                        }
+                        dt.setOrderAccessionNo(orderNumRAD);
+                        dt.setAppointmentDate(inv.getDate());
+                        dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setBillingStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setCreatedby(useObj.getFirstName());dt.setCreatedon(Instant.now());
+                        dt.setLastChgBy(useObj.getFirstName());
+                        dt.setLastChgDate(Instant.now());
+                        radOrderDtRepository.save(dt);
+                    }
+                }
+            }
+
+            // ===================== TREATMENT =====================
+
+            opdObj.setTreatmentAdvice(request.getTreatmentAdvice());
+            List<RecallOpdPatientDetailRequest.TreatmentRequest> treatments = request.getTreatments();
+
+            if (treatments != null && !treatments.isEmpty()) {
+
+                Long prescriptionHdId;
+
+                Optional<RecallOpdPatientDetailRequest.TreatmentRequest> existing = treatments.stream().filter(t -> t != null && t.getTreatmentId() != null).findFirst();
+
+                if (existing.isPresent()) {
+                    PatientPrescriptionDt dt = patientPrescriptionDtRepository.findById(existing.get().getTreatmentId()).orElseThrow(() -> new RuntimeException("Treatment not found"));
+                    prescriptionHdId = dt.getPrescriptionHdId();
+                } else {
+
+                    patientPrescriptionHdRepository.findLatestByPatientId(request.getPatientId()).ifPresent(hd -> {
+                        patientPrescriptionDtRepository.deleteByPrescriptionHdId(hd.getPrescriptionHdId());
+                        patientPrescriptionHdRepository.deleteById(hd.getPrescriptionHdId());
+                    });
+
+                    Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new RuntimeException("Patient not found"));
+
+                    PatientPrescriptionHd hd = new PatientPrescriptionHd();
+                    hd.setHospitalId(useObj.getHospital().getId());
+                    hd.setPatientId(patient.getId());
+                    hd.setDepartmentId(request.getDepartmentId());
+                    hd.setDoctorName(useObj.getFirstName());
+                    hd.setPrescriptionDate(LocalDateTime.now());
+                    hd.setStatus(AppConstants.STATUS_N.toLowerCase());
+                    hd.setCreatedBy(useObj.getFirstName());
+                    hd.setTotalCost(BigDecimal.ZERO);
+                    hd.setTotalGst(BigDecimal.ZERO);
+                    hd.setTotalDiscount(BigDecimal.ZERO);
+                    hd.setNetAmount(BigDecimal.ZERO);
+
+                    prescriptionHdId = patientPrescriptionHdRepository.save(hd).getPrescriptionHdId();
+                }
+
+                Long finalHdId = prescriptionHdId;
+
+                treatments.stream().filter(t -> t != null && t.getTreatmentId() == null).forEach(trt -> {
+                    PatientPrescriptionDt dt = new PatientPrescriptionDt();
+                    dt.setPrescriptionHdId(finalHdId);
+                    dt.setItemId(trt.getDrugId());
+                    dt.setDosage(trt.getDosage());
+                    dt.setFrequency(trt.getFrequency());
+                    dt.setDays(trt.getDays());
+                    dt.setTotal(trt.getTotal() == null ? BigDecimal.ZERO : BigDecimal.valueOf(trt.getTotal()));
+                    dt.setInstruction(trt.getInstruction());
+                    dt.setStatus(AppConstants.STATUS_N.toLowerCase());
+                    patientPrescriptionDtRepository.save(dt);
+                });
+            }
+
+            // ===================== ADMISSION =====================
+
+            if (isYes(request.getAdmissionFlag())) {
+
+                opdObj.setAdmissionFlag(AppConstants.STATUS_Y.toLowerCase());
+
+                if (request.getAdmissionCareLevel() != null) {
+                    masCareLevelRepository.findById(request.getAdmissionCareLevel()).ifPresent(opdObj::setAdmissionCareLevel);
+                }
+
+                if (request.getAdmissionWardCategory() != null) {
+                    masWardCategoryRepository.findById(request.getAdmissionWardCategory()).ifPresent(opdObj::setAdmissionWardCategory);
+                }
+
+                if (request.getAdmissionWard() != null) {
+                    masDepartmentRepository.findById(request.getAdmissionWard()).ifPresent(opdObj::setAdmissionWard);
+                }
+
+                opdObj.setAdmissionAdvisedDate(request.getAdmissionAdvisedDate());
+                opdObj.setAdmissionRemarks(request.getAdmissionRemarks());
+                opdObj.setAdmissionPriority(request.getAdmissionPriority());
+
+            } else {
+                opdObj.setAdmissionFlag(AppConstants.STATUS_N.toLowerCase());
+
+                opdObj.setAdmissionCareLevel(null);
+                opdObj.setAdmissionWardCategory(null);
+                opdObj.setAdmissionWard(null);
+                opdObj.setAdmissionAdvisedDate(null);
+                opdObj.setAdmissionRemarks(null);
+                opdObj.setAdmissionPriority(null);
+            }
 
 
-        // ================================ Procedure Care =====================
+            // ===================== FOLLOW UP =====================
+
+            if (isYes(request.getFollowUpFlag())) {
+
+                opdObj.setFollowUpFlag(AppConstants.STATUS_Y.toLowerCase());
+                opdObj.setFollowUpDays(request.getFollowUpDays());
+                opdObj.setFollowUpDate(request.getFollowUpDate());
+
+            } else {
+                opdObj.setFollowUpFlag(AppConstants.STATUS_N.toLowerCase());
+                opdObj.setFollowUpDays(null);
+                opdObj.setFollowUpDate(null);
+            }
+
+            // ===================== Referral =====================
+
+            if (isYes(request.getReferralFlag())) {
+
+                opdObj.setReferralFlag(AppConstants.STATUS_Y.toLowerCase());
+                opdObj.setReferralRemarks(request.getReferralRemarks());
+                opdObj.setReferralDate(request.getReferralDate());
+
+            } else {
+                opdObj.setReferralFlag(AppConstants.STATUS_N.toLowerCase());
+                opdObj.setReferralRemarks(null);
+                opdObj.setReferralDate(null);
+            }
+
+            deleteDischargeIcd(request.getRemoveIcdIds());
+            deleteOrderDetails(request.getRemovedInvestigationIds());
+            deletePrescriptionDetails(request.getRemovedTreatmentIds());
+
+            // ================================ Procedure Care =====================
+
 //        List<RecallOpdPatientDetailRequest.ProcedureCare> careList = request.getProcedureCare();
 //
 //        boolean allIdsNull = careList.stream()
@@ -801,17 +919,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 //            }
 //        }
 //
+//      deleteProcedureCareDetails(request.getRemoveprocedureCareIds());
 
+            log.info("==== END recallOpdPatientDetail ====");
 
-        // ===================== DELETE REMOVED =====================
-        deleteDischargeIcd(request.getRemoveIcdIds());
-        deleteOrderDetails(request.getRemovedInvestigationIds());
-        deletePrescriptionDetails(request.getRemovedTreatmentIds());
-        //        deleteProcedureCareDetails(request.getRemoveprocedureCareIds());
+            return ResponseUtils.createSuccessResponse("recall patient update successfully", new TypeReference<>() {});
 
-
-        return ResponseUtils.createSuccessResponse(saved, new TypeReference<>() {
-        });
+        }catch (Exception e) {
+            log.error("Error while recall opd", e);
+            throw e;
+        }
     }
 
     private boolean isYes(String flag) {
