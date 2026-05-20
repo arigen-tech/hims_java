@@ -4984,6 +4984,7 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
                 .body(insuranceTpaMappingService.createInsuranceTpaMapping(request));
     }
 
+
     @PutMapping("insuranceTpaMapping/update/{id}")
     public ResponseEntity<ApiResponse<InsuranceTpaMappingResponse>>
     updateInsuranceTpaMapping(
