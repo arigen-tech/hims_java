@@ -615,7 +615,7 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     }
 
     @PutMapping("/gender/updateById/{id}")
-    public ResponseEntity<ApiResponse<MasGenderResponse>> updateGender(@PathVariable Long id, @RequestBody MasGenderResponse genderDetails) {
+    public ResponseEntity<ApiResponse<MasGenderResponse>> updateGender(@PathVariable Long id, @RequestBody MasGenderRequest genderDetails) {
         ApiResponse<MasGenderResponse> response = masGenderService.updateGender(id, genderDetails);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
