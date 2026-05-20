@@ -36,7 +36,7 @@ public interface OpdPatientDetailService {
 //    ApiResponse<OpdPatientDetailResponseDTO> createOpdPatientDetailWithBilling(OpdPatientDetailFinalRequest request);
 
     @Transactional
-    ApiResponse<OpdPatientDetail> recallOpdPatientDetail(RecallOpdPatientDetailRequest request);
+    ApiResponse<String> recallOpdPatientDetail(RecallOpdPatientDetailRequest request);
 
     ApiResponse<List<OpdPatientDetailsWaitingresponce>> getActiveVisits();
 

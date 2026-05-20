@@ -167,6 +167,10 @@ public class AppConstants {
     public static final String BED_STATUS_AVAILABLE = "available";
     public static final String  BED_STATUS_CLEANING_BED= "cleaning";
     public static final String BED_STATUS_OCCUPIED_BED= "occupied";
+    // opd
+    public static final String OPD_PATIENT= "OPD PATIENT";
+
+
 
 
 
