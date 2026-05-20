@@ -179,6 +179,10 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             }
             hospital.setLabBilling(hospitalRequest.getLabStatus());
             hospital.setRadioBilling(hospitalRequest.getRadioStatus());
+            hospital.setLongitude(hospitalRequest.getLongitude());
+            hospital.setLatitude(hospitalRequest.getLatitude());
+            hospital.setExecutive1Contact(hospitalRequest.getExecutive1Contact());
+            hospital.setExecutive2Contact(hospitalRequest.getExecutive2Contact());
             MasHospital savedHospital = masHospitalRepository.save(hospital);
             return ResponseUtils.createSuccessResponse(convertToResponse(savedHospital), new TypeReference<>() {
             });
