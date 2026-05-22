@@ -198,7 +198,7 @@ public class DgInvestigationPackageServiceImpl implements DgInvestigationPackage
         if (flag == 1) {
             pack = packRepo.findByStatus("y");
         } else if (flag == 0) {
-            pack = packRepo.findAll();
+            pack = packRepo.findAllByOrderByUpdatedByAsc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid flag value. Use 0 or 1.", 400);
