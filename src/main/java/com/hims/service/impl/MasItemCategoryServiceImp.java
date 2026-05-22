@@ -117,12 +117,11 @@ private MasItemCategoryRepository masItemCategoryRepository;
             );
 
         } catch (Exception e) {
-
-            e.printStackTrace(); // console me full error show karega
-
+            e.printStackTrace();
             throw e;
         }
     }
+
     @Override
     public ApiResponse<MasItemCategoryResponse> findById(Integer id) {
         Optional<MasItemCategory> masItemCategory =masItemCategoryRepository.findById(id);
@@ -221,26 +220,12 @@ private MasItemCategoryRepository masItemCategoryRepository;
         response.setLastChgBy(masItemCategory.getLastChgBy());
         response.setLastChgTime(masItemCategory.getLastChgTime());
         response.setLastChgDate(masItemCategory.getLastChgDate());
-       // response.setSectionId(masItemCategory.getMasStoreSect if (masItemCategory.getMasStoreSection() != null) {
-        try {
+       // response.setSectionId(masItemCategory.getMasStoreSection().getSectionId());
+        if(masItemCategory.getMasStoreSection()!=null){
+            response.setSectionId(masItemCategory.getMasStoreSection().getSectionId());
+            response.setSectionName(masItemCategory.getMasStoreSection().getSectionName());
 
-            if (masItemCategory.getMasStoreSection() != null) {
-
-                response.setSectionId(
-                        masItemCategory.getMasStoreSection().getSectionId()
-                );
-
-                response.setSectionName(
-                        masItemCategory.getMasStoreSection().getSectionName()
-                );
-            }
-
-        } catch (Exception e) {
-
-            response.setSectionId(null);
-            response.setSectionName(null);
         }
-
 
         return response;
     }
