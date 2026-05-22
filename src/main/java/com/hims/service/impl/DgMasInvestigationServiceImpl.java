@@ -448,6 +448,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             masInvestigation.setPreparationText(investigationRequest.getPreparationRequired());
             masInvestigation.setTatHours(investigationRequest.getTatHours());
             masInvestigation.setEstimatedDays(investigationRequest.getEstimatedDays());
+            masInvestigation.setLoincCode(investigationRequest.getLoincCode());
+            masInvestigation.setInvServiceType(investigationRequest.getInvServiceType());
+            masInvestigation.setPandemic(investigationRequest.getPandemic());
 //            masInvestigation.setMultipleResults(investigationRequest.getMultipleResults());
 //            masInvestigation.setQuantity(investigationRequest.getQuantity());
 //            masInvestigation.setNormalValue(investigationRequest.getNormalValue());
@@ -553,6 +556,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 dmi.setEstimatedDays(investigationRequest.getEstimatedDays());
                 dmi.setPreparationText(investigationRequest.getPreparationRequired());
                 dmi.setTatHours(investigationRequest.getTatHours());
+                dmi.setLoincCode(investigationRequest.getLoincCode());
+                dmi.setInvServiceType(investigationRequest.getInvServiceType());
+                dmi.setPandemic(investigationRequest.getPandemic());
 //                dmi.setAppearInDischargeSummary(investigationRequest.getAppearInDischargeSummary());
 //                dmi.setMultipleResults(investigationRequest.getMultipleResults());
 //                dmi.setQuantity(investigationRequest.getQuantity());
@@ -916,6 +922,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
         dmir.setPreparationText(masInvest.getPreparationText());
         dmir.setTatHours(masInvest.getTatHours());
         dmir.setEstimatedDays(masInvest.getEstimatedDays());
+        dmir.setLoincCode(masInvest.getLoincCode());
+        dmir.setPandemic(masInvest.getPandemic());
+        dmir.setInvServiceType(masInvest.getInvServiceType());
 
         // --- Group fixed values by subInvestigationId ---
         Map<Long, List<DgFixedValueResponse>> fixedBySub = fixedValList.stream()

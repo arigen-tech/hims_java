@@ -105,4 +105,14 @@ public class DgMasInvestigation {
 
     @Column(name = "contrast_req")
     private String contrastRequired;
+
+    @Column(name = "loinc_code",length = 30)
+    private String loincCode;
+
+    @Column(name = "pandemic",length = 1)
+    private String pandemic;
+
+    @Column(name = "inv_service_type",length = 1)
+    private String invServiceType;
+
 }
