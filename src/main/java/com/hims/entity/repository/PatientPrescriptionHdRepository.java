@@ -19,5 +19,7 @@ public interface PatientPrescriptionHdRepository extends JpaRepository<PatientPr
     PatientPrescriptionHd findByPatientIdAndVisitId(
             @Param("visitId") Long visitId);
 
+    PatientPrescriptionHd findByVisit_Id(Long visitId);
+
     Optional<PatientPrescriptionHd> findLatestByPatientId(Long patientId);
 }

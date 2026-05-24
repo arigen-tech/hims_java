@@ -59,7 +59,6 @@ public class PatientController {
         return ResponseEntity.ok(response);
     }
 
-
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> registerPatient(@RequestBody PatientRegistrationReq request) {
         ApiResponse<PatientRegFollowUpResp> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail(), request.getVisits());
@@ -131,23 +130,6 @@ public class PatientController {
 //        return ResponseEntity.ok(response);
 //    }
 
-
-    @PutMapping("/update-recall-patient")
-    public ResponseEntity<ApiResponse<String>> updateRecallOpdPatient(
-            @Valid @RequestBody RecallOpdPatientDetailRequest request) {
-
-        log.info("==== START updateRecallOpdPatient API ====");
-
-        log.info("Request received for OPD Patient ID : {}", request.getOpdPatientId());
-
-        ApiResponse<String> response = opdPatientDetailService.recallOpdPatientDetail(request);
-
-        log.info("Recall OPD patient updated successfully for OPD ID : {}", request.getOpdPatientId());
-
-        log.info("==== END updateRecallOpdPatient API ====");
-
-        return ResponseEntity.ok(response);
-    }
 
 
 //    @GetMapping("/activeVisit")

@@ -30,5 +30,7 @@ public interface OpdPatientDetailRepository extends JpaRepository<OpdPatientDeta
 
     OpdPatientDetail findByVisit_Id(Long visitId);
 
+    OpdPatientDetail findTopByVisit_IdOrderByOpdPatientDetailsIdDesc(Long visitId);
+
     OpdPatientDetail findByVisitId(Long visitId);
 }
