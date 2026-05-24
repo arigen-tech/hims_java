@@ -1518,6 +1518,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             opd.setAdmissionPriority(request.getAdmissionPriority());
         } else {
             opd.setAdmissionFlag(AppConstants.STATUS_N.toLowerCase());
+            opd.setAdmissionAdvisedDate(null);
+            opd.setAdmissionRemarks(null);
+            opd.setAdmissionPriority(null);
+            opd.setAdmissionCareLevel(null);
+            opd.setAdmissionWardCategory(null);
+            opd.setAdmissionWard(null);
         }
     }
 
@@ -1528,32 +1534,29 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             opd.setFollowUpDate(request.getFollowUpDate());
         } else {
             opd.setFollowUpFlag(AppConstants.STATUS_N.toLowerCase());
+            opd.setFollowUpDays(null);
+            opd.setFollowUpDate(null);
         }
     }
 
     private void handleRecallReferral(OpdPatientDetail opd, RecallOpdPatientDetailRequest request) {
-        opd.setReferralFlag(isYes(request.getReferralFlag()) ? AppConstants.STATUS_Y.toLowerCase() : AppConstants.STATUS_N.toLowerCase());
-        opd.setReferralRemarks(request.getReferralRemarks());
-        opd.setReferralDate(request.getReferralDate());
-        opd.setReferTo(request.getReferTo());
-        opd.setReferredHospitalName(request.getReferredHospitalName());
-    }
 
-    private void updateIcdDiagnosis(RecallOpdPatientDetailRequest request, OpdPatientDetail opd, User user) {
-        dischargeIcdCodeRepository.deleteByOpdPatientDetailsId(opd.getOpdPatientDetailsId());
+        boolean isReferral = isYes(request.getReferralFlag());
 
-        if (request.getIcdDiagnosisList() != null && !request.getIcdDiagnosisList().isEmpty()) {
-            for (RecallOpdPatientDetailRequest.IcdDiagnosis icd : request.getIcdDiagnosisList()) {
-                if (icd == null) continue;
-                DischargeIcdCode entity = new DischargeIcdCode();
-                entity.setIcdId(icd.getIcdId());
-                entity.setVisitId(request.getVisitId());
-                entity.setOpdPatientDetailsId(opd.getOpdPatientDetailsId());
-                entity.setAddEditById(user.getUserId());
-                entity.setAddEditDate(LocalDate.now());
-                entity.setAddEditTime(LocalTime.now().toString());
-                dischargeIcdCodeRepository.save(entity);
-            }
+        opd.setReferralFlag(isReferral ? AppConstants.STATUS_Y.toLowerCase() : AppConstants.STATUS_N.toLowerCase());
+
+        if (isYes(request.getReferralFlag())) {
+            opd.setReferralFlag(AppConstants.STATUS_Y.toLowerCase());
+            opd.setReferralRemarks(request.getReferralRemarks());
+            opd.setReferralDate(request.getReferralDate());
+            opd.setReferTo(request.getReferTo());
+            opd.setReferredHospitalName(request.getReferredHospitalName());
+        } else {
+            opd.setReferralFlag(AppConstants.STATUS_N.toLowerCase());
+            opd.setReferralRemarks(null);
+            opd.setReferralDate(null);
+            opd.setReferTo(null);
+            opd.setReferredHospitalName(null);
         }
     }
 

@@ -59,6 +59,7 @@ public class PatientController {
         return ResponseEntity.ok(response);
     }
 
+
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> registerPatient(@RequestBody PatientRegistrationReq request) {
         ApiResponse<PatientRegFollowUpResp> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail(), request.getVisits());
