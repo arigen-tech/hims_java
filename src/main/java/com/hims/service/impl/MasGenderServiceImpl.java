@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasGender;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasGenderRepository;
@@ -65,7 +66,7 @@ public class MasGenderServiceImpl implements MasGenderService {
         response.setLastChgDt(gender.getLastChgDt());
         response.setStatus(gender.getStatus());
         response.setCode(gender.getCode());
-        response.setCode(gender.getLastChgBy());
+        response.setLastChgBy(gender.getLastChgBy());
 
         return response;
     }
@@ -88,7 +89,7 @@ public class MasGenderServiceImpl implements MasGenderService {
             gender.setGenderCode(genderRequest.getGenderCode());
             gender.setGenderName(genderRequest.getGenderName());
             gender.setLastChgDt(LocalDateTime.now());
-            gender.setStatus(genderRequest.getStatus());
+            gender.setStatus(AppConstants.STATUS_Y.toLowerCase());
             gender.setCode(null);
 
             User currentUser = getCurrentUser();
@@ -112,7 +113,7 @@ public class MasGenderServiceImpl implements MasGenderService {
 
     @Override
     @Transactional
-    public ApiResponse<MasGenderResponse> updateGender(Long id, MasGenderResponse genderDetails) {
+    public ApiResponse<MasGenderResponse> updateGender(Long id, MasGenderRequest genderDetails) {
         try{
             Optional<MasGender> existingGenderOpt = masGenderRepository.findById(id);
             if (existingGenderOpt.isPresent()) {
@@ -120,7 +121,6 @@ public class MasGenderServiceImpl implements MasGenderService {
                 existingGender.setGenderCode(genderDetails.getGenderCode());
                 existingGender.setGenderName(genderDetails.getGenderName());
                 existingGender.setLastChgDt(LocalDateTime.now());
-                existingGender.setStatus(genderDetails.getStatus());
                 existingGender.setCode(null);
                 User currentUser = getCurrentUser();
                 if (currentUser == null) {

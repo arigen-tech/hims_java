@@ -1,5 +1,6 @@
 package com.hims.request;
 
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ public class MasHospitalRequest {
     private Long stateId;
     private Long districtId;
     private String city;
+    @Pattern(regexp = "^[0-9]{6}$", message = "PinCode must be exactly 6 digits")
     private String pinCode;
     private String email;
     private String gstnNo;
