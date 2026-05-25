@@ -317,6 +317,8 @@ private BillingTemplateService billingTemplateService;
 private OpdHolidayService opdHolidayService;
 @Autowired
 private InsuranceTpaMappingService insuranceTpaMappingService;
+    @Autowired
+    private MasItemFacilityService masItemFacilityService;
 
 
 
@@ -2585,9 +2587,9 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     }
     //    ===============================Billing Policy=====================================
 
-    @GetMapping("billingPolicy/getAll")
-    public ResponseEntity<ApiResponse<List<BillingPolicyResponse>>> getAllPolicy() {
-        return ResponseEntity.ok(billingPolicyService.getAll());
+    @GetMapping("billingPolicy/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<BillingPolicyResponse>>> getAllPolicy(  @PathVariable int flag) {
+        return ResponseEntity.ok(billingPolicyService.getAll(flag));
     }
 
     @GetMapping("billingPolicy/getById/{id}")
@@ -2610,12 +2612,12 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
         return ResponseEntity.ok(billingPolicyService.update(id, request));
     }
 
-//    @PutMapping("billingPolicy/status/{id}")
-//    public ResponseEntity<ApiResponse<BillingPolicyResponse>> changeStatusPolicy(
-//            @PathVariable Long id,
-//            @RequestParam String status) {
-//        return ResponseEntity.ok(billingPolicyService.changeStatus(id, status));
-//    }
+    @PutMapping("billingPolicy/status/{id}")
+    public ResponseEntity<ApiResponse<BillingPolicyResponse>> changeStatusPolicy(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(billingPolicyService.changeStatus(id, status));
+    }
 
     //    ===============================Mas Nursing Type=====================================
     @GetMapping("masNursingType/getAll/{flag}")
@@ -5064,6 +5066,44 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
                 insuranceTpaMappingService.changeStatusInsuranceTpaMapping(id, status)
         );
     }
+    //======================================= facility ==================================
 
+    @GetMapping("masItemFacility/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasItemFacilityResponse>>> getAllFacility(
+            @PathVariable int flag) {
+
+        return ResponseEntity.ok(masItemFacilityService.getAllFacility(flag));
+    }
+
+    @GetMapping("masItemFacility/getById/{id}")
+    public ResponseEntity<ApiResponse<MasItemFacilityResponse>> getFacilityById(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(masItemFacilityService.getFacilityById(id));
+    }
+
+    @PostMapping("masItemFacility/create")
+    public ResponseEntity<ApiResponse<MasItemFacilityResponse>> createFacility(
+            @RequestBody @Valid MasItemFacilityRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masItemFacilityService.createFacility(request));
+    }
+
+    @PutMapping("masItemFacility/update/{id}")
+    public ResponseEntity<ApiResponse<MasItemFacilityResponse>> updateFacility(
+            @PathVariable Long id,
+            @RequestBody @Valid MasItemFacilityRequest request) {
+
+        return ResponseEntity.ok(masItemFacilityService.updateFacility(id, request));
+    }
+
+    @PutMapping("masItemFacility/status/{id}")
+    public ResponseEntity<ApiResponse<MasItemFacilityResponse>> changeStatusFacility(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(masItemFacilityService.changeStatus(id, status));
+    }
 
 }

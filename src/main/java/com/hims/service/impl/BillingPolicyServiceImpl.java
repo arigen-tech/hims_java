@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.BillingPolicyMaster;
 import com.hims.entity.User;
 import com.hims.entity.repository.BillingPolicyRepository;
@@ -26,13 +27,20 @@ public class BillingPolicyServiceImpl implements BillingPolicyService {
     private AuthUtil authUtil;
 
     @Override
-    public ApiResponse<List<BillingPolicyResponse>> getAll() {
+    public ApiResponse<List<BillingPolicyResponse>> getAll(int flag) {
+
         try {
-            List<BillingPolicyMaster> list =repo.findAllByOrderByLastUpdateDateDesc();
+            List<BillingPolicyMaster> list;
+            if(flag==1){
+
+                list =repo.findByStatusIgnoreCaseOrderByPolicyCodeAsc(AppConstants.STATUS_Y.toLowerCase());
+            }else{
+                 list =repo.findAllByOrderByLastUpdateDateDesc();
+            }
 
 
-            List<BillingPolicyResponse> response =
-                    list.stream().map(this::toResponse).toList();
+
+            List<BillingPolicyResponse> response = list.stream().map(this::toResponse).toList();
 
             return ResponseUtils.createSuccessResponse(
                     response, new TypeReference<>() {});
@@ -68,6 +76,7 @@ public class BillingPolicyServiceImpl implements BillingPolicyService {
                     .createdBy(user.getFirstName())
                     .lastUpdatedBy(user.getFirstName())
                     .lastUpdateDate(LocalDateTime.now())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
                     .build();
 
             repo.save(policy);
@@ -106,32 +115,32 @@ public class BillingPolicyServiceImpl implements BillingPolicyService {
                 toResponse(policy), new TypeReference<>() {});
     }
 
-//    @Override
-//    public ApiResponse<BillingPolicyResponse> changeStatus(
-//            Long id, String status) {
-//
-//        BillingPolicyMaster policy = repo.findById(id).orElse(null);
-//
-//        if (policy == null)
-//            return ResponseUtils.createNotFoundResponse(
-//                    "Billing Policy not found", 404);
-//
-//        if (!status.equalsIgnoreCase("y")
-//                && !status.equalsIgnoreCase("n"))
-//            return ResponseUtils.createFailureResponse(
-//                    null, new TypeReference<>() {}, "Invalid status", 400);
-//
-//        User user = authUtil.getCurrentUser();
-//
-//        policy.setStatus(status);
-//        policy.setLastUpdatedBy(user.getFirstName());
-//        policy.setLastUpdateDate(LocalDateTime.now());
-//
-//        repo.save(policy);
-//
-//        return ResponseUtils.createSuccessResponse(
-//                toResponse(policy), new TypeReference<>() {});
-//    }
+    @Override
+    public ApiResponse<BillingPolicyResponse> changeStatus(
+            Long id, String status) {
+
+        BillingPolicyMaster policy = repo.findById(id).orElse(null);
+
+        if (policy == null)
+            return ResponseUtils.createNotFoundResponse(
+                    "Billing Policy not found", 404);
+
+        if (!status.equalsIgnoreCase("y")
+                && !status.equalsIgnoreCase("n"))
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Invalid status", 400);
+
+        User user = authUtil.getCurrentUser();
+
+        policy.setStatus(status);
+        policy.setLastUpdatedBy(user.getFirstName());
+        policy.setLastUpdateDate(LocalDateTime.now());
+
+        repo.save(policy);
+
+        return ResponseUtils.createSuccessResponse(
+                toResponse(policy), new TypeReference<>() {});
+    }
 
     private BillingPolicyResponse toResponse(BillingPolicyMaster p) {
         return new BillingPolicyResponse(
