@@ -132,23 +132,6 @@ public class PatientController {
 //    }
 
 
-    @PutMapping("/update-recall-patient")
-    public ResponseEntity<ApiResponse<String>> updateRecallOpdPatient(
-            @Valid @RequestBody RecallOpdPatientDetailRequest request) {
-
-        log.info("==== START updateRecallOpdPatient API ====");
-
-        log.info("Request received for OPD Patient ID : {}", request.getOpdPatientId());
-
-        ApiResponse<String> response = opdPatientDetailService.recallOpdPatientDetail(request);
-
-        log.info("Recall OPD patient updated successfully for OPD ID : {}", request.getOpdPatientId());
-
-        log.info("==== END updateRecallOpdPatient API ====");
-
-        return ResponseEntity.ok(response);
-    }
-
 
 //    @GetMapping("/activeVisit")
 //    public ResponseEntity<ApiResponse<List<OpdPatientDetailsWaitingresponce>>> getActiveVisits() {

@@ -89,6 +89,8 @@ public class OpdPatientRecallResponce {
     private String referralFlag;
     private String referralRemarks;
     private Instant referralDate;
+    private String referTo;
+    private String referredHospitalName;
 
     // =================== follow up =========
 

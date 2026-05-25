@@ -3,7 +3,7 @@ package com.hims.service;
 import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Visit;
 import com.hims.request.ActiveVisitSearchRequest;
-import com.hims.request.OpdPatientDetailFinalRequest;
+import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,14 +29,14 @@ public interface OpdPatientDetailService {
      * @return ApiResponse containing the created OpdPatientDetailResponseDTO with order and billing IDs
      */
     @Transactional
-    ApiResponse<OpdPatientDetailResponseDTO> createOpdPatientDetail(OpdPatientDetailFinalRequest request);
+    ApiResponse<OpdPatientDetailResponseDTO> createOpdPatientDetail(OpdPatientDetailCreateRequest request);
 
 
 //    @Transactional
 //    ApiResponse<OpdPatientDetailResponseDTO> createOpdPatientDetailWithBilling(OpdPatientDetailFinalRequest request);
 
     @Transactional
-    ApiResponse<String> recallOpdPatientDetail(RecallOpdPatientDetailRequest request);
+    ApiResponse<String> updateRecallOpdPatientDetail(RecallOpdPatientDetailRequest request);
 
     ApiResponse<List<OpdPatientDetailsWaitingresponce>> getActiveVisits();
 
