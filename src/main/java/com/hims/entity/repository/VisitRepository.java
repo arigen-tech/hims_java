@@ -220,6 +220,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
         WHERE v.hospital_id = :hospitalId
         AND v.department_id = :departmentId
+            AND DATE(v.visit_date) = CURRENT_DATE
         AND v.pre_consultation = :preConsultation
         AND v.billing_status = :billingStatus
         AND v.visit_status = :visitStatus

@@ -14,7 +14,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class OpdPatientDetailFinalRequest {
+public class OpdPatientDetailCreateRequest {
 
     // ======================== Mapping IDs ======================
     private Long patientId;

@@ -1,8 +1,8 @@
 package com.hims.controller;
 
 import com.hims.request.OpdOpthDetailsRequest;
+import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.*;
-import com.hims.request.OpdPatientDetailFinalRequest;
 import com.hims.service.OpdOpthDetailsService;
 import com.hims.service.OpdPatientDetailService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -90,7 +90,7 @@ public class OPDPatientController {
             description = "Create OPD patient registration with order header, details, billing header, and details"
     )
     public ResponseEntity<ApiResponse<OpdPatientDetailResponseDTO>> createOpdPatientDetails(
-            @Valid @RequestBody OpdPatientDetailFinalRequest request) {
+            @Valid @RequestBody OpdPatientDetailCreateRequest request) {
         log.info("Creating OPD patient detail - Patient ID: {}", request.getPatientId());
         ApiResponse<OpdPatientDetailResponseDTO> response = opdPatientDetailService.createOpdPatientDetail(request);
         log.info("Successfully created OPD patient detail - Order ID: {}",
@@ -191,5 +191,15 @@ public class OPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+
+    @PutMapping("/update-recall-patient")
+    public ResponseEntity<ApiResponse<String>> updateRecallOpdPatient(@Valid @RequestBody RecallOpdPatientDetailRequest request) {
+        log.info("==== START updateRecallOpdPatient API ====");
+        log.info("Request received for OPD Patient ID : {}", request.getPatientId());
+        ApiResponse<String> response = opdPatientDetailService.updateRecallOpdPatientDetail(request);
+        log.info("Recall OPD patient updated successfully for OPD ID : {}", request.getPatientId());
+        log.info("==== END updateRecallOpdPatient API ====");
+        return ResponseEntity.ok(response);
+    }
 
 }
