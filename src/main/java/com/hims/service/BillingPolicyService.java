@@ -7,7 +7,7 @@ import com.hims.response.BillingPolicyResponse;
 import java.util.List;
 
 public interface BillingPolicyService {
-    ApiResponse<List<BillingPolicyResponse>> getAll();
+    ApiResponse<List<BillingPolicyResponse>> getAll(int flag);
 
     ApiResponse<BillingPolicyResponse> getById(Long id);
 
@@ -15,5 +15,7 @@ public interface BillingPolicyService {
 
     ApiResponse<BillingPolicyResponse> update(Long id, BillingPolicyRequest request);
 
-   // ApiResponse<BillingPolicyResponse> changeStatus(Long id, String status);
+
+
+     ApiResponse<BillingPolicyResponse> changeStatus(Long id, String status);
 }

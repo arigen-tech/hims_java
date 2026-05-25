@@ -35,8 +35,8 @@ public class BillingPolicyMaster {
     @Column(name = "discount_percentage")
     private BigDecimal discountPercentage;
 
-//    @Column(name = "status", length = 1)
-//    private String status;
+    @Column(name = "status", length = 1)
+    private String status;
 
     @Column(name = "created_by", length = 200)
     private String createdBy;

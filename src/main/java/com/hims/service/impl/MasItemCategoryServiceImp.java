@@ -221,10 +221,23 @@ private MasItemCategoryRepository masItemCategoryRepository;
         response.setLastChgTime(masItemCategory.getLastChgTime());
         response.setLastChgDate(masItemCategory.getLastChgDate());
        // response.setSectionId(masItemCategory.getMasStoreSection().getSectionId());
-        if(masItemCategory.getMasStoreSection()!=null){
-            response.setSectionId(masItemCategory.getMasStoreSection().getSectionId());
-            response.setSectionName(masItemCategory.getMasStoreSection().getSectionName());
+        try {
 
+            if (masItemCategory.getMasStoreSection() != null) {
+
+                response.setSectionId(
+                        masItemCategory.getMasStoreSection().getSectionId()
+                );
+
+                response.setSectionName(
+                        masItemCategory.getMasStoreSection().getSectionName()
+                );
+            }
+
+        } catch (Exception e) {
+
+            response.setSectionId(null);
+            response.setSectionName(null);
         }
 
         return response;
