@@ -805,13 +805,14 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
         WHERE v.patient.id = :patientId
         AND v.hospital.id = :hospitalId
-       
+       AND v.visitStatus=:visitStatus
 
         ORDER BY v.visitDate DESC
     """)
     Page<PreviousOpdVisitProjection> getPreviousOpdVisit(
             @Param("patientId") Long patientId,
             @Param("hospitalId") Long hospitalId,
+            @Param("visitStatus") String visitStatus,
               Pageable pageable
     );
     @Query("""
@@ -832,10 +833,12 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
         WHERE v.patient.id = :patientId
         AND v.hospital.id = :hospitalId
+            AND v.visitStatus=:visitStatus
+            
 
         ORDER BY v.visitDate DESC
     """)
-    Page<PreviousOpdVitalsDetailsProjection> getPriviousOpdVitalsDetails(Long patientId, Long hospitalId, Pageable pageable);
+    Page<PreviousOpdVitalsDetailsProjection> getPriviousOpdVitalsDetails(Long patientId, Long hospitalId, @Param("visitStatus") String visitStatus, Pageable pageable);
 
     @Query(value = """
         SELECT 
