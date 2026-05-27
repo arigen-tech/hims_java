@@ -2795,7 +2795,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("visitDate").descending());
-            Page<PreviousOpdVisitProjection> projectionPage = visitRepository.getPreviousOpdVisit(patientId, hospitalId, pageable);
+            Page<PreviousOpdVisitProjection> projectionPage = visitRepository.getPreviousOpdVisit(patientId, hospitalId,AppConstants.STATUS_Y.toLowerCase(), pageable);
 
             //Projection → DTO
             Page<PreviousOpdVisitResponse> responsePage = projectionPage.map(p -> {
@@ -2824,7 +2824,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("visitDate").descending());
-            Page<PreviousOpdVitalsDetailsProjection> projectionPage = visitRepository.getPriviousOpdVitalsDetails(patientId, hospitalId, pageable);
+            Page<PreviousOpdVitalsDetailsProjection> projectionPage = visitRepository.getPriviousOpdVitalsDetails(patientId, hospitalId,AppConstants.STATUS_Y.toLowerCase(), pageable);
 
             //Projection → DTO
             Page<PreviousOpdVitalsDetailsResponse> responsePage = projectionPage.map(p -> {
