@@ -20,4 +20,5 @@ public class BillingPolicyResponse {
     private String createdBy;
     private String lastUpdatedBy;
     private LocalDateTime lastUpdateDate;
+    private String status;
 }

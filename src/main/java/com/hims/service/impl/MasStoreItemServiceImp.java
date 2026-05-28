@@ -27,12 +27,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,6 +55,10 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
     @Autowired
     private  StoreItemBatchStockRepository storeItemBatchStockRepository;
+    @Autowired
+    private MasItemFacilityRepository masItemFacilityRepository;
+    @Autowired
+    private StoreItemFacilityMapRepository storeItemFacilityMapRepository;
 
 
     @Autowired
@@ -113,6 +115,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     @Override
     @Transactional
     public ApiResponse<MasStoreItemResponse> addMasStoreItem(MasStoreItemRequest masStoreItemRequest) {
+        try{
         User currentUser = authUtil.getCurrentUser();
         if (currentUser == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
@@ -133,13 +136,17 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setNomenclature(masStoreItemRequest.getNomenclature());
         masStoreItem.setStatus("y");
         masStoreItem.setAdispQty(masStoreItemRequest.getAdispQty());
-//        masStoreItem.setHospitalId(currentUser.getHospital().getId());
+//       masStoreItem.setHospitalId(currentUser.getHospital().getId());
 //        masStoreItem.setDepartmentId(depObj.getId());
         masStoreItem.setLastChgBy(currentUser.getUserId());
         masStoreItem.setLastChgDate(LocalDate.now());
         masStoreItem.setLastChgTime(getCurrentTimeFormatted());
 //        masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore());
 //        masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary());
+        masStoreItem.setIsGeneric(masStoreItemRequest.getIsGeneric());
+        masStoreItem.setDangerousDrug(masStoreItem.getDangerousDrug());
+        masStoreItem.setDrugSchedule(masStoreItemRequest.getDrugSchedule());
+
 
         Optional<MasStoreUnit> masStoreUnit = masStoreUnitRepository.findById(masStoreItemRequest.getDispUnit());
         if (masStoreUnit.isEmpty()) {
@@ -188,20 +195,36 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
         MasHospital hospital = currentUser.getHospital();
 
-        if ("y".equalsIgnoreCase(hospital.getRoIsManual())) {
-            masStoreItem.setStoreRoLManual("y");
-            masStoreItem.setDispRoLManual("y");
-            masStoreItem.setWardRoLManual("y");
+        if (AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRoIsManual())) {
+            masStoreItem.setStoreRoLManual(AppConstants.STATUS_Y.toLowerCase());
+            masStoreItem.setDispRoLManual(AppConstants.STATUS_Y.toLowerCase());
+            masStoreItem.setWardRoLManual(AppConstants.STATUS_Y.toLowerCase());
 
-        } else if("y".equalsIgnoreCase(hospital.getRolIsAuto())){
-            masStoreItem.setStoreRoLAuto("y");
-            masStoreItem.setDispRoLAuto("y");
-            masStoreItem.setWardRoLAuto("y");
+        } else if(AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRolIsAuto())){
+            masStoreItem.setStoreRoLAuto(AppConstants.STATUS_Y.toLowerCase());
+            masStoreItem.setDispRoLAuto(AppConstants.STATUS_Y.toLowerCase());
+            masStoreItem.setWardRoLAuto(AppConstants.STATUS_Y.toLowerCase());
         }
-
         MasStoreItem savedItem = masStoreItemRepository.save(masStoreItem);
+        if (masStoreItemRequest.getFacility() != null && !masStoreItemRequest.getFacility().isEmpty()) {
 
+            for (Long facilityId : masStoreItemRequest.getFacility()) {
+
+                StoreItemFacilityMap storeItemFacilityMap = new StoreItemFacilityMap();
+
+                storeItemFacilityMap.setItem(savedItem);
+                storeItemFacilityMap.setFacility(masItemFacilityRepository.findById(facilityId).orElseThrow());
+                storeItemFacilityMap.setStatus(AppConstants.STATUS_N.toLowerCase());
+                storeItemFacilityMap.setCreatedBy(currentUser.getFullName());
+                storeItemFacilityMap.setLastUpdatedBy(currentUser.getFullName());
+                storeItemFacilityMap.setLastUpdateDate(LocalDateTime.now());
+                storeItemFacilityMapRepository.save(storeItemFacilityMap);
+            }
+        }
         return ResponseUtils.createSuccessResponse(convertToResponse(savedItem), new TypeReference<>() {});
+    } catch (Exception e) {
+            throw new RuntimeException("Failed to save MasStoreItem : " + e.getMessage());
+    }
     }
 
     @Override
@@ -280,7 +303,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             }, "Invalid flag value. Use 0 or 1.", 400);
         }
 
-        // ✅ Fetch all stocks in one query
+        //Fetch all stocks in one query
         List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemIds(masStoreItems);
 
         // Group stocks by itemId
@@ -346,6 +369,11 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             item.setLastChgBy(currentUser.getUserId());
             item.setLastChgDate(LocalDate.now());
             item.setLastChgTime(getCurrentTimeFormatted());
+            item.setStoreROL(request.getReOrderLevelStore());
+            item.setDispROL(request.getReOrderLevelDispensary());
+            item.setIsGeneric(request.getIsGeneric());
+            item.setDangerousDrug(request.getDangerousDrug());
+            item.setDrugSchedule(request.getDrugSchedule());
 
             if (request.getDispUnit() != null) {
                 item.setDispUnit(masStoreUnitRepository.findById(request.getDispUnit())
@@ -388,23 +416,67 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
             }
             MasHospital hospital = currentUser.getHospital();
 
-            if ("y".equalsIgnoreCase(hospital.getRoIsManual())) {
-                item .setStoreRoLManual("y");
-                item .setDispRoLManual("y");
-                item .setWardRoLManual("y");
+            if (AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRoIsManual())) {
+                item .setStoreRoLManual(AppConstants.STATUS_Y.toLowerCase());
+                item .setDispRoLManual(AppConstants.STATUS_Y.toLowerCase());
+                item .setWardRoLManual(AppConstants.STATUS_Y.toLowerCase());
 
-            } else if("y".equalsIgnoreCase(hospital.getRolIsAuto())){
-                item .setStoreRoLAuto("y");
-                item .setDispRoLAuto("y");
-                item .setWardRoLAuto("y");
+            } else if(AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRolIsAuto())){
+                item .setStoreRoLAuto(AppConstants.STATUS_Y.toLowerCase());
+                item .setDispRoLAuto(AppConstants.STATUS_Y.toLowerCase());
+                item .setWardRoLAuto(AppConstants.STATUS_Y.toLowerCase());
             }
 
             MasStoreItem updatedItem = masStoreItemRepository.save(item);
+            // ================= UPDATE FACILITY MAP =================
+
+            if (request.getFacility() != null) {
+
+                // Request facility ids
+                List<Long> newFacilityIds = request.getFacility();
+
+                // Existing mappings from DB
+                List<StoreItemFacilityMap> existingMappings = storeItemFacilityMapRepository.findByItemItemId(updatedItem.getItemId());
+
+                // Existing facility ids
+                List<Long> existingFacilityIds = existingMappings.stream().map(map -> map.getFacility().getFacilityId()).toList();
+
+                // ================= DELETE OLD FACILITIES =================
+
+                List<StoreItemFacilityMap> mappingsToDelete = existingMappings.stream().filter(map -> !newFacilityIds.contains(map.getFacility().getFacilityId()))
+                        .toList();
+
+                if (!mappingsToDelete.isEmpty()) {
+                    storeItemFacilityMapRepository.deleteAll(mappingsToDelete);
+                }
+
+                // ================= ADD NEW FACILITIES =================
+
+                for (Long facilityId : newFacilityIds) {
+
+                    // If mapping already exists then skip
+                    if (!existingFacilityIds.contains(facilityId)) {
+
+                        MasItemFacility facility = masItemFacilityRepository.findById(facilityId).orElseThrow(() -> new RuntimeException("Facility not found : " + facilityId));
+
+                        StoreItemFacilityMap storeItemFacilityMap = new StoreItemFacilityMap();
+
+                        storeItemFacilityMap.setItem(updatedItem);
+                        storeItemFacilityMap.setFacility(facility);
+                        storeItemFacilityMap.setStatus(AppConstants.STATUS_N.toLowerCase());
+                        storeItemFacilityMap.setCreatedBy(currentUser.getFullName());
+                        storeItemFacilityMap.setLastUpdatedBy(currentUser.getFullName());
+                        storeItemFacilityMap.setLastUpdateDate(LocalDateTime.now());
+                        storeItemFacilityMapRepository.save(storeItemFacilityMap);
+                    }
+                }
+            }
+
 
             return ResponseUtils.createSuccessResponse(convertToResponse(updatedItem), new TypeReference<>() {});
         } catch (Exception ex) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+            log.error("An unexpected error occurred",ex);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
 
     }
@@ -702,12 +774,14 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setNomenclature(item.getNomenclature());
         response.setPvmsNo(item.getPvmsNo());
         response.setStatus(item.getStatus());
-        response.setReOrderLevelStore(item.getReOrderLevelStore());
-        response.setReOrderLevelDispensary(item.getReOrderLevelDispensary());
+        response.setReOrderLevelStore(item.getStoreROL());
+        response.setReOrderLevelDispensary(item.getDispROL());
         response.setLastChgDate(item.getLastChgDate());
         response.setLastChgBy(item.getLastChgBy());
         response.setLastChgTime(item.getLastChgTime());
         response.setAdispQty(item.getAdispQty());
+        response.setReOrderLevelStore(item.getStoreROL());
+        response.setReOrderLevelDispensary(item.getDispROL());
 
         response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
         response.setGroupName(item.getGroupId() != null ? item.getGroupId().getGroupName() : null);
@@ -734,7 +808,20 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
 
         response.setMasItemCategoryid(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
         response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
+        response.setDangerousDrug(item.getDangerousDrug());
+        response.setIsGeneric(item.getIsGeneric());
+        response.setDrugSchedule(item.getDrugSchedule());
 
+        List<MasStoreItemResponse.MasFacilityCodeResponse> facilityList = new ArrayList<>();
+        List<StoreItemFacilityMap> storeItemFacilityMaps=storeItemFacilityMapRepository.findByItemItemId(item.getItemId());
+        for (StoreItemFacilityMap map : storeItemFacilityMaps) {
+
+                MasStoreItemResponse.MasFacilityCodeResponse facilityResponse = new MasStoreItemResponse.MasFacilityCodeResponse();
+                facilityResponse.setFacilityId(map.getFacility() != null ? map.getFacility().getFacilityId() : null);
+                facilityResponse.setFacilityCode(map.getFacility() != null ? map.getFacility().getFacilityCode() : null);
+                facilityList.add(facilityResponse);
+            }
+        response.setFacilityCode(facilityList);
         return response;
     }
 
@@ -744,12 +831,16 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setNomenclature(item.getNomenclature());
         response.setPvmsNo(item.getPvmsNo());
         response.setStatus(item.getStatus());
-        response.setReOrderLevelStore(item.getReOrderLevelStore());
-        response.setReOrderLevelDispensary(item.getReOrderLevelDispensary());
+        response.setReOrderLevelStore(item.getStoreROL());
+        response.setReOrderLevelDispensary(item.getDispROL());
         response.setLastChgDate(item.getLastChgDate());
         response.setLastChgBy(item.getLastChgBy());
         response.setLastChgTime(item.getLastChgTime());
         response.setAdispQty(item.getAdispQty());
+        response.setDangerousDrug(item.getDangerousDrug());
+        response.setIsGeneric(item.getIsGeneric());
+        response.setDrugSchedule(item.getDrugSchedule());
+
 
         response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
         response.setGroupName(item.getGroupId() != null ? item.getGroupId().getGroupName() : null);
