@@ -152,7 +152,8 @@ public class BillingPolicyServiceImpl implements BillingPolicyService {
                 p.getDiscountPercentage(),
                 p.getCreatedBy(),
                 p.getLastUpdatedBy(),
-                p.getLastUpdateDate()
+                p.getLastUpdateDate(),
+                p.getStatus()
         );
     }
 }

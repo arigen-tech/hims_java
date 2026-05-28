@@ -319,6 +319,8 @@ private OpdHolidayService opdHolidayService;
 private InsuranceTpaMappingService insuranceTpaMappingService;
     @Autowired
     private MasItemFacilityService masItemFacilityService;
+    @Autowired
+    private MasDrugScheduleService masDrugScheduleService;
 
 
 
@@ -5106,4 +5108,45 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
         return ResponseEntity.ok(masItemFacilityService.changeStatus(id, status));
     }
 
+
+//======================================= Drug Schedule ==================================
+
+
+    @GetMapping("masDrugSchedule/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasDrugScheduleResponse>>> getAllDrugSchedule(
+            @PathVariable int flag) {
+
+        return ResponseEntity.ok(masDrugScheduleService.getAllSchedule(flag));
+    }
+
+    @GetMapping("masDrugSchedule/getById/{id}")
+    public ResponseEntity<ApiResponse<MasDrugScheduleResponse>> getByIdDrugSchedule(
+            @PathVariable String id) {
+
+        return ResponseEntity.ok(masDrugScheduleService.getScheduleById(id));
+    }
+
+    @PostMapping("masDrugSchedule/create")
+    public ResponseEntity<ApiResponse<MasDrugScheduleResponse>> createDrugSchedule(
+            @RequestBody @Valid MasDrugScheduleRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masDrugScheduleService.createSchedule(request));
+    }
+
+    @PutMapping("masDrugSchedule/update/{id}")
+    public ResponseEntity<ApiResponse<MasDrugScheduleResponse>> updateDrugSchedulee(
+            @PathVariable String id,
+            @RequestBody @Valid MasDrugScheduleRequest request) {
+
+        return ResponseEntity.ok(masDrugScheduleService.updateSchedule(id, request));
+    }
+
+    @PutMapping("masDrugSchedule/status/{id}")
+    public ResponseEntity<ApiResponse<MasDrugScheduleResponse>> changeStatusDrugSchedule(
+            @PathVariable String id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(masDrugScheduleService.changeStatus(id, status));
+    }
 }

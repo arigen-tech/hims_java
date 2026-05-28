@@ -50,7 +50,6 @@ public class MasStoreItem {
 
     @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "unit_au")
-
     private MasStoreUnit unitAU;
 
     @ManyToOne(fetch =  FetchType.LAZY)
@@ -59,7 +58,6 @@ public class MasStoreItem {
 
     @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "item_type_id")
-
     private MasItemType itemTypeId;
 
     @ManyToOne(fetch =  FetchType.LAZY)
@@ -112,6 +110,15 @@ public class MasStoreItem {
 
     @Column(name = "ward_rol_is_auto", length = 10)
     private String wardRoLAuto;
+
+    @Column(name = "dangerous_drug", length = 1)
+    private String dangerousDrug;
+
+    @Column(name = " is_generic", length = 1)
+    private String isGeneric;
+
+    @Column(name = "drug_schedule", length = 10)
+    private String drugSchedule;
 
 
 
