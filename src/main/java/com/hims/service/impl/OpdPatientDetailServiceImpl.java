@@ -8,8 +8,10 @@ import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.projection.*;
 import com.hims.request.ActiveVisitSearchRequest;
+import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.*;
+import com.hims.service.OpdOpthDetailsService;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
@@ -96,6 +98,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     private final MasSubChargeCodeRepository subChargeCodeRepository;
     private final MasHospitalRepository masHospitalRepository;
+
+
+    private final OpdOpthDetailsService opdOpthDetailsService;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -496,6 +501,30 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (request.getTreatment() != null && !request.getTreatment().isEmpty()) {
             saveTreatments(request.getTreatment(), patient, visit, user, deptId);
         }
+
+        if (request.getOphthalmologyExaminationDetails() != null) {
+
+            OpdOpthDetailsRequest opthRequest =
+                    request.getOphthalmologyExaminationDetails();
+
+            opthRequest.setPatientId(patient.getId());
+            opthRequest.setVisitId(visit.getId());
+
+            ApiResponse<String> response =
+                    opdOpthDetailsService.opdVisionExaminationDetailsSave(opthRequest);
+
+            if (response == null
+                    || response.getStatus() != HttpStatus.OK.value()) {
+
+                throw new SDDException(
+                        "ophthalmology",
+                        500,
+                        response != null
+                                ? response.getMessage()
+                                : "Failed to save ophthalmology details");
+            }
+        }
+
         opdPatientDetailRepository.save(saved);
         closeVisit(visit);
         log.info("Successfully completed OPD patient detail creation for visit ID: {}", visit.getId());
@@ -2860,9 +2889,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             Long departmentId = authUtil.getCurrentDepartmentId();
             name = name == null ? "" : name.trim();
             mobile = mobile == null ? "" : mobile.trim();
-
             boolean dateFilter = visitDate != null;
-
             Instant startDate = null;
             Instant endDate = null;
 
@@ -2870,13 +2897,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 startDate = visitDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
                 endDate = visitDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
             }
-
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-
             Page<OpdRecallVisitProjection> projectionPage = visitRepository.getOpdRecallVisit(name, mobile, dateFilter, startDate, endDate, departmentId, AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), pageable);
-
             Page<OpdRecallVisitResponse> responsePage = projectionPage.map(this::mapToResponse);
-
             return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
             });
         } catch (Exception e) {

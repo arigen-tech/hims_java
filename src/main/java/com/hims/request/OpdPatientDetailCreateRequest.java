@@ -100,6 +100,8 @@ public class OpdPatientDetailCreateRequest {
     private Instant followUpDate;
     private Long followUpDays;
 
+    private OpdOpthDetailsRequest ophthalmologyExaminationDetails;
+
 
 
 
