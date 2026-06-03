@@ -5,7 +5,9 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.projection.ItemProjection;
+import com.hims.projection.NonDrugStoreItemProjection;
 import com.hims.request.MasStoreItemRequest;
+import com.hims.request.NonDrugStoreItemRequest;
 import com.hims.response.*;
 import com.hims.service.MasStoreItemService;
 import com.hims.utils.AuthUtil;
@@ -429,45 +431,44 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
             MasStoreItem updatedItem = masStoreItemRepository.save(item);
             // ================= UPDATE FACILITY MAP =================
-
             if (request.getFacility() != null) {
 
                 // Request facility ids
-                List<Long> newFacilityIds = request.getFacility();
+                Set<Long> newFacilityIds = new HashSet<>(request.getFacility());
 
-                // Existing mappings from DB
+                // Existing mappings
                 List<StoreItemFacilityMap> existingMappings = storeItemFacilityMapRepository.findByItemItemId(updatedItem.getItemId());
 
                 // Existing facility ids
-                List<Long> existingFacilityIds = existingMappings.stream().map(map -> map.getFacility().getFacilityId()).toList();
+                Set<Long> existingFacilityIds = existingMappings.stream().map(map -> map.getFacility().getFacilityId())
+                        .collect(Collectors.toSet());
 
-                // ================= DELETE OLD FACILITIES =================
+                // ================= DELETE OLD =================
 
-                List<StoreItemFacilityMap> mappingsToDelete = existingMappings.stream().filter(map -> !newFacilityIds.contains(map.getFacility().getFacilityId()))
-                        .toList();
+                List<StoreItemFacilityMap> mappingsToDelete = existingMappings.stream().filter(map -> !newFacilityIds.contains(map.getFacility().getFacilityId())).toList();
 
                 if (!mappingsToDelete.isEmpty()) {
                     storeItemFacilityMapRepository.deleteAll(mappingsToDelete);
                 }
 
-                // ================= ADD NEW FACILITIES =================
+                // ================= ADD NEW =================
 
                 for (Long facilityId : newFacilityIds) {
 
-                    // If mapping already exists then skip
                     if (!existingFacilityIds.contains(facilityId)) {
 
                         MasItemFacility facility = masItemFacilityRepository.findById(facilityId).orElseThrow(() -> new RuntimeException("Facility not found : " + facilityId));
 
-                        StoreItemFacilityMap storeItemFacilityMap = new StoreItemFacilityMap();
+                        StoreItemFacilityMap map = new StoreItemFacilityMap();
 
-                        storeItemFacilityMap.setItem(updatedItem);
-                        storeItemFacilityMap.setFacility(facility);
-                        storeItemFacilityMap.setStatus(AppConstants.STATUS_N.toLowerCase());
-                        storeItemFacilityMap.setCreatedBy(currentUser.getFullName());
-                        storeItemFacilityMap.setLastUpdatedBy(currentUser.getFullName());
-                        storeItemFacilityMap.setLastUpdateDate(LocalDateTime.now());
-                        storeItemFacilityMapRepository.save(storeItemFacilityMap);
+                        map.setItem(updatedItem);
+                        map.setFacility(facility);
+                        map.setStatus(AppConstants.STATUS_N.toLowerCase());
+                        map.setCreatedBy(currentUser.getFullName());
+                        map.setLastUpdatedBy(currentUser.getFullName());
+                        map.setLastUpdateDate(LocalDateTime.now());
+
+                        storeItemFacilityMapRepository.save(map);
                     }
                 }
             }
@@ -733,6 +734,249 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         }
     }
 
+    @Override
+    public ApiResponse<NonDrugStoreItemResponse> addNonDrugStoreItem(NonDrugStoreItemRequest nonDrugStoreItemRequest) {
+        try{
+            User currentUser = authUtil.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
+                        "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            Optional<MasStoreItem> existingItem = masStoreItemRepository
+                    .findFirstByPvmsNoOrNomenclature(nonDrugStoreItemRequest.getPvmsNo(), nonDrugStoreItemRequest.getNomenclature());
+
+            if (existingItem.isPresent()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Pvms No or Nomenclature already exists", HttpStatus.CONFLICT.value());
+            }
+            long deptId = authUtil.getCurrentDepartmentId();
+            MasDepartment depObj = masDepartmentRepository.getById(deptId);
+            MasStoreItem masStoreItem = new MasStoreItem();
+            masStoreItem.setPvmsNo(nonDrugStoreItemRequest.getPvmsNo());
+            masStoreItem.setNomenclature(nonDrugStoreItemRequest.getNomenclature());
+            masStoreItem.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            masStoreItem.setLastChgBy(currentUser.getUserId());
+            masStoreItem.setLastChgDate(LocalDate.now());
+            masStoreItem.setLastChgTime(getCurrentTimeFormatted());
+
+            Optional<MasStoreUnit> masStoreUnit1 = masStoreUnitRepository.findById(nonDrugStoreItemRequest.getUnitAU());
+            if (masStoreUnit1.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasStoreUnit not found", 404);
+            }
+            Optional<MasStoreSection> masStoreSection = masStoreSectionRepository.findById(nonDrugStoreItemRequest.getSectionId());
+            if (masStoreSection.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasStoreSection not found", 404);
+            }
+            Optional<MasItemType> masItemType = masItemTypeRepository.findById(nonDrugStoreItemRequest.getItemTypeId());
+            if (masItemType.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasItemType not found", 404);
+            }
+            Optional<MasStoreGroup> masStoreGroup = masStoreGroupRepository.findById(nonDrugStoreItemRequest.getGroupId());
+            if (masStoreGroup.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasStoreGroup not found", 404);
+            }
+            Optional<MasItemClass> masItemClass = masItemClassRepository.findById(nonDrugStoreItemRequest.getItemClassId());
+            if (masItemClass.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasItemClass not found", 404);
+            }
+
+            Optional<MasItemCategory> masItemCategory = masItemCategoryRepository.findById(nonDrugStoreItemRequest.getMasItemCategoryId());
+            if (masItemCategory.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasItemCategory not found", 404);
+            }
+            masStoreItem.setUnitAU(masStoreUnit1.get());
+            masStoreItem.setItemClassId(masItemClass.get());
+            masStoreItem.setGroupId(masStoreGroup.get());
+            masStoreItem.setItemTypeId(masItemType.get());
+            masStoreItem.setSectionId(masStoreSection.get());
+            masStoreItem.setMasItemCategory(masItemCategory.get());
+
+            MasHospital hospital = currentUser.getHospital();
+
+            if (AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRoIsManual())) {
+                masStoreItem.setStoreRoLManual(AppConstants.STATUS_Y.toLowerCase());
+                masStoreItem.setDispRoLManual(AppConstants.STATUS_Y.toLowerCase());
+                masStoreItem.setWardRoLManual(AppConstants.STATUS_Y.toLowerCase());
+
+            } else if(AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRolIsAuto())){
+                masStoreItem.setStoreRoLAuto(AppConstants.STATUS_Y.toLowerCase());
+                masStoreItem.setDispRoLAuto(AppConstants.STATUS_Y.toLowerCase());
+                masStoreItem.setWardRoLAuto(AppConstants.STATUS_Y.toLowerCase());
+            }
+            MasStoreItem savedItem=masStoreItemRepository.save(masStoreItem);
+            return ResponseUtils.createSuccessResponse(convertToResponseNonDrug(savedItem), new TypeReference<>() {});
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save MasStoreItem : " + e.getMessage());
+        }
+
+    }
+
+    @Override
+    public ApiResponse<NonDrugStoreItemResponse> updateNonDrugItem(Long id, NonDrugStoreItemRequest request) {
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(id);
+            if (masStoreItem.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "MasStoreItem not found", HttpStatus.NOT_FOUND.value());
+            }
+
+            MasStoreItem item = masStoreItem.get();
+            if (!item.getPvmsNo().equals(request.getPvmsNo())) {
+                Optional<MasStoreItem> duplicatePvms = masStoreItemRepository
+                        .findByPvmsNoAndItemIdNot(request.getPvmsNo(), id);
+
+                if (duplicatePvms.isPresent()) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Pvms No already exists in another item", HttpStatus.CONFLICT.value());
+                }
+
+                item.setPvmsNo(request.getPvmsNo());
+            }
+
+
+            if (!item.getNomenclature().equals(request.getNomenclature())) {
+                Optional<MasStoreItem> duplicateNomenclature = masStoreItemRepository
+                        .findByNomenclatureAndItemIdNot(request.getNomenclature(), id);
+
+                if (duplicateNomenclature.isPresent()) {
+                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                            "Nomenclature already exists in another item", HttpStatus.CONFLICT.value());
+                }
+
+                item.setNomenclature(request.getNomenclature());
+            }
+
+            long deptId = authUtil.getCurrentDepartmentId();
+            MasDepartment depObj = masDepartmentRepository.getById(deptId);
+
+            item.setLastChgBy(currentUser.getUserId());
+            item.setLastChgDate(LocalDate.now());
+            item.setLastChgTime(getCurrentTimeFormatted());
+
+
+
+
+            if (request.getUnitAU() != null) {
+                item.setUnitAU(masStoreUnitRepository.findById(request.getUnitAU())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "UnitAU not found")));
+            }
+
+            if (request.getSectionId() != null) {
+                item.setSectionId(masStoreSectionRepository.findById(request.getSectionId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Section not found")));
+            }
+
+            if (request.getItemTypeId() != null) {
+                item.setItemTypeId(masItemTypeRepository.findById(request.getItemTypeId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ItemType not found")));
+            }
+
+            if (request.getGroupId() != null) {
+                item.setGroupId(masStoreGroupRepository.findById(request.getGroupId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found")));
+            }
+
+            if (request.getItemClassId() != null) {
+                item.setItemClassId(masItemClassRepository.findById(request.getItemClassId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ItemClass not found")));
+            }
+
+
+            if (request.getMasItemCategoryId() != null) {
+                item.setMasItemCategory(masItemCategoryRepository.findById(request.getMasItemCategoryId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ItemCategory not found")));
+            }
+            MasHospital hospital = currentUser.getHospital();
+
+            if (AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRoIsManual())) {
+                item .setStoreRoLManual(AppConstants.STATUS_Y.toLowerCase());
+                item .setDispRoLManual(AppConstants.STATUS_Y.toLowerCase());
+                item .setWardRoLManual(AppConstants.STATUS_Y.toLowerCase());
+
+            } else if(AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRolIsAuto())){
+                item .setStoreRoLAuto(AppConstants.STATUS_Y.toLowerCase());
+                item .setDispRoLAuto(AppConstants.STATUS_Y.toLowerCase());
+                item .setWardRoLAuto(AppConstants.STATUS_Y.toLowerCase());
+            }
+
+            MasStoreItem updatedItem = masStoreItemRepository.save(item);
+
+
+
+            return ResponseUtils.createSuccessResponse(convertToResponseNonDrug(updatedItem), new TypeReference<>() {});
+        } catch (Exception ex) {
+            log.error("An unexpected error occurred",ex);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+    }
+
+    @Override
+    public ApiResponse<List<NonDrugStoreItemResponse>> getAllNonDrugItem() {
+
+        List<NonDrugStoreItemProjection> projections = masStoreItemRepository.getAllNonDrugItems(sectionId);
+
+        List<NonDrugStoreItemResponse> responseList = projections.stream()
+                .map(p -> {
+                    NonDrugStoreItemResponse dto = new NonDrugStoreItemResponse();
+
+                    dto.setItemId(p.getItemId());
+                    dto.setPvmsNo(p.getPvmsNo());
+                    dto.setNomenclature(p.getNomenclature());
+
+                    dto.setGroupId(p.getGroupId());
+                    dto.setGroupName(p.getGroupName());
+
+                    dto.setItemTypeId(p.getItemTypeId());
+                    dto.setItemTypeName(p.getItemTypeName());
+
+                    dto.setSectionId(p.getSectionId());
+                    dto.setSectionName(p.getSectionName());
+
+                    dto.setItemClassId(p.getItemClassId());
+                    dto.setItemClassName(p.getItemClassName());
+
+                    dto.setMasItemCategoryId(p.getMasItemCategoryId());
+                    dto.setMasItemCategoryName(p.getMasItemCategoryName());
+
+                    dto.setUnitAU(p.getUnitAU());
+                    dto.setUnitAuName(p.getUnitAuName());
+
+                    dto.setStatus(p.getStatus());
+
+                    return dto;
+                })
+                .toList();
+
+        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+    }
+    @Override
+    public ApiResponse<NonDrugStoreItemResponse> getNonDrugItemById(Long id) {
+        try {
+            Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(id);
+            if (masStoreItem.isPresent()) {
+                MasStoreItem masStoreItem1 = masStoreItem.get();
+
+                return ResponseUtils.createSuccessResponse(convertToResponseNonDrug(masStoreItem1), new TypeReference<>() {
+                });
+            } else {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "MasStoreItem not found", 404);
+            }
+        } catch (Exception ex) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
+                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+    }
+
 
     private MasStoreItemResponseWithStock convertToResponseFast(MasStoreItem item,
                                                                 Map<Long, List<StoreItemBatchStock>> stockMap) {
@@ -891,6 +1135,34 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setHsnCode(item.getHsnCode()!=null?item.getHsnCode().getHsnCode():null);
         response.setADispQty(item.getAdispQty());
         response.setItemClassName(item.getItemClassId() !=null ? item.getItemClassId().getItemClassName() : null);
+        return response;
+    }
+
+    private NonDrugStoreItemResponse convertToResponseNonDrug(MasStoreItem item) {
+        NonDrugStoreItemResponse response = new NonDrugStoreItemResponse();
+        response.setItemId(item.getItemId());
+        response.setNomenclature(item.getNomenclature());
+        response.setPvmsNo(item.getPvmsNo());
+        response.setStatus(item.getStatus());
+
+        response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
+        response.setGroupName(item.getGroupId() != null ? item.getGroupId().getGroupName() : null);
+
+        response.setItemClassId(item.getItemClassId() != null ? item.getItemClassId().getItemClassId() : null);
+        response.setItemClassName(item.getItemClassId() != null ? item.getItemClassId().getItemClassName() : null);
+
+        response.setItemTypeId(item.getItemTypeId() != null ? item.getItemTypeId().getId() : null);
+        response.setItemTypeName(item.getItemTypeId() != null ? item.getItemTypeId().getName(): null);
+
+        response.setSectionId(item.getSectionId() != null ? item.getSectionId().getSectionId() : null);
+        response.setSectionName(item.getSectionId() != null ? item.getSectionId().getSectionName() : null);
+
+        response.setUnitAU(item.getUnitAU() != null ? item.getUnitAU().getUnitId() : null);
+        response.setUnitAuName(item.getUnitAU() != null ? item.getUnitAU().getUnitName() : null);
+
+        response.setMasItemCategoryId(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryId():null);
+        response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
+
         return response;
     }
 
