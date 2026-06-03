@@ -2,6 +2,7 @@ package com.hims.service;
 
 import com.hims.projection.ItemProjection;
 import com.hims.request.MasStoreItemRequest;
+import com.hims.request.NonDrugStoreItemRequest;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
 
@@ -36,5 +37,13 @@ public interface MasStoreItemService {
     ApiResponse<List<ItemProjection>> getAllDrugs(Integer sectionId);
 
     ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String keyword, int page, int size);
+
+    ApiResponse<NonDrugStoreItemResponse> addNonDrugStoreItem(NonDrugStoreItemRequest nonDrugStoreItemRequest);
+
+    ApiResponse<NonDrugStoreItemResponse> updateNonDrugItem(Long id, NonDrugStoreItemRequest request);
+
+    ApiResponse<List<NonDrugStoreItemResponse>> getAllNonDrugItem();
+
+    ApiResponse<NonDrugStoreItemResponse> getNonDrugItemById(Long id);
 }
 
