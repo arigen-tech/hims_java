@@ -205,8 +205,8 @@ public class OPDPatientController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/saveObgDetails")
-    @Operation(description = "Save Obg  data for a patient visit")
+    @PostMapping("/saveOBGDetails")
+    @Operation(description = "Save Obg data for a patient visit")
     public ApiResponse<String> saveObgDetails(@Valid @RequestBody OpdObgDetailsRequest request ) {
         log.info("Saving OPD Obg details");
         return opdObgDetailsService.saveObgDetails(request);

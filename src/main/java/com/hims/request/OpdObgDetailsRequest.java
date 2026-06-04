@@ -1,7 +1,10 @@
 package com.hims.request;
 
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
@@ -10,61 +13,125 @@ public class OpdObgDetailsRequest {
     private Long patientId;
     private Long visitId;
     private LocalDate opdDate;
-    private String obstetricHistoryNotes;
-    private String gravida;
-    private String para;
-    private String abortions;
-    private String livingChildren;
-    private String conceptionType;
-    private String marriedLifeYears;
-    private String consanguinity;
-    private String bookedStatus;
-    private String immunisedStatus;
-    private String trimester;
-    private String gc;
+    private OBGDetails obgDetails;
+    private GynaecologyHistory gynaecologyHistory;
+
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class GynaecologyHistory {
+        private String gynFlow;
+        private Integer ageOfMenarche;
+        private LocalDate lastMenstrualPeriod;
+        private String menstrualPattern;
+        private String gynCycle;
+        private String sterilisation;
+        private String obstetricHistory;
+        private String perAbdomenInspection;
+        private String abdomenPalpation;
+        private String papSmear;
+        private String localExamination;
+        private String perSpeculum;
+        private String bimanualExamination;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class OBGDetails {
+        private String obstetricHistory;
+        private ObstetricScore obstetricScore;
+        private String conception;
+        private String marriedLife;
+        private String consanguinity;
+        private String booked;
+        private String immunised;
+        private String trimesters;
+        private String gestationalCalculation;
+        private String paPalpation;
+        private String perExamination;
+        private String tetanusToxoid;
+        private String fetalHeartRate;
+        private String presentation;
+        private String palpation;
+        private String pv;
+        private String inspectionHeightOfUterus;
+        private String specify;
+        private String Remarks;
+        private MenstrualHistory menstrualHistory;
+        private SystemicExamination systemicExamination;
+        private CardiovascularSystem cardiovascularSystem;
+        private PerVaginalExamination perVaginalExamination;
+
+
+
+        @Data
+        @Builder
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class ObstetricScore {
+            private String gravida;
+            private String para;
+            private String abortion;
+            private String livingChildren;
+        }
+
+        @Data
+        @Builder
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class MenstrualHistory {
+            private Integer ageOfMenarche;
+            private String cycles;
+            private Integer rangeDays;
+            private String interval;
+            private String flow;
+            private String menstrualPause;
+        }
+
+        @Data
+        @Builder
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class SystemicExamination{
+            private String respiratorySystem;
+            private String breathSounds;
+        }
+
+
+        @Data
+        @Builder
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class CardiovascularSystem{
+            private String s1;
+            private String s2;
+            private String murmurs;
+        }
+
+        @Data
+        @Builder
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class PerVaginalExamination{
+            private String osDilatation;
+            private String effacement;
+            private String membrane;
+            private String liquor;
+            private String consistency;
+            private String position;
+            private String length;
+            private String stationOfPresentingPart;
+            private String head;
+            private String pelvis;
+        }
+
+    }
+
     private String pallor;
     private String pedalEdema;
-    private String respiratorySystem;
-    private String breathSounds;
-    private String cardiovascularS1;
-    private String cardiovascularS2;
-    private String cardiovascularMurmurs;
-    private String ttStatus;
-    private String fhr;
-    private String presentation;
-    private String palpationNotes;
-    private String pvDone;
-    private String uterusHeight;
-    private String uterusHeightSpecify;
     private String antenatalRemarks;
-    private String menarcheAge;
-    private String cycles;
-    private String rangeDays;
-    private String intervalDays;
-    private String menstrualFlow;
-    private String menstrualPause;
-    private String pvOsDilatation;
-    private String pvEffacement;
-    private String pvMembrane;
-    private String pvLiquor;
-    private String cervixConsistency;
-    private String cervixPosition;
-    private String cervixLength;
-    private String stationPresenting;
-    private String fetalHead;
-    private String pelvis;
-    private String gynFlow;
-    private String gynMenarcheAge;
-    private LocalDate gynLastMenstrualPeriod;
-    private String gynMenstrualPattern;
-    private String gynCycleType;
-    private String sterilisation;
-    private String abdomenInspection;
-    private String abdomenPalpation;
-    private String papSmearResult;
-    private String localExaminationNotes;
-    private String perSpeculum;
-    private String bimanualExamination;
-
-
 }

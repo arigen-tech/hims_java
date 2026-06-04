@@ -102,6 +102,8 @@ public class OpdPatientDetailCreateRequest {
 
     private OpdOpthDetailsRequest ophthalmologyExaminationDetails;
 
+//    private OpdObgDetailsRequest opdObgDetailsRequest;
+
 
 
 

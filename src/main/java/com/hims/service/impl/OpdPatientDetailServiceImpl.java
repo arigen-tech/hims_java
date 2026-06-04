@@ -2805,8 +2805,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             Long hospitalId = currentUser.getHospital().getId();
             Long departmentId = authUtil.getCurrentDepartmentId();
-
-            Page<PatientWaitingListProjection> projectionPage = visitRepository.findWaitingPatientsByHospitalWithFilters(hospitalId, departmentId, AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase(), patientName, mobileNumber, doctorId, sessionId, pageable);
+            Page<PatientWaitingListProjection> projectionPage = visitRepository.findWaitingPatientsByHospitalWithFilters(hospitalId, departmentId, AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase(), patientName, mobileNumber, doctorId, sessionId, pageable);
 
             Page<PatientWaitingListResponse> responsePage = projectionPage.map(this::mapPatientWaitingListProjectionToResponse);
             return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
