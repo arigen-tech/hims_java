@@ -1,8 +1,10 @@
 package com.hims.controller;
 
+import com.hims.request.OpdObgDetailsRequest;
 import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.*;
+import com.hims.service.OpdObgDetailsService;
 import com.hims.service.OpdOpthDetailsService;
 import com.hims.service.OpdPatientDetailService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +39,7 @@ public class OPDPatientController {
 
     private final OpdOpthDetailsService opdOpthDetailsService;
     private final OpdPatientDetailService opdPatientDetailService;
+    private final OpdObgDetailsService opdObgDetailsService;
 
     @GetMapping("/getPendingPreConsultations")
     @Operation(
@@ -200,6 +203,13 @@ public class OPDPatientController {
         log.info("Recall OPD patient updated successfully for OPD ID : {}", request.getPatientId());
         log.info("==== END updateRecallOpdPatient API ====");
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/saveObgDetails")
+    @Operation(description = "Save Obg  data for a patient visit")
+    public ApiResponse<String> saveObgDetails(@Valid @RequestBody OpdObgDetailsRequest request ) {
+        log.info("Saving OPD Obg details");
+        return opdObgDetailsService.saveObgDetails(request);
     }
 
 }
