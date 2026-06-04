@@ -5149,4 +5149,31 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
 
         return ResponseEntity.ok(masDrugScheduleService.changeStatus(id, status));
     }
+
+
+//======================================= Non drug Master ==================================
+
+@PostMapping("/nonDrugItem/create")
+public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> addMasItemCategory(@RequestBody NonDrugStoreItemRequest nonDrugStoreItemRequest) {
+    ApiResponse<NonDrugStoreItemResponse> response = masStoreItemService.addNonDrugStoreItem(nonDrugStoreItemRequest);
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
+}
+
+@PutMapping("/nonDrugItem/update/{id}")
+public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@PathVariable Long id,
+            @RequestBody NonDrugStoreItemRequest request) {
+        ApiResponse<NonDrugStoreItemResponse> response = masStoreItemService.updateNonDrugItem(id, request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/nonDrugItem/getAll")
+    public ApiResponse<List<NonDrugStoreItemResponse>> getAllNonDrugItem() {
+        return masStoreItemService.getAllNonDrugItem();
+    }
+    @GetMapping("/nonDrugItem/getById/{id}")
+    public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> getNonDrugItemById(@PathVariable Long id) {
+        ApiResponse<NonDrugStoreItemResponse> response = masStoreItemService.getNonDrugItemById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
 }
