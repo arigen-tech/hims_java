@@ -84,6 +84,7 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
         UserDepartment userDepartment = new UserDepartment();
         userDepartment.setLastChgBy(currentUser.getUsername());
         userDepartment.setLasUpdatedDt(OffsetDateTime.now());
+        userDepartment.setStatus(AppConstants.STATUS_Y.toLowerCase());
 
         if (request.getUserId() != null) {
             Optional<User> user = userRepository.findById(request.getUserId());
