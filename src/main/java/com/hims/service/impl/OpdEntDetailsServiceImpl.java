@@ -42,12 +42,8 @@ public class OpdEntDetailsServiceImpl implements OpdEntDetailsService {
     public ApiResponse<String> saveEntDetails(OpdEntDetailsRequest request) {
         try {
             User user = authUtil.getCurrentUser();
-
             Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new RuntimeException("Patient not found"));
-
             Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new RuntimeException("Visit not found"));
-
-
             OpdEntDetails entity = new OpdEntDetails();
 
             entity.setPatient(patient);

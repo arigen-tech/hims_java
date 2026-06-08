@@ -43,7 +43,7 @@ public class OpdObgDetailsResponse {
     private String trimester;
     private String gc; // Gestational Calculation
     private String pallor;
-    private String pedalEdema;
+    private String peA;
 
     // Vitals & Respiratory
     private String respiratorySystem;

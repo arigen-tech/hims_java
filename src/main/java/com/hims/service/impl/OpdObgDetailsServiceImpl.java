@@ -94,7 +94,7 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                 entity.setImmunisedStatus(obg.getImmunised());
                 entity.setTrimester(obg.getTrimester());
                 entity.setGc(obg.getGestationalCalculation());
-                entity.setPvDone(obg.getPerExamination());
+                entity.setPedalEdema(obg.getPerExamination());
                 entity.setTtStatus(obg.getTetanusToxoid());
                 entity.setFhr(obg.getFetalHeartRate());
                 entity.setPresentation(obg.getPresentation());
@@ -237,7 +237,7 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                 .trimester(projection.getTrimester())
                 .gc(projection.getGc())
                 .pallor(projection.getPallor())
-                .pedalEdema(projection.getPedalEdema())
+                .peA(projection.getPedalEdema())
                 .respiratorySystem(projection.getRespiratorySystem())
                 .breathSounds(projection.getBreathSounds())
                 .cardiovascularS1(projection.getCardiovascularS1())
