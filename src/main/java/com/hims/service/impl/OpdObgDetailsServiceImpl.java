@@ -9,8 +9,10 @@ import com.hims.entity.Visit;
 import com.hims.entity.repository.OpdObgDetailsRepository;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.entity.repository.VisitRepository;
+import com.hims.projection.OpdObgDetailsProjection;
 import com.hims.request.OpdObgDetailsRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.OpdObgDetailsResponse;
 import com.hims.service.OpdObgDetailsService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
@@ -161,12 +163,126 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
 
             opdObgDetailsRepository.save(entity);
 
-            return ResponseUtils.createSuccessResponse("OPD Obg Details saved successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("OPD Obg Details saved successfully", new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("OPD Obg details field: ", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+    @Override
+    public ApiResponse<OpdObgDetailsResponse> getObgDetailsByVisitId(Long visitId) {
+        try {
+            log.info("Fetching OBG details for visit ID: {}", visitId);
+            if (visitId == null || visitId <= 0) {
+                log.warn("Invalid visit ID provided: {}", visitId);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<OpdObgDetailsResponse>() {
+                        },
+                        "Invalid visit ID", HttpStatus.BAD_REQUEST.value());
+            }
+            if (!visitRepository.existsById(visitId)) {
+                log.warn("Visit not found with ID: {}", visitId);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<OpdObgDetailsResponse>() {
+                        },
+                        "Visit not found", HttpStatus.NOT_FOUND.value());
+            }
+            var obgProjection = opdObgDetailsRepository.findOpdObgDetailsByVisitId(visitId);
+            if (obgProjection.isPresent()) {
+                log.info("Successfully retrieved OBG details for visit ID: {}", visitId);
+                OpdObgDetailsResponse response = mapProjectionToResponse(obgProjection.get());
+                return ResponseUtils.createSuccessResponse(response, new TypeReference<OpdObgDetailsResponse>() {
+                        },
+                        "OBG details retrieved successfully");
+            } else {
+                log.info("No OBG details found for visit ID: {}", visitId);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<OpdObgDetailsResponse>() {
+                        },
+                        "No OBG examination details found for this visit", HttpStatus.NOT_FOUND.value());
+            }
+        } catch (Exception e) {
+            log.error("Error fetching OBG details for visit ID: {}", visitId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<OpdObgDetailsResponse>() {
+                    },
+                    AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    /**
+     * Map OpdObgDetailsProjection to OpdObgDetailsResponse
+     * Converts projection data from database to response object
+     *
+     * @param projection the projection object from database query
+     * @return mapped OpdObgDetailsResponse object
+     */
+    private OpdObgDetailsResponse mapProjectionToResponse(OpdObgDetailsProjection projection) {
+        return OpdObgDetailsResponse.builder()
+                .obgId(projection.getObgId())
+                .patientId(projection.getPatientId())
+                .visitId(projection.getVisitId())
+                .opdDate(projection.getOpdDate())
+                .obstetricHistoryNotes(projection.getObstetricHistoryNotes())
+                .gravida(projection.getGravida())
+                .para(projection.getPara())
+                .abortions(projection.getAbortions())
+                .livingChildren(projection.getLivingChildren())
+                .conceptionType(projection.getConceptionType())
+                .marriedLifeYears(projection.getMarriedLifeYears())
+                .consanguinity(projection.getConsanguinity())
+                .bookedStatus(projection.getBookedStatus())
+                .immunisedStatus(projection.getImmunisedStatus())
+                .trimester(projection.getTrimester())
+                .gc(projection.getGc())
+                .pallor(projection.getPallor())
+                .pedalEdema(projection.getPedalEdema())
+                .respiratorySystem(projection.getRespiratorySystem())
+                .breathSounds(projection.getBreathSounds())
+                .cardiovascularS1(projection.getCardiovascularS1())
+                .cardiovascularS2(projection.getCardiovascularS2())
+                .cardiovascularMurmurs(projection.getCardiovascularMurmurs())
+                .ttStatus(projection.getTtStatus())
+                .fhr(projection.getFhr())
+                .presentation(projection.getPresentation())
+                .palpationNotes(projection.getPalpationNotes())
+                .pvDone(projection.getPvDone())
+                .uterusHeight(projection.getUterusHeight())
+                .uterusHeightSpecify(projection.getUterusHeightSpecify())
+                .antenatalRemarks(projection.getAntenatalRemarks())
+                .menarcheAge(projection.getMenarcheAge())
+                .cycles(projection.getCycles())
+                .rangeDays(projection.getRangeDays())
+                .intervalDays(projection.getIntervalDays())
+                .menstrualFlow(projection.getMenstrualFlow())
+                .menstrualPause(projection.getMenstrualPause())
+                .pvOsDilatation(projection.getPvOsDilatation())
+                .pvEffacement(projection.getPvEffacement())
+                .pvMembrane(projection.getPvMembrane())
+                .pvLiquor(projection.getPvLiquor())
+                .cervixConsistency(projection.getCervixConsistency())
+                .cervixPosition(projection.getCervixPosition())
+                .cervixLength(projection.getCervixLength())
+                .stationPresenting(projection.getStationPresenting())
+                .fetalHead(projection.getFetalHead())
+                .pelvis(projection.getPelvis())
+                .gynFlow(projection.getGynFlow())
+                .gynMenarcheAge(projection.getGynMenarcheAge())
+                .gynLastMenstrualPeriod(projection.getGynLastMenstrualPeriod())
+                .gynMenstrualPattern(projection.getGynMenstrualPattern())
+                .gynCycleType(projection.getGynCycleType())
+                .sterilisation(projection.getSterilisation())
+                .abdomenInspection(projection.getAbdomenInspection())
+                .abdomenPalpation(projection.getAbdomenPalpation())
+                .papSmearResult(projection.getPapSmearResult())
+                .localExaminationNotes(projection.getLocalExaminationNotes())
+                .perSpeculum(projection.getPerSpeculum())
+                .bimanualExamination(projection.getBimanualExamination())
+                .status(projection.getStatus())
+                .lastUpdateDate(projection.getLastUpdateDate())
+                .createdBy(projection.getCreatedBy())
+                .lastUpdatedBy(projection.getLastUpdatedBy())
+                .build();
     }
 }

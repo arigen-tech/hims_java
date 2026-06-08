@@ -216,12 +216,24 @@ public class OPDPatientController {
         return opdObgDetailsService.saveObgDetails(request);
     }
 
+    @GetMapping("/getOBGDetailsByVisit")
+    @Operation(
+            summary = "Get OBG Examination Details by Visit",
+            description = "Retrieve OBG (Obstetrics and Gynecology) examination details for a specific patient visit"
+    )
+    public ApiResponse<OpdObgDetailsResponse> getOBGDetailsByVisit(@RequestParam Long visitId) {
+        log.info("Fetching OBG details for visit ID: {}", visitId);
+        return opdObgDetailsService.getObgDetailsByVisitId(visitId);
+    }
+
     @PostMapping("/saveEntDetails")
     @Operation(description = "Save Ent  data for a patient visit")
     public ApiResponse<String> saveEntDetails(@Valid @RequestBody OpdEntDetailsRequest request ) {
         log.info("Saving OPD Ent details");
         return opdEntDetailsService.saveEntDetails(request);
     }
+
+
 
 
 }

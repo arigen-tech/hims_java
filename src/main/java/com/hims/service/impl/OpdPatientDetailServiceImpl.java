@@ -3010,12 +3010,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     private PrescriptionDetailResponse mapPrescriptionDetailProjectionToResponse(PrescriptionDetailProjection projection) {
-
         return PrescriptionDetailResponse.builder().prescriptionDtId(projection.getPrescriptionDtId()).prescriptionHdId(projection.getPrescriptionHdId()).drugId(projection.getItemId()).drugName(projection.getItemName()).dosage(projection.getDosage()).frequency(projection.getFrequency()).days(projection.getDays()).total(projection.getTotal()).issuedQty(projection.getIssuedQty()).route(projection.getRoute()).instruction(projection.getInstruction()).unitPrice(projection.getUnitPrice()).discount(projection.getDiscount()).gstRate(projection.getGstRate()).lineCost(projection.getLineCost()).status(projection.getStatus()).batchNo(projection.getBatchNo()).expiryDate(projection.getExpiryDate()).doctorName(projection.getDoctorName()).departmentName(projection.getDepartmentName()).prescribedDate(projection.getPrescribedDate()).dispUnit(projection.getDispUnit()).build();
     }
 
     private OpdRecallVisitResponse mapToResponse(OpdRecallVisitProjection projection) {
-
         OpdRecallVisitResponse response = new OpdRecallVisitResponse();
         response.setVisitId(projection.getVisitId());
         response.setPatientId(projection.getPatientId());
