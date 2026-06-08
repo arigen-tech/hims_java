@@ -8,5 +8,5 @@ import jakarta.validation.Valid;
 public interface OpdEntDetailsService {
     ApiResponse<String> saveEntDetails(@Valid OpdEntDetailsRequest request);
 
-    ApiResponse<OpdEntDetailsResponse> getEntDetails(Long visitId);
+    ApiResponse<OpdEntDetailsResponse> getEntDetailsByVisit(Long visitId);
 }
