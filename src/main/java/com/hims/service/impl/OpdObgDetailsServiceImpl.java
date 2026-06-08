@@ -90,7 +90,7 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                 entity.setConsanguinity(obg.getConsanguinity());
                 entity.setBookedStatus(obg.getBooked());
                 entity.setImmunisedStatus(obg.getImmunised());
-                entity.setTrimester(obg.getTrimesters());
+                entity.setTrimester(obg.getTrimester());
                 entity.setGc(obg.getGestationalCalculation());
                 entity.setPvDone(obg.getPerExamination());
                 entity.setTtStatus(obg.getTetanusToxoid());
@@ -152,9 +152,6 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                 }
             }
 
-            // Direct fields from request (not nested)
-            entity.setPedalEdema(request.getPedalEdema());
-            entity.setAntenatalRemarks(request.getAntenatalRemarks());
 
             // System fields
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());

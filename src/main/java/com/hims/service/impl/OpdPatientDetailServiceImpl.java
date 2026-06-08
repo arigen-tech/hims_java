@@ -11,6 +11,7 @@ import com.hims.request.ActiveVisitSearchRequest;
 import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.*;
+import com.hims.service.OpdObgDetailsService;
 import com.hims.service.OpdOpthDetailsService;
 import com.hims.service.OpdPatientDetailService;
 import com.hims.utils.AuthUtil;
@@ -101,6 +102,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
 
     private final OpdOpthDetailsService opdOpthDetailsService;
+    private final OpdObgDetailsService opdObgDetailsService;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -449,9 +451,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         Visit visit = getVisit(request.getVisitId());
         Long deptId = authUtil.getCurrentDepartmentId();
         OpdPatientDetail opd = opdPatientDetailRepository.findByVisit_Id(request.getVisitId());
-
+        // If OPD patient detail doesn't exist, create a new one
         if (opd == null) {
-            throw new SDDException("opdPatientDetail", 404, "OPD Patient Detail not found for visit ID: " + request.getVisitId());
+            opd = new OpdPatientDetail();
+            log.info("Creating new OPD Patient Detail for visit ID: {}", request.getVisitId());
         }
         if ((request.getWorkingDiagnosis() == null || request.getWorkingDiagnosis().isBlank()) && (request.getIcdDiagnosis() == null || request.getIcdDiagnosis().isEmpty())) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
@@ -503,28 +506,22 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
 
         if (request.getOphthalmologyExaminationDetails() != null) {
-
-            OpdOpthDetailsRequest opthRequest =
-                    request.getOphthalmologyExaminationDetails();
-
+            OpdOpthDetailsRequest opthRequest = request.getOphthalmologyExaminationDetails();
             opthRequest.setPatientId(patient.getId());
             opthRequest.setVisitId(visit.getId());
-
-            ApiResponse<String> response =
-                    opdOpthDetailsService.opdVisionExaminationDetailsSave(opthRequest);
-
-            if (response == null
-                    || response.getStatus() != HttpStatus.OK.value()) {
-
-                throw new SDDException(
-                        "ophthalmology",
-                        500,
-                        response != null
-                                ? response.getMessage()
-                                : "Failed to save ophthalmology details");
+            ApiResponse<String> response = opdOpthDetailsService.opdVisionExaminationDetailsSave(opthRequest);
+            if (response == null|| response.getStatus() != HttpStatus.OK.value()) {
+                throw new SDDException("ophthalmology",500,response != null? response.getMessage(): "Failed to save ophthalmology details");
             }
         }
-
+        if(request.getOpdObgDetailsRequest() != null){
+            request.getOpdObgDetailsRequest().setPatientId(patient.getId());
+            request.getOpdObgDetailsRequest().setVisitId(visit.getId());
+            ApiResponse<String> response = opdObgDetailsService.saveObgDetails(request.getOpdObgDetailsRequest());
+            if (response == null|| response.getStatus() != HttpStatus.OK.value()) {
+                throw new SDDException("obg",500,response != null? response.getMessage(): "Failed to save OBG details");
+            }
+        }
         opdPatientDetailRepository.save(saved);
         closeVisit(visit);
         log.info("Successfully completed OPD patient detail creation for visit ID: {}", visit.getId());
@@ -581,6 +578,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         opd.setBpSystolic(request.getBpSystolic());
         opd.setBpDiastolic(request.getBpDiastolic());
         opd.setMlcFlag(request.getMlcFlag());
+        opd.setPatient(request.getPatientId() != null ? patientRepository.findById(request.getPatientId()).orElseThrow(() -> new SDDException("patient", 404, "Patient not found")) : null);
+        opd.setVisit(request.getVisitId() != null ? visitRepository.findById(request.getVisitId()).orElseThrow(() -> new SDDException("visit", 404, "Visit not found")) : null);
+        opd.setDepartment(request.getDepartmentId() != null ? departmentRepository.findById(request.getDepartmentId()).orElseThrow(() -> new SDDException("department", 404, "Department not found")) : null);
+        opd.setHospital(request.getHospitalId() != null ? hospitalRepository.findById(request.getHospitalId()).orElseThrow(() -> new SDDException("hospital", 404, "Hospital not found")) : null);
+        opd.setDoctor(request.getDoctorId() != null ? userRepository.findById(request.getDoctorId()).orElseThrow(() -> new SDDException("doctor", 404, "Doctor not found")) : null);
+        opd.setLastChgDate(Instant.now());
+        opd.setLastChgBy(Objects.requireNonNull(getCurrentUser()).getFullName());
     }
 
     private void validateUpdateRequest(RecallOpdPatientDetailRequest request) {
@@ -3013,23 +3017,14 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private OpdRecallVisitResponse mapToResponse(OpdRecallVisitProjection projection) {
 
         OpdRecallVisitResponse response = new OpdRecallVisitResponse();
-
         response.setVisitId(projection.getVisitId());
-
         response.setPatientId(projection.getPatientId());
-
         response.setPatientName(projection.getPatientName());
-
         response.setMobileNo(projection.getMobileNo());
-
         response.setGender(projection.getGender());
-
         response.setAge(projection.getAge());
-
         response.setDeptName(projection.getDeptName());
-
         response.setDoctorName(projection.getDoctorName());
-
         return response;
     }
 }

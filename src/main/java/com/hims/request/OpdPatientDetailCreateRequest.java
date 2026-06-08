@@ -101,8 +101,7 @@ public class OpdPatientDetailCreateRequest {
     private Long followUpDays;
 
     private OpdOpthDetailsRequest ophthalmologyExaminationDetails;
-
-//    private OpdObgDetailsRequest opdObgDetailsRequest;
+    private OpdObgDetailsRequest opdObgDetailsRequest;
 
 
 

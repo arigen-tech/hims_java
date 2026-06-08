@@ -22,19 +22,19 @@ public class OpdObgDetailsRequest {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class GynaecologyHistory {
-        private String gynFlow;
-        private Integer ageOfMenarche;
-        private LocalDate lastMenstrualPeriod;
-        private String menstrualPattern;
-        private String gynCycle;
-        private String sterilisation;
-        private String obstetricHistory;
-        private String perAbdomenInspection;
         private String abdomenPalpation;
-        private String papSmear;
-        private String localExamination;
-        private String perSpeculum;
+        private Integer ageOfMenarche;
         private String bimanualExamination;
+        private String gynFlow;
+        private String gynCycle;
+        private LocalDate lastMenstrualPeriod;
+        private String localExamination;
+        private String menstrualPattern;
+        private String obstetricHistory;
+        private String papSmear;
+        private String perAbdomenInspection;
+        private String perSpeculum;
+        private String sterilisation;
     }
 
     @Data
@@ -49,7 +49,7 @@ public class OpdObgDetailsRequest {
         private String consanguinity;
         private String booked;
         private String immunised;
-        private String trimesters;
+        private String trimester;
         private String gestationalCalculation;
         private String paPalpation;
         private String perExamination;
@@ -131,7 +131,5 @@ public class OpdObgDetailsRequest {
 
     }
 
-    private String pallor;
-    private String pedalEdema;
-    private String antenatalRemarks;
+
 }
