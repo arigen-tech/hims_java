@@ -232,6 +232,16 @@ public class OPDPatientController {
         log.info("Saving OPD Ent details");
         return opdEntDetailsService.saveEntDetails(request);
     }
+    @Operation(
+            summary = "Get ENT Details",
+            description = "Fetch Opd ENT details based on the provided Visit ID."
+    )
+    @GetMapping("/getEntDetails")
+    public ApiResponse<OpdEntDetailsResponse> getEntDetails(@RequestParam Long visitId) {
+        log.info("Received request to fetch ENT details for visitId: {}", visitId);
+        return opdEntDetailsService.getEntDetails(visitId);
+
+    }
 
 
 
