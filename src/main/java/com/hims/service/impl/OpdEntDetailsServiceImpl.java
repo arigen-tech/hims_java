@@ -10,18 +10,23 @@ import com.hims.entity.repository.OpdEntDetailsRepository;
 import com.hims.entity.repository.OpdObgDetailsRepository;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.entity.repository.VisitRepository;
+import com.hims.projection.OpdEntDetailsProjection;
 import com.hims.request.OpdEntDetailsRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.OpdEntDetailsResponse;
+import com.hims.response.OphthalmologyExaminationDetailResponse;
 import com.hims.service.OpdEntDetailsService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -102,5 +107,68 @@ public class OpdEntDetailsServiceImpl implements OpdEntDetailsService {
                 AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
 
     }
+    }
+
+    @Override
+    public ApiResponse<OpdEntDetailsResponse> getEntDetails(Long visitId) {
+try{
+        Optional<OpdEntDetailsProjection> projection = opdEntDetailsRepository.getEntDetailsByVisitId(visitId);
+
+        // If no data found → return null
+        if (projection.isEmpty()) {return ResponseUtils.createSuccessResponse(null, new TypeReference<OpdEntDetailsResponse>() {});}
+
+        OpdEntDetailsResponse response = convertToResponse(projection.get());
+
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    } catch (Exception e) {
+        log.error("get Opd Ent Detail field: ", e);
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+
+    }
+
+
+    }
+    private OpdEntDetailsResponse convertToResponse(OpdEntDetailsProjection p) {
+
+        OpdEntDetailsResponse response = new OpdEntDetailsResponse();
+
+        response.setEntId(p.getEntId());
+        response.setPatientId(p.getPatientId());
+        response.setVisitId(p.getVisitId());
+        response.setOpdDate(p.getOpdDate());
+        response.setRightPinna(p.getRightPinna());
+        response.setLeftPinna(p.getLeftPinna());
+        response.setRightEarCanal(p.getRightEarCanal());
+        response.setLeftEarCanal(p.getLeftEarCanal());
+        response.setRightTmStatus(p.getRightTmStatus());
+        response.setLeftTmStatus(p.getLeftTmStatus());
+        response.setRinneTest(p.getRinneTest());
+        response.setWeberTest(p.getWeberTest());
+        response.setAbcTest(p.getAbcTest());
+        response.setAudiometryFindings(p.getAudiometryFindings());
+        response.setExternalNose(p.getExternalNose());
+        response.setNasalMucosa(p.getNasalMucosa());
+        response.setSeptum(p.getSeptum());
+        response.setTurbinates(p.getTurbinates());
+        response.setNasalPolyp(p.getNasalPolyp());
+        response.setNasalDischarge(p.getNasalDischarge());
+        response.setMaxillaryTenderness(p.getMaxillaryTenderness());
+        response.setFrontalTenderness(p.getFrontalTenderness());
+        response.setOralCavity(p.getOralCavity());
+        response.setTonsilGrade(p.getTonsilGrade());
+        response.setTonsilCongestion(p.getTonsilCongestion());
+        response.setTonsilFollicles(p.getTonsilFollicles());
+        response.setTonsilMembrane(p.getTonsilMembrane());
+        response.setPeritonsillarAbscess(p.getPeritonsillarAbscess());
+        response.setPharynx(p.getPharynx());
+        response.setUvula(p.getUvula());
+        response.setVoiceQuality(p.getVoiceQuality());
+        response.setThyroidEnlargement(p.getThyroidEnlargement());
+        response.setCervicalNodes(p.getCervicalNodes());
+        response.setNeckMass(p.getNeckMass());
+        response.setNeckOtherFindings(p.getNeckOtherFindings());
+
+        return response;
     }
 }
