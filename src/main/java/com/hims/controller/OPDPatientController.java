@@ -1,9 +1,11 @@
 package com.hims.controller;
 
+import com.hims.request.OpdEntDetailsRequest;
 import com.hims.request.OpdObgDetailsRequest;
 import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.*;
+import com.hims.service.OpdEntDetailsService;
 import com.hims.service.OpdObgDetailsService;
 import com.hims.service.OpdOpthDetailsService;
 import com.hims.service.OpdPatientDetailService;
@@ -40,6 +42,8 @@ public class OPDPatientController {
     private final OpdOpthDetailsService opdOpthDetailsService;
     private final OpdPatientDetailService opdPatientDetailService;
     private final OpdObgDetailsService opdObgDetailsService;
+    private final OpdEntDetailsService opdEntDetailsService;
+
 
     @GetMapping("/getPendingPreConsultations")
     @Operation(
@@ -211,5 +215,13 @@ public class OPDPatientController {
         log.info("Saving OPD Obg details");
         return opdObgDetailsService.saveObgDetails(request);
     }
+
+    @PostMapping("/saveEntDetails")
+    @Operation(description = "Save Ent  data for a patient visit")
+    public ApiResponse<String> saveEntDetails(@Valid @RequestBody OpdEntDetailsRequest request ) {
+        log.info("Saving OPD Ent details");
+        return opdEntDetailsService.saveEntDetails(request);
+    }
+
 
 }
