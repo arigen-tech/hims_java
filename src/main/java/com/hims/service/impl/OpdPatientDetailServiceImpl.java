@@ -11,6 +11,7 @@ import com.hims.request.ActiveVisitSearchRequest;
 import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.*;
+import com.hims.service.OpdEntDetailsService;
 import com.hims.service.OpdObgDetailsService;
 import com.hims.service.OpdOpthDetailsService;
 import com.hims.service.OpdPatientDetailService;
@@ -103,6 +104,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     private final OpdOpthDetailsService opdOpthDetailsService;
     private final OpdObgDetailsService opdObgDetailsService;
+    private final OpdEntDetailsService opdEntDetailsService;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -520,6 +522,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             ApiResponse<String> response = opdObgDetailsService.saveObgDetails(request.getOpdObgDetailsRequest());
             if (response == null|| response.getStatus() != HttpStatus.OK.value()) {
                 throw new SDDException("obg",500,response != null? response.getMessage(): "Failed to save OBG details");
+            }
+        }
+        if(request.getEntExaminationDetails()!= null){
+            ApiResponse<String> response = opdEntDetailsService.saveEntDetails(request.getEntExaminationDetails());
+            if (response == null|| response.getStatus() != HttpStatus.OK.value()) {
+                throw new SDDException("ent",500,response != null? response.getMessage(): "Failed to save ENT details");
             }
         }
         opdPatientDetailRepository.save(saved);
