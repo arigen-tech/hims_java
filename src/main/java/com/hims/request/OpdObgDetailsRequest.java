@@ -30,7 +30,7 @@ public class OpdObgDetailsRequest {
         private LocalDate lastMenstrualPeriod;
         private String localExamination;
         private String menstrualPattern;
-        private String obstetricHistory;
+        private String gynObstetricHistory;
         private String papSmear;
         private String perAbdomenInspection;
         private String perSpeculum;

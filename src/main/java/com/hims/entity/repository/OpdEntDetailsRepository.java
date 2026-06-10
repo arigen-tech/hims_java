@@ -54,4 +54,11 @@ public interface OpdEntDetailsRepository extends JpaRepository<OpdEntDetails,Lon
             nativeQuery = true)
     Optional<OpdEntDetailsProjection> getEntDetailsByVisitId(
             @Param("visitId") Long visitId);
+
+    /**
+     * Find ENT details record (entity) by visit ID
+     * @param visitId the visit ID
+     * @return Optional containing OpdEntDetails entity if found
+     */
+    Optional<OpdEntDetails> findByVisitId(Long visitId);
 }

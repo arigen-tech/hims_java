@@ -84,4 +84,5 @@ public interface OpdObgDetailsProjection {
     LocalDateTime getLastUpdateDate();
     String getCreatedBy();
     String getLastUpdatedBy();
+    String getGynObstetricHistory();
 }

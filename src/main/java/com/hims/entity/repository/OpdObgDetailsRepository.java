@@ -79,6 +79,7 @@ SELECT
     pap_smear_result AS papSmearResult,
     local_examination_notes AS localExaminationNotes,
     per_speculum AS perSpeculum,
+    gyn_obstetric_history AS gynObstetricHistory,
     bimanual_examination AS bimanualExamination,
     status AS status,
     last_update_date AS lastUpdateDate,
