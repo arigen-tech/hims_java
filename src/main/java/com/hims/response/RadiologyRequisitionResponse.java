@@ -4,7 +4,7 @@ import lombok.Data;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @Data
 public class RadiologyRequisitionResponse {
@@ -24,6 +24,6 @@ public class RadiologyRequisitionResponse {
     private String reportStatus;
     private String studyStatus;
     private LocalDate studyDate;
-    private LocalTime studyTime;
+    private LocalDateTime studyTime;
 
 }
