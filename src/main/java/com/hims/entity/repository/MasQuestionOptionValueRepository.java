@@ -11,4 +11,6 @@ public interface MasQuestionOptionValueRepository extends JpaRepository<MasQuest
     List<MasQuestionOptionValue> findByStatusIgnoreCaseOrderByOptionValueAsc(String y);
 
     List<MasQuestionOptionValue> findAllByOrderByStatusDescLastUpdateDateDesc();
+
+    List<MasQuestionOptionValue> findByQuestionIdIdAndStatus(Long id, String y);
 }
