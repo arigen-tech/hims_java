@@ -103,13 +103,5 @@ public class RadiologyController {
         return radiologyService.getPACSStudyList(modality, patientName, phoneNumber, page, size);
     }
 
-    @GetMapping("/getPacsStudiesByUhidAndOrderNo")
-    public ApiResponse<List<PacsHmisStudyResponse>> getPacsStudiesByUhidAndOrderNo(
-            @RequestParam String uhid,
-            @RequestParam String orderNo) {
-        return radiologyService.getPacsStudiesByUhidAndOrderNo(uhid, orderNo);
-    }
-
-
 }
 

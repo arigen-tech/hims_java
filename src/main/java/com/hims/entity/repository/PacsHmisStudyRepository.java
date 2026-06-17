@@ -8,9 +8,6 @@ import java.util.Optional;
 
 public interface PacsHmisStudyRepository extends JpaRepository<PacsHmisStudy, Long> {
 
-    Optional<PacsHmisStudy> findByOrderNo(String orderNo);
-
     List<PacsHmisStudy> findAllByUhidAndOrderNo(String uhid, String orderNo);
 
-    Optional<PacsHmisStudy> findByStudyInstanceUid(String studyInstanceUid);
 }

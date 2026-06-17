@@ -86,9 +86,6 @@ public class RadiologyServiceImpl implements RadiologyService {
     PaymentDetailRepository paymentDetailRepository;
     @Autowired
     private RadStudyReportRepository radStudyReportRepository;
-    @Autowired
-    private PacsHmisStudyRepository pacsHmisStudyRepository;
-
 
 
     @Override
@@ -1047,30 +1044,6 @@ public class RadiologyServiceImpl implements RadiologyService {
             );
         }
     }
-
-    @Override
-    public ApiResponse<List<PacsHmisStudyResponse>> getPacsStudiesByUhidAndOrderNo(String uhid, String orderNo) {
-        try {
-            List<PacsHmisStudyResponse> response = pacsHmisStudyRepository.findAllByUhidAndOrderNo(uhid, orderNo)
-                    .stream()
-                    .map(this::toPacsHmisStudyResponse)
-                    .toList();
-
-            return ResponseUtils.createSuccessResponse(
-                    response,
-                    new TypeReference<List<PacsHmisStudyResponse>>() {}
-            );
-        } catch (Exception e) {
-            log.error("Error while fetching PACS studies for uhid={}, orderNo={}", uhid, orderNo, e);
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<List<PacsHmisStudyResponse>>() {},
-                    "Internal Server Error",
-                    500
-            );
-        }
-    }
-
     private RadiologyRequisitionResponse toResponse(RadiologyProjection p) {
         RadiologyRequisitionResponse r = new RadiologyRequisitionResponse();
         r.setAccessionNo(p.getOrderAccessionNo());
@@ -1113,19 +1086,4 @@ public class RadiologyServiceImpl implements RadiologyService {
 
         return dto;
     }
-
-    private PacsHmisStudyResponse toPacsHmisStudyResponse(PacsHmisStudy pacsHmisStudy) {
-        PacsHmisStudyResponse response = new PacsHmisStudyResponse();
-        response.setId(pacsHmisStudy.getId());
-        response.setOrderNo(pacsHmisStudy.getOrderNo());
-        response.setUhid(pacsHmisStudy.getUhid());
-        response.setStudyInstanceUid(pacsHmisStudy.getStudyInstanceUid());
-        response.setModality(pacsHmisStudy.getModality());
-        response.setStudyDescription(pacsHmisStudy.getStudyDescription());
-        response.setStudyDatetime(pacsHmisStudy.getStudyDatetime());
-        response.setStudyStatus(pacsHmisStudy.getStudyStatus());
-        response.setPacsSource(pacsHmisStudy.getPacsSource());
-        return response;
-    }
-
 }
