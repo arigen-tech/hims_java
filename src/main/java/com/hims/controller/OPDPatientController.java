@@ -5,15 +5,14 @@ import com.hims.request.OpdObgDetailsRequest;
 import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.*;
-import com.hims.service.OpdEntDetailsService;
-import com.hims.service.OpdObgDetailsService;
-import com.hims.service.OpdOpthDetailsService;
-import com.hims.service.OpdPatientDetailService;
+import com.hims.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +42,8 @@ public class OPDPatientController {
     private final OpdPatientDetailService opdPatientDetailService;
     private final OpdObgDetailsService opdObgDetailsService;
     private final OpdEntDetailsService opdEntDetailsService;
+    @Autowired
+    private OpdQuestionMasterService opdQuestionMasterService;
 
 
     @GetMapping("/getPendingPreConsultations")
@@ -259,5 +260,13 @@ public class OPDPatientController {
         return opdEntDetailsService.getEntDetailsByVisit(visitId);
 
     }
+    @GetMapping("/getQuestionWiseAnswerValue/{questionHeadingId}")
+    public ApiResponse<List<QuestionWiseAnswerResponse>> getQuestionWiseAnswer(@PathVariable Long questionHeadingId) {
+        log.info("Received request to get question-wise answer for questionHeadingId: {}", questionHeadingId);
+        return opdQuestionMasterService.getQuestionWiseAnswer(questionHeadingId);
+
+    }
+
+
 
 }

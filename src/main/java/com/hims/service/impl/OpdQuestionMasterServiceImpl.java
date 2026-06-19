@@ -3,23 +3,30 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasQuestionHeading;
+import com.hims.entity.MasQuestionOptionValue;
 import com.hims.entity.OpdQuestionMaster;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasQuestionHeadingRepository;
+import com.hims.entity.repository.MasQuestionOptionValueRepository;
 import com.hims.entity.repository.OpdQuestionMasterRepository;
 import com.hims.request.OpdQuestionMasterRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpdQuestionMasterResponse;
+import com.hims.response.QuestionWiseAnswerResponse;
 import com.hims.service.OpdQuestionMasterService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.HTTP;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -29,6 +36,9 @@ public class OpdQuestionMasterServiceImpl implements OpdQuestionMasterService {
     private final OpdQuestionMasterRepository repository;
     private final MasQuestionHeadingRepository masQuestionHeadingRepository;
     private final AuthUtil authUtil;
+    private final OpdQuestionMasterRepository opdQuestionMasterRepository;
+    private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
+
 
     @Override
     public ApiResponse<List<OpdQuestionMasterResponse>> getAll(int flag) {
@@ -185,6 +195,47 @@ public class OpdQuestionMasterServiceImpl implements OpdQuestionMasterService {
         }
     }
 
+    @Override
+    public ApiResponse<List<QuestionWiseAnswerResponse>> getQuestionWiseAnswer(Long questionHeadingId) {
+try{
+        List<OpdQuestionMaster> questions = opdQuestionMasterRepository.findByQuestionHeading_QuestionHeadingIdAndStatus(questionHeadingId, AppConstants.STATUS_Y.toLowerCase());
+
+        List<QuestionWiseAnswerResponse> responseList = new ArrayList<>();
+
+        for (OpdQuestionMaster question : questions) {
+
+            QuestionWiseAnswerResponse response = new QuestionWiseAnswerResponse();
+
+            response.setQuestionId(question.getId());
+            response.setQuestion(question.getQuestion());
+
+            List<MasQuestionOptionValue> optionValues = masQuestionOptionValueRepository.findByQuestionIdIdAndStatus(question.getId(), AppConstants.STATUS_Y.toLowerCase());
+
+            List<QuestionWiseAnswerResponse.AnswerResponse> answerResponses = optionValues.stream()
+                            .map(option -> {
+                                QuestionWiseAnswerResponse.AnswerResponse ans =
+                                        new QuestionWiseAnswerResponse.AnswerResponse();
+
+                                ans.setAnswerId(option.getId());
+                                ans.setAnswerValue(option.getOptionValue());
+                                ans.setAnswerCode(option.getOptionCode());
+                                ans.setAnswerScore(option.getOptionScore());
+                                return ans;
+                            })
+                            .collect(Collectors.toList());
+
+            response.setAnswerResponse(answerResponses);
+
+            responseList.add(response);
+        }
+
+        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<List<QuestionWiseAnswerResponse>>() {
+        });
+    } catch (Exception e) {
+        log.error("Error getQuestionWiseAnswer", e);
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+    }
+    }
     private OpdQuestionMasterResponse toResponse(OpdQuestionMaster e) {
         OpdQuestionMasterResponse response = new OpdQuestionMasterResponse();
         response.setId(e.getId());

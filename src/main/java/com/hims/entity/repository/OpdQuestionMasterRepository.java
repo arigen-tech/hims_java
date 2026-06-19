@@ -11,4 +11,8 @@ public interface OpdQuestionMasterRepository extends JpaRepository<OpdQuestionMa
     List<OpdQuestionMaster> findByStatusIgnoreCaseOrderByQuestionAsc(String y);
 
     List<OpdQuestionMaster> findAllByOrderByStatusDescLastUpdateDateDesc();
+
+
+
+    List<OpdQuestionMaster> findByQuestionHeading_QuestionHeadingIdAndStatus(Long questionHeadingId, String lowerCase);
 }
