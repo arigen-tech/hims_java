@@ -1,15 +1,18 @@
 package com.hims.controller;
 
+import com.hims.request.OpdEntDetailsRequest;
+import com.hims.request.OpdObgDetailsRequest;
 import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.*;
-import com.hims.service.OpdOpthDetailsService;
-import com.hims.service.OpdPatientDetailService;
+import com.hims.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,7 +26,7 @@ import java.util.List;
 
 /**
  * OPD (Out-Patient Department) Controller
- *
+ * <p>
  * Handles all OPD-related operations including pre-consultation management
  * and patient waiting list retrieval. This controller provides endpoints
  * for retrieving pending pre-consultations and managing patient queues.
@@ -37,6 +40,11 @@ public class OPDPatientController {
 
     private final OpdOpthDetailsService opdOpthDetailsService;
     private final OpdPatientDetailService opdPatientDetailService;
+    private final OpdObgDetailsService opdObgDetailsService;
+    private final OpdEntDetailsService opdEntDetailsService;
+    @Autowired
+    private OpdQuestionMasterService opdQuestionMasterService;
+
 
     @GetMapping("/getPendingPreConsultations")
     @Operation(
@@ -74,6 +82,7 @@ public class OPDPatientController {
                 opdPatientDetailService.getWaitingList(pageable, patientName, mobileNumber, doctorId, sessionId);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
     @PostMapping("/saveOphthalmologyExaminationDetails")
     @Operation(
             summary = "Save Vision Examination Details",
@@ -100,7 +109,7 @@ public class OPDPatientController {
 
     /**
      * Retrieve prescription details of a patient within the last 30 days.
-     *
+     * <p>
      * Each patient can have multiple prescriptions. This endpoint fetches all
      * prescriptions issued within the last 30 days with their associated medication
      * details including dosage, frequency, cost, and billing information.
@@ -122,6 +131,7 @@ public class OPDPatientController {
             return new ResponseEntity<>(response, HttpStatus.valueOf(response.getStatus()));
         }
     }
+
     /**
      * Fetch ophthalmology examination details for a specific visit.
      *
@@ -132,6 +142,7 @@ public class OPDPatientController {
     public ApiResponse<OphthalmologyExaminationDetailResponse> getOphthalmologyExaminationDetail(@RequestParam Long visitId) {
         return opdOpthDetailsService.getOphthalmologyExaminationDetail(visitId);
     }
+
     /**
      * Fetch previous OPD history of a patient with pagination.
      *
@@ -150,6 +161,7 @@ public class OPDPatientController {
 
         return opdPatientDetailService.getPreviousOpdVisit(patientId, hospitalId, page, size);
     }
+
     /**
      * Fetch previous vitals details of a patient with pagination.
      *
@@ -182,6 +194,7 @@ public class OPDPatientController {
         ApiResponse<Page<OpdRecallVisitResponse>> response = opdPatientDetailService.getRecallOpdVisit(name, mobile, visitDate, page, size);
         return ResponseEntity.ok(response);
     }
+
     @GetMapping("/recallPatientDetailsByVisit")
     public ResponseEntity<ApiResponse<OpdPatientRecallResponce>> getRecallVisits(
             @RequestParam Long visitId) {
@@ -201,5 +214,49 @@ public class OPDPatientController {
         log.info("==== END updateRecallOpdPatient API ====");
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/saveOBGDetails")
+    @Operation(description = "Save Obg data for a patient visit")
+    public ApiResponse<String> saveObgDetails(@Valid @RequestBody OpdObgDetailsRequest request) {
+        log.info("Saving OPD Obg details");
+        return opdObgDetailsService.saveObgDetails(request);
+    }
+
+    @GetMapping("/getOBGDetailsByVisit")
+    @Operation(
+            summary = "Get OBG Examination Details by Visit",
+            description = "Retrieve OBG (Obstetrics and Gynecology) examination details for a specific patient visit"
+    )
+    public ApiResponse<OpdObgDetailsResponse> getOBGDetailsByVisit(@RequestParam Long visitId) {
+        log.info("Fetching OBG details for visit ID: {}", visitId);
+        return opdObgDetailsService.getObgDetailsByVisitId(visitId);
+    }
+
+    @PostMapping("/saveEntDetails")
+    @Operation(description = "Save Ent  data for a patient visit")
+    public ApiResponse<String> saveEntDetails(@Valid @RequestBody OpdEntDetailsRequest request) {
+        log.info("Saving OPD Ent details");
+        return opdEntDetailsService.saveEntDetails(request);
+    }
+
+    @Operation(
+            summary = "Get ENT Details",
+            description = "Fetch Opd ENT details based on the provided Visit ID."
+    )
+
+    @GetMapping("/getEntDetailsByVisit")
+    public ApiResponse<OpdEntDetailsResponse> getEntDetailsByVisit(@RequestParam Long visitId) {
+        log.info("Received request to fetch ENT details for visitId: {}", visitId);
+        return opdEntDetailsService.getEntDetailsByVisit(visitId);
+
+    }
+    @GetMapping("/getQuestionWiseAnswerValue/{questionHeadingId}")
+    public ApiResponse<List<QuestionWiseAnswerResponse>> getQuestionWiseAnswer(@PathVariable Long questionHeadingId) {
+        log.info("Received request to get question-wise answer for questionHeadingId: {}", questionHeadingId);
+        return opdQuestionMasterService.getQuestionWiseAnswer(questionHeadingId);
+
+    }
+
+
 
 }

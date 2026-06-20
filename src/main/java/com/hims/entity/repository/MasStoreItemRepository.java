@@ -4,6 +4,7 @@ import com.hims.entity.MasItemCategory;
 import com.hims.entity.MasStoreItem;
 import com.hims.projection.ItemProjection;
 import com.hims.projection.MasStoreItemProjection;
+import com.hims.projection.NonDrugStoreItemProjection;
 import com.hims.response.ItemStockLedgerWithBatchResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -289,4 +290,46 @@ GROUP BY
     List<MasStoreItem> findAllByItemIds(
             @Param("itemIds") List<Long> itemIds
     );
+
+
+
+    @Query("""
+        SELECT
+            m.itemId AS itemId,
+            m.pvmsNo AS pvmsNo,
+            m.nomenclature AS nomenclature,
+
+            g.id AS groupId,
+            g.groupName AS groupName,
+
+            it.id AS itemTypeId,
+            it.name AS itemTypeName,
+
+            s.sectionId AS sectionId,
+            s.sectionName AS sectionName,
+
+            ic.itemClassId AS itemClassId,
+            ic.itemClassName AS itemClassName,
+
+            c.itemCategoryId AS masItemCategoryId,
+            c.itemCategoryName AS masItemCategoryName,
+
+            u.unitId AS unitAU,
+            u.unitName AS unitAuName,
+
+            m.status AS status
+
+        FROM MasStoreItem m
+        LEFT JOIN m.groupId g
+        LEFT JOIN m.itemTypeId it
+        LEFT JOIN m.sectionId s
+        LEFT JOIN m.itemClassId ic
+        LEFT JOIN m.masItemCategory c
+        LEFT JOIN m.unitAU u
+
+        WHERE  s.sectionId <> :sectionId
+
+        ORDER BY m.lastChgDate DESC,  m.lastChgTime DESC
+        """)
+    List<NonDrugStoreItemProjection> getAllNonDrugItems( @Param("sectionId") Integer sectionId);
 }

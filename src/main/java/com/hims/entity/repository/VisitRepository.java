@@ -805,13 +805,14 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
         WHERE v.patient.id = :patientId
         AND v.hospital.id = :hospitalId
-       
+       AND v.visitStatus=:visitStatus
 
         ORDER BY v.visitDate DESC
     """)
     Page<PreviousOpdVisitProjection> getPreviousOpdVisit(
             @Param("patientId") Long patientId,
             @Param("hospitalId") Long hospitalId,
+            @Param("visitStatus") String visitStatus,
               Pageable pageable
     );
     @Query("""
@@ -832,10 +833,12 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
         WHERE v.patient.id = :patientId
         AND v.hospital.id = :hospitalId
+            AND v.visitStatus=:visitStatus
+            
 
         ORDER BY v.visitDate DESC
     """)
-    Page<PreviousOpdVitalsDetailsProjection> getPriviousOpdVitalsDetails(Long patientId, Long hospitalId, Pageable pageable);
+    Page<PreviousOpdVitalsDetailsProjection> getPriviousOpdVitalsDetails(Long patientId, Long hospitalId, @Param("visitStatus") String visitStatus, Pageable pageable);
 
     @Query(value = """
         SELECT 
@@ -872,7 +875,6 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
         WHERE v.hospital_id = :hospitalId
         AND v.department_id = :departmentId
           AND DATE(v.visit_date) = CURRENT_DATE
-        AND v.pre_consultation = :preConsultation
         AND v.billing_status = :billingStatus
         AND v.visit_status = :visitStatus
 
@@ -907,7 +909,6 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
         WHERE v.hospital_id = :hospitalId
         AND v.department_id = :departmentId
-        AND v.pre_consultation = :preConsultation
         AND v.billing_status = :billingStatus
         AND v.visit_status = :visitStatus
 
@@ -937,7 +938,6 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     Page<PatientWaitingListProjection> findWaitingPatientsByHospitalWithFilters(
             @Param("hospitalId") Long hospitalId,
             @Param("departmentId") Long departmentId,
-            @Param("preConsultation") String preConsultation,
             @Param("billingStatus") String billingStatus,
             @Param("visitStatus") String visitStatus,
             @Param("patientName") String patientName,
