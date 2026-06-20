@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @Tag(name = "PatientController", description = "This controller is used for any Patient Related task.")
@@ -101,7 +102,6 @@ public class RadiologyController {
             @RequestParam(defaultValue = "5") int size) {
         return radiologyService.getPACSStudyList(modality, patientName, phoneNumber, page, size);
     }
-
 
 }
 

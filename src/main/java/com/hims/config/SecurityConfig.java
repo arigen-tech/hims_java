@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .requestMatchers("/authController/login").permitAll()
                         .requestMatchers("/authController/getUsersRole/{userName}").permitAll()
                         .requestMatchers("/apiTest/getTest").permitAll()
+                       .requestMatchers("/api/v1/abdm/**").permitAll()
                         .requestMatchers("/users/**").permitAll()
                         .requestMatchers("/patient/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()

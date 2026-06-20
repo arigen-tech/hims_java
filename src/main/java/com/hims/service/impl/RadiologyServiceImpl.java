@@ -88,7 +88,6 @@ public class RadiologyServiceImpl implements RadiologyService {
     private RadStudyReportRepository radStudyReportRepository;
 
 
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<LabRadiologyRegistrationResponse> registerPatientWithInv(PatientRequest patient, List<LabInvestigationReq> radInvestigationReq) {
@@ -1045,7 +1044,6 @@ public class RadiologyServiceImpl implements RadiologyService {
             );
         }
     }
-
     private RadiologyRequisitionResponse toResponse(RadiologyProjection p) {
         RadiologyRequisitionResponse r = new RadiologyRequisitionResponse();
         r.setAccessionNo(p.getOrderAccessionNo());
@@ -1063,8 +1061,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         r.setRadOrderDtId(p.getRadOrderdtId());
         r.setReportStatus(p.getReportStatus());
         r.setStudyStatus(p.getStudyStatus());
-        r.setStudyDate(null);
-        r.setStudyTime(null);
+        r.setStudyDate(p.getStudyDatetime() != null ? p.getStudyDatetime().toLocalDate() : null);
+        r.setStudyTime(p.getStudyDatetime());
         return r;
     }
 
@@ -1088,5 +1086,4 @@ public class RadiologyServiceImpl implements RadiologyService {
 
         return dto;
     }
-
 }

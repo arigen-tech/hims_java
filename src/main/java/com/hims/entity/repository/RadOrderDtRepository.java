@@ -161,13 +161,17 @@ select
  inv.investigationName as investigationName,
  hd.orderTime as orderTime,
  hd.orderDate as orderDate,
- hd.department.departmentName as department
+ hd.department.departmentName as department,
+  pacs.studyDatetime as studyDatetime
 
 from RadOrderDt dt
 join dt.radOrderhd hd
 left join hd.patient p
 join dt.subChargecode sc
 join dt.investigation inv
+left join PacsHmisStudy pacs
+       on pacs.orderNo = dt.orderAccessionNo
+      and pacs.uhid = p.uhidNo
 where hd.hospital.id = :hospitalId
   and lower(dt.studyStatus) = lower(:studyStatus)
   and (:modalityId is null or sc.subId = :modalityId)
