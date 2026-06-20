@@ -1381,6 +1381,8 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setBillingHd(bhdId);
         billingDetail.setBillHd(bhdId);
         billingDetail.setServiceCategory(sevcat);
+        billingDetail.setServiceId(0L);
+        billingDetail.setChargeCost(BigDecimal.ZERO);
 
         if (isRadiology) {
             RadOrderDt rad = (RadOrderDt) dtId;
