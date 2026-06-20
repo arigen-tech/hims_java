@@ -21,9 +21,8 @@ public class PacsViewerService {
     private final PacsHmisStudyRepository pacsHmisStudyRepository;
 
     public WeasisLaunchResponse generateLaunchResponse(String uhid, String orderNo) {
-        PacsHmisStudy study = pacsHmisStudyRepository.findAllByUhidAndOrderNo(uhid, orderNo)
-                .stream()
-                .findFirst()
+        PacsHmisStudy study = pacsHmisStudyRepository
+                .findFirstByUhidAndOrderNo(uhid, orderNo)
                 .orElseThrow(() -> new ResponseStatusException(
                         NOT_FOUND,
                         "No PACS study found for uhid: " + uhid + " and orderNo: " + orderNo

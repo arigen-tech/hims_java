@@ -1,7 +1,10 @@
 package com.hims.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.response.ApiResponse;
 import com.hims.response.WeasisLaunchResponse;
 import com.hims.service.PacsViewerService;
+import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,9 +20,13 @@ public class PacsViewerController {
     private final PacsViewerService pacsViewerService;
 
     @GetMapping("/launch-url")
-    public ResponseEntity<WeasisLaunchResponse> getLaunchUrl(
+    public ResponseEntity<ApiResponse<WeasisLaunchResponse>> getLaunchUrl(
             @RequestParam String uhid,
             @RequestParam String orderNo) {
-        return ResponseEntity.ok(pacsViewerService.generateLaunchResponse(uhid, orderNo));
+        WeasisLaunchResponse response = pacsViewerService.generateLaunchResponse(uhid, orderNo);
+        return ResponseEntity.ok(ResponseUtils.createSuccessResponse(
+                response,
+                new TypeReference<>() {}
+        ));
     }
 }
