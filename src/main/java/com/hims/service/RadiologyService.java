@@ -32,4 +32,5 @@ public interface RadiologyService {
     ApiResponse<String> saveDetailsReportForRadiology(RadiologyReportRequest request,String status);
 
     ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size);
+
 }
