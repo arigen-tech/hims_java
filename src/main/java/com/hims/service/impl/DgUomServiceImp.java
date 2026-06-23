@@ -79,7 +79,7 @@ public class DgUomServiceImp implements DgUomService {
     public ApiResponse<List<DgUomResponse>> getAllDgUom(int flag) {
         List<DgUom> dpUom;
         if(flag==1){
-            dpUom=dgUomRepository.findByStatusOrderByNameAsc("y");
+            dpUom=dgUomRepository.findByStatusIgnoreCaseOrderByNameAsc("y");
         }else if(flag==0){
             dpUom=dgUomRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
 

@@ -17,4 +17,6 @@ public interface DgUomRepository extends JpaRepository<DgUom,Long> {
     //List<DgUom> findAllByOrderByLastChgDateDescLastChgTimeDesc();
 
     List<DgUom> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
+
+    List<DgUom> findByStatusIgnoreCaseOrderByNameAsc(String y);
 }

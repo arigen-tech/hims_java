@@ -96,7 +96,7 @@ public class MasRoomCategoryServiceImpl implements MasRoomCategoryService {
 
             entity.setStatus(status);
             entity.setUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-//            entity.setLastUpdatedDate(LocalDate.now());
+            entity.setLastUpdatedDate(LocalDate.now());
 
             MasRoomCategory saved = masRoomCategoryRepo.save(entity);
 
