@@ -17,4 +17,6 @@ public interface DgMasCollectionRepository extends JpaRepository<DgMasCollection
 
 
     List<DgMasCollection> findAllByOrderByStatusDescLastChgTimeDescLastChgDateDesc();
+
+    List<DgMasCollection> findByStatusIgnoreCaseOrderByCollectionNameAsc(String y);
 }

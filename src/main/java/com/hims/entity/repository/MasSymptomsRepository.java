@@ -11,4 +11,6 @@ public interface MasSymptomsRepository extends JpaRepository<MasSymptoms, Long> 
     List<MasSymptoms> findByStatusOrderBySymptomsNameAsc(String y);
 
     List<MasSymptoms> findAllByOrderByStatusDescLastChgDateDesc();
+
+    List<MasSymptoms> findByStatusIgnoreCaseOrderBySymptomsNameAsc(String y);
 }

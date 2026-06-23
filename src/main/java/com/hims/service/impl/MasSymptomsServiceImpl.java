@@ -146,7 +146,7 @@ public class MasSymptomsServiceImpl implements MasSymptomsService {
     public ApiResponse<List<MasSymptomsResponse>> getAllSymptoms (int flag){
         List<MasSymptoms> masSymptoms;
         if (flag == 1) {
-            masSymptoms = symptomsRepo.findByStatusOrderBySymptomsNameAsc("y");
+            masSymptoms = symptomsRepo.findByStatusIgnoreCaseOrderBySymptomsNameAsc("y");
         } else if (flag == 0) {
             masSymptoms = symptomsRepo.findAllByOrderByStatusDescLastChgDateDesc();
         } else {

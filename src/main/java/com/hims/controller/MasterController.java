@@ -811,7 +811,7 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     }
 
 
-    //    ================================EmployeementType Controller================================//
+    //    ================================Employeement Type Controller================================//
 
     @GetMapping("/employmentType/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasEmploymentTypeResponse>>> getAllMasEmploymentType(@PathVariable int flag) {
@@ -874,7 +874,7 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     }
 
 
-    //    ================================IdentificationType Controller================================//
+    //    ================================Identification Type Controller================================//
 
     @PostMapping("/identification-types/create")
     public ApiResponse<MasIdentificationTypeResponse> addIdentificationType(@RequestBody MasIdentificationTypeRequest request) {
@@ -902,7 +902,7 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     }
 
 
-    //    ================================Mas ItemType Controller================================//
+    //    ================================Mas Item Type Controller================================//
 
     @PostMapping("/masItemType/create")
     public ResponseEntity<ApiResponse<MasItemTypeResponse>> addMasTypeItem(@RequestBody MasItemTypeRequest masItemTypeRequest) {
