@@ -5,6 +5,8 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.projection.ItemProjection;
+import com.hims.projection.MasStoreItemFacilityProjection;
+import com.hims.projection.MasStoreItemsProjection;
 import com.hims.projection.NonDrugStoreItemProjection;
 import com.hims.request.MasStoreItemRequest;
 import com.hims.request.NonDrugStoreItemRequest;
@@ -290,37 +292,95 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
+//
+////
+////    @Override
+////    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(int flag) {
+////
+////        List<MasStoreItem> masStoreItems;
+////        if (flag == 1) {
+////            masStoreItems =
+////                    masStoreItemRepository
+////                            .findBySectionIdSectionIdAndStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(
+////                                    sectionId, "y"
+////                            );
+////
+////        } else if (flag == 0) {
+////            masStoreItems =
+////                    masStoreItemRepository
+////                            .findBySectionIdSectionIdAndStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(
+////                                    sectionId, List.of("y", "n")
+////                            );
+////
+////        } else {
+////            return ResponseUtils.createFailureResponse(
+////                    null,
+////                    new TypeReference<>() {},
+////                    "Invalid flag value. Use 0 or 1.",
+////                    400
+////            );
+////        }
+//
+////        //Fetch all stocks in one query
+////        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemIds(masStoreItems);
+////
+////        // Group stocks by itemId
+////        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
+////                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
+//
+//        List<MasStoreItemResponse> responses = masStoreItems.stream()
+//                .map(this::convertToResponse)
+//                .collect(Collectors.toList());
+//
+//        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
+//        });
+//    }
+@Override
+public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(int flag) {
 
-
-    @Override
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithotStock(int flag) {
-
-        List<MasStoreItem> masStoreItems;
+    try {
+        List<MasStoreItemsProjection> masStoreItems;
         if (flag == 1) {
-            masStoreItems = masStoreItemRepository.findByStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc("y");
+            masStoreItems = masStoreItemRepository.findActiveItemsBySectionId("y");
+
         } else if (flag == 0) {
-            masStoreItems = masStoreItemRepository.findByStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(List.of("y", "n"));
+            masStoreItems = masStoreItemRepository.findAllItemsBySectionIdAndStatusIn(sectionId, List.of("y", "n"));
+
         } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "Invalid flag value. Use 0 or 1.", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
         }
 
-        //Fetch all stocks in one query
-        List<StoreItemBatchStock> allStocks = storeItemBatchStockRepository.findByItemIds(masStoreItems);
+        List<Long> itemIds = masStoreItems.stream().map(MasStoreItemsProjection::getItemId).filter(Objects::nonNull).distinct().toList();
 
-        // Group stocks by itemId
-        Map<Long, List<StoreItemBatchStock>> stockMap = allStocks.stream()
-                .collect(Collectors.groupingBy(s -> s.getItemId().getItemId()));
+        Map<Long, List<MasStoreItemResponse.MasFacilityCodeResponse>> facilityMap = Collections.emptyMap();
+
+        if (!itemIds.isEmpty()) {
+            facilityMap = storeItemFacilityMapRepository.findFacilityByItemIds(itemIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            MasStoreItemFacilityProjection::getItemId,
+                            Collectors.mapping(f -> {
+                                MasStoreItemResponse.MasFacilityCodeResponse res = new MasStoreItemResponse.MasFacilityCodeResponse();
+                                res.setFacilityId(f.getFacilityId());
+                                res.setFacilityCode(f.getFacilityCode());
+                                return res;
+                            }, Collectors.toList())
+                    ));
+        }
+
+        Map<Long, List<MasStoreItemResponse.MasFacilityCodeResponse>> finalFacilityMap = facilityMap;
 
         List<MasStoreItemResponse> responses = masStoreItems.stream()
-                .map(this::convertToResponse)
+                .map(item -> convertProjectionToResponse(item, finalFacilityMap))
                 .collect(Collectors.toList());
 
-        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
-        });
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+
+    } catch (Exception e) {
+        log.error("Error while fetching Mas Store Items without stock. Flag: {}", flag, e);
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
     }
-
-
+}
     @Override
     public ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request) {
         try {
@@ -1165,7 +1225,64 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
 
         return response;
     }
+    private MasStoreItemResponse convertProjectionToResponse(
+            MasStoreItemsProjection item,
+            Map<Long, List<MasStoreItemResponse.MasFacilityCodeResponse>> facilityMap
+    ) {
 
+        MasStoreItemResponse response = new MasStoreItemResponse();
+
+        response.setItemId(item.getItemId());
+        response.setPvmsNo(item.getPvmsNo());
+        response.setNomenclature(item.getNomenclature());
+        response.setStatus(item.getStatus());
+
+        response.setLastChgBy(item.getLastChgBy());
+        response.setLastChgDate(item.getLastChgDate());
+        response.setLastChgTime(item.getLastChgTime());
+
+        response.setStorestocks(item.getStorestocks());
+        response.setDispstocks(item.getDispstocks());
+        response.setWardstocks(item.getWardstocks());
+        response.setAdispQty(item.getAdispQty());
+
+        response.setHospitalId(item.getHospitalId());
+        response.setDepartmentId(item.getDepartmentId());
+
+        response.setDispUnit(item.getDispUnit());
+        response.setDispUnitName(item.getDispUnitName());
+
+        response.setUnitAU(item.getUnitAU());
+        response.setUnitAuName(item.getUnitAuName());
+
+        response.setSectionId(item.getSectionId());
+        response.setSectionName(item.getSectionName());
+
+        response.setItemTypeId(item.getItemTypeId());
+        response.setItemTypeName(item.getItemTypeName());
+
+        response.setGroupId(item.getGroupId());
+        response.setGroupName(item.getGroupName());
+
+        response.setItemClassId(item.getItemClassId());
+        response.setItemClassName(item.getItemClassName());
+
+        response.setMasItemCategoryid(item.getMasItemCategoryid());
+        response.setMasItemCategoryName(item.getMasItemCategoryName());
+
+        response.setHsnCode(item.getHsnCode());
+        response.setHsnGstPercent(item.getHsnGstPercent());
+
+        response.setReOrderLevelDispensary(item.getReOrderLevelDispensary());
+        response.setReOrderLevelStore(item.getReOrderLevelStore());
+
+        response.setIsGeneric(item.getIsGeneric());
+        response.setDangerousDrug(item.getDangerousDrug());
+        response.setDrugSchedule(item.getDrugSchedule());
+        response.setFacilityCode(facilityMap.getOrDefault(item.getItemId(), Collections.emptyList()));
+
+        return response;
+    }
 
 
 }

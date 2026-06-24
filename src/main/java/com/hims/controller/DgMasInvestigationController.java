@@ -34,9 +34,9 @@ public class DgMasInvestigationController {
         return dgMasInvestigationService.getPriceDetails(genderApplicable,radioFlag);
     }
 
-    @GetMapping("/getAll/{flag}")
-    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(@PathVariable int flag) {
-        return dgMasInvestigationService.getAllInvestigations(flag);
+    @GetMapping("/getAll/{flag}/{mainChargeCodeId}")
+    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(@PathVariable int flag, @PathVariable int mainChargeCodeId) {
+        return dgMasInvestigationService.getAllInvestigations(flag,mainChargeCodeId);
     }
 
     @GetMapping("/dynamic/all")
