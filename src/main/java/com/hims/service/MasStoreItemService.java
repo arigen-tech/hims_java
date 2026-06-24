@@ -16,7 +16,7 @@ public interface MasStoreItemService {
 
     ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag);
 
-    ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithotStock(int flag);
+    ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(int flag);
 
     ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request);
 

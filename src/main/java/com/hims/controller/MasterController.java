@@ -1431,8 +1431,8 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     }
 
     @GetMapping("/masStoreItemWithotStock/getAll/{flag}")
-    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithotStock(@PathVariable int flag) {
-        return masStoreItemService.getAllMasStoreItemWithotStock(flag);
+    public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(@PathVariable int flag) {
+        return masStoreItemService.getAllMasStoreItemWithOutStock(flag);
     }
 
     @GetMapping("/getAll/drugsAndNonDrugs")
