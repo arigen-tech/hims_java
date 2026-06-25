@@ -8,7 +8,15 @@ import lombok.RequiredArgsConstructor;
 
 
 public interface OpdObgDetailsService {
-    ApiResponse<String> saveObgDetails(@Valid OpdObgDetailsRequest request);
+    /**
+     * Create or Update OBG examination details for a visit
+     * Since one visit can have only one OBG details record,
+     * this method checks if record exists and updates, otherwise creates new
+     * @param visitId the visit ID (unique key for OBG details)
+     * @param request the OBG details request with examination data
+     * @return ApiResponse with success/error message
+     */
+    ApiResponse<String> createOrUpdateObgDetails(Long visitId, @Valid OpdObgDetailsRequest request);
 
     /**
      * Retrieve OBG examination details for a specific visit

@@ -15,6 +15,7 @@ public interface PatientProjectionFollowUpDetails {
     String getGenderName();
     Long getRelationId();
     String getRelationName();
+    String getPatientAbhaId();
 
     // Address
     String getAddress1();

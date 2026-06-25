@@ -215,11 +215,16 @@ public class OPDPatientController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/saveOBGDetails")
-    @Operation(description = "Save Obg data for a patient visit")
-    public ApiResponse<String> saveObgDetails(@Valid @RequestBody OpdObgDetailsRequest request) {
-        log.info("Saving OPD Obg details");
-        return opdObgDetailsService.saveObgDetails(request);
+    @PostMapping("/saveOrUpdateOBGDetails/{visitId}")
+    @Operation(
+            summary = "Create or Update OBG Examination Details",
+            description = "Create new or update existing OBG (Obstetrics and Gynecology) examination details for a visit. Since one visit can have only one OBG record, this endpoint intelligently creates or updates as needed."
+    )
+    public ApiResponse<String> saveOrUpdateOBGDetails(
+            @PathVariable Long visitId,
+            @Valid @RequestBody OpdObgDetailsRequest request) {
+        log.info("Creating or updating OBG details for visit ID: {}", visitId);
+        return opdObgDetailsService.createOrUpdateObgDetails(visitId, request);
     }
 
     @GetMapping("/getOBGDetailsByVisit")
@@ -232,19 +237,24 @@ public class OPDPatientController {
         return opdObgDetailsService.getObgDetailsByVisitId(visitId);
     }
 
-    @PostMapping("/saveEntDetails")
-    @Operation(description = "Save Ent  data for a patient visit")
-    public ApiResponse<String> saveEntDetails(@Valid @RequestBody OpdEntDetailsRequest request) {
-        log.info("Saving OPD Ent details");
-        return opdEntDetailsService.saveEntDetails(request);
+
+    @PostMapping("/saveOrUpdateEntDetails/{visitId}")
+    @Operation(
+            summary = "Create or Update ENT Examination Details",
+            description = "Create new or update existing ENT (Ear, Nose, and Throat) examination details for a visit. Since one visit can have only one ENT record, this endpoint intelligently creates or updates as needed."
+    )
+    public ApiResponse<String> saveOrUpdateEntDetails(
+            @PathVariable Long visitId,
+            @Valid @RequestBody OpdEntDetailsRequest request) {
+        log.info("Creating or updating ENT details for visit ID: {}", visitId);
+        return opdEntDetailsService.createOrUpdateEntDetails(visitId, request);
     }
 
+    @GetMapping("/getEntDetailsByVisit")
     @Operation(
             summary = "Get ENT Details",
-            description = "Fetch Opd ENT details based on the provided Visit ID."
+            description = "Fetch OPD ENT details based on the provided Visit ID."
     )
-
-    @GetMapping("/getEntDetailsByVisit")
     public ApiResponse<OpdEntDetailsResponse> getEntDetailsByVisit(@RequestParam Long visitId) {
         log.info("Received request to fetch ENT details for visitId: {}", visitId);
         return opdEntDetailsService.getEntDetailsByVisit(visitId);

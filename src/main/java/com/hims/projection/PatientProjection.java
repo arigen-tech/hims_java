@@ -11,4 +11,5 @@ public interface PatientProjection {
     String getAddress();
     String getRelation();
     String getPatientEmailId();
+    String getPatientAbhaId();
 }

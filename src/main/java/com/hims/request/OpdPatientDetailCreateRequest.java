@@ -103,6 +103,7 @@ public class OpdPatientDetailCreateRequest {
     private OpdOpthDetailsRequest ophthalmologyExaminationDetails;
     private OpdObgDetailsRequest opdObgDetailsRequest;
     private OpdEntDetailsRequest entExaminationDetails;
+    private PregnancyDetails pregnancyDetails;
 
 
 
@@ -134,6 +135,17 @@ public class OpdPatientDetailCreateRequest {
         private Integer days;
         private BigDecimal total;
         private String instraction;
+    }
+
+    @Getter
+    @Setter
+    public static class PregnancyDetails{
+        private Boolean isPregnant;
+        private LocalDate lmpDate;
+        private LocalDate edd;
+        private LocalDate currentEdd;
+        private String gestationPeriod;
+
     }
 
 //    @Getter

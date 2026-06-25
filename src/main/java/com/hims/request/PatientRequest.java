@@ -54,4 +54,5 @@ public class PatientRequest {
     private LocalDate regDate;
     private String lastChgBy;
     private Long patientHospitalId;
+    private String patientAbhaId;
 }

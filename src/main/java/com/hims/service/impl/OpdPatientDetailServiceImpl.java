@@ -519,13 +519,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if(request.getOpdObgDetailsRequest() != null){
             request.getOpdObgDetailsRequest().setPatientId(patient.getId());
             request.getOpdObgDetailsRequest().setVisitId(visit.getId());
-            ApiResponse<String> response = opdObgDetailsService.saveObgDetails(request.getOpdObgDetailsRequest());
+            ApiResponse<String> response = opdObgDetailsService.createOrUpdateObgDetails(request.getVisitId(),request.getOpdObgDetailsRequest());
             if (response == null|| response.getStatus() != HttpStatus.OK.value()) {
                 throw new SDDException("obg",500,response != null? response.getMessage(): "Failed to save OBG details");
             }
         }
         if(request.getEntExaminationDetails()!= null){
-            ApiResponse<String> response = opdEntDetailsService.saveEntDetails(request.getEntExaminationDetails());
+            ApiResponse<String> response = opdEntDetailsService.createOrUpdateEntDetails(request.getVisitId(),request.getEntExaminationDetails());
             if (response == null|| response.getStatus() != HttpStatus.OK.value()) {
                 throw new SDDException("ent",500,response != null? response.getMessage(): "Failed to save ENT details");
             }

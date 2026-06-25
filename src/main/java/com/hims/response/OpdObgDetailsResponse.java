@@ -93,6 +93,7 @@ public class OpdObgDetailsResponse {
     private String gynMenstrualPattern;
     private String gynCycleType;
     private String sterilisation;
+    private String gynObstetricHistory;
 
     // Abdominal & Local Examination
     private String abdomenInspection;

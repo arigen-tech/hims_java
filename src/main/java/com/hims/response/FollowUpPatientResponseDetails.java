@@ -36,6 +36,7 @@ public class FollowUpPatientResponseDetails {
         private String genderName;
         private Long relation;
         private String relationName;
+        private String patientAbhaId;
     }
 
     @Data

@@ -594,6 +594,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         patient.setUpdatedOn(Instant.now());
         patient.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
         patient.setPatientHospital(currentUser.getHospital());
+        patient.setPatientAbhaId(request.getPatientAbhaId());
 
 
         Optional.ofNullable(request.getPatientGenderId())
@@ -1118,6 +1119,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         patient.setNokPincode(request.getNokPincode());
         patient.setPatientStatus(request.getPatientStatus());
         patient.setRegDate(request.getRegDate());
+        patient.setPatientAbhaId(request.getPatientAbhaId());
 
         Optional.ofNullable(request.getPatientGenderId())
                 .flatMap(masGenderRepository::findById)
@@ -1267,6 +1269,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         personal.setGenderName(p.getGenderName());
         personal.setRelation(p.getRelationId());
         personal.setRelationName(p.getRelationName());
+        personal.setPatientAbhaId(p.getPatientAbhaId());
         return personal;
     }
     /**
