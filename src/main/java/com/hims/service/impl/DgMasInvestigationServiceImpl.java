@@ -102,14 +102,15 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     }
 
     @Override
-    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag) {
-//        long startTime = System.currentTimeMillis();
+    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag,int mainChargeCodeId) {
+
         try {
             List<DgMasInvestigation> investigationList;
             if (flag == 1) {
                 investigationList = dgMasInvestigationRepo.findByStatusIgnoreCaseOrderByLastChgDateDesc("Y");
             } else if (flag == 0) {
-                investigationList = dgMasInvestigationRepo.findByStatusInIgnoreCaseOrderByLastChgDateDesc(List.of("Y", "N"));
+                investigationList =
+                        dgMasInvestigationRepo.findByMainChargeCodeIdChargecodeIdAndStatusInIgnoreCaseOrderByLastChgDateDesc(mainChargeCodeId, List.of("y", "n"));
             } else {
                 return ResponseUtils.createFailureResponse(
                         null,

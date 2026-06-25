@@ -29,4 +29,6 @@ public interface MasSubChargeCodeRepository extends JpaRepository<MasSubChargeCo
 """)
     List<ModalityDetailsProjection> findModalityByDepartmentCode(@Param("deptCode") String deptCode,
                                                                  @Param("status") String status);
+
+    List<MasSubChargeCode> findByStatusIgnoreCaseOrderBySubNameAsc(String y);
 }

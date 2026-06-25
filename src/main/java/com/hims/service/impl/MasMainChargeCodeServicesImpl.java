@@ -67,7 +67,7 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
         List<MasMainChargeCode> charge;
 
         if (flag == 1) {
-            charge = masMainChargeCodeRepository.findByStatusOrderByChargecodeNameAsc("y");
+            charge = masMainChargeCodeRepository.findByStatusIgnoreCaseOrderByChargecodeNameAsc("y");
         } else if (flag == 0) {
             charge = masMainChargeCodeRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {

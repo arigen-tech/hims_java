@@ -4,6 +4,7 @@ import com.hims.entity.MasItemCategory;
 import com.hims.entity.MasStoreItem;
 import com.hims.projection.ItemProjection;
 import com.hims.projection.MasStoreItemProjection;
+import com.hims.projection.MasStoreItemsProjection;
 import com.hims.projection.NonDrugStoreItemProjection;
 import com.hims.response.ItemStockLedgerWithBatchResponse;
 import org.springframework.data.domain.Page;
@@ -332,4 +333,132 @@ GROUP BY
         ORDER BY m.lastChgDate DESC,  m.lastChgTime DESC
         """)
     List<NonDrugStoreItemProjection> getAllNonDrugItems( @Param("sectionId") Integer sectionId);
+
+    List<MasStoreItem> findBySectionIdSectionIdAndStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(Integer sectionId, String y);
+
+    List<MasStoreItem> findBySectionIdSectionIdAndStatusInIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(Integer sectionId, List<String> y);
+
+    @Query("""
+    SELECT
+        m.itemId AS itemId,
+        m.pvmsNo AS pvmsNo,
+        m.nomenclature AS nomenclature,
+        m.status AS status,
+        m.lastChgBy AS lastChgBy,
+        m.lastChgDate AS lastChgDate,
+        m.lastChgTime AS lastChgTime,
+        m.adispQty AS adispQty,
+
+        du.unitId AS dispUnit,
+        du.unitName AS dispUnitName,
+
+        au.unitId AS unitAU,
+        au.unitName AS unitAuName,
+
+        sec.sectionId AS sectionId,
+        sec.sectionName AS sectionName,
+
+        it.id AS itemTypeId,
+        it.name AS itemTypeName,
+
+        grp.id AS groupId,
+        grp.groupName AS groupName,
+
+        cls.itemClassId AS itemClassId,
+        cls.itemClassName AS itemClassName,
+
+        cat.itemCategoryId AS masItemCategoryid,
+        cat.itemCategoryName AS masItemCategoryName,
+
+        hsn.hsnCode AS hsnCode,
+        hsn.gstRate AS hsnGstPercent,
+
+        m.reOrderLevelDispensary AS reOrderLevelDispensary,
+        m.reOrderLevelStore AS reOrderLevelStore,
+
+        m.dangerousDrug AS dangerousDrug,
+        m.isGeneric AS isGeneric,
+        m.drugSchedule AS drugSchedule
+
+    FROM MasStoreItem m
+    LEFT JOIN m.dispUnit du
+    LEFT JOIN m.unitAU au
+    LEFT JOIN m.sectionId sec
+    LEFT JOIN m.itemTypeId it
+    LEFT JOIN m.groupId grp
+    LEFT JOIN m.itemClassId cls
+    LEFT JOIN m.masItemCategory cat
+    LEFT JOIN m.hsnCode hsn
+
+    WHERE 
+      LOWER(m.status) = LOWER(:status)
+ORDER BY m.lastChgDate DESC, m.lastChgTime DESC
+""")
+    List<MasStoreItemsProjection> findActiveItemsBySectionId(
+
+            @Param("status") String status
+    );
+
+
+    @Query("""
+    SELECT
+        m.itemId AS itemId,
+        m.pvmsNo AS pvmsNo,
+        m.nomenclature AS nomenclature,
+        m.status AS status,
+        m.lastChgBy AS lastChgBy,
+        m.lastChgDate AS lastChgDate,
+        m.lastChgTime AS lastChgTime,
+        m.adispQty AS adispQty,
+
+        du.unitId AS dispUnit,
+        du.unitName AS dispUnitName,
+
+        au.unitId AS unitAU,
+        au.unitName AS unitAuName,
+
+        sec.sectionId AS sectionId,
+        sec.sectionName AS sectionName,
+
+        it.id AS itemTypeId,
+        it.name AS itemTypeName,
+
+        grp.id AS groupId,
+        grp.groupName AS groupName,
+
+        cls.itemClassId AS itemClassId,
+        cls.itemClassName AS itemClassName,
+
+        cat.itemCategoryId AS masItemCategoryid,
+        cat.itemCategoryName AS masItemCategoryName,
+
+        hsn.hsnCode AS hsnCode,
+        hsn.gstRate AS hsnGstPercent,
+
+        m.reOrderLevelDispensary AS reOrderLevelDispensary,
+        m.reOrderLevelStore AS reOrderLevelStore,
+
+        m.dangerousDrug AS dangerousDrug,
+        m.isGeneric AS isGeneric,
+        m.drugSchedule AS drugSchedule
+
+    FROM MasStoreItem m
+    LEFT JOIN m.dispUnit du
+    LEFT JOIN m.unitAU au
+    LEFT JOIN m.sectionId sec
+    LEFT JOIN m.itemTypeId it
+    LEFT JOIN m.groupId grp
+    LEFT JOIN m.itemClassId cls
+    LEFT JOIN m.masItemCategory cat
+    LEFT JOIN m.hsnCode hsn
+
+    WHERE sec.sectionId = :sectionId
+      AND LOWER(m.status) IN :statusList
+
+    ORDER BY m.status DESC, m.lastChgDate DESC, m.lastChgTime DESC
+""")
+    List<MasStoreItemsProjection> findAllItemsBySectionIdAndStatusIn(
+            @Param("sectionId") Integer sectionId,
+            @Param("statusList") List<String> statusList
+    );
 }

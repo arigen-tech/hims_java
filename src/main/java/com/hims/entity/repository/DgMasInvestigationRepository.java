@@ -117,4 +117,6 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
     List<MasInvestigationByMainChargeCodeResponse>
     dgMasInvestigationByMainChargeCodeId(@Param("mainChargeCodeId") Long mainChargeCodeId,
                                          @Param("status") String status              );
+
+    List<DgMasInvestigation> findByMainChargeCodeIdChargecodeIdAndStatusInIgnoreCaseOrderByLastChgDateDesc(int mainChargeCodeId, List<String> y);
 }

@@ -258,10 +258,17 @@ public class MasBedServiceImpl implements MasBedService {
 
         // Room
         if (masBed.getRoomId() != null) {
+
             res.setRoomId(masBed.getRoomId().getRoomId());
             res.setRoomName(masBed.getRoomId().getRoomName());
-            res.setDepartmentId(masBed.getRoomId().getMasDepartment().getId());
-            res.setDepartmentName(masBed.getRoomId().getMasDepartment().getDepartmentName());
+
+            if (masBed.getRoomId().getMasDepartment() != null) {
+                res.setDepartmentId(masBed.getRoomId().getMasDepartment().getId());
+                res.setDepartmentName(masBed.getRoomId().getMasDepartment().getDepartmentName());
+            } else {
+                res.setDepartmentId(null);
+                res.setDepartmentName(null);
+            }
         }
 
 

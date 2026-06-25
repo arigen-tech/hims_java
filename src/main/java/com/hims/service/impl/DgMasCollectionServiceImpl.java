@@ -118,7 +118,7 @@ public class DgMasCollectionServiceImpl implements DgMasCollectionService {
     public ApiResponse<List<DgMasCollectionResponse>> getDgMasCollection(int flag) {
         List<DgMasCollection> dgMasCollections;
         if (flag == 1) {
-            dgMasCollections = dgMasCollectionRepository.findByStatusOrderByCollectionNameAsc("y");
+            dgMasCollections = dgMasCollectionRepository.findByStatusIgnoreCaseOrderByCollectionNameAsc("y");
         } else if (flag == 0) {
             dgMasCollections = dgMasCollectionRepository.findAllByOrderByStatusDescLastChgTimeDescLastChgDateDesc();
         } else {
