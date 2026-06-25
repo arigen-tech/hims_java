@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/abdm/create")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 @Tag(name = "ABHA Creation", description = "APIs to create ABHA using Aadhaar OTP, manage ABHA profile, and update contact details")
 
 public class CreateAbhaContoller {

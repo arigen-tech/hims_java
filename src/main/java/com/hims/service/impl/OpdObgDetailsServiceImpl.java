@@ -35,15 +35,27 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
     private AuthUtil authUtil;
 
     @Override
-    public ApiResponse<String> saveObgDetails(OpdObgDetailsRequest request) {
-        try {
+    public ApiResponse<String> createOrUpdateObgDetails(Long visitId, OpdObgDetailsRequest request) {
+
+            log.info("Creating or updating OBG details for visit ID: {}", visitId);
+            // Validate visitId
+            if (visitId == null || visitId <= 0) {
+                log.warn("Invalid visit ID provided: {}", visitId);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Invalid visit ID", HttpStatus.BAD_REQUEST.value());
+            }
             User user = authUtil.getCurrentUser();
             Patient patient = patientRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new RuntimeException("Patient not found"));
-            Visit visit = visitRepository.findById(request.getVisitId())
+            Visit visit = visitRepository.findById(visitId)
                     .orElseThrow(() -> new RuntimeException("Visit not found"));
 
-            OpdObgDetails entity = new OpdObgDetails();
+            // Check if OBG details already exist for this visit
+            OpdObgDetails entity = opdObgDetailsRepository.findByVisitId(visitId)
+                    .orElse(new OpdObgDetails());
+
+            boolean isNew = entity.getObgId() == null;
+            String operation = isNew ? "Created" : "Updated";
 
             // Basic info
             entity.setPatient(patient);
@@ -59,7 +71,7 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                 entity.setGynMenstrualPattern(gh.getMenstrualPattern());
                 entity.setGynCycleType(gh.getGynCycle());
                 entity.setSterilisation(gh.getSterilisation());
-                entity.setObstetricHistoryNotes(gh.getObstetricHistory());
+                entity.setGynObstetricHistory(gh.getGynObstetricHistory());
 
                 // Examination from GynaecologyHistory
                 entity.setAbdomenInspection(gh.getPerAbdomenInspection());
@@ -154,24 +166,20 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                 }
             }
 
-
             // System fields
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setCreatedBy(user.getFullName());
+            if (isNew) {
+                entity.setCreatedBy(user.getFullName());
+            }
             entity.setLastUpdatedBy(user.getFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             opdObgDetailsRepository.save(entity);
 
-            return ResponseUtils.createSuccessResponse("OPD Obg Details saved successfully", new TypeReference<>() {
-            });
-
-        } catch (Exception e) {
-            log.error("OPD Obg details field: ", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    },
-                    AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
-        }
+            log.info("Successfully {} OBG details for visit ID: {}", operation, visitId);
+            return ResponseUtils.createSuccessResponse(
+                    "OPD OBG Details " + operation + " successfully",
+                    new TypeReference<>() {});
     }
 
     @Override
@@ -283,6 +291,9 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                 .lastUpdateDate(projection.getLastUpdateDate())
                 .createdBy(projection.getCreatedBy())
                 .lastUpdatedBy(projection.getLastUpdatedBy())
+                .gynObstetricHistory(projection.getGynObstetricHistory())
                 .build();
     }
+
+
 }

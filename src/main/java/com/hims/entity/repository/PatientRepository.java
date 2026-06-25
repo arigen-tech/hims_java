@@ -48,7 +48,9 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
                 p.p_age AS patientAge,
                 g.gender_name AS gender,
                 p.p_email_id AS patientEmailId,
+                p.abha_number AS patientAbhaId,
                 m.relation_name AS relation
+                        
             
             FROM patient p
             LEFT JOIN mas_gender g ON g.id = p.p_gender_id
@@ -162,7 +164,8 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
         p.emer_ln AS emerLastName,
         p.emer_mobile AS emerMobile,
 
-        p.patient_image AS photoUrl
+        p.patient_image AS photoUrl,
+        p.abha_number AS patientAbhaId
 
     FROM patient p
     LEFT JOIN mas_gender g ON p.p_gender_id = g.id

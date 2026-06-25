@@ -204,6 +204,10 @@ public class Patient {
     @JsonIgnore
     private MasHospital patientHospital;
 
+    @Size(max = 20)
+    @Column(name = "abha_number")
+    private String patientAbhaId;
+
     public String getFullName(){
         return patientFn+" "+patientMn +" "+patientLn;
     }

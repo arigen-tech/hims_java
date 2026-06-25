@@ -73,9 +73,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     @Autowired
     private AuthUtil authUtil;
 
-    @Value("${investigation.mainChargecodeId}")
+    @Value("${labInvestigation.mainChargecodeId}")
     private Long mainChargecodeId;
-    @Value("11")
+    @Value("${radioInvestigation.mainChargecodeId}")
     private Long radMainChargeCodeId;
 
 

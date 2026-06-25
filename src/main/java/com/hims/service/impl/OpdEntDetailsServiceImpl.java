@@ -39,17 +39,35 @@ public class OpdEntDetailsServiceImpl implements OpdEntDetailsService {
     private AuthUtil authUtil;
 
     @Override
-    public ApiResponse<String> saveEntDetails(OpdEntDetailsRequest request) {
-        try {
-            User user = authUtil.getCurrentUser();
-            Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new RuntimeException("Patient not found"));
-            Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new RuntimeException("Visit not found"));
-            OpdEntDetails entity = new OpdEntDetails();
+    public ApiResponse<String> createOrUpdateEntDetails(Long visitId, OpdEntDetailsRequest request) {
+            log.info("Creating or updating ENT details for visit ID: {}", visitId);
 
+            // Validate visitId
+            if (visitId == null || visitId <= 0) {
+                log.warn("Invalid visit ID provided: {}", visitId);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Invalid visit ID", HttpStatus.BAD_REQUEST.value());
+            }
+
+            User user = authUtil.getCurrentUser();
+            Patient patient = patientRepository.findById(request.getPatientId())
+                    .orElseThrow(() -> new RuntimeException("Patient not found"));
+            Visit visit = visitRepository.findById(visitId)
+                    .orElseThrow(() -> new RuntimeException("Visit not found"));
+
+            // Check if ENT details already exist for this visit
+            OpdEntDetails entity = opdEntDetailsRepository.findByVisitId(visitId)
+                    .orElse(new OpdEntDetails());
+
+            boolean isNew = entity.getEntId() == null;
+            String operation = isNew ? "Created" : "Updated";
+
+            // Set basic info
             entity.setPatient(patient);
             entity.setVisit(visit);
             entity.setOpdDate(request.getOpdDate());
 
+            // Set ear examination fields
             entity.setRightPinna(request.getRightPinna());
             entity.setLeftPinna(request.getLeftPinna());
             entity.setRightEarCanal(request.getRightEarCanal());
@@ -57,11 +75,13 @@ public class OpdEntDetailsServiceImpl implements OpdEntDetailsService {
             entity.setRightTmStatus(request.getRightTmStatus());
             entity.setLeftTmStatus(request.getLeftTmStatus());
 
+            // Set audiological tests
             entity.setRinneTest(request.getRinneTest());
             entity.setWeberTest(request.getWeberTest());
             entity.setAbcTest(request.getAbcTest());
             entity.setAudiometryFindings(request.getAudiometryFindings());
 
+            // Set nasal examination fields
             entity.setExternalNose(request.getExternalNose());
             entity.setNasalMucosa(request.getNasalMucosa());
             entity.setSeptum(request.getSeptum());
@@ -71,6 +91,7 @@ public class OpdEntDetailsServiceImpl implements OpdEntDetailsService {
             entity.setMaxillaryTenderness(request.getMaxillaryTenderness());
             entity.setFrontalTenderness(request.getFrontalTenderness());
 
+            // Set oral and throat examination fields
             entity.setOralCavity(request.getOralCavity());
             entity.setTonsilGrade(request.getTonsilGrade());
             entity.setTonsilCongestion(request.getTonsilCongestion());
@@ -78,33 +99,33 @@ public class OpdEntDetailsServiceImpl implements OpdEntDetailsService {
             entity.setTonsilMembrane(request.getTonsilMembrane());
             entity.setPeritonsillarAbscess(request.getPeritonsillarAbscess());
 
+            // Set pharynx and neck fields
             entity.setPharynx(request.getPharynx());
             entity.setUvula(request.getUvula());
             entity.setVoiceQuality(request.getVoiceQuality());
 
+            // Set neck examination fields
             entity.setThyroidEnlargement(request.getThyroidEnlargement());
             entity.setCervicalNodes(request.getCervicalNodes());
             entity.setNeckMass(request.getNeckMass());
             entity.setNeckOtherFindings(request.getNeckOtherFindings());
 
+            // Set system fields
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setCreatedBy(user.getFullName());
-            entity.setLastUpdateDate(LocalDateTime.now());
+            if (isNew) {
+                entity.setCreatedBy(user.getFullName());
+            }
             entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdateDate(LocalDateTime.now());
 
             opdEntDetailsRepository.save(entity);
 
-            return ResponseUtils.createSuccessResponse("OPD Ent Details save successfully", new TypeReference<>() {
-            });
-
-        } catch (Exception e) {
-            log.error("OPD Ent details field: ", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    },
-                    AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
-
-        }
+            log.info("Successfully {} ENT details for visit ID: {}", operation, visitId);
+            return ResponseUtils.createSuccessResponse(
+                    "OPD ENT Details " + operation + " successfully",
+                    new TypeReference<>() {});
     }
+
 
     @Override
     public ApiResponse<OpdEntDetailsResponse> getEntDetailsByVisit(Long visitId) {

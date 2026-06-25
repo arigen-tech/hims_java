@@ -191,6 +191,9 @@ public class OpdObgDetails {
     @Column(name = "bimanual_examination", length = 500)
     private String bimanualExamination;
 
+    @Column(name = "gyn_obstetric_history", length = 500)
+    private String gynObstetricHistory;
+
     @Column(name = "status", length = 1)
     private String status;
 

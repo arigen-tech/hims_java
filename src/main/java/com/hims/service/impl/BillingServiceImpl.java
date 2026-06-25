@@ -1381,6 +1381,8 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setBillingHd(bhdId);
         billingDetail.setBillHd(bhdId);
         billingDetail.setServiceCategory(sevcat);
+        billingDetail.setServiceId(0L);
+        billingDetail.setChargeCost(BigDecimal.ZERO);
 
         if (isRadiology) {
             RadOrderDt rad = (RadOrderDt) dtId;
@@ -1452,6 +1454,8 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setUpdatedDt(OffsetDateTime.now());
         billingDetail.setCreatedAt(Instant.now());
         billingDetail.setQuantity(1);
+        billingDetail.setServiceId(0L);
+        billingDetail.setChargeCost(BigDecimal.ZERO);
 
         BigDecimal actual = BigDecimal.valueOf(req.getActualAmount());
         BigDecimal discount = BigDecimal.valueOf(req.getDiscountedAmount());
