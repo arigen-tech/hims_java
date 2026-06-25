@@ -18,7 +18,6 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/abdm/verificationWeb")
-@CrossOrigin(origins = "*")
 @Tag(name = "ABHA Verification", description = "APIs for ABHA number verification using OTP-based authentication")
 public class VerificationAbhaContoller {
 

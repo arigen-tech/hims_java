@@ -594,6 +594,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         patient.setUpdatedOn(Instant.now());
         patient.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
         patient.setPatientHospital(currentUser.getHospital());
+        patient.setPatientAbhaId(request.getPatientAbhaId());
 
 
         Optional.ofNullable(request.getPatientGenderId())
