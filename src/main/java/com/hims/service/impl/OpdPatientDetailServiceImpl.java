@@ -7,9 +7,7 @@ import com.hims.entity.projection.PrescriptionDetailProjection;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.projection.*;
-import com.hims.request.ActiveVisitSearchRequest;
-import com.hims.request.OpdOpthDetailsRequest;
-import com.hims.request.OpdPatientDetailCreateRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.OpdEntDetailsService;
 import com.hims.service.OpdObgDetailsService;
@@ -19,6 +17,7 @@ import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import com.hims.utils.StockFound;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,6 +104,14 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final OpdOpthDetailsService opdOpthDetailsService;
     private final OpdObgDetailsService opdObgDetailsService;
     private final OpdEntDetailsService opdEntDetailsService;
+    private final OpdPsychiatryAssessmentDetailRepository opdPsychiatryAssessmentDetailRepository;
+    private final OpdPsychiatryAssessmentHeaderRepository opdPsychiatryAssessmentHeaderRepository;
+    private final MasQuestionHeadingRepository masQuestionHeadingRepository;
+    private final OpdQuestionMasterRepository opdQuestionMasterRepository;
+    private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
+
+
+
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -530,6 +537,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 throw new SDDException("ent",500,response != null? response.getMessage(): "Failed to save ENT details");
             }
         }
+        // ================= Psychiatric Assessment Save =================
+
+        savePsychiatricHeaderAndDetails(request, visit, saved);
+
         opdPatientDetailRepository.save(saved);
         closeVisit(visit);
         log.info("Successfully completed OPD patient detail creation for visit ID: {}", visit.getId());
@@ -3032,6 +3043,53 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         response.setDeptName(projection.getDeptName());
         response.setDoctorName(projection.getDoctorName());
         return response;
+    }
+    private OpdPsychiatryAssessmentHeader savePsychiatricHeaderAndDetails(
+            OpdPatientDetailCreateRequest request,
+            Visit visit,
+            OpdPatientDetail opdPatientDetail) {
+
+        OpdPsychiatryAssessmentHeader header = new OpdPsychiatryAssessmentHeader();
+
+        header.setVisit(visit);
+        header.setDepartment(visit.getDepartment());
+        header.setPatient(visit.getPatient());
+        header.setOpdPatientDetails(opdPatientDetail);
+        header.setAssessmentDate(LocalDateTime.now());
+        header.setTopic(masQuestionHeadingRepository.findById(request.getTopicId())
+                        .orElseThrow(() -> new EntityNotFoundException(
+                                "Topic not found with id: " + request.getTopicId()
+                        ))
+        );
+
+        OpdPsychiatryAssessmentHeader savedHeader = opdPsychiatryAssessmentHeaderRepository.save(header);
+
+        BigDecimal totalScore = BigDecimal.ZERO;
+        for (OpdPsychiatricDetailsRequest detailReq : request.getDetails()) {
+
+            OpdPsychiatryAssessmentDetail detail = new OpdPsychiatryAssessmentDetail();
+
+            detail.setAssessmentHeaderId(savedHeader);
+
+            detail.setQuestionId(detailReq.getQuestionId() != null
+                            ? opdQuestionMasterRepository.findById(detailReq.getQuestionId()).orElse(null)
+                            : null);
+
+            MasQuestionOptionValue optionValue = null;
+            if (detailReq.getAnswerOptionId() != null) {
+                optionValue = masQuestionOptionValueRepository.findById(detailReq.getAnswerOptionId()).orElse(null);
+            }
+            detail.setAnswerOptionId(optionValue);
+
+            BigDecimal score = BigDecimal.ZERO;
+            detail.setScore(BigDecimal.valueOf(optionValue.getOptionScore()));
+            totalScore = totalScore.add(score);
+
+            opdPsychiatryAssessmentDetailRepository.save(detail);
+        }
+        savedHeader.setTotalScore(totalScore);
+
+        return opdPsychiatryAssessmentHeaderRepository.save(savedHeader);
     }
 }
 

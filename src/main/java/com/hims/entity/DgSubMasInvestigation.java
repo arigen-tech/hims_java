@@ -66,4 +66,12 @@ public class DgSubMasInvestigation {
     @Column(name = "fixed_value_expected_result", length = 1)
     private String fixedValueExpectedValue;
 
+    @Column(name = "print_order")
+    private Integer printOrder;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_autocomplete_investigation_id")
+    private DgMasInvestigation parentAutoCompeteInvestigationId;
+
+
 }

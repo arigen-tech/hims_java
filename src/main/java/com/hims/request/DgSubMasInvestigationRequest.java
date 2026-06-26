@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 public class DgSubMasInvestigationRequest {
     private Long subInvestigationId;
+
     private String subInvestigationCode;
     private String subInvestigationName;
     private String resultType;
@@ -16,6 +17,9 @@ public class DgSubMasInvestigationRequest {
     private Long subChargeCodeId;
     private Long uomId;
     private String fixedValueExpectedResult;
+    private Integer printOrder;
+    private Long parentAutoCompleteInvestigationId;
+
 
     private List<DgFixedValueRequest> fixedValues;
     private List<DgNormalValueRequest> normalValues;

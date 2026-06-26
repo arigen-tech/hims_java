@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.projection.InvestigationProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.DgMasInvestigationService;
@@ -102,22 +103,23 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     }
 
     @Override
-    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag,int mainChargeCodeId) {
+    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag,Long mainChargeCodeId) {
 
         try {
             List<DgMasInvestigation> investigationList;
+
             if (flag == 1) {
                 investigationList = dgMasInvestigationRepo.findByStatusIgnoreCaseOrderByLastChgDateDesc("Y");
+
             } else if (flag == 0) {
-                investigationList =
-                        dgMasInvestigationRepo.findByMainChargeCodeIdChargecodeIdAndStatusInIgnoreCaseOrderByLastChgDateDesc(mainChargeCodeId, List.of("y", "n"));
+                if (mainChargeCodeId != null) {
+                    investigationList = dgMasInvestigationRepo.findByMainChargeCodeIdChargecodeIdAndStatusInIgnoreCaseOrderByLastChgDateDesc(mainChargeCodeId, List.of("Y", "N"));
+                } else {
+                    investigationList = dgMasInvestigationRepo.findByStatusInIgnoreCaseOrderByLastChgDateDesc(List.of("Y", "N"));
+                }
+
             } else {
-                return ResponseUtils.createFailureResponse(
-                        null,
-                        new TypeReference<>() {},
-                        "Invalid flag value. Use 0 for all, 1 for active.",
-                        400
-                );
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
             }
 
             if (investigationList == null || investigationList.isEmpty()) {
@@ -676,6 +678,17 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                     newSubObj.setSubInvestigationName(subInvestObj.getSubInvestigationName());
                     newSubObj.setStatus("y");
                     newSubObj.setResultType(subInvestObj.getResultType());
+                    newSubObj.setPrintOrder(subInvestObj.getPrintOrder());
+                    if (subInvestObj.getParentAutoCompleteInvestigationId() != null) {
+                        newSubObj.setParentAutoCompeteInvestigationId(
+                                dgMasInvestigationRepo
+                                        .findById(subInvestObj.getParentAutoCompleteInvestigationId())
+                                        .orElse(null)
+                        );
+                    } else {
+                        newSubObj.setParentAutoCompeteInvestigationId(null);
+                    }
+
                     newSubObj.setComparisonType(subInvestObj.getComparisonType());
                     newSubObj.setLastChgBy(currentUser.getUsername());
                     newSubObj.setLastChgDate(Instant.now());
@@ -777,6 +790,16 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         existing.setResultType(subInvestObj.getResultType());
                         existing.setComparisonType(subInvestObj.getComparisonType());
                         existing.setLastChgBy(currentUser.getUsername());
+                        existing.setPrintOrder(subInvestObj.getPrintOrder());
+                        if (subInvestObj.getParentAutoCompleteInvestigationId() != null) {
+                            existing.setParentAutoCompeteInvestigationId(
+                                    dgMasInvestigationRepo
+                                            .findById(subInvestObj.getParentAutoCompleteInvestigationId())
+                                            .orElse(null)
+                            );
+                        } else {
+                            existing.setParentAutoCompeteInvestigationId(null);
+                        }
                         existing.setLastChgDate(Instant.now());
                         existing.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
                         Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subInvestObj.getMainChargeCodeId());
@@ -1086,6 +1109,31 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 
             return ResponseUtils.createFailureResponse(
                     null, AppConstants.INTERNAL_SERVER_ERR_MSG,HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+    @Override
+    public ApiResponse<Page<InvestigationResponse>> getDgMasInvestigation(
+            Long investigationId,
+            String search,
+            int page,
+            int size) {
+
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+
+            Page<InvestigationProjection> projectionPage = dgMasInvestigationRepo.getDgMasInvestigation(mainChargecodeId,investigationId, search, pageable);
+            Page<InvestigationResponse> responsePage = projectionPage.map(proj -> {
+                InvestigationResponse response = new InvestigationResponse();
+                response.setInvestigationId(proj.getInvestigationId());
+                response.setInvestigationName(proj.getInvestigationName());
+                return response;
+            });
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<InvestigationResponse>>() {});
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<Page<InvestigationResponse>>() {},
+                    "Error while fetching investigation list: " + e.getMessage(), 500);
         }
     }
 
