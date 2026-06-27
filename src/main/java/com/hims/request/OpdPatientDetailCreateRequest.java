@@ -23,6 +23,8 @@ public class OpdPatientDetailCreateRequest {
     private Long hospitalId;
     private Long doctorId;
     private Long opdPatientDetailId;
+    private Long topicId;
+    private List<OpdPsychiatricDetailsRequest> details;
 
 
     @Size(max = 40)
@@ -157,4 +159,6 @@ public class OpdPatientDetailCreateRequest {
 //        private Long noOfDays;
 //        private String remarks;
 //    }
+
+
 }

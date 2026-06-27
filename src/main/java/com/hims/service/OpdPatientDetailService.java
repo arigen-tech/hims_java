@@ -1,6 +1,5 @@
 package com.hims.service;
 
-import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Visit;
 import com.hims.request.ActiveVisitSearchRequest;
 import com.hims.request.OpdPatientDetailCreateRequest;
@@ -70,4 +69,6 @@ public interface OpdPatientDetailService {
 
 
     ApiResponse<Page<OpdRecallVisitResponse>> getRecallOpdVisit(String name, String mobile, LocalDate visitDate, int page, int size);
+
+
 }
