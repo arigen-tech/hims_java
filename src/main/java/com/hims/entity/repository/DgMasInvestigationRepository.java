@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.DgMasInvestigation;
+import com.hims.projection.InvestigationProjection;
 import com.hims.response.MasInvestigationByMainChargeCodeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -118,5 +119,34 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
     dgMasInvestigationByMainChargeCodeId(@Param("mainChargeCodeId") Long mainChargeCodeId,
                                          @Param("status") String status              );
 
-    List<DgMasInvestigation> findByMainChargeCodeIdChargecodeIdAndStatusInIgnoreCaseOrderByLastChgDateDesc(int mainChargeCodeId, List<String> y);
+    List<DgMasInvestigation> findByMainChargeCodeIdChargecodeIdAndStatusInIgnoreCaseOrderByLastChgDateDesc(Long mainChargeCodeId, List<String> y);
+
+    @Query(value = """
+    SELECT 
+        inv.investigation_id AS investigationId,
+        inv.investigation_name AS investigationName
+    FROM dg_mas_investigation inv
+    WHERE inv.main_chargecode_id =:mainChargeCodeId AND inv.investigation_id <> :investigationId
+    AND (
+        :search IS NULL OR :search = '' OR
+        LOWER(inv.investigation_name) LIKE LOWER(CONCAT('%', :search, '%'))
+    )
+    ORDER BY inv.investigation_name ASC
+    """,
+            countQuery = """
+    SELECT COUNT(*)
+    FROM dg_mas_investigation inv
+    WHERE  inv.main_chargecode_id =:mainChargeCodeId AND inv.investigation_id <> :investigationId
+    AND (
+        :search IS NULL OR :search = '' OR
+        LOWER(inv.investigation_name) LIKE LOWER(CONCAT('%', :search, '%'))
+    )
+    """,
+            nativeQuery = true)
+    Page<InvestigationProjection> getDgMasInvestigation(
+            @Param("mainChargeCodeId") Long mainChargeCodeId,
+            @Param("investigationId") Long investigationId,
+            @Param("search") String search,
+            Pageable pageable
+    );
 }

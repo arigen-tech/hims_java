@@ -5,6 +5,7 @@ import com.hims.request.DgMasInvestigationRequest;
 import com.hims.request.DgMasInvestigationSingleReqest;
 import com.hims.response.*;
 import com.hims.service.DgMasInvestigationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpEntity;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/DgMasInvestigation")
+@Slf4j
 public class DgMasInvestigationController {
 
     @Autowired
@@ -33,12 +35,13 @@ public class DgMasInvestigationController {
             radioFlag=false;
         return dgMasInvestigationService.getPriceDetails(genderApplicable,radioFlag);
     }
+    @GetMapping("/getAll/{flag}")
+    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(
+            @PathVariable int flag,
+            @RequestParam(required = false) Long mainChargeCodeId) {
 
-    @GetMapping("/getAll/{flag}/{mainChargeCodeId}")
-    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(@PathVariable int flag, @PathVariable int mainChargeCodeId) {
-        return dgMasInvestigationService.getAllInvestigations(flag,mainChargeCodeId);
+        return dgMasInvestigationService.getAllInvestigations(flag, mainChargeCodeId);
     }
-
     @GetMapping("/dynamic/all")
     public ApiResponse<Page<DgMasInvestigationResponse>> getAllInvestigationsDynamic(
             @RequestParam int flag,
@@ -96,6 +99,19 @@ public class DgMasInvestigationController {
     @GetMapping("/mas-investigation/all")
     public  ResponseEntity<?> getAll(){
         return  ResponseEntity.ok(dgMasInvestigationService.getAllInvestigations());
+    }
+
+    @GetMapping("/getDgMasInvestigationBySearch")
+    public ApiResponse<Page<InvestigationResponse>> getDgMasInvestigation(
+            @RequestParam Long investigationId,
+            @RequestParam String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        log.info("Request received for getDgMasInvestigation | investigationId: {}, search: {}, page: {}, size: {}",
+                investigationId, search, page, size);
+
+        return dgMasInvestigationService.getDgMasInvestigation(investigationId, search, page, size);
     }
 
 }

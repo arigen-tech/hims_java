@@ -13,7 +13,7 @@ import java.util.Map;
 public interface DgMasInvestigationService {
     ApiResponse<List<DgMasInvestigationResponse>> getPriceDetails(String genderApplicable,Boolean radioFlag);
 
-    ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag,int mainChargeCodeId);
+    ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(int flag,Long mainChargeCodeId);
 
     ApiResponse<String> changeInvestigationStatus(Long investigationId,String status);
 
@@ -35,4 +35,6 @@ public interface DgMasInvestigationService {
     ApiResponse<List<DgMasInvestigationRes>> getAllInvestigations();
 
     ApiResponse<List<MasInvestigationByMainChargeCodeResponse>> dgMasInvestigationByMainChargeCodeId(Long mainChargeCodeId);
+
+    ApiResponse<Page<InvestigationResponse>> getDgMasInvestigation(Long investigationId, String search, int page, int size);
 }
