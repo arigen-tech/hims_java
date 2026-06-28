@@ -37,14 +37,14 @@ public class RadStudyReport {
     @Column(name = "report_image_path", length = 500)
     private String reportImagePath;
 
-    @NotBlank(message = "reportStatus is required")
+//    @NotBlank(message = "reportStatus is required")
     @Size(max = 1, message = "reportStatus must be 1 character")
     @Column(name = "report_status", length = 1)
     private String reportStatus;
 
-    @NotBlank(message = "createdBy is required")
-    @Size(max = 200, message = "createdBy max length is 200")
-    @Column(name = "createdby", length = 200, nullable = false)
+    @NotNull(message = "createdBy is required")
+//    @Size(max = 1000, message = "createdBy max length is 200")
+    @Column(name = "createdby", nullable = false)
     private Long createdBy;
 
     @NotNull(message = "createdOn is required")
