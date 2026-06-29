@@ -27,7 +27,7 @@ public class DgMasInvestigationController {
     private DgMasInvestigationService dgMasInvestigationService;
 
     @GetMapping("/price-details")
-    public ApiResponse<List<DgMasInvestigationResponse>> getInvestigationPriceDetails(
+    public ApiResponse<List<DgMasInvestigationPriceDetailsResponse>> getInvestigationPriceDetails(
             @RequestParam String genderApplicable,@RequestParam(required = false) Boolean radioFlag
            // @RequestParam String investigationName
     ) {

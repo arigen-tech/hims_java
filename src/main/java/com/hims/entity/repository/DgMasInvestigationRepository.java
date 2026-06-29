@@ -22,10 +22,16 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
         d.investigation_name,
         d.status,
         d.gender_applicable,
+        d.discount_applicable,
+        d.discount,
         COALESCE(ipd.price, 0),
-        d.main_chargecode_id
+        d.main_chargecode_id,
+        mmc.main_chargecode_name
     FROM 
         dg_mas_investigation d
+    LEFT JOIN
+        mas_main_chargecode mmc
+        ON d.main_chargecode_id = mmc.main_chargecode_id
     LEFT JOIN
         investigation_price_details ipd
         ON d.investigation_id = ipd.investigation_id
