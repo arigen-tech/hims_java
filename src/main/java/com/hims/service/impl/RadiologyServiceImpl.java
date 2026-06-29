@@ -1040,27 +1040,9 @@ public class RadiologyServiceImpl implements RadiologyService {
             RadiologyReportResponse response = new RadiologyReportResponse();
             response.setRadStudyReportId(report.getRadStudyReportId());
             response.setRadOrderDtId(orderDt.getId());
-            response.setAccessionNo(orderDt.getOrderAccessionNo());
             response.setReportDesc(report.getReportDesc());
             response.setReportImagePath(report.getReportImagePath());
             response.setReportStatus(orderDt.getReportStatus());
-            response.setReportDate(orderDt.getReportDate());
-            response.setCreatedBy(report.getCreatedBy());
-            response.setCreatedOn(report.getCreatedOn());
-            response.setLastChgBy(report.getLastChgBy());
-            response.setLastChgDate(report.getLastChgDate());
-
-            if (orderDt.getInvestigation() != null) {
-                response.setInvestigationName(orderDt.getInvestigation().getInvestigationName());
-            }
-            if (orderDt.getSubChargecode() != null) {
-                response.setModality(orderDt.getSubChargecode().getSubName());
-            }
-            if (orderDt.getRadOrderhd() != null && orderDt.getRadOrderhd().getPatient() != null) {
-                Patient patient = orderDt.getRadOrderhd().getPatient();
-                response.setUhidNo(patient.getUhidNo());
-                response.setPatientName(patient.getFullName());
-            }
 
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
         } catch (Exception e) {
