@@ -1022,6 +1022,38 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<RadiologyReportResponse> getDetailsReportForRadiology(Long radOrderDtId) {
+        try {
+            RadOrderDt orderDt = radOrderDtRepository.findById(radOrderDtId).orElse(null);
+            if (orderDt == null) {
+                return ResponseUtils.createNotFoundResponse("RadOrderDt not found for id: " + radOrderDtId, 404);
+            }
+
+            RadStudyReport report = radStudyReportRepository
+                    .findTopByRadOrderDt_IdOrderByRadStudyReportIdDesc(radOrderDtId)
+                    .orElse(null);
+            if (report == null) {
+                return ResponseUtils.createNotFoundResponse("Radiology report not found for radOrderDtId: " + radOrderDtId, 404);
+            }
+
+            RadiologyReportResponse response = new RadiologyReportResponse();
+            response.setRadStudyReportId(report.getRadStudyReportId());
+            response.setRadOrderDtId(orderDt.getId());
+            response.setReportDesc(report.getReportDesc());
+            response.setReportImagePath(report.getReportImagePath());
+            response.setReportStatus(orderDt.getReportStatus());
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching radiology report details for radOrderDtId={}", radOrderDtId, e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal Server Error", 500
+            );
+        }
+    }
+
+    @Override
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size) {
         try {
             User currentUser = authUtil.getCurrentUser();
