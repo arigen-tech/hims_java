@@ -31,7 +31,6 @@ public class MasPacsTemplate {
     private String templateName;
 
     @NotNull(message = "subChargecodeId is required")
-    @Positive(message = "subChargecodeId must be positive")
     @ManyToOne
     @JoinColumn(name = "sub_chargecode_id", nullable = false)
     private MasSubChargeCode subChargecodeId;

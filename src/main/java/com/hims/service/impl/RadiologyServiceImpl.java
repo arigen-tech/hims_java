@@ -990,20 +990,25 @@ public class RadiologyServiceImpl implements RadiologyService {
                 return ResponseUtils.createNotFoundResponse("current user not found", 404
                 );
             }
-            RadStudyReport radStudyReport = new RadStudyReport();
-            radStudyReport.setReportDesc(request.getReportDesc());
             RadOrderDt orderDt = radOrderDtRepository.findById(request.getRadOrderDtId()).orElse(null);
             if (orderDt == null) {
                 return ResponseUtils.createNotFoundResponse(
                         "RadOrderDt not found for id: " + request.getRadOrderDtId(), 404
                 );
             }
+            RadStudyReport radStudyReport = radStudyReportRepository
+                    .findTopByRadOrderDt_IdOrderByRadStudyReportIdDesc(request.getRadOrderDtId())
+                    .orElseGet(RadStudyReport::new);
+
             radStudyReport.setRadOrderDt(orderDt);
-            // radStudyReport.setReportStatus();
+            radStudyReport.setReportDesc(request.getReportDesc());
+            radStudyReport.setReportStatus(status.toLowerCase().trim());
             radStudyReport.setLastChgBy(currentUser.getFullName());
             radStudyReport.setLastChgDate(LocalDateTime.now());
-            radStudyReport.setCreatedBy(currentUser.getUserId());
-            radStudyReport.setCreatedOn(LocalDateTime.now());
+            if (radStudyReport.getRadStudyReportId() == null) {
+                radStudyReport.setCreatedBy(currentUser.getUserId());
+                radStudyReport.setCreatedOn(LocalDateTime.now());
+            }
             // radStudyReport.setReportImagePath();
             radStudyReportRepository.save(radStudyReport);
             orderDt.setReportStatus(status.toLowerCase().trim());
