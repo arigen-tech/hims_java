@@ -5,9 +5,11 @@ import com.hims.entity.repository.MasEmployeeRepository;
 import com.hims.request.MasEmployeeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasEmployeeDTO;
+import com.hims.response.MasEmployeeResponse;
 import com.hims.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -37,9 +39,16 @@ public class EmployeeController {
      * Get all employees
      */
     @GetMapping("/getAllEmployees")
-    public ResponseEntity<ApiResponse<List<MasEmployeeDTO>>> getAllEmployees() {
-        log.info("GET /employee/getAllEmployees called");
-        return ResponseEntity.ok(employeeService.getAllEmployees());
+    public ResponseEntity<ApiResponse<Page<MasEmployeeResponse>>> getAllEmployees(
+            @RequestParam(required = false) String employeeName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        log.info("GET /employee/getAllEmployees called | employeeName: {}, mobileNo: {}, page: {}, size: {}",
+                employeeName, mobileNo, page, size);
+
+        return ResponseEntity.ok(employeeService.getAllEmployees(employeeName, mobileNo, page, size));
     }
 
     /**
