@@ -227,9 +227,9 @@ public class MasBedServiceImpl implements MasBedService {
     }
 
     @Override
-    public ApiResponse<?> getBedStatusCount(Long departmentId) {
+    public ApiResponse<?> getBedStatusCount(Long wardId) {
         try {
-        BedStatusCountProjection projection = masBedRepository.getBedStatusCount(departmentId, AppConstants.BED_STATUS_AVAILABLE,AppConstants.BED_STATUS_CLEANING_BED,AppConstants.BED_STATUS_OCCUPIED_BED);
+        BedStatusCountProjection projection = masBedRepository.getBedStatusCount(wardId, AppConstants.BED_STATUS_AVAILABLE,AppConstants.BED_STATUS_CLEANING_BED,AppConstants.BED_STATUS_OCCUPIED_BED);
 
         BedStatusCountResponse response = BedStatusCountResponse.builder()
                         .available(projection.getAvailable() != null ? projection.getAvailable() : 0L)
@@ -239,7 +239,7 @@ public class MasBedServiceImpl implements MasBedService {
 
         return ResponseUtils.createSuccessResponse(response, new TypeReference<BedStatusCountResponse>() {});
         } catch (Exception e) {
-            log.error("Error while fetching bed status count for departmentId : {}", departmentId, e);
+            log.error("Error while fetching bed status count for wardId : {}", wardId, e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
             );

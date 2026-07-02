@@ -9,5 +9,4 @@ public class OpdPsychiatricDetailsRequest {
     private Long questionId;
     private Long answerOptionId;
 
-
 }

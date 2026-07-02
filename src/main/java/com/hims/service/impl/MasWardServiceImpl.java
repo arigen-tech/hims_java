@@ -172,6 +172,63 @@ if(masWard.isEmpty()){
         }
 
     }
+
+    @Override
+    public ApiResponse<List<MasWardResponse>> getWardByCategory(Long wardCategoryId) {
+        try {
+            log.info("getWardByCategory() method Started with wardCategoryId: {}", wardCategoryId);
+            
+            if(wardCategoryId == null || wardCategoryId <= 0) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, 
+                    "Ward Category ID must not be null or zero", HttpStatus.BAD_REQUEST.value());
+            }
+            
+            List<MasWard> masWards = masWardRepository.findByWardCategory_Id(wardCategoryId);
+            
+            if(masWards.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("No wards found for this category", HttpStatus.NOT_FOUND.value());
+            }
+            
+            log.info("getWardByCategory() method Ended. Found {} wards", masWards.size());
+            return ResponseUtils.createSuccessResponse(masWards.stream().map(this::mapToResponse).toList(), new TypeReference<>() {});
+            
+        } catch (Exception e) {
+            log.error("getWardByCategory() Error :: ", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, 
+                "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<List<MasWardResponse>> getWardByCategoryAndStatus(Long wardCategoryId, String status) {
+        try {
+            log.info("getWardByCategoryAndStatus() method Started with wardCategoryId: {}, status: {}", wardCategoryId, status);
+            
+            if(wardCategoryId == null || wardCategoryId <= 0) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, 
+                    "Ward Category ID must not be null or zero", HttpStatus.BAD_REQUEST.value());
+            }
+            
+            if(status == null || status.trim().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, 
+                    "Status must not be null or empty", HttpStatus.BAD_REQUEST.value());
+            }
+            
+            List<MasWard> masWards = masWardRepository.findByWardCategory_IdAndStatus(wardCategoryId, status);
+            
+            if(masWards.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("No wards found for this category and status", HttpStatus.NOT_FOUND.value());
+            }
+            
+            log.info("getWardByCategoryAndStatus() method Ended. Found {} wards", masWards.size());
+            return ResponseUtils.createSuccessResponse(masWards.stream().map(this::mapToResponse).toList(), new TypeReference<>() {});
+            
+        } catch (Exception e) {
+            log.error("getWardByCategoryAndStatus() Error :: ", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, 
+                "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
     private MasWardResponse mapToResponse(MasWard masWard){
         MasWardResponse masWardResponse=new MasWardResponse();
         masWardResponse.setWardId(masWard.getWardId());

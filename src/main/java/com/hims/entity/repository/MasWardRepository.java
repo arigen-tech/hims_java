@@ -19,4 +19,8 @@ public interface MasWardRepository extends JpaRepository<MasWard,Long> {
    // List<MasWard> findByStatusIgnoreCaseInOrderByLastUpdateDateDesc(List<String> y);
 
     List<MasWard> findAllByOrderByStatusDescLastUpdateDateDesc();
+
+    List<MasWard> findByWardCategory_Id(Long wardCategoryId);
+
+    List<MasWard> findByWardCategory_IdAndStatus(Long wardCategoryId, String status);
 }

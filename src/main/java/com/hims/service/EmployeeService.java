@@ -17,7 +17,7 @@ public interface EmployeeService {
 
     ApiResponse<?> createEmployee(MasEmployeeRequest request);
 
-    ApiResponse<MasEmployee> updateEmployee(Long id, MasEmployeeRequest request);
+    ApiResponse<MasEmployeeDTO> updateEmployee(Long id, MasEmployeeRequest request);
 
     ApiResponse<MasEmployee> updateEmployeeApprovalStatus(Long id, Long deptId);
 

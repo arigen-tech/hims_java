@@ -35,10 +35,10 @@ public interface MasBedRepository extends JpaRepository<MasBed,Long> {
                 ON mr.room_id = mb.room_id
             JOIN mas_bed_status mbs 
                 ON mb.bed_status_id = mbs.bed_status_id
-            WHERE mr.department_id = :departmentId
+            WHERE mr.ward_id = :wardId
             """, nativeQuery = true)
     BedStatusCountProjection getBedStatusCount(
-            @Param("departmentId") Long departmentId,
+            @Param("wardId") Long wardId,
             @Param("available") String available,
             @Param("cleaning") String cleaning,
             @Param("occupied") String occupied

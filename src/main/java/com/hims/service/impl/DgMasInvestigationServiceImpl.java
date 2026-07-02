@@ -209,7 +209,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 investigationPage =
                         dgMasInvestigationRepo.searchInvestigations(
                                 flag,
-                                search.toLowerCase(),   // ❌ no %
+                                search.toLowerCase(),
                                 mainChargeCodeId,
                                 pageable
                         );
