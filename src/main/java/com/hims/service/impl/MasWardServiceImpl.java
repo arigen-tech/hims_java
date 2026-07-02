@@ -1,21 +1,22 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.MasCareLevel;
-import com.hims.entity.MasWard;
-import com.hims.entity.MasWardCategory;
-import com.hims.entity.User;
+import com.hims.constants.AppConstants;
+import com.hims.entity.*;
 import com.hims.entity.repository.MasCareLevelRepo;
+import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasWardCategoryRepository;
 import com.hims.entity.repository.MasWardRepository;
 import com.hims.request.MasWardRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.DepartmentByDepartmentTypeCode;
 import com.hims.response.MasWardResponse;
 import com.hims.service.MasWardService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +35,13 @@ public class MasWardServiceImpl implements MasWardService {
     private MasWardCategoryRepository masWardCategoryRepository;
     @Autowired
     private MasCareLevelRepo masCareLevelRepo;
+
+    @Autowired
+    private MasDepartmentRepository masDepartmentRepository;
+
+
+    @Value("${department.type.code.ward}")
+    private String wardDepartmentTypeCode;
     @Override
     public ApiResponse<List<MasWardResponse>> getAllMasWardCategory(int flag) {
         try {
@@ -95,9 +103,14 @@ public class MasWardServiceImpl implements MasWardService {
             masWard.setWardCategory(masWardCategory.get());
             Optional<MasCareLevel> masCareLevel= masCareLevelRepo.findById(request.getCareLevelId());
             if(masCareLevel.isEmpty()){
-                return  ResponseUtils.createNotFoundResponse("Mas Ward Category Not Found", HttpStatus.NOT_FOUND.value());
+                return  ResponseUtils.createNotFoundResponse("Mas care level Not Found", HttpStatus.NOT_FOUND.value());
             }
             masWard.setCareLevel(masCareLevel.get());
+            Optional<MasDepartment> masDepartment= masDepartmentRepository.findById(request.getDepartmentId());
+            if(masDepartment.isEmpty()){
+                return  ResponseUtils.createNotFoundResponse("Department Not Found", HttpStatus.NOT_FOUND.value());
+            }
+            masWard.setDepartment(masDepartment.get());
            MasWard masWard1= masWardRepository.save(masWard);
            log.info("MasWard() method Ended...");
             return  ResponseUtils.createSuccessResponse(mapToResponse(masWard1), new TypeReference<>() {});
@@ -134,6 +147,11 @@ public class MasWardServiceImpl implements MasWardService {
                 return  ResponseUtils.createNotFoundResponse("Mas Care Level Not Found", HttpStatus.NOT_FOUND.value());
             }
             masWard.setCareLevel(masCareLevel.get());
+            Optional<MasDepartment> masDepartment= masDepartmentRepository.findById(request.getDepartmentId());
+            if(masDepartment.isEmpty()){
+                return  ResponseUtils.createNotFoundResponse("Department Not Found", HttpStatus.NOT_FOUND.value());
+            }
+            masWard.setDepartment(masDepartment.get());
             MasWard masWard1=masWardRepository.save( masWard);
             log.info("updateMasWard() method Ended...");
 
@@ -172,6 +190,21 @@ if(masWard.isEmpty()){
         }
 
     }
+    @Override
+    public ApiResponse<List<DepartmentByDepartmentTypeCode>> getDepartmentListByDepartmentTypeCode() {
+        try {
+            List<DepartmentByDepartmentTypeCode> departmentList =
+                    masDepartmentRepository.findDepartmentsByDepartmentTypeCode(wardDepartmentTypeCode, AppConstants.STATUS_Y.toLowerCase());
+
+            return ResponseUtils.createSuccessResponse(departmentList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching department list by department type code: {}", wardDepartmentTypeCode, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+
     private MasWardResponse mapToResponse(MasWard masWard){
         MasWardResponse masWardResponse=new MasWardResponse();
         masWardResponse.setWardId(masWard.getWardId());
@@ -184,6 +217,8 @@ if(masWard.isEmpty()){
         masWardResponse.setCareLevelName(masWard.getCareLevel()!=null?masWard.getCareLevel().getCareLevelName():null);
         masWardResponse.setWardCategoryId(masWard.getWardCategory()!=null?masWard.getWardCategory().getId():null);
         masWardResponse.setWardCategoryName(masWard.getWardCategory()!=null?masWard.getWardCategory().getCategoryName():null);
+        masWardResponse.setDepartmentId(masWard.getDepartment()!=null?masWard.getDepartment().getId():null);
+        masWardResponse.setDepartmentName(masWard.getDepartment()!=null?masWard.getDepartment().getDepartmentName():null);
         return masWardResponse;
 
     }

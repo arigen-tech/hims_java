@@ -1814,6 +1814,14 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+    @GetMapping("/getDepartmentListByDepartmentTypeCode")
+    public ResponseEntity<ApiResponse<List<DepartmentByDepartmentTypeCode>>> getDepartmentListByDepartmentTypeCode() {
+        ApiResponse<List<DepartmentByDepartmentTypeCode>> response = masWardService.getDepartmentListByDepartmentTypeCode();
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
     //  ============================================ Mas Room Category =====================================
 
 
