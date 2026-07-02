@@ -1,10 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.MasDepartment;
-import com.hims.response.DepartmentDropdownResponse;
-import com.hims.response.MasDepartmentResponse;
-import com.hims.response.SpecialitiesResponse;
-import com.hims.response.DepartmentDropdownResponse;
+import com.hims.response.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -200,6 +197,21 @@ ORDER BY d.departmentName ASC
             @Param("departmentTypeCode") String departmentTypeCode);
 
 
-
+    @Query("""
+        SELECT new  com.hims.response.DepartmentByDepartmentTypeCode(
+            d.id,
+            d.departmentName
+        )
+        FROM MasDepartment d
+        JOIN d.departmentType dt
+        WHERE dt.departmentTypeCode = :departmentTypeCode
+          AND LOWER(d.status) =:status
+          AND LOWER(dt.status) =:status
+        ORDER BY d.departmentName ASC
+        """)
+    List<DepartmentByDepartmentTypeCode> findDepartmentsByDepartmentTypeCode(
+            @Param("departmentTypeCode") String departmentTypeCode,
+            @Param("status") String status
+            );
 }
 
