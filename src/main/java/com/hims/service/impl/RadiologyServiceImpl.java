@@ -990,20 +990,25 @@ public class RadiologyServiceImpl implements RadiologyService {
                 return ResponseUtils.createNotFoundResponse("current user not found", 404
                 );
             }
-            RadStudyReport radStudyReport = new RadStudyReport();
-            radStudyReport.setReportDesc(request.getReportDesc());
             RadOrderDt orderDt = radOrderDtRepository.findById(request.getRadOrderDtId()).orElse(null);
             if (orderDt == null) {
                 return ResponseUtils.createNotFoundResponse(
                         "RadOrderDt not found for id: " + request.getRadOrderDtId(), 404
                 );
             }
+            RadStudyReport radStudyReport = radStudyReportRepository
+                    .findTopByRadOrderDt_IdOrderByRadStudyReportIdDesc(request.getRadOrderDtId())
+                    .orElseGet(RadStudyReport::new);
+
             radStudyReport.setRadOrderDt(orderDt);
-            // radStudyReport.setReportStatus();
+            radStudyReport.setReportDesc(request.getReportDesc());
+            radStudyReport.setReportStatus(status.toLowerCase().trim());
             radStudyReport.setLastChgBy(currentUser.getFullName());
             radStudyReport.setLastChgDate(LocalDateTime.now());
-            radStudyReport.setCreatedBy(currentUser.getUserId());
-            radStudyReport.setCreatedOn(LocalDateTime.now());
+            if (radStudyReport.getRadStudyReportId() == null) {
+                radStudyReport.setCreatedBy(currentUser.getUserId());
+                radStudyReport.setCreatedOn(LocalDateTime.now());
+            }
             // radStudyReport.setReportImagePath();
             radStudyReportRepository.save(radStudyReport);
             orderDt.setReportStatus(status.toLowerCase().trim());
@@ -1019,6 +1024,38 @@ public class RadiologyServiceImpl implements RadiologyService {
             );
         }
 
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<RadiologyReportResponse> getDetailsReportForRadiology(Long radOrderDtId) {
+        try {
+            RadOrderDt orderDt = radOrderDtRepository.findById(radOrderDtId).orElse(null);
+            if (orderDt == null) {
+                return ResponseUtils.createNotFoundResponse("RadOrderDt not found for id: " + radOrderDtId, 404);
+            }
+
+            RadStudyReport report = radStudyReportRepository
+                    .findTopByRadOrderDt_IdOrderByRadStudyReportIdDesc(radOrderDtId)
+                    .orElse(null);
+            if (report == null) {
+                return ResponseUtils.createNotFoundResponse("Radiology report not found for radOrderDtId: " + radOrderDtId, 404);
+            }
+
+            RadiologyReportResponse response = new RadiologyReportResponse();
+            response.setRadStudyReportId(report.getRadStudyReportId());
+            response.setRadOrderDtId(orderDt.getId());
+            response.setReportDesc(report.getReportDesc());
+            response.setReportImagePath(report.getReportImagePath());
+            response.setReportStatus(orderDt.getReportStatus());
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching radiology report details for radOrderDtId={}", radOrderDtId, e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal Server Error", 500
+            );
+        }
     }
 
     @Override

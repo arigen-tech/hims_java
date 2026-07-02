@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Lab_Sub_Detail_Report" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="595" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="7b51ea1c-cf1c-4368-a29a-7331d1460fcd">
 	<property name="ireport.scriptlethandling" value="0"/>
 	<property name="ireport.encoding" value="UTF-8"/>
 	<property name="ireport.zoom" value="2.0"/>
 	<property name="ireport.x" value="0"/>
 	<property name="ireport.y" value="0"/>
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.unit." value="pixel"/>
 	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
@@ -30,6 +30,7 @@
 	<parameter name="investigation_id" class="java.lang.Long"/>
 	<parameter name="from_age" class="java.lang.Long"/>
 	<parameter name="to_age" class="java.lang.Long"/>
+	<parameter name="mainChargeCodeId" class="java.lang.Long"/>
 	<queryString>
 		<![CDATA[select distinct 
 	concat(pt.p_fn, ' ', pt.p_ln) as patient_name,
@@ -58,7 +59,7 @@ left join mas_gender mg on pt.p_gender_id = mg.id
 left join dg_mas_investigation dmi on dt.investigation_id = dmi.investigation_id
 left join mas_sub_chargecode msc on hd.sub_chargecode_id = msc.sub_chargecode_id
 left join dg_uom du on dmi.uom_id = du.uom_id
-where hd.main_chargecode_id = 12 
+where hd.main_chargecode_id = $P{mainChargeCodeId}
 and dt.validated = 'y'
 and hd.result_status = 'y'
 and dt.result is not null

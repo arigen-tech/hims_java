@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Lab_Main_Report" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b36e4c85-8d3f-4b77-af41-ad4e977e0476">
 	<property name="ireport.scriptlethandling" value="0"/>
 	<property name="ireport.encoding" value="UTF-8"/>
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<import value="net.sf.jasperreports.engine.*"/>
 	<import value="java.util.*"/>
@@ -21,9 +21,11 @@
 	<parameter name="investigation_id" class="java.lang.Long"/>
 	<parameter name="from_age" class="java.lang.Long"/>
 	<parameter name="to_age" class="java.lang.Long"/>
+
 	<parameter name="SUBREPORT_DIR" class="java.lang.String">
 		<defaultValueExpression><![CDATA["/Users/rozaltheric/JaspersoftWorkspace/MyReports/Billing/lab_register_report/"]]></defaultValueExpression>
 	</parameter>
+	<parameter name="mainChargeCodeId" class="java.lang.Long"/>
 	<queryString>
 		<![CDATA[select distinct 
 	mh.hospital_name
@@ -33,9 +35,9 @@ left join patient pt on hd.hin_id = pt.patient_id
 left join mas_gender mg on pt.p_gender_id = mg.id
 left join dg_mas_investigation dmi on dt.investigation_id = dmi.investigation_id
 left join mas_hospital mh on hd.hospital_id = mh.hospital_id
-left join dg_sub_mas_investigation dsmi on dt.result_type = 'm' 
+left join dg_sub_mas_investigation dsmi on dt.result_type = 's' 
 	and dsmi.sub_investigation_id = dt.sub_investigation_id
-where hd.main_chargecode_id = 12 
+where hd.main_chargecode_id = $P{mainChargeCodeId}
 and dt.validated = 'y'
 and hd.result_status = 'y'
 and dt.result is not null
@@ -166,6 +168,9 @@ and dt.result is not null
 				<subreportParameter name="to_age">
 					<subreportParameterExpression><![CDATA[$P{to_age}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="mainChargeCodeId">
+					<subreportParameterExpression><![CDATA[$P{mainChargeCodeId}]]></subreportParameterExpression>
+				</subreportParameter>
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Lab_Sub_Detail_Report.jasper"]]></subreportExpression>
 			</subreport>
@@ -188,6 +193,9 @@ and dt.result is not null
 				</subreportParameter>
 				<subreportParameter name="to_age">
 					<subreportParameterExpression><![CDATA[$P{to_age}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="mainChargeCodeId">
+					<subreportParameterExpression><![CDATA[$P{mainChargeCodeId}]]></subreportParameterExpression>
 				</subreportParameter>
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Lab_Sub_Summary_Report.jasper"]]></subreportExpression>

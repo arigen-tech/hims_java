@@ -1814,6 +1814,14 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+    @GetMapping("/getDepartmentListByDepartmentTypeCode")
+    public ResponseEntity<ApiResponse<List<DepartmentByDepartmentTypeCode>>> getDepartmentListByDepartmentTypeCode() {
+        ApiResponse<List<DepartmentByDepartmentTypeCode>> response = masWardService.getDepartmentListByDepartmentTypeCode();
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
     @GetMapping("/masWard/getByCategory/{wardCategoryId}")
     public ResponseEntity<ApiResponse<List<MasWardResponse>>> getWardsByCategory(@PathVariable Long wardCategoryId) {
         log.info("GET /masWard/getByCategory/{} called", wardCategoryId);
@@ -2513,6 +2521,11 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     @GetMapping("masOpdMedicalAdvise/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasOpdMedicalAdviseResponse>>> getAllMasOpdMedicalAdvise(@PathVariable int flag) {
         return ResponseEntity.ok( masOpdMedicalAdviseService.getAll(flag));
+    }
+
+    @GetMapping("masOpdMedicalAdvise/getById/{id}")
+    public ResponseEntity<ApiResponse<MasOpdMedicalAdviseResponse>> getMasOpdMedicalAdvise(@PathVariable Long id) {
+        return ResponseEntity.ok(masOpdMedicalAdviseService.getById(id));
     }
     @PostMapping("masOpdMedicalAdvise/create")
     public ResponseEntity<ApiResponse<MasOpdMedicalAdviseResponse>>

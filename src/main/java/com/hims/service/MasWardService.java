@@ -2,6 +2,7 @@ package com.hims.service;
 
 import com.hims.request.MasWardRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.DepartmentByDepartmentTypeCode;
 import com.hims.response.MasWardResponse;
 import org.springframework.stereotype.Service;
 
@@ -22,4 +23,6 @@ public interface MasWardService {
     ApiResponse<List<MasWardResponse>> getWardByCategory(Long wardCategoryId);
 
     ApiResponse<List<MasWardResponse>> getWardByCategoryAndStatus(Long wardCategoryId, String status);
+
+    ApiResponse<List<DepartmentByDepartmentTypeCode>> getDepartmentListByDepartmentTypeCode();
 }

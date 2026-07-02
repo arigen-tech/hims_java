@@ -93,6 +93,13 @@ public class RadiologyController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @GetMapping("/getDetailsReportForRadiology")
+    public ResponseEntity<ApiResponse<RadiologyReportResponse>> getDetailsReportForRadiology(
+            @RequestParam Long radOrderDtId) {
+        ApiResponse<RadiologyReportResponse> response = radiologyService.getDetailsReportForRadiology(radOrderDtId);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/getPACSStudyList")
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(
             @RequestParam(required = false) Long modality,

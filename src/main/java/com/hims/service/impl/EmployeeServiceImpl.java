@@ -1,28 +1,32 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.DuplicatePersonFoundException;
 import com.hims.helperUtil.HelperUtils;
-import com.hims.projection.AppointmentHistoryProjection;
+import com.hims.projection.MasEmployeeProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.EmployeeService;
 import com.hims.utils.ResponseUtils;
-import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +35,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -143,71 +146,99 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 
 
-    @Override
-    public ApiResponse<List<MasEmployeeDTO>> getAllEmployees() {
-        List<MasEmployee> employees = masEmployeeRepository.findAll();
+//    @Override
+//    public ApiResponse<List<MasEmployeeDTO>> getAllEmployees() {
+//        List<MasEmployee> employees = masEmployeeRepository.findAll();
+//
+//        if (employees.isEmpty()) {
+//            return ResponseUtils.createFailureResponse(
+//                    null,
+//                    new TypeReference<>() {},
+//                    "RECORD NOT FOUND",
+//                    400
+//            );
+//        }
+//
+//        List<MasEmployeeDTO> employeeDTOs = employees.stream().map(employee -> {
+//            List<EmployeeQualificationDTO> qualifications = employeeQualificationRepository
+//                    .findByEmployee(employee)
+//                    .stream()
+//                    .map(EmployeeQualificationDTO::fromEntity)
+//                    .toList();
+//            List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters = employeeSpecialtyCenterRepository
+//                    .findByEmpId(employee.getEmployeeId())
+//                    .stream()
+//                    .map(EmployeeSpecialtyCenterMappingDTO::fromEntity)
+//                    .toList();
+//
+//            List<EmployeeWorkExperienceDTO> workExperiences = employeeWorkExperienceRepository
+//                    .findByEmployee(employee)
+//                    .stream()
+//                    .map(EmployeeWorkExperienceDTO::fromEntity)
+//                    .toList();
+//
+//            List<EmployeeMembershipDTO> memberships = employeeMembershipRepository
+//                    .findByEmployee(employee)
+//                    .stream()
+//                    .map(EmployeeMembershipDTO::fromEntity)
+//                    .toList();
+//
+//            List<EmployeeSpecialtyInterestDTO> specialtyInterests = employeeSpecialtyInterestRepository
+//                    .findByEmployee(employee)
+//                    .stream()
+//                    .map(EmployeeSpecialtyInterestDTO::fromEntity)
+//                    .toList();
+//
+//            List<EmployeeAwardDTO> awards = employeeAwardRepository
+//                    .findByEmployee(employee)
+//                    .stream()
+//                    .map(EmployeeAwardDTO::fromEntity)
+//                    .toList();
+//
+//            List<EmployeeDocumentDTO> documents = employeeDocumentRepository
+//                    .findByEmployee(employee)
+//                    .stream()
+//                    .map(EmployeeDocumentDTO::fromEntity)
+//                    .toList();
+//
+//            List<EmployeeLanguageDTO> languages = masEmployeeLanguageMappingRepository
+//                    .findByEmpId(employee.getEmployeeId())
+//                    .stream()
+//                    .map(EmployeeLanguageDTO::fromEntity)
+//                    .toList();
+//            return MasEmployeeDTO.fromEntity(employee, qualifications, documents,specialtyCenters,workExperiences,memberships,specialtyInterests,awards,languages);
+//        }).toList();
+//
+//        return ResponseUtils.createSuccessResponse(employeeDTOs, new TypeReference<>() {});
+//    }
+@Override
+public ApiResponse<Page<MasEmployeeResponse>> getAllEmployees(String employeeName, String mobileNo, int page, int size) {
+    log.info("Fetching employees | employeeName: {}, mobileNo: {}, page: {}, size: {}",
+            employeeName, mobileNo, page, size);
 
-        if (employees.isEmpty()) {
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<>() {},
-                    "RECORD NOT FOUND",
-                    400
-            );
-        }
+    try {
+        String employeeNameValue = employeeName == null ? "" : employeeName.trim();
+        String mobileNoValue = mobileNo == null ? "" : mobileNo.trim();
 
-        List<MasEmployeeDTO> employeeDTOs = employees.stream().map(employee -> {
-            List<EmployeeQualificationDTO> qualifications = employeeQualificationRepository
-                    .findByEmployee(employee)
-                    .stream()
-                    .map(EmployeeQualificationDTO::fromEntity)
-                    .toList();
-            List<EmployeeSpecialtyCenterMappingDTO> specialtyCenters = employeeSpecialtyCenterRepository
-                    .findByEmpId(employee.getEmployeeId())
-                    .stream()
-                    .map(EmployeeSpecialtyCenterMappingDTO::fromEntity)
-                    .toList();
+        Pageable pageable = PageRequest.of(page, size);
 
-            List<EmployeeWorkExperienceDTO> workExperiences = employeeWorkExperienceRepository
-                    .findByEmployee(employee)
-                    .stream()
-                    .map(EmployeeWorkExperienceDTO::fromEntity)
-                    .toList();
+        Page<MasEmployeeProjection> employeePage = masEmployeeRepository.getAllEmployeesProjection(
+                        employeeNameValue,
+                        mobileNoValue,
+                        pageable
+                );
 
-            List<EmployeeMembershipDTO> memberships = employeeMembershipRepository
-                    .findByEmployee(employee)
-                    .stream()
-                    .map(EmployeeMembershipDTO::fromEntity)
-                    .toList();
+        Page<MasEmployeeResponse> responsePage = employeePage.map(this::mapToEmployeeResponse);
 
-            List<EmployeeSpecialtyInterestDTO> specialtyInterests = employeeSpecialtyInterestRepository
-                    .findByEmployee(employee)
-                    .stream()
-                    .map(EmployeeSpecialtyInterestDTO::fromEntity)
-                    .toList();
+        log.info("Employees fetched successfully. Total elements: {}, Total pages: {}", responsePage.getTotalElements(), responsePage.getTotalPages());
 
-            List<EmployeeAwardDTO> awards = employeeAwardRepository
-                    .findByEmployee(employee)
-                    .stream()
-                    .map(EmployeeAwardDTO::fromEntity)
-                    .toList();
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
 
-            List<EmployeeDocumentDTO> documents = employeeDocumentRepository
-                    .findByEmployee(employee)
-                    .stream()
-                    .map(EmployeeDocumentDTO::fromEntity)
-                    .toList();
-
-            List<EmployeeLanguageDTO> languages = masEmployeeLanguageMappingRepository
-                    .findByEmpId(employee.getEmployeeId())
-                    .stream()
-                    .map(EmployeeLanguageDTO::fromEntity)
-                    .toList();
-            return MasEmployeeDTO.fromEntity(employee, qualifications, documents,specialtyCenters,workExperiences,memberships,specialtyInterests,awards,languages);
-        }).toList();
-
-        return ResponseUtils.createSuccessResponse(employeeDTOs, new TypeReference<>() {});
+    } catch (Exception e) {
+        log.error("Error while fetching employees: {}", e.getMessage(), e);
+        return new ApiResponse<>(null, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
     }
+}
 
     @Override
     public ApiResponse<List<MasEmployeeDTO>> getEmployeesByStatus(String status) {
@@ -1380,4 +1411,22 @@ public class EmployeeServiceImpl implements EmployeeService {
         return ALLOWED_PIC_EXTENSIONS.contains(fileExtension);
     }
 
+    private MasEmployeeResponse mapToEmployeeResponse(MasEmployeeProjection projection) {
+
+        MasEmployeeResponse response = new MasEmployeeResponse();
+        response.setEmployeeId(projection.getEmployeeId());
+        response.setFirstName(projection.getFirstName());
+        response.setMiddleName(projection.getMiddleName());
+        response.setLastName(projection.getLastName());
+        response.setDob(projection.getDob());
+        response.setGenderId(projection.getGenderId());
+        response.setGender(projection.getGender());
+        response.setMobileNo(projection.getMobileNo());
+        response.setEmploymentTypeId(projection.getEmploymentTypeId());
+        response.setEmploymentType(projection.getEmploymentType());
+        response.setEmployeeTypeId(projection.getEmployeeTypeId());
+        response.setEmployeeType(projection.getEmployeeType());
+        response.setStatus(projection.getStatus());
+        return response;
+    }
 }

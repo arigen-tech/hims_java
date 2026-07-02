@@ -7,6 +7,7 @@ import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jasperreports.engine.JasperPrint;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +30,8 @@ public class ReportController {
 
     @Autowired
     private DataSource dataSource;
+    @Value("${labInvestigation.mainChargecodeId}")
+    private Long mainChargecodeId;
 
     private Connection getConnection() throws SQLException {
         return dataSource.getConnection();
@@ -544,6 +547,7 @@ public class ReportController {
         Long safeInvestigationId = (investigationId == null ? 0L : investigationId);
         Long safeFromAge = (fromAge == null ? 0L : fromAge);
         Long safeToAge = (toAge == null ? 0L : toAge);
+        Long safeMainChargeCodeId=mainChargecodeId;
 
         Map<String, Object> params =  new HashMap<>();
         params.put("from_date", fromDate);
@@ -552,6 +556,8 @@ public class ReportController {
         params.put("investigation_id", safeInvestigationId);
         params.put("from_age", safeFromAge);
         params.put("to_age", safeToAge);
+        params.put("mainChargeCodeId", safeMainChargeCodeId);
+
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_LAB + ReportConstants.LAB_REGISTER_SUB_REPORT_DIR)).toString());
 
