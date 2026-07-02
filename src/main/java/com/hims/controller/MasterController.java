@@ -2504,6 +2504,11 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     public ResponseEntity<ApiResponse<List<MasOpdMedicalAdviseResponse>>> getAllMasOpdMedicalAdvise(@PathVariable int flag) {
         return ResponseEntity.ok( masOpdMedicalAdviseService.getAll(flag));
     }
+
+    @GetMapping("masOpdMedicalAdvise/getById/{id}")
+    public ResponseEntity<ApiResponse<MasOpdMedicalAdviseResponse>> getMasOpdMedicalAdvise(@PathVariable Long id) {
+        return ResponseEntity.ok(masOpdMedicalAdviseService.getById(id));
+    }
     @PostMapping("masOpdMedicalAdvise/create")
     public ResponseEntity<ApiResponse<MasOpdMedicalAdviseResponse>>
     createOpdMedicalAdvise(@RequestBody MasOpdMedicalAdviseRequest request) {
