@@ -20,5 +20,9 @@ public interface MasWardService {
 
     ApiResponse<MasWardResponse> changeMasWardStatus(Long id, String status);
 
+    ApiResponse<List<MasWardResponse>> getWardByCategory(Long wardCategoryId);
+
+    ApiResponse<List<MasWardResponse>> getWardByCategoryAndStatus(Long wardCategoryId, String status);
+
     ApiResponse<List<DepartmentByDepartmentTypeCode>> getDepartmentListByDepartmentTypeCode();
 }

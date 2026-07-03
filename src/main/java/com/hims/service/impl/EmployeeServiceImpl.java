@@ -403,7 +403,7 @@ public ApiResponse<Page<MasEmployeeResponse>> getAllEmployees(String employeeNam
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public ApiResponse<MasEmployee> updateEmployee(Long id, MasEmployeeRequest req) {
+    public ApiResponse<MasEmployeeDTO> updateEmployee(Long id, MasEmployeeRequest req) {
         if (id == null) {
             throw new RuntimeException("Employee ID cannot be null");
         }
@@ -431,7 +431,7 @@ public ApiResponse<Page<MasEmployeeResponse>> getAllEmployees(String employeeNam
         updateDocuments(savedEmployee, req, currentUser);
         audit(employee, currentUser);
 
-        return ResponseUtils.createSuccessResponse(savedEmployee, new TypeReference<>() {});
+        return getEmployeeById(savedEmployee.getEmployeeId());
     }
 
     @Transactional(rollbackFor = {Exception.class})
@@ -500,7 +500,7 @@ public ApiResponse<Page<MasEmployeeResponse>> getAllEmployees(String employeeNam
                     .userType(userTypeObj)
                     .roleId(employeeObj.getRoleId().getId().toString())
                     .dateOfBirth(employeeObj.getDob())
-                    .oldPassword(passwordEncoder.encode(otp))
+                        .oldPassword(passwordEncoder.encode(otp))
                     .currentPassword(passwordEncoder.encode(otp))
                     .profilePicture(employeeObj.getProfilePicName())
                     .isVerified(true)
@@ -772,11 +772,21 @@ public ApiResponse<Page<MasEmployeeResponse>> getAllEmployees(String employeeNam
 
     private void updateQualifications(MasEmployee emp, MasEmployeeRequest req, User user) {
         if (req.getQualification() == null) return;
-        employeeQualificationRepository.deleteAll(
-                employeeQualificationRepository.findByEmployee(emp)
-        );
-        for (EmployeeQualificationReq q : req.getQualification()) {
-            String filePath = saveFile(q.getFilePath());
+        List<EmployeeQualification> existingQualifications =
+                employeeQualificationRepository.findByEmployee(emp);
+        employeeQualificationRepository.deleteAll(existingQualifications);
+
+        for (int i = 0; i < req.getQualification().size(); i++) {
+            EmployeeQualificationReq q = req.getQualification().get(i);
+            String existingFilePath = getExistingQualificationFilePath(
+                    existingQualifications,
+                    q.getEmployeeQualificationId(),
+                    i
+            );
+            MultipartFile upload = q.getFilePath();
+            String filePath = (upload != null && !upload.isEmpty())
+                    ? saveFile(upload)
+                    : existingFilePath;
             EmployeeQualification eq = new EmployeeQualification();
             eq.setEmployee(emp);
             eq.setQualificationName(q.getQualificationName());
@@ -791,11 +801,20 @@ public ApiResponse<Page<MasEmployeeResponse>> getAllEmployees(String employeeNam
 
     private void updateDocuments(MasEmployee emp, MasEmployeeRequest req, User user) {
         if (req.getDocument() == null) return;
-        employeeDocumentRepository.deleteAll(
-                employeeDocumentRepository.findByEmployee(emp)
-        );
-        for (EmployeeDocumentReq d : req.getDocument()) {
-            String filePath = saveFile(d.getFilePath());
+        List<EmployeeDocument> existingDocuments = employeeDocumentRepository.findByEmployee(emp);
+        employeeDocumentRepository.deleteAll(existingDocuments);
+
+        for (int i = 0; i < req.getDocument().size(); i++) {
+            EmployeeDocumentReq d = req.getDocument().get(i);
+            String existingFilePath = getExistingDocumentFilePath(
+                    existingDocuments,
+                    d.getEmployeeDocumentId(),
+                    i
+            );
+            MultipartFile upload = d.getFilePath();
+            String filePath = (upload != null && !upload.isEmpty())
+                    ? saveFile(upload)
+                    : existingFilePath;
             EmployeeDocument doc = new EmployeeDocument();
             doc.setEmployee(emp);
             doc.setDocumentName(d.getDocumentName());
@@ -804,6 +823,42 @@ public ApiResponse<Page<MasEmployeeResponse>> getAllEmployees(String employeeNam
             doc.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
             employeeDocumentRepository.save(doc);
         }
+    }
+
+    private String getExistingQualificationFilePath(
+            List<EmployeeQualification> existingQualifications,
+            Long qualificationId,
+            int fallbackIndex
+    ) {
+        if (qualificationId != null) {
+            for (EmployeeQualification qualification : existingQualifications) {
+                if (qualificationId.equals(qualification.getEmployeeQualificationId())) {
+                    return qualification.getFilePath();
+                }
+            }
+        }
+
+        return fallbackIndex < existingQualifications.size()
+                ? existingQualifications.get(fallbackIndex).getFilePath()
+                : null;
+    }
+
+    private String getExistingDocumentFilePath(
+            List<EmployeeDocument> existingDocuments,
+            Long documentId,
+            int fallbackIndex
+    ) {
+        if (documentId != null) {
+            for (EmployeeDocument document : existingDocuments) {
+                if (documentId.equals(document.getEmployeeDocumentId())) {
+                    return document.getFilePath();
+                }
+            }
+        }
+
+        return fallbackIndex < existingDocuments.size()
+                ? existingDocuments.get(fallbackIndex).getFilePath()
+                : null;
     }
 
     private String saveFile(MultipartFile file) {

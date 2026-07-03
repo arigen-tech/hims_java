@@ -1822,6 +1822,24 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     }
 
 
+    @GetMapping("/masWard/getByCategory/{wardCategoryId}")
+    public ResponseEntity<ApiResponse<List<MasWardResponse>>> getWardsByCategory(@PathVariable Long wardCategoryId) {
+        log.info("GET /masWard/getByCategory/{} called", wardCategoryId);
+        ApiResponse<List<MasWardResponse>> response = masWardService.getWardByCategory(wardCategoryId);
+        HttpStatus status = (response.getStatus() == 200) ? HttpStatus.OK : HttpStatus.NOT_FOUND;
+        return new ResponseEntity<>(response, status);
+    }
+
+    @GetMapping("/masWard/getByCategory/{wardCategoryId}/status/{status}")
+    public ResponseEntity<ApiResponse<List<MasWardResponse>>> getWardsByCategoryAndStatus(
+            @PathVariable Long wardCategoryId,
+            @PathVariable String status) {
+        log.info("GET /masWard/getByCategory/{}/status/{} called", wardCategoryId, status);
+        ApiResponse<List<MasWardResponse>> response = masWardService.getWardByCategoryAndStatus(wardCategoryId, status);
+        HttpStatus httpStatus = (response.getStatus() == 200) ? HttpStatus.OK : HttpStatus.NOT_FOUND;
+        return new ResponseEntity<>(response, httpStatus);
+    }
+
     //  ============================================ Mas Room Category =====================================
 
 
@@ -1985,10 +2003,10 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     public ResponseEntity<?> getAllMasBed(@PathVariable int flag) {
         return ResponseEntity.ok(masBedService.getAll(flag));
     }
-    @GetMapping("/masBedCount/{departmentId}")
+    @GetMapping("/masBedCount/{wardId}")
     public ResponseEntity<?> getBedStatusCount(
-            @PathVariable Long departmentId) {
-        return ResponseEntity.ok(masBedService.getBedStatusCount(departmentId));
+            @PathVariable Long wardId) {
+        return ResponseEntity.ok(masBedService.getBedStatusCount(wardId));
 
     }
 

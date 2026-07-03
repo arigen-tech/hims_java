@@ -20,5 +20,6 @@ public class JwtResponce {
     private long hospitalId;
     private long departmentId;
     private String departmentName;
+    private String departmentCode;
 
 }

@@ -252,6 +252,7 @@ public class AuthServiceImpl implements AuthService {
                     .hospitalId(user.getHospital().getId())
                     .departmentId(departmentId)
                     .departmentName(userDepartmentId.getDepartment().getDepartmentName())
+                    .departmentCode(userDepartmentId.getDepartment().getDepartmentCode())
                     .build();
 
 

@@ -104,6 +104,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final OpdOpthDetailsService opdOpthDetailsService;
     private final OpdObgDetailsService opdObgDetailsService;
     private final OpdEntDetailsService opdEntDetailsService;
+    private final OpdPatientPregnancyDetailsRepository opdPatientPregnancyDetailsRepository;
     private final OpdPsychiatryAssessmentDetailRepository opdPsychiatryAssessmentDetailRepository;
     private final OpdPsychiatryAssessmentHeaderRepository opdPsychiatryAssessmentHeaderRepository;
     private final MasQuestionHeadingRepository masQuestionHeadingRepository;
@@ -537,10 +538,14 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 throw new SDDException("ent",500,response != null? response.getMessage(): "Failed to save ENT details");
             }
         }
+        if(request.getPregnancyDetails() != null) {
+            handlePregnancyDetails(saved, request.getPregnancyDetails(), user);
+        }
         // ================= Psychiatric Assessment Save =================
-
-        savePsychiatricHeaderAndDetails(request, visit, saved);
-
+        if(request.getDetails() != null && !request.getDetails().isEmpty()) {
+            log.info("Saving Psychiatric Assessment Header and Details for OPD ID: {}", saved.getOpdPatientDetailsId());
+            savePsychiatricHeaderAndDetails(request, visit, saved);
+        }
         opdPatientDetailRepository.save(saved);
         closeVisit(visit);
         log.info("Successfully completed OPD patient detail creation for visit ID: {}", visit.getId());
@@ -3082,7 +3087,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             detail.setAnswerOptionId(optionValue);
 
             BigDecimal score = BigDecimal.ZERO;
-            detail.setScore(BigDecimal.valueOf(optionValue.getOptionScore()));
+            score = BigDecimal.valueOf(optionValue.getOptionScore());
+            detail.setScore(score);
             totalScore = totalScore.add(score);
 
             opdPsychiatryAssessmentDetailRepository.save(detail);
@@ -3090,6 +3096,33 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         savedHeader.setTotalScore(totalScore);
 
         return opdPsychiatryAssessmentHeaderRepository.save(savedHeader);
+    }
+
+    private void handlePregnancyDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails, User user) {
+        if (pregnancyDetails == null) {
+            return;
+        }
+        
+        // Delete existing pregnancy details if any
+        opdPatientPregnancyDetailsRepository.deleteByOpdPatientDetail_OpdPatientDetailsId(opd.getOpdPatientDetailsId());
+        
+        // Create new pregnancy details
+        OpdPatientPregnancyDetails pregnancyEntity = OpdPatientPregnancyDetails.builder()
+                .opdPatientDetail(opd)
+                .opdPatientDetailsId(opd.getOpdPatientDetailsId())
+                .visitId(opd.getVisit() != null ? opd.getVisit().getId() : null)
+                .patientId(opd.getPatient() != null ? opd.getPatient().getId() : null)
+                .isPregnant(pregnancyDetails.getIsPregnant())
+                .lmpDate(pregnancyDetails.getLmpDate())
+                .edd(pregnancyDetails.getEdd())
+                .currentEdd(pregnancyDetails.getCurrentEdd())
+                .gestationPeriod(pregnancyDetails.getGestationPeriod())
+                .lastChgDate(Instant.now())
+                .lastChgBy(user.getFullName())
+                .build();
+        
+        opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
+        log.info("Saved pregnancy details for OPD patient ID: {}", opd.getOpdPatientDetailsId());
     }
 }
 

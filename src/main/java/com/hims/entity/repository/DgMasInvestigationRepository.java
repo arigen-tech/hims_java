@@ -101,13 +101,13 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
 
 
     @Query("""
-        SELECT DISTINCT 
-            m.chargecodeId AS id,
-            m.chargecodeName AS name
-        FROM DgMasInvestigation d
-        JOIN d.mainChargeCodeId m
-        WHERE m.status = 'y'
-        """)
+    SELECT DISTINCT 
+        m.chargecodeId AS id,
+        m.chargecodeName AS name
+    FROM DgMasInvestigation d
+    JOIN d.mainChargeCodeId m
+    WHERE LOWER(m.status) = 'y'
+    """)
     List<InvestigationTypeProjection> findUniqueInvestigationTypes();
 
     @Query("""

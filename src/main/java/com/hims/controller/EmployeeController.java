@@ -84,7 +84,7 @@ public class EmployeeController {
      * Update existing employee
      */
     @PutMapping(value = "/updateEmployee/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<MasEmployee>> updateEmployee(
+    public ResponseEntity<ApiResponse<MasEmployeeDTO>> updateEmployee(
             @PathVariable Long id,
             @ModelAttribute MasEmployeeRequest request) {
         log.info("PUT /employee/updateEmployee/{} called", id);

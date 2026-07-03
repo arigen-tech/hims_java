@@ -20,5 +20,5 @@ public interface MasBedService {
     ApiResponse<?> getAll(int flag);
 
 
-    ApiResponse<?> getBedStatusCount(Long departmentId);
+    ApiResponse<?> getBedStatusCount(Long wardId);
 }

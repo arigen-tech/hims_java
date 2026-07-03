@@ -23,7 +23,7 @@ public interface MasServiceOpdRepository extends JpaRepository<MasServiceOpd, Lo
             "AND a.departmentId = :department " +
             "AND a.serviceCategory = :serviceCat " +
             "AND :currentDateTime BETWEEN a.fromDt AND a.toDt " +
-            "AND a.status = 'y'")
+            "AND LOWER(a.status) = 'y'")
     Optional<MasServiceOpd> findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatIdAndCurrentDate(
             @Param("hospital") MasHospital hospital,
             @Param("doctor") User doctor,
