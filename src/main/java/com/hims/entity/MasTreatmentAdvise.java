@@ -19,7 +19,7 @@ public class MasTreatmentAdvise {
     private Long treatmentAdviseId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id", nullable = false)
+    @JoinColumn(name = "department_id")
     private MasDepartment department;
 
     @Column(name = "treatment_advice", length = 500, nullable = false)
