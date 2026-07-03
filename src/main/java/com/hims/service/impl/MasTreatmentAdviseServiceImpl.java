@@ -66,16 +66,16 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
     public ApiResponse<MasTreatmentAdviseResponse> add(MasTreatmentAdviseRequest request) {
         try {
             User currentUser = util.getCurrentUser();
-            Long depart= util.getCurrentDepartmentId();
             if (currentUser == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", 404);
             }
+            MasDepartment masDepartment=null;
+            if(request.getDepartmentId()!=null){
+                masDepartment = masDepartmentRepository.findById(request.getDepartmentId()).orElse(null);
 
-            MasDepartment department = masDepartmentRepository.findById(request.getDepartmentId())
-                    .orElseThrow(() -> new RuntimeException("Invalid Department Id"));
-
+            }
             MasTreatmentAdvise advise = new MasTreatmentAdvise();
-            advise.setDepartment(department);
+            advise.setDepartment(masDepartment);
             advise.setTreatmentAdvice(request.getTreatmentAdvice());
             advise.setStatus("y");
             advise.setCreatedBy(currentUser.getFullName());
@@ -99,7 +99,7 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
     public ApiResponse<MasTreatmentAdviseResponse> update(Long id, MasTreatmentAdviseRequest request) {
         try {
             User currentUser = util.getCurrentUser();
-            Long depart =util.getCurrentDepartmentId();
+
             if (currentUser == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", 404);
             }
@@ -107,10 +107,12 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
             MasTreatmentAdvise advise = masTreatmentAdviseRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Invalid Treatment Advise Id"));
 
-            MasDepartment department = masDepartmentRepository.findById(request.getDepartmentId())
-                    .orElseThrow(() -> new RuntimeException("Invalid Department Id"));
+            MasDepartment masDepartment=null;
+            if(request.getDepartmentId()!=null){
+                masDepartment = masDepartmentRepository.findById(request.getDepartmentId()).orElse(null);
 
-            advise.setDepartment(department);
+            }
+            advise.setDepartment(masDepartment);
             advise.setTreatmentAdvice(request.getTreatmentAdvice());
             advise.setLastUpdateDate(LocalDateTime.now());
             advise.setLastUpdatedBy(currentUser.getFullName());
@@ -166,11 +168,9 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
         res.setLastUpdateDate(entity.getLastUpdateDate());
         res.setCreatedBy(entity.getCreatedBy());
         res.setLastUpdatedBy(entity.getLastUpdatedBy());
+        res.setDepartmentId(entity.getDepartment() != null?entity.getDepartment().getId():null);
+        res.setDepartmentName(entity.getDepartment() != null?entity.getDepartment().getDepartmentName():null);
 
-        if (entity.getDepartment() != null) {
-            res.setDepartmentId(entity.getDepartment().getId());
-            res.setDepartmentName(entity.getDepartment().getDepartmentName());
-        }
 
         return res;
     }
