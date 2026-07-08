@@ -1,31 +1,31 @@
 package com.hims.entity;
 
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "mas_treatment_advise")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MasTreatmentAdvise {
+@Entity
+@Table(name = "mas_admission_source")
+public class MasAdmissionSource {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "treatment_advise_id")
-    private Long treatmentAdviseId;
+    @Column(name = "admission_source_id")
+    private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id")
-    private MasDepartment department;
+    @Column(name = "admission_source_name", length = 50)
+    private String admissionSourceName;
 
-    @Column(name = "treatment_advice", length = 500, nullable = false)
-    private String treatmentAdvice;
+    @Column(name = "description", length = 200)
+    private String description;
 
-    @Column(name = "status", length = 1, nullable = false)
+    @Column(name = "status", length = 1)
     private String status;
 
     @Column(name = "last_update_date")
