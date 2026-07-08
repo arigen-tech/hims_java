@@ -942,10 +942,33 @@ public class RadiologyServiceImpl implements RadiologyService {
     public ApiResponse<String> cancelOrCompleteInvestigationRadiology(Long id, String status) {
         try{
             log.info("pendingInvestigationRadiology called with id={}, status={}", id, status);
-            Optional<RadOrderDt> radOrderDt=radOrderDtRepository.findById(id);
-            RadOrderDt radDt=radOrderDt.get();
+            Optional<RadOrderDt> radOrderDt = radOrderDtRepository.findById(id);
+            if (radOrderDt.isEmpty()) {
+                log.warn("Radiology order detail not found for id={}", id);
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {}, "Radiology order detail not found", 404
+                );
+            }
+
+            RadOrderDt radDt = radOrderDt.get();
             radDt.setStudyStatus(status);
             radOrderDtRepository.save(radDt);
+
+            if (AppConstants.STATUS_Y.equalsIgnoreCase(status)) {
+                Visit visit = Optional.ofNullable(radDt.getRadOrderhd())
+                        .map(RadOrderHd::getVisit)
+                        .orElse(null);
+
+                if (visit != null) {
+                    visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
+                    visitRepository.save(visit);
+                    log.info("Visit status updated successfully for visitId={} newStatus={}",
+                            visit.getId(), visit.getVisitStatus());
+                } else {
+                    log.warn("No linked visit found for radiology order detail id={} while status={}", id, status);
+                }
+            }
+
             log.info("Study status updated successfully for id={} newStatus={}",
                     id, radDt.getStudyStatus());
             return ResponseUtils.createSuccessResponse("status change successfully", new TypeReference<>() {});
