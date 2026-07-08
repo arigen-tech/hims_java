@@ -169,6 +169,10 @@ public class AppConstants {
     public static final String BED_STATUS_OCCUPIED_BED= "occupied";
     // opd
     public static final String OPD_PATIENT= "OPD PATIENT";
+    //Ipd
+
+    public static final String IPD_ADMISSION_FLAG= "Y";
+
 
 
 
