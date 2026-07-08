@@ -381,13 +381,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         visit.setHospital(hospital);
         visit.setTokenNo(token + 1);
         visit.setDepartment(dept);
-        Instant visitDate = Instant.now();
-        visit.setVisitDate(visitDate);
-        visit.setLastChgDate(visitDate);
+        visit.setVisitDate(Instant.now());
+        visit.setLastChgDate(Instant.now());
         visit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS);
-        
-        String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), visitDate);
-        visit.setVisitType(visitType);
 
         return visitRepository.save(visit);
     }
@@ -893,11 +889,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
             }, "Internal Server Error: " + e.getMessage(), 500);
         }
-    }
-
-    private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
-        int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
-        return count > 0 ? "F" : "N";
     }
 
 }

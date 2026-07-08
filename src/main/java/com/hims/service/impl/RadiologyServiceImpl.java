@@ -130,9 +130,8 @@ public class RadiologyServiceImpl implements RadiologyService {
             visit.setBillingStatus("n");
             visit.setHospital(masHospital);
             visit.setTokenNo(existingTokens + 1);
-             Instant visitDate = Instant.now();
-            visit.setVisitDate(visitDate);
-            visit.setLastChgDate(visitDate);
+            visit.setVisitDate(Instant.now());
+            visit.setLastChgDate(Instant.now());
             visit.setDepartment(department);
             visit.setDisplayPatientStatus("wp");
             Visit savedVisit = visitRepository.save(visit);
@@ -419,11 +418,6 @@ public class RadiologyServiceImpl implements RadiologyService {
         return  billingDetailRepository.save(billingDetail);
     }
 
-    private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
-        int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
-        return count > 0 ? "F" : "N";
-    }
-
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<LabRadiologyRegistrationResponse> registerAndBookingRadiology(
@@ -563,9 +557,6 @@ public class RadiologyServiceImpl implements RadiologyService {
         visit.setVisitDate(Instant.now());
         visit.setLastChgDate(Instant.now());
         visit.setDisplayPatientStatus("wp");
-
-        String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), Instant.now());
-        visit.setVisitType(visitType);
 
 
         return visitRepository.save(visit);

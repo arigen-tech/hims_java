@@ -1905,7 +1905,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
 
     @Override
-    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>>  appointmentHistoryList(
+    public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistoryList(
             Long hospitalId, Long patientId, String mobileNo, String deptTypeCode, Boolean includeHistory) {
 
         log.info("Fetching appointment history list: hospitalId={}, patientId={}, mobileNo={}, deptTypeCode={}, includeHistory={}",

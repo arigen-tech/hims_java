@@ -2909,95 +2909,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     @Override
-    public ApiResponse<Page<PreviousOpdPsychiatryHistoryResponse>> getPreviousOpdPsychiatryDetailsHistory(
-            Long patientId,
-            Long hospitalId,
-            int page,
-            int size) {
-
-        try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "assessmentDate"));
-
-            Page<OpdPsychiatryAssessmentHeader> headerPage = opdPsychiatryAssessmentHeaderRepository.findByPatient_IdOrderByAssessmentDateDesc(patientId, pageable);
-
-            List<Long> headerIds = headerPage.getContent().stream().map(OpdPsychiatryAssessmentHeader::getAssessmentHeaderId).filter(Objects::nonNull).toList();
-
-            Map<Long, Map<Long, List<PreviousOpdPsychiatryHistoryResponse.AssessmentQuestionsResponse>>> detailsByHeaderId = new HashMap<>();
-            Map<Long, Map<Long, String>> topicNamesByHeaderId = new HashMap<>();
-            if (!headerIds.isEmpty()) {
-                List<OpdPsychiatryAssessmentDetail> detailEntities = opdPsychiatryAssessmentDetailRepository.findByAssessmentHeaderId_AssessmentHeaderIdIn(headerIds);
-
-                for (OpdPsychiatryAssessmentDetail detail : detailEntities) {
-                    if (detail == null || detail.getAssessmentHeaderId() == null) continue;
-                    PreviousOpdPsychiatryHistoryResponse.AssessmentQuestionsResponse qResponse = mapPsychiatryDetailToResponse(detail);
-                    Long headerId = detail.getAssessmentHeaderId().getAssessmentHeaderId();
-                    Long topicId = null;
-                    String topicName = null;
-                    if (detail.getQuestionId() != null && detail.getQuestionId().getQuestionHeading() != null) {
-                        topicId = detail.getQuestionId().getQuestionHeading().getQuestionHeadingId();
-                        topicName = detail.getQuestionId().getQuestionHeading().getQuestionHeadingName();
-                    }
-                    detailsByHeaderId.computeIfAbsent(headerId, k -> new HashMap<>()).computeIfAbsent(topicId, k -> new ArrayList<>()).add(qResponse);
-                    if (topicName != null) {
-                        topicNamesByHeaderId.computeIfAbsent(headerId, k -> new HashMap<>()).putIfAbsent(topicId, topicName);
-                    }
-                }
-            }
-
-
-
-            Page<PreviousOpdPsychiatryHistoryResponse> responsePage = headerPage.map(header -> {
-                PreviousOpdPsychiatryHistoryResponse response = new PreviousOpdPsychiatryHistoryResponse();
-                response.setAssessmentHeaderId(header.getAssessmentHeaderId());
-                response.setPatientId(header.getPatient() != null ? header.getPatient().getId() : null);
-                response.setVisitId(header.getVisit() != null ? header.getVisit().getId() : null);
-                response.setDoctorName(extractDoctorName(header));
-                response.setAssessmentDate(header.getAssessmentDate());
-                response.setTotalScore(header.getTotalScore());
-                response.setRemarks(header.getRemarks());
-
-                Map<Long, List<PreviousOpdPsychiatryHistoryResponse.AssessmentQuestionsResponse>> topicsMap =
-                        detailsByHeaderId.getOrDefault(header.getAssessmentHeaderId(), Collections.emptyMap());
-
-                List<PreviousOpdPsychiatryHistoryResponse.PsychiatricAssessmentResponse> assessments = new ArrayList<>();
-                for (Map.Entry<Long, List<PreviousOpdPsychiatryHistoryResponse.AssessmentQuestionsResponse>> entry : topicsMap.entrySet()) {
-                    PreviousOpdPsychiatryHistoryResponse.PsychiatricAssessmentResponse pa =
-                            new PreviousOpdPsychiatryHistoryResponse.PsychiatricAssessmentResponse();
-                    Long tId = entry.getKey();
-                    String tName = null;
-                    Map<Long, String> topicNames = topicNamesByHeaderId.getOrDefault(header.getAssessmentHeaderId(), Collections.emptyMap());
-                    if (tId != null) {
-                        tName = topicNames.getOrDefault(tId, null);
-                    }
-                    if (tName == null) {
-                        tName = header.getTopic() != null ? header.getTopic().getQuestionHeadingName() : null;
-                    }
-                    pa.setTopicName(tName);
-                    pa.setQuestionsResponses(entry.getValue());
-                    assessments.add(pa);
-                }
-
-                response.setAssessments(assessments);
-                return response;
-            });
-
-            return ResponseUtils.createSuccessResponse(
-                    responsePage,
-                    new TypeReference<Page<PreviousOpdPsychiatryHistoryResponse>>() {
-                    });
-
-        } catch (Exception ex) {
-            log.error("Error fetching previous psychiatry history for patientId={}, hospitalId={}", patientId, hospitalId, ex);
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<>() {
-                    },
-                    AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value());
-        }
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public ApiResponse<Page<OpdRecallVisitResponse>> getRecallOpdVisit(String name, String mobile, LocalDate visitDate, int page, int size) {
 
@@ -3023,30 +2934,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
-    }
-
-    private String extractDoctorName(OpdPsychiatryAssessmentHeader header) {
-        if (header == null || header.getVisit() == null) {
-            return null;
-        }
-
-        if (header.getVisit().getDoctorName() != null && !header.getVisit().getDoctorName().isBlank()) {
-            return header.getVisit().getDoctorName();
-        }
-
-        if (header.getVisit().getDoctor() != null) {
-            return header.getVisit().getDoctor().getFullName();
-        }
-
-        return null;
-    }
-
-    private PreviousOpdPsychiatryHistoryResponse.AssessmentQuestionsResponse mapPsychiatryDetailToResponse(OpdPsychiatryAssessmentDetail detail) {
-        PreviousOpdPsychiatryHistoryResponse.AssessmentQuestionsResponse response = new PreviousOpdPsychiatryHistoryResponse.AssessmentQuestionsResponse();
-        if (detail == null) return response;
-        response.setQuestionName(detail.getQuestionId() != null ? detail.getQuestionId().getQuestion() : null);
-        response.setQuestionsAns(detail.getAnswerOptionId() != null ? detail.getAnswerOptionId().getOptionValue() : null);
-        return response;
     }
 
     /**
