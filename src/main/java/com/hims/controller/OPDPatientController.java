@@ -181,6 +181,25 @@ public class OPDPatientController {
         return opdPatientDetailService.getPreviousOpdVitalsDetailsHistory(patientId, hospitalId, page, size);
     }
 
+    /**
+     * Fetch previous psychiatry assessment history of a patient with pagination.
+     *
+     * @param patientId  Unique ID of the patient
+     * @param hospitalId Unique ID of the hospital
+     * @param page       Page number for pagination (default = 0)
+     * @param size       Number of records per page (default = 5)
+     * @return ApiResponse containing paginated psychiatrist history entries
+     */
+    @GetMapping("/getPreviousOpdPsychiatristDetailsHistory")
+    public ApiResponse<Page<PreviousOpdPsychiatryHistoryResponse>> getPreviousOpdPsychiatristDetailsHistory(
+            @RequestParam Long patientId,
+            @RequestParam Long hospitalId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        return opdPatientDetailService.getPreviousOpdPsychiatryDetailsHistory(patientId, hospitalId, page, size);
+    }
+
 
     @GetMapping("/getRecallOpdPatientVisitList")
     public ResponseEntity<ApiResponse<Page<OpdRecallVisitResponse>>> getRecallOpdVisit(
