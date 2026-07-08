@@ -321,6 +321,11 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     private MasItemFacilityService masItemFacilityService;
     @Autowired
     private MasDrugScheduleService masDrugScheduleService;
+    @Autowired
+    private  MasAdmissionSourceService masAdmissionSourceService;
+    @Autowired
+    private MasPatientConditionService masPatientConditionService;
+
 
 
 
@@ -5206,5 +5211,82 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    //======================================= Mas Admission Source ==================================
 
+    @GetMapping("masAdmissionSource/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasAdmissionSourceResponse>>> getAllMasAdmissionSource(
+            @PathVariable int flag) {
+
+        return ResponseEntity.ok(masAdmissionSourceService.getAllMasAdmissionSource(flag));
+    }
+
+    @GetMapping("masAdmissionSource/getById/{id}")
+    public ResponseEntity<ApiResponse<MasAdmissionSourceResponse>> getByIdMasAdmissionSource(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(masAdmissionSourceService.getByIdMasAdmissionSource(id));
+    }
+
+    @PostMapping("masAdmissionSource/create")
+    public ResponseEntity<ApiResponse<MasAdmissionSourceResponse>> createMasAdmissionSource(
+            @RequestBody @Valid MasAdmissionSourceRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(masAdmissionSourceService.createMasAdmissionSource(request));
+    }
+
+    @PutMapping("masAdmissionSource/update/{id}")
+    public ResponseEntity<ApiResponse<MasAdmissionSourceResponse>> updateMasAdmissionSource(
+            @PathVariable Long id,
+            @RequestBody @Valid MasAdmissionSourceRequest request) {
+
+        return ResponseEntity.ok(masAdmissionSourceService.updateMasAdmissionSource(id, request));
+    }
+
+    @PutMapping("masAdmissionSource/status/{id}")
+    public ResponseEntity<ApiResponse<MasAdmissionSourceResponse>> changeStatusMasAdmissionSource(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(masAdmissionSourceService.changeStatusMasAdmissionSource(id, status));
+    }
+
+    //======================================= Mas Patient Condition==================================
+
+    @GetMapping("masPatientCondition/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasPatientConditionResponse>>> getAllMasPatientCondition(
+            @PathVariable int flag) {
+
+        return ResponseEntity.ok(masPatientConditionService.getAllMasPatientCondition(flag));
+    }
+
+    @GetMapping("masPatientCondition/getById/{id}")
+    public ResponseEntity<ApiResponse<MasPatientConditionResponse>> getByIdMasPatientCondition(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(masPatientConditionService.getByIdMasPatientCondition(id));
+    }
+
+    @PostMapping("masPatientCondition/create")
+    public ResponseEntity<ApiResponse<MasPatientConditionResponse>> createMasPatientCondition(
+            @RequestBody @Valid MasPatientConditionRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(masPatientConditionService.createMasPatientCondition(request));
+    }
+
+    @PutMapping("masPatientCondition/update/{id}")
+    public ResponseEntity<ApiResponse<MasPatientConditionResponse>> updateMasPatientCondition(
+            @PathVariable Long id,
+            @RequestBody @Valid MasPatientConditionRequest request) {
+
+        return ResponseEntity.ok(masPatientConditionService.updateMasPatientCondition(id, request));
+    }
+
+    @PutMapping("masPatientCondition/status/{id}")
+    public ResponseEntity<ApiResponse<MasPatientConditionResponse>> changeStatusMasPatientCondition(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(masPatientConditionService.changeStatusMasPatientCondition(id, status));
+    }
 }
