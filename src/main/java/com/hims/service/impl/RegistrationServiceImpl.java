@@ -454,28 +454,81 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public ApiResponse<RescheduleAppointmentResponse> rescheduleAppointment(RescheduleAppointmentRequest request) {
+        if (request == null || request.getVisitId() == null) {
+            return new ApiResponse<>(HttpStatus.BAD_REQUEST, "visitId is required");
+        }
+
         Optional<Visit> optionalVisit = visitRepository.findById(request.getVisitId());
         if (optionalVisit.isEmpty()) {
             return new ApiResponse<>(HttpStatus.NOT_FOUND, "Appointment not found with ID: " + request.getVisitId());
         }
+
         Visit v = optionalVisit.get();
+        String departmentTypeCode = null;
+        if (v.getDepartment() != null && v.getDepartment().getDepartmentType() != null) {
+            departmentTypeCode = v.getDepartment().getDepartmentType().getDepartmentTypeCode();
+        }
+        boolean isOpdAppointment = AppConstants.OPDTYPE.equalsIgnoreCase(departmentTypeCode);
+        boolean isLabOrRadiologyAppointment =
+                AppConstants.LABTYPE.equalsIgnoreCase(departmentTypeCode) || AppConstants.RADIOTYPE.equalsIgnoreCase(departmentTypeCode);
+
+        if (request.getVisitDate() == null) {
+            return new ApiResponse<>(HttpStatus.BAD_REQUEST, "visitDate is required");
+        }
+
+        if (isOpdAppointment) {
+            if (request.getAppointmentStartTime() == null ||
+                    request.getAppointmentEndTime() == null ||
+                    request.getTokenNumber() == null) {
+                return new ApiResponse<>(
+                        HttpStatus.BAD_REQUEST,
+                        "appointmentStartTime, appointmentEndTime and tokenNumber are required for OPD reschedule"
+                );
+            }
+        }
+
+        Long resolvedTokenNumber = isOpdAppointment
+                ? request.getTokenNumber()
+                : v.getTokenNo();
+
+        Instant resolvedStartTime = isOpdAppointment
+                ? request.getAppointmentStartTime()
+                : v.getStartTime();
+
+        Instant resolvedEndTime = isOpdAppointment
+                ? request.getAppointmentEndTime()
+                : v.getEndTime();
+
         VisitRescheduleHistory history = new VisitRescheduleHistory();
         history.setVisitId(v);
         history.setRescheduleDatetime(request.getVisitDate());
         history.setRescheduleBy(authUtil.getCurrentUser().getFirstName());
-        history.setNewTokenNo(request.getTokenNumber());
+        history.setNewTokenNo(resolvedTokenNumber);
         history.setOldTokenNo(v.getTokenNo());
-        history.setNewVisitDatetime(request.getAppointmentStartTime());
+        history.setNewVisitDatetime(
+                isOpdAppointment ? request.getAppointmentStartTime() : request.getVisitDate()
+        );
         history.setOldVisitDatetime(v.getVisitDate());
         history.setRescheduleDatetime(Instant.now());
         history.setRescheduleReason("");
         historyRepository.save(history);
 
-
         v.setVisitDate(request.getVisitDate());
-        v.setStartTime(request.getAppointmentStartTime());
-        v.setEndTime(request.getAppointmentEndTime());
-        v.setTokenNo(request.getTokenNumber());
+        if (isOpdAppointment) {
+            v.setStartTime(resolvedStartTime);
+            v.setEndTime(resolvedEndTime);
+            v.setTokenNo(resolvedTokenNumber);
+        } else if (isLabOrRadiologyAppointment) {
+            // Lab/Radiology appointments are rescheduled by date only.
+            // Keep the existing token and time values intact.
+            v.setTokenNo(resolvedTokenNumber);
+            if (request.getAppointmentStartTime() != null) {
+                v.setStartTime(request.getAppointmentStartTime());
+            }
+            if (request.getAppointmentEndTime() != null) {
+                v.setEndTime(request.getAppointmentEndTime());
+            }
+        }
         v.setLastChgDate(Instant.now());
 
         visitRepository.save(v);

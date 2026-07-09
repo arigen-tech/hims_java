@@ -148,7 +148,7 @@ LEFT JOIN inv.collectionId c
 WHERE d.result_status IN (:resultStatuses) 
 AND d.sampleCollectionHeader.sampleCollectionHeaderId = :headerId
 """)
-    List<SampleDetailsForValidationResponse> findDetailsByHeaderId(@Param("headerId") Long headerId,List<String> resultStatuses);
+    List<SampleDetailsForValidationResponse> findDetailsByHeaderId(@Param("headerId")  Long headerId,  @Param("resultStatuses")List<String> resultStatuses);
 
 
     @Query("""

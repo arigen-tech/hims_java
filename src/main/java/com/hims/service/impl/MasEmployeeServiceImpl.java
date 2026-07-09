@@ -1932,7 +1932,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 );
             }
 
-            if(deptTypeCode == null || deptTypeCode.trim().isEmpty()){
+            if (deptTypeCode == null || deptTypeCode.trim().isEmpty()) {
                 log.warn("Department Type Code is required");
                 return ResponseUtils.createFailureResponse(
                         null,
@@ -1949,20 +1949,18 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
             List<AppointmentBookingHistoryResponseDetails> response;
 
-            // Get department IDs if deptTypeCode is provided
-            List<Long> departmentIds = null;
+            // Resolve all department IDs that match any of the provided department type codes.
+            List<Long> departmentIds = resolveDepartmentIdsByTypeCodes(normalizedDeptTypeCode);
+            log.debug("Found {} departments for deptTypeCode={}", departmentIds.size(), normalizedDeptTypeCode);
 
-                departmentIds = masDepartmentRepository.findDepartmentIdsByDepartmentTypeCode(normalizedDeptTypeCode);
-                log.debug("Found {} departments for deptTypeCode={}", departmentIds.size(), normalizedDeptTypeCode);
-
-                if (departmentIds.isEmpty()) {
-                    log.warn("No departments found for deptTypeCode={}", normalizedDeptTypeCode);
-                    // Return empty list if no departments found for the given type code
-                    return ResponseUtils.createSuccessResponse(
-                            List.of(),
-                            new TypeReference<>() {}
-                    );
-                }
+            if (departmentIds.isEmpty()) {
+                log.warn("No departments found for deptTypeCode={}", normalizedDeptTypeCode);
+                // Return empty list if no departments found for the given type code(s)
+                return ResponseUtils.createSuccessResponse(
+                        List.of(),
+                        new TypeReference<>() {}
+                );
+            }
 
 
             if (patientId != null) {
@@ -1996,6 +1994,20 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
+    }
+
+    private List<Long> resolveDepartmentIdsByTypeCodes(String deptTypeCode) {
+        if (deptTypeCode == null || deptTypeCode.trim().isEmpty()) {
+            return List.of();
+        }
+
+        return Arrays.stream(deptTypeCode.split(","))
+                .map(String::trim)
+                .filter(code -> !code.isEmpty())
+                .distinct()
+                .flatMap(code -> masDepartmentRepository.findDepartmentIdsByDepartmentTypeCode(code).stream())
+                .distinct()
+                .toList();
     }
 
     @Override
@@ -2064,8 +2076,8 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setDepartmentId(projection.getDepartmentId());
         dto.setDepartmentName(projection.getDepartmentName());
         dto.setAppointmentDate(HelperUtils.instantTimeToLocalDateTime(projection.getAppointmentDate()));
-        dto.setAppointmentStartTime(HelperUtils.extractTimeFromInstant(projection.getAppointmentStartTime()));
-        dto.setAppointmentEndTime(HelperUtils.extractTimeFromInstant(projection.getAppointmentEndTime()));
+        dto.setAppointmentStartTime(projection.getAppointmentStartTime() !=null ? HelperUtils.extractTimeFromInstant(projection.getAppointmentStartTime()):null);
+        dto.setAppointmentEndTime(projection.getAppointmentEndTime() != null ? HelperUtils.extractTimeFromInstant(projection.getAppointmentEndTime()) : null);
         dto.setVisitStatus(projection.getVisitStatus());
         dto.setReason(projection.getReason());
         dto.setPaymentStatus(projection.getPaymentStatus());
