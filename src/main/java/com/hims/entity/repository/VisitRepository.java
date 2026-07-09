@@ -838,7 +838,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
         ORDER BY v.visitDate DESC
     """)
-    Page<PreviousOpdVitalsDetailsProjection> getPriviousOpdVitalsDetails(Long patientId, Long hospitalId, @Param("visitStatus") String visitStatus, Pageable pageable);
+    Page<PreviousOpdVitalsDetailsProjection> getPriviousOpdVitalsDetails(@Param("patientId") Long patientId,  @Param("hospitalId") Long hospitalId, @Param("visitStatus") String visitStatus, Pageable pageable);
 
     @Query(value = """
         SELECT 

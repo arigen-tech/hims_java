@@ -2064,8 +2064,8 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setDepartmentId(projection.getDepartmentId());
         dto.setDepartmentName(projection.getDepartmentName());
         dto.setAppointmentDate(HelperUtils.instantTimeToLocalDateTime(projection.getAppointmentDate()));
-        dto.setAppointmentStartTime(HelperUtils.extractTimeFromInstant(projection.getAppointmentStartTime()));
-        dto.setAppointmentEndTime(HelperUtils.extractTimeFromInstant(projection.getAppointmentEndTime()));
+        dto.setAppointmentStartTime(projection.getAppointmentStartTime() != null ? HelperUtils.extractTimeFromInstant(projection.getAppointmentStartTime()) : null);
+        dto.setAppointmentEndTime(projection.getAppointmentEndTime() != null ? HelperUtils.extractTimeFromInstant(projection.getAppointmentEndTime()) : null);
         dto.setVisitStatus(projection.getVisitStatus());
         dto.setReason(projection.getReason());
         dto.setPaymentStatus(projection.getPaymentStatus());
