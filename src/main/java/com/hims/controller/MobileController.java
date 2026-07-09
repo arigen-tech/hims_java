@@ -143,7 +143,7 @@ public class MobileController {
      * @param hospitalId Hospital ID (required)
      * @param patientId Patient ID (optional if mobileNo provided)
      * @param mobileNo Mobile number (optional if patientId provided)
-     * @param deptTypeCode Department type code (required)
+     * @param deptTypeCode Department type code(s), comma-separated when multiple types are needed
      * @param includeAllHistory true (default) = all appointments (past + future), false = only future appointments
      * @return Appointment history based on flag
      */
