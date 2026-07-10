@@ -28,6 +28,7 @@ public class JasperReportCompiler {
     }
 
     public static void main(String[] args) {
-        compileAllReports("/Users/rozaltheric/Office Work/hims_java/src/main/resources/jasperReport");
+//        compileAllReports("/Users/rozaltheric/Office Work/hims_java/src/main/resources/jasperReport");
+        compileAllReports("D:\\hims_java\\src\\main\\resources\\jasperReport");
     }
 }

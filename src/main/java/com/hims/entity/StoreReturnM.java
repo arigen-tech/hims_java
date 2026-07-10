@@ -55,5 +55,7 @@ public class StoreReturnM {
     @JoinColumn(name = "store_id", referencedColumnName = "department_id")
     private MasDepartment storeDepartment;
 
+    @Column(name = "return_no", length = 150)
+    private String returnNo;
 
 }

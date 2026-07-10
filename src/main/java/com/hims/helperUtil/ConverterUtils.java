@@ -201,26 +201,26 @@ public class ConverterUtils {
         }
     }
 
-    public static String addSpacaeInString(String number, int lenghtData) {
+    public static String addSpaceInString(String number, int lengthData) {
 
         String addSpace = "";
-        for (Integer n = number.length(); n < lenghtData; n++) {
+        for (Integer n = number.length(); n < lengthData; n++) {
             addSpace = addSpace + " ";
         }
-        if (number.length() == lenghtData) {
+        if (number.length() == lengthData) {
             return number + addSpace;
         } else {
             return number + addSpace + " ";
         }
     }
 
-    public static String addSpacaeInStringInWord(String number, int lenghtData) {
+    public static String addSpaceInStringInWord(String number, int lengthData) {
 
         String addSpace = "";
-        for (Integer n = number.length(); n < lenghtData; n++) {
+        for (Integer n = number.length(); n < lengthData; n++) {
             addSpace = addSpace + "   ";
         }
-        if (number.length() == lenghtData) {
+        if (number.length() == lengthData) {
             return number + addSpace;
         } else {
             return number + addSpace + "  ";

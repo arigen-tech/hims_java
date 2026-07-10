@@ -1,13 +1,10 @@
 package com.hims.service;
 
-import com.hims.entity.MasStoreItem;
+import com.hims.projection.ItemProjection;
 import com.hims.request.MasStoreItemRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.MasStoreItemResponse;
-import com.hims.response.MasStoreItemResponse2;
-import com.hims.response.MasStoreItemResponseWithStock;
+import com.hims.request.NonDrugStoreItemRequest;
+import com.hims.response.*;
 import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -19,7 +16,7 @@ public interface MasStoreItemService {
 
     ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItem(int flag);
 
-    ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithotStock(int flag);
+    ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(int flag);
 
     ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request);
 
@@ -27,7 +24,7 @@ public interface MasStoreItemService {
 
     ApiResponse<MasStoreItemResponse> findByCode(String code);
 
-    ApiResponse<List<MasStoreItemResponse2>> getAllMasStore(int flag);
+    ApiResponse<List<MasStoreItemResponseDto>> getAllMasStore(int flag);
 
     public ApiResponse<List<MasStoreItemResponseWithStock>> getAllMasStoreItemBySectionOnly(int flag);
 
@@ -36,5 +33,17 @@ public interface MasStoreItemService {
             String search,
             int page,
             int size);
+
+    ApiResponse<List<ItemProjection>> getAllDrugs(Integer sectionId);
+
+    ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String keyword, int page, int size);
+
+    ApiResponse<NonDrugStoreItemResponse> addNonDrugStoreItem(NonDrugStoreItemRequest nonDrugStoreItemRequest);
+
+    ApiResponse<NonDrugStoreItemResponse> updateNonDrugItem(Long id, NonDrugStoreItemRequest request);
+
+    ApiResponse<List<NonDrugStoreItemResponse>> getAllNonDrugItem();
+
+    ApiResponse<NonDrugStoreItemResponse> getNonDrugItemById(Long id);
 }
 

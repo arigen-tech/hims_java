@@ -10,7 +10,7 @@ import java.util.List;
 
 @Service
 public interface MasMedicalHistoryService {
-    ApiResponse<List<MasMedicalHistoryResponse>> getAllMas(int flag);
+    ApiResponse<List<MasMedicalHistoryResponse>> getMasMedicalHistory(int flag);
 
     ApiResponse<MasMedicalHistoryResponse> addMas(MasMedicalHistoryRequest request);
 

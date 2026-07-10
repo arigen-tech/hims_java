@@ -82,7 +82,7 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
         try {
             List<DgMasSample> dpUom;
             if(flag==1){
-                dpUom=dgMasSampleRepository.findByStatusOrderBySampleDescriptionAsc("y");
+                dpUom=dgMasSampleRepository.findByStatusIgnoreCaseOrderBySampleDescriptionAsc("y");
             }else if(flag==0){
                 dpUom=dgMasSampleRepository.findAllByOrderByStatusDescLastChgDateDesc();
             }else{

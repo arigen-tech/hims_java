@@ -1,6 +1,8 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.DgMasInvestigation;
+import com.hims.projection.InvestigationProjection;
+import com.hims.response.MasInvestigationByMainChargeCodeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,10 +22,16 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
         d.investigation_name,
         d.status,
         d.gender_applicable,
+        d.discount_applicable,
+        d.discount,
         COALESCE(ipd.price, 0),
-        d.main_chargecode_id
+        d.main_chargecode_id,
+        mmc.main_chargecode_name
     FROM 
         dg_mas_investigation d
+    LEFT JOIN
+        mas_main_chargecode mmc
+        ON d.main_chargecode_id = mmc.main_chargecode_id
     LEFT JOIN
         investigation_price_details ipd
         ON d.investigation_id = ipd.investigation_id
@@ -93,13 +101,58 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
 
 
     @Query("""
-        SELECT DISTINCT 
-            m.chargecodeId AS id,
-            m.chargecodeName AS name
-        FROM DgMasInvestigation d
-        JOIN d.mainChargeCodeId m
-        WHERE m.status = 'y'
-        """)
+    SELECT DISTINCT 
+        m.chargecodeId AS id,
+        m.chargecodeName AS name
+    FROM DgMasInvestigation d
+    JOIN d.mainChargeCodeId m
+    WHERE LOWER(m.status) = 'y'
+    """)
     List<InvestigationTypeProjection> findUniqueInvestigationTypes();
 
+    @Query("""
+    SELECT new com.hims.response.MasInvestigationByMainChargeCodeResponse(
+        m.investigationId,
+        m.investigationName,
+        m.mainChargeCodeId.chargecodeId
+    )
+    FROM DgMasInvestigation m
+    WHERE LOWER(m.status) = :status
+    AND (:mainChargeCodeId IS NULL 
+         OR m.mainChargeCodeId.chargecodeId = :mainChargeCodeId)
+""")
+    List<MasInvestigationByMainChargeCodeResponse>
+    dgMasInvestigationByMainChargeCodeId(@Param("mainChargeCodeId") Long mainChargeCodeId,
+                                         @Param("status") String status              );
+
+    List<DgMasInvestigation> findByMainChargeCodeIdChargecodeIdAndStatusInIgnoreCaseOrderByLastChgDateDesc(Long mainChargeCodeId, List<String> y);
+
+    @Query(value = """
+    SELECT 
+        inv.investigation_id AS investigationId,
+        inv.investigation_name AS investigationName
+    FROM dg_mas_investigation inv
+    WHERE inv.main_chargecode_id =:mainChargeCodeId AND inv.investigation_id <> :investigationId
+    AND (
+        :search IS NULL OR :search = '' OR
+        LOWER(inv.investigation_name) LIKE LOWER(CONCAT('%', :search, '%'))
+    )
+    ORDER BY inv.investigation_name ASC
+    """,
+            countQuery = """
+    SELECT COUNT(*)
+    FROM dg_mas_investigation inv
+    WHERE  inv.main_chargecode_id =:mainChargeCodeId AND inv.investigation_id <> :investigationId
+    AND (
+        :search IS NULL OR :search = '' OR
+        LOWER(inv.investigation_name) LIKE LOWER(CONCAT('%', :search, '%'))
+    )
+    """,
+            nativeQuery = true)
+    Page<InvestigationProjection> getDgMasInvestigation(
+            @Param("mainChargeCodeId") Long mainChargeCodeId,
+            @Param("investigationId") Long investigationId,
+            @Param("search") String search,
+            Pageable pageable
+    );
 }

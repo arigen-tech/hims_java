@@ -15,7 +15,7 @@ public class DgFixedValue {
     @Column(name = "fixed_value")
     private String fixedValue;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_investigation_id")
     private DgSubMasInvestigation subInvestigationId;
 }

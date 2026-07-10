@@ -17,4 +17,6 @@ public interface MasMainChargeCodeRepository extends JpaRepository<MasMainCharge
     List<MasMainChargeCode> findByStatusOrderByChargecodeNameAsc(String y);
 
     List<MasMainChargeCode> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
+
+    List<MasMainChargeCode> findByStatusIgnoreCaseOrderByChargecodeNameAsc(String y);
 }

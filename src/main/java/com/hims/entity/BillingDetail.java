@@ -65,7 +65,6 @@ public class BillingDetail {
     @Column(name = "created_at")
     private Instant createdAt;
 
-    @NotNull
     @Column(name = "detail_id")//, nullable = false)
     private Integer detailId;
 
@@ -107,4 +106,7 @@ public class BillingDetail {
     @Column(name = "registration_cost",precision = 10, scale = 2)
     private BigDecimal registrationCost;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "collected_by", referencedColumnName = "user_id")
+    private User collectedBy;
 }

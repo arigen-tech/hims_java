@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -78,25 +79,47 @@ private MasItemCategoryRepository masItemCategoryRepository;
 
     }
 
+    @Transactional
     @Override
     public ApiResponse<List<MasItemCategoryResponse>> getAllMasItemCategory(int flag) {
-        List<MasItemCategory> masItemCategory;
 
-        if (flag == 1) {
-            masItemCategory = masItemCategoryRepository.findByStatusIgnoreCaseOrderByItemCategoryNameAsc("y");
-        } else if (flag == 0) {
-            masItemCategory = masItemCategoryRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
-        } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "Invalid flag value. Use 0 or 1.", 400);
+        try {
+
+            List<MasItemCategory> masItemCategory;
+
+            if (flag == 1) {
+
+                masItemCategory = masItemCategoryRepository
+                        .findByStatusIgnoreCaseOrderByItemCategoryNameAsc("y");
+
+            } else if (flag == 0) {
+
+                masItemCategory = masItemCategoryRepository
+                        .getAllMasItemCategoryData();
+
+            } else {
+
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Invalid flag value. Use 0 or 1.",
+                        400
+                );
+            }
+
+            List<MasItemCategoryResponse> responses = masItemCategory.stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+
+            return ResponseUtils.createSuccessResponse(
+                    responses,
+                    new TypeReference<>() {}
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
-
-        List<MasItemCategoryResponse> responses = masItemCategory.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-
-        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
-        });
     }
 
     @Override
@@ -198,10 +221,23 @@ private MasItemCategoryRepository masItemCategoryRepository;
         response.setLastChgTime(masItemCategory.getLastChgTime());
         response.setLastChgDate(masItemCategory.getLastChgDate());
        // response.setSectionId(masItemCategory.getMasStoreSection().getSectionId());
-        if(masItemCategory.getMasStoreSection()!=null){
-            response.setSectionId(masItemCategory.getMasStoreSection().getSectionId());
-            response.setSectionName(masItemCategory.getMasStoreSection().getSectionName());
+        try {
 
+            if (masItemCategory.getMasStoreSection() != null) {
+
+                response.setSectionId(
+                        masItemCategory.getMasStoreSection().getSectionId()
+                );
+
+                response.setSectionName(
+                        masItemCategory.getMasStoreSection().getSectionName()
+                );
+            }
+
+        } catch (Exception e) {
+
+            response.setSectionId(null);
+            response.setSectionName(null);
         }
 
         return response;

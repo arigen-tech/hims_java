@@ -22,15 +22,15 @@ public class StoreItemBatchStock {
     @Column(name = "stock_id")
     private Long stockId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hospital_id", nullable=false)
     private MasHospital hospitalId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable=false)
     private MasDepartment departmentId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
     private MasStoreItem itemId;
 
@@ -84,7 +84,7 @@ public class StoreItemBatchStock {
     @Column(name = "mrp_per_unit", precision = 12, scale = 2)
     private BigDecimal mrpPerUnit;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hsn_code")
     private MasHSN hsnCode;
 
@@ -97,11 +97,11 @@ public class StoreItemBatchStock {
     @Column(name = "total_mrp_value", precision = 12, scale = 2, insertable = false, updatable = false)
     private BigDecimal totalMrpValue;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id")
     private MasBrand brandId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manufacturer_id")
     private MasManufacturer manufacturerId;
 

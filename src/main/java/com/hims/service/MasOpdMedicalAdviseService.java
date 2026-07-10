@@ -16,4 +16,6 @@ public interface MasOpdMedicalAdviseService {
     ApiResponse<MasOpdMedicalAdviseResponse> update(Long id, MasOpdMedicalAdviseRequest request);
 
     ApiResponse<MasOpdMedicalAdviseResponse> changeStatus(Long id, String status);
+
+    ApiResponse<MasOpdMedicalAdviseResponse> getById(Long id);
 }

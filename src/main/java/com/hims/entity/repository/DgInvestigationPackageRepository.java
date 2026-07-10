@@ -24,4 +24,5 @@ public interface DgInvestigationPackageRepository extends JpaRepository<DgInvest
             @Param("currDate") LocalDate currDate
     );
 
+    List<DgInvestigationPackage> findAllByOrderByUpdatedByAsc();
 }

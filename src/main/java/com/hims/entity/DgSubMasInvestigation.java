@@ -43,27 +43,35 @@ public class DgSubMasInvestigation {
     @Column(name = "comparison_type", length = 1)
     private String comparisonType;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "main_chargecode_id")
     private MasMainChargeCode mainChargeCodeId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_chargecode_id")
     private MasSubChargeCode subChargeCodeId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sample_id")
     private DgMasSample sampleId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uomId")
     private DgUom uomId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "investigation_id")
     private DgMasInvestigation investigationId;
 
     @Column(name = "fixed_value_expected_result", length = 1)
     private String fixedValueExpectedValue;
+
+    @Column(name = "print_order")
+    private Integer printOrder;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_autocomplete_investigation_id")
+    private DgMasInvestigation parentAutoCompeteInvestigationId;
+
 
 }

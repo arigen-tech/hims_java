@@ -17,15 +17,15 @@ public class DgSampleCollectionHeader {
     @Column(name = "sample_collection_header_id")
     private Long sampleCollectionHeaderId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id")
     private  Patient patientId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hospital_id")
     private MasHospital hospitalId;
 
-   @ManyToOne(fetch = FetchType.EAGER)
+   @ManyToOne(fetch = FetchType.LAZY)
    @JoinColumn(name = "department_id")
    private MasDepartment departmentId;
 
@@ -41,12 +41,12 @@ public class DgSampleCollectionHeader {
     @Column(name = "inpatient_id")
     private Long inpatientId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "visit_id")
     private Visit visitId;
 
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_charge_code_id")
     private MasSubChargeCode subChargeCode;
 

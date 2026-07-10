@@ -16,11 +16,11 @@ public class StoreBalanceDt {
     @Column(name = "balance_t_id")
     private Long balanceTId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "balance_m_id")
     private StoreBalanceHd balanceMId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
     private MasStoreItem itemId;
 
@@ -48,7 +48,7 @@ public class StoreBalanceDt {
     @Column(name = "mrp_per_unit", precision = 10, scale = 2)
     private BigDecimal mrpPerUnit;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hsn_code")
     private MasHSN hsnCode;
 
@@ -68,11 +68,11 @@ public class StoreBalanceDt {
     @Column(name = "total_mrp_value", precision = 12, scale = 2,insertable = false, updatable = false)
     private BigDecimal totalMrp;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id")
     private MasBrand brandId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manufacturer_id")
     private MasManufacturer manufacturerId;
 

@@ -1,11 +1,15 @@
 package com.hims.response;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+//@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class MasIcdResponse {
     private Long icdId;
     private String icdCode;
     private String icdName;
-    private String status;
+//    private String status;
 }

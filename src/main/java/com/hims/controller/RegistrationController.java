@@ -1,0 +1,237 @@
+package com.hims.controller;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.repository.PatientRepository;
+import com.hims.projection.PatientProjection;
+import com.hims.request.*;
+import com.hims.response.*;
+import com.hims.service.RegistrationService;
+import com.hims.utils.ResponseUtils;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDate;
+import java.util.List;
+
+/**
+ * Controller for patient registration and appointment management
+ */
+@RestController
+@RequestMapping("/registration")
+@RequiredArgsConstructor
+@Slf4j
+public class RegistrationController {
+
+    private final RegistrationService registrationService;
+
+    private final PatientRepository patientRepository;
+
+    /**
+     * Register new patient with OPD details
+     */
+    @PostMapping("/createPatient")
+    public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> createPatient(
+            @RequestBody PatientRegistrationReq request) {
+        log.info("POST /registration/createPatient called");
+        ApiResponse<PatientRegFollowUpResp> response = registrationService.createPatient(
+                request.getPatient(), request.getOpdPatientDetail(), request.getVisits());
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Update existing patient details
+     */
+    @PostMapping("/updatePatient")
+    public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> updatePatient(
+            @RequestBody PatientFollowUpReq request) {
+        log.info("POST /registration/updatePatient called");
+        ApiResponse<PatientRegFollowUpResp> response = registrationService.updatePatient(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Book appointment for existing patient
+     */
+    @PostMapping("/bookAppointment/{patientId}")
+    public ResponseEntity<ApiResponse<BookingAppointmentResponse>> bookAppointment(
+            @PathVariable Long patientId,
+            @RequestBody VisitRequest visitRequest) {
+        log.info("POST /registration/bookAppointment/{} called", patientId);
+        ApiResponse<BookingAppointmentResponse> response = registrationService.bookAppointment(patientId, visitRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Upload patient image
+     */
+    @PostMapping("/uploadPatientImage")
+    public ResponseEntity<ApiResponse<String>> uploadPatientImage(
+            @RequestParam("file") MultipartFile file) {
+        log.info("POST /registration/uploadPatientImage called");
+        try {
+            ApiResponse<String> response = registrationService.uploadPatientImage(file);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(ResponseUtils.createFailureResponse(e.getMessage(),
+                    new TypeReference<>() {}, "Error uploading image", 500), HttpStatus.OK);
+        }
+    }
+
+    /**
+     * Search patients by mobile number and name with pagination
+     */
+    @PostMapping("/searchPatient")
+    public ResponseEntity<ApiResponse<Page<PatientProjection>>> searchPatient(
+            @RequestBody PatientSearchReq searchRequest,
+            Pageable pageable) {
+        log.info("POST /registration/searchPatient called with page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        ApiResponse<Page<PatientProjection>> response = registrationService.searchPatient(searchRequest, pageable);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Check for duplicate patient
+     */
+    @GetMapping("/checkDuplicatePatient")
+    public ResponseEntity<Boolean> checkDuplicatePatient(
+            @RequestParam String firstName,
+            @RequestParam String dob,
+            @RequestParam Long gender,
+            @RequestParam String mobile,
+            @RequestParam Long relation) {
+        log.info("GET /registration/checkDuplicatePatient called");
+        boolean exists = patientRepository.existsByPatientFnAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(
+                firstName.trim(), LocalDate.parse(dob), gender, mobile.trim(), relation);
+        return ResponseEntity.ok(exists);
+    }
+
+    /**
+     * Get patient full details for follow-up
+     * @param patientId the unique ID of the patient (required)
+     * @param serviceCategoryCode the service category code (optional - defaults to OPD if not provided)
+     */
+    @GetMapping("/getPatientDetails/{patientId}")
+    public ResponseEntity<ApiResponse<FollowUpPatientResponseDetails>> getPatientDetails(
+            @PathVariable Long patientId,
+            @RequestParam(required = false) String serviceCategoryCode) {
+        log.info("GET /registration/getPatientDetails called - patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
+        ApiResponse<FollowUpPatientResponseDetails> response = registrationService.getPatientDetails(patientId, serviceCategoryCode);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Update payment status
+     */
+    @PostMapping("/updatePaymentStatus")
+    public ResponseEntity<ApiResponse<PaymentResponse>> updatePaymentStatus(
+            @RequestBody PaymentUpdateRequest request) {
+        log.info("POST /registration/updatePaymentStatus called");
+        return new ResponseEntity<>(registrationService.updatePaymentStatus(request), HttpStatus.OK);
+    }
+
+    /**
+     * Cancel appointment
+     */
+    @PostMapping("/cancelAppointment")
+    public ResponseEntity<?> cancelAppointment(
+            @RequestBody CancelAppointmentRequest request) {
+        log.info("POST /registration/cancelAppointment called");
+        ApiResponse<String> response = registrationService.cancelAppointment(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Reschedule appointment
+     */
+    @PostMapping("/rescheduleAppointment")
+    public ResponseEntity<ApiResponse<RescheduleAppointmentResponse>> rescheduleAppointment(
+            @RequestBody RescheduleAppointmentRequest request) {
+        log.info("POST /registration/rescheduleAppointment called");
+        ApiResponse<RescheduleAppointmentResponse> response = registrationService.rescheduleAppointment(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Get cancelled appointments with filters
+     */
+    @GetMapping("/getCancelledAppointments")
+    public ResponseEntity<ApiResponse<List<CancelledAppointmentResponse>>> getCancelledAppointments(
+            @RequestParam Long hospitalId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) Long cancellationReasonId) {
+        log.info("GET /registration/getCancelledAppointments called: hospitalId={}, departmentId={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}",
+                hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId);
+        ApiResponse<List<CancelledAppointmentResponse>> response = registrationService.getCancelledAppointments(
+                hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId);
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * Retrieves available appointment token slots for a specific doctor,
+     * department, session, and appointment date.
+     *
+     * <p>This API returns a list of available token slots based on the
+     * provided department ID, doctor ID, appointment date, session ID,
+     * and flag value.</p>
+     * @param deptId           the unique ID of the department (required)
+     * @param doctorId         the unique ID of the doctor (required)
+     * @param appointmentDate  the appointment date in yyyy-MM-dd format (required)
+     * @param sessionId        the session ID (e.g., Morning/Evening) (required)
+     * @param flag             flag to determine slot online or offline tokens logic (required)
+     * @return ResponseEntity containing ApiResponse with list of AvailableTokenSlotResponse objects
+     */
+    @GetMapping("/getAppointmentSlots/{flag}")
+    public ResponseEntity<ApiResponse<List<AvailableTokenSlotResponse>>> getAllOnlineTokens(
+            @RequestParam Long deptId,
+            @RequestParam Long doctorId,
+            @RequestParam String appointmentDate,
+            @RequestParam Long sessionId,
+            @PathVariable Integer flag
+    ) {
+        ApiResponse<List<AvailableTokenSlotResponse>> response =
+                registrationService.getAppointmentSlots(
+                        deptId, doctorId, appointmentDate, sessionId,flag
+                );
+        return ResponseEntity.ok(response);
+    }
+    /**
+     * Appointment Summary Report - Department-wise and Doctor-wise
+     * Shows appointment statistics grouped by doctor and department
+     *
+     * @param hospitalId Hospital ID (required)
+     * @param departmentId Department ID (optional - null for all departments)
+     * @param doctorId Doctor ID (optional - null for all doctors)
+     * @param fromDate Start date
+     * @param toDate End date
+     * @return List of appointment summary statistics
+     * flag=0 use for department and flag=1  use for doctor
+     */
+    @GetMapping("/getAppointmentSummaryReport")
+    public ApiResponse<List<?>> getAppointmentSummaryReport(
+            @RequestParam Long hospitalId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam Integer flag) {
+        log.info("Received getAppointmentSummaryReport request with hospitalId: {}, departmentId: {}, doctorId: {}, fromDate: {}, toDate: {}, flag: {}",
+                hospitalId, departmentId, doctorId, fromDate, toDate, flag);
+        return registrationService.getAppointmentSummaryReport(hospitalId, departmentId, doctorId, fromDate, toDate,flag);
+    }
+
+}

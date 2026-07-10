@@ -38,7 +38,7 @@ public class MasDistrict {
     @Column(name = "last_chg_date")
     private Instant lastChgDate;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "state_id")
     private MasState state;
 

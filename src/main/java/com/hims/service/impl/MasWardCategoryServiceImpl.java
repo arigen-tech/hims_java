@@ -43,7 +43,7 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
             log.info("Mas Ward Category get List Start");
             List<MasWardCategory> masWardCategories;
             if (flag == 1) {
-                masWardCategories = masWardCategoryRepository.findByStatusOrderByCategoryNameAsc("y");
+                masWardCategories = masWardCategoryRepository.findByStatusIgnoreCaseOrderByCategoryNameAsc("y");
             } else if (flag == 0) {
                 masWardCategories = masWardCategoryRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
@@ -131,7 +131,7 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
         if(masWardCategory.isEmpty()){
             return ResponseUtils.createNotFoundResponse("MasWardCategory data not found",  404);
         }
-        if("n".equals(status)||"y".equals(status)){
+        if ("n".equalsIgnoreCase(status) || "y".equalsIgnoreCase(status)) {
             MasWardCategory masWardCategory1=masWardCategory.get();
             masWardCategory1.setStatus(status);
             masWardCategory1.setLastUpdateDate(LocalDate.now());

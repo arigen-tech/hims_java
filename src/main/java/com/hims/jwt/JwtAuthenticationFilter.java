@@ -36,10 +36,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
-            if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-                handlePreflightRequest(response);
-                return;
-            }
+//            if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+//                handlePreflightRequest(response);
+//                return;
+//            }
 
             String authorizationHeader = request.getHeader("Authorization");
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
@@ -68,10 +68,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
+//    private void handlePreflightRequest(HttpServletResponse response) {
+//        response.setHeader("Access-Control-Allow-Origin", "*");
+//        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+//        response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+//        response.setStatus(HttpServletResponse.SC_OK);
+//    }
+
     private void handlePreflightRequest(HttpServletResponse response) {
         response.setHeader("Access-Control-Allow-Origin", "*");
-        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+        response.setHeader("Access-Control-Allow-Methods",
+                "GET, POST, PUT, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers",
+                "*");
         response.setStatus(HttpServletResponse.SC_OK);
     }
 

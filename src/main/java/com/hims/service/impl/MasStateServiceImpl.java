@@ -163,7 +163,7 @@ public class MasStateServiceImpl implements MasStateService {
         List<MasState> states;
 
         if (flag == 1) {
-            states = masStateRepository.findByStatusIgnoreCaseOrderByStateNameAsc("Y");
+            states = masStateRepository.findByStatusIgnoreCaseOrderByStateNameAsc("y");
         } else if (flag == 0) {
             states = masStateRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
@@ -180,7 +180,7 @@ public class MasStateServiceImpl implements MasStateService {
 
     @Override
     public ApiResponse<List<MasStateResponse>> getStatesByCountryId(Long countryId) {
-        List<MasStateResponse> states = masStateRepository.findByCountryIdAndStatusIgnoreCase(countryId, "Y").stream()
+        List<MasStateResponse> states = masStateRepository.findByCountryIdAndStatusIgnoreCaseOrderByStateNameAsc(countryId, "Y").stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
         return ResponseUtils.createSuccessResponse(states, new TypeReference<>() {});

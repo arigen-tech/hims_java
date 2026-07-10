@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.MasBedRepository;
 import com.hims.entity.repository.MasBedStatusRepo;
 import com.hims.entity.repository.MasBedTypeRepository;
 import com.hims.entity.repository.MasRoomRepo;
+import com.hims.projection.BedStatusCountProjection;
 import com.hims.request.MasBedRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.BedStatusCountResponse;
 import com.hims.response.MasBedResponse;
 import com.hims.service.MasBedService;
 import com.hims.utils.AuthUtil;
@@ -223,6 +226,26 @@ public class MasBedServiceImpl implements MasBedService {
         }
     }
 
+    @Override
+    public ApiResponse<?> getBedStatusCount(Long wardId) {
+        try {
+        BedStatusCountProjection projection = masBedRepository.getBedStatusCount(wardId, AppConstants.BED_STATUS_AVAILABLE,AppConstants.BED_STATUS_CLEANING_BED,AppConstants.BED_STATUS_OCCUPIED_BED);
+
+        BedStatusCountResponse response = BedStatusCountResponse.builder()
+                        .available(projection.getAvailable() != null ? projection.getAvailable() : 0L)
+                        .cleaning(projection.getCleaning() != null ? projection.getCleaning() : 0L)
+                        .occupied(projection.getOccupied() != null ? projection.getOccupied() : 0L)
+                        .build();
+
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<BedStatusCountResponse>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching bed status count for wardId : {}", wardId, e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
     private MasBedResponse mapToResponse(MasBed masBed) {
         MasBedResponse res = new MasBedResponse();
 
@@ -235,10 +258,17 @@ public class MasBedServiceImpl implements MasBedService {
 
         // Room
         if (masBed.getRoomId() != null) {
+
             res.setRoomId(masBed.getRoomId().getRoomId());
             res.setRoomName(masBed.getRoomId().getRoomName());
-            res.setDepartmentId(masBed.getRoomId().getMasDepartment().getId());
-            res.setDepartmentName(masBed.getRoomId().getMasDepartment().getDepartmentName());
+
+            if (masBed.getRoomId().getMasDepartment() != null) {
+                res.setDepartmentId(masBed.getRoomId().getMasDepartment().getId());
+                res.setDepartmentName(masBed.getRoomId().getMasDepartment().getDepartmentName());
+            } else {
+                res.setDepartmentId(null);
+                res.setDepartmentName(null);
+            }
         }
 
 

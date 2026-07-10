@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.*;
@@ -104,9 +105,9 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             List<OpdTemplate> templates;
 
             if (flag == 1) {
-                templates = opdTempRepo.findByStatusIgnoreCase("Y");
+                templates = opdTempRepo.findByStatusIgnoreCase(AppConstants.STATUS_Y);
             } else if (flag == 0) {
-                templates = opdTempRepo.findByStatusInIgnoreCase(List.of("Y", "N"));
+                templates = opdTempRepo.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y, AppConstants.STATUS_N));
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid flag value. Use 0 or 1.", 400);
@@ -133,13 +134,13 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
 
 
     @Override
-    public ApiResponse<OpdTemplateResponse> createOpdTemplate(OpdTemplateRequest opdTempReq) {
+    public ApiResponse<OpdTemplateResponse> saveInvestigationTemplate(OpdTemplateRequest opdTempReq) {
         try{
             Long depId = authUtil.getCurrentDepartmentId();
             OpdTemplate opdt = new OpdTemplate();
             opdt.setOpdTemplateName(opdTempReq.getOpdTemplateName());
             opdt.setOpdTemplateCode(opdTempReq.getOpdTemplateCode());
-            opdt.setOpdTemplateType("I");
+            opdt.setOpdTemplateType(AppConstants.TEMPLATE_TYPE_INVESTIGATION);
             User currentUser = getCurrentUser();
             if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
@@ -148,7 +149,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             }
             opdt.setLastChgBy(currentUser.getUsername());
             opdt.setLastChgDate(Instant.now());
-            opdt.setStatus("y");
+            opdt.setStatus(AppConstants.STATUS_Y.toLowerCase());
             MasDepartment department = departmentRepo.findById(depId)
                     .orElseThrow(() -> new RuntimeException("Department not found"));
             opdt.setDepartmentId(department);
@@ -174,9 +175,9 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
             });
         } catch (Exception e) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    },
-                    "The data cannot be created" + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+            log.error("The data cannot be created",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
@@ -206,18 +207,18 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
                 }
 
             }else {
-                return ResponseUtils.createSuccessResponse("OpdTemplate is not foud", new TypeReference<>() {
+                return ResponseUtils.createSuccessResponse("OpdTemplate is not found", new TypeReference<>() {
                 });
             }
 
             return ResponseUtils.createSuccessResponse("update Successfully", new TypeReference<>() {
             });
         } catch (Exception e) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    },
-                    "The data cannot be created" + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+            log.error("The data cannot be updated",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
-//        return null;
+
     }
 
     @Override
@@ -250,8 +251,8 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
                 hd.setOrderStatus("n");
                 hd.setCollectionStatus("n");
                 hd.setPaymentStatus("n");
-                hd.setHospitalId(Math.toIntExact(currentUser.getHospital().getId()));
-                hd.setDepartmentId(departmentId.intValue());
+                hd.setHospitalId(authUtil.getCurrentUser().getHospital().getId());
+                hd.setDepartmentId(departmentId);
                 hd.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
                 hd.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
                 hd.setCreatedOn(LocalDate.now());
@@ -419,10 +420,10 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             OpdTemplate template = new OpdTemplate();
             template.setOpdTemplateCode(request.getOpdTemplateCode());
             template.setOpdTemplateName(request.getOpdTemplateName());
-            template.setOpdTemplateType("P");
+            template.setOpdTemplateType(AppConstants.TEMPLATE_TYPE_PRESCRIPTION);
             template.setLastChgBy(currentUser.getUsername());
             template.setLastChgDate(Instant.now());
-            template.setStatus("y");
+            template.setStatus(AppConstants.STATUS_Y.toLowerCase());
 
             // Department & Doctor mapping
             MasDepartment department = departmentRepo.findById(depId)
@@ -464,9 +465,8 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
 
         } catch (Exception e) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Failed to save OPD Template Treatment: " + e.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+            log.error("Failed to save OPD Template Treatment: ",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
@@ -538,15 +538,14 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
 
             // Filter based on flag
             if (flag == 1) {
-                templates = opdTempRepo.findByStatusIgnoreCase("Y");
+                templates = opdTempRepo.findByStatusIgnoreCase(AppConstants.STATUS_Y);
             } else if (flag == 0) {
-                templates = opdTempRepo.findByStatusInIgnoreCase(List.of("Y", "N"));
+                templates = opdTempRepo.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y, AppConstants.STATUS_N));
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid flag value. Use 0 or 1.", 400);
             }
 
-            // ✅ Filter templates whose type = 'p'
             templates = templates.stream()
                     .filter(t -> t.getOpdTemplateType() != null && t.getOpdTemplateType().equalsIgnoreCase("P"))
                     .collect(Collectors.toList());

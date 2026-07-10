@@ -30,11 +30,11 @@ public class DgNormalValue {
     @Column(name = "normalvalue")
     private String normalValue;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_investigation_id")
     private DgSubMasInvestigation subInvestigationId ;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "charge_code_id")
     private MasMainChargeCode mainChargeCodeId;
 }

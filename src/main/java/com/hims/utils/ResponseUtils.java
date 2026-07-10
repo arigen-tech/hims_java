@@ -2,8 +2,11 @@ package com.hims.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.response.ApiResponse;
+import com.hims.response.AvailableTokenSlotResponse;
 import lombok.experimental.UtilityClass;
 import org.springframework.http.HttpStatus;
+
+import java.util.List;
 
 @UtilityClass
 
@@ -14,11 +17,10 @@ public class ResponseUtils {
         response.setResponse(data);
         response.setStatus(HttpStatus.OK.value());
         response.setMessage("success");
-//        response.setAndroidVersion("prod_v1.1.0");
-//        response.setApiVersion("prod_v1.1.0");
-//        response.setIosVersion("prod_v1.1.0");
         return response;
     }
+
+
 
     public <T> ApiResponse<T> createSuccessResponseWithCred(T data, TypeReference<T> tClass) {
         ApiResponse<T> response = new ApiResponse<>();
@@ -43,6 +45,14 @@ public class ResponseUtils {
     }
 
     public <T> ApiResponse<T> createFailureResponse(T data, TypeReference<T> tClass, String msg, Integer status) {
+        ApiResponse<T> response = new ApiResponse<>();
+        response.setResponse(data);
+        response.setStatus(status);
+        response.setMessage(msg);
+        return response;
+    }
+
+    public <T> ApiResponse<T> createFailureResponse(T data, String msg, Integer status) {
         ApiResponse<T> response = new ApiResponse<>();
         response.setResponse(data);
         response.setStatus(status);

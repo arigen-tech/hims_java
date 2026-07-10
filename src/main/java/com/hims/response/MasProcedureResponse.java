@@ -14,14 +14,14 @@ public class MasProcedureResponse {
     private Long procedureId;
     private String procedureCode;
     private String procedureName;
-//    private String defaultStatus;
     private String status;
-//    private String procedureGroup;
-    private  Long departmentId;
+    private String lastChgBy;
+    private LocalDateTime lastChgDate;
+    private Long departmentId;
     private String departmentName;
-    private String procedureTypeName;
-    private Long procedureTypeId;
-//    private String lastChangedBy;
-    private LocalDateTime lastChangedDate;
+    private String opdAllowed;
+    private String ipdAllowed;
+    private String isNursing;
+    private String procedureLevel;
 
 }

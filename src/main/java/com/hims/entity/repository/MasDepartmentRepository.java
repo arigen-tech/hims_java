@@ -1,11 +1,13 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.MasDepartment;
+import com.hims.response.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Long> {
    // MasDepartment findById(Long amountTypeId);
@@ -16,19 +18,200 @@ public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Lo
 
     List<MasDepartment> findByStatusIgnoreCaseOrderByDepartmentNameAsc(String y);
 
+//    @Query("""
+//        SELECT m
+//        FROM MasDepartment m
+//        WHERE m.departmentType.id = :departmentTypeId
+//          AND m.wardCategory.id = :wardCategoryId
+//          AND LOWER(m.status) = 'y'
+//    """)
+//    List<MasDepartment> findActiveWardDepartments(
+//            @Param("departmentTypeId") Long departmentTypeId,
+//            @Param("wardCategoryId") Long wardCategoryId
+//    );
+@Query("""
+    SELECT new com.hims.response.MasDepartmentResponse(
+        m.id,
+        m.departmentCode,
+        m.departmentName,
+        m.status,
+        m.lastChgBy,
+        m.lastChgDate,
+        m.lastChgTime,
+        m.departmentType.id,
+        m.departmentType.departmentTypeName,
+        m.hospital.id,
+        m.hospital.hospitalName,
+        m.departmentNo,
+        m.wardCategory.id,
+        m.wardCategory.categoryName,
+        m.indentApplicable
+    )
+    FROM MasDepartment m
+    WHERE m.departmentType.id = :departmentTypeId
+      AND m.wardCategory.id = :wardCategoryId
+      AND LOWER(m.status) = :status
+""")
+List<MasDepartmentResponse> findActiveWardDepartments(
+        @Param("departmentTypeId") Long departmentTypeId,
+        @Param("wardCategoryId") Long wardCategoryId,
+        @Param("status") String status
+);
+
+    List<MasDepartment> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
+
+    List<MasDepartment> findByDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(Long opdId, String keyword);
+
+    /**
+     * Get department IDs by department type code
+     * @param deptTypeCode Department type code from mas_department_type table
+     * @return List of department IDs
+     */
+    @Query("""
+        SELECT d.id
+        FROM MasDepartment d
+        WHERE  LOWER(d.departmentType.departmentTypeCode) = LOWER(:deptTypeCode)
+          AND LOWER(d.status) = 'y'
+    """)
+    List<Long> findDepartmentIdsByDepartmentTypeCode(@Param("deptTypeCode") String deptTypeCode);
+
+ /**
+  * Get department IDs by department type ID
+  * @param deptTypeId Department type Id from mas_department_type table
+  * @return List of department IDs
+  */
+ @Query("""
+        SELECT d.id
+        FROM MasDepartment d
+        WHERE d.departmentType.id = :deptTypeId
+          AND LOWER(d.status) = 'y'
+    """)
+ List<Long> findDepartmentIdsByDepartmentTypeId(@Param("deptTypeId") Long deptTypeId);
+
+
+
+    List<MasDepartment> findByIndentApplicableIgnoreCase(String indentApplicable);
+
+
+    List<MasDepartment> findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(Long hospitalId, Long opdDeptTypeId, String searchInput);
+
+    List<MasDepartment> findByHospitalIdAndDepartmentTypeId(Long hospitalId, Long opdId);
+
+    List<MasDepartment> findByDepartmentTypeId(Long opdId);
+    List<MasDepartment> findByDepartmentTypeId(int opdId);
+
+ 
+
+    /**
+     *  Fetches departments with all relationships in a single query.
+     * Use this instead of findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCase
+     * to avoid N+1 problems when accessing departmentType, hospital, etc.
+     */
+    @Query("""
+        SELECT DISTINCT d
+        FROM MasDepartment d
+        LEFT JOIN FETCH d.departmentType dt
+        LEFT JOIN FETCH d.hospital h
+        LEFT JOIN FETCH d.careLevel cl
+        LEFT JOIN FETCH d.wardCategory wc
+        WHERE d.hospital.id = :hospitalId
+          AND d.departmentType.id = :deptTypeId
+          AND LOWER(d.departmentName) LIKE LOWER(CONCAT('%', :searchInput, '%'))
+        ORDER BY d.departmentName ASC
+        """)
+    List<MasDepartment> findByHospitalAndDeptTypeAndNameWithSearchInput(
+        @Param("hospitalId") Long hospitalId,
+        @Param("deptTypeId") Long deptTypeId,
+        @Param("searchInput") String searchInput
+    );
+
+
+
+
+    /**
+     * Fetches departments by type with keyword search and all relationships.
+     * Use instead of findByDepartmentTypeIdAndDepartmentNameContainingIgnoreCase to avoid N+1.
+     */
+    @Query("""
+        SELECT DISTINCT d
+        FROM MasDepartment d
+        LEFT JOIN FETCH d.departmentType dt
+        LEFT JOIN FETCH d.hospital h
+        LEFT JOIN FETCH d.careLevel cl
+        LEFT JOIN FETCH d.wardCategory wc
+        WHERE d.departmentType.id = :deptTypeId
+          AND LOWER(d.departmentName) LIKE LOWER(CONCAT('%', :searchInput, '%'))
+        ORDER BY d.departmentName ASC
+        """)
+    List<MasDepartment> findByTypeWithSearchInput(
+        @Param("deptTypeId") Long deptTypeId,
+        @Param("searchInput") String searchInput
+    );
+
+    @Query(value = "select d.department_id from mas_department d where department_id = :departmentId", nativeQuery = true)
+    Long findByDepartmentId(@Param("departmentId") Long departmentId);
+    @Query("""
+    SELECT new com.hims.response.DepartmentDropdownResponse(
+        d.id,
+        d.departmentCode,
+        d.departmentName,
+        d.departmentType.departmentTypeCode
+    )
+    FROM MasDepartment d
+    WHERE d.id IN :ids
+      AND LOWER(d.status) = 'y'
+    ORDER BY d.departmentName ASC
+""")
+    List<DepartmentDropdownResponse> findDropdownDepartmentsByIds(
+            @Param("ids") List<Long> ids
+    );
+
+    @Query("""
+    SELECT new com.hims.response.DepartmentDropdownResponse(
+        d.id,
+        d.departmentCode,
+        d.departmentName,
+        d.departmentType.departmentTypeCode
+    )
+    FROM MasDepartment d
+    WHERE d.id = :id
+      AND LOWER(d.status) = 'y'
+""")
+    Optional<DepartmentDropdownResponse> findCurrentDeptById(
+            @Param("id") Long id
+    );
+
+    @Query("""
+SELECT new com.hims.response.DepartmentDropdownResponse(
+    d.id,
+    d.departmentCode,
+    d.departmentName,
+    dt.departmentTypeCode
+)
+FROM MasDepartment d
+LEFT JOIN d.departmentType dt
+WHERE (:departmentTypeCode IS NULL OR dt.departmentTypeCode = :departmentTypeCode)
+ORDER BY d.departmentName ASC
+""")
+    List<DepartmentDropdownResponse> findDepartmentsForDropdown(
+            @Param("departmentTypeCode") String departmentTypeCode);
 
 
     @Query("""
-        SELECT m
-        FROM MasDepartment m
-        WHERE m.departmentType.id = :departmentTypeId
-          AND m.wardCategory.id = :wardCategoryId
-          AND LOWER(m.status) = 'y'
-    """)
-    List<MasDepartment> findActiveWardDepartments(
-            @Param("departmentTypeId") Long departmentTypeId,
-            @Param("wardCategoryId") Long wardCategoryId
-    );
-
-    List<MasDepartment> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
+        SELECT new  com.hims.response.DepartmentByDepartmentTypeCode(
+            d.id,
+            d.departmentName
+        )
+        FROM MasDepartment d
+        JOIN d.departmentType dt
+        WHERE dt.departmentTypeCode = :departmentTypeCode
+          AND LOWER(d.status) =:status
+          AND LOWER(dt.status) =:status
+        ORDER BY d.departmentName ASC
+        """)
+    List<DepartmentByDepartmentTypeCode> findDepartmentsByDepartmentTypeCode(
+            @Param("departmentTypeCode") String departmentTypeCode,
+            @Param("status") String status
+            );
 }
+

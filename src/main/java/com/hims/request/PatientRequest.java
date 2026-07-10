@@ -1,5 +1,7 @@
 package com.hims.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -52,4 +54,5 @@ public class PatientRequest {
     private LocalDate regDate;
     private String lastChgBy;
     private Long patientHospitalId;
+    private String patientAbhaId;
 }

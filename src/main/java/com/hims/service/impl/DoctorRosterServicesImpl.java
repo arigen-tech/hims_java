@@ -19,15 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.time.format.TextStyle;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -125,7 +120,9 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
             Long deptId, Long doctorId, LocalDate rosterDate, Long sessionId) {
 
         Date convertedDate = java.sql.Date.valueOf(rosterDate);
-        Instant currentDate = Instant.now();
+        Instant currentDate = rosterDate
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
         List<DoctorRoaster> rosterList;
         if (doctorId != null) {
             rosterList = doctorRoasterRepository.findDoctorRosterByDeptAndDoctor(deptId, doctorId, convertedDate);
@@ -301,15 +298,8 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
             Long sessionId) {
 
         Long hospitalId = roster.getHospital().getId();
-        String dayName = LocalDate.now()
-                .getDayOfWeek()
-                .name()
-                .substring(0, 1)
-                .toUpperCase() + LocalDate.now()
-                .getDayOfWeek()
-                .name()
-                .substring(1)
-                .toLowerCase();
+        String dayName = rosterDate.getDayOfWeek()
+                .getDisplayName(TextStyle.FULL, Locale.ENGLISH);
         List<AppSetup> optionalSetup =
                 appSetupRepository.findByDoctorHospitalSessionAndDayName(
                         doctorId, roster.getDepartment().getId(), sessionId, dayName);
@@ -335,6 +325,167 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
         return "SUCCESS";
     }
 
+    @Override
+//    public ApiResponse<List<AvailableTokenSlotResponse>> getAvailableToken(Long deptId, Long doctorId, String appointmentDate, Long sessionId) {
+//        LocalDate date = LocalDate.parse(appointmentDate);
+//        String dayName =
+//                date.getDayOfWeek()
+//                        .getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+//
+//
+//        List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(
+//                doctorId, deptId, sessionId, dayName);
+//
+//        AppSetup appSetup = optionalSetup.get(0);
+//        int startToken = appSetup.getStartToken();
+//        int intervalToken = appSetup.getTotalInterval()-1;
+//        int totalToken = appSetup.getTotalToken();
+//        int totalOnlineTokens = appSetup.getTotalOnlineToken();
+//        int timeTakenMin = appSetup.getTimeTaken();
+//        String startTime = appSetup.getStartTime();
+//        String endTime = appSetup.getEndTime();
+//
+//        List<AvailableTokenSlotResponse> list = generateOfflineSlots(startToken,intervalToken,totalToken,totalOnlineTokens,startTime,endTime,timeTakenMin,deptId,doctorId,sessionId,date,visitRepository);
+//        return ResponseUtils.createSuccessResponse(list, new TypeReference<List<AvailableTokenSlotResponse>>() {});
+//    }
+
+
+    public ApiResponse<List<AvailableTokenSlotResponse>> getAvailableToken(
+            Long deptId, Long doctorId, String appointmentDate, Long sessionId,int flag) {
+        int startToken,intervalToken,totalToken,totalOnlineTokens,timeTakenMin=0;
+        String startTime,endTime="";
+        LocalDate date = LocalDate.parse(appointmentDate);
+        String dayName = date.getDayOfWeek()
+                .getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+
+        List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(
+                doctorId, deptId, sessionId, dayName);
+
+        ApiResponse<List<DoctorRosterDTO>> checkDoctorRoaster = getDoctorRoster(deptId,doctorId,date,sessionId);
+        if(!checkDoctorRoaster.getMessage().equalsIgnoreCase("success")){
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},checkDoctorRoaster.getMessage(),400);
+
+        }
+
+
+        AppSetup appSetup = optionalSetup.get(0);
+        if (appSetup == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"App setup not defined for this day",400);
+        }
+
+        if (appSetup.getStartToken() == null ||
+                appSetup.getTotalInterval() == null ||
+                appSetup.getTotalToken() == null||
+                appSetup.getStartTime()==null||
+                appSetup.getEndTime()==null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"App setup not defined for this day (Missing Token/Interval data)",400);
+        }else {
+            startToken = appSetup.getStartToken();
+            intervalToken = appSetup.getTotalInterval();
+            totalToken = appSetup.getTotalToken();
+            totalOnlineTokens = (appSetup.getTotalOnlineToken() != null) ? appSetup.getTotalOnlineToken() : 0;
+            timeTakenMin = appSetup.getTimeTaken();
+            startTime = appSetup.getStartTime();
+            endTime = appSetup.getEndTime();
+        }
+
+        Instant startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Set<Long> occupiedTokens = new HashSet<>();
+        try {
+            occupiedTokens = visitRepository.findOccupiedTokens(
+                            deptId, doctorId, sessionId, startOfDay, endOfDay)
+                    .stream().collect(Collectors.toSet());
+        } catch (Exception e) {
+            log.error("Error fetching occupied tokens", e);
+        }
+
+        List<AvailableTokenSlotResponse> list = generateSlotsWithAvailability(
+                startToken, intervalToken, totalToken,
+                startTime, endTime, timeTakenMin, occupiedTokens,flag);
+
+        return ResponseUtils.createSuccessResponse(list, new TypeReference<List<AvailableTokenSlotResponse>>() {});
+    }
+//    public static List<AvailableTokenSlotResponse> generateSlotsWithAvailability(
+//            int tokenStart,
+//            int tokenInterval,
+//            int totalTokens,
+//            String dayStartTime,
+//            String dayEndTime,
+//            int timeTakenMin,
+//            Set<Long> occupiedTokenNumbers,
+//            int flag
+//    ) {
+//        List<AvailableTokenSlotResponse> slots = new ArrayList<>();
+//        if (totalTokens <= 0 || timeTakenMin <= 0) {
+//            return slots;
+//        }
+//        LocalTime start = LocalTime.parse(dayStartTime);
+//        LocalTime end = LocalTime.parse(dayEndTime);
+//        int slotIndex = 0;
+//        for (int tokenNum = tokenStart; tokenNum <= totalTokens; tokenNum++) {
+//            LocalTime slotStart = start.plusMinutes(slotIndex * timeTakenMin);
+//            LocalTime slotEnd = slotStart.plusMinutes(timeTakenMin);
+//            if (!slotStart.isBefore(end) || slotEnd.isAfter(end)) {
+//                break;
+//            }
+//            boolean isOnline = tokenInterval > 0 && tokenNum % tokenInterval == 0;
+//            boolean isAvailable = !occupiedTokenNumbers.contains((long) tokenNum);
+//            boolean shouldAdd =
+//                    tokenInterval == 0 ||
+//                            (flag == 0 && !isOnline) ||
+//                            (flag == 1 && isOnline);
+//            if (shouldAdd) {
+//                slots.add(new AvailableTokenSlotResponse(tokenNum, slotStart, slotEnd, isAvailable));
+//            }
+//            slotIndex++;
+//        }
+//        return slots;
+//    }
+
+//    // If you want to show booked tokens with isAvailable = false, use this version:
+public static List<AvailableTokenSlotResponse> generateSlotsWithAvailability(
+        int tokenStart,
+        int tokenInterval, int totalTokens, String dayStartTime, String dayEndTime, int timeTakenMin, Set<Long> occupiedTokenNumbers, int flag) {
+
+    List<AvailableTokenSlotResponse> slots = new ArrayList<>();
+
+    if (totalTokens <= 0 || timeTakenMin <= 0) {
+        return slots;
+    }
+
+    LocalTime start = LocalTime.parse(dayStartTime);
+    LocalTime end = LocalTime.parse(dayEndTime);
+
+    int slotIndex = 0;
+
+    for (int tokenNum = tokenStart; tokenNum <= totalTokens; tokenNum++) {
+
+        LocalTime slotStart = start.plusMinutes(slotIndex * timeTakenMin);
+        LocalTime slotEnd = slotStart.plusMinutes(timeTakenMin);
+
+        if (!slotStart.isBefore(end) || slotEnd.isAfter(end)) {
+            break;
+        }
+
+        boolean isOnline = tokenInterval > 0 && tokenNum % tokenInterval == 0;
+        boolean isAvailable = !occupiedTokenNumbers.contains((long) tokenNum);
+
+        boolean shouldAdd =
+                tokenInterval == 0 || (flag == 0 && !isOnline) || (flag == 1 && isOnline);
+
+        if (shouldAdd) {
+            slots.add(new AvailableTokenSlotResponse(
+                    tokenNum,
+                    slotStart,
+                    slotEnd,
+                    isAvailable
+            ));
+        }
+        slotIndex++;
+    }
+    return slots;
+}
 
 
 }

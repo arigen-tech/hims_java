@@ -1,15 +1,15 @@
 package com.hims.service;
 
+import com.beust.ah.A;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
+import com.hims.projection.PatientProjection;
 import com.hims.request.*;
-import com.hims.response.ApiResponse;
-import com.hims.response.FollowUpPatientResponseDetails;
-import com.hims.response.PatientRegFollowUpResp;
-import com.hims.response.PaymentResponse;
+import com.hims.response.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface PatientService {
@@ -20,16 +20,24 @@ public interface PatientService {
 
     ApiResponse<List<Patient>> searchPatient(PatientSearchReq substring);
 
-    ApiResponse<List<Visit>> getPendingPreConsultations();
+//    ApiResponse<List<OpdPreConsultationResponse>> getPendingPreConsultations();
 
-    ApiResponse<List<Visit>> getWaitingList();
+//    ApiResponse<List<PatientWaitingListResponse>> getWaitingList();
 
     ApiResponse<String> saveVitalDetails(OpdPatientDetailRequest request);
 
     ApiResponse<FollowUpPatientResponseDetails> getAllFollowUpDetails(Long patient);
 
-
-
     ApiResponse<PaymentResponse> paymentStatusReq(PaymentUpdateRequest opdreq);
 
-    }
+    ApiResponse<String> cancelAppointment(CancelAppointmentRequest request);
+
+    ApiResponse<RescheduleAppointmentResponse> rescheduleAppointment(RescheduleAppointmentRequest request);
+
+    ApiResponse<BookingAppointmentResponse> bookAppointment(Long patientId, VisitRequest visitRequest);
+
+    ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate, Long cancellationReasonId);
+
+    ApiResponse<List<AvailableTokenSlotResponse>> getAppointmentSlots(Long deptId, Long doctorId, String appointmentDate, Long sessionId, int flag);
+
+}

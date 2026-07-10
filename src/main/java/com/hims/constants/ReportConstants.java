@@ -5,10 +5,24 @@ public final class ReportConstants {
     private ReportConstants() {
         // prevent instantiation
     }
+
+    public static final String REPORT_FLAG_DOWNLOAD = "D";
+    public static final String REPORT_FLAG_PRINT = "P";
+    public static final int HTTP_STATUS_BAD_REQUEST = 400;
+
+    // General Report Error Messages
+    public static final String ERROR_FAILED_TO_GENERATE_REPORT = "Failed to generate report: ";
+    public static final String ERROR_INVALID_FLAG = "Invalid flag value. Use D or P";
+
+
     public static final String JASPER_BASE_PATH_DISPENSARY = "/jasperReport/Dispensary/";
     public static final String JASPER_BASE_PATH_LAB = "/jasperReport/Lab/";
     public static final String JASPER_BASE_PATH_OPD = "/jasperReport/OPD/";
     public static final String JASPER_BASE_PATH_STORE = "/jasperReport/Store/";
+    public static final String JASPER_BASE_PATH_RADIOLOGY = "/jasperReport/Radiology/";
+    public static final String JASPER_BASE_PATH_REGISTRATION = "/jasperReport/Registration/";
+    public static final String JASPER_BASE_PATH_BILLING = "/jasperReport/Billing/";
+    public static final String JASPER_BASE_PATH_BLOOD_BANK = "/jasperReport/BloodBank/";
 
     public static final String ASSET_LOGO = "/Assets/arigen_health.png";
 
@@ -52,4 +66,98 @@ public final class ReportConstants {
     public static final String LAB_JASPER = "Lab_report";
     public static final String LAB_REPORT = "LabInvoice";
 
+    public static final String INDENT_MEDICINE_ISSUE_REGISTER_SUBREPORT_DIR = "IndentMedicineIssueRegisterReport/";
+    public static final String INDENT_MEDICINE_ISSUE_REGISTER_JASPER = "Medicine_issue_register";
+    public static final String INDENT_MEDICINE_ISSUE_REGISTER_REPORT = "IndentMedicineIssueRegisterReport";
+
+    public static final String INDENT_ISSUE_JASPER = "indent_issue_report";
+    public static final String INDENT_ISSUE_REPORT = "IndentIssueReport";
+
+    public static final String INDENT_RECEIVING_JASPER = "indent_receive_report";
+    public static final String INDENT_RECEIVING_REPORT = "IndentReceiveReport";
+
+    public static final String LAB_REGISTER_SUB_REPORT_DIR = "LabRegisterReport/";
+    public static final String LAB_REGISTER_JASPER = "Lab_Main_Report";
+    public static final String LAB_REGISTER_REPORT = "LabRegisterReport";
+
+    public static final String ITEM_WISE_RECEIVING_JASPER = "Item_wise_receiving_report";
+    public static final String ITEM_WISE_RECEIVING_REPORT = "ItemWiseReceivingReport";
+
+    public static final String DATE_WISE_RECEIVING_JASPER = "Date_wise_receiving_report";
+    public static final String DATE_WISE_RECEIVING_REPORT = "DateWiseReceivingReport";
+
+    public static final String INDENT_RETURN_JASPER = "Return_report";
+    public static final String INDENT_RETURN_REPORT = "ReturnReport";
+
+    public static final String ITEM_WISE_RETURN_JASPER = "Item_wise_return_register";
+    public static final String ITEM_WISE_RETURN_REPORT = "ItemWiseReturnRegister";
+
+    public static final String DATE_WISE_RETURN_JASPER = "Date_wise_return_register";
+    public static final String DATE_WISE_RETURN_REPORT = "DateWiseReturnRegister";
+
+    public static final String DETAILED_TAT_JASPER = "Detailed_tat_report";
+    public static final String DETAILED_TAT_REPORT = "DetailedTatReport";
+
+    public static final String SUMMARY_TAT_JASPER = "Summary_tat_report";
+    public static final String SUMMARY_TAT_REPORT = "SummaryTatReport";
+
+    public static final String RESULT_AMENDMENT_JASPER = "Result_amendment";
+    public static final String RESULT_AMENDMENT_REPORT = "ResultAmendmentReport";
+
+    public static final String STOCK_MOVEMENT_JASPER = "Item_stock_moment_history";
+    public static final String STOCK_MOVEMENT_REPORT = "ItemStockMomentHistory";
+
+    public static final String RADIOLOGY_JASPER = "radiology_report";
+    public static final String RADIOLOGY_REPORT = "RadiologyReport";
+
+    public static final String OPD_REGISTER_JASPER = "OPD_register_report";
+    public static final String OPD_REGISTER_REPORT = "OPDRegisterReport";
+
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_JASPER = "Appointment_summary_department";
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_REPORT = "AppointmentSummaryDepartment";
+
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_JASPER_DASHED = "Appointment_summary_department_dashed";
+    public static final String APPOINTMENT_SUMMARY_DEPARTMENT_REPORT_DASHED = "AppointmentSummaryDepartmentDashed";
+
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_JASPER = "Appointment_summary_doctor";
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_REPORT = "AppointmentSummaryDoctor";
+
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_JASPER_DASHED = "Appointment_summary_doctor_dashed";
+    public static final String APPOINTMENT_SUMMARY_DOCTOR_REPORT_DASHED = "AppointmentSummaryDoctorDashed";
+
+    public static final String DAILY_CANCELLATION_JASPER = "Daily_cancellation_report";
+    public static final String DAILY_CANCELLATION_REPORT = "DailyCancellationReport";
+
+    public static final String RADIOLOGY_INVOICE_JASPER = "Radiology_invoice";
+    public static final String RADIOLOGY_INVOICE_REPORT = "RadiologyInvoice";
+
+    public static final String SAMPLE_REJECTION_JASPER = "Sample_rejection_report";
+    public static final String SAMPLE_REJECTION_REPORT = "SampleRejectionReport";
+
+    public static final String PENDING_INVESTIGATION_JASPER = "Pending_investigation_report";
+    public static final String PENDING_INVESTIGATION_REPORT = "PendingInvestigationReport";
+
+    public static final String OPD_BILLING_REGISTER_JASPER = "Opd_billing_register";
+    public static final String OPD_BILLING_REGISTER_REPORT = "OpdBillingRegisterReport";
+
+    public static final String LAB_BILLING_REGISTER_JASPER = "Lab_billing_register";
+    public static final String LAB_BILLING_REGISTER_REPORT = "LabBillingRegisterReport";
+
+    public static final String RADIOLOGY_BILLING_REGISTER_JASPER = "Radiology_billing_register";
+    public static final String RADIOLOGY_BILLING_REGISTER_REPORT = "RadiologyBillingRegisterReport";
+
+    public static final String DAILY_CASH_COLLECTION_JASPER = "Daily_cash_collection";
+    public static final String DAILY_CASH_COLLECTION_REPORT = "DailyCashCollectionReport";
+
+    public static final String CASHIER_WISE_COLLECTION_JASPER = "Cashier_wise_collection";
+    public static final String CASHIER_WISE_COLLECTION_REPORT = "CashierWiseCollection";
+
+    public static final String BLOOD_INVENTORY_STOCK_SUMMARY_JASPER = "Blood_inventory_stock_summary";
+    public static final String BLOOD_INVENTORY_STOCK_SUMMARY_REPORT = "BloodInventoryStockSummary";
+
+    public static final String BLOOD_INVENTORY_STOCK_DETAIL_JASPER = "Blood_inventory_stock_detail";
+    public static final String BLOOD_INVENTORY_STOCK_DETAIL_REPORT = "BloodInventoryStockDetail";
+
+    public static final String COMPONENT_WISE_STOCK_JASPER = "Component_wise_stock_report";
+    public static final String COMPONENT_WISE_STOCK_REPORT = "ComponentWiseStockReport";
 }

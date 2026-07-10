@@ -1,17 +1,18 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasDepartment;
 import com.hims.entity.MasWardCategory;
 import com.hims.entity.repository.*;
 import com.hims.request.MasDepartmentRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.MasDepartmentResponse;
-import com.hims.response.MasUserDepartmentResponse;
+import com.hims.response.*;
 import com.hims.service.MasDepartmentService;
 import com.hims.utils.ResponseUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -22,6 +23,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 @Service
+@Slf4j
 public class MasDepartmentServiceImpl implements MasDepartmentService {
 
     @Autowired
@@ -65,6 +67,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         department.setLastChgBy(request.getLastChgBy());
         department.setLastChgTime(getCurrentTimeFormatted());
         department.setLastChgDate(Instant.now());
+        department.setIndentApplicable(request.getIndentApplicable());
         if (request.getWardCategoryId() != null) {
             department.setWardCategory( masWardCategoryRepository.findById(request.getWardCategoryId()).orElse(null));
         }
@@ -110,6 +113,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
             department.setLastChgBy(request.getLastChgBy());
             department.setLastChgTime(getCurrentTimeFormatted());
             department.setLastChgDate(Instant.now());
+            department.setIndentApplicable(request.getIndentApplicable());
 
 
             if (request.getDepartmentTypeId() != null) {
@@ -185,6 +189,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         response.setLastChgBy(department.getLastChgBy());
         response.setLastChgDate(department.getLastChgDate());
         response.setLastChgTime(department.getLastChgTime());
+        response.setIndentApplicable(department.getIndentApplicable());
         if(department.getWardCategory()!=null){
             response.setWardCategoryId(department.getWardCategory().getId());
             response.setWardCategoryName(department.getWardCategory().getCategoryName());
@@ -223,21 +228,56 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
     @Override
     public ApiResponse<List<MasDepartmentResponse>> getAllWardDepartmentByWardCategory(Long wardCategory) {
 
-        Long departmentTypeId = WARD_ID;
+        try {
+            Long departmentTypeId = WARD_ID;
+            List<MasDepartmentResponse> departments = masDepartmentRepository.findActiveWardDepartments(departmentTypeId,
+                            wardCategory,AppConstants.STATUS_Y.toLowerCase()
+                    );
 
-        List<MasDepartment> departments =
-                masDepartmentRepository.findActiveWardDepartments(
-                        departmentTypeId,
-                        wardCategory
-                );
+            return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {}
+            );
 
-        List<MasDepartmentResponse> responses = departments.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-
-        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Failed to fetch ward departments",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to fetch ward departments: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
     }
 
+    @Override
+    public ApiResponse<List<MasDeptResponse>> getAllIndentApplicableDepartments(String indentApplicable) {
+
+        try {
+            log.info("getAllIndentApplicableDepartments method started ...");
+            List<MasDepartment> departments = masDepartmentRepository.findByIndentApplicableIgnoreCase(indentApplicable);
+            log.info("getAllIndentApplicableDepartments method ended ...");
+            return  ResponseUtils.createSuccessResponse(departments.stream().map(this::mapToResponseForDropDown).toList(), new TypeReference<>() {});
+        }catch (Exception e){
+            log.error("getAllIndentApplicableDepartments method error :: ",e);
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+    }
+
+    @Override
+    public ApiResponse<List<DepartmentDropdownResponse>> getAllDepartments(String departmentTypeCode) {
+        try {
+            log.info("getAllDepartments methods started...");
+            List<DepartmentDropdownResponse> departments = masDepartmentRepository.findDepartmentsForDropdown(departmentTypeCode);
+            log.info("getAllDepartments methods ended...");
+            return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("getAllDepartments method error :: ",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    private MasDeptResponse mapToResponseForDropDown(MasDepartment department){
+        MasDeptResponse response= new MasDeptResponse();
+        response.setDeptId(department.getId());
+        response.setDeptName(department.getDepartmentName());
+        return  response;
+    }
 
 
 }

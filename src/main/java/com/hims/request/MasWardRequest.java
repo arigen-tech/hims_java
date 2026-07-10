@@ -9,5 +9,6 @@ public class MasWardRequest {
     private String wardName;
     private Long wardCategoryId;
     private Long careLevelId;
+    private Long departmentId;
 
 }

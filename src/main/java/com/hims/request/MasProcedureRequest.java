@@ -12,7 +12,9 @@ import lombok.Setter;
 public class MasProcedureRequest {
     private String procedureCode;
     private String procedureName;
-//    private String procedureGroup;
-    private Long procedureTypeId;
+    private String opdAllowed;
+    private String ipdAllowed;
+    private String isNursing ;
+    private String procedureLevel;
     private Long departmentId;
 }

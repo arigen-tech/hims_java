@@ -10,7 +10,7 @@ import java.util.List;
 
 @Getter
 @Setter
-@NoArgsConstructor  // ADD THIS
+@NoArgsConstructor
 @AllArgsConstructor
 public class PatientFollowUpReq {
     private boolean appointmentFlag;
