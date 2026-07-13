@@ -30,7 +30,7 @@ public class IpDiagnosisEntry {
     @JoinColumn(name = "department_id")
     private MasDepartment department;
 
-    @Column(name = "diagnosis_type", nullable = false, length = 10)
+    @Column(name = "diagnosis_type", length = 10)
     private String diagnosisType;
 
     @Column(name = "diagnosis_text", length = 500)
@@ -40,18 +40,18 @@ public class IpDiagnosisEntry {
     @JoinColumn(name = "icd_id")
     private MasIcd icd;
 
-    @Column(name = "status", nullable = false, length = 15)
-    private String status = "ACTIVE";
+    @Column(name = "status", length = 15)
+    private String status;
 
-    @Column(name = "diagnosis_datetime", nullable = false)
+    @Column(name = "diagnosis_datetime")
     private LocalDateTime diagnosisDatetime;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recorded_by", nullable = false)
+    @JoinColumn(name = "recorded_by")
     private User recordedBy;
 
     @Column(name = "last_update_date")
-    private LocalDateTime lastUpdateDate = LocalDateTime.now();
+    private LocalDateTime lastUpdateDate;
 
     @Column(name = "created_by", length = 200)
     private String createdBy;

@@ -46,8 +46,8 @@ public class MasRoom {
     private MasRoomCategory masRoomCategory;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn (name = "department_id")
-    private MasDepartment masDepartment;
+    @JoinColumn (name = "ward_id")
+    private MasWard masWard;
 
 
 }
