@@ -8,4 +8,5 @@ import lombok.Data;
 public class IpdRoomResponse {
     private Long roomId;
     private String roomName;
+    private Long availableBed;
 }
