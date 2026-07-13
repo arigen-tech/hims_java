@@ -325,6 +325,8 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     private  MasAdmissionSourceService masAdmissionSourceService;
     @Autowired
     private MasPatientConditionService masPatientConditionService;
+    @Autowired
+    private TransferReasonService transferReasonService;
 
 
 
@@ -5288,5 +5290,35 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
             @RequestParam String status) {
 
         return ResponseEntity.ok(masPatientConditionService.changeStatusMasPatientCondition(id, status));
+    }
+
+    @GetMapping("/transferReason/getAll/{flag}")
+    public ApiResponse<List<MasTransferReasonResponse>> getAllTransferReasons(@PathVariable int flag) {
+        return transferReasonService.getAll(flag);
+    }
+
+    @PostMapping("/transferReason/create")
+    public ApiResponse<MasTransferReasonResponse> createTransferReason(
+            @RequestBody TransferReasonRequest request) {
+        return transferReasonService.createTransferReason(request);
+    }
+
+    @PutMapping("/transferReason/status/{id}")
+    public ApiResponse<MasTransferReasonResponse> changeTransferReasonStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return transferReasonService.changeActiveStatus(id, status);
+    }
+
+    @PutMapping("/transferReason/updateById/{id}")
+    public ApiResponse<MasTransferReasonResponse> updateTransferReason(
+            @PathVariable Long id,
+            @RequestBody TransferReasonRequest request) {
+        return transferReasonService.updateTransferReason(id, request);
+    }
+
+    @GetMapping("/transferReason/getById/{id}")
+    public ApiResponse<MasTransferReasonResponse> getTransferReasonById(@PathVariable Long id) {
+        return transferReasonService.getById(id);
     }
 }
