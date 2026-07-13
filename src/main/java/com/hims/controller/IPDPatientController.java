@@ -62,8 +62,8 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("getRoomByWard")
-    public ResponseEntity<ApiResponse<List<IpdRoomResponse>>> getRoomByWard(@RequestParam Long wardId ){
+    @GetMapping("getRoomByWard/{wardId}")
+    public ResponseEntity<ApiResponse<List<IpdRoomResponse>>> getRoomByWard(@PathVariable Long wardId ){
 
         ApiResponse<List<IpdRoomResponse>> response = ipdPatientService.getRoomByWard(wardId);
 
@@ -77,6 +77,19 @@ public class IPDPatientController {
         HttpStatus status = (response.getStatus() == 200) ? HttpStatus.OK : HttpStatus.NOT_FOUND;
         return new ResponseEntity<>(response, status);
     }
+
+    @GetMapping("getBedByRoom/{roomId}")
+    public ResponseEntity<ApiResponse<List<BedResponse>>> getBedByRoom(@PathVariable Long roomId ){
+
+        log.info("Request received to fetch beds for roomId: {}", roomId);
+
+        ApiResponse<List<BedResponse>> response = ipdPatientService.getBedByRoom(roomId);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+
 
 
 

@@ -26,16 +26,23 @@ public interface MasRoomRepo extends JpaRepository<MasRoom,Long> {
 
     @Query("""
         SELECT new com.hims.response.IpdRoomResponse(
-            w.roomId,
-            w.roomName
+            r.roomId,
+            r.roomName,
+            COUNT(DISTINCT b.bedId)
         )
-        FROM MasRoom w
-        WHERE w.masWard.wardId = :wardId
-          AND LOWER(w.status) =:status
-        ORDER BY w.roomName ASC
+        FROM MasRoom r
+        LEFT JOIN MasBed b
+            ON b.roomId.roomId = r.roomId
+            AND LOWER(b.status) =:status
+             AND b.bedStatusId.bedStatusId =:bedStatusId
+        WHERE r.masWard.wardId = :wardId
+          AND LOWER(r.status) =:status
+        GROUP BY r.roomId, r.roomName
+        ORDER BY r.roomName ASC
     """)
     List<IpdRoomResponse> getRoomByWard(
             @Param("wardId") Long wardId,
+            @Param("bedStatusId") Long bedStatusId,
             @Param("status") String status
     );
 }

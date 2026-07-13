@@ -172,7 +172,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         } catch (Exception e) {
             log.error("Error while fetching wards for departmentId: {}", departmentId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,
                     500
             );
         }
@@ -181,13 +181,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Override
     public ApiResponse<List<IpdRoomResponse>> getRoomByWard(Long wardId) {
         try {
-            List<IpdRoomResponse> roomList = masRoomRepository.getRoomByWard(wardId,AppConstants.STATUS_Y.toLowerCase());
+            List<IpdRoomResponse> roomList = masRoomRepository.getRoomByWard(wardId,bedStatusId,AppConstants.STATUS_Y.toLowerCase());
 
             return ResponseUtils.createSuccessResponse(roomList, new TypeReference<List<IpdRoomResponse>>() {});
 
         } catch (Exception e) {
             log.error("Error while fetching wards for departmentId: {}", wardId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,
                     500
             );
         }
@@ -205,8 +205,30 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         } catch (Exception e) {
             log.error("Error while fetching wards for wardCategoryId: {}", wardCategoryId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),
-                    500
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<List<BedResponse>> getBedByRoom(Long roomId) {
+        try {
+            log.info("Fetching rooms and available bed count for roomId: {}", roomId);
+
+            List<MasBed> beds = masBedRepository.findAllActiveBedsByRoomId(roomId,bedStatusId,AppConstants.STATUS_Y.toLowerCase());
+
+            List<BedResponse> bedResponses = beds.stream()
+                    .map(bed -> new BedResponse(
+                            bed.getBedId(),
+                            bed.getBedNumber()
+                    ))
+                    .toList();
+
+            return ResponseUtils.createSuccessResponse(bedResponses, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching wards for wardCategoryId: {}", roomId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG, 500
             );
         }
     }

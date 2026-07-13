@@ -44,4 +44,16 @@ public interface MasBedRepository extends JpaRepository<MasBed,Long> {
             @Param("occupied") String occupied
             );
 
+
+    @Query("""
+            SELECT b
+            FROM MasBed b
+            WHERE b.roomId.roomId = :roomId
+              AND LOWER(b.status) =:status
+              AND b.bedStatusId.bedStatusId =:bedStatusId
+            ORDER BY b.bedNumber
+            """)
+    List<MasBed> findAllActiveBedsByRoomId(@Param("roomId") Long roomId,
+                                           @Param("bedStatusId") Long bedStatusId,
+                                           @Param("status") String status);
 }
