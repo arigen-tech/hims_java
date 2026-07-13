@@ -3215,10 +3215,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (pregnancyDetails == null) {
             return;
         }
-        
+
         // Delete existing pregnancy details if any
         opdPatientPregnancyDetailsRepository.deleteByOpdPatientDetail_OpdPatientDetailsId(opd.getOpdPatientDetailsId());
-        
+
         // Create new pregnancy details
         OpdPatientPregnancyDetails pregnancyEntity = OpdPatientPregnancyDetails.builder()
                 .opdPatientDetail(opd)
@@ -3233,9 +3233,298 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 .lastChgDate(Instant.now())
                 .lastChgBy(user.getFullName())
                 .build();
-        
+
         opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
         log.info("Saved pregnancy details for OPD patient ID: {}", opd.getOpdPatientDetailsId());
     }
+
+    @Override
+    public ApiResponse<Page<PaidCancelledAppointmentResponse>>
+    getBillingRefundPatientList(
+            int page,
+            int size,
+            String patientName,
+            String mobileNo,
+            String billingService,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String refundStatus
+    ) {
+
+        try {
+            log.info(
+                    "Fetching billing refund patient list: " +
+                            "page={}, size={}, patientName={}, mobileNo={}, " +
+                            "billingService={}, fromDate={}, toDate={}, refundStatus={}",
+                    page,
+                    size,
+                    patientName,
+                    mobileNo,
+                    billingService,
+                    fromDate,
+                    toDate,
+                    refundStatus
+            );
+
+            validatePagination(page, size);
+            validateDateRange(fromDate, toDate);
+
+            patientName = cleanValue(patientName);
+            mobileNo = cleanValue(mobileNo);
+
+            billingService = normalizeBillingService(billingService);
+            refundStatus = normalizeRefundStatus(refundStatus);
+
+            Pageable pageable = PageRequest.of(page, size);
+
+            Page<PaidCancelledAppointmentProjection> projectionPage =
+                    opdPatientDetailRepository.getBillingRefundPatientList(
+                            patientName,
+                            mobileNo,
+                            billingService,
+                            fromDate,
+                            toDate,
+                            refundStatus,
+                            pageable
+                    );
+
+            Page<PaidCancelledAppointmentResponse> responsePage =
+                    projectionPage.map(this::mapToResponse);
+
+            log.info(
+                    "Billing refund patient list fetched successfully. " +
+                            "Total records={}",
+                    responsePage.getTotalElements()
+            );
+
+            return new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    "Billing refund patient list fetched successfully",
+                    responsePage
+            );
+
+        } catch (IllegalArgumentException exception) {
+
+            log.warn(
+                    "Invalid billing refund search request: {}",
+                    exception.getMessage()
+            );
+
+            return new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST.value(),
+                    exception.getMessage(),
+                    null
+            );
+
+        } catch (Exception exception) {
+
+            log.error(
+                    "Error while fetching billing refund patient list",
+                    exception
+            );
+
+            return new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "Unable to fetch billing refund patient list",
+                    null
+            );
+        }
+    }
+
+    private PaidCancelledAppointmentResponse mapToResponse(PaidCancelledAppointmentProjection projection) {
+
+        PaidCancelledAppointmentResponse response =
+                new PaidCancelledAppointmentResponse();
+
+        response.setVisitId(projection.getVisitId());
+        response.setPatientId(projection.getPatientId());
+
+        response.setPatientName(
+                projection.getPatientName()
+        );
+
+        response.setMobileNumber(
+                projection.getMobileNumber()
+        );
+
+        response.setPatientAge(
+                projection.getPatientAge()
+        );
+
+        response.setGender(
+                projection.getGender()
+        );
+
+        response.setDoctorId(
+                projection.getDoctorId()
+        );
+
+        response.setDoctorName(
+                projection.getDoctorName()
+        );
+
+        response.setDepartmentId(
+                projection.getDepartmentId()
+        );
+
+        response.setDepartmentName(
+                projection.getDepartmentName()
+        );
+
+        response.setAppointmentDate(
+                projection.getAppointmentDate()
+        );
+
+        response.setAppointmentStartTime(
+                projection.getAppointmentStartTime()
+        );
+
+        response.setAppointmentEndTime(
+                projection.getAppointmentEndTime()
+        );
+
+        response.setVisitStatus(
+                projection.getVisitStatus()
+        );
+
+        response.setReason(
+                projection.getReason()
+        );
+
+        response.setPaymentStatus(
+                projection.getPaymentStatus()
+        );
+
+        response.setBilledAmount(
+                projection.getBilledAmount()
+        );
+
+        response.setBillingHeaderId(
+                projection.getBillingHeaderId()
+        );
+
+        response.setBillingService(
+                projection.getBillingService()
+        );
+
+        response.setCancelledDate(
+                projection.getCancelledDate()
+        );
+
+        response.setRefundStatus(
+                projection.getRefundStatus()
+        );
+
+        response.setRefundDate(
+                projection.getRefundDate()
+        );
+
+        return response;
+    }
+
+    private void validatePagination(int page, int size) {
+
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "Page number cannot be negative"
+            );
+        }
+
+        if (size <= 0) {
+            throw new IllegalArgumentException(
+                    "Page size must be greater than zero"
+            );
+        }
+
+        if (size > 100) {
+            throw new IllegalArgumentException(
+                    "Page size cannot be greater than 100"
+            );
+        }
+    }
+
+    private void validateDateRange(
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        if (fromDate == null) {
+            throw new IllegalArgumentException(
+                    "From date is required"
+            );
+        }
+
+        if (toDate == null) {
+            throw new IllegalArgumentException(
+                    "To date is required"
+            );
+        }
+
+        if (fromDate.isAfter(toDate)) {
+            throw new IllegalArgumentException(
+                    "From date cannot be greater than to date"
+            );
+        }
+    }
+
+    private String normalizeBillingService(
+            String billingService
+    ) {
+
+        billingService = cleanValue(billingService);
+
+        if (billingService == null) {
+            return null;
+        }
+
+        billingService =
+                billingService.toUpperCase(Locale.ROOT);
+
+        if (!ALLOWED_BILLING_SERVICES.contains(
+                billingService
+        )) {
+            throw new IllegalArgumentException(
+                    "Billing service must be OPD, " +
+                            "LABORATORY or RADIOLOGY"
+            );
+        }
+
+        return billingService;
+    }
+
+    private String normalizeRefundStatus(
+            String refundStatus
+    ) {
+
+        refundStatus = cleanValue(refundStatus);
+
+        if (refundStatus == null) {
+            return "ALL";
+        }
+
+        refundStatus =
+                refundStatus.toUpperCase(Locale.ROOT);
+
+        if (!ALLOWED_REFUND_STATUS.contains(
+                refundStatus
+        )) {
+            throw new IllegalArgumentException(
+                    "Refund status must be PENDING, " +
+                            "COMPLETED or ALL"
+            );
+        }
+
+        return refundStatus;
+    }
+
+    private String cleanValue(String value) {
+
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+
+        return value.trim();
+    }
+}
 }
 

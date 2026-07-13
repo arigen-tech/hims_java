@@ -1034,5 +1034,43 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("visitStatus") String visitStatus,
             Pageable pageable);
 
+
+    @Query(value = """
+        SELECT
+            v.visit_id AS visitId,
+            v.patient_id AS patientId,
+            v.billing_hd_id AS billingHeaderId,
+            p.uhid_no AS registrationNo,
+            CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            ) AS patientName,
+            p.p_mobile_number AS mobileNo,
+            p.p_age AS age,
+            g.gender_name AS gender,
+            v.billing_type AS billingType,
+            v.visit_date AS date,
+            bh.net_amount AS billingAmount,
+            v.cancelled_date AS cancelledDate,
+            bh.refund_date AS refundDate,
+            bh.refund_status AS refundStatus,
+            d.department_name AS departmentName
+        FROM visit v
+        LEFT JOIN patient p
+            ON p.patient_id = v.patient_id
+        LEFT JOIN mas_gender g
+            ON g.gender_id = p.gender_id
+        LEFT JOIN mas_department d
+            ON d.department_id = v.department_id
+        LEFT JOIN billing_header bh
+            ON bh.billing_hd_id = v.billing_hd_id
+        """,
+            nativeQuery = true)
+    Page<PaidCancelledAppointmentProjection>
+    getBillingRefundPatientList(Pageable pageable);
     }
+
+
+
 

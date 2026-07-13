@@ -3,6 +3,7 @@ package com.hims.entity.repository;
 import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
 import com.hims.projection.IPDPatientWaitingListProjection;
+import com.hims.projection.PaidCancelledAppointmentProjection;
 import com.hims.projection.PatientVitalsProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface OpdPatientDetailRepository extends JpaRepository<OpdPatientDetail, Long> {
@@ -134,4 +136,371 @@ public interface OpdPatientDetailRepository extends JpaRepository<OpdPatientDeta
             @Param("mobileNo") String mobileNo,
             Pageable pageable
     );
+    public interface VisitRepository extends JpaRepository<Visit, Long> {
+
+        @Query(
+                value = """
+            SELECT
+                v.visit_id AS visitId,
+                p.patient_id AS patientId,
+
+                p.uhid_no AS registrationNo,
+
+                TRIM(CONCAT(
+                    COALESCE(p.p_fn, ''),
+                    ' ',
+                    COALESCE(p.p_mn, ''),
+                    ' ',
+                    COALESCE(p.p_ln, '')
+                )) AS patientName,
+
+                p.p_mobile_number AS mobileNo,
+                p.p_age AS age,
+                g.gender_name AS gender,
+
+                v.department_id AS departmentId,
+                d.department_name AS departmentName,
+
+                v.doctor_id AS doctorId,
+                v.doctor_name AS doctorName,
+
+                v.visit_date AS appointmentDate,
+                v.start_time AS appointmentTime,
+                v.cancelled_date AS cancelledDate,
+
+                bh.billing_hd_id AS billingHeaderId,
+                bh.bill_no AS billNo,
+                bh.bill_date AS billDate,
+
+                CASE
+                    WHEN bh.service_category_code = 'SC001'
+                        THEN 'OPD'
+                    WHEN bh.service_category_code = 'SC002'
+                        THEN 'LABORATORY'
+                    WHEN bh.service_category_code = 'SC004'
+                        THEN 'RADIOLOGY'
+                    ELSE bh.service_category_code
+                END AS billingService,
+
+                bh.net_amount AS billingAmount,
+
+                COALESCE(bh.patient_refund_amount, 0)
+                    AS refundAmount,
+
+                CASE
+                    WHEN LOWER(COALESCE(bh.refund_status, 'n'))
+                         IN ('y', 'completed', 'refunded')
+                    THEN 'COMPLETED'
+                    ELSE 'PENDING'
+                END AS refundStatus,
+
+                bh.refund_date AS refundDate
+
+            FROM visit v
+
+            INNER JOIN patient p
+                ON p.patient_id = v.patient_id
+
+            LEFT JOIN mas_gender g
+                ON g.gender_id = p.gender_id
+
+            LEFT JOIN mas_department d
+                ON d.department_id = v.department_id
+
+            INNER JOIN billing_header bh
+                ON bh.billing_hd_id = v.billing_hd_id
+
+            WHERE LOWER(v.visit_status) = 'cancelled'
+
+              AND LOWER(COALESCE(v.billing_status, ''))
+                  IN ('y', 'paid', 'completed')
+
+              AND COALESCE(bh.net_amount, 0) > 0
+
+              AND (
+                    :patientName IS NULL
+                    OR :patientName = ''
+                    OR LOWER(
+                        CONCAT(
+                            COALESCE(p.p_fn, ''),
+                            ' ',
+                            COALESCE(p.p_mn, ''),
+                            ' ',
+                            COALESCE(p.p_ln, '')
+                        )
+                    ) LIKE LOWER(
+                        CONCAT('%', :patientName, '%')
+                    )
+              )
+
+              AND (
+                    :mobileNo IS NULL
+                    OR :mobileNo = ''
+                    OR p.p_mobile_number
+                        LIKE CONCAT('%', :mobileNo, '%')
+              )
+
+              AND (
+                    :billingService IS NULL
+                    OR :billingService = ''
+                    OR (
+                        :billingService = 'OPD'
+                        AND bh.service_category_code = 'SC001'
+                    )
+                    OR (
+                        :billingService = 'LABORATORY'
+                        AND bh.service_category_code = 'SC002'
+                    )
+                    OR (
+                        :billingService = 'RADIOLOGY'
+                        AND bh.service_category_code = 'SC004'
+                    )
+              )
+
+              AND (
+                    (
+                        :refundStatus = 'PENDING'
+
+                        AND LOWER(
+                            COALESCE(bh.refund_status, 'n')
+                        ) NOT IN (
+                            'y',
+                            'completed',
+                            'refunded'
+                        )
+
+                        AND CAST(v.cancelled_date AS DATE)
+                            BETWEEN :fromDate AND :toDate
+                    )
+
+                    OR
+
+                    (
+                        :refundStatus = 'COMPLETED'
+
+                        AND LOWER(
+                            COALESCE(bh.refund_status, 'n')
+                        ) IN (
+                            'y',
+                            'completed',
+                            'refunded'
+                        )
+
+                        AND CAST(bh.refund_date AS DATE)
+                            BETWEEN :fromDate AND :toDate
+                    )
+
+                    OR
+
+                    (
+                        :refundStatus = 'ALL'
+
+                        AND (
+                            (
+                                LOWER(
+                                    COALESCE(
+                                        bh.refund_status,
+                                        'n'
+                                    )
+                                ) NOT IN (
+                                    'y',
+                                    'completed',
+                                    'refunded'
+                                )
+
+                                AND CAST(
+                                    v.cancelled_date AS DATE
+                                ) BETWEEN :fromDate AND :toDate
+                            )
+
+                            OR
+
+                            (
+                                LOWER(
+                                    COALESCE(
+                                        bh.refund_status,
+                                        'n'
+                                    )
+                                ) IN (
+                                    'y',
+                                    'completed',
+                                    'refunded'
+                                )
+
+                                AND CAST(
+                                    bh.refund_date AS DATE
+                                ) BETWEEN :fromDate AND :toDate
+                            )
+                        )
+                    )
+              )
+
+            ORDER BY
+                COALESCE(
+                    bh.refund_date,
+                    v.cancelled_date
+                ) DESC
+            """,
+
+                countQuery = """
+            SELECT COUNT(v.visit_id)
+
+            FROM visit v
+
+            INNER JOIN patient p
+                ON p.patient_id = v.patient_id
+
+            INNER JOIN billing_header bh
+                ON bh.billing_hd_id = v.billing_hd_id
+
+            WHERE LOWER(v.visit_status) = 'cancelled'
+
+              AND LOWER(COALESCE(v.billing_status, ''))
+                  IN ('y', 'paid', 'completed')
+
+              AND COALESCE(bh.net_amount, 0) > 0
+
+              AND (
+                    :patientName IS NULL
+                    OR :patientName = ''
+                    OR LOWER(
+                        CONCAT(
+                            COALESCE(p.p_fn, ''),
+                            ' ',
+                            COALESCE(p.p_mn, ''),
+                            ' ',
+                            COALESCE(p.p_ln, '')
+                        )
+                    ) LIKE LOWER(
+                        CONCAT('%', :patientName, '%')
+                    )
+              )
+
+              AND (
+                    :mobileNo IS NULL
+                    OR :mobileNo = ''
+                    OR p.p_mobile_number
+                        LIKE CONCAT('%', :mobileNo, '%')
+              )
+
+              AND (
+                    :billingService IS NULL
+                    OR :billingService = ''
+                    OR (
+                        :billingService = 'OPD'
+                        AND bh.service_category_code = 'SC001'
+                    )
+                    OR (
+                        :billingService = 'LABORATORY'
+                        AND bh.service_category_code = 'SC002'
+                    )
+                    OR (
+                        :billingService = 'RADIOLOGY'
+                        AND bh.service_category_code = 'SC004'
+                    )
+              )
+
+              AND (
+                    (
+                        :refundStatus = 'PENDING'
+
+                        AND LOWER(
+                            COALESCE(bh.refund_status, 'n')
+                        ) NOT IN (
+                            'y',
+                            'completed',
+                            'refunded'
+                        )
+
+                        AND CAST(v.cancelled_date AS DATE)
+                            BETWEEN :fromDate AND :toDate
+                    )
+
+                    OR
+
+                    (
+                        :refundStatus = 'COMPLETED'
+
+                        AND LOWER(
+                            COALESCE(bh.refund_status, 'n')
+                        ) IN (
+                            'y',
+                            'completed',
+                            'refunded'
+                        )
+
+                        AND CAST(bh.refund_date AS DATE)
+                            BETWEEN :fromDate AND :toDate
+                    )
+
+                    OR
+
+                    (
+                        :refundStatus = 'ALL'
+
+                        AND (
+                            (
+                                LOWER(
+                                    COALESCE(
+                                        bh.refund_status,
+                                        'n'
+                                    )
+                                ) NOT IN (
+                                    'y',
+                                    'completed',
+                                    'refunded'
+                                )
+
+                                AND CAST(
+                                    v.cancelled_date AS DATE
+                                ) BETWEEN :fromDate AND :toDate
+                            )
+
+                            OR
+
+                            (
+                                LOWER(
+                                    COALESCE(
+                                        bh.refund_status,
+                                        'n'
+                                    )
+                                ) IN (
+                                    'y',
+                                    'completed',
+                                    'refunded'
+                                )
+
+                                AND CAST(
+                                    bh.refund_date AS DATE
+                                ) BETWEEN :fromDate AND :toDate
+                            )
+                        )
+                    )
+              )
+            """,
+                nativeQuery = true
+        )
+        Page<PaidCancelledAppointmentProjection> getBillingRefundPatientList(
+
+                @Param("patientName")
+                String patientName,
+
+                @Param("mobileNo")
+                String mobileNo,
+
+                @Param("billingService")
+                String billingService,
+
+                @Param("fromDate")
+                LocalDate fromDate,
+
+                @Param("toDate")
+                LocalDate toDate,
+
+                @Param("refundStatus")
+                String refundStatus,
+
+                Pageable pageable
+        );
+    }
 }
