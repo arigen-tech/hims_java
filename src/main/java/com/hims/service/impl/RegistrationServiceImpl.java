@@ -125,6 +125,18 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Autowired
     VisitRepository visitRepository;
 
+    @Autowired
+    private LabHdRepository labHdRepository;
+
+    @Autowired
+    private LabDtRepository labDtRepository;
+
+    @Autowired
+    private RadOrderHdRepository radOrderHdRepository;
+
+    @Autowired
+    private RadOrderDtRepository radOrderDtRepository;
+
 
     @Override
     @Transactional
@@ -437,7 +449,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             throw new RuntimeException("User authentication failed or user has no first name");
         }
         // Update visit
-        visit.setVisitStatus("c");
+        visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
         visit.setCancelledBy(currentUser.getFirstName());
         visit.setCancelledDateTime(Instant.now());
         if (request.getCancelReasonId() != null) {
@@ -445,8 +457,11 @@ public class RegistrationServiceImpl implements RegistrationService {
                     .orElseThrow(() -> new RuntimeException("Cancel reason not found with ID: " + request.getCancelReasonId()));
             visit.setReason(reason);
         }
-        bill.setPaymentStatus("y");
-        billingHeaderRepository.save(bill);
+
+        syncCancelledOrderStatus(visit);
+
+      //  bill.setPaymentStatus("y");
+      //  billingHeaderRepository.save(bill);
         Visit savedVisit = visitRepository.save(visit);
         return new ApiResponse<>(HttpStatus.OK, "Appointment cancelled successfully");
     }
@@ -513,14 +528,14 @@ public class RegistrationServiceImpl implements RegistrationService {
         history.setRescheduleReason("");
         historyRepository.save(history);
 
+        LocalDate updatedVisitDate = toLocalDate(request.getVisitDate());
+
         v.setVisitDate(request.getVisitDate());
         if (isOpdAppointment) {
             v.setStartTime(resolvedStartTime);
             v.setEndTime(resolvedEndTime);
             v.setTokenNo(resolvedTokenNumber);
         } else if (isLabOrRadiologyAppointment) {
-            // Lab/Radiology appointments are rescheduled by date only.
-            // Keep the existing token and time values intact.
             v.setTokenNo(resolvedTokenNumber);
             if (request.getAppointmentStartTime() != null) {
                 v.setStartTime(request.getAppointmentStartTime());
@@ -528,11 +543,76 @@ public class RegistrationServiceImpl implements RegistrationService {
             if (request.getAppointmentEndTime() != null) {
                 v.setEndTime(request.getAppointmentEndTime());
             }
+            syncLabOrRadiologyReschedule(v, updatedVisitDate, departmentTypeCode);
         }
         v.setLastChgDate(Instant.now());
 
         visitRepository.save(v);
         return new ApiResponse<>(HttpStatus.OK, "Success");
+    }
+
+    private void syncLabOrRadiologyReschedule(Visit visit, LocalDate updatedVisitDate, String departmentTypeCode) {
+        if (visit == null || updatedVisitDate == null) {
+            return;
+        }
+
+        if (AppConstants.LABTYPE.equalsIgnoreCase(departmentTypeCode)) {
+            List<DgOrderHd> labHeaders = labHdRepository.findAllByVisitId(visit);
+            for (DgOrderHd header : labHeaders) {
+                header.setOrderDate(updatedVisitDate);
+                header.setAppointmentDate(updatedVisitDate);
+                List<DgOrderDt> details = labDtRepository.findByOrderhdId(header);
+                for (DgOrderDt detail : details) {
+                    detail.setAppointmentDate(updatedVisitDate);
+                }
+                labDtRepository.saveAll(details);
+            }
+            labHdRepository.saveAll(labHeaders);
+            return;
+        }
+
+        if (AppConstants.RADIOTYPE.equalsIgnoreCase(departmentTypeCode)) {
+            List<RadOrderHd> radHeaders = radOrderHdRepository.findAllByVisit_Id(visit.getId());
+            for (RadOrderHd header : radHeaders) {
+                header.setOrderDate(updatedVisitDate);
+                header.setAppointmentDate(updatedVisitDate);
+                List<RadOrderDt> details = radOrderDtRepository.findByRadOrderhd(header);
+                for (RadOrderDt detail : details) {
+                    detail.setAppointmentDate(updatedVisitDate);
+                }
+                radOrderDtRepository.saveAll(details);
+            }
+            radOrderHdRepository.saveAll(radHeaders);
+        }
+    }
+
+    private void syncCancelledOrderStatus(Visit visit) {
+        String cancelledStatus = AppConstants.VISIT_STATUS_CANCELLED.toLowerCase();
+
+        List<DgOrderHd> labHeaders = labHdRepository.findAllByVisitId(visit);
+        for (DgOrderHd header : labHeaders) {
+            header.setOrderStatus(cancelledStatus);
+            List<DgOrderDt> details = labDtRepository.findByOrderhdId(header);
+            for (DgOrderDt detail : details) {
+                detail.setOrderStatus(cancelledStatus);
+            }
+            labDtRepository.saveAll(details);
+        }
+        labHdRepository.saveAll(labHeaders);
+
+        List<RadOrderHd> radHeaders = radOrderHdRepository.findAllByVisit_Id(visit.getId());
+        for (RadOrderHd header : radHeaders) {
+            List<RadOrderDt> details = radOrderDtRepository.findByRadOrderhd(header);
+            for (RadOrderDt detail : details) {
+                detail.setOrderStatus(cancelledStatus);
+            }
+            radOrderDtRepository.saveAll(details);
+        }
+        radOrderHdRepository.saveAll(radHeaders);
+    }
+
+    private LocalDate toLocalDate(Instant instant) {
+        return instant == null ? null : instant.atZone(ZoneId.systemDefault()).toLocalDate();
     }
 
 
