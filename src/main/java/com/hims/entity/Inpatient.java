@@ -142,4 +142,9 @@ public class Inpatient {
 
     @Column(name = "admission_advised_from")
     private String admissionAdvisedFrom;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ipd_internal_status_id")
+    private MasIpdInternalStatus masIpdInternalStatus;
+
 }
