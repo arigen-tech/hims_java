@@ -10,7 +10,7 @@ public interface PaidCancelledAppointmentProjection {
     String getRegistrationNo();
     String getPatientName();
     String getMobileNo();
-    Integer getAge();
+    String getAge();
     String getGender();
     String getBillingType();
     LocalDate getDate();

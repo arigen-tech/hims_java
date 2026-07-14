@@ -83,7 +83,6 @@ public interface OpdPatientDetailService {
             String mobileNo,
             String billingService,
             LocalDate fromDate,
-            LocalDate toDate,
-            String refundStatus
+            LocalDate toDate
     );
 }

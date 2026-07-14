@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
+import com.hims.entity.Visit;
 import com.hims.projection.IPDPatientWaitingListProjection;
 import com.hims.projection.PaidCancelledAppointmentProjection;
 import com.hims.projection.PatientVitalsProjection;
@@ -34,7 +35,7 @@ public interface OpdPatientDetailRepository extends JpaRepository<OpdPatientDeta
     ORDER BY opd.opd_patient_details_id DESC
     LIMIT 1
 """, nativeQuery = true)
-    PatientVitalsProjection findLatestVitals(Long patientId);
+    PatientVitalsProjection findLatestVitals(@Param("patientId")Long patientId);
 
     OpdPatientDetail findByVisit_Id(Long visitId);
 

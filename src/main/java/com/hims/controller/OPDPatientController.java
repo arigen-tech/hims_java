@@ -289,12 +289,19 @@ public class OPDPatientController {
                                                                                                            @RequestParam(required = false) String patientName,
                                                                                                            @RequestParam(required = false) String mobileNo,
                                                                                                            @RequestParam(required = false) String billingService,
-                                                                                                           @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate fromDate,
-                                                                                                           @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate toDate,
-                                                                                                           @RequestParam(defaultValue = "ALL") String refundStatus) {
+                                                                                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+                                                                                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
         log.info("Billing refund patient list request received");
-        ApiResponse<Page<PaidCancelledAppointmentResponse>>
-                response = opdPatientDetailService.getBillingRefundPatientList(page,size,patientName,mobileNo, billingService,fromDate, toDate,refundStatus);
+        ApiResponse<Page<PaidCancelledAppointmentResponse>> response =
+                opdPatientDetailService.getBillingRefundPatientList(
+                        page,
+                        size,
+                        patientName,
+                        mobileNo,
+                        billingService,
+                        fromDate,
+                        toDate
+                );
         return ResponseEntity.ok(response);
     }
 

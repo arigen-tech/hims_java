@@ -12,7 +12,7 @@ public class PaidCancelledAppointmentResponse {
     private String registrationNo;
     private String patientName;
     private String mobileNo;
-    private Integer age;
+    private String age;
     private String gender;
     private String billingType;
     private LocalDate date;
