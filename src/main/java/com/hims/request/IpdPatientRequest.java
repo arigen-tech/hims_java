@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -32,7 +33,6 @@ public class IpdPatientRequest {
     @NotNull(message = "Patient id is required")
     private Long patientId;
 
-    @NotNull(message = "Visit id is required")
     private Long visitId;
 
     @NotNull(message = "Admission date is required")
@@ -57,6 +57,14 @@ public class IpdPatientRequest {
 
     @Size(max = 500, message = "Condition notes should not exceed 500 characters")
     private String conditionNotes;
+
+    private String admissionConsentTaken;
+    private String consentTakenBy;
+    private String mlcCase;
+    private String policeIntimationRequired;
+    private String admissionAdvisedFrom;
+
+
 
     // ==========================
     // NOK Details
@@ -118,4 +126,20 @@ public class IpdPatientRequest {
         @NotNull(message = "Document file is required")
         private MultipartFile ipDocumentUploads;
     }
+
+
+// Financial Details
+
+    private Long paymentType;
+    private String advanceCollected;
+    private BigDecimal advanceAmount;
+    private Long paymentMode;
+    private String patientName;
+    private String uhid;
+
+    // Doctor & Diagnosis
+    private Long departmentId;
+    private Long treatingDoctor;
+    private String workingDiagnosis;
+
 }

@@ -64,8 +64,9 @@ public class Inpatient {
     @JoinColumn(name = "ward_category_id")
     private MasWardCategory wardCategory;
 
-    @Column(name = "admitting_ward_id")
-    private Long admittingWardId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admitting_ward_id")
+    private MasWard admittingWardId;
 
     @Column(name = "admission_priority", length = 20)
     @Size(max = 20)
@@ -126,4 +127,19 @@ public class Inpatient {
     @Column(name = "last_updated_by", length = 200)
     @Size(max = 200)
     private String lastUpdatedBy;
+
+    @Column(name = "admission_consent_taken")
+    private String admissionConsentTaken;
+
+    @Column(name = "consent_taken_by")
+    private String consentTakenBy;
+
+    @Column(name = "mlc_case")
+    private String mlcCase;
+
+    @Column(name = "police_intimation_required")
+    private String policeIntimationRequired;
+
+    @Column(name = "admission_advised_from")
+    private String admissionAdvisedFrom;
 }
