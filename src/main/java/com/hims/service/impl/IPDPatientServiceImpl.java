@@ -5,6 +5,7 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.projection.IPDPatientWaitingListProjection;
+import com.hims.projection.WardWiseDetailsProjection;
 import com.hims.request.IpdPatientRequest;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
@@ -84,12 +85,17 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasHospitalRepository masHospitalRepository;
     @Autowired
     MasDepartmentRepository masDepartmentRepository;
+    @Autowired
+    MasBedStatusRepo masBedStatusRepo;
+
 
     @Value("${ipd.admission.status.active}")
      Long activeAdmissionStatusId;
 
     @Value("${bed.status.available.id}")
     Long bedStatusId;
+    @Value("${bed.status.Occupied.id}")
+    Long bedStatusOccupiedId;
 
     @Override
     public ApiResponse<Page<IPDPatientWaitingListResponse>> ipdPatientWaitingList(
@@ -231,6 +237,54 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG, 500
             );
         }
+    }
+
+    @Override
+    public ApiResponse<List<WardWiseDetailsResponse>> getWardWiseDetails(Long departmentId) {
+        try {
+
+            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(departmentId);
+
+        List<WardWiseDetailsResponse> responseList = projections.stream()
+                        .map(item -> new WardWiseDetailsResponse(
+                                item.getPatientId(),
+                                item.getIpdPatientId(),
+                                item.getPatientName(),
+                                item.getWardName(),
+                                item.getRoomName(),
+                                item.getBedNumber(),
+                                item.getAdmitDate(),
+                                item.getDays(),
+                                item.getBedCount(),
+                                item.getAdmissionNo(),
+                                item.getAdmissionStatus(),
+                                item.getIpdInternalStatus()
+                        ))
+                        .toList();
+
+        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching getWardWiseDetails", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG, 500
+            );
+        }
+
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<TotalBedCountResponse> getTotalBedCount(Long departmentId) {
+
+        log.info("Fetching total bed count for departmentId: {}", departmentId);
+
+        TotalBedCountResponse response = masBedRepository.getTotalBedCountByDepartmentId(departmentId,bedStatusId,bedStatusOccupiedId);
+
+        if (response == null) {
+            response = new TotalBedCountResponse(0L, 0L, 0L, null);
+        }
+
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
     }
 
 
@@ -395,6 +449,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         IpBedAllocation bedAllocation = new IpBedAllocation();
 
         bedAllocation.setInpatient(inpatient);
+
         bedAllocation.setPatient(patient);
 
         if (request.getWardId() != null) {
@@ -407,6 +462,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         if (request.getBedId() != null) {
             bedAllocation.setBed(masBedRepository.getReferenceById(request.getBedId()));
+            MasBed bed = masBedRepository.findById(request.getBedId()).orElseThrow(() -> new RuntimeException("Bed not found with id: " + request.getBedId()));
+            bed.setBedStatusId(masBedStatusRepo.findById(bedStatusOccupiedId).orElseThrow());
         }
 
         bedAllocation.setAllocationStartDate(LocalDateTime.now());
