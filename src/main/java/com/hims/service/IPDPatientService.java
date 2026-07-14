@@ -24,4 +24,8 @@ public interface IPDPatientService {
     ApiResponse<List<WardResponse>> getWardByCategory(Long wardCategoryId);
 
     ApiResponse<List<BedResponse>> getBedByRoom(Long roomId);
+
+    ApiResponse<List<WardWiseDetailsResponse>> getWardWiseDetails(Long departmentId);
+
+    ApiResponse<TotalBedCountResponse> getTotalBedCount(Long departmentId);
 }

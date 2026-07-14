@@ -88,6 +88,28 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("getWardWiseDetails/{departmentId}")
+    public ResponseEntity<ApiResponse<List<WardWiseDetailsResponse>>> getWardWiseDetails(@PathVariable Long departmentId ){
+
+        log.info("Request received to getWardWiseDetails");
+
+        ApiResponse<List<WardWiseDetailsResponse>> response = ipdPatientService.getWardWiseDetails(departmentId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("getTotalBedCount/{departmentId}")
+    public ResponseEntity<ApiResponse<TotalBedCountResponse>> getTotalBedCount(@PathVariable Long departmentId ){
+
+        log.info("Request received to fetch beds for departmentId: {}", departmentId);
+
+        ApiResponse<TotalBedCountResponse> response = ipdPatientService.getTotalBedCount(departmentId);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+
 
 
 

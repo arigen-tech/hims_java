@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.MasBed;
 import com.hims.projection.BedStatusCountProjection;
+import com.hims.response.TotalBedCountResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -56,4 +57,40 @@ public interface MasBedRepository extends JpaRepository<MasBed,Long> {
     List<MasBed> findAllActiveBedsByRoomId(@Param("roomId") Long roomId,
                                            @Param("bedStatusId") Long bedStatusId,
                                            @Param("status") String status);
+
+
+
+    @Query("""
+    SELECT new com.hims.response.TotalBedCountResponse(
+        COUNT(b.bedId),
+
+        SUM(
+            CASE
+                WHEN b.bedStatusId.bedStatusId = :bedStatusId
+                THEN 1L
+                ELSE 0L
+            END
+        ),
+
+        SUM(
+            CASE
+                WHEN b.bedStatusId.bedStatusId = :bedStatusOccupiedId
+                THEN 1L
+                ELSE 0L
+            END
+        ),
+
+        w.wardName
+    )
+    FROM MasBed b
+    JOIN b.roomId r
+    JOIN r.masWard w
+    WHERE w.department.id = :departmentId
+    GROUP BY w.wardId, w.wardName
+""")
+    TotalBedCountResponse getTotalBedCountByDepartmentId(
+            @Param("departmentId") Long departmentId,
+            @Param("bedStatusId") Long bedStatusId,
+            @Param("bedStatusOccupiedId") Long bedStatusOccupiedId
+    );
 }
