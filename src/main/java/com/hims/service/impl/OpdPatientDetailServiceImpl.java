@@ -6,6 +6,7 @@ import com.hims.entity.*;
 import com.hims.entity.projection.PrescriptionDetailProjection;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.mapper.PaidCancelledAppointmentMapper;
 import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
@@ -110,8 +111,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasQuestionHeadingRepository masQuestionHeadingRepository;
     private final OpdQuestionMasterRepository opdQuestionMasterRepository;
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
-
-
+    private final PaidCancelledAppointmentMapper paidCancelledAppointmentMapper;
 
 
     @Value("${hos.define.storeDay}")
@@ -520,29 +520,29 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             opthRequest.setPatientId(patient.getId());
             opthRequest.setVisitId(visit.getId());
             ApiResponse<String> response = opdOpthDetailsService.opdVisionExaminationDetailsSave(opthRequest);
-            if (response == null|| response.getStatus() != HttpStatus.OK.value()) {
-                throw new SDDException("ophthalmology",500,response != null? response.getMessage(): "Failed to save ophthalmology details");
+            if (response == null || response.getStatus() != HttpStatus.OK.value()) {
+                throw new SDDException("ophthalmology", 500, response != null ? response.getMessage() : "Failed to save ophthalmology details");
             }
         }
-        if(request.getOpdObgDetailsRequest() != null){
+        if (request.getOpdObgDetailsRequest() != null) {
             request.getOpdObgDetailsRequest().setPatientId(patient.getId());
             request.getOpdObgDetailsRequest().setVisitId(visit.getId());
-            ApiResponse<String> response = opdObgDetailsService.createOrUpdateObgDetails(request.getVisitId(),request.getOpdObgDetailsRequest());
-            if (response == null|| response.getStatus() != HttpStatus.OK.value()) {
-                throw new SDDException("obg",500,response != null? response.getMessage(): "Failed to save OBG details");
+            ApiResponse<String> response = opdObgDetailsService.createOrUpdateObgDetails(request.getVisitId(), request.getOpdObgDetailsRequest());
+            if (response == null || response.getStatus() != HttpStatus.OK.value()) {
+                throw new SDDException("obg", 500, response != null ? response.getMessage() : "Failed to save OBG details");
             }
         }
-        if(request.getEntExaminationDetails()!= null){
-            ApiResponse<String> response = opdEntDetailsService.createOrUpdateEntDetails(request.getVisitId(),request.getEntExaminationDetails());
-            if (response == null|| response.getStatus() != HttpStatus.OK.value()) {
-                throw new SDDException("ent",500,response != null? response.getMessage(): "Failed to save ENT details");
+        if (request.getEntExaminationDetails() != null) {
+            ApiResponse<String> response = opdEntDetailsService.createOrUpdateEntDetails(request.getVisitId(), request.getEntExaminationDetails());
+            if (response == null || response.getStatus() != HttpStatus.OK.value()) {
+                throw new SDDException("ent", 500, response != null ? response.getMessage() : "Failed to save ENT details");
             }
         }
-        if(request.getPregnancyDetails() != null) {
+        if (request.getPregnancyDetails() != null) {
             handlePregnancyDetails(saved, request.getPregnancyDetails(), user);
         }
         // ================= Psychiatric Assessment Save =================
-        if(request.getDetails() != null && !request.getDetails().isEmpty()) {
+        if (request.getDetails() != null && !request.getDetails().isEmpty()) {
             log.info("Saving Psychiatric Assessment Header and Details for OPD ID: {}", saved.getOpdPatientDetailsId());
             savePsychiatricHeaderAndDetails(request, visit, saved);
         }
@@ -2851,7 +2851,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("visitDate").descending());
-            Page<PreviousOpdVisitProjection> projectionPage = visitRepository.getPreviousOpdVisit(patientId, hospitalId,AppConstants.STATUS_Y.toLowerCase(), pageable);
+            Page<PreviousOpdVisitProjection> projectionPage = visitRepository.getPreviousOpdVisit(patientId, hospitalId, AppConstants.STATUS_Y.toLowerCase(), pageable);
 
             //Projection → DTO
             Page<PreviousOpdVisitResponse> responsePage = projectionPage.map(p -> {
@@ -2880,7 +2880,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("visitDate").descending());
-            Page<PreviousOpdVitalsDetailsProjection> projectionPage = visitRepository.getPriviousOpdVitalsDetails(patientId, hospitalId,AppConstants.STATUS_Y.toLowerCase(), pageable);
+            Page<PreviousOpdVitalsDetailsProjection> projectionPage = visitRepository.getPriviousOpdVitalsDetails(patientId, hospitalId, AppConstants.STATUS_Y.toLowerCase(), pageable);
 
             //Projection → DTO
             Page<PreviousOpdVitalsDetailsResponse> responsePage = projectionPage.map(p -> {
@@ -2943,7 +2943,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     }
                 }
             }
-
 
 
             Page<PreviousOpdPsychiatryHistoryResponse> responsePage = headerPage.map(header -> {
@@ -3162,6 +3161,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         response.setDoctorName(projection.getDoctorName());
         return response;
     }
+
     private OpdPsychiatryAssessmentHeader savePsychiatricHeaderAndDetails(
             OpdPatientDetailCreateRequest request,
             Visit visit,
@@ -3175,9 +3175,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         header.setOpdPatientDetails(opdPatientDetail);
         header.setAssessmentDate(LocalDateTime.now());
         header.setTopic(masQuestionHeadingRepository.findById(request.getTopicId())
-                        .orElseThrow(() -> new EntityNotFoundException(
-                                "Topic not found with id: " + request.getTopicId()
-                        ))
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Topic not found with id: " + request.getTopicId()
+                ))
         );
 
         OpdPsychiatryAssessmentHeader savedHeader = opdPsychiatryAssessmentHeaderRepository.save(header);
@@ -3190,8 +3190,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             detail.setAssessmentHeaderId(savedHeader);
 
             detail.setQuestionId(detailReq.getQuestionId() != null
-                            ? opdQuestionMasterRepository.findById(detailReq.getQuestionId()).orElse(null)
-                            : null);
+                    ? opdQuestionMasterRepository.findById(detailReq.getQuestionId()).orElse(null)
+                    : null);
 
             MasQuestionOptionValue optionValue = null;
             if (detailReq.getAnswerOptionId() != null) {
@@ -3215,10 +3215,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (pregnancyDetails == null) {
             return;
         }
-        
+
         // Delete existing pregnancy details if any
         opdPatientPregnancyDetailsRepository.deleteByOpdPatientDetail_OpdPatientDetailsId(opd.getOpdPatientDetailsId());
-        
+
         // Create new pregnancy details
         OpdPatientPregnancyDetails pregnancyEntity = OpdPatientPregnancyDetails.builder()
                 .opdPatientDetail(opd)
@@ -3233,9 +3233,149 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 .lastChgDate(Instant.now())
                 .lastChgBy(user.getFullName())
                 .build();
-        
+
         opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
         log.info("Saved pregnancy details for OPD patient ID: {}", opd.getOpdPatientDetailsId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<PaidCancelledAppointmentResponse>>
+    getBillingRefundPatientList(
+            int page,
+            int size,
+            String patientName,
+            String mobileNo,
+            String billingService,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        try {
+            log.info(
+                    "Fetching billing refund patient list: " +
+                            "page={}, size={}, patientName={}, mobileNo={}, " +
+                            "billingService={}, fromDate={}, toDate={}",
+                    page,
+                    size,
+                    patientName,
+                    mobileNo,
+                    billingService,
+                    fromDate,
+                    toDate
+            );
+
+            validatePagination(page, size);
+            validateDateRange(fromDate, toDate);
+
+            patientName = cleanValue(patientName);
+            mobileNo = cleanValue(mobileNo);
+
+            billingService = cleanValue(billingService);
+
+            Pageable pageable = PageRequest.of(page, size);
+
+            Page<PaidCancelledAppointmentProjection> projectionPage =
+                    visitRepository.getBillingRefundPatientList(
+                            patientName,
+                            mobileNo,
+                            billingService,
+                            fromDate,
+                            toDate,
+                            pageable
+                    );
+
+            Page<PaidCancelledAppointmentResponse> responsePage =
+                    projectionPage.map(paidCancelledAppointmentMapper::mapToResponse);
+
+            log.info(
+                    "Billing refund patient list fetched successfully. " +
+                            "Total records={}",
+                    responsePage.getTotalElements()
+            );
+
+            return ResponseUtils.createSuccessResponse(
+                    responsePage,
+                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                    },
+                    "Billing refund patient list fetched successfully"
+            );
+
+        } catch (IllegalArgumentException exception) {
+            log.warn("Invalid billing refund search request: {}", exception.getMessage());
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                    },
+                    exception.getMessage(),
+                    HttpStatus.BAD_REQUEST.value()
+            );
+
+        } catch (Exception exception) {
+            log.error("Error while fetching billing refund patient list",
+exception);
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                    },
+                    "Unable to fetch billing refund patient list",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    private void validatePagination(int page, int size) {
+
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "Page number cannot be negative"
+            );
+        }
+
+        if (size <= 0) {
+            throw new IllegalArgumentException(
+                    "Page size must be greater than zero"
+            );
+        }
+
+        if (size > 100) {
+            throw new IllegalArgumentException(
+                    "Page size cannot be greater than 100"
+            );
+        }
+    }
+
+    private void validateDateRange(
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        if (fromDate == null && toDate == null) {
+            return;
+        }
+
+        if (fromDate == null || toDate == null) {
+            throw new IllegalArgumentException(
+                    "Both from date and to date are required when using date filter"
+            );
+        }
+
+        if (fromDate.isAfter(toDate)) {
+            throw new IllegalArgumentException(
+                    "From date cannot be greater than to date"
+            );
+        }
+    }
+
+    private String cleanValue(String value) {
+
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+
+        return value.trim();
     }
 }
 
