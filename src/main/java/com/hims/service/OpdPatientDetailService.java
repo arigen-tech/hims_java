@@ -3,6 +3,7 @@ package com.hims.service;
 import com.hims.entity.Visit;
 import com.hims.request.ActiveVisitSearchRequest;
 import com.hims.request.OpdPatientDetailCreateRequest;
+import com.hims.request.PaidCancelledAppointmentResponse;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -74,4 +75,14 @@ public interface OpdPatientDetailService {
     ApiResponse<Page<OpdRecallVisitResponse>> getRecallOpdVisit(String name, String mobile, LocalDate visitDate, int page, int size);
 
 
+    ApiResponse<Page<PaidCancelledAppointmentResponse>>
+    getBillingRefundPatientList(
+            int page,
+            int size,
+            String patientName,
+            String mobileNo,
+            String billingService,
+            LocalDate fromDate,
+            LocalDate toDate
+    );
 }

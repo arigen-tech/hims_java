@@ -1,9 +1,6 @@
 package com.hims.controller;
 
-import com.hims.request.OpdEntDetailsRequest;
-import com.hims.request.OpdObgDetailsRequest;
-import com.hims.request.OpdOpthDetailsRequest;
-import com.hims.request.OpdPatientDetailCreateRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -284,6 +281,28 @@ public class OPDPatientController {
         log.info("Received request to get question-wise answer for questionHeadingId: {}", questionHeadingId);
         return opdQuestionMasterService.getQuestionWiseAnswer(questionHeadingId);
 
+    }
+
+    @GetMapping("/billingRefundPatientList")
+    public ResponseEntity<ApiResponse<Page<PaidCancelledAppointmentResponse>>> getBillingRefundPatientList(@RequestParam(defaultValue = "0") int page,
+                                                                                                           @RequestParam(defaultValue = "10") int size,
+                                                                                                           @RequestParam(required = false) String patientName,
+                                                                                                           @RequestParam(required = false) String mobileNo,
+                                                                                                           @RequestParam(required = false) String billingService,
+                                                                                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+                                                                                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        log.info("Billing refund patient list request received");
+        ApiResponse<Page<PaidCancelledAppointmentResponse>> response =
+                opdPatientDetailService.getBillingRefundPatientList(
+                        page,
+                        size,
+                        patientName,
+                        mobileNo,
+                        billingService,
+                        fromDate,
+                        toDate
+                );
+        return ResponseEntity.ok(response);
     }
 
 
