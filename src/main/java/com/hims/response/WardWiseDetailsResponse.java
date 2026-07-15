@@ -12,8 +12,6 @@ public class WardWiseDetailsResponse {
     private Long patientId;
     private Long IpdPatientId;
     private String patientName;
-    private Long wardId;
-    private String wardName;
     private Long roomId;
     private String roomName;
     private Long bedId;

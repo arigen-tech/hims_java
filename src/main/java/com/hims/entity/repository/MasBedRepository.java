@@ -85,11 +85,11 @@ public interface MasBedRepository extends JpaRepository<MasBed,Long> {
     FROM MasBed b
     JOIN b.roomId r
     JOIN r.masWard w
-    WHERE w.department.id = :departmentId
+    WHERE w.wardId = :wardId
     GROUP BY w.wardId, w.wardName
 """)
     TotalBedCountResponse getTotalBedCountByDepartmentId(
-            @Param("departmentId") Long departmentId,
+            @Param("wardId") Long wardId,
             @Param("bedStatusId") Long bedStatusId,
             @Param("bedStatusOccupiedId") Long bedStatusOccupiedId
     );

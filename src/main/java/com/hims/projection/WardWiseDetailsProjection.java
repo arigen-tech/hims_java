@@ -9,9 +9,7 @@ public interface WardWiseDetailsProjection {
     Long getIpdPatientId();
 
     String getPatientName();
-    Long getWardId();
 
-    String getWardName();
     Long getRoomId();
     String getRoomName();
     Long getBedId();

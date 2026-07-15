@@ -89,22 +89,22 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("getWardWiseDetails/{departmentId}")
-    public ResponseEntity<ApiResponse<List<WardWiseDetailsResponse>>> getWardWiseDetails(@PathVariable Long departmentId ){
+    @GetMapping("getWardWiseDetails/{wardId}")
+    public ResponseEntity<ApiResponse<List<WardWiseDetailsResponse>>> getWardWiseDetails(@PathVariable Long wardId ){
 
         log.info("Request received to getWardWiseDetails");
 
-        ApiResponse<List<WardWiseDetailsResponse>> response = ipdPatientService.getWardWiseDetails(departmentId);
+        ApiResponse<List<WardWiseDetailsResponse>> response = ipdPatientService.getWardWiseDetails(wardId);
 
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("getTotalBedCount/{departmentId}")
-    public ResponseEntity<ApiResponse<TotalBedCountResponse>> getTotalBedCount(@PathVariable Long departmentId ){
+    @GetMapping("getTotalBedCount/{wardId}")
+    public ResponseEntity<ApiResponse<TotalBedCountResponse>> getTotalBedCount(@PathVariable Long wardId ){
 
-        log.info("Request received to fetch beds for departmentId: {}", departmentId);
+        log.info("Request received to fetch beds for departmentId: {}", wardId);
 
-        ApiResponse<TotalBedCountResponse> response = ipdPatientService.getTotalBedCount(departmentId);
+        ApiResponse<TotalBedCountResponse> response = ipdPatientService.getTotalBedCount(wardId);
 
         return ResponseEntity.ok(response);
     }

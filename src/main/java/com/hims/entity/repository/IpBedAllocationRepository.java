@@ -35,13 +35,14 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
             ELSE NULL
         END AS patientName,
 
-        w.ward_name AS wardName,
+       
         r.room_name AS roomName,
         b.bed_number AS bedNumber,
         i.admission_date AS admitDate,
                 r.room_id AS roomId,
                 b.bed_id AS bedId,
-                w.ward_id AS wardId,
+                i.consent_taken_by AS doctor,
+               
 
         CASE
             WHEN i.admission_date IS NOT NULL THEN
@@ -80,13 +81,13 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
     LEFT JOIN mas_admission_status mds
         ON mds.admission_status_id = i.admission_status
 
-    WHERE w.department_id = :departmentId
+    WHERE w.ward_id = :wardId
 
     ORDER BY
         b.bed_id,
         iba.allocation_start_date DESC
     """, nativeQuery = true)
     List<WardWiseDetailsProjection> getWardWiseDetails(
-            @Param("departmentId") Long departmentId
+            @Param("wardId") Long wardId
     );
 }

@@ -248,18 +248,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
 
     @Override
-    public ApiResponse<List<WardWiseDetailsResponse>> getWardWiseDetails(Long departmentId) {
+    public ApiResponse<List<WardWiseDetailsResponse>> getWardWiseDetails(Long wardId) {
         try {
 
-            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(departmentId);
+            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(wardId);
 
         List<WardWiseDetailsResponse> responseList = projections.stream()
                         .map(item -> new WardWiseDetailsResponse(
                                 item.getPatientId(),
                                 item.getIpdPatientId(),
                                 item.getPatientName(),
-                                item.getWardId(),
-                                item.getWardName(),
                                 item.getRoomId(),
                                 item.getRoomName(),
                                 item.getBedId(),
@@ -286,11 +284,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<TotalBedCountResponse> getTotalBedCount(Long departmentId) {
+    public ApiResponse<TotalBedCountResponse> getTotalBedCount(Long wardId) {
 
-        log.info("Fetching total bed count for departmentId: {}", departmentId);
+        log.info("Fetching total bed count for wardId: {}", wardId);
 
-        TotalBedCountResponse response = masBedRepository.getTotalBedCountByDepartmentId(departmentId,bedStatusId,bedStatusOccupiedId);
+        TotalBedCountResponse response = masBedRepository.getTotalBedCountByDepartmentId(wardId,bedStatusId,bedStatusOccupiedId);
 
         if (response == null) {
             response = new TotalBedCountResponse(0L, 0L, 0L, null);
