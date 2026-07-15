@@ -12,70 +12,82 @@ import java.util.List;
 @Repository
 public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation,Long> {
     @Query(value = """
-        SELECT DISTINCT ON (i.inpatient_id)
-            p.patient_id AS patientId,
-            i.inpatient_id AS ipdPatientId,
-                i.admission_no AS admissionNo,
-                mis.status_code AS ipdInternalStatus,
-                mds.status_code AS admissionStatus,
-                p.p_age AS age,
-                g.gender_code AS gender,
-                
-                TRIM(CONCAT_WS(
-                ' ',
-                NULLIF(p.p_fn, ''),
-                NULLIF(p.p_mn, ''),
-                NULLIF(p.p_ln, '')
-            )) AS patientName,
+    SELECT DISTINCT ON (b.bed_id)
 
-            w.ward_name AS wardName,
-            r.room_name AS roomName,
-            b.bed_number AS bedNumber,
-            i.admission_date AS admitDate,
+        p.patient_id AS patientId,
+        i.inpatient_id AS ipdPatientId,
+        i.admission_no AS admissionNo,
+        mis.status_code AS ipdInternalStatus,
+        mds.status_code AS admissionStatus,
+        p.p_age AS age,
+        g.gender_code AS gender,
 
-          CAST(
-                 GREATEST(
-            (CURRENT_DATE - i.admission_date) + 1,
-                             0
-                         ) AS BIGINT
-                     ) AS days,
-                           COUNT(b.bed_id) OVER () AS bedCount
+        CASE
+            WHEN p.patient_id IS NOT NULL THEN
+                TRIM(
+                    CONCAT_WS(
+                        ' ',
+                        NULLIF(p.p_fn, ''),
+                        NULLIF(p.p_mn, ''),
+                        NULLIF(p.p_ln, '')
+                    )
+                )
+            ELSE NULL
+        END AS patientName,
 
-        FROM inpatient i
+       
+        r.room_name AS roomName,
+        b.bed_number AS bedNumber,
+        i.admission_date AS admitDate,
+                r.room_id AS roomId,
+                b.bed_id AS bedId,
+                i.consent_taken_by AS doctor,
+               
 
-        INNER JOIN patient p
-            ON p.patient_id = i.patient
-                    
-        LEFT JOIN mas_gender g
-           ON g.id = p.p_gender_id
-                    
+        CASE
+            WHEN i.admission_date IS NOT NULL THEN
+                CAST(
+                    GREATEST(
+                        (CURRENT_DATE - i.admission_date) + 1,
+                        0
+                    ) AS BIGINT
+                )
+            ELSE NULL
+        END AS days
 
-        INNER JOIN ip_bed_allocation iba
-            ON iba.ip_admission_id = i.inpatient_id
+    FROM mas_bed b
 
-        INNER JOIN mas_ward w
-            ON w.ward_id = i.admitting_ward_id
+    INNER JOIN mas_room r
+        ON r.room_id = b.room_id
 
-        LEFT JOIN mas_room r
-            ON r.room_id = iba.room_id
+    INNER JOIN mas_ward w
+        ON w.ward_id = r.ward_id
 
-        LEFT JOIN mas_bed b
-            ON b.bed_id = iba.bed_id
-                
-                
-                 LEFT JOIN mas_ipd_internal_status mis on
-                 mis.ipd_internal_status_id=i.ip_internal_status_id
-                    
-                  LEFT JOIN mas_admission_status mds on
-                 mds.admission_status_id=i.admission_status
+    LEFT JOIN ip_bed_allocation iba
+        ON iba.bed_id = b.bed_id
+       
+    LEFT JOIN inpatient i
+        ON i.inpatient_id = iba.ip_admission_id
 
-        WHERE w.department_id = :departmentId
-        
+    LEFT JOIN patient p
+        ON p.patient_id = i.patient
+
+    LEFT JOIN mas_gender g
+        ON g.id = p.p_gender_id
+
+    LEFT JOIN mas_ipd_internal_status mis
+        ON mis.ipd_internal_status_id = i.ip_internal_status_id
+
+    LEFT JOIN mas_admission_status mds
+        ON mds.admission_status_id = i.admission_status
+
+    WHERE w.ward_id = :wardId
+
     ORDER BY
-            i.inpatient_id,
-            iba.allocation_start_date DESC
-        """, nativeQuery = true)
+        b.bed_id,
+        iba.allocation_start_date DESC
+    """, nativeQuery = true)
     List<WardWiseDetailsProjection> getWardWiseDetails(
-            @Param("departmentId") Long departmentId
+            @Param("wardId") Long wardId
     );
 }
