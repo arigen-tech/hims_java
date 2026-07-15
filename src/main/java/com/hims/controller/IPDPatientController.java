@@ -1,6 +1,7 @@
 package com.hims.controller;
 
 
+import com.hims.request.IpNursingMedicalAssessmentRequest;
 import com.hims.request.IpdPatientRequest;
 import com.hims.request.SampleCollectionRequest;
 import com.hims.response.*;
@@ -106,6 +107,16 @@ public class IPDPatientController {
         ApiResponse<TotalBedCountResponse> response = ipdPatientService.getTotalBedCount(departmentId);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("SaveIpNursingMedicalAssessment")
+    public ApiResponse<String> SaveIpNursingMedicalAssessment(@RequestBody IpNursingMedicalAssessmentRequest request) {
+        log.info(
+                "Request received to save IP nursing medical assessment. inpatientId: {}, hospitalId: {}",
+                request.getInpatientId(),
+                request.getHospitalId()
+        );
+        return ipdPatientService.SaveIpNursingMedicalAssessment(request);
     }
 
 

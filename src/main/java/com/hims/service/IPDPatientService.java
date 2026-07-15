@@ -1,5 +1,6 @@
 package com.hims.service;
 
+import com.hims.request.IpNursingMedicalAssessmentRequest;
 import com.hims.request.IpdPatientRequest;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
@@ -28,4 +29,6 @@ public interface IPDPatientService {
     ApiResponse<List<WardWiseDetailsResponse>> getWardWiseDetails(Long departmentId);
 
     ApiResponse<TotalBedCountResponse> getTotalBedCount(Long departmentId);
+
+    ApiResponse<String> SaveIpNursingMedicalAssessment(IpNursingMedicalAssessmentRequest request);
 }
