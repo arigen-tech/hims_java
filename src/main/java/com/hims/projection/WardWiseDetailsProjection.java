@@ -28,5 +28,9 @@ public interface WardWiseDetailsProjection {
 
     String getIpdInternalStatus();
 
+    String getAge();
+
+    String getGender();
+
 
 }

@@ -18,6 +18,8 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
                 i.admission_no AS admissionNo,
                 mis.status_code AS ipdInternalStatus,
                 mds.status_code AS admissionStatus,
+                p.p_age AS age,
+                g.gender_code AS gender,
                 
                 TRIM(CONCAT_WS(
                 ' ',
@@ -43,6 +45,9 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
 
         INNER JOIN patient p
             ON p.patient_id = i.patient
+                    
+        LEFT JOIN mas_gender g
+           ON g.id = p.p_gender_id
                     
 
         INNER JOIN ip_bed_allocation iba

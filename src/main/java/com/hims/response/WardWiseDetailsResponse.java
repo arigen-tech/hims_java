@@ -20,6 +20,8 @@ public class WardWiseDetailsResponse {
     private String admissionNo;
     private String admissionStatus;
     private String ipdInternalStatus;
+    private String age;
+    private String gender;
 
 
 }
