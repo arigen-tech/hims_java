@@ -258,7 +258,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                                 item.getBedCount(),
                                 item.getAdmissionNo(),
                                 item.getAdmissionStatus(),
-                                item.getIpdInternalStatus()
+                                item.getIpdInternalStatus(),
+                                item.getAge(),
+                                item.getGender()
                         ))
                         .toList();
 
