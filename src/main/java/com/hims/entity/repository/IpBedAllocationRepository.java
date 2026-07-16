@@ -41,7 +41,14 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
         i.admission_date AS admitDate,
                 r.room_id AS roomId,
                 b.bed_id AS bedId,
-                i.consent_taken_by AS doctor,
+               TRIM(
+                  CONCAT_WS(
+                             ' ',
+                         NULLIF(u.first_name, ''),
+                         NULLIF(u.middle_name, ''),
+                          NULLIF(u.last_name, '')
+                         )
+                    ) AS doctor,
                
 
         CASE
@@ -80,6 +87,13 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
 
     LEFT JOIN mas_admission_status mds
         ON mds.admission_status_id = i.admission_status
+              
+                LEFT JOIN ip_diagnosis_entry ide
+                    ON ide.inpatient_id = i.inpatient_id
+                
+                LEFT JOIN users u
+                    ON u.user_id = ide.recorded_by
+  
 
     WHERE w.ward_id = :wardId
 
