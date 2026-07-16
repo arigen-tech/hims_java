@@ -136,7 +136,7 @@ public class BillingController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping({"/patientBillingRefundDetails/{billingId}","/{billingId}/refund-details"})
+    @GetMapping({"/patientBillingRefundDetails/{billingId}"})
     public ResponseEntity<ApiResponse<List<PatientBillingRefundDetailsResponse>>>
     getPatientBillingRefundDetails(@PathVariable Long billingId) {
         log.info("Fetching refund details for billingId={}", billingId);
