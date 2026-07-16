@@ -327,6 +327,8 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     private MasPatientConditionService masPatientConditionService;
     @Autowired
     private TransferReasonService transferReasonService;
+    @Autowired
+    private MasIpNursingAssessmentValueService masIpNursingAssessmentValueService;
 
 
 
@@ -5320,5 +5322,12 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
     @GetMapping("/transferReason/getById/{id}")
     public ApiResponse<MasTransferReasonResponse> getTransferReasonById(@PathVariable Long id) {
         return transferReasonService.getById(id);
+    }
+
+    //======================================= Mas Ip Nursing Assessment Value==================================
+
+    @GetMapping("/masIpNursingAssessmentValue/getAll/{flag}")
+    public ApiResponse<List<MasIpNursingAssessmentValueResponse>> masIpNursingAssessmentValue(@PathVariable int flag) {
+        return masIpNursingAssessmentValueService.getAll(flag);
     }
 }

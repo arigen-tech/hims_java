@@ -63,6 +63,7 @@ public class IpdPatientRequest {
     private String mlcCase;
     private String policeIntimationRequired;
     private String admissionAdvisedFrom;
+    private Long dietPreferenceId;
 
 
 

@@ -1,5 +1,6 @@
 package com.hims.service;
 
+import com.hims.request.IpNursingMedicalAssessmentRequest;
 import com.hims.request.IpdPatientRequest;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
@@ -7,7 +8,7 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public interface IPDPatientService {
-    ApiResponse<Page<IPDPatientWaitingListResponse>> ipdPatientWaitingList(
+    ApiResponse<Page<IPDPatientWaitingListResponse>> pendingAdmissionList(
             int page,
             int size,
             Long hospitalId,
@@ -15,17 +16,21 @@ public interface IPDPatientService {
             String mobileNo
     );
 
-    ApiResponse<String> saveIpdPatientDetails(IpdPatientRequest request);
+    ApiResponse<String> saveAdmissionDetails(IpdPatientRequest request);
 
-    ApiResponse<List<IpdWardResponse>> getWardByDepartment(Long departmentId);
+    ApiResponse<List<IpdWardResponse>> getWardDetailsByDepartment(Long departmentId);
 
-    ApiResponse<List<IpdRoomResponse>> getRoomByWard(Long wardId);
+    ApiResponse<List<IpdRoomResponse>> getRoomDetailsByWard(Long wardId);
 
-    ApiResponse<List<WardResponse>> getWardByCategory(Long wardCategoryId);
+    ApiResponse<List<WardResponse>> getWardDetailsByCategory(Long wardCategoryId);
 
-    ApiResponse<List<BedResponse>> getBedByRoom(Long roomId);
+    ApiResponse<List<BedResponse>> getBedDetailsByRoom(Long roomId);
 
-    ApiResponse<List<WardWiseDetailsResponse>> getWardWiseDetails(Long departmentId);
+    ApiResponse<List<WardWiseDetailsResponse>> getNursingDashboardByWard(Long wardId);
 
-    ApiResponse<TotalBedCountResponse> getTotalBedCount(Long departmentId);
+    ApiResponse<TotalBedCountResponse> getTotalBedCountByWard(Long wardId);
+
+    ApiResponse<String> saveNursingMedicalAssessment(IpNursingMedicalAssessmentRequest request);
+
+    ApiResponse<String> updateAdmissionInternalStatus(Long inpatientId,Long internalStatusId);
 }

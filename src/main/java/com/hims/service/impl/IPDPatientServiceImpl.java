@@ -6,6 +6,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.projection.IPDPatientWaitingListProjection;
 import com.hims.projection.WardWiseDetailsProjection;
+import com.hims.request.IpNursingMedicalAssessmentRequest;
 import com.hims.request.IpdPatientRequest;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
@@ -32,6 +33,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -87,6 +89,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasDepartmentRepository masDepartmentRepository;
     @Autowired
     MasBedStatusRepo masBedStatusRepo;
+    @Autowired
+    IpNursingMedicalAssessmentRepository ipNursingMedicalAssessmentRepository;
+    @Autowired
+    MasIpdInternalStatusRepository masIpdInternalStatusRepository;
+    @Autowired
+    IpVitalsRepository ipVitalsRepository;
+
 
 
     @Value("${ipd.admission.status.active}")
@@ -96,9 +105,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long bedStatusId;
     @Value("${bed.status.Occupied.id}")
     Long bedStatusOccupiedId;
+    @Value("${ip.internal.status.id}")
+    Long ipInternalStatusId;
+    @Value("${ip.internal.status.rw.id}")
+    Long ipInternalStatusRwId;
 
     @Override
-    public ApiResponse<Page<IPDPatientWaitingListResponse>> ipdPatientWaitingList(
+    public ApiResponse<Page<IPDPatientWaitingListResponse>> pendingAdmissionList(
             int page,
             int size,
             Long hospitalId,
@@ -131,8 +144,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
 
     @Override
-    @Transactional
-    public ApiResponse<String> saveIpdPatientDetails(IpdPatientRequest request) {
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> saveAdmissionDetails(IpdPatientRequest request) {
 
         try {
             log.info("Saving IPD patient details started for patientId: {}", request.getPatientId());
@@ -170,7 +183,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
 
     @Override
-    public ApiResponse<List<IpdWardResponse>> getWardByDepartment(Long departmentId) {
+    public ApiResponse<List<IpdWardResponse>> getWardDetailsByDepartment(Long departmentId) {
         try {
             List<IpdWardResponse> wardList = masWardRepository.getWardByDepartment(departmentId,AppConstants.STATUS_Y.toLowerCase());
 
@@ -185,7 +198,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
 
     @Override
-    public ApiResponse<List<IpdRoomResponse>> getRoomByWard(Long wardId) {
+    public ApiResponse<List<IpdRoomResponse>> getRoomDetailsByWard(Long wardId) {
         try {
             List<IpdRoomResponse> roomList = masRoomRepository.getRoomByWard(wardId,bedStatusId,AppConstants.STATUS_Y.toLowerCase());
 
@@ -200,7 +213,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
 
     @Override
-    public ApiResponse<List<WardResponse>> getWardByCategory(Long wardCategoryId) {
+    public ApiResponse<List<WardResponse>> getWardDetailsByCategory(Long wardCategoryId) {
 
         try {
             log.info("Fetching wards and available bed count for wardCategoryId: {}", wardCategoryId);
@@ -217,7 +230,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
 
     @Override
-    public ApiResponse<List<BedResponse>> getBedByRoom(Long roomId) {
+    public ApiResponse<List<BedResponse>> getBedDetailsByRoom(Long roomId) {
         try {
             log.info("Fetching rooms and available bed count for roomId: {}", roomId);
 
@@ -240,25 +253,28 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
 
     @Override
-    public ApiResponse<List<WardWiseDetailsResponse>> getWardWiseDetails(Long departmentId) {
+    public ApiResponse<List<WardWiseDetailsResponse>> getNursingDashboardByWard(Long wardId) {
         try {
 
-            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(departmentId);
+            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(wardId);
 
         List<WardWiseDetailsResponse> responseList = projections.stream()
                         .map(item -> new WardWiseDetailsResponse(
                                 item.getPatientId(),
                                 item.getIpdPatientId(),
                                 item.getPatientName(),
-                                item.getWardName(),
+                                item.getRoomId(),
                                 item.getRoomName(),
+                                item.getBedId(),
                                 item.getBedNumber(),
                                 item.getAdmitDate(),
                                 item.getDays(),
-                                item.getBedCount(),
                                 item.getAdmissionNo(),
                                 item.getAdmissionStatus(),
-                                item.getIpdInternalStatus()
+                                item.getIpdInternalStatus(),
+                                item.getAge(),
+                                item.getGender(),
+                                item.getDoctor()
                         ))
                         .toList();
 
@@ -272,12 +288,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public ApiResponse<TotalBedCountResponse> getTotalBedCount(Long departmentId) {
+    public ApiResponse<TotalBedCountResponse> getTotalBedCountByWard(Long wardId) {
 
-        log.info("Fetching total bed count for departmentId: {}", departmentId);
+        log.info("Fetching total bed count for wardId: {}", wardId);
 
-        TotalBedCountResponse response = masBedRepository.getTotalBedCountByDepartmentId(departmentId,bedStatusId,bedStatusOccupiedId);
+        TotalBedCountResponse response = masBedRepository.getTotalBedCountByDepartmentId(wardId,bedStatusId,bedStatusOccupiedId);
 
         if (response == null) {
             response = new TotalBedCountResponse(0L, 0L, 0L, null);
@@ -287,8 +302,174 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     }
 
-
+    @Override
     @Transactional
+    public ApiResponse<String> saveNursingMedicalAssessment(IpNursingMedicalAssessmentRequest request) {
+
+        log.info("Saving IP nursing medical assessment. inpatientId: {}, hospitalId: {}",
+                request.getInpatientId(),
+                request.getHospitalId()
+        );
+
+        try {
+            User user=authUtil.getCurrentUser();
+
+            Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
+            if(inpatient.isEmpty()){
+
+                return ResponseUtils.createSuccessResponse("Inpatient not found ", new TypeReference<>() {});
+
+            }
+
+            Optional<MasHospital> hospital = masHospitalRepository.findById(request.getHospitalId());
+            if(hospital.isEmpty()){
+
+                return ResponseUtils.createSuccessResponse("Hospital not found ", new TypeReference<>() {});
+
+            }
+            IpNursingMedicalAssessment assessment = new IpNursingMedicalAssessment();
+
+            assessment.setInpatient(inpatient.get());
+            assessment.setHospital(hospital.get());
+
+            // Nursing assessment
+            assessment.setConsciousness(request.getConsciousness());
+            assessment.setGcsScore(request.getGcsScore());
+            assessment.setPainScore(request.getPainScore());
+            assessment.setMobilityStatus(request.getMobilityStatus());
+            assessment.setFallRisk(request.getFallRisk());
+            assessment.setPressureSoreRisk(request.getPressureSoreRisk());
+
+            // Skin assessment
+            assessment.setSkinCondition(request.getSkinCondition());
+            assessment.setSkinRemarks(request.getSkinRemarks());
+
+            // IV line details
+            assessment.setIvLinePresent(request.getIvLinePresent());
+            assessment.setIvSite(request.getIvSite());
+
+            // Catheter details
+            assessment.setCatheterPresent(request.getCatheterPresent());
+            assessment.setCatheterType(request.getCatheterType());
+
+            // Drain details
+            assessment.setDrainPresent(request.getDrainPresent());
+            assessment.setDrainType(request.getDrainType());
+
+            // Nutrition assessment
+            assessment.setNutritionRisk(request.getNutritionRisk());
+            assessment.setNutritionRemarks(request.getNutritionRemarks());
+
+            // Infection assessment
+            assessment.setInfectionRisk(request.getInfectionRisk());
+            assessment.setInfectionRemarks(request.getInfectionRemarks());
+
+            // Orientation details
+            assessment.setPatientOrientationDone(request.getPatientOrientationDone());
+            assessment.setRelativeOrientationDone(request.getRelativeOrientationDone());
+
+            assessment.setNursingCarePlan(request.getNursingCarePlan());
+
+            // Medical history
+            assessment.setChiefComplaint(request.getChiefComplaint());
+            assessment.setHistoryPresentIllness(request.getHistoryPresentIllness());
+            assessment.setFamilyHistory(request.getFamilyHistory());
+            assessment.setMedicationHistory(request.getMedicationHistory());
+            assessment.setAllergies(request.getAllergies());
+
+            // Vitals
+            assessment.setPulse(request.getPulse());
+            assessment.setSystolicBp(request.getSystolicBp());
+            assessment.setDiastolicBp(request.getDiastolicBp());
+            assessment.setTemperature(request.getTemperature());
+
+            assessment.setRespiratoryRate(request.getRespiratoryRate());
+            assessment.setSpo2(request.getSpo2());
+
+            // Examination
+            assessment.setGeneralExaminationNotes(request.getGeneralExaminationNotes());
+            assessment.setSystemRsExamination(request.getRsExamination());
+            assessment.setSystemCvsExamination(request.getCvsExamination());
+            assessment.setSystemPaExamination(request.getPaExamination());
+            assessment.setSystemCnsExamination(request.getCnsExamination());
+            assessment.setProvisionalDiagnosis(request.getProvisionalDiagnosis());
+            assessment.setCreatedBy(user.getFullName());
+            assessment.setCreatedDate(LocalDateTime.now());
+            assessment.setUpdatedBy(user.getFullName());
+            assessment.setUpdatedDate(LocalDateTime.now());
+
+            IpNursingMedicalAssessment savedAssessment = ipNursingMedicalAssessmentRepository.save(assessment);
+
+            // Save an entry in ip_vitals
+             saveIpVitals(request, inpatient.get(), user);
+
+
+            log.info("IP nursing medical assessment saved successfully. assessmentId: {}, inpatientId: {}",
+                    savedAssessment.getAssessmentId(),
+                    request.getInpatientId());
+
+            return ResponseUtils.createSuccessResponse("IP nursing medical assessment saved successfully. Assessment ID: "
+                            + savedAssessment.getAssessmentId(), new TypeReference<>() {});
+
+        } catch (Exception exception) {
+            log.error("Error while saving IP nursing medical assessment. inpatientId: {}, hospitalId: {}", request.getInpatientId(), request.getHospitalId(), exception);
+
+            throw new RuntimeException("Unable to save IP nursing medical assessment: " + exception.getMessage(), exception);
+        }
+    }
+    private void saveIpVitals(
+            IpNursingMedicalAssessmentRequest request,
+            Inpatient inpatient,
+            User user
+    ) {
+        try {
+            LocalDateTime currentDateTime = LocalDateTime.now();
+
+            IpVitals ipVitals = new IpVitals();
+
+            ipVitals.setInpatient(inpatient);
+            ipVitals.setObservationDatetime(currentDateTime);
+            ipVitals.setTemperature(request.getTemperature());
+            ipVitals.setPulse(request.getPulse());
+            ipVitals.setBpSystolic(request.getSystolicBp());
+            ipVitals.setBpDiastolic(request.getDiastolicBp());
+            ipVitals.setRespiration(request.getRespiratoryRate());
+            ipVitals.setSpo2(request.getSpo2());
+            ipVitals.setPainScore(request.getPainScore());
+            ipVitals.setCreatedBy(user.getFullName());
+            ipVitals.setLastUpdatedBy(user.getFullName());
+            ipVitals.setLastUpdateDate(currentDateTime);
+
+            IpVitals savedVitals = ipVitalsRepository.save(ipVitals);
+
+            log.info("IP vitals saved successfully. ipVitalsId: {}, inpatientId: {}", savedVitals.getIpVitalsId(), inpatient.getInpatientId());
+
+        } catch (Exception exception) {
+            log.error("Error while saving IP vitals. inpatientId: {}", inpatient.getInpatientId(), exception);
+
+            throw new RuntimeException("Unable to save IP vitals for inpatient ID: " + inpatient.getInpatientId() + ". Error: " + exception.getMessage(), exception);
+        }
+    }
+    @Override
+    public ApiResponse<String> updateAdmissionInternalStatus(Long inpatientId,Long internalStatusId) {
+        try{
+        User user=authUtil.getCurrentUser();
+
+        Inpatient inpatient = inpatientRepository.findById(inpatientId).orElseThrow(() -> new RuntimeException("Inpatient not found with id: "
+                + inpatientId));
+        inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(internalStatusId).orElseThrow());
+        inpatient.setLastUpdateDate(LocalDateTime.now());
+        inpatient.setLastUpdatedBy(user.getFullName());
+        inpatientRepository.save(inpatient);
+
+        return ResponseUtils.createSuccessResponse( "Ip internal status change successfully", new TypeReference<>() {});
+
+    } catch (Exception exception) {
+        log.error("Error while saving Ip internal status change", exception);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG, 500
+            );
+    }
+    }
     private void saveDoctorDiagnosis(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
 
         User user = authUtil.getCurrentUser();
@@ -355,7 +536,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     }
 
-    @Transactional
     private Inpatient saveInpatientDetails(IpdPatientRequest request, Patient patient, Visit visit) {
         User user = authUtil.getCurrentUser();
 
@@ -372,6 +552,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         inpatient.setAdmissionAdvisedFrom(request.getAdmissionAdvisedFrom());
         inpatient.setAdmissionConsentTaken(request.getAdmissionConsentTaken());
         inpatient.setAdmissionStatus(masAdmissionStatusRepository.findById(activeAdmissionStatusId).orElseThrow());
+        inpatient.setDietPreference(masDietPreferenceRepository.findById(request.getDietPreferenceId()).orElseThrow());
+        inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusId).orElseThrow());
 
         if (request.getAdmissionTypeId() != null) {
             inpatient.setAdmissionType(masAdmissionTypeRepository.getReferenceById(request.getAdmissionTypeId()));
@@ -400,6 +582,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             inpatient.setWardCategory(masWardCategoryRepository.getReferenceById(request.getWardCategoryId()));
         }
 
+
         inpatient.setConditionNotes(request.getConditionNotes());
         inpatient.setLastUpdateDate(LocalDateTime.now());
 
@@ -414,7 +597,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         return savedInpatient;
     }
 
-    @Transactional
     private void saveNokDetails(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
         User user = authUtil.getCurrentUser();
 
@@ -442,7 +624,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("NOK details saved successfully for inpatientId: {}", inpatient.getInpatientId());
     }
 
-    @Transactional
+
     private void saveBedAllocationDetails(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
         User user = authUtil.getCurrentUser();
 
@@ -477,7 +659,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Bed allocation details saved successfully for inpatientId: {}", inpatient.getInpatientId());
     }
 
-    @Transactional
+
     private void saveIpDocumentDetails(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
 
         List<IpdPatientRequest.IpDocumentRequest> documents = request.getDocuments();
@@ -596,23 +778,42 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
     private String generateAdmissionNo() {
 
-        String prefix = "IPD";
-        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        LocalDate currentDate = LocalDate.now();
+        int currentYear = currentDate.getYear();
+        int currentMonth = currentDate.getMonthValue();
 
-        String lastAdmissionNo = inpatientRepository.findLastAdmissionNo();
+        int financialYearStart;
+        int financialYearEnd;
+
+        if (currentMonth >= 4) {
+            financialYearStart = currentYear;
+            financialYearEnd = currentYear + 1;
+        } else {
+            financialYearStart = currentYear - 1;
+            financialYearEnd = currentYear;
+        }
+
+        String financialYear = String.format("%02d-%02d", financialYearStart % 100, financialYearEnd % 100);
+
+        String prefix = "IPD/" + financialYear;
+
+        String lastAdmissionNo = inpatientRepository.findLastAdmissionNoByFinancialYear(prefix + "/%");
 
         int nextNumber = 1;
 
         if (lastAdmissionNo != null && !lastAdmissionNo.isBlank()) {
             try {
-                String[] parts = lastAdmissionNo.split("-");
-                String lastNumberPart = parts[2]; // IPD-20260709-0001
-                nextNumber = Integer.parseInt(lastNumberPart) + 1;
-            } catch (Exception e) {
-                nextNumber = 1;
+                // Example: IPD/26-27/1
+                String[] parts = lastAdmissionNo.split("/");
+
+                if (parts.length == 3) {
+                    nextNumber = Integer.parseInt(parts[2]) + 1;
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Unable to parse last admission number: {}", lastAdmissionNo);
             }
         }
 
-        return prefix + "-" + datePart + "-" + String.format("%04d", nextNumber);
+        return prefix + "/" + nextNumber;
     }
 }

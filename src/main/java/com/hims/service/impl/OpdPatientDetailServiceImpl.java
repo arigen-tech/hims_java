@@ -113,6 +113,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
 
 
+    private final PaidCancelledAppointmentMapper paidCancelledAppointmentMapper;
+
+
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
 
@@ -2944,6 +2947,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }
 
 
+
             Page<PreviousOpdPsychiatryHistoryResponse> responsePage = headerPage.map(header -> {
                 PreviousOpdPsychiatryHistoryResponse response = new PreviousOpdPsychiatryHistoryResponse();
                 response.setAssessmentHeaderId(header.getAssessmentHeaderId());
@@ -3236,7 +3240,5 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
         log.info("Saved pregnancy details for OPD patient ID: {}", opd.getOpdPatientDetailsId());
     }
-
-
 }
 

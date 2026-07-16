@@ -10,23 +10,25 @@ public interface WardWiseDetailsProjection {
 
     String getPatientName();
 
-    String getWardName();
-
+    Long getRoomId();
     String getRoomName();
-
+    Long getBedId();
     String getBedNumber();
 
     LocalDate getAdmitDate();
 
     Long getDays();
 
-    Long getBedCount();
-
     String  getAdmissionNo();
 
     String getAdmissionStatus();
 
     String getIpdInternalStatus();
+
+    String getAge();
+
+    String getGender();
+    String getDoctor();
 
 
 }
