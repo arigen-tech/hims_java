@@ -127,5 +127,5 @@ public class IpNursingMedicalAssessmentRequest {
 
     private String provisionalDiagnosis;
 
-    private String status;
+
 }

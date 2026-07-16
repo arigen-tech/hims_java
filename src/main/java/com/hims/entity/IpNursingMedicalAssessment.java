@@ -146,7 +146,7 @@ public class IpNursingMedicalAssessment {
     private String provisionalDiagnosis;
 
     @Column(name = "status", length = 1)
-    private String status = "Y";
+    private String status;
 
     @Column(name = "created_by", length = 200)
     private String createdBy;
