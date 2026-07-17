@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -317,14 +318,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
             if(inpatient.isEmpty()){
 
-                return ResponseUtils.createSuccessResponse("Inpatient not found ", new TypeReference<>() {});
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Inpatient not found", HttpStatus.NOT_FOUND.value());
 
             }
 
             Optional<MasHospital> hospital = masHospitalRepository.findById(request.getHospitalId());
             if(hospital.isEmpty()){
 
-                return ResponseUtils.createSuccessResponse("Hospital not found ", new TypeReference<>() {});
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Hospital not found", HttpStatus.NOT_FOUND.value());
 
             }
             IpNursingMedicalAssessment assessment = new IpNursingMedicalAssessment();
