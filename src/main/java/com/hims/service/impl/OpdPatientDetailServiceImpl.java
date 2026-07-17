@@ -1230,6 +1230,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         handleRecallFollowUp(opd, request);
         handleRecallReferral(opd, request);
         opdPatientDetailRepository.save(opd);
+        handleRecallPregnancyDetails(opd, request.getPregnancyDetails(), user);
         replaceIcdDiagnosis(request, opd, user);
         replaceInvestigations(request, patient, visit, user);
         replaceTreatments(request, patient, visit, user);
@@ -1617,6 +1618,33 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             opd.setReferTo(null);
             opd.setReferredHospitalName(null);
         }
+    }
+
+    private void handleRecallPregnancyDetails(
+            OpdPatientDetail opd,
+            RecallOpdPatientDetailRequest.PregnancyDetails pregnancyDetails,
+            User user
+    ) {
+        if (opd == null || pregnancyDetails == null || opd.getVisit() == null || opd.getPatient() == null) {
+            return;
+        }
+
+        Long visitId = opd.getVisit().getId();
+        OpdPatientPregnancyDetails pregnancyEntity = opdPatientPregnancyDetailsRepository
+                .findByVisit_Id(visitId)
+                .orElseGet(OpdPatientPregnancyDetails::new);
+
+        pregnancyEntity.setVisit(opd.getVisit());
+        pregnancyEntity.setPatient(opd.getPatient());
+        pregnancyEntity.setIsPregnant(pregnancyDetails.getIsPregnant());
+        pregnancyEntity.setLmpDate(pregnancyDetails.getLmpDate());
+        pregnancyEntity.setEdd(pregnancyDetails.getEdd());
+        pregnancyEntity.setCurrentEdd(pregnancyDetails.getCurrentEdd());
+        pregnancyEntity.setGestationPeriod(pregnancyDetails.getGestationPeriod());
+        pregnancyEntity.setLastChgDate(Instant.now());
+        pregnancyEntity.setLastChgBy(user != null ? user.getFullName() : null);
+
+        opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
     }
 
     private boolean isYes(String flag) {
@@ -2356,6 +2384,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 response.setTreatmentAdvice(opdPatientObj.getTreatmentAdvice());
             }
 
+            if (basicData != null) {
+                response.setPregnancyDetails(
+                        mapPregnancyDetails(
+                                opdPatientPregnancyDetailsRepository.findByVisit_Id(visitId).orElse(null)
+                        )
+                );
+            } else {
+                response.setPregnancyDetails(null);
+            }
+
             // ================= DG / RADIO =================
             response.setLabOrderHds(buildDgOrderHdList(dgOrderHdList));
 
@@ -2600,6 +2638,23 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         // ---------------- FLAGS ----------------
         response.setLabFlag(opd.getLabFlag());
         response.setRadioFlag(opd.getRadioFlag());
+    }
+
+    private OpdPatientRecallResponce.PregnancyDetails mapPregnancyDetails(
+            OpdPatientPregnancyDetails pregnancyDetails
+    ) {
+        if (pregnancyDetails == null) {
+            return null;
+        }
+
+        OpdPatientRecallResponce.PregnancyDetails response =
+                new OpdPatientRecallResponce.PregnancyDetails();
+        response.setIsPregnant(pregnancyDetails.getIsPregnant());
+        response.setLmpDate(pregnancyDetails.getLmpDate());
+        response.setEdd(pregnancyDetails.getEdd());
+        response.setCurrentEdd(pregnancyDetails.getCurrentEdd());
+        response.setGestationPeriod(pregnancyDetails.getGestationPeriod());
+        return response;
     }
 
     private List<OpdPatientRecallResponce.LabOrderHd> buildDgOrderHdList(List<DgOrderHd> hdList) {
@@ -3214,31 +3269,67 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return opdPsychiatryAssessmentHeaderRepository.save(savedHeader);
     }
 
-    private void handlePregnancyDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails, User user) {
+    private void handlePregnancyDetails(
+            OpdPatientDetail opd,
+            OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails,
+            User user
+    ) {
         if (pregnancyDetails == null) {
             return;
         }
 
-        // Delete existing pregnancy details if any
-        opdPatientPregnancyDetailsRepository.deleteByOpdPatientDetail_OpdPatientDetailsId(opd.getOpdPatientDetailsId());
+        if (opd.getVisit() == null) {
+            throw new IllegalArgumentException(
+                    "Visit is required to save pregnancy details"
+            );
+        }
 
-        // Create new pregnancy details
-        OpdPatientPregnancyDetails pregnancyEntity = OpdPatientPregnancyDetails.builder()
-                .opdPatientDetail(opd)
-                .opdPatientDetailsId(opd.getOpdPatientDetailsId())
-                .visitId(opd.getVisit() != null ? opd.getVisit().getId() : null)
-                .patientId(opd.getPatient() != null ? opd.getPatient().getId() : null)
-                .isPregnant(pregnancyDetails.getIsPregnant())
-                .lmpDate(pregnancyDetails.getLmpDate())
-                .edd(pregnancyDetails.getEdd())
-                .currentEdd(pregnancyDetails.getCurrentEdd())
-                .gestationPeriod(pregnancyDetails.getGestationPeriod())
-                .lastChgDate(Instant.now())
-                .lastChgBy(user.getFullName())
-                .build();
+        if (opd.getPatient() == null) {
+            throw new IllegalArgumentException(
+                    "Patient is required to save pregnancy details"
+            );
+        }
 
-        opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
-        log.info("Saved pregnancy details for OPD patient ID: {}", opd.getOpdPatientDetailsId());
+        Long visitId = opd.getVisit().getId();
+        log.info(
+                "Saving pregnancy details for visitId={}, isPregnant={}, lmpDate={}, edd={}, currentEdd={}, gestationPeriod={}",
+                visitId,
+                pregnancyDetails.getIsPregnant(),
+                pregnancyDetails.getLmpDate(),
+                pregnancyDetails.getEdd(),
+                pregnancyDetails.getCurrentEdd(),
+                pregnancyDetails.getGestationPeriod()
+        );
+
+        OpdPatientPregnancyDetails pregnancyEntity =
+                opdPatientPregnancyDetailsRepository
+                        .findByVisit_Id(visitId)
+                        .orElseGet(OpdPatientPregnancyDetails::new);
+
+        pregnancyEntity.setVisit(opd.getVisit());
+        pregnancyEntity.setPatient(opd.getPatient());
+        pregnancyEntity.setIsPregnant(pregnancyDetails.getIsPregnant());
+        pregnancyEntity.setLmpDate(pregnancyDetails.getLmpDate());
+        pregnancyEntity.setEdd(pregnancyDetails.getEdd());
+        pregnancyEntity.setCurrentEdd(pregnancyDetails.getCurrentEdd());
+        pregnancyEntity.setGestationPeriod(
+                pregnancyDetails.getGestationPeriod()
+        );
+        pregnancyEntity.setLastChgDate(Instant.now());
+        pregnancyEntity.setLastChgBy(
+                user != null ? user.getFullName() : null
+        );
+
+        OpdPatientPregnancyDetails savedEntity =
+                opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
+
+        log.info(
+                "Pregnancy details saved successfully. pregnancyDetailsId: {}, OPD patient ID: {}, visit ID: {}",
+                savedEntity.getPregnancyDetailsId(),
+                opd.getOpdPatientDetailsId(),
+                visitId
+        );
     }
+
 }
 
