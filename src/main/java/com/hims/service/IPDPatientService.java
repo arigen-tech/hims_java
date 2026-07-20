@@ -1,8 +1,11 @@
 package com.hims.service;
 
+import com.hims.request.IpIntakeOutputSaveRequest;
 import com.hims.request.IpNursingMedicalAssessmentRequest;
+import com.hims.request.IpVitalsRequest;
 import com.hims.request.IpdPatientRequest;
 import com.hims.response.*;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -33,4 +36,10 @@ public interface IPDPatientService {
     ApiResponse<String> saveNursingMedicalAssessment(IpNursingMedicalAssessmentRequest request);
 
     ApiResponse<String> updateAdmissionInternalStatus(Long inpatientId,Long internalStatusId);
+
+    ApiResponse<List<IpVitalsResponse>> getVitalsDetails(Long inpatientId);
+
+    ApiResponse<String> saveVitalsDetails(IpVitalsRequest request);
+
+    ApiResponse<String> saveIntakeOutputDetails(@Valid IpIntakeOutputSaveRequest request);
 }

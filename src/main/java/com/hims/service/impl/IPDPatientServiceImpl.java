@@ -5,9 +5,9 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.projection.IPDPatientWaitingListProjection;
+import com.hims.projection.IpVitalsProjection;
 import com.hims.projection.WardWiseDetailsProjection;
-import com.hims.request.IpNursingMedicalAssessmentRequest;
-import com.hims.request.IpdPatientRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
 import com.hims.utils.AuthUtil;
@@ -33,9 +33,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 
@@ -96,6 +94,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasIpdInternalStatusRepository masIpdInternalStatusRepository;
     @Autowired
     IpVitalsRepository ipVitalsRepository;
+    @Autowired
+    IpIntakeOutputEntryRepository ipIntakeOutputEntryRepository;
+    @Autowired
+    MasIntakeItemRepository masIntakeItemRepository;
+    @Autowired
+    MasIntakeTypeRepository masIntakeTypeRepository;
+    @Autowired
+    MasOutputTypeRepository masOutputTypeRepository;
+    @Autowired
+    MasRouteRepository masRouteRepository;
 
 
 
@@ -473,6 +481,180 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             );
     }
     }
+
+    @Override
+    public ApiResponse<List<IpVitalsResponse>> getVitalsDetails(Long inpatientId) {
+
+        log.info("Fetching all vitals history for inpatientId: {}", inpatientId);
+
+        try {
+            List<IpVitalsProjection> vitalsList = ipVitalsRepository.findAllVitalsByInpatientId(inpatientId);
+
+            if (vitalsList == null || vitalsList.isEmpty()) {
+
+                log.warn("No vitals history found for inpatientId: {}", inpatientId);
+
+                return ResponseUtils.createFailureResponse(Collections.emptyList(), new TypeReference<>() {}, "No vitals details found for inpatient ID: " + inpatientId, 404);
+            }
+
+            List<IpVitalsResponse> responseList = vitalsList.stream()
+                    .map(this::mapVitalsProjectionToResponse)
+                    .toList();
+
+            log.info("Successfully fetched {} vitals records for inpatientId: {}", responseList.size(), inpatientId);
+
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while fetching vitals history for inpatientId: {}", inpatientId, e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+        }
+    }
+
+    @Override
+    public ApiResponse<String> saveVitalsDetails(IpVitalsRequest request) {
+        log.info("Saving vitals details started for inpatientId: {}", request.getInpatientId());
+
+        try {
+            User user=authUtil.getCurrentUser();
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
+
+            if (inpatient == null) {
+                log.warn("Inpatient not found for inpatientId: {}", request.getInpatientId());
+
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient not found with ID: " + request.getInpatientId(), 404);}
+
+            IpVitals ipVitals = new IpVitals();
+
+            ipVitals.setInpatient(inpatient);
+            ipVitals.setObservationDatetime( LocalDateTime.now());
+            ipVitals.setTemperature(request.getTemperature());
+            ipVitals.setPulse(request.getPulse());
+            ipVitals.setBpSystolic(request.getBpSystolic());
+            ipVitals.setBpDiastolic(request.getBpDiastolic());
+            ipVitals.setRespiration(request.getRespiration());
+            ipVitals.setSpo2(request.getSpo2());
+            ipVitals.setPainScore(request.getPainScore());
+            ipVitals.setLastUpdateDate(LocalDateTime.now());
+            ipVitals.setCreatedBy(user.getFullName());
+            ipVitals.setLastUpdatedBy(user.getFullName());
+
+            IpVitals savedVitals = ipVitalsRepository.save(ipVitals);
+
+            log.info("Vitals details saved successfully for inpatientId: {}, vitalId: {}", request.getInpatientId(), savedVitals.getIpVitalsId());
+
+            return ResponseUtils.createSuccessResponse("Vitals details saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while saving vitals details for inpatientId: {}", request.getInpatientId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+        }
+    }
+
+    @Override
+    public ApiResponse<String> saveIntakeOutputDetails(IpIntakeOutputSaveRequest request) {
+
+        log.info("Saving intake/output details started for inpatientId: {}", request.getInpatientId());
+
+        try {
+            if (request.getEntries() == null || request.getEntries().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "At least one intake/output entry is required", 400);
+            }
+
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
+
+            if (inpatient == null) {
+                log.warn("Inpatient not found with inpatientId: {}", request.getInpatientId());
+
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient not found with ID: " + request.getInpatientId(), 404);
+            }
+
+            Patient patient = inpatient.getPatient();
+
+            if (patient == null) {
+                log.warn("Patient is not associated with inpatientId: {}", request.getInpatientId());
+
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Patient is not associated with this inpatient", 400);}
+
+            User currentUser = authUtil.getCurrentUser();
+            LocalDateTime currentDateTime = LocalDateTime.now();
+
+            List<IpIntakeOutputEntry> entities = new ArrayList<>();
+
+            for (int index = 0; index < request.getEntries().size(); index++) {
+
+                IpIntakeOutputEntryRequest entryRequest = request.getEntries().get(index);
+
+
+                IpIntakeOutputEntry entity = buildIntakeOutputEntity(entryRequest, inpatient, patient, currentUser, currentDateTime);
+
+                entities.add(entity);
+            }
+
+            List<IpIntakeOutputEntry> savedEntries = ipIntakeOutputEntryRepository.saveAll(entities);
+
+            log.info("Successfully saved {} intake/output entries for inpatientId: {}", savedEntries.size(), request.getInpatientId());
+
+            return ResponseUtils.createSuccessResponse( " intake/output entries saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while saving intake/output details for inpatientId: {}",request.getInpatientId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+        }
+    }
+    private IpIntakeOutputEntry buildIntakeOutputEntity(
+            IpIntakeOutputEntryRequest request,
+            Inpatient inpatient,
+            Patient patient,
+            User userName,
+            LocalDateTime currentDateTime) {
+
+        String ioType = request.getIoType().trim().toUpperCase();
+
+        IpIntakeOutputEntry entity = new IpIntakeOutputEntry();
+
+        entity.setInpatient(inpatient);
+        entity.setPatient(patient);
+        entity.setQuantity(request.getQuantity());
+        entity.setUnit("ml");
+        entity.setObservationDatetime( currentDateTime);
+        entity.setRemarks(request.getRemarks());
+        entity.setLastUpdateDate(currentDateTime);
+        entity.setCreatedBy(userName.getFullName());
+        entity.setLastUpdatedBy(userName.getFullName());
+
+        if ("I".equals(ioType)) {
+
+            MasIntakeType intakeType = masIntakeTypeRepository.getReferenceById(request.getIntakeTypeId());
+
+            MasIntakeItem intakeItem = masIntakeItemRepository.getReferenceById(request.getIntakeItemId());
+
+            entity.setIntakeType(intakeType);
+            entity.setIntakeItem(intakeItem);
+            if (request.getRouteId() != null)
+            {
+                entity.setRoute(masRouteRepository.getReferenceById(request.getRouteId()));
+            }
+            entity.setOutputType(null);
+
+        } else {
+
+            MasOutputType outputType = masOutputTypeRepository.getReferenceById(request.getOutputTypeId());
+
+            entity.setOutputType(outputType);
+            entity.setIntakeType(null);
+            entity.setIntakeItem(null);
+            entity.setRoute(null);
+        }
+
+        return entity;
+    }
+
     private void saveDoctorDiagnosis(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
 
         User user = authUtil.getCurrentUser();
@@ -818,5 +1000,19 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         }
 
         return prefix + "/" + nextNumber;
+    }
+    private IpVitalsResponse mapVitalsProjectionToResponse(IpVitalsProjection projection) {
+        return IpVitalsResponse.builder()
+                .vitalId(projection.getVitalId())
+                .inpatientId(projection.getInpatientId())
+                .observationDatetime(projection.getObservationDatetime())
+                .temperature(projection.getTemperature())
+                .pulse(projection.getPulse())
+                .bpSystolic(projection.getBpSystolic())
+                .bpDiastolic(projection.getBpDiastolic())
+                .respiration(projection.getRespiration())
+                .spo2(projection.getSpo2())
+                .painScore(projection.getPainScore())
+                .build();
     }
 }
