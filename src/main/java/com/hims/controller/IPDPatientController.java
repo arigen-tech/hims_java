@@ -173,6 +173,16 @@ public class IPDPatientController {
         return ipdPatientService.saveDailyCaseSheetEntry(request);
     }
 
+    @GetMapping("getDailyCaseSheetEntry/{inpatientId}")
+    public ResponseEntity<ApiResponse<List<DailyCaseSheetEntryResponse>>> getDailyCaseSheetEntry(@PathVariable Long inpatientId ){
+
+        log.info("Request received to fetch vitals details for inpatientId: {}", inpatientId);
+
+        ApiResponse<List<DailyCaseSheetEntryResponse>> response = ipdPatientService.getDailyCaseSheetEntry(inpatientId);
+
+        return ResponseEntity.ok(response);
+    }
+
 
 
 

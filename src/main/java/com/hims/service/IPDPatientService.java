@@ -41,4 +41,6 @@ public interface IPDPatientService {
     ApiResponse<String> saveIntakeOutputDetails(@Valid IpIntakeOutputSaveRequest request);
 
     ApiResponse<String> saveDailyCaseSheetEntry(@Valid IpDailyCaseSheetEntryRequest request);
+
+    ApiResponse<List<DailyCaseSheetEntryResponse>> getDailyCaseSheetEntry(Long inpatientId);
 }
