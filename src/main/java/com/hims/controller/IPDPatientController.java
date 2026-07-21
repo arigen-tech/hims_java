@@ -1,9 +1,7 @@
 package com.hims.controller;
 
 
-import com.hims.request.IpNursingMedicalAssessmentRequest;
-import com.hims.request.IpdPatientRequest;
-import com.hims.request.SampleCollectionRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -137,6 +135,54 @@ public class IPDPatientController {
 
         return ipdPatientService.updateAdmissionInternalStatus(inpatientId,internalStatusId);
     }
+
+    @GetMapping("getVitalsDetailsByInpatientId/{inpatientId}")
+    public ResponseEntity<ApiResponse<List<IpVitalsResponse>>> getVitalsDetails(@PathVariable Long inpatientId ){
+
+        log.info("Request received to fetch vitals details for inpatientId: {}", inpatientId);
+
+        ApiResponse<List<IpVitalsResponse>> response = ipdPatientService.getVitalsDetails(inpatientId);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PostMapping("saveVitalsDetails")
+    public ApiResponse<String> saveVitalsDetails(@RequestBody IpVitalsRequest request) {
+
+        log.info("Request received to save vitals details for inpatientId: {}", request.getInpatientId());
+
+        return ipdPatientService.saveVitalsDetails(request);
+    }
+
+    @PostMapping("saveIntakeOutputDetails")
+    public ApiResponse<String> saveIntakeOutputDetails(@Valid @RequestBody IpIntakeOutputSaveRequest request) {
+
+        log.info("Request received to save intake/output details. inpatientId: {}, entryCount: {}", request.getInpatientId(), request.getEntries() != null ? request.getEntries().size() : 0);
+
+        return ipdPatientService.saveIntakeOutputDetails(request);
+    }
+
+    @PostMapping("saveDailyCaseSheetEntry")
+    public ApiResponse<String> saveDailyCaseSheetEntry(@Valid @RequestBody IpDailyCaseSheetEntryRequest request) {
+        log.info(
+                "Request received to save daily case sheet entry. inpatientId: {}, doctorId: {}",
+                request.getInpatientId(),
+                request.getDoctorId());
+
+        return ipdPatientService.saveDailyCaseSheetEntry(request);
+    }
+
+    @GetMapping("getDailyCaseSheetEntry/{inpatientId}")
+    public ResponseEntity<ApiResponse<List<DailyCaseSheetEntryResponse>>> getDailyCaseSheetEntry(@PathVariable Long inpatientId ){
+
+        log.info("Request received to fetch vitals details for inpatientId: {}", inpatientId);
+
+        ApiResponse<List<DailyCaseSheetEntryResponse>> response = ipdPatientService.getDailyCaseSheetEntry(inpatientId);
+
+        return ResponseEntity.ok(response);
+    }
+
 
 
 

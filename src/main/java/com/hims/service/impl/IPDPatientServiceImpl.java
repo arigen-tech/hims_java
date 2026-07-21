@@ -4,10 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.projection.DailyCaseSheetEntryProjectionResponse;
 import com.hims.projection.IPDPatientWaitingListProjection;
+import com.hims.projection.IpVitalsProjection;
 import com.hims.projection.WardWiseDetailsProjection;
-import com.hims.request.IpNursingMedicalAssessmentRequest;
-import com.hims.request.IpdPatientRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
 import com.hims.utils.AuthUtil;
@@ -20,11 +21,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,9 +35,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 
@@ -95,6 +96,26 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasIpdInternalStatusRepository masIpdInternalStatusRepository;
     @Autowired
     IpVitalsRepository ipVitalsRepository;
+    @Autowired
+    IpIntakeOutputEntryRepository ipIntakeOutputEntryRepository;
+    @Autowired
+    MasIntakeItemRepository masIntakeItemRepository;
+    @Autowired
+    MasIntakeTypeRepository masIntakeTypeRepository;
+    @Autowired
+    MasOutputTypeRepository masOutputTypeRepository;
+    @Autowired
+    MasRouteRepository masRouteRepository;
+    @Autowired
+    IpDailyCaseSheetEntryRepository ipDailyCaseSheetEntryRepository;
+    @Autowired
+    MasIpdServiceCategoryRepository masIpdServiceCategoryRepository;
+    @Autowired
+    IpdBillingDetailsRepository ipdBillingDetailsRepository;
+    @Autowired
+    MasVisitTypeRepository masVisitTypeRepository;
+    @Autowired
+    IpdConsultationTariffRepository ipdConsultationTariffRepository;
 
 
 
@@ -109,6 +130,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long ipInternalStatusId;
     @Value("${ip.internal.status.rw.id}")
     Long ipInternalStatusRwId;
+
+    @Value("${ipd.service.category.id}")
+    Long ipdServiceCategoryId;
 
     @Override
     public ApiResponse<Page<IPDPatientWaitingListResponse>> pendingAdmissionList(
@@ -317,14 +341,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
             if(inpatient.isEmpty()){
 
-                return ResponseUtils.createSuccessResponse("Inpatient not found ", new TypeReference<>() {});
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Inpatient not found", HttpStatus.NOT_FOUND.value());
 
             }
 
             Optional<MasHospital> hospital = masHospitalRepository.findById(request.getHospitalId());
             if(hospital.isEmpty()){
 
-                return ResponseUtils.createSuccessResponse("Hospital not found ", new TypeReference<>() {});
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Hospital not found", HttpStatus.NOT_FOUND.value());
 
             }
             IpNursingMedicalAssessment assessment = new IpNursingMedicalAssessment();
@@ -470,6 +496,416 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             );
     }
     }
+
+    @Override
+    public ApiResponse<List<IpVitalsResponse>> getVitalsDetails(Long inpatientId) {
+
+        log.info("Fetching all vitals history for inpatientId: {}", inpatientId);
+
+        try {
+            List<IpVitalsProjection> vitalsList = ipVitalsRepository.findAllVitalsByInpatientId(inpatientId);
+
+            if (vitalsList == null || vitalsList.isEmpty()) {
+
+                log.warn("No vitals history found for inpatientId: {}", inpatientId);
+
+                return ResponseUtils.createFailureResponse(Collections.emptyList(), new TypeReference<>() {}, "No vitals details found for inpatient ID: " + inpatientId, 404);
+            }
+
+            List<IpVitalsResponse> responseList = vitalsList.stream()
+                    .map(this::mapVitalsProjectionToResponse)
+                    .toList();
+
+            log.info("Successfully fetched {} vitals records for inpatientId: {}", responseList.size(), inpatientId);
+
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while fetching vitals history for inpatientId: {}", inpatientId, e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+        }
+    }
+
+    @Override
+    public ApiResponse<String> saveVitalsDetails(IpVitalsRequest request) {
+        log.info("Saving vitals details started for inpatientId: {}", request.getInpatientId());
+
+        try {
+            User user=authUtil.getCurrentUser();
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
+
+            if (inpatient == null) {
+                log.warn("Inpatient not found for inpatientId: {}", request.getInpatientId());
+
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient not found with ID: " + request.getInpatientId(), 404);}
+
+            IpVitals ipVitals = new IpVitals();
+
+            ipVitals.setInpatient(inpatient);
+            ipVitals.setObservationDatetime( LocalDateTime.now());
+            ipVitals.setTemperature(request.getTemperature());
+            ipVitals.setPulse(request.getPulse());
+            ipVitals.setBpSystolic(request.getBpSystolic());
+            ipVitals.setBpDiastolic(request.getBpDiastolic());
+            ipVitals.setRespiration(request.getRespiration());
+            ipVitals.setSpo2(request.getSpo2());
+            ipVitals.setPainScore(request.getPainScore());
+            ipVitals.setLastUpdateDate(LocalDateTime.now());
+            ipVitals.setCreatedBy(user.getFullName());
+            ipVitals.setLastUpdatedBy(user.getFullName());
+
+            IpVitals savedVitals = ipVitalsRepository.save(ipVitals);
+
+            log.info("Vitals details saved successfully for inpatientId: {}, vitalId: {}", request.getInpatientId(), savedVitals.getIpVitalsId());
+
+            return ResponseUtils.createSuccessResponse("Vitals details saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while saving vitals details for inpatientId: {}", request.getInpatientId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+        }
+    }
+
+    @Override
+    public ApiResponse<String> saveIntakeOutputDetails(IpIntakeOutputSaveRequest request) {
+
+        log.info("Saving intake/output details started for inpatientId: {}", request.getInpatientId());
+
+        try {
+            if (request.getEntries() == null || request.getEntries().isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "At least one intake/output entry is required", 400);
+            }
+
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
+
+            if (inpatient == null) {
+                log.warn("Inpatient not found with inpatientId: {}", request.getInpatientId());
+
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient not found with ID: " + request.getInpatientId(), 404);
+            }
+
+            Patient patient = inpatient.getPatient();
+
+            if (patient == null) {
+                log.warn("Patient is not associated with inpatientId: {}", request.getInpatientId());
+
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Patient is not associated with this inpatient", 400);}
+
+            User currentUser = authUtil.getCurrentUser();
+            LocalDateTime currentDateTime = LocalDateTime.now();
+
+            List<IpIntakeOutputEntry> entities = new ArrayList<>();
+
+            for (int index = 0; index < request.getEntries().size(); index++) {
+
+                IpIntakeOutputEntryRequest entryRequest = request.getEntries().get(index);
+
+
+                IpIntakeOutputEntry entity = buildIntakeOutputEntity(entryRequest, inpatient, patient, currentUser, currentDateTime);
+
+                entities.add(entity);
+            }
+
+            List<IpIntakeOutputEntry> savedEntries = ipIntakeOutputEntryRepository.saveAll(entities);
+
+            log.info("Successfully saved {} intake/output entries for inpatientId: {}", savedEntries.size(), request.getInpatientId());
+
+            return ResponseUtils.createSuccessResponse( " intake/output entries saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while saving intake/output details for inpatientId: {}",request.getInpatientId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> saveDailyCaseSheetEntry(IpDailyCaseSheetEntryRequest request) {
+
+        log.info("Saving daily case sheet entry. inpatientId: {}, doctorId: {}, " + "departmentId: {}, visitTypeId: {}",
+                request.getInpatientId(),
+                request.getDoctorId(),
+                request.getVisitDepartmentId(),
+                request.getVisitType());
+
+        try {
+
+            LocalDateTime currentDateTime = LocalDateTime.now();
+
+            User loggedInUser = authUtil.getCurrentUser();
+
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException("Inpatient not found with ID: "
+                                    + request.getInpatientId()));
+
+            Patient patient = inpatient.getPatient();
+
+            if (patient == null) {
+                throw new RuntimeException("Patient is not associated with inpatient ID: " + request.getInpatientId());
+            }
+
+            User doctor = userRepo.findById(request.getDoctorId()).orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + request.getDoctorId()));
+
+            MasDepartment department = masDepartmentRepository.findById(request.getVisitDepartmentId()).orElseThrow(() -> new RuntimeException(
+                            "Department not found with ID: " + request.getVisitDepartmentId()));
+
+            MasVisitType visitType = masVisitTypeRepository.findById(request.getVisitType()).orElseThrow(() -> new RuntimeException(
+                            "Visit type not found with ID: " + request.getVisitType()));
+
+            /*
+             * Check current active consultation tariff before saving
+             * the case-sheet entry.
+             */
+            IpdConsultationTariff consultationTariff = ipdConsultationTariffRepository.findCurrentApplicableTariff(
+                                    request.getVisitDepartmentId(),
+                                    request.getDoctorId(),
+                                    request.getVisitType(),
+                                    currentDateTime
+                            )
+                            .orElseThrow(() -> new RuntimeException(
+                                    "No active consultation tariff found for the current date. "
+                                            + "Doctor ID: " + request.getDoctorId()
+                                            + ", Department ID: "
+                                            + request.getVisitDepartmentId()
+                                            + ", Visit Type ID: "
+                                            + request.getVisitType()
+                            ));
+
+
+
+            log.info("Consultation tariff found. tariffId: {}, baseTariff: {}", consultationTariff.getTariffId(), consultationTariff.getBaseTariff());
+
+            IpDailyCaseSheetEntry caseSheetEntry =
+                    IpDailyCaseSheetEntry.builder()
+                            .inpatient(inpatient)
+                            .patient(patient)
+                            .visitDatetime(currentDateTime)
+                            .doctor(doctor)
+                            .doctorName(doctor.getFullName())
+                            .doctorRole(null)
+                            .visitDepartment(department)
+                            .doctorNotes(request.getDoctorNotes())
+                            .investigationSummary(request.getInvestigationSummary())
+                            .medicineSummary(request.getMedicineSummary())
+                            .procedureSummary(request.getProcedureSummary())
+                            .carePlanChanges(request.getCarePlanChanges())
+                            .nextFollowUpPlan(request.getNextFollowUpPlan())
+                            .lastUpdateDate(currentDateTime)
+                            .createdBy(loggedInUser.getFullName())
+                            .lastUpdatedBy(loggedInUser.getFullName())
+                            .build();
+
+            IpDailyCaseSheetEntry savedCaseSheetEntry = ipDailyCaseSheetEntryRepository.save(caseSheetEntry);
+
+            /*
+             * Create billing using the matched tariff.
+             */
+            saveDailyCaseSheetBillingDetails(inpatient, consultationTariff);
+
+            log.info("Daily case sheet entry saved successfully. " + "caseSheetEntryId: {}, inpatientId: {}, tariffId: {}",
+                    savedCaseSheetEntry.getCaseSheetEntryId(),
+                    inpatient.getInpatientId(),
+                    consultationTariff.getTariffId()
+            );
+
+            return ResponseUtils.createSuccessResponse("Daily case sheet entry saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while saving daily case sheet entry. inpatientId: {}", request.getInpatientId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},e.getMessage(), 404);
+        }
+    }
+    @Override
+    public ApiResponse<List<DailyCaseSheetEntryResponse>> getDailyCaseSheetEntry(Long inpatientId) {
+
+        log.info("Fetching daily case sheet entries for inpatientId: {}", inpatientId);
+
+        try {
+            List<DailyCaseSheetEntryProjectionResponse> projections = ipDailyCaseSheetEntryRepository.findDailyCaseSheetEntries(inpatientId);
+
+            List<DailyCaseSheetEntryResponse> responseList =
+                    projections.stream().map(this::mapToDailyCaseSheetResponse).toList();
+
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception exception) {
+
+            log.error("Error while fetching daily case sheet entries. " + "inpatientId: {}", inpatientId, exception);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG + exception.getMessage(),
+                    500
+            );
+        }
+    }
+    private DailyCaseSheetEntryResponse mapToDailyCaseSheetResponse(
+            DailyCaseSheetEntryProjectionResponse projection
+    ) {
+
+        return DailyCaseSheetEntryResponse.builder()
+                .caseSheetEntryId(projection.getCaseSheetEntryId())
+                .inpatient(projection.getInpatient())
+                .notes(projection.getNotes())
+                .investigation(projection.getInvestigation())
+                .medicines(projection.getMedicines())
+                .procedure(projection.getProcedure())
+                .plan(projection.getPlan())
+                .followUp(projection.getFollowUp())
+                .visitDateTime(projection.getVisitDateTime())
+                .build();
+    }
+
+    private void saveDailyCaseSheetBillingDetails(Inpatient inpatient, IpdConsultationTariff consultationTariff) {
+
+        LocalDateTime currentDateTime = LocalDateTime.now();
+
+        IpdBillingHeader billingHeader = ipdBillingHeaderRepository.findByInpatientId_InpatientId(inpatient.getInpatientId())
+                .orElseThrow(() -> new RuntimeException("IPD billing header not found for inpatient ID: " + inpatient.getInpatientId()));
+
+        MasIpdServiceCategory billingCategory = masIpdServiceCategoryRepository.findById(2L)
+                        .orElseThrow(() -> new RuntimeException("IPD service category not found with ID: 2"));
+
+        BigDecimal quantity = BigDecimal.ONE;
+
+        BigDecimal rate = Optional.ofNullable(consultationTariff.getBaseTariff()).orElseThrow(() -> new RuntimeException("Base tariff is not configured for tariff ID: " + consultationTariff.getTariffId()));
+
+        BigDecimal gstPercent = BigDecimal.ZERO;
+
+        if (consultationTariff.getServiceCategory() != null && consultationTariff.getServiceCategory().getGstPercent() != null) {
+
+            gstPercent = new BigDecimal(consultationTariff.getServiceCategory().getGstPercent().toString());
+        }
+
+        BigDecimal discountAmount = BigDecimal.ZERO;
+
+        // amount = rate × quantity
+        BigDecimal amount = rate.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+
+        // gstAmount = amount × gstPercent ÷ 100
+        BigDecimal gstAmount = amount.multiply(gstPercent).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+        // netAmount = amount + GST - discount
+        BigDecimal netAmount = amount.add(gstAmount).subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
+
+        IpdBillingDetails billingDetails = new IpdBillingDetails();
+
+        billingDetails.setBillHeader(billingHeader);
+        billingDetails.setCategory(masIpdServiceCategoryRepository.findById(ipdServiceCategoryId).orElseThrow());
+
+        billingDetails.setItemName(consultationTariff.getDoctor().getFullName());
+
+        billingDetails.setServiceDate(currentDateTime);
+        billingDetails.setQuantity(quantity);
+        billingDetails.setRate(rate);
+        billingDetails.setAmount(amount);
+        billingDetails.setGstPercent(gstPercent);
+        billingDetails.setGstAmount(gstAmount);
+        billingDetails.setDiscountAmount(discountAmount);
+        billingDetails.setNetAmount(netAmount);
+        billingDetails.setCreatedAt(currentDateTime);
+
+        IpdBillingDetails savedBillingDetails = ipdBillingDetailsRepository.save(billingDetails);
+
+        updateIpdBillingHeaderAmount(billingHeader, amount, gstAmount, discountAmount, netAmount);
+
+        log.info(
+                "Daily case sheet billing saved successfully. billItemId: {}, " + "inpatientId: {}, rate: {}, GST percentage: {}, " +
+                        "GST amount: {}, net amount: {}",
+                savedBillingDetails.getBillItemId(),
+                inpatient.getInpatientId(),
+                rate,
+                gstPercent,
+                gstAmount,
+                netAmount
+        );
+    }
+    private void updateIpdBillingHeaderAmount(IpdBillingHeader billingHeader, BigDecimal amount,BigDecimal gstAmount,   BigDecimal discountAmount, BigDecimal netAmount) {
+
+        BigDecimal currentTotalAmount = billingHeader.getTotalAmount() != null ? billingHeader.getTotalAmount() : BigDecimal.ZERO;
+
+        BigDecimal currentGstAmount = billingHeader.getGstAmount() != null ? billingHeader.getGstAmount() : BigDecimal.ZERO;
+
+        BigDecimal currentDiscountAmount = billingHeader.getDiscountAmount() != null ? billingHeader.getDiscountAmount() : BigDecimal.ZERO;
+
+        BigDecimal currentNetAmount = billingHeader.getNetAmount() != null ? billingHeader.getNetAmount() : BigDecimal.ZERO;
+
+        billingHeader.setTotalAmount(currentTotalAmount.add(amount != null ? amount : BigDecimal.ZERO));
+
+        billingHeader.setGstAmount(currentGstAmount.add(gstAmount != null ? gstAmount : BigDecimal.ZERO));
+
+        billingHeader.setDiscountAmount(currentDiscountAmount.add(discountAmount != null ? discountAmount : BigDecimal.ZERO));
+
+        billingHeader.setNetAmount(currentNetAmount.add(netAmount != null ? netAmount : BigDecimal.ZERO));
+
+        billingHeader.setUpdatedAt(LocalDateTime.now());
+
+        ipdBillingHeaderRepository.save(billingHeader);
+
+        log.info("IPD billing header updated successfully. billId: {}, " +
+                        "totalAmount: {}, gstAmount: {}, discountAmount: {}, " +
+                        "netAmount: {}, patientPayableAmount: {}",
+                billingHeader.getBillId(),
+                billingHeader.getTotalAmount(),
+                billingHeader.getGstAmount(),
+                billingHeader.getDiscountAmount(),
+                billingHeader.getNetAmount(),
+                billingHeader.getPatientPayableAmount()
+        );
+    }
+
+    private IpIntakeOutputEntry buildIntakeOutputEntity(
+            IpIntakeOutputEntryRequest request,
+            Inpatient inpatient,
+            Patient patient,
+            User userName,
+            LocalDateTime currentDateTime) {
+
+        String ioType = request.getIoType().trim().toUpperCase();
+
+        IpIntakeOutputEntry entity = new IpIntakeOutputEntry();
+
+        entity.setInpatient(inpatient);
+        entity.setPatient(patient);
+        entity.setQuantity(request.getQuantity());
+        entity.setUnit("ml");
+        entity.setObservationDatetime( currentDateTime);
+        entity.setRemarks(request.getRemarks());
+        entity.setLastUpdateDate(currentDateTime);
+        entity.setCreatedBy(userName.getFullName());
+        entity.setLastUpdatedBy(userName.getFullName());
+
+        if ("I".equals(ioType)) {
+
+            MasIntakeType intakeType = masIntakeTypeRepository.getReferenceById(request.getIntakeTypeId());
+
+            MasIntakeItem intakeItem = masIntakeItemRepository.getReferenceById(request.getIntakeItemId());
+
+            entity.setIntakeType(intakeType);
+            entity.setIntakeItem(intakeItem);
+            if (request.getRouteId() != null)
+            {
+                entity.setRoute(masRouteRepository.getReferenceById(request.getRouteId()));
+            }
+            entity.setOutputType(null);
+
+        } else {
+
+            MasOutputType outputType = masOutputTypeRepository.getReferenceById(request.getOutputTypeId());
+
+            entity.setOutputType(outputType);
+            entity.setIntakeType(null);
+            entity.setIntakeItem(null);
+            entity.setRoute(null);
+        }
+
+        return entity;
+    }
+
     private void saveDoctorDiagnosis(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
 
         User user = authUtil.getCurrentUser();
@@ -503,7 +939,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         IpdBillingHeader billingHeader = new IpdBillingHeader();
 
         billingHeader.setUhid(request.getUhid());
-        billingHeader.setInpatientId(inpatient.getInpatientId());
+        billingHeader.setInpatientId(inpatientRepository.findById(inpatient.getInpatientId()).orElseThrow());
         billingHeader.setPatientName(request.getPatientName());
         billingHeader.setBillingType(billingType);
         billingHeader.setCreatedBy(user.getFullName());
@@ -815,5 +1251,19 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         }
 
         return prefix + "/" + nextNumber;
+    }
+    private IpVitalsResponse mapVitalsProjectionToResponse(IpVitalsProjection projection) {
+        return IpVitalsResponse.builder()
+                .vitalId(projection.getVitalId())
+                .inpatientId(projection.getInpatientId())
+                .observationDatetime(projection.getObservationDatetime())
+                .temperature(projection.getTemperature())
+                .pulse(projection.getPulse())
+                .bpSystolic(projection.getBpSystolic())
+                .bpDiastolic(projection.getBpDiastolic())
+                .respiration(projection.getRespiration())
+                .spo2(projection.getSpo2())
+                .painScore(projection.getPainScore())
+                .build();
     }
 }
