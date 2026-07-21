@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.projection.DailyCaseSheetEntryProjectionResponse;
 import com.hims.projection.IPDPatientWaitingListProjection;
 import com.hims.projection.IpVitalsProjection;
 import com.hims.projection.WardWiseDetailsProjection;
@@ -720,6 +721,45 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},e.getMessage(), 404);
         }
     }
+    @Override
+    public ApiResponse<List<DailyCaseSheetEntryResponse>> getDailyCaseSheetEntry(Long inpatientId) {
+
+        log.info("Fetching daily case sheet entries for inpatientId: {}", inpatientId);
+
+        try {
+            List<DailyCaseSheetEntryProjectionResponse> projections = ipDailyCaseSheetEntryRepository.findDailyCaseSheetEntries(inpatientId);
+
+            List<DailyCaseSheetEntryResponse> responseList =
+                    projections.stream().map(this::mapToDailyCaseSheetResponse).toList();
+
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception exception) {
+
+            log.error("Error while fetching daily case sheet entries. " + "inpatientId: {}", inpatientId, exception);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG + exception.getMessage(),
+                    500
+            );
+        }
+    }
+    private DailyCaseSheetEntryResponse mapToDailyCaseSheetResponse(
+            DailyCaseSheetEntryProjectionResponse projection
+    ) {
+
+        return DailyCaseSheetEntryResponse.builder()
+                .caseSheetEntryId(projection.getCaseSheetEntryId())
+                .inpatient(projection.getInpatient())
+                .notes(projection.getNotes())
+                .investigation(projection.getInvestigation())
+                .medicines(projection.getMedicines())
+                .procedure(projection.getProcedure())
+                .plan(projection.getPlan())
+                .followUp(projection.getFollowUp())
+                .visitDateTime(projection.getVisitDateTime())
+                .build();
+    }
+
     private void saveDailyCaseSheetBillingDetails(Inpatient inpatient, IpdConsultationTariff consultationTariff) {
 
         LocalDateTime currentDateTime = LocalDateTime.now();
