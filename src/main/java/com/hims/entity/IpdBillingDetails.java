@@ -28,21 +28,20 @@ public class IpdBillingDetails {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bill_id", nullable = false)
-    private IpdBillingHeader bill;
+    private IpdBillingHeader billHeader;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private MasIpdServiceCategory category;
-//
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "subcategory_id")
-//    private MasIpdServiceSubcategory subcategory;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "source_type", nullable = false, length = 50)
-    private SourceType sourceType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subcategory_id")
+    private MasIpdServiceSubcategory subcategory;
 
-    @Column(name = "source_id", nullable = false)
+    @JoinColumn(name = "source_type")
+    private String  sourceType;
+
+    @Column(name = "source_id")
     private Long sourceId;
 
     @Column(name = "item_name", length = 300)
@@ -52,7 +51,7 @@ public class IpdBillingDetails {
     private LocalDateTime serviceDate;
 
     @Column(name = "quantity", precision = 10, scale = 2)
-    private BigDecimal quantity = BigDecimal.ONE;
+    private BigDecimal quantity;
 
 
     @Column(name = "rate", precision = 12, scale = 2)
