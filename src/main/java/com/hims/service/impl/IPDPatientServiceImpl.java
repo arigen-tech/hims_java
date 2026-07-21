@@ -280,7 +280,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     public ApiResponse<List<WardWiseDetailsResponse>> getNursingDashboardByWard(Long wardId) {
         try {
 
-            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(wardId);
+            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(wardId,activeAdmissionStatusId);
 
         List<WardWiseDetailsResponse> responseList = projections.stream()
                         .map(item -> new WardWiseDetailsResponse(
@@ -743,6 +743,28 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             );
         }
     }
+
+    @Override
+    public ApiResponse<List<BedDetailsByWardResponse>> getBedDetailsByWard(Long wardId) {
+        log.info("Fetching bed details for wardId: {}", wardId);
+
+        try {
+            List<BedDetailsByWardResponse> bedDetails = masBedRepository.getBedDetailsByWard(wardId,bedStatusId);
+
+            log.info("Bed details fetched successfully for wardId: {}, totalBeds: {}",   bedDetails.size());
+
+            return ResponseUtils.createSuccessResponse(bedDetails, new TypeReference<>() {});
+
+        } catch (Exception exception) {
+
+            log.error("Error while fetching bed details for wardId: {}", wardId, exception);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Unable to fetch bed details: " + exception.getMessage(),
+                    500
+            );
+        }
+    }
+
     private DailyCaseSheetEntryResponse mapToDailyCaseSheetResponse(
             DailyCaseSheetEntryProjectionResponse projection
     ) {
@@ -757,6 +779,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 .plan(projection.getPlan())
                 .followUp(projection.getFollowUp())
                 .visitDateTime(projection.getVisitDateTime())
+                .doctorId(projection.getDoctorId())
+                .doctorName(projection.getDoctorName())
+                .departmentId(projection.getDepartmentId())
+                .departmentName(projection.getDepartmentName())
                 .build();
     }
 

@@ -183,6 +183,16 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("getBedDetailsByWard/{wardId}")
+    public ResponseEntity<ApiResponse<List<BedDetailsByWardResponse>>> getBedDetailsByWard(@PathVariable Long wardId ){
+
+        log.info("Request received to fetch getBedDetailsByWard: {}", wardId);
+
+        ApiResponse<List<BedDetailsByWardResponse>> response = ipdPatientService.getBedDetailsByWard(wardId);
+
+        return ResponseEntity.ok(response);
+    }
+
 
 
 
