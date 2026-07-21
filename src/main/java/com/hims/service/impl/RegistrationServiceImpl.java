@@ -1498,5 +1498,37 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
 
+    @Override
+    public boolean checkDuplicatePatient(String firstName, LocalDate dob, Long gender,
+            String mobile,
+            Long relation) {
+
+        log.info(
+                "Checking duplicate patient: firstName={}, dob={}, gender={}, mobile={}, relation={}",
+                firstName, dob, gender, mobile, relation
+        );
+
+        String normalizedFirstName = firstName == null ? "" : firstName.trim();
+        String normalizedMobile = mobile == null ? "" : mobile.trim();
+
+
+        boolean exists = patientRepository
+                        .existsByPatientFnIgnoreCaseAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(
+                                normalizedFirstName,
+                                dob,
+                                gender,
+                                normalizedMobile,
+                                relation
+                        );
+
+        log.info(
+                "Duplicate patient check result: firstName={}, mobile={}, exists={}",
+                normalizedFirstName,
+                normalizedMobile,
+                exists
+        );
+        return exists;
+    }
+
 }
 

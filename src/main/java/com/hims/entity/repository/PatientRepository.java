@@ -117,7 +117,7 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
                                  @Param("uhidNo") String uhidNo);
 
 
-    boolean existsByPatientFnAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(String trim, LocalDate parse, Long gender, String trim1, Long relation);
+    boolean existsByPatientFnIgnoreCaseAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(String trim, LocalDate parse, Long gender, String trim1, Long relation);
 
 
     @Query(value = """
