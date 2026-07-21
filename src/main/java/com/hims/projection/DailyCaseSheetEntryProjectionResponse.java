@@ -21,4 +21,13 @@ public interface DailyCaseSheetEntryProjectionResponse {
     String getFollowUp();
 
     LocalDateTime getVisitDateTime();
+
+
+    Long getDoctorId();
+
+    String getDoctorName();
+
+    Long getDepartmentId();
+
+    String getDepartmentName();
 }

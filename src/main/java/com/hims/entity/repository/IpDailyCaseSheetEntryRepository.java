@@ -22,7 +22,11 @@ public interface IpDailyCaseSheetEntryRepository extends JpaRepository<IpDailyCa
             entry.procedureSummary AS procedure,
             entry.carePlanChanges AS plan,
             entry.nextFollowUpPlan AS followUp,
-            entry.visitDatetime AS visitDateTime
+            entry.visitDatetime AS visitDateTime,
+                     entry.doctor.userId AS doctorId,
+                      entry.doctorName AS doctorName,
+                      entry.visitDepartment.id AS departmentId,
+                      entry.visitDepartment.departmentName AS departmentName
         FROM IpDailyCaseSheetEntry entry
         WHERE entry.inpatient.inpatientId = :inpatientId
         ORDER BY entry.visitDatetime DESC

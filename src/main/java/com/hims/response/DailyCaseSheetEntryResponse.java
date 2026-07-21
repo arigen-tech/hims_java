@@ -16,6 +16,10 @@ public class DailyCaseSheetEntryResponse {
     private String plan;
     private String followUp;
     private LocalDateTime visitDateTime;
+    private Long doctorId;
+    private String doctorName;
+    private Long departmentId;
+    private String departmentName;
 
 
 
