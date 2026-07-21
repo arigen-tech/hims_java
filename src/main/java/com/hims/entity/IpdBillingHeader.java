@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+
 @Entity
 @DynamicInsert
 @DynamicUpdate
@@ -30,8 +30,9 @@ public class IpdBillingHeader {
     @Column(name = "uhid", nullable = false, length = 50)
     private String uhid;
 
-    @Column(name = "inpatient_id", nullable = false)
-    private Long inpatientId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inpatient_id", nullable = false)
+    private Inpatient inpatientId;
 
     @Column(name = "patient_name", length = 150)
     private String patientName;
@@ -57,45 +58,43 @@ public class IpdBillingHeader {
     @Column(name = "credit_limit", precision = 12, scale = 2)
     private BigDecimal creditLimit;
 
-    @Builder.Default
+
     @Column(name = "total_amount", precision = 12, scale = 2)
-    private BigDecimal totalAmount = BigDecimal.ZERO;
+    private BigDecimal totalAmount;
 
-    @Builder.Default
+
     @Column(name = "gst_amount", precision = 12, scale = 2)
-    private BigDecimal gstAmount = BigDecimal.ZERO;
+    private BigDecimal gstAmount;
 
-    @Builder.Default
+
     @Column(name = "discount_amount", precision = 12, scale = 2)
-    private BigDecimal discountAmount = BigDecimal.ZERO;
+    private BigDecimal discountAmount;
 
-    @Builder.Default
+
     @Column(name = "net_amount", precision = 12, scale = 2)
-    private BigDecimal netAmount = BigDecimal.ZERO;
+    private BigDecimal netAmount;
 
-    @Builder.Default
     @Column(name = "insurance_payable_amount", precision = 12, scale = 2)
-    private BigDecimal insurancePayableAmount = BigDecimal.ZERO;
+    private BigDecimal insurancePayableAmount;
 
-    @Builder.Default
+
     @Column(name = "patient_payable_amount", precision = 12, scale = 2)
-    private BigDecimal patientPayableAmount = BigDecimal.ZERO;
+    private BigDecimal patientPayableAmount ;
 
-    @Builder.Default
+
     @Column(name = "non_payable_amount", precision = 12, scale = 2)
-    private BigDecimal nonPayableAmount = BigDecimal.ZERO;
+    private BigDecimal nonPayableAmount ;
 
-    @Builder.Default
+
     @Column(name = "insurance_approved_amount", precision = 12, scale = 2)
-    private BigDecimal insuranceApprovedAmount = BigDecimal.ZERO;
+    private BigDecimal insuranceApprovedAmount ;
 
-    @Builder.Default
     @Column(name = "insurance_settled_amount", precision = 12, scale = 2)
-    private BigDecimal insuranceSettledAmount = BigDecimal.ZERO;
+    private BigDecimal insuranceSettledAmount;
 
-    @Builder.Default
+
     @Column(name = "patient_paid_amount", precision = 12, scale = 2)
-    private BigDecimal patientPaidAmount = BigDecimal.ZERO;
+    private BigDecimal patientPaidAmount ;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bill_status_id")
@@ -114,14 +113,13 @@ public class IpdBillingHeader {
     @Column(name = "created_by", length = 100)
     private String createdBy;
 
-    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
-    @UpdateTimestamp
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -129,11 +127,11 @@ public class IpdBillingHeader {
 //    @JoinColumn(name = "preauth_id")
 //    private TpaPreauthRequest preauth;
 
-    @Builder.Default
-    @Column(name = "patient_refund_amount", precision = 12, scale = 2)
-    private BigDecimal patientRefundAmount = BigDecimal.ZERO;
 
-    @Builder.Default
+    @Column(name = "patient_refund_amount", precision = 12, scale = 2)
+    private BigDecimal patientRefundAmount;
+
+
     @Column(name = "refund_status", length = 1)
-    private String refundStatus = "n";
+    private String refundStatus;
 }

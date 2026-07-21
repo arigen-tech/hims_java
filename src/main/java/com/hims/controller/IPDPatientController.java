@@ -155,12 +155,22 @@ public class IPDPatientController {
         return ipdPatientService.saveVitalsDetails(request);
     }
 
-    @PostMapping("/saveIntakeOutputDetails")
+    @PostMapping("saveIntakeOutputDetails")
     public ApiResponse<String> saveIntakeOutputDetails(@Valid @RequestBody IpIntakeOutputSaveRequest request) {
 
         log.info("Request received to save intake/output details. inpatientId: {}, entryCount: {}", request.getInpatientId(), request.getEntries() != null ? request.getEntries().size() : 0);
 
         return ipdPatientService.saveIntakeOutputDetails(request);
+    }
+
+    @PostMapping("saveDailyCaseSheetEntry")
+    public ApiResponse<String> saveDailyCaseSheetEntry(@Valid @RequestBody IpDailyCaseSheetEntryRequest request) {
+        log.info(
+                "Request received to save daily case sheet entry. inpatientId: {}, doctorId: {}",
+                request.getInpatientId(),
+                request.getDoctorId());
+
+        return ipdPatientService.saveDailyCaseSheetEntry(request);
     }
 
 

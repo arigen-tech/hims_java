@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -104,6 +105,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasOutputTypeRepository masOutputTypeRepository;
     @Autowired
     MasRouteRepository masRouteRepository;
+    @Autowired
+    IpDailyCaseSheetEntryRepository ipDailyCaseSheetEntryRepository;
+    @Autowired
+    MasIpdServiceCategoryRepository masIpdServiceCategoryRepository;
+    @Autowired
+    IpdBillingDetailsRepository ipdBillingDetailsRepository;
+    @Autowired
+    MasVisitTypeRepository masVisitTypeRepository;
+    @Autowired
+    IpdConsultationTariffRepository ipdConsultationTariffRepository;
 
 
 
@@ -118,6 +129,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long ipInternalStatusId;
     @Value("${ip.internal.status.rw.id}")
     Long ipInternalStatusRwId;
+
+    @Value("${ipd.service.category.id}")
+    Long ipdServiceCategoryId;
 
     @Override
     public ApiResponse<Page<IPDPatientWaitingListResponse>> pendingAdmissionList(
@@ -607,6 +621,203 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
         }
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> saveDailyCaseSheetEntry(IpDailyCaseSheetEntryRequest request) {
+
+        log.info("Saving daily case sheet entry. inpatientId: {}, doctorId: {}, " + "departmentId: {}, visitTypeId: {}",
+                request.getInpatientId(),
+                request.getDoctorId(),
+                request.getVisitDepartmentId(),
+                request.getVisitType());
+
+        try {
+
+            LocalDateTime currentDateTime = LocalDateTime.now();
+
+            User loggedInUser = authUtil.getCurrentUser();
+
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException("Inpatient not found with ID: "
+                                    + request.getInpatientId()));
+
+            Patient patient = inpatient.getPatient();
+
+            if (patient == null) {
+                throw new RuntimeException("Patient is not associated with inpatient ID: " + request.getInpatientId());
+            }
+
+            User doctor = userRepo.findById(request.getDoctorId()).orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + request.getDoctorId()));
+
+            MasDepartment department = masDepartmentRepository.findById(request.getVisitDepartmentId()).orElseThrow(() -> new RuntimeException(
+                            "Department not found with ID: " + request.getVisitDepartmentId()));
+
+            MasVisitType visitType = masVisitTypeRepository.findById(request.getVisitType()).orElseThrow(() -> new RuntimeException(
+                            "Visit type not found with ID: " + request.getVisitType()));
+
+            /*
+             * Check current active consultation tariff before saving
+             * the case-sheet entry.
+             */
+            IpdConsultationTariff consultationTariff = ipdConsultationTariffRepository.findCurrentApplicableTariff(
+                                    request.getVisitDepartmentId(),
+                                    request.getDoctorId(),
+                                    request.getVisitType(),
+                                    currentDateTime
+                            )
+                            .orElseThrow(() -> new RuntimeException(
+                                    "No active consultation tariff found for the current date. "
+                                            + "Doctor ID: " + request.getDoctorId()
+                                            + ", Department ID: "
+                                            + request.getVisitDepartmentId()
+                                            + ", Visit Type ID: "
+                                            + request.getVisitType()
+                            ));
+
+
+
+            log.info("Consultation tariff found. tariffId: {}, baseTariff: {}", consultationTariff.getTariffId(), consultationTariff.getBaseTariff());
+
+            IpDailyCaseSheetEntry caseSheetEntry =
+                    IpDailyCaseSheetEntry.builder()
+                            .inpatient(inpatient)
+                            .patient(patient)
+                            .visitDatetime(currentDateTime)
+                            .doctor(doctor)
+                            .doctorName(doctor.getFullName())
+                            .doctorRole(null)
+                            .visitDepartment(department)
+                            .doctorNotes(request.getDoctorNotes())
+                            .investigationSummary(request.getInvestigationSummary())
+                            .medicineSummary(request.getMedicineSummary())
+                            .procedureSummary(request.getProcedureSummary())
+                            .carePlanChanges(request.getCarePlanChanges())
+                            .nextFollowUpPlan(request.getNextFollowUpPlan())
+                            .lastUpdateDate(currentDateTime)
+                            .createdBy(loggedInUser.getFullName())
+                            .lastUpdatedBy(loggedInUser.getFullName())
+                            .build();
+
+            IpDailyCaseSheetEntry savedCaseSheetEntry = ipDailyCaseSheetEntryRepository.save(caseSheetEntry);
+
+            /*
+             * Create billing using the matched tariff.
+             */
+            saveDailyCaseSheetBillingDetails(inpatient, consultationTariff);
+
+            log.info("Daily case sheet entry saved successfully. " + "caseSheetEntryId: {}, inpatientId: {}, tariffId: {}",
+                    savedCaseSheetEntry.getCaseSheetEntryId(),
+                    inpatient.getInpatientId(),
+                    consultationTariff.getTariffId()
+            );
+
+            return ResponseUtils.createSuccessResponse("Daily case sheet entry saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while saving daily case sheet entry. inpatientId: {}", request.getInpatientId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},e.getMessage(), 404);
+        }
+    }
+    private void saveDailyCaseSheetBillingDetails(Inpatient inpatient, IpdConsultationTariff consultationTariff) {
+
+        LocalDateTime currentDateTime = LocalDateTime.now();
+
+        IpdBillingHeader billingHeader = ipdBillingHeaderRepository.findByInpatientId_InpatientId(inpatient.getInpatientId())
+                .orElseThrow(() -> new RuntimeException("IPD billing header not found for inpatient ID: " + inpatient.getInpatientId()));
+
+        MasIpdServiceCategory billingCategory = masIpdServiceCategoryRepository.findById(2L)
+                        .orElseThrow(() -> new RuntimeException("IPD service category not found with ID: 2"));
+
+        BigDecimal quantity = BigDecimal.ONE;
+
+        BigDecimal rate = Optional.ofNullable(consultationTariff.getBaseTariff()).orElseThrow(() -> new RuntimeException("Base tariff is not configured for tariff ID: " + consultationTariff.getTariffId()));
+
+        BigDecimal gstPercent = BigDecimal.ZERO;
+
+        if (consultationTariff.getServiceCategory() != null && consultationTariff.getServiceCategory().getGstPercent() != null) {
+
+            gstPercent = new BigDecimal(consultationTariff.getServiceCategory().getGstPercent().toString());
+        }
+
+        BigDecimal discountAmount = BigDecimal.ZERO;
+
+        // amount = rate × quantity
+        BigDecimal amount = rate.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+
+        // gstAmount = amount × gstPercent ÷ 100
+        BigDecimal gstAmount = amount.multiply(gstPercent).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+        // netAmount = amount + GST - discount
+        BigDecimal netAmount = amount.add(gstAmount).subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
+
+        IpdBillingDetails billingDetails = new IpdBillingDetails();
+
+        billingDetails.setBillHeader(billingHeader);
+        billingDetails.setCategory(masIpdServiceCategoryRepository.findById(ipdServiceCategoryId).orElseThrow());
+
+        billingDetails.setItemName(consultationTariff.getDoctor().getFullName());
+
+        billingDetails.setServiceDate(currentDateTime);
+        billingDetails.setQuantity(quantity);
+        billingDetails.setRate(rate);
+        billingDetails.setAmount(amount);
+        billingDetails.setGstPercent(gstPercent);
+        billingDetails.setGstAmount(gstAmount);
+        billingDetails.setDiscountAmount(discountAmount);
+        billingDetails.setNetAmount(netAmount);
+        billingDetails.setCreatedAt(currentDateTime);
+
+        IpdBillingDetails savedBillingDetails = ipdBillingDetailsRepository.save(billingDetails);
+
+        updateIpdBillingHeaderAmount(billingHeader, amount, gstAmount, discountAmount, netAmount);
+
+        log.info(
+                "Daily case sheet billing saved successfully. billItemId: {}, " + "inpatientId: {}, rate: {}, GST percentage: {}, " +
+                        "GST amount: {}, net amount: {}",
+                savedBillingDetails.getBillItemId(),
+                inpatient.getInpatientId(),
+                rate,
+                gstPercent,
+                gstAmount,
+                netAmount
+        );
+    }
+    private void updateIpdBillingHeaderAmount(IpdBillingHeader billingHeader, BigDecimal amount,BigDecimal gstAmount,   BigDecimal discountAmount, BigDecimal netAmount) {
+
+        BigDecimal currentTotalAmount = billingHeader.getTotalAmount() != null ? billingHeader.getTotalAmount() : BigDecimal.ZERO;
+
+        BigDecimal currentGstAmount = billingHeader.getGstAmount() != null ? billingHeader.getGstAmount() : BigDecimal.ZERO;
+
+        BigDecimal currentDiscountAmount = billingHeader.getDiscountAmount() != null ? billingHeader.getDiscountAmount() : BigDecimal.ZERO;
+
+        BigDecimal currentNetAmount = billingHeader.getNetAmount() != null ? billingHeader.getNetAmount() : BigDecimal.ZERO;
+
+        billingHeader.setTotalAmount(currentTotalAmount.add(amount != null ? amount : BigDecimal.ZERO));
+
+        billingHeader.setGstAmount(currentGstAmount.add(gstAmount != null ? gstAmount : BigDecimal.ZERO));
+
+        billingHeader.setDiscountAmount(currentDiscountAmount.add(discountAmount != null ? discountAmount : BigDecimal.ZERO));
+
+        billingHeader.setNetAmount(currentNetAmount.add(netAmount != null ? netAmount : BigDecimal.ZERO));
+
+        billingHeader.setUpdatedAt(LocalDateTime.now());
+
+        ipdBillingHeaderRepository.save(billingHeader);
+
+        log.info("IPD billing header updated successfully. billId: {}, " +
+                        "totalAmount: {}, gstAmount: {}, discountAmount: {}, " +
+                        "netAmount: {}, patientPayableAmount: {}",
+                billingHeader.getBillId(),
+                billingHeader.getTotalAmount(),
+                billingHeader.getGstAmount(),
+                billingHeader.getDiscountAmount(),
+                billingHeader.getNetAmount(),
+                billingHeader.getPatientPayableAmount()
+        );
+    }
+
     private IpIntakeOutputEntry buildIntakeOutputEntity(
             IpIntakeOutputEntryRequest request,
             Inpatient inpatient,
@@ -688,7 +899,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         IpdBillingHeader billingHeader = new IpdBillingHeader();
 
         billingHeader.setUhid(request.getUhid());
-        billingHeader.setInpatientId(inpatient.getInpatientId());
+        billingHeader.setInpatientId(inpatientRepository.findById(inpatient.getInpatientId()).orElseThrow());
         billingHeader.setPatientName(request.getPatientName());
         billingHeader.setBillingType(billingType);
         billingHeader.setCreatedBy(user.getFullName());

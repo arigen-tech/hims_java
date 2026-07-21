@@ -1,9 +1,6 @@
 package com.hims.service;
 
-import com.hims.request.IpIntakeOutputSaveRequest;
-import com.hims.request.IpNursingMedicalAssessmentRequest;
-import com.hims.request.IpVitalsRequest;
-import com.hims.request.IpdPatientRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -42,4 +39,6 @@ public interface IPDPatientService {
     ApiResponse<String> saveVitalsDetails(IpVitalsRequest request);
 
     ApiResponse<String> saveIntakeOutputDetails(@Valid IpIntakeOutputSaveRequest request);
+
+    ApiResponse<String> saveDailyCaseSheetEntry(@Valid IpDailyCaseSheetEntryRequest request);
 }
