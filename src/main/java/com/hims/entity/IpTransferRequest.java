@@ -58,9 +58,6 @@ public class IpTransferRequest {
     @JoinColumn(name = "doctor_id", nullable = false, foreignKey = @ForeignKey(name = "ip_transfer_request_doctor_id_fkey"))
     private User doctor;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "transfer_reason_id", nullable = false, foreignKey = @ForeignKey(name = "fk_transfer_reason"))
-    private MasIpdTransferReason transferReason;
 
     @Column(name = "priority", length = 20)
     private String priority;
