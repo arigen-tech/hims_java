@@ -15,15 +15,8 @@ import java.time.LocalDateTime;
 @Entity
 @DynamicInsert
 @DynamicUpdate
-@Table(
-        name = "ip_transfer_request",
-        schema = "public",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "ip_transfer_request_transfer_no_key",
-                        columnNames = "transfer_no"
-                )
-        }
+@Table(name = "ip_transfer_request", schema = "public", uniqueConstraints = {
+                @UniqueConstraint(name = "ip_transfer_request_transfer_no_key", columnNames = "transfer_no")}
 )
 public class IpTransferRequest {
 
@@ -65,9 +58,9 @@ public class IpTransferRequest {
     @JoinColumn(name = "doctor_id", nullable = false, foreignKey = @ForeignKey(name = "ip_transfer_request_doctor_id_fkey"))
     private User doctor;
 
-//    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-//    @JoinColumn(name = "transfer_reason_id", nullable = false, foreignKey = @ForeignKey(name = "fk_transfer_reason"))
-//    private MasIpdTransferReason transferReason;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "transfer_reason_id", nullable = false, foreignKey = @ForeignKey(name = "fk_transfer_reason"))
+    private MasIpdTransferReason transferReason;
 
     @Column(name = "priority", length = 20)
     private String priority;
@@ -81,9 +74,9 @@ public class IpTransferRequest {
     @Column(name = "requested_by", length = 300)
     private String requestedBy;
 
-    @Builder.Default
+
     @Column(name = "approval_required", length = 1)
-    private String approvalRequired = "n";
+    private String approvalRequired;
 
     @Column(name = "approved_by", length = 300)
     private String approvedBy;

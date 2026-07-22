@@ -173,6 +173,8 @@ public class AppConstants {
     //Ipd
 
     public static final String IPD_ADMISSION_FLAG= "Y";
+    public static final String IPD_TRANSFER_STATUS= "P";
+
 
     public static final String OPDTYPE = "OPD";
     public static final String LABTYPE = "LAB";

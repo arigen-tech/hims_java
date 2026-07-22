@@ -193,6 +193,16 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("saveBedTransferRequest")
+    public ApiResponse<String> saveBedTransferRequest(@Valid @RequestBody BedTransferRequest request) {
+        log.info(
+                "Request received to save Bed Transfer Request. inpatientId: {}, doctorId: {}",
+                request.getInpatientId(),
+                request.getDoctorId());
+
+        return ipdPatientService.saveBedTransferRequest(request);
+    }
+
 
 
 
