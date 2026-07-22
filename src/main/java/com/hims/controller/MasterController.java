@@ -329,6 +329,8 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     private TransferReasonService transferReasonService;
     @Autowired
     private MasIpNursingAssessmentValueService masIpNursingAssessmentValueService;
+    @Autowired
+    private MasIpdTransferReasonService masIpdTransferReasonService;
 
 
 
@@ -5330,4 +5332,13 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
     public ApiResponse<List<MasIpNursingAssessmentValueResponse>> masIpNursingAssessmentValue(@PathVariable int flag) {
         return masIpNursingAssessmentValueService.getAll(flag);
     }
+
+    //======================================= Mas Ipd Transfer Reason==================================
+
+
+    @GetMapping("/masIpdTransferReason/getAll/{flag}")
+    public ApiResponse<List<MasIpdTransferReasonResponse>> masIpdTransferReason(@PathVariable int flag) {
+        return masIpdTransferReasonService.getAll(flag);
+    }
+
 }

@@ -49,22 +49,21 @@ public interface IpdConsultationTariffRepository extends JpaRepository<IpdConsul
                 Pageable pageable
         );
 
-
     @Query(value = """
-            SELECT tariff.*
-            FROM ipd_consultation_tariff tariff
-            WHERE tariff.department_id = :departmentId
-              AND tariff.doctor_id = :doctorId
-              AND tariff.visit_type_id = :visitTypeId
-              AND LOWER(tariff.status) = 'y'
-              AND tariff.from_dt <= :currentDateTime
-              AND (
-                    tariff.to_dt IS NULL
-                    OR tariff.to_dt >= :currentDateTime
-                  )
-            ORDER BY tariff.from_dt DESC, tariff.tariff_id DESC
-            LIMIT 1
-            """, nativeQuery = true)
+        SELECT tariff.*
+        FROM ipd_consultation_tariff tariff
+        WHERE tariff.department_id = :departmentId
+          AND tariff.doctor_id = :doctorId
+          AND tariff.visit_type_id = :visitTypeId
+          AND LOWER(tariff.status) = 'y'
+          AND :currentDateTime >= tariff.from_dt
+          AND (
+                tariff.to_dt IS NULL
+                OR :currentDateTime <= tariff.to_dt
+              )
+        ORDER BY tariff.from_dt DESC, tariff.tariff_id DESC
+        LIMIT 1
+        """, nativeQuery = true)
     Optional<IpdConsultationTariff> findCurrentApplicableTariff(
             @Param("departmentId") Long departmentId,
             @Param("doctorId") Long doctorId,
