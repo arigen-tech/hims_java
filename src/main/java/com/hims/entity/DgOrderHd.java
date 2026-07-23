@@ -79,12 +79,16 @@ public class DgOrderHd {
     private Patient patientId;
 
     @Column(name = "discount_id")
-    private int discountId;
+    private Integer discountId;
 
     @Column(name = "last_chg_by", length = 50)
     private String lastChgBy;
 
     @Column(name = "order_time")
     private Instant orderTime;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inpatient_id")
+    private Inpatient inpatientId;
 
 }

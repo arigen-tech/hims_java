@@ -1,5 +1,6 @@
 package com.hims.helperUtil;
 
+import com.hims.constants.AppConstants;
 import com.hims.utils.RandomNumGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -10,10 +11,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.security.SecureRandom;
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 @Service
@@ -90,6 +88,69 @@ public class HelperUtils {
 
     public String createInvoiceNumber() {
         return randomNumGenerator.generateOrderNumber("HIMS", true, true);
+    }
+
+    public void validatePagination(int page, int size) {
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "Page number cannot be negative"
+            );
+        }
+        if (size <= 0) {
+            throw new IllegalArgumentException(
+                    "Page size must be greater than zero"
+            );
+        }
+        if (size > 100) {
+            throw new IllegalArgumentException(
+                    "Page size cannot be greater than 100"
+            );
+        }
+    }
+
+    public void validateDateRange(LocalDate fromDate, LocalDate toDate) {
+        if (fromDate == null && toDate == null) {
+            return;
+        }
+        if (fromDate == null || toDate == null) {
+            throw new IllegalArgumentException(
+                    "Both from date and to date are required when using date filter"
+            );
+        }
+        if (fromDate.isAfter(toDate)) {
+            throw new IllegalArgumentException(
+                    "From date cannot be greater than to date"
+            );
+        }
+    }
+
+
+    public String cleanValue(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    public String normalizeRefundStatusFilter(String value) {
+        String cleaned = cleanValue(value);
+        if (cleaned == null) {
+            return null;
+        }
+
+        if ("completed".equalsIgnoreCase(cleaned) || AppConstants.STATUS_Y.equalsIgnoreCase(cleaned)) {
+            return AppConstants.STATUS_Y;
+        }
+
+        if ("pending".equalsIgnoreCase(cleaned) || AppConstants.STATUS_N.equalsIgnoreCase(cleaned)) {
+            return AppConstants.STATUS_N;
+        }
+
+        if ("all".equalsIgnoreCase(cleaned)) {
+            return null;
+        }
+
+        return cleaned.toUpperCase();
     }
 
 }

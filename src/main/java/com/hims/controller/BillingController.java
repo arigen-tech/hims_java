@@ -1,11 +1,9 @@
 package com.hims.controller;
 
 import com.hims.projection.BillingHeaderResponseProjection;
+import com.hims.request.PaidCancelledAppointmentResponse;
 import com.hims.request.PaymentUpdateRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.PatientAppointmentResponse;
-import com.hims.response.PaymentResponse;
-import com.hims.response.PendingBillingResponse;
+import com.hims.response.*;
 import com.hims.service.BillingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,10 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -109,5 +109,37 @@ public class BillingController {
         log.info("Search Invoice Details API called - patientName={}, phoneNo={}, registrationNo={}",
                 patientName, phoneNo, registrationNo);
         return billingService.searchInvoiceDetails(patientName, phoneNo, registrationNo, pageable);
+    }
+
+    @GetMapping("/billingRefundPatientList")
+    public ResponseEntity<ApiResponse<Page<PaidCancelledAppointmentResponse>>> getBillingRefundPatientList(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(required = false) String patientName,
+        @RequestParam(required = false) String mobileNo,
+        @RequestParam(required = false) String billingServiceType,
+        @RequestParam(required = false) String refundStatus,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        log.info("Billing refund patient list request received");
+        ApiResponse<Page<PaidCancelledAppointmentResponse>> response =
+                billingService.getBillingRefundPatientList(
+                        page,
+                        size,
+                        patientName,
+                        mobileNo,
+                        billingServiceType,
+                        refundStatus,
+                        fromDate,
+                        toDate
+                );
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping({"/patientBillingRefundDetails/{billingId}"})
+    public ResponseEntity<ApiResponse<List<PatientBillingRefundDetailsResponse>>>
+    getPatientBillingRefundDetails(@PathVariable Long billingId) {
+        log.info("Fetching refund details for billingId={}", billingId);
+        return ResponseEntity.ok(billingService.getPatientBillingRefundDetails(billingId));
     }
 }

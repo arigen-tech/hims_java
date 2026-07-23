@@ -37,6 +37,9 @@ public interface RegistrationService {
     ApiResponse<List<AvailableTokenSlotResponse>> getAppointmentSlots(Long deptId, Long doctorId, String appointmentDate, Long sessionId, int flag);
 
     ApiResponse<List<?>> getAppointmentSummaryReport(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate,Integer flag);
+
+    boolean checkDuplicatePatient(String firstName,  LocalDate dob, Long gender, String mobile, Long relation);
+
 }
 
 
