@@ -203,6 +203,24 @@ public class IPDPatientController {
         return ipdPatientService.saveBedTransferRequest(request);
     }
 
+    @GetMapping("wardPendingToTransferRequestList/{wardId}")
+    public ResponseEntity<ApiResponse<List<PendingToTransferResponse>>> wardPendingToTransferRequest(  @RequestParam List<Long> wardIds ){
+
+        log.info("Request received to fetch pending transfer requests for wardIds: {}", wardIds);
+        ApiResponse<List<PendingToTransferResponse>> response = ipdPatientService.wardPendingToTransferRequest(wardIds);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("wardPendingToTransferRequestStatusCompleteAndReject/{inpatientId}/{transferStatus}")
+    public ApiResponse<String> updateAdmissionInternalStatus(@PathVariable Long inpatientId,@PathVariable String transferStatus) {
+
+        log.info("Request received to change wardPendingToTransferRequestStatusCompleteAndReject for inpatientId: {}", inpatientId);
+
+        return ipdPatientService.wardPendingToTransferRequestStatusCompleteAndReject(inpatientId,transferStatus);
+    }
+
+
 
 
 

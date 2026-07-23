@@ -47,4 +47,8 @@ public interface IPDPatientService {
     ApiResponse<List<BedDetailsByWardResponse>> getBedDetailsByWard(Long wardId);
 
     ApiResponse<String> saveBedTransferRequest(@Valid BedTransferRequest request);
+
+    ApiResponse<List<PendingToTransferResponse>> wardPendingToTransferRequest(List<Long> wardIds);
+
+    ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(Long inpatientId,String transferStatus);
 }

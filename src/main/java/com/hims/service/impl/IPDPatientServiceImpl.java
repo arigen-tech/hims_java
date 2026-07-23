@@ -4,16 +4,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.projection.DailyCaseSheetEntryProjectionResponse;
-import com.hims.projection.IPDPatientWaitingListProjection;
-import com.hims.projection.IpVitalsProjection;
-import com.hims.projection.WardWiseDetailsProjection;
+import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import com.hims.utils.SaveIpdBillingDetails;
+import io.swagger.models.auth.In;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -139,6 +137,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Value("${ipd.service.category.id}")
     Long ipdServiceCategoryId;
+    @Value("${bed.status.transfer.request.id}")
+    Long bedStatusTransferRequestId;
 
     @Override
     public ApiResponse<Page<IPDPatientWaitingListResponse>> pendingAdmissionList(
@@ -853,6 +853,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             IpTransferRequest savedRequest = ipTransferRequestRepository.save(transferRequest);
 
+            toBed.setBedStatusId(masBedStatusRepo.findById(bedStatusTransferRequestId).orElseThrow());
+
             log.info("Bed transfer request saved successfully. transferId: {}, transferNo: {}",
                     savedRequest.getTransferId(),
                     savedRequest.getTransferNo());
@@ -869,6 +871,248 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     500);
         }
     }
+    @Override
+    public ApiResponse<List<PendingToTransferResponse>> wardPendingToTransferRequest(List<Long> wardIds) {
+
+        log.info(
+                "Fetching pending transfer requests for wardIds: {}",
+                wardIds
+        );
+
+        try {
+            List<PendingToTransferProjectionResponse> projectionList = ipTransferRequestRepository
+                            .findPendingTransferRequestsByWardId(wardIds,AppConstants.IPD_TRANSFER_STATUS.toLowerCase());
+
+            List<PendingToTransferResponse> responseList = projectionList.stream()
+                            .map(this::mapToPendingTransferResponse)
+                            .toList();
+
+            log.info("Found {} pending transfer requests for destination wardId: {}", responseList.size(), wardIds);
+
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching pending transfer requests for wardId: {}", wardIds, e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+        }
+    }
+
+//    @Override
+//    @Transactional
+//    public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(Long inpatientId, String transferStatus) {
+//        User user=authUtil.getCurrentUser();
+//        Optional<IpTransferRequest> ipTransferRequest = ipTransferRequestRepository.findById(inpatientId);
+//        IpTransferRequest ipTransferRequest1= ipTransferRequest.get();
+//        Optional<Inpatient> inpatient=inpatientRepository.findById(inpatientId);
+//        Inpatient inpatient1=inpatient.get();
+//        Optional<IpBedAllocation> bedAllocation=ipBedAllocationRepository.findById(inpatientId);
+//        IpBedAllocation allocation=bedAllocation.get();
+//        MasBed masBed=ipTransferRequest.get().getToBed();
+//        if (transferStatus.equals("C")){
+//
+//            masBed.setBedStatusId(masBedStatusRepo.findById(bedStatusOccupiedId).orElseThrow());
+//
+//            ipTransferRequest1.setTransferStatus("C");
+//            ipTransferRequest1.setTransferDatetime(LocalDateTime.now());
+//            ipTransferRequest1.setAcceptanceDatetime(LocalDateTime.now());
+//
+//            inpatient1.setAdmittingWardId(ipTransferRequest1.getToWard());
+//            inpatient1.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusId).orElseThrow());
+//
+//            allocation.setInpatient(inpatient1);
+//            allocation.setPatient(inpatient1.getPatient());
+//            allocation.setWard(ipTransferRequest1.getToWard());
+//            allocation.setBed(ipTransferRequest1.getToBed());
+//            allocation.setRoom(masBed.getRoomId());
+//            allocation.setAllocationStartDate(LocalDateTime.now());
+//            allocation.setCreatedBy(user.getFullName());
+//            allocation.setLastUpdatedBy(user.getFullName());
+//            allocation.setLastUpdateDate(LocalDateTime.now());
+//
+//        }else{
+//            ipTransferRequest1.setTransferStatus("R");
+//            ipTransferRequest1.setLastUpdatedBy(user.getFullName());
+//            ipTransferRequest1.setLastUpdateDate(LocalDateTime.now());
+//
+//            masBed.setBedStatusId(masBedStatusRepo.findById(bedStatusId).orElseThrow());
+//
+//
+//    }
+//        return ResponseUtils.createSuccessResponse("Status change successfully", new TypeReference<>() {});
+//
+//    }
+@Override
+@Transactional(rollbackFor = Exception.class)
+public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(Long inpatientId, String transferStatus) {
+
+    log.info("Updating transfer request status for inpatientId: {}, transferStatus: {}", inpatientId, transferStatus);
+
+    try {
+
+
+
+        // Convert status to uppercase to support values such as c, C, r and R.
+        String normalizedTransferStatus = transferStatus.trim().toUpperCase();
+
+        if (!normalizedTransferStatus.equals("C") && !normalizedTransferStatus.equals("R")) {
+
+            return ResponseUtils.createFailureResponse("Invalid transfer status. Allowed values are C and R", new TypeReference<>() {}.toString(), 400);
+        }
+
+        // Get the currently logged-in user.
+        User user = authUtil.getCurrentUser();
+
+        if (user == null) {
+            return ResponseUtils.createFailureResponse("current user not found", new TypeReference<>() {}.toString(), 404);
+        }
+
+        String updatedBy = user.getFullName();
+        LocalDateTime currentDateTime = LocalDateTime.now();
+
+        /*
+         * Fetch the transfer request.
+         *
+         * Note:
+         * findById() searches using transferId. Use this only when
+         * inpatientId and transferId contain the same value.
+         */
+        Optional<IpTransferRequest> ipTransferRequest = ipTransferRequestRepository.findByInpatient_InpatientId(inpatientId);
+                IpTransferRequest ipTransferRequest1=ipTransferRequest.get();
+
+        // Fetch inpatient details.
+        Inpatient inpatient =
+                inpatientRepository.findById(inpatientId).orElseThrow(() -> new RuntimeException("Inpatient not found with ID: " + inpatientId
+                        ));
+
+        /*
+         * Fetch the patient's current bed allocation.
+         *
+         * Note:
+         * findById() searches using bedAllocationId, not inpatientId.
+         */
+
+
+        // Get the destination bed selected in the transfer request.
+        MasBed destinationBed = ipTransferRequest1.getToBed();
+        MasBed masBed=ipTransferRequest1.getFromBed();
+
+        IpBedAllocation bedAllocation=new IpBedAllocation();
+
+        /*
+         * Complete the transfer request.
+         */
+        if ("C".equals(normalizedTransferStatus)) {
+
+            // Fetch the occupied bed status.
+            MasBedStatus occupiedBedStatus = masBedStatusRepo.findById(bedStatusOccupiedId).orElseThrow(() -> new RuntimeException("Occupied bed status not found with ID: " + bedStatusOccupiedId));
+            MasBedStatus availableBedStatus = masBedStatusRepo.findById(bedStatusId)
+                    .orElseThrow(() -> new RuntimeException(
+                            "Available bed status not found with ID: "
+                                    + bedStatusId
+                    ));
+            // Mark the destination bed as occupied.
+            destinationBed.setBedStatusId(occupiedBedStatus);
+            masBed.setBedStatusId(availableBedStatus);
+
+            // Update the transfer-request details.
+            ipTransferRequest1.setTransferStatus("C");
+            ipTransferRequest1.setTransferDatetime(currentDateTime);
+            ipTransferRequest1.setAcceptanceDatetime(currentDateTime);
+            ipTransferRequest1.setAcceptedBy(updatedBy);
+            ipTransferRequest1.setLastUpdatedBy(updatedBy);
+            ipTransferRequest1.setLastUpdateDate(currentDateTime);
+
+            // Update the inpatient's current ward.
+            inpatient.setAdmittingWardId(ipTransferRequest1.getToWard()
+            );
+
+            // Update the inpatient's internal status.
+            inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusId).orElseThrow(() -> new RuntimeException(
+                                    "IPD internal status not found with ID: "
+                                            + ipInternalStatusId
+                            ))
+            );
+
+            inpatient.setLastUpdatedBy(updatedBy);
+            inpatient.setLastUpdateDate(currentDateTime);
+
+            // Update the bed-allocation details with the destination ward and bed.
+            bedAllocation.setInpatient(inpatient);
+            bedAllocation.setPatient(inpatient.getPatient());
+            bedAllocation.setWard(ipTransferRequest1.getToWard());
+            bedAllocation.setBed(destinationBed);
+            bedAllocation.setRoom(destinationBed.getRoomId());
+            bedAllocation.setAllocationStartDate(currentDateTime);
+            bedAllocation.setCreatedBy(updatedBy);
+            bedAllocation.setLastUpdatedBy(updatedBy);
+            bedAllocation.setLastUpdateDate(currentDateTime);
+
+            log.info(
+                    "Transfer request completed successfully for inpatientId: {}",
+                    inpatientId);
+
+        } else {
+            /*
+             * Reject the transfer request.
+             */
+
+            // Update the transfer-request status as rejected.
+            ipTransferRequest1.setTransferStatus("R");
+            ipTransferRequest1.setLastUpdatedBy(updatedBy);
+            ipTransferRequest1.setLastUpdateDate(currentDateTime);
+
+            // Fetch the vacant/available bed status.
+            MasBedStatus availableBedStatus = masBedStatusRepo.findById(bedStatusId)
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Available bed status not found with ID: "
+                                            + bedStatusId
+                            ));
+
+            // Release the destination bed because the transfer was rejected.
+            destinationBed.setBedStatusId(availableBedStatus);
+
+            log.info(
+                    "Transfer request rejected successfully for inpatientId: {}",
+                    inpatientId
+            );
+        }
+
+        /*
+         * Explicit saves are added for clarity.
+         * Transactional dirty checking would also persist managed entities.
+         */
+        masBedRepository.save(destinationBed);
+        ipTransferRequestRepository.save(ipTransferRequest1);
+        ipBedAllocationRepository.save(bedAllocation);
+
+
+        String message = "C".equals(normalizedTransferStatus)
+                ? "Transfer completed successfully"
+                : "Transfer rejected successfully";
+
+        return ResponseUtils.createSuccessResponse(message, new TypeReference<>() {});
+
+    } catch (IllegalArgumentException e) {
+
+        log.error("Validation error while updating transfer status for inpatientId: {}. Reason: {}",
+                inpatientId,
+                e.getMessage()
+        );
+
+        // Mark the transaction for rollback because the exception is handled.
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(), 400);
+
+    } catch (Exception e) {
+
+        log.error("Error while updating transfer status for inpatientId: {}", inpatientId, e);
+
+        // Prevent partially updated transfer, inpatient and bed records.
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500
+        );
+    }
+}
 
     private DailyCaseSheetEntryResponse mapToDailyCaseSheetResponse(
             DailyCaseSheetEntryProjectionResponse projection
@@ -1298,6 +1542,36 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 .respiration(projection.getRespiration())
                 .spo2(projection.getSpo2())
                 .painScore(projection.getPainScore())
+                .build();
+    }
+    private PendingToTransferResponse mapToPendingTransferResponse(
+            PendingToTransferProjectionResponse projection) {
+
+        return PendingToTransferResponse.builder()
+                .inpatientId(projection.getInpatientId())
+                .patientId(projection.getPatientId())
+                .transferNo(projection.getTransferNo())
+                .transferDateTime(projection.getTransferDateTime())
+                .patientName(projection.getPatientName())
+                .gender(projection.getGender())
+                .age(projection.getAge())
+                .admissionNo(projection.getAdmissionNo())
+                .admissionDate(projection.getAdmissionDate())
+                .fromWardId(projection.getFromWardId())
+                .fromWardName(projection.getFromWardName())
+                .fromBedId(projection.getFromBedId())
+                .fromBedName(projection.getFromBedName())
+                .toWardId(projection.getToWardId())
+                .toWardName(projection.getToWardName())
+                .toBedId(projection.getToBedId())
+                .toBedName(projection.getToBedName())
+                .transferReasonId(projection.getTransferReasonId())
+                .transferReason(projection.getTransferReason())
+                .transferStatus(projection.getTransferStatus())
+                .clinicalNotes(projection.getClinicalNotes())
+                .doctorId(projection.getDoctorId())
+                .doctorName(projection.getDoctorName())
+                .uhidNO(projection.getUhidNo())
                 .build();
     }
 }
