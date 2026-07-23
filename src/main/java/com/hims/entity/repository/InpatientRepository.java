@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface InpatientRepository extends JpaRepository<Inpatient,Long> {
 
@@ -23,4 +25,6 @@ public interface InpatientRepository extends JpaRepository<Inpatient,Long> {
     String findLastAdmissionNoByFinancialYear(
             @Param("financialYearPattern") String financialYearPattern
     );
+
+    Optional<Inpatient> findTopByPatient_IdOrderByInpatientIdDesc(Long patientId);
 }

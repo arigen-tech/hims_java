@@ -137,6 +137,14 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Autowired
     private RadOrderDtRepository radOrderDtRepository;
 
+    @Autowired
+    private InpatientRepository inpatientRepository;
+
+    @Autowired
+    private InpatientValidationService inpatientValidationService;
+
+
+
 
     @Override
     @Transactional
@@ -310,7 +318,28 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     public ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patientId, String serviceCategoryCode) {
         try {
-            log.info("Fetching patient details for patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
+//            Inpatient inpatient = inpatientRepository
+//                    .findTopByPatient_IdOrderByInpatientIdDesc(patientId)
+//                    .orElseThrow(() -> new SDDException(404, "Inpatient not found"));
+//
+//            boolean isAdmitted = inpatient.getAdmissionStatus() != null
+//                    && "ADMITTED".equalsIgnoreCase(inpatient.getAdmissionStatus().getStatusCode());
+//
+//            if (isAdmitted) {
+//                return ResponseUtils.createFailureResponse(
+//                        null,
+//                        new TypeReference<>() {},
+//                        "The patient is currently admitted. Service registration is not allowed for this patient.",
+//                        400);
+//            }
+
+            if (inpatientValidationService.isPatientCurrentlyAdmitted(patientId)) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "The patient is currently admitted. Service registration is not allowed for this patient.",
+                        400);
+            }            log.info("Fetching patient details for patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
 
             // Default to OPD if serviceCategoryCode is null or empty
             String categoryCode = (serviceCategoryCode == null || serviceCategoryCode.trim().isEmpty())

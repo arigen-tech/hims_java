@@ -183,10 +183,11 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
-
-
-
-
+    @PostMapping("saveInpatientBookingInvestigation")
+    public ApiResponse<String> saveInpatientBookingInvestigation(@Valid @RequestBody InpatientBookingInvestigationRequest request) {
+        log.info("Request received to save inpatient booking investigation. inpatientId: {}", request.getInpatientId());
+        return ipdPatientService.saveInpatientBookingInvestigation(request);
+    }
 
 
 

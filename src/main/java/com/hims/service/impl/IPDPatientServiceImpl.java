@@ -13,6 +13,7 @@ import com.hims.response.*;
 import com.hims.service.IPDPatientService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +33,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 
@@ -116,6 +120,20 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasVisitTypeRepository masVisitTypeRepository;
     @Autowired
     IpdConsultationTariffRepository ipdConsultationTariffRepository;
+    @Autowired
+    private LabHdRepository labHdRepository;
+    @Autowired
+    private LabDtRepository labDtRepository;
+    @Autowired
+    private RadOrderHdRepository radOrderHdRepository;
+    @Autowired
+    private RadOrderDtRepository radOrderDtRepository;
+    @Autowired
+    private DgMasInvestigationRepository dgMasInvestigationRepository;
+    @Autowired
+    private LabOrderTrackingStatusRepository labOrderTrackingStatusRepository;
+    @Autowired
+    private com.hims.utils.RandomNumGenerator randomNumGenerator;
 
 
 
@@ -133,6 +151,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Value("${ipd.service.category.id}")
     Long ipdServiceCategoryId;
+    @Value("${app.laboratoryDepartment}")
+    Long laboratoryDepartment;
+    @Value("${app.radiologyDepartment}")
+    Long radiologyDepartment;
+    @Value("${lab.track-order-status-reg.ordered}")
+    Long labOrderedStatusId;
+    @Value("${labInvestigation.mainChargecodeId}")
+    Long labInvestigationMainChargecodeId;
+    @Value("${radioInvestigation.mainChargecodeId}")
+    Long radioInvestigationMainChargecodeId;
 
     @Override
     public ApiResponse<Page<IPDPatientWaitingListResponse>> pendingAdmissionList(
@@ -1265,5 +1293,243 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 .spo2(projection.getSpo2())
                 .painScore(projection.getPainScore())
                 .build();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> saveInpatientBookingInvestigation(@Valid InpatientBookingInvestigationRequest request) {
+        try {
+            if (request == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Request body is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            if (request.getPatientId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "patientId is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            if (request.getInpatientId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "inpatientId is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId())
+                    .orElseThrow(() -> new RuntimeException("Inpatient not found with id: " + request.getInpatientId()));
+
+            Patient patient = inpatient.getPatient();
+            if (patient == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient is not linked to a patient", HttpStatus.BAD_REQUEST.value());
+            }
+
+            if (request.getPatientId() != null && !Objects.equals(request.getPatientId(), patient.getId())) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "patientId does not match the inpatient record", HttpStatus.BAD_REQUEST.value());
+            }
+
+            User currentUser = authUtil.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+
+            List<LabRadioInvestigationRequest> investigations = resolveInvestigations(request);
+            if (investigations.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "At least one investigation is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            Map<Long, DgMasInvestigation> masterMap = dgMasInvestigationRepository.findAllById(
+                            investigations.stream()
+                                    .map(LabRadioInvestigationRequest::getId)
+                                    .filter(Objects::nonNull)
+                                    .distinct()
+                                    .toList()
+                    )
+                    .stream()
+                    .collect(Collectors.toMap(DgMasInvestigation::getInvestigationId, investigation -> investigation));
+
+            if (masterMap.size() != investigations.stream().map(LabRadioInvestigationRequest::getId).filter(Objects::nonNull).distinct().count()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "One or more investigation IDs are invalid", HttpStatus.BAD_REQUEST.value());
+            }
+
+            Map<Boolean, Map<LocalDate, List<LabRadioInvestigationRequest>>> grouped =
+                    investigations.stream()
+                            .filter(item -> item.getId() != null)
+                            .collect(Collectors.groupingBy(
+                                    item -> isRadiologyInvestigation(masterMap.get(item.getId())),
+                                    Collectors.groupingBy(item -> item.getAppointmentDate() != null ? item.getAppointmentDate() : LocalDate.now())
+                            ));
+
+            LocalTime now = LocalTime.now();
+            String userName = currentUser.getFullName();
+            List<Long> createdLabOrderIds = new ArrayList<>();
+            List<Long> createdRadOrderIds = new ArrayList<>();
+
+            Map<LocalDate, List<LabRadioInvestigationRequest>> labGroups = grouped.getOrDefault(Boolean.FALSE, Collections.emptyMap());
+            for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : labGroups.entrySet()) {
+                LocalDate appointmentDate = entry.getKey();
+                DgOrderHd orderHd = buildLabOrderHeader(inpatient, currentUser, appointmentDate, now);
+                DgOrderHd savedHd = labHdRepository.save(orderHd);
+                LabOrderTrackingStatus orderedStatus = labOrderTrackingStatusRepository.findById(labOrderedStatusId)
+                        .orElseThrow(() -> new RuntimeException("Lab ordered status not found with id: " + labOrderedStatusId));
+
+                for (LabRadioInvestigationRequest item : entry.getValue()) {
+                    DgMasInvestigation master = masterMap.get(item.getId());
+                    DgOrderDt orderDt = buildLabOrderDetail(savedHd, master, currentUser, appointmentDate, now, orderedStatus);
+                    labDtRepository.save(orderDt);
+                }
+
+                createdLabOrderIds.add((long) savedHd.getId());
+            }
+
+            Map<LocalDate, List<LabRadioInvestigationRequest>> radGroups = grouped.getOrDefault(Boolean.TRUE, Collections.emptyMap());
+            for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : radGroups.entrySet()) {
+                LocalDate appointmentDate = entry.getKey();
+                RadOrderHd orderHd = buildRadiologyOrderHeader(inpatient, currentUser, appointmentDate);
+                RadOrderHd savedHd = radOrderHdRepository.save(orderHd);
+
+                for (LabRadioInvestigationRequest item : entry.getValue()) {
+                    DgMasInvestigation master = masterMap.get(item.getId());
+                    RadOrderDt orderDt = buildRadiologyOrderDetail(savedHd, master, currentUser, appointmentDate);
+                    radOrderDtRepository.save(orderDt);
+                }
+
+                createdRadOrderIds.add(savedHd.getId());
+            }
+
+            log.info("Saved inpatient investigations successfully. inpatientId: {}, labOrders: {}, radOrders: {}",
+                    request.getInpatientId(), createdLabOrderIds.size(), createdRadOrderIds.size());
+
+            return ResponseUtils.createSuccessResponse(
+                    "Investigations saved successfully. Lab orders: " + createdLabOrderIds.size() + ", Radiology orders: " + createdRadOrderIds.size(),
+                    new TypeReference<>() {}
+            );
+
+        } catch (Exception e) {
+            log.error("Error while saving inpatient booking investigation. inpatientId: {}, patientId: {}",
+                    request != null ? request.getInpatientId() : null,
+                    request != null ? request.getPatientId() : null,
+                    e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to save investigations: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    private List<LabRadioInvestigationRequest> resolveInvestigations(InpatientBookingInvestigationRequest request) {
+        if (request.getInvestigationReq() != null && !request.getInvestigationReq().isEmpty()) {
+            return request.getInvestigationReq();
+        }
+
+        if (request.getInvestigationId() != null) {
+            LabRadioInvestigationRequest single = new LabRadioInvestigationRequest();
+            single.setId(request.getInvestigationId());
+            single.setAppointmentDate(LocalDate.now());
+            return List.of(single);
+        }
+
+        return Collections.emptyList();
+    }
+
+    private boolean isRadiologyInvestigation(DgMasInvestigation investigation) {
+        if (investigation == null) {
+            return false;
+        }
+
+        Long mainChargeCodeId = investigation.getMainChargeCodeId() != null
+                ? investigation.getMainChargeCodeId().getChargecodeId()
+                : null;
+
+        if (mainChargeCodeId != null && radioInvestigationMainChargecodeId != null && mainChargeCodeId.equals(radioInvestigationMainChargecodeId)) {
+            return true;
+        }
+
+        if (mainChargeCodeId != null && labInvestigationMainChargecodeId != null && mainChargeCodeId.equals(labInvestigationMainChargecodeId)) {
+            return false;
+        }
+
+        String serviceType = Optional.ofNullable(investigation.getInvServiceType()).orElse("").trim().toLowerCase(Locale.ROOT);
+        return serviceType.startsWith("r") || "radiology".equals(serviceType) || "rad".equals(serviceType);
+    }
+
+    private DgOrderHd buildLabOrderHeader(Inpatient inpatient, User currentUser, LocalDate appointmentDate, LocalTime now) {
+        DgOrderHd hd = new DgOrderHd();
+        hd.setOrderDate(LocalDate.now());
+        hd.setOrderTime(Instant.now());
+        hd.setOrderNo(randomNumGenerator.generateOrderNumber("LAB", true, true));
+        hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+        hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
+        hd.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
+        hd.setSource("ipd");
+        hd.setHospitalId(currentUser.getHospital().getId());
+        hd.setPrescribedBy(currentUser.getUserId() != null ? currentUser.getUserId().intValue() : 0);
+        hd.setDepartmentId(laboratoryDepartment);
+        hd.setInvestigationRequestNo(0);
+        hd.setVisitId(inpatient.getVisit());
+        hd.setPatientId(inpatient.getPatient());
+        hd.setDiscountId(null);
+        hd.setAppointmentDate(appointmentDate);
+        hd.setCreatedBy(currentUser.getFullName());
+        hd.setLastChgBy(currentUser.getFullName());
+        hd.setCreatedOn(LocalDate.now());
+        hd.setLastChgDate(LocalDate.now());
+        hd.setLastChgTime(now.toString());
+        hd.setLabOrderStatus(AppConstants.STATUS_N.toLowerCase());
+        hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+        hd.setInpatientId(inpatient);
+        return hd;
+    }
+
+    private DgOrderDt buildLabOrderDetail(DgOrderHd orderHd, DgMasInvestigation investigation, User currentUser, LocalDate appointmentDate, LocalTime now, LabOrderTrackingStatus orderedStatus) {
+        DgOrderDt dt = new DgOrderDt();
+        dt.setOrderhdId(orderHd);
+        dt.setInvestigationId(investigation);
+        dt.setAppointmentDate(appointmentDate);
+        dt.setOrderQty(1);
+        dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setBillingStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setCreatedBy(currentUser.getFullName());
+        dt.setLastChgBy(currentUser.getFullName());
+        dt.setLastChgDate(LocalDate.now());
+        dt.setLastChgTime(now.toString());
+        dt.setMainChargecodeId(investigation.getMainChargeCodeId() != null ? investigation.getMainChargeCodeId().getChargecodeId() : 0L);
+        dt.setSubChargeid(investigation.getSubChargeCodeId() != null ? investigation.getSubChargeCodeId().getSubId() : 0L);
+        dt.setCreatedon(Instant.now());
+        dt.setMsgSent(AppConstants.STATUS_N.toLowerCase());
+        dt.setOrderTrackingStatus(orderedStatus);
+        return dt;
+    }
+
+    private RadOrderHd buildRadiologyOrderHeader(Inpatient inpatient, User currentUser, LocalDate appointmentDate) {
+        RadOrderHd hd = new RadOrderHd();
+        hd.setOrderDate(LocalDate.now());
+        hd.setOrderTime(Instant.now());
+        hd.setAppointmentDate(appointmentDate);
+        hd.setPatient(inpatient.getPatient());
+        hd.setVisit(inpatient.getVisit());
+        hd.setHospital(currentUser.getHospital());
+        hd.setDepartment(masDepartmentRepository.findById(radiologyDepartment)
+                .orElseThrow(() -> new RuntimeException("Radiology department not found with id: " + radiologyDepartment)));
+        hd.setPrescribedBy(currentUser.getFullName());
+        hd.setCreatedby(currentUser.getFullName());
+        hd.setCreatedon(Instant.now());
+        hd.setLastChgBy(currentUser.getFullName());
+        hd.setLastChgDate(Instant.now());
+        hd.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
+        hd.setInpatient(inpatient);
+        return hd;
+    }
+
+    private RadOrderDt buildRadiologyOrderDetail(RadOrderHd orderHd, DgMasInvestigation investigation, User currentUser, LocalDate appointmentDate) {
+        RadOrderDt dt = new RadOrderDt();
+        dt.setRadOrderhd(orderHd);
+        dt.setInvestigation(investigation);
+        dt.setSubChargecode(investigation.getSubChargeCodeId());
+        dt.setOrderAccessionNo(randomNumGenerator.generateOrderNumber("RAD", true, true));
+        dt.setAppointmentDate(appointmentDate);
+        dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setBillingStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
+        dt.setCreatedby(currentUser.getFullName());
+        dt.setCreatedon(Instant.now());
+        dt.setLastChgBy(currentUser.getFullName());
+        dt.setLastChgDate(Instant.now());
+        return dt;
     }
 }
