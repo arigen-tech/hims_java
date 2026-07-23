@@ -318,26 +318,12 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     public ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patientId, String serviceCategoryCode) {
         try {
-//            Inpatient inpatient = inpatientRepository
-//                    .findTopByPatient_IdOrderByInpatientIdDesc(patientId)
-//                    .orElseThrow(() -> new SDDException(404, "Inpatient not found"));
-//
-//            boolean isAdmitted = inpatient.getAdmissionStatus() != null
-//                    && "ADMITTED".equalsIgnoreCase(inpatient.getAdmissionStatus().getStatusCode());
-//
-//            if (isAdmitted) {
-//                return ResponseUtils.createFailureResponse(
-//                        null,
-//                        new TypeReference<>() {},
-//                        "The patient is currently admitted. Service registration is not allowed for this patient.",
-//                        400);
-//            }
 
             if (inpatientValidationService.isPatientCurrentlyAdmitted(patientId)) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
-                        "The patient is currently admitted. Service registration is not allowed for this patient.",
+                        AppConstants.PATIENT_NOT_APPLICABLE_FOR_SERVICE_REGISTRATION,
                         400);
             }            log.info("Fetching patient details for patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
 
