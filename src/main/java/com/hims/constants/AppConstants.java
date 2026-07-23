@@ -180,6 +180,8 @@ public class AppConstants {
     public static final String LABTYPE = "LAB";
     public static final String RADIOTYPE = "RAD";
 
+    public static final String PATIENT_NOT_APPLICABLE_FOR_SERVICE_REGISTRATION = "The patient is currently admitted. Service registration is not allowed for this patient.";
+
 
 
 
