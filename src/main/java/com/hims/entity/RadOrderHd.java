@@ -77,4 +77,8 @@ public class RadOrderHd {
     @OneToMany(mappedBy = "radOrderHd")
     private Set<BillingHeader> billingHeaders = new LinkedHashSet<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inpatient_id")
+    private Inpatient inpatient;
+
 }

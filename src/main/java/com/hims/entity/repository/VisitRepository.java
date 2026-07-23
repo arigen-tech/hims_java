@@ -1058,7 +1058,9 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                     v.visit_date AS date,
                     bh.net_amount AS billingAmount,
                     v.cancelled_datetime AS cancelledDate,
-                    d.department_name AS departmentName
+                    d.department_name AS departmentName,
+                    rd.refundDate AS refundDate,
+                    COALESCE(rd.refundStatus, 'PENDING') AS refundStatus
 
                 FROM visit v
 
@@ -1072,6 +1074,19 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                     ON d.department_id = v.department_id
                 LEFT JOIN mas_department_type dt
                     ON dt.department_type_id = d.department_type_id
+                    LEFT JOIN (
+                    SELECT
+                        ord.billing_hd_id,
+                        MAX(ord.refund_date) AS refundDate,
+                        CASE
+                            WHEN MAX(ord.processed_date) IS NOT NULL THEN 'COMPLETED'
+                            WHEN MAX(ord.refund_date) IS NOT NULL THEN 'PENDING'
+                            ELSE 'PENDING'
+                        END AS refundStatus
+                    FROM opd_refund_details ord
+                    GROUP BY ord.billing_hd_id
+                ) rd
+                    ON rd.billing_hd_id = v.billing_hd_id
                 INNER JOIN billing_header bh
                     ON bh.bill_hd_id = v.billing_hd_id
 
@@ -1109,6 +1124,19 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                   )
 
                   AND (
+                      :refundStatus IS NULL
+                      OR :refundStatus = ''
+                      OR (
+                          :refundStatus = 'y'
+                          AND COALESCE(rd.refundStatus, 'n') = 'y'
+                      )
+                      OR (
+                          :refundStatus = 'n'
+                          AND COALESCE(rd.refundStatus, 'n') = 'n'
+                      )
+                  )
+
+                  AND (
                       :fromDate IS NULL
                       OR CAST(v.cancelled_datetime AS DATE) >= :fromDate
                   )
@@ -1121,9 +1149,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
             countQuery = """
                 SELECT COUNT(v.visit_id)
-
                 FROM visit v
-
                 INNER JOIN patient p
                     ON p.patient_id = v.patient_id
                 LEFT JOIN mas_department d
@@ -1132,7 +1158,6 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                     ON dt.department_type_id = d.department_type_id
                 INNER JOIN billing_header bh
                     ON bh.bill_hd_id = v.billing_hd_id
-
                 WHERE LOWER(COALESCE(v.visit_status, ''))
                     = 'c'
 
@@ -1159,35 +1184,22 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                       OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
                   )
 
-                  AND (
-                      :billingService IS NULL
+                  AND (:billingService IS NULL
                       OR :billingService = ''
-                      OR LOWER(COALESCE(dt.department_type_code, ''))
-                          = LOWER(:billingService)
-                  )
+                      OR LOWER(COALESCE(dt.department_type_code, ''))= LOWER(:billingService))
 
-                 AND (
-                         :fromDate IS NULL
-                         OR CAST(v.cancelled_datetime AS DATE) >= :fromDate
-                     )
-                    
-                     AND (
-                         :toDate IS NULL
-                         OR CAST(v.cancelled_datetime AS DATE) <= :toDate
-                     )
-                """,
+                 AND (:fromDate IS NULL OR CAST(v.cancelled_datetime AS DATE) >= :fromDate )
+                    AND (:toDate IS NULL OR CAST(v.cancelled_datetime AS DATE) <= :toDate ) """,
             nativeQuery = true
     )
     Page<PaidCancelledAppointmentProjection> getBillingRefundPatientList(
             @Param("patientName") String patientName,
             @Param("mobileNo") String mobileNo,
             @Param("billingService") String billingService,
+            @Param("refundStatus") String refundStatus,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             Pageable pageable
     );
     }
-
-
-
 

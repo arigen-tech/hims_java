@@ -54,6 +54,7 @@ public class RecallOpdPatientDetailRequest {
     private String followUpFlag;
     private Instant followUpDate;
     private Long followUpDays;
+    private PregnancyDetails pregnancyDetails;
     private Long opdPatientDetailId;
     private Long patientId;
     private Long visitId;
@@ -105,5 +106,15 @@ public class RecallOpdPatientDetailRequest {
         private Long frequencyId;
         private Long noOfDays;
         private String remarks;
+    }
+
+    @Getter
+    @Setter
+    public static class PregnancyDetails {
+        private Boolean isPregnant;
+        private LocalDate lmpDate;
+        private LocalDate edd;
+        private LocalDate currentEdd;
+        private String gestationPeriod;
     }
 }

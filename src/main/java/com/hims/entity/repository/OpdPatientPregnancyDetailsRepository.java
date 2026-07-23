@@ -8,6 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface OpdPatientPregnancyDetailsRepository extends JpaRepository<OpdPatientPregnancyDetails, Long> {
-    Optional<OpdPatientPregnancyDetails> findByOpdPatientDetail_OpdPatientDetailsId(Long opdPatientDetailsId);
-    void deleteByOpdPatientDetail_OpdPatientDetailsId(Long opdPatientDetailsId);
+    Optional<OpdPatientPregnancyDetails> findByVisit_Id(Long visitId);
 }

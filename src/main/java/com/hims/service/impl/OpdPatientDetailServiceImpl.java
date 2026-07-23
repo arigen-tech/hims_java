@@ -111,6 +111,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasQuestionHeadingRepository masQuestionHeadingRepository;
     private final OpdQuestionMasterRepository opdQuestionMasterRepository;
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
+
+
     private final PaidCancelledAppointmentMapper paidCancelledAppointmentMapper;
 
 
@@ -1228,6 +1230,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         handleRecallFollowUp(opd, request);
         handleRecallReferral(opd, request);
         opdPatientDetailRepository.save(opd);
+        handleRecallPregnancyDetails(opd, request.getPregnancyDetails(), user);
         replaceIcdDiagnosis(request, opd, user);
         replaceInvestigations(request, patient, visit, user);
         replaceTreatments(request, patient, visit, user);
@@ -1615,6 +1618,33 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             opd.setReferTo(null);
             opd.setReferredHospitalName(null);
         }
+    }
+
+    private void handleRecallPregnancyDetails(
+            OpdPatientDetail opd,
+            RecallOpdPatientDetailRequest.PregnancyDetails pregnancyDetails,
+            User user
+    ) {
+        if (opd == null || pregnancyDetails == null || opd.getVisit() == null || opd.getPatient() == null) {
+            return;
+        }
+
+        Long visitId = opd.getVisit().getId();
+        OpdPatientPregnancyDetails pregnancyEntity = opdPatientPregnancyDetailsRepository
+                .findByVisit_Id(visitId)
+                .orElseGet(OpdPatientPregnancyDetails::new);
+
+        pregnancyEntity.setVisit(opd.getVisit());
+        pregnancyEntity.setPatient(opd.getPatient());
+        pregnancyEntity.setIsPregnant(pregnancyDetails.getIsPregnant());
+        pregnancyEntity.setLmpDate(pregnancyDetails.getLmpDate());
+        pregnancyEntity.setEdd(pregnancyDetails.getEdd());
+        pregnancyEntity.setCurrentEdd(pregnancyDetails.getCurrentEdd());
+        pregnancyEntity.setGestationPeriod(pregnancyDetails.getGestationPeriod());
+        pregnancyEntity.setLastChgDate(Instant.now());
+        pregnancyEntity.setLastChgBy(user != null ? user.getFullName() : null);
+
+        opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
     }
 
     private boolean isYes(String flag) {
@@ -2354,6 +2384,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 response.setTreatmentAdvice(opdPatientObj.getTreatmentAdvice());
             }
 
+            if (basicData != null) {
+                response.setPregnancyDetails(
+                        mapPregnancyDetails(
+                                opdPatientPregnancyDetailsRepository.findByVisit_Id(visitId).orElse(null)
+                        )
+                );
+            } else {
+                response.setPregnancyDetails(null);
+            }
+
             // ================= DG / RADIO =================
             response.setLabOrderHds(buildDgOrderHdList(dgOrderHdList));
 
@@ -2598,6 +2638,23 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         // ---------------- FLAGS ----------------
         response.setLabFlag(opd.getLabFlag());
         response.setRadioFlag(opd.getRadioFlag());
+    }
+
+    private OpdPatientRecallResponce.PregnancyDetails mapPregnancyDetails(
+            OpdPatientPregnancyDetails pregnancyDetails
+    ) {
+        if (pregnancyDetails == null) {
+            return null;
+        }
+
+        OpdPatientRecallResponce.PregnancyDetails response =
+                new OpdPatientRecallResponce.PregnancyDetails();
+        response.setIsPregnant(pregnancyDetails.getIsPregnant());
+        response.setLmpDate(pregnancyDetails.getLmpDate());
+        response.setEdd(pregnancyDetails.getEdd());
+        response.setCurrentEdd(pregnancyDetails.getCurrentEdd());
+        response.setGestationPeriod(pregnancyDetails.getGestationPeriod());
+        return response;
     }
 
     private List<OpdPatientRecallResponce.LabOrderHd> buildDgOrderHdList(List<DgOrderHd> hdList) {
@@ -2945,6 +3002,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }
 
 
+
             Page<PreviousOpdPsychiatryHistoryResponse> responsePage = headerPage.map(header -> {
                 PreviousOpdPsychiatryHistoryResponse response = new PreviousOpdPsychiatryHistoryResponse();
                 response.setAssessmentHeaderId(header.getAssessmentHeaderId());
@@ -3211,171 +3269,67 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return opdPsychiatryAssessmentHeaderRepository.save(savedHeader);
     }
 
-    private void handlePregnancyDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails, User user) {
+    private void handlePregnancyDetails(
+            OpdPatientDetail opd,
+            OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails,
+            User user
+    ) {
         if (pregnancyDetails == null) {
             return;
         }
 
-        // Delete existing pregnancy details if any
-        opdPatientPregnancyDetailsRepository.deleteByOpdPatientDetail_OpdPatientDetailsId(opd.getOpdPatientDetailsId());
+        if (opd.getVisit() == null) {
+            throw new IllegalArgumentException(
+                    "Visit is required to save pregnancy details"
+            );
+        }
 
-        // Create new pregnancy details
-        OpdPatientPregnancyDetails pregnancyEntity = OpdPatientPregnancyDetails.builder()
-                .opdPatientDetail(opd)
-                .opdPatientDetailsId(opd.getOpdPatientDetailsId())
-                .visitId(opd.getVisit() != null ? opd.getVisit().getId() : null)
-                .patientId(opd.getPatient() != null ? opd.getPatient().getId() : null)
-                .isPregnant(pregnancyDetails.getIsPregnant())
-                .lmpDate(pregnancyDetails.getLmpDate())
-                .edd(pregnancyDetails.getEdd())
-                .currentEdd(pregnancyDetails.getCurrentEdd())
-                .gestationPeriod(pregnancyDetails.getGestationPeriod())
-                .lastChgDate(Instant.now())
-                .lastChgBy(user.getFullName())
-                .build();
+        if (opd.getPatient() == null) {
+            throw new IllegalArgumentException(
+                    "Patient is required to save pregnancy details"
+            );
+        }
 
-        opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
-        log.info("Saved pregnancy details for OPD patient ID: {}", opd.getOpdPatientDetailsId());
+        Long visitId = opd.getVisit().getId();
+        log.info(
+                "Saving pregnancy details for visitId={}, isPregnant={}, lmpDate={}, edd={}, currentEdd={}, gestationPeriod={}",
+                visitId,
+                pregnancyDetails.getIsPregnant(),
+                pregnancyDetails.getLmpDate(),
+                pregnancyDetails.getEdd(),
+                pregnancyDetails.getCurrentEdd(),
+                pregnancyDetails.getGestationPeriod()
+        );
+
+        OpdPatientPregnancyDetails pregnancyEntity =
+                opdPatientPregnancyDetailsRepository
+                        .findByVisit_Id(visitId)
+                        .orElseGet(OpdPatientPregnancyDetails::new);
+
+        pregnancyEntity.setVisit(opd.getVisit());
+        pregnancyEntity.setPatient(opd.getPatient());
+        pregnancyEntity.setIsPregnant(pregnancyDetails.getIsPregnant());
+        pregnancyEntity.setLmpDate(pregnancyDetails.getLmpDate());
+        pregnancyEntity.setEdd(pregnancyDetails.getEdd());
+        pregnancyEntity.setCurrentEdd(pregnancyDetails.getCurrentEdd());
+        pregnancyEntity.setGestationPeriod(
+                pregnancyDetails.getGestationPeriod()
+        );
+        pregnancyEntity.setLastChgDate(Instant.now());
+        pregnancyEntity.setLastChgBy(
+                user != null ? user.getFullName() : null
+        );
+
+        OpdPatientPregnancyDetails savedEntity =
+                opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
+
+        log.info(
+                "Pregnancy details saved successfully. pregnancyDetailsId: {}, OPD patient ID: {}, visit ID: {}",
+                savedEntity.getPregnancyDetailsId(),
+                opd.getOpdPatientDetailsId(),
+                visitId
+        );
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public ApiResponse<Page<PaidCancelledAppointmentResponse>>
-    getBillingRefundPatientList(
-            int page,
-            int size,
-            String patientName,
-            String mobileNo,
-            String billingService,
-            LocalDate fromDate,
-            LocalDate toDate
-    ) {
-
-        try {
-            log.info(
-                    "Fetching billing refund patient list: " +
-                            "page={}, size={}, patientName={}, mobileNo={}, " +
-                            "billingService={}, fromDate={}, toDate={}",
-                    page,
-                    size,
-                    patientName,
-                    mobileNo,
-                    billingService,
-                    fromDate,
-                    toDate
-            );
-
-            validatePagination(page, size);
-            validateDateRange(fromDate, toDate);
-
-            patientName = cleanValue(patientName);
-            mobileNo = cleanValue(mobileNo);
-
-            billingService = cleanValue(billingService);
-
-            Pageable pageable = PageRequest.of(page, size);
-
-            Page<PaidCancelledAppointmentProjection> projectionPage =
-                    visitRepository.getBillingRefundPatientList(
-                            patientName,
-                            mobileNo,
-                            billingService,
-                            fromDate,
-                            toDate,
-                            pageable
-                    );
-
-            Page<PaidCancelledAppointmentResponse> responsePage =
-                    projectionPage.map(paidCancelledAppointmentMapper::mapToResponse);
-
-            log.info(
-                    "Billing refund patient list fetched successfully. " +
-                            "Total records={}",
-                    responsePage.getTotalElements()
-            );
-
-            return ResponseUtils.createSuccessResponse(
-                    responsePage,
-                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
-                    },
-                    "Billing refund patient list fetched successfully"
-            );
-
-        } catch (IllegalArgumentException exception) {
-            log.warn("Invalid billing refund search request: {}", exception.getMessage());
-
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
-                    },
-                    exception.getMessage(),
-                    HttpStatus.BAD_REQUEST.value()
-            );
-
-        } catch (Exception exception) {
-            log.error("Error while fetching billing refund patient list",
-exception);
-
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
-                    },
-                    "Unable to fetch billing refund patient list",
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
-        }
-    }
-
-    private void validatePagination(int page, int size) {
-
-        if (page < 0) {
-            throw new IllegalArgumentException(
-                    "Page number cannot be negative"
-            );
-        }
-
-        if (size <= 0) {
-            throw new IllegalArgumentException(
-                    "Page size must be greater than zero"
-            );
-        }
-
-        if (size > 100) {
-            throw new IllegalArgumentException(
-                    "Page size cannot be greater than 100"
-            );
-        }
-    }
-
-    private void validateDateRange(
-            LocalDate fromDate,
-            LocalDate toDate
-    ) {
-
-        if (fromDate == null && toDate == null) {
-            return;
-        }
-
-        if (fromDate == null || toDate == null) {
-            throw new IllegalArgumentException(
-                    "Both from date and to date are required when using date filter"
-            );
-        }
-
-        if (fromDate.isAfter(toDate)) {
-            throw new IllegalArgumentException(
-                    "From date cannot be greater than to date"
-            );
-        }
-    }
-
-    private String cleanValue(String value) {
-
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-
-        return value.trim();
-    }
 }
 

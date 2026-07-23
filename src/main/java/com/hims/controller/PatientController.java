@@ -105,7 +105,7 @@ public class PatientController {
             @RequestParam Long gender,
             @RequestParam String mobile,
             @RequestParam Long relation) {
-        boolean exists = patientRepository.existsByPatientFnAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(
+        boolean exists = patientRepository.existsByPatientFnIgnoreCaseAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(
                 firstName.trim(),
                 LocalDate.parse(dob),
                 gender,

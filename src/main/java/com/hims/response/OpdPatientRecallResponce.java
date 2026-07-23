@@ -98,6 +98,8 @@ public class OpdPatientRecallResponce {
     private Instant followUpDate;
     private Long followUpDays;
 
+    private PregnancyDetails pregnancyDetails;
+
     //=========================== DgOrderHd =====================
     @Getter
     @Setter
@@ -188,5 +190,15 @@ public class OpdPatientRecallResponce {
         private Long id;
         private Long icdId;
         private String icdDiagName;
+    }
+
+    @Getter
+    @Setter
+    public static class PregnancyDetails {
+        private Boolean isPregnant;
+        private LocalDate lmpDate;
+        private LocalDate edd;
+        private LocalDate currentEdd;
+        private String gestationPeriod;
     }
 }

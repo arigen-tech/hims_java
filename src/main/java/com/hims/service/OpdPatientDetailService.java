@@ -74,15 +74,4 @@ public interface OpdPatientDetailService {
 
     ApiResponse<Page<OpdRecallVisitResponse>> getRecallOpdVisit(String name, String mobile, LocalDate visitDate, int page, int size);
 
-
-    ApiResponse<Page<PaidCancelledAppointmentResponse>>
-    getBillingRefundPatientList(
-            int page,
-            int size,
-            String patientName,
-            String mobileNo,
-            String billingService,
-            LocalDate fromDate,
-            LocalDate toDate
-    );
 }
