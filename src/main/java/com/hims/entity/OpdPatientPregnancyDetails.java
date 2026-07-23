@@ -28,18 +28,12 @@ public class OpdPatientPregnancyDetails {
     private Long pregnancyDetailsId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    @JoinColumn(name = "opd_patient_details_id", insertable = false, updatable = false)
-    private OpdPatientDetail opdPatientDetail;
+    @JoinColumn(name = "visit_id")
+    private Visit visit;
 
-    @Column(name = "opd_patient_details_id", nullable = false)
-    private Long opdPatientDetailsId;
-
-    @Column(name = "visit_id")
-    private Long visitId;
-
-    @Column(name = "patient_id")
-    private Long patientId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patient_id", nullable = false)
+    private Patient patient;
 
     @Column(name = "is_pregnant")
     private Boolean isPregnant;
