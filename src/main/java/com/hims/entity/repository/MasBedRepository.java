@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.MasBed;
 import com.hims.projection.BedStatusCountProjection;
+import com.hims.response.BedDetailsByWardResponse;
 import com.hims.response.TotalBedCountResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -93,4 +94,21 @@ public interface MasBedRepository extends JpaRepository<MasBed,Long> {
             @Param("bedStatusId") Long bedStatusId,
             @Param("bedStatusOccupiedId") Long bedStatusOccupiedId
     );
-}
+
+    @Query("""
+            SELECT new com.hims.response.BedDetailsByWardResponse(
+                bed.bedId,
+                bed.bedNumber
+            )
+            FROM MasBed bed
+            INNER JOIN bed.roomId room
+            INNER JOIN room.masWard ward
+            WHERE ward.wardId = :wardId
+                        AND bed.bedStatusId.bedStatusId =:bedStatusId
+            ORDER BY bed.bedNumber ASC
+            """)
+    List<BedDetailsByWardResponse> getBedDetailsByWard(
+            @Param("wardId") Long wardId,
+            @Param("bedStatusId") Long bedStatusId
+
+    );}

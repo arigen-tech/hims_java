@@ -183,6 +183,30 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("getBedDetailsByWard/{wardId}")
+    public ResponseEntity<ApiResponse<List<BedDetailsByWardResponse>>> getBedDetailsByWard(@PathVariable Long wardId ){
+
+        log.info("Request received to fetch getBedDetailsByWard: {}", wardId);
+
+        ApiResponse<List<BedDetailsByWardResponse>> response = ipdPatientService.getBedDetailsByWard(wardId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("saveBedTransferRequest")
+    public ApiResponse<String> saveBedTransferRequest(@Valid @RequestBody BedTransferRequest request) {
+        log.info(
+                "Request received to save Bed Transfer Request. inpatientId: {}, doctorId: {}",
+                request.getInpatientId(),
+                request.getDoctorId());
+
+        return ipdPatientService.saveBedTransferRequest(request);
+    }
+
+
+
+
+
     @PostMapping("saveInpatientBookingInvestigation")
     public ApiResponse<String> saveInpatientBookingInvestigation(@Valid @RequestBody InpatientBookingInvestigationRequest request) {
         log.info("Request received to save inpatient booking investigation. inpatientId: {}", request.getInpatientId());

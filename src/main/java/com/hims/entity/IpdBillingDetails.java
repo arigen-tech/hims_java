@@ -107,16 +107,14 @@ public class IpdBillingDetails {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
-
     @Column(name = "is_cancelled")
     private Boolean cancelled ;
 
     @Column(name = "cancel_reason", length = 255)
     private String cancelReason;
 
-
     @Column(name = "item_status", length = 20)
-    private String itemStatus = "BILLED";
+    private String itemStatus;
 
     @Column(name = "reference_no", length = 100)
     private String referenceNo;

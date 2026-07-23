@@ -44,5 +44,9 @@ public interface IPDPatientService {
 
     ApiResponse<List<DailyCaseSheetEntryResponse>> getDailyCaseSheetEntry(Long inpatientId);
 
+    ApiResponse<List<BedDetailsByWardResponse>> getBedDetailsByWard(Long wardId);
+
+    ApiResponse<String> saveBedTransferRequest(@Valid BedTransferRequest request);
+
     ApiResponse<String> saveInpatientBookingInvestigation(@Valid InpatientBookingInvestigationRequest request);
 }

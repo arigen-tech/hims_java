@@ -75,6 +75,7 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
        
     LEFT JOIN inpatient i
         ON i.inpatient_id = iba.ip_admission_id
+        AND i.admission_status =:activeAdmissionStatusId
 
     LEFT JOIN patient p
         ON p.patient_id = i.patient
@@ -102,6 +103,7 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
         iba.allocation_start_date DESC
     """, nativeQuery = true)
     List<WardWiseDetailsProjection> getWardWiseDetails(
-            @Param("wardId") Long wardId
+            @Param("wardId") Long wardId,
+            @Param("activeAdmissionStatusId") Long activeAdmissionStatusId
     );
 }

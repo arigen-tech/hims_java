@@ -14,6 +14,7 @@ import com.hims.service.IPDPatientService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import jakarta.validation.Valid;
+import com.hims.utils.SaveIpdBillingDetails;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +76,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private final IpDocumentRepository ipDocumentRepository;
     private final UserRepo userRepo;
     private final IpDiagnosisEntryRepository ipDiagnosisEntryRepository;
+    private final SaveIpdBillingDetails saveIpdBillingDetails;
 
     @Autowired
     MasGenderRepository masGenderRepository;
@@ -134,6 +136,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private LabOrderTrackingStatusRepository labOrderTrackingStatusRepository;
     @Autowired
     private com.hims.utils.RandomNumGenerator randomNumGenerator;
+    @Autowired
+    MasIpdTransferReasonRepository masIpdTransferReasonRepository;
+    @Autowired
+    IpTransferRequestRepository ipTransferRequestRepository;
 
 
 
@@ -308,7 +314,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     public ApiResponse<List<WardWiseDetailsResponse>> getNursingDashboardByWard(Long wardId) {
         try {
 
-            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(wardId);
+            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(wardId,activeAdmissionStatusId);
 
         List<WardWiseDetailsResponse> responseList = projections.stream()
                         .map(item -> new WardWiseDetailsResponse(
@@ -727,12 +733,39 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                             .lastUpdatedBy(loggedInUser.getFullName())
                             .build();
 
+            MasIpdServiceCategory billingCategory = masIpdServiceCategoryRepository.findById(ipdServiceCategoryId)
+                    .orElseThrow(() -> new RuntimeException("IPD service category not found with ID: 2"));
+
+
             IpDailyCaseSheetEntry savedCaseSheetEntry = ipDailyCaseSheetEntryRepository.save(caseSheetEntry);
+
+            BigDecimal quantity = BigDecimal.ONE;
+
+            BigDecimal rate = Optional.ofNullable(consultationTariff.getBaseTariff()).orElseThrow(() -> new RuntimeException("Base tariff is not configured for tariff ID: " + consultationTariff.getTariffId()));
+
+            BigDecimal gstPercent = BigDecimal.ZERO;
+
+            if (billingCategory != null && billingCategory.getGstPercentage() != null) {
+                gstPercent = new BigDecimal(billingCategory.getGstPercentage().toString());
+            }
+
+            BigDecimal discountAmount = BigDecimal.ZERO;
+
+            // amount = rate × quantity
+            BigDecimal amount = rate.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+
+            // gstAmount = amount × gstPercent ÷ 100
+            BigDecimal gstAmount = amount.multiply(gstPercent).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+            // netAmount = amount + GST - discount
+            BigDecimal netAmount = amount.add(gstAmount).subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
+            String name=consultationTariff.getDoctor().getFullName();
 
             /*
              * Create billing using the matched tariff.
+             *
              */
-            saveDailyCaseSheetBillingDetails(inpatient, consultationTariff);
+            saveIpdBillingDetails.saveDailyCaseSheetBillingDetails(inpatient,rate,quantity,gstPercent,discountAmount,amount ,gstAmount,netAmount,billingCategory,name);
 
             log.info("Daily case sheet entry saved successfully. " + "caseSheetEntryId: {}, inpatientId: {}, tariffId: {}",
                     savedCaseSheetEntry.getCaseSheetEntryId(),
@@ -771,6 +804,100 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             );
         }
     }
+
+    @Override
+    public ApiResponse<List<BedDetailsByWardResponse>> getBedDetailsByWard(Long wardId) {
+        log.info("Fetching bed details for wardId: {}", wardId);
+
+        try {
+            List<BedDetailsByWardResponse> bedDetails = masBedRepository.getBedDetailsByWard(wardId,bedStatusId);
+
+            log.info("Bed details fetched successfully for wardId: {}, totalBeds: {}",   bedDetails.size());
+
+            return ResponseUtils.createSuccessResponse(bedDetails, new TypeReference<>() {});
+
+        } catch (Exception exception) {
+
+            log.error("Error while fetching bed details for wardId: {}", wardId, exception);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Unable to fetch bed details: " + exception.getMessage(),
+                    500
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<String> saveBedTransferRequest(BedTransferRequest request) {
+
+        log.info("Saving bed transfer request started. inpatientId: {}", request.getInpatientId());
+
+        try {
+
+            User currentUser = authUtil.getCurrentUser();
+
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException(
+                            "Inpatient not found with ID: " + request.getInpatientId()));
+
+            Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new RuntimeException(
+                            "Patient not found with ID: " + request.getPatientId()));
+
+            MasWard fromWard = masWardRepository.findById(request.getFromWard()).orElseThrow(() -> new RuntimeException(
+                    "From ward not found with ID: " + request.getFromWard()));
+
+            MasBed fromBed = masBedRepository.findById(request.getFromBed())
+                    .orElseThrow(() -> new RuntimeException("From bed not found with ID: " + request.getFromBed()));
+
+            MasWard toWard = masWardRepository.findById(request.getToWard()).orElseThrow(() -> new RuntimeException("To ward not found with ID: " + request.getToWard()));
+
+            MasBed toBed = masBedRepository.findById(request.getToBed()).orElseThrow(() -> new RuntimeException("To bed not found with ID: " + request.getToBed()));
+
+            User doctor = userRepo.findById(request.getDoctorId()).orElseThrow(() -> new RuntimeException(
+                            "Doctor not found with ID: " + request.getDoctorId()));
+
+            MasIpdTransferReason transferReason = masIpdTransferReasonRepository.findById(request.getTransferReasonId())
+                            .orElseThrow(() -> new RuntimeException("Transfer reason not found with ID: " + request.getTransferReasonId()));
+
+
+            IpTransferRequest transferRequest = IpTransferRequest.builder()
+
+                    .patient(patient)
+                    .inpatient(inpatient)
+                    .fromWard(fromWard)
+                    .fromBed(fromBed)
+                    .toWard(toWard)
+                    .toBed(toBed)
+                    .doctor(doctor)
+                    .transferReason(transferReason)
+                    .priority(request.getPriority())
+                    .clinicalNotes(request.getClinicalNotes())
+                    .requestDatetime(LocalDateTime.now())
+                    .requestedBy(currentUser.getFullName())
+                    .transferStatus(AppConstants.IPD_TRANSFER_STATUS)
+                    .createdBy(currentUser.getFullName())
+                    .createdDate(LocalDateTime.now())
+                    .lastUpdatedBy(currentUser.getFullName())
+                    .lastUpdateDate(LocalDateTime.now())
+                    .build();
+
+            IpTransferRequest savedRequest = ipTransferRequestRepository.save(transferRequest);
+
+            log.info("Bed transfer request saved successfully. transferId: {}, transferNo: {}",
+                    savedRequest.getTransferId(),
+                    savedRequest.getTransferNo());
+
+            return ResponseUtils.createSuccessResponse("Bed transfer request saved successfully. Transfer No: "
+                            + savedRequest.getTransferNo(), new TypeReference<>() {}
+            );
+
+        } catch (Exception e) {
+
+            log.error("Error while saving bed transfer request. inpatientId: {}", request.getInpatientId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),
+                    500);
+        }
+    }
+
     private DailyCaseSheetEntryResponse mapToDailyCaseSheetResponse(
             DailyCaseSheetEntryProjectionResponse projection
     ) {
@@ -785,106 +912,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 .plan(projection.getPlan())
                 .followUp(projection.getFollowUp())
                 .visitDateTime(projection.getVisitDateTime())
+                .doctorId(projection.getDoctorId())
+                .doctorName(projection.getDoctorName())
+                .departmentId(projection.getDepartmentId())
+                .departmentName(projection.getDepartmentName())
                 .build();
     }
 
-    private void saveDailyCaseSheetBillingDetails(Inpatient inpatient, IpdConsultationTariff consultationTariff) {
-
-        LocalDateTime currentDateTime = LocalDateTime.now();
-
-        IpdBillingHeader billingHeader = ipdBillingHeaderRepository.findByInpatientId_InpatientId(inpatient.getInpatientId())
-                .orElseThrow(() -> new RuntimeException("IPD billing header not found for inpatient ID: " + inpatient.getInpatientId()));
-
-        MasIpdServiceCategory billingCategory = masIpdServiceCategoryRepository.findById(2L)
-                        .orElseThrow(() -> new RuntimeException("IPD service category not found with ID: 2"));
-
-        BigDecimal quantity = BigDecimal.ONE;
-
-        BigDecimal rate = Optional.ofNullable(consultationTariff.getBaseTariff()).orElseThrow(() -> new RuntimeException("Base tariff is not configured for tariff ID: " + consultationTariff.getTariffId()));
-
-        BigDecimal gstPercent = BigDecimal.ZERO;
-
-        if (consultationTariff.getServiceCategory() != null && consultationTariff.getServiceCategory().getGstPercent() != null) {
-
-            gstPercent = new BigDecimal(consultationTariff.getServiceCategory().getGstPercent().toString());
-        }
-
-        BigDecimal discountAmount = BigDecimal.ZERO;
-
-        // amount = rate × quantity
-        BigDecimal amount = rate.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
-
-        // gstAmount = amount × gstPercent ÷ 100
-        BigDecimal gstAmount = amount.multiply(gstPercent).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-        // netAmount = amount + GST - discount
-        BigDecimal netAmount = amount.add(gstAmount).subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
-
-        IpdBillingDetails billingDetails = new IpdBillingDetails();
-
-        billingDetails.setBillHeader(billingHeader);
-        billingDetails.setCategory(masIpdServiceCategoryRepository.findById(ipdServiceCategoryId).orElseThrow());
-
-        billingDetails.setItemName(consultationTariff.getDoctor().getFullName());
-
-        billingDetails.setServiceDate(currentDateTime);
-        billingDetails.setQuantity(quantity);
-        billingDetails.setRate(rate);
-        billingDetails.setAmount(amount);
-        billingDetails.setGstPercent(gstPercent);
-        billingDetails.setGstAmount(gstAmount);
-        billingDetails.setDiscountAmount(discountAmount);
-        billingDetails.setNetAmount(netAmount);
-        billingDetails.setCreatedAt(currentDateTime);
-
-        IpdBillingDetails savedBillingDetails = ipdBillingDetailsRepository.save(billingDetails);
-
-        updateIpdBillingHeaderAmount(billingHeader, amount, gstAmount, discountAmount, netAmount);
-
-        log.info(
-                "Daily case sheet billing saved successfully. billItemId: {}, " + "inpatientId: {}, rate: {}, GST percentage: {}, " +
-                        "GST amount: {}, net amount: {}",
-                savedBillingDetails.getBillItemId(),
-                inpatient.getInpatientId(),
-                rate,
-                gstPercent,
-                gstAmount,
-                netAmount
-        );
-    }
-    private void updateIpdBillingHeaderAmount(IpdBillingHeader billingHeader, BigDecimal amount,BigDecimal gstAmount,   BigDecimal discountAmount, BigDecimal netAmount) {
-
-        BigDecimal currentTotalAmount = billingHeader.getTotalAmount() != null ? billingHeader.getTotalAmount() : BigDecimal.ZERO;
-
-        BigDecimal currentGstAmount = billingHeader.getGstAmount() != null ? billingHeader.getGstAmount() : BigDecimal.ZERO;
-
-        BigDecimal currentDiscountAmount = billingHeader.getDiscountAmount() != null ? billingHeader.getDiscountAmount() : BigDecimal.ZERO;
-
-        BigDecimal currentNetAmount = billingHeader.getNetAmount() != null ? billingHeader.getNetAmount() : BigDecimal.ZERO;
-
-        billingHeader.setTotalAmount(currentTotalAmount.add(amount != null ? amount : BigDecimal.ZERO));
-
-        billingHeader.setGstAmount(currentGstAmount.add(gstAmount != null ? gstAmount : BigDecimal.ZERO));
-
-        billingHeader.setDiscountAmount(currentDiscountAmount.add(discountAmount != null ? discountAmount : BigDecimal.ZERO));
-
-        billingHeader.setNetAmount(currentNetAmount.add(netAmount != null ? netAmount : BigDecimal.ZERO));
-
-        billingHeader.setUpdatedAt(LocalDateTime.now());
-
-        ipdBillingHeaderRepository.save(billingHeader);
-
-        log.info("IPD billing header updated successfully. billId: {}, " +
-                        "totalAmount: {}, gstAmount: {}, discountAmount: {}, " +
-                        "netAmount: {}, patientPayableAmount: {}",
-                billingHeader.getBillId(),
-                billingHeader.getTotalAmount(),
-                billingHeader.getGstAmount(),
-                billingHeader.getDiscountAmount(),
-                billingHeader.getNetAmount(),
-                billingHeader.getPatientPayableAmount()
-        );
-    }
 
     private IpIntakeOutputEntry buildIntakeOutputEntity(
             IpIntakeOutputEntryRequest request,
