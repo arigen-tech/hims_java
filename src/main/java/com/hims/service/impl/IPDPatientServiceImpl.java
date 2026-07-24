@@ -1875,37 +1875,5 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         return prefix + "/" + nextNumber;
     }
-//    private synchronized  String generateTransferNumber() {
-//
-//        LocalDate currentDate = LocalDate.now();
-//        int currentYear = currentDate.getYear();
-//        int currentMonth = currentDate.getMonthValue();
-//
-//        int financialYearStart;
-//        int financialYearEnd;
-//
-//        // Indian financial year: April to March
-//        if (currentMonth >= 4) {
-//            financialYearStart = currentYear;
-//            financialYearEnd = currentYear + 1;
-//        } else {
-//            financialYearStart = currentYear - 1;
-//            financialYearEnd = currentYear;
-//        }
-//
-//        String financialYear = String.format(
-//                "%02d-%02d",
-//                financialYearStart % 100,
-//                financialYearEnd % 100
-//        );
-//
-//        Long sequenceNumber =
-//                ipTransferRequestRepository.getNextTransferSequence();
-//
-//        return String.format(
-//                "TRF/%s/%d",
-//                financialYear,
-//                sequenceNumber
-//        );
-//    }
+
 }
