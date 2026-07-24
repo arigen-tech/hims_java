@@ -114,4 +114,3 @@ public interface IpTransferRequestRepository extends JpaRepository<IpTransferReq
 
     Optional<IpTransferRequest> findByInpatient_InpatientIdAndTransferStatusIgnoreCase(Long inpatientId, String ipdBedTransferStatus);
 }
-
