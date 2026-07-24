@@ -167,6 +167,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long radioInvestigationMainChargecodeId;
     @Value("${bed.status.transfer.request.id}")
     Long bedStatusTransferRequestId;
+    @Value("${ip.internal.status.transfer.pending.id}")
+    Long ipInternalStatusTransferPendingId ;
 
 
     @Override
@@ -868,12 +870,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     .toWard(toWard)
                     .toBed(toBed)
                     .doctor(doctor)
+                    .transferNo(generateTransferNumber())
                     .transferReason(transferReason)
                     .priority(request.getPriority())
                     .clinicalNotes(request.getClinicalNotes())
                     .requestDatetime(LocalDateTime.now())
                     .requestedBy(currentUser.getFullName())
-                    .transferStatus(AppConstants.IPD_BED_TRANSFER_STATUS)
+                    .transferStatus(AppConstants.IPD_BED_TRANSFER_REQUEST)
                     .createdBy(currentUser.getFullName())
                     .createdDate(LocalDateTime.now())
                     .lastUpdatedBy(currentUser.getFullName())
@@ -881,8 +884,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     .build();
 
             IpTransferRequest savedRequest = ipTransferRequestRepository.save(transferRequest);
-
+            inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusTransferPendingId).orElseThrow());
+            inpatientRepository.save(inpatient);
             toBed.setBedStatusId(masBedStatusRepo.findById(bedStatusTransferRequestId).orElseThrow());
+            masBedRepository.save(toBed);
+
 
             log.info("Bed transfer request saved successfully. transferId: {}, transferNo: {}",
                     savedRequest.getTransferId(),
@@ -910,7 +916,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         try {
             List<PendingToTransferProjectionResponse> projectionList = ipTransferRequestRepository
-                            .findPendingTransferRequestsByWardId(wardIds,AppConstants.IPD_BED_TRANSFER_STATUS.toLowerCase());
+                            .findPendingTransferRequestsByWardId(wardIds,AppConstants.IPD_BED_TRANSFER_REQUEST.toLowerCase());
 
             List<PendingToTransferResponse> responseList = projectionList.stream()
                             .map(this::mapToPendingTransferResponse)
@@ -1000,7 +1006,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
          * Fetch the transfer request.
          */
         Optional<IpTransferRequest> ipTransferRequest = ipTransferRequestRepository.findByInpatient_InpatientIdAndTransferStatusIgnoreCase(inpatientId,
-                                AppConstants.IPD_BED_TRANSFER_STATUS);
+                                AppConstants.IPD_BED_TRANSFER_REQUEST);
 
         if (ipTransferRequest.isEmpty()) {
             return ResponseUtils.createNotFoundResponse("Inpatient transfer request is not available",
@@ -1481,7 +1487,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         response.setAdmissionSource(null);
         return response;
     }
-    private String generateAdmissionNo() {
+    private synchronized  String generateAdmissionNo() {
 
         LocalDate currentDate = LocalDate.now();
         int currentYear = currentDate.getYear();
@@ -1680,6 +1686,32 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         }
     }
 
+    @Override
+    public ApiResponse<List<PendingToTransferResponse>> wardTransferList( List<Long> wardIds) {
+
+        log.info(
+                "Fetching pending transfer requests for wardId: {}", wardIds);
+
+        try {
+            List<PendingToTransferProjectionResponse> projectionList = ipTransferRequestRepository
+                    .findTransferCompleteByWardId(wardIds,AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE);
+
+            List<PendingToTransferResponse> responseList = projectionList.stream()
+                    .map(this::mapToPendingTransferResponse)
+                    .toList();
+
+            log.info("Found {} pending transfer requests for destination wardId: {}", responseList.size(), wardIds);
+
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching pending transfer requests for wardId: {}", wardIds, e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+        }
+    }
+
     private List<LabRadioInvestigationRequest> resolveInvestigations(InpatientBookingInvestigationRequest request) {
         if (request.getInvestigationReq() != null && !request.getInvestigationReq().isEmpty()) {
             return request.getInvestigationReq();
@@ -1803,4 +1835,77 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         dt.setLastChgDate(Instant.now());
         return dt;
     }
+    private synchronized  String generateTransferNumber() {
+
+        LocalDate currentDate = LocalDate.now();
+        int currentYear = currentDate.getYear();
+        int currentMonth = currentDate.getMonthValue();
+
+        int financialYearStart;
+        int financialYearEnd;
+
+        if (currentMonth >= 4) {
+            financialYearStart = currentYear;
+            financialYearEnd = currentYear + 1;
+        } else {
+            financialYearStart = currentYear - 1;
+            financialYearEnd = currentYear;
+        }
+
+        String financialYear = String.format("%02d-%02d", financialYearStart % 100, financialYearEnd % 100);
+
+        String prefix = "TRF/" + financialYear;
+
+        String lastAdmissionNo = ipTransferRequestRepository.findLastTransferNoByFinancialYear(prefix + "/%");
+
+        int nextNumber = 1;
+
+        if (lastAdmissionNo != null && !lastAdmissionNo.isBlank()) {
+            try {
+                // Example: IPD/26-27/1
+                String[] parts = lastAdmissionNo.split("/");
+
+                if (parts.length == 3) {
+                    nextNumber = Integer.parseInt(parts[2]) + 1;
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Unable to parse last admission number: {}", lastAdmissionNo);
+            }
+        }
+
+        return prefix + "/" + nextNumber;
+    }
+//    private synchronized  String generateTransferNumber() {
+//
+//        LocalDate currentDate = LocalDate.now();
+//        int currentYear = currentDate.getYear();
+//        int currentMonth = currentDate.getMonthValue();
+//
+//        int financialYearStart;
+//        int financialYearEnd;
+//
+//        // Indian financial year: April to March
+//        if (currentMonth >= 4) {
+//            financialYearStart = currentYear;
+//            financialYearEnd = currentYear + 1;
+//        } else {
+//            financialYearStart = currentYear - 1;
+//            financialYearEnd = currentYear;
+//        }
+//
+//        String financialYear = String.format(
+//                "%02d-%02d",
+//                financialYearStart % 100,
+//                financialYearEnd % 100
+//        );
+//
+//        Long sequenceNumber =
+//                ipTransferRequestRepository.getNextTransferSequence();
+//
+//        return String.format(
+//                "TRF/%s/%d",
+//                financialYear,
+//                sequenceNumber
+//        );
+//    }
 }

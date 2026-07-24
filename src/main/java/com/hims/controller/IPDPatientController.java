@@ -240,6 +240,16 @@ public class IPDPatientController {
     }
 
 
+    @GetMapping("wardTransferList/{wardIds}")
+    public ResponseEntity<ApiResponse<List<PendingToTransferResponse>>> wardTransferList(  @RequestParam  List<Long> wardIds){
+
+        log.info("Request received to fetch pending transfer requests for wardIds: {}", wardIds);
+
+        ApiResponse<List<PendingToTransferResponse>> response = ipdPatientService.wardTransferList(wardIds);
+
+        return ResponseEntity.ok(response);
+    }
+
 
 
 
