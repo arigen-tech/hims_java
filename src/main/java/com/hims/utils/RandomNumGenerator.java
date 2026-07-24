@@ -19,7 +19,7 @@ public class RandomNumGenerator {
     }
 
     @Transactional
-    public String generateOrderNumber(String prefix, boolean AddYear, boolean AddMonth) {
+    public synchronized String generateOrderNumber(String prefix, boolean AddYear, boolean AddMonth) {
         LocalDate now = LocalDate.now();
 
         String yearSuffix = "";
