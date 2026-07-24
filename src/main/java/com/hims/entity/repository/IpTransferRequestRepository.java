@@ -109,6 +109,9 @@ public interface IpTransferRequestRepository extends JpaRepository<IpTransferReq
                                             @Param("transferStatus") String transferStatus
         );
 
-    Optional<IpTransferRequest> findByInpatient_InpatientId(Long inpatientId);
+
+
+
+    Optional<IpTransferRequest> findByInpatient_InpatientIdAndTransferStatusIgnoreCase(Long inpatientId, String ipdBedTransferStatus);
 }
 
