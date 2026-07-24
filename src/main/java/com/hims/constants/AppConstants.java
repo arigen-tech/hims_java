@@ -173,7 +173,10 @@ public class AppConstants {
     //Ipd
 
     public static final String IPD_ADMISSION_FLAG= "Y";
-    public static final String IPD_TRANSFER_STATUS= "P";
+    public static final String IPD_BED_TRANSFER_STATUS= "P";
+    public static final String IPD_BED_TRANSFER_STATUS_COMPLETE= "C";
+    public static final String IPD_BED_TRANSFER_STATUS_REJECT= "R";
+
 
 
     public static final String OPDTYPE = "OPD";
