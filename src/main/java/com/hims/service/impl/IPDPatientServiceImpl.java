@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.projection.DailyCaseSheetEntryProjectionResponse;
 import com.hims.projection.IPDPatientWaitingListProjection;
 import com.hims.projection.IpVitalsProjection;
@@ -1467,11 +1468,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 ? investigation.getMainChargeCodeId().getChargecodeId()
                 : null;
 
-        if (mainChargeCodeId != null && radioInvestigationMainChargecodeId != null && mainChargeCodeId.equals(radioInvestigationMainChargecodeId)) {
+        if (mainChargeCodeId != null && mainChargeCodeId.equals(radioInvestigationMainChargecodeId)) {
             return true;
         }
 
-        if (mainChargeCodeId != null && labInvestigationMainChargecodeId != null && mainChargeCodeId.equals(labInvestigationMainChargecodeId)) {
+        if (mainChargeCodeId != null && mainChargeCodeId.equals(labInvestigationMainChargecodeId)) {
             return false;
         }
 
@@ -1492,7 +1493,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         hd.setPrescribedBy(currentUser.getUserId() != null ? currentUser.getUserId().intValue() : 0);
         hd.setDepartmentId(laboratoryDepartment);
         hd.setInvestigationRequestNo(0);
-        hd.setVisitId(inpatient.getVisit());
         hd.setPatientId(inpatient.getPatient());
         hd.setDiscountId(null);
         hd.setAppointmentDate(appointmentDate);
@@ -1533,10 +1533,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         hd.setOrderTime(Instant.now());
         hd.setAppointmentDate(appointmentDate);
         hd.setPatient(inpatient.getPatient());
-        hd.setVisit(inpatient.getVisit());
         hd.setHospital(currentUser.getHospital());
         hd.setDepartment(masDepartmentRepository.findById(radiologyDepartment)
-                .orElseThrow(() -> new RuntimeException("Radiology department not found with id: " + radiologyDepartment)));
+                .orElseThrow(() -> new SDDException(404,"Radiology department not found with id: " + radiologyDepartment)));
         hd.setPrescribedBy(currentUser.getFullName());
         hd.setCreatedby(currentUser.getFullName());
         hd.setCreatedon(Instant.now());

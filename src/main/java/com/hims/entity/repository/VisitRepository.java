@@ -625,7 +625,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                         (:mobileNo IS NOT NULL AND :mobileNo <> '' AND p.p_mobile_number = :mobileNo)
                     )
                 AND (:includeAllHistory = true OR v.visit_date >= CURRENT_DATE)  -- Include all history if flag is true, otherwise only future appointments
-                AND LOWER(v.visit_status) IN ('y', 'c', 'n')
+                AND LOWER(v.visit_status) IN (:visitStatus)
                 AND v.department_id IN (:departmentIds)
                 ORDER BY v.visit_date ASC
             """, nativeQuery = true)
@@ -634,7 +634,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("patientId") Long patientId,
             @Param("mobileNo") String mobileNo,
             @Param("departmentIds") List<Long> departmentIds,
-            @Param("includeAllHistory") Boolean includeAllHistory
+            @Param("includeAllHistory") Boolean includeAllHistory,
+            @Param("visitStatus") String visitStatus
     );
 
 
@@ -1161,35 +1162,53 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                 WHERE LOWER(COALESCE(v.visit_status, ''))
                     = 'c'
 
-                  AND LOWER(COALESCE(v.billing_status, ''))
-                    = 'y'
+    WHERE LOWER(v.visit_status) = 'c'
 
-                  AND COALESCE(bh.net_amount, 0) > 0
+      AND LOWER(v.billing_status) = 'y'
 
-                  AND (
-                      :patientName IS NULL
-                      OR :patientName = ''
-                      OR LOWER(
-                          CONCAT(
-                              COALESCE(p.p_fn, ''), ' ',
-                              COALESCE(p.p_mn, ''), ' ',
-                              COALESCE(p.p_ln, '')
-                          )
-                      ) LIKE LOWER(CONCAT('%', :patientName, '%'))
-                  )
+      AND COALESCE(bh.net_amount, 0) > 0
 
-                  AND (
-                      :mobileNo IS NULL
-                      OR :mobileNo = ''
-                      OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
-                  )
+      AND (
+          :patientName IS NULL
+          OR :patientName = ''
+          OR LOWER(
+              CONCAT(
+                  COALESCE(p.p_fn, ''), ' ',
+                  COALESCE(p.p_mn, ''), ' ',
+                  COALESCE(p.p_ln, '')
+              )
+          ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+      )
 
-                  AND (:billingService IS NULL
-                      OR :billingService = ''
-                      OR LOWER(COALESCE(dt.department_type_code, ''))= LOWER(:billingService))
+      AND (
+          :mobileNo IS NULL
+          OR :mobileNo = ''
+          OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+      )
 
-                 AND (:fromDate IS NULL OR CAST(v.cancelled_datetime AS DATE) >= :fromDate )
-                    AND (:toDate IS NULL OR CAST(v.cancelled_datetime AS DATE) <= :toDate ) """,
+      AND (
+          :billingService IS NULL
+          OR :billingService = ''
+          OR LOWER(COALESCE(dt.department_type_code, ''))
+              = LOWER(:billingService)
+      )
+
+      AND (
+          :refundStatus IS NULL
+          OR :refundStatus = ''
+          OR COALESCE(rd.refundStatus, 'PENDING') = :refundStatus
+      )
+
+      AND (
+          :fromDate IS NULL
+          OR CAST(v.cancelled_datetime AS DATE) >= :fromDate
+      )
+
+      AND (
+          :toDate IS NULL
+          OR CAST(v.cancelled_datetime AS DATE) <= :toDate
+      )
+""",
             nativeQuery = true
     )
     Page<PaidCancelledAppointmentProjection> getBillingRefundPatientList(
