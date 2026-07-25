@@ -963,13 +963,18 @@ public class RadiologyServiceImpl implements RadiologyService {
             radDt.setStudyStatus(status);
             radOrderDtRepository.save(radDt);
 
-            if (AppConstants.STATUS_Y.equalsIgnoreCase(status)) {
+            if (AppConstants.STATUS_Y.equalsIgnoreCase(status)
+                    || AppConstants.VISIT_STATUS_CANCELLED.equalsIgnoreCase(status)) {
                 Visit visit = Optional.ofNullable(radDt.getRadOrderhd())
                         .map(RadOrderHd::getVisit)
                         .orElse(null);
 
                 if (visit != null) {
-                    visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
+                    if (AppConstants.STATUS_Y.equalsIgnoreCase(status)) {
+                        visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
+                    } else {
+                        visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
+                    }
                     visitRepository.save(visit);
                     log.info("Visit status updated successfully for visitId={} newStatus={}",
                             visit.getId(), visit.getVisitStatus());
