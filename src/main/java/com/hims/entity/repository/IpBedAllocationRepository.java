@@ -76,6 +76,7 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
     LEFT JOIN inpatient i
         ON i.inpatient_id = iba.ip_admission_id
         AND i.admission_status =:activeAdmissionStatusId
+         AND i.admitting_ward_id=:wardId
 
     LEFT JOIN patient p
         ON p.patient_id = i.patient
@@ -97,6 +98,7 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
   
 
     WHERE w.ward_id = :wardId
+                 
 
     ORDER BY
         b.bed_id,

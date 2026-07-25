@@ -173,12 +173,17 @@ public class AppConstants {
     //Ipd
 
     public static final String IPD_ADMISSION_FLAG= "Y";
-    public static final String IPD_TRANSFER_STATUS= "P";
+    public static final String IPD_BED_TRANSFER_REQUEST= "P";
+    public static final String IPD_BED_TRANSFER_STATUS_COMPLETE= "C";
+    public static final String IPD_BED_TRANSFER_STATUS_REJECT= "R";
+
 
 
     public static final String OPDTYPE = "OPD";
     public static final String LABTYPE = "LAB";
     public static final String RADIOTYPE = "RAD";
+
+    public static final String PATIENT_NOT_APPLICABLE_FOR_SERVICE_REGISTRATION = "The patient is currently admitted. Service registration is not allowed for this patient.";
 
 
 
