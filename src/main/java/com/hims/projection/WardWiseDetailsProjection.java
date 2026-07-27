@@ -29,6 +29,10 @@ public interface WardWiseDetailsProjection {
 
     String getGender();
     String getDoctor();
+    Long getDiagnosisId();
+    String getDiagnosisType();
+    String getDiagnosis();
+
 
 
 }

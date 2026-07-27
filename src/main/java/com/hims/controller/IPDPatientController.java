@@ -250,6 +250,25 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+   @PostMapping("saveIpDiagnosisEntry")
+   public ApiResponse<String> saveIpDiagnosisEntry(@Valid @RequestBody IpDiagnosisEntryRequest  request) {
+
+       log.info("Request received to saveIpDiagnosisEntry Request");
+
+       return ipdPatientService.saveIpDiagnosisEntry(request);
+   }
+
+   @GetMapping("getIpDiagnosisEntry/{inpatientID}")
+   public ResponseEntity<ApiResponse<List<IpDiagnosisEntryResponse>>> getIpDiagnosisEntry(@PathVariable Long inpatientID){
+
+        log.info("Request received to fetch getIpDiagnosisEntry for inpatientID: {}", inpatientID);
+
+        ApiResponse<List<IpDiagnosisEntryResponse>> response = ipdPatientService.getIpDiagnosisEntry(inpatientID);
+
+        return ResponseEntity.ok(response);
+    }
+
+
 
 
 
