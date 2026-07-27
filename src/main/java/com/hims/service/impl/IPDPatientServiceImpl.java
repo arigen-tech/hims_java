@@ -335,7 +335,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                                 item.getIpdInternalStatus(),
                                 item.getAge(),
                                 item.getGender(),
-                                item.getDoctor()
+                                item.getDoctor(),
+                                item.getDiagnosisId(),
+                                item.getDiagnosisType(),
+                                item.getDiagnosis()
                         ))
                         .toList();
 
@@ -515,23 +518,25 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
     @Override
     public ApiResponse<String> updateAdmissionInternalStatus(Long inpatientId,Long internalStatusId) {
-        try{
-        User user=authUtil.getCurrentUser();
+        try {
+            User user = authUtil.getCurrentUser();
 
-        Inpatient inpatient = inpatientRepository.findById(inpatientId).orElseThrow(() -> new RuntimeException("Inpatient not found with id: "
-                + inpatientId));
-        inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(internalStatusId).orElseThrow());
-        inpatient.setLastUpdateDate(LocalDateTime.now());
-        inpatient.setLastUpdatedBy(user.getFullName());
-        inpatientRepository.save(inpatient);
+            Inpatient inpatient = inpatientRepository.findById(inpatientId).orElseThrow(() -> new RuntimeException("Inpatient not found with id: "
+                    + inpatientId));
+            inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(internalStatusId).orElseThrow());
+            inpatient.setLastUpdateDate(LocalDateTime.now());
+            inpatient.setLastUpdatedBy(user.getFullName());
+            inpatientRepository.save(inpatient);
 
-        return ResponseUtils.createSuccessResponse( "Ip internal status change successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("Ip internal status change successfully", new TypeReference<>() {
+            });
 
-    } catch (Exception exception) {
-        log.error("Error while saving Ip internal status change", exception);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG, 500
+        } catch (Exception exception) {
+            log.error("Error while saving Ip internal status change", exception);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG, 500
             );
-    }
+        }
     }
 
     @Override
@@ -1035,6 +1040,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         MasBedStatus availableBedStatus = masBedStatusRepo.findById(bedStatusId)
                 .orElseThrow(() -> new RuntimeException("Available bed status not found with ID: " + bedStatusId));
 
+        Optional<IpBedAllocation> previousAllocation = ipBedAllocationRepository.findFirstByInpatient_InpatientIdAndAllocationEndDateIsNullOrderByAllocationStartDateDesc(inpatientId);
+        IpBedAllocation ipBedAllocation=previousAllocation.get();
+
         /*
          * Complete the transfer request.
          */
@@ -1077,6 +1085,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             bedAllocation.setLastUpdatedBy(updatedBy);
             bedAllocation.setLastUpdateDate(currentDateTime);
 
+            ipBedAllocation.setAllocationEndDate(LocalDateTime.now());
+
+
             log.info("Transfer request completed successfully for inpatientId: {}", inpatientId);
 
         } else {
@@ -1098,6 +1109,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         masBedRepository.save(destinationBed);
         ipTransferRequestRepository.save(ipTransferRequest1);
         ipBedAllocationRepository.save(bedAllocation);
+        inpatientRepository.save(inpatient);
+        ipBedAllocationRepository.save(ipBedAllocation);
 
         String message = AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE.equals(normalizedTransferStatus) ? "Transfer completed successfully" : "Transfer rejected successfully";
 
@@ -1700,7 +1713,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     .map(this::mapToPendingTransferResponse)
                     .toList();
 
-            log.info("Found {} pending transfer requests for destination wardId: {}", responseList.size(), wardIds);
+            log.info("Found {} pending transfer requests for destination wardIds: {}", responseList.size(), wardIds);
 
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
@@ -1712,6 +1725,149 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         }
     }
 
+    @Override
+    public ApiResponse<String> saveIpDiagnosisEntry(IpDiagnosisEntryRequest request) {
+
+        log.info("Saving IP diagnosis entry. inpatientId: {}, diagnosisType: {}",
+                request.getInpatientId(),
+                request.getDiagnosisType());
+
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            LocalDateTime currentDateTime = LocalDateTime.now();
+
+            String diagnosisType = request.getDiagnosisType() == null ? null : request.getDiagnosisType().trim().toUpperCase();
+
+            /*
+             * Only W and I are allowed.
+             *
+             * W = Working diagnosis
+             * I = ICD diagnosis
+             */
+            if (!AppConstants.WORKING_DIAGNOSIS_TYPE.equals(diagnosisType) && !AppConstants.ICD_DIAGNOSIS_TYPE.equals(diagnosisType)) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Invalid diagnosis type. Allowed values are W and I",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
+
+            if (inpatient == null) {
+                return ResponseUtils.createNotFoundResponse("Inpatient not found with ID: " + request.getInpatientId(), HttpStatus.NOT_FOUND.value());
+            }
+
+            Patient patient = patientRepository.findById(request.getPatientId()).orElse(null);
+
+            if (patient == null) {
+                return ResponseUtils.createNotFoundResponse("Patient not found with ID: " + request.getPatientId(), HttpStatus.NOT_FOUND.value()
+                );
+            }
+
+            MasDepartment department = masDepartmentRepository.findById(request.getDepartmentId()).orElse(null);
+
+            if (department == null) {
+                return ResponseUtils.createNotFoundResponse("Department not found with ID: " + request.getDepartmentId(), HttpStatus.NOT_FOUND.value());
+            }
+
+            MasIcd icd = null;
+
+            if (AppConstants.WORKING_DIAGNOSIS_TYPE.equals(diagnosisType)) {
+                icd = null;
+
+            } else {
+                icd = masIcdRepository.findById(request.getIcdId()).orElse(null);
+
+                if (icd == null) {
+                    return ResponseUtils.createNotFoundResponse("ICD not found with ID: " + request.getIcdId(), HttpStatus.NOT_FOUND.value());
+                }
+            }
+
+            IpDiagnosisEntry diagnosisEntry = new IpDiagnosisEntry();
+
+            diagnosisEntry.setInpatient(inpatient);
+            diagnosisEntry.setPatient(patient);
+            diagnosisEntry.setDepartment(department);
+            diagnosisEntry.setDiagnosisType(diagnosisType);
+
+            if (AppConstants.WORKING_DIAGNOSIS_TYPE.equalsIgnoreCase(diagnosisType)) {
+                // Working diagnosis
+                diagnosisEntry.setDiagnosisText(request.getDiagnosisText());
+                diagnosisEntry.setIcd(null);
+            } else if (AppConstants.ICD_DIAGNOSIS_TYPE.equalsIgnoreCase(diagnosisType)) {
+                // ICD diagnosis
+                diagnosisEntry.setDiagnosisText(icd.getIcdName());
+                diagnosisEntry.setIcd(icd);
+            }
+
+            diagnosisEntry.setStatus(request.getStatus().toUpperCase());
+            diagnosisEntry.setDiagnosisDatetime(  request.getDateTime());
+            diagnosisEntry.setRecordedBy(currentUser);
+            diagnosisEntry.setCreatedBy(currentUser.getFullName());
+            diagnosisEntry.setLastUpdatedBy(currentUser.getFullName());
+            diagnosisEntry.setLastUpdateDate(currentDateTime);
+
+            IpDiagnosisEntry savedDiagnosis = ipDiagnosisEntryRepository.save(diagnosisEntry);
+
+            log.info(
+                    "IP diagnosis entry saved successfully. diagnosisId: {}, inpatientId: {}, diagnosisType: {}, icdId: {}",
+                    savedDiagnosis.getDiagnosisId(),
+                    inpatient.getInpatientId(),
+                    diagnosisType,
+                    icd != null ? icd.getIcdId() : null
+            );
+
+            return ResponseUtils.createSuccessResponse("IP diagnosis entry saved successfully", new TypeReference<>() {}
+            );
+
+        } catch (Exception e) {
+
+            log.error("Error while saving IP diagnosis entry. inpatientId: {}, diagnosisType: {}",
+                    request.getInpatientId(),
+                    request.getDiagnosisType(),
+                    e
+            );
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+    @Override
+    public ApiResponse<List<IpDiagnosisEntryResponse>> getIpDiagnosisEntry(Long inpatientId) {
+
+        log.info("Fetching diagnosis entries for inpatientId: {}", inpatientId);
+
+        try {
+
+            List<IpDiagnosisEntryProjection> projections = ipDiagnosisEntryRepository.getIpDiagnosisEntry(inpatientId);
+
+            List<IpDiagnosisEntryResponse> response = projections.stream().map(p -> {
+                IpDiagnosisEntryResponse dto = new IpDiagnosisEntryResponse();
+                dto.setInpatientId(p.getInpatientId());
+                dto.setIcdId(p.getIcdId());
+                dto.setIcdCode(p.getIcdCode());
+                dto.setIcdName(p.getIcdName());
+                dto.setRemark(p.getRemark());
+                dto.setDiagnosisType(p.getDiagnosisType());
+                dto.setStatus(p.getStatus());
+                dto.setDiagnosis(p.getDiagnosis());
+                dto.setDateTime(p.getDateTime());
+                return dto;
+            }).toList();
+
+            log.info("Successfully fetched {} diagnosis entries for inpatientId: {}",
+                    response.size(), inpatientId);
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while fetching diagnosis entries for inpatientId: {}",
+                    inpatientId, e);
+
+            return ResponseUtils.createFailureResponse(null,new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
     private List<LabRadioInvestigationRequest> resolveInvestigations(InpatientBookingInvestigationRequest request) {
         if (request.getInvestigationReq() != null && !request.getInvestigationReq().isEmpty()) {
             return request.getInvestigationReq();
@@ -1875,5 +2031,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         return prefix + "/" + nextNumber;
     }
+
 
 }
