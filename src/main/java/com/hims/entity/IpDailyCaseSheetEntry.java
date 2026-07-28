@@ -74,4 +74,8 @@ public class IpDailyCaseSheetEntry {
     @Column(name = "last_updated_by", length = 200)
     private String lastUpdatedBy;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "visit_type_id")
+    private MasVisitType visitType;
+
 }

@@ -30,4 +30,6 @@ public interface DailyCaseSheetEntryProjectionResponse {
     Long getDepartmentId();
 
     String getDepartmentName();
+    String getVisitTypeName();
+     Long getVisitTypeId();
 }
