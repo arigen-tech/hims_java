@@ -1,5 +1,6 @@
 package com.hims.service.impl;
 
+import com.hims.constants.AppConstants;
 import com.hims.entity.Inpatient;
 import com.hims.entity.MasAdmissionStatus;
 import com.hims.entity.repository.InpatientRepository;
@@ -17,7 +18,7 @@ public class InpatientValidationService {
         return inpatientRepository.findTopByPatient_IdOrderByInpatientIdDesc(patientId)
                 .map(Inpatient::getAdmissionStatus)
                 .map(MasAdmissionStatus::getStatusCode)
-                .map(status -> "ADMITTED".equalsIgnoreCase(status))
+                .map(AppConstants.PATIENT_STATUS_ADMITTED::equalsIgnoreCase)
                 .orElse(false);
     }
 }

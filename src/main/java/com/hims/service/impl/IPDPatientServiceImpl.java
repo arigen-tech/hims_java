@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
+import com.hims.helperUtil.HelperUtils;
 import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
@@ -24,6 +26,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -131,6 +135,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Autowired
     private DgMasInvestigationRepository dgMasInvestigationRepository;
     @Autowired
+    private MasSubChargeCodeRepository subChargeCodeRepository;
+    @Autowired
     private LabOrderTrackingStatusRepository labOrderTrackingStatusRepository;
     @Autowired
     private com.hims.utils.RandomNumGenerator randomNumGenerator;
@@ -138,7 +144,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasIpdTransferReasonRepository masIpdTransferReasonRepository;
     @Autowired
     IpTransferRequestRepository ipTransferRequestRepository;
+    @Autowired
+    MasIpdPaymentStatusRepository masIpdPaymentStatusRepository;
+    @Autowired
+    MasIpdBillStatusRepository masIpdBillStatusRepository;
 
+    @Autowired
+    HelperUtils helperUtils;
 
 
     @Value("${ipd.admission.status.active}")
@@ -161,14 +173,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long radiologyDepartment;
     @Value("${lab.track-order-status-reg.ordered}")
     Long labOrderedStatusId;
-    @Value("${labInvestigation.mainChargecodeId}")
-    Long labInvestigationMainChargecodeId;
-    @Value("${radioInvestigation.mainChargecodeId}")
-    Long radioInvestigationMainChargecodeId;
     @Value("${bed.status.transfer.request.id}")
     Long bedStatusTransferRequestId;
     @Value("${ip.internal.status.transfer.pending.id}")
     Long ipInternalStatusTransferPendingId ;
+
+    @Value("${ip.payment.status.partial}")
+    Long ipPaymentStatusPartial ;
+    @Value("${ip.bill.status.open}")
+    Long ipBillStatusOpen;
+
 
 
     @Override
@@ -335,7 +349,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                                 item.getIpdInternalStatus(),
                                 item.getAge(),
                                 item.getGender(),
-                                item.getDoctor()
+                                item.getDoctor(),
+                                item.getDiagnosisId(),
+                                item.getDiagnosisType(),
+                                item.getDiagnosis()
                         ))
                         .toList();
 
@@ -515,23 +532,25 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
     @Override
     public ApiResponse<String> updateAdmissionInternalStatus(Long inpatientId,Long internalStatusId) {
-        try{
-        User user=authUtil.getCurrentUser();
+        try {
+            User user = authUtil.getCurrentUser();
 
-        Inpatient inpatient = inpatientRepository.findById(inpatientId).orElseThrow(() -> new RuntimeException("Inpatient not found with id: "
-                + inpatientId));
-        inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(internalStatusId).orElseThrow());
-        inpatient.setLastUpdateDate(LocalDateTime.now());
-        inpatient.setLastUpdatedBy(user.getFullName());
-        inpatientRepository.save(inpatient);
+            Inpatient inpatient = inpatientRepository.findById(inpatientId).orElseThrow(() -> new RuntimeException("Inpatient not found with id: "
+                    + inpatientId));
+            inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(internalStatusId).orElseThrow());
+            inpatient.setLastUpdateDate(LocalDateTime.now());
+            inpatient.setLastUpdatedBy(user.getFullName());
+            inpatientRepository.save(inpatient);
 
-        return ResponseUtils.createSuccessResponse( "Ip internal status change successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("Ip internal status change successfully", new TypeReference<>() {
+            });
 
-    } catch (Exception exception) {
-        log.error("Error while saving Ip internal status change", exception);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG, 500
+        } catch (Exception exception) {
+            log.error("Error while saving Ip internal status change", exception);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG, 500
             );
-    }
+        }
     }
 
     @Override
@@ -704,13 +723,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                                     currentDateTime
                             )
                             .orElseThrow(() -> new RuntimeException(
-                                    "No active consultation tariff found for the current date. "
-                                            + "Doctor ID: " + request.getDoctorId()
-                                            + ", Department ID: "
-                                            + request.getVisitDepartmentId()
-                                            + ", Visit Type ID: "
-                                            + request.getVisitType()
-                            ));
+                                    "Consultation fee is not defined for this doctor"));
 
 
 
@@ -734,6 +747,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                             .lastUpdateDate(currentDateTime)
                             .createdBy(loggedInUser.getFullName())
                             .lastUpdatedBy(loggedInUser.getFullName())
+                            .visitType(visitType)
                             .build();
 
             MasIpdServiceCategory billingCategory = masIpdServiceCategoryRepository.findById(ipdServiceCategoryId)
@@ -768,7 +782,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
              * Create billing using the matched tariff.
              *
              */
-            saveIpdBillingDetails.saveDailyCaseSheetBillingDetails(inpatient,rate,quantity,gstPercent,discountAmount,amount ,gstAmount,netAmount,billingCategory,name);
+            saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,rate,quantity,gstPercent,discountAmount,amount ,gstAmount,netAmount,billingCategory,name);
 
             log.info("Daily case sheet entry saved successfully. " + "caseSheetEntryId: {}, inpatientId: {}, tariffId: {}",
                     savedCaseSheetEntry.getCaseSheetEntryId(),
@@ -1035,6 +1049,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         MasBedStatus availableBedStatus = masBedStatusRepo.findById(bedStatusId)
                 .orElseThrow(() -> new RuntimeException("Available bed status not found with ID: " + bedStatusId));
 
+        Optional<IpBedAllocation> previousAllocation = ipBedAllocationRepository.findFirstByInpatient_InpatientIdAndAllocationEndDateIsNullOrderByAllocationStartDateDesc(inpatientId);
+        IpBedAllocation ipBedAllocation=previousAllocation.get();
+
         /*
          * Complete the transfer request.
          */
@@ -1077,6 +1094,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             bedAllocation.setLastUpdatedBy(updatedBy);
             bedAllocation.setLastUpdateDate(currentDateTime);
 
+            ipBedAllocation.setAllocationEndDate(LocalDateTime.now());
+
+            ipBedAllocationRepository.save(bedAllocation);
             log.info("Transfer request completed successfully for inpatientId: {}", inpatientId);
 
         } else {
@@ -1097,7 +1117,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         masBedRepository.save(destinationBed);
         ipTransferRequestRepository.save(ipTransferRequest1);
-        ipBedAllocationRepository.save(bedAllocation);
+        inpatientRepository.save(inpatient);
+        ipBedAllocationRepository.save(ipBedAllocation);
 
         String message = AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE.equals(normalizedTransferStatus) ? "Transfer completed successfully" : "Transfer rejected successfully";
 
@@ -1129,6 +1150,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 .doctorName(projection.getDoctorName())
                 .departmentId(projection.getDepartmentId())
                 .departmentName(projection.getDepartmentName())
+                .visitTypeName(projection.getVisitTypeName())
+                .visitTypeId(projection.getVisitTypeId())
                 .build();
     }
 
@@ -1147,14 +1170,13 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         entity.setInpatient(inpatient);
         entity.setPatient(patient);
         entity.setQuantity(request.getQuantity());
-        entity.setUnit("ml");
         entity.setObservationDatetime( currentDateTime);
-        entity.setRemarks(request.getRemarks());
+        entity.setIoType(ioType);
         entity.setLastUpdateDate(currentDateTime);
         entity.setCreatedBy(userName.getFullName());
         entity.setLastUpdatedBy(userName.getFullName());
 
-        if ("I".equals(ioType)) {
+        if (AppConstants.IO_TYPE_I.equals(ioType)) {
 
             MasIntakeType intakeType = masIntakeTypeRepository.getReferenceById(request.getIntakeTypeId());
 
@@ -1162,10 +1184,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             entity.setIntakeType(intakeType);
             entity.setIntakeItem(intakeItem);
-            if (request.getRouteId() != null)
-            {
-                entity.setRoute(masRouteRepository.getReferenceById(request.getRouteId()));
-            }
             entity.setOutputType(null);
 
         } else {
@@ -1191,6 +1209,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         ipDiagnosisEntry.setPatient(patient);
         ipDiagnosisEntry.setDepartment(masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow());
         ipDiagnosisEntry.setRecordedBy(userRepo.findById(request.getTreatingDoctor()).orElseThrow());
+        ipDiagnosisEntry.setDiagnosisType(AppConstants.WORKING_DIAGNOSIS_TYPE);
         ipDiagnosisEntry.setDiagnosisText(request.getWorkingDiagnosis());
         ipDiagnosisEntry.setCreatedBy(user.getFullName());
         ipDiagnosisEntry.setLastUpdateDate(LocalDateTime.now());
@@ -1221,6 +1240,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         billingHeader.setUpdatedBy(user.getFullName());
         billingHeader.setCreatedAt(LocalDateTime.now());
         billingHeader.setUpdatedAt(LocalDateTime.now());
+        billingHeader.setPatientPaidAmount(request.getAdvanceAmount());
+        billingHeader.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusOpen).orElseThrow());
+        billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPartial).orElseThrow());
 
         IpdBillingHeader savedBillingHeader = ipdBillingHeaderRepository.save(billingHeader);
 
@@ -1398,7 +1420,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 }
 
                 MultipartFile file = docReq.getIpDocumentUploads();
-
                 if (file == null || file.isEmpty()) {
                     throw new RuntimeException(
                             "File is required for document type: " + docReq.getDocumentType()
@@ -1589,7 +1610,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             }
 
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId())
-                    .orElseThrow(() -> new RuntimeException("Inpatient not found with id: " + request.getInpatientId()));
+                    .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(), "Inpatient not found with id: " + request.getInpatientId()));
 
             Patient patient = inpatient.getPatient();
             if (patient == null) {
@@ -1624,11 +1645,11 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "One or more investigation IDs are invalid", HttpStatus.BAD_REQUEST.value());
             }
 
-            Map<Boolean, Map<LocalDate, List<LabRadioInvestigationRequest>>> grouped =
+            Map<Long, Map<LocalDate, List<LabRadioInvestigationRequest>>> grouped =
                     investigations.stream()
                             .filter(item -> item.getId() != null)
                             .collect(Collectors.groupingBy(
-                                    item -> isRadiologyInvestigation(masterMap.get(item.getId())),
+                                    item -> helperUtils.getDepartmentFromInvestigation(item.getId()),
                                     Collectors.groupingBy(item -> item.getAppointmentDate() != null ? item.getAppointmentDate() : LocalDate.now())
                             ));
 
@@ -1637,24 +1658,43 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             List<Long> createdLabOrderIds = new ArrayList<>();
             List<Long> createdRadOrderIds = new ArrayList<>();
 
-            Map<LocalDate, List<LabRadioInvestigationRequest>> labGroups = grouped.getOrDefault(Boolean.FALSE, Collections.emptyMap());
+            Map<LocalDate, List<LabRadioInvestigationRequest>> labGroups = grouped.getOrDefault(laboratoryDepartment, Collections.emptyMap());
             for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : labGroups.entrySet()) {
                 LocalDate appointmentDate = entry.getKey();
                 DgOrderHd orderHd = buildLabOrderHeader(inpatient, currentUser, appointmentDate, now);
                 DgOrderHd savedHd = labHdRepository.save(orderHd);
                 LabOrderTrackingStatus orderedStatus = labOrderTrackingStatusRepository.findById(labOrderedStatusId)
-                        .orElseThrow(() -> new RuntimeException("Lab ordered status not found with id: " + labOrderedStatusId));
+                        .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),"Lab ordered status not found with id: " + labOrderedStatusId));
 
                 for (LabRadioInvestigationRequest item : entry.getValue()) {
                     DgMasInvestigation master = masterMap.get(item.getId());
-                    DgOrderDt orderDt = buildLabOrderDetail(savedHd, master, currentUser, appointmentDate, now, orderedStatus);
+                    int count = 1;
+                    DgOrderDt orderDt = buildLabOrderDetail(
+                            savedHd,
+                            master,
+                            currentUser,
+                            appointmentDate,
+                            now,
+                            orderedStatus,
+                            item.getRemarks()
+                    );
                     labDtRepository.save(orderDt);
-                }
+//                    saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,
+//                            master.getPrice(),
+//                            count,BigDecimal.ZERO,
+//                            master.getDiscount(),
+//                            master.getPrice(),
+//                            BigDecimal.ZERO,
+//                            BigDecimal.ZERO,
+//
+//                            );
 
+                }
                 createdLabOrderIds.add((long) savedHd.getId());
+
             }
 
-            Map<LocalDate, List<LabRadioInvestigationRequest>> radGroups = grouped.getOrDefault(Boolean.TRUE, Collections.emptyMap());
+            Map<LocalDate, List<LabRadioInvestigationRequest>> radGroups = grouped.getOrDefault(radiologyDepartment, Collections.emptyMap());
             for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : radGroups.entrySet()) {
                 LocalDate appointmentDate = entry.getKey();
                 RadOrderHd orderHd = buildRadiologyOrderHeader(inpatient, currentUser, appointmentDate);
@@ -1662,7 +1702,13 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
                 for (LabRadioInvestigationRequest item : entry.getValue()) {
                     DgMasInvestigation master = masterMap.get(item.getId());
-                    RadOrderDt orderDt = buildRadiologyOrderDetail(savedHd, master, currentUser, appointmentDate);
+                    RadOrderDt orderDt = buildRadiologyOrderDetail(
+                            savedHd,
+                            master,
+                            currentUser,
+                            appointmentDate,
+                            item.getRemarks()
+                    );
                     radOrderDtRepository.save(orderDt);
                 }
 
@@ -1682,7 +1728,17 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     request != null ? request.getInpatientId() : null,
                     request != null ? request.getPatientId() : null,
                     e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Failed to save investigations: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+            //manully rollback the whole transaction
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            }
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Failed to save investigations: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
         }
     }
 
@@ -1700,7 +1756,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     .map(this::mapToPendingTransferResponse)
                     .toList();
 
-            log.info("Found {} pending transfer requests for destination wardId: {}", responseList.size(), wardIds);
+            log.info("Found {} pending transfer requests for destination wardIds: {}", responseList.size(), wardIds);
 
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
@@ -1712,6 +1768,203 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         }
     }
 
+    @Override
+    public ApiResponse<String> saveIpDiagnosisEntry(IpDiagnosisEntryRequest request) {
+
+        log.info("Saving IP diagnosis entry. inpatientId: {}, diagnosisType: {}",
+                request.getInpatientId(),
+                request.getDiagnosisType());
+
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            LocalDateTime currentDateTime = LocalDateTime.now();
+
+            String diagnosisType = request.getDiagnosisType() == null ? null : request.getDiagnosisType().trim().toUpperCase();
+
+            /*
+             * Only W and I are allowed.
+             *
+             * W = Working diagnosis
+             * I = ICD diagnosis
+             */
+            if (!AppConstants.WORKING_DIAGNOSIS_TYPE.equals(diagnosisType) && !AppConstants.ICD_DIAGNOSIS_TYPE.equals(diagnosisType)) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Invalid diagnosis type. Allowed values are W and I",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
+
+            if (inpatient == null) {
+                return ResponseUtils.createNotFoundResponse("Inpatient not found with ID: " + request.getInpatientId(), HttpStatus.NOT_FOUND.value());
+            }
+
+            Patient patient = patientRepository.findById(request.getPatientId()).orElse(null);
+
+            if (patient == null) {
+                return ResponseUtils.createNotFoundResponse("Patient not found with ID: " + request.getPatientId(), HttpStatus.NOT_FOUND.value()
+                );
+            }
+
+            MasDepartment department = masDepartmentRepository.findById(request.getDepartmentId()).orElse(null);
+
+            if (department == null) {
+                return ResponseUtils.createNotFoundResponse("Department not found with ID: " + request.getDepartmentId(), HttpStatus.NOT_FOUND.value());
+            }
+
+            MasIcd icd = null;
+
+            if (AppConstants.WORKING_DIAGNOSIS_TYPE.equals(diagnosisType)) {
+                icd = null;
+
+            } else {
+                icd = masIcdRepository.findById(request.getIcdId()).orElse(null);
+
+                if (icd == null) {
+                    return ResponseUtils.createNotFoundResponse("ICD not found with ID: " + request.getIcdId(), HttpStatus.NOT_FOUND.value());
+                }
+            }
+
+            IpDiagnosisEntry diagnosisEntry = new IpDiagnosisEntry();
+
+            diagnosisEntry.setInpatient(inpatient);
+            diagnosisEntry.setPatient(patient);
+            diagnosisEntry.setDepartment(department);
+            diagnosisEntry.setDiagnosisType(diagnosisType);
+
+            if (AppConstants.WORKING_DIAGNOSIS_TYPE.equalsIgnoreCase(diagnosisType)) {
+                // Working diagnosis
+                diagnosisEntry.setDiagnosisText(request.getDiagnosisText());
+                diagnosisEntry.setIcd(null);
+            } else if (AppConstants.ICD_DIAGNOSIS_TYPE.equalsIgnoreCase(diagnosisType)) {
+                // ICD diagnosis
+                diagnosisEntry.setDiagnosisText(icd.getIcdName());
+                diagnosisEntry.setIcd(icd);
+            }
+
+            diagnosisEntry.setStatus(request.getStatus().toUpperCase());
+            diagnosisEntry.setDiagnosisDatetime(  request.getDateTime());
+            diagnosisEntry.setRecordedBy(currentUser);
+            diagnosisEntry.setCreatedBy(currentUser.getFullName());
+            diagnosisEntry.setLastUpdatedBy(currentUser.getFullName());
+            diagnosisEntry.setLastUpdateDate(currentDateTime);
+
+            IpDiagnosisEntry savedDiagnosis = ipDiagnosisEntryRepository.save(diagnosisEntry);
+
+            log.info(
+                    "IP diagnosis entry saved successfully. diagnosisId: {}, inpatientId: {}, diagnosisType: {}, icdId: {}",
+                    savedDiagnosis.getDiagnosisId(),
+                    inpatient.getInpatientId(),
+                    diagnosisType,
+                    icd != null ? icd.getIcdId() : null
+            );
+
+            return ResponseUtils.createSuccessResponse("IP diagnosis entry saved successfully", new TypeReference<>() {}
+            );
+
+        } catch (Exception e) {
+
+            log.error("Error while saving IP diagnosis entry. inpatientId: {}, diagnosisType: {}",
+                    request.getInpatientId(),
+                    request.getDiagnosisType(),
+                    e
+            );
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+    @Override
+    public ApiResponse<List<IpDiagnosisEntryResponse>> getIpDiagnosisEntry(Long inpatientId) {
+
+        log.info("Fetching diagnosis entries for inpatientId: {}", inpatientId);
+
+        try {
+
+            List<IpDiagnosisEntryProjection> projections = ipDiagnosisEntryRepository.getIpDiagnosisEntry(inpatientId);
+
+            List<IpDiagnosisEntryResponse> response = projections.stream().map(p -> {
+                IpDiagnosisEntryResponse dto = new IpDiagnosisEntryResponse();
+                dto.setInpatientId(p.getInpatientId());
+                dto.setIcdId(p.getIcdId());
+                dto.setIcdCode(p.getIcdCode());
+                dto.setIcdName(p.getIcdName());
+                dto.setRemark(p.getRemark());
+                dto.setDiagnosisType(p.getDiagnosisType());
+                dto.setStatus(p.getStatus());
+                dto.setDiagnosis(p.getDiagnosis());
+                dto.setDateTime(p.getDateTime());
+                return dto;
+            }).toList();
+
+            log.info("Successfully fetched {} diagnosis entries for inpatientId: {}",
+                    response.size(), inpatientId);
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while fetching diagnosis entries for inpatientId: {}",
+                    inpatientId, e);
+
+            return ResponseUtils.createFailureResponse(null,new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+    @Override
+    public ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientId, String ioType) {
+
+        log.info("Fetching Intake/Output details for inpatientId: {}, ioType: {}", inpatientId, ioType);
+
+        List<IntakeOutputProjection> projections = ipIntakeOutputEntryRepository.getIntakeOutputDetails(inpatientId, ioType);
+
+        log.info("Total records fetched from database: {}", projections.size());
+
+        if (projections.isEmpty()) {
+            log.warn("No Intake/Output records found for inpatientId: {}, ioType: {}", inpatientId, ioType);
+
+            return ResponseUtils.createNotFoundResponse("No intake/output records found.", HttpStatus.NOT_FOUND.value());
+        }
+
+        List<IntakeOutputResponse> responses = projections.stream().map(p -> {
+
+            IntakeOutputResponse response = new IntakeOutputResponse();
+
+            response.setInpatientId(p.getInpatientId());
+            response.setIoEntryId(p.getIoEntryId());
+            response.setDateTime(p.getDateTime());
+            response.setIoType(p.getIoType());
+
+            if (AppConstants.IO_TYPE_I.equalsIgnoreCase(ioType)) {
+
+                log.debug("Mapping Intake record. ioEntryId: {}", p.getIoEntryId());
+
+                response.setIntakeTypeId(p.getIntakeTypeId());
+                response.setIntakeTypeName(p.getIntakeTypeName());
+                response.setIntakeItemId(p.getIntakeItemId());
+                response.setIntakeItemName(p.getIntakeItemName());
+                response.setQuantity(p.getIntakeQuantity());
+
+            } else if (AppConstants.IO_TYPE_O.equalsIgnoreCase(ioType)) {
+
+                log.debug("Mapping Output record. ioEntryId: {}", p.getIoEntryId());
+
+                response.setOutputTypeId(p.getOutputTypeId());
+                response.setOutputName(p.getOutputName());
+                response.setQuantity(p.getIntakeQuantity());
+            }
+
+            return response;
+
+        }).toList();
+
+        log.info("Successfully mapped {} Intake/Output records for inpatientId: {}",
+                responses.size(), inpatientId);
+
+        return ResponseUtils.createSuccessResponse(
+                responses,
+                new TypeReference<List<IntakeOutputResponse>>() {});
+    }
     private List<LabRadioInvestigationRequest> resolveInvestigations(InpatientBookingInvestigationRequest request) {
         if (request.getInvestigationReq() != null && !request.getInvestigationReq().isEmpty()) {
             return request.getInvestigationReq();
@@ -1727,26 +1980,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         return Collections.emptyList();
     }
 
-    private boolean isRadiologyInvestigation(DgMasInvestigation investigation) {
-        if (investigation == null) {
-            return false;
-        }
-
-        Long mainChargeCodeId = investigation.getMainChargeCodeId() != null
-                ? investigation.getMainChargeCodeId().getChargecodeId()
-                : null;
-
-        if (mainChargeCodeId != null && radioInvestigationMainChargecodeId != null && mainChargeCodeId.equals(radioInvestigationMainChargecodeId)) {
-            return true;
-        }
-
-        if (mainChargeCodeId != null && labInvestigationMainChargecodeId != null && mainChargeCodeId.equals(labInvestigationMainChargecodeId)) {
-            return false;
-        }
-
-        String serviceType = Optional.ofNullable(investigation.getInvServiceType()).orElse("").trim().toLowerCase(Locale.ROOT);
-        return serviceType.startsWith("r") || "radiology".equals(serviceType) || "rad".equals(serviceType);
-    }
 
     private DgOrderHd buildLabOrderHeader(Inpatient inpatient, User currentUser, LocalDate appointmentDate, LocalTime now) {
         DgOrderHd hd = new DgOrderHd();
@@ -1761,7 +1994,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         hd.setPrescribedBy(currentUser.getUserId() != null ? currentUser.getUserId().intValue() : 0);
         hd.setDepartmentId(laboratoryDepartment);
         hd.setInvestigationRequestNo(0);
-        hd.setVisitId(inpatient.getVisit());
         hd.setPatientId(inpatient.getPatient());
         hd.setDiscountId(null);
         hd.setAppointmentDate(appointmentDate);
@@ -1776,7 +2008,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         return hd;
     }
 
-    private DgOrderDt buildLabOrderDetail(DgOrderHd orderHd, DgMasInvestigation investigation, User currentUser, LocalDate appointmentDate, LocalTime now, LabOrderTrackingStatus orderedStatus) {
+    private DgOrderDt buildLabOrderDetail(DgOrderHd orderHd, DgMasInvestigation investigation, User currentUser, LocalDate appointmentDate, LocalTime now, LabOrderTrackingStatus orderedStatus, String remarks) {
         DgOrderDt dt = new DgOrderDt();
         dt.setOrderhdId(orderHd);
         dt.setInvestigationId(investigation);
@@ -1793,6 +2025,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         dt.setCreatedon(Instant.now());
         dt.setMsgSent(AppConstants.STATUS_N.toLowerCase());
         dt.setOrderTrackingStatus(orderedStatus);
+        dt.setRemarks(remarks);
         return dt;
     }
 
@@ -1802,10 +2035,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         hd.setOrderTime(Instant.now());
         hd.setAppointmentDate(appointmentDate);
         hd.setPatient(inpatient.getPatient());
-        hd.setVisit(inpatient.getVisit());
         hd.setHospital(currentUser.getHospital());
         hd.setDepartment(masDepartmentRepository.findById(radiologyDepartment)
-                .orElseThrow(() -> new RuntimeException("Radiology department not found with id: " + radiologyDepartment)));
+                .orElseThrow(() -> new SDDException(404,"Radiology department not found with id: " + radiologyDepartment)));
         hd.setPrescribedBy(currentUser.getFullName());
         hd.setCreatedby(currentUser.getFullName());
         hd.setCreatedon(Instant.now());
@@ -1816,7 +2048,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         return hd;
     }
 
-    private RadOrderDt buildRadiologyOrderDetail(RadOrderHd orderHd, DgMasInvestigation investigation, User currentUser, LocalDate appointmentDate) {
+    private RadOrderDt buildRadiologyOrderDetail(RadOrderHd orderHd, DgMasInvestigation investigation, User currentUser, LocalDate appointmentDate, String remarks) {
         RadOrderDt dt = new RadOrderDt();
         dt.setRadOrderhd(orderHd);
         dt.setInvestigation(investigation);
@@ -1833,6 +2065,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         dt.setCreatedon(Instant.now());
         dt.setLastChgBy(currentUser.getFullName());
         dt.setLastChgDate(Instant.now());
+        dt.setRemarks(remarks);
         return dt;
     }
     private synchronized  String generateTransferNumber() {

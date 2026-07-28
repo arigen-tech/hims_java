@@ -26,7 +26,9 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
         d.discount,
         COALESCE(ipd.price, 0),
         d.main_chargecode_id,
-        mmc.main_chargecode_name
+        mmc.main_chargecode_name,
+        dms.sample_description,
+        dmc.collection_name
     FROM 
         dg_mas_investigation d
     LEFT JOIN
@@ -35,12 +37,18 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
     LEFT JOIN
         investigation_price_details ipd
         ON d.investigation_id = ipd.investigation_id
+        
+    LEFT JOIN dg_mas_sample dms 
+        ON d.sample_id = dms.sample_id
+    LEFT JOIN dg_mas_collection dmc
+        ON d.collection_id = dmc.collection_id
         AND CURRENT_DATE BETWEEN ipd.from_dt AND ipd.to_dt
     WHERE 
-        d.status = 'y'
+        d.status = 'y' 
         AND (d.gender_applicable = :genderApplicable 
         OR d.gender_applicable = 'c')
         AND d.main_chargecode_id = :mainChargecodeId
+        AND ipd.price > 0
 """, nativeQuery = true)
     List<Object[]> findByPriceDetails(
             @Param("genderApplicable") String genderApplicable,

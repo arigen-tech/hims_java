@@ -55,4 +55,10 @@ public interface IPDPatientService {
     ApiResponse<String> saveInpatientBookingInvestigation(@Valid InpatientBookingInvestigationRequest request);
 
     ApiResponse<List<PendingToTransferResponse>> wardTransferList( List<Long> wardIds);
+
+   ApiResponse<String> saveIpDiagnosisEntry(@Valid IpDiagnosisEntryRequest request);
+
+    ApiResponse<List<IpDiagnosisEntryResponse>> getIpDiagnosisEntry(Long inpatientID);
+
+    ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientID, String ioType);
 }

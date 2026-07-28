@@ -1539,6 +1539,11 @@ public class BillingServiceImpl implements BillingService {
                             mobileNo,
                             billingServiceType,
                             refundStatus,
+                            AppConstants.STATUS_Y.toLowerCase(),
+                            AppConstants.STATUS_N.toLowerCase(),
+                            AppConstants.STATUS_N.toLowerCase(),
+                            AppConstants.BILLING_REFUND_STATUS_COMPLETED_LABEL,
+                            AppConstants.BILLING_REFUND_STATUS_PENDING_LABEL,
                             fromDate,
                             toDate,
                             pageable

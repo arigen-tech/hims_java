@@ -20,6 +20,8 @@ public class DailyCaseSheetEntryResponse {
     private String doctorName;
     private Long departmentId;
     private String departmentName;
+    private Long visitTypeId;
+    private String visitTypeName;
 
 
 

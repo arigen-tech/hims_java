@@ -23,7 +23,7 @@ IpdBillingHeaderRepository ipdBillingHeaderRepository;
 @Autowired
 IpdBillingDetailsRepository ipdBillingDetailsRepository;
 
-    public void saveDailyCaseSheetBillingDetails(Inpatient inpatient,
+    public void saveInpatientBillingDetails(Inpatient inpatient,
                                                   BigDecimal rate,
                                                   BigDecimal quantity,
                                                   BigDecimal gstPercent,
