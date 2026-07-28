@@ -109,6 +109,121 @@ public interface IpTransferRequestRepository extends JpaRepository<IpTransferReq
                                             @Param("transferStatus") String transferStatus
         );
 
-    Optional<IpTransferRequest> findByInpatient_InpatientId(Long inpatientId);
-}
 
+
+
+    Optional<IpTransferRequest> findByInpatient_InpatientIdAndTransferStatusIgnoreCase(Long inpatientId, String ipdBedTransferStatus);
+
+    @Query(value = """
+            SELECT
+                itr.inpatient_id AS "inpatientId",
+                itr.patient_id AS "patientId",
+                itr.transfer_no AS "transferNo",
+                itr.request_datetime AS "transferDateTime",
+
+                TRIM(
+                    CONCAT_WS(
+                        ' ',
+                        NULLIF(TRIM(p.p_fn), ''),
+                        NULLIF(TRIM(p.p_mn), ''),
+                        NULLIF(TRIM(p.p_ln), '')
+                    )
+                ) AS "patientName",
+
+                mg.gender_code AS "gender",
+                p.p_age AS "age",
+                i.admission_no AS "admissionNo",
+                TO_CHAR(i.admission_date, 'YYYY-MM-DD') AS "admissionDate",
+
+                itr.from_ward_id AS "fromWardId",
+                fw.ward_name AS "fromWardName",
+
+                itr.from_bed_id AS "fromBedId",
+                fb.bed_number AS "fromBedName",
+
+                itr.to_ward_id AS "toWardId",
+                tw.ward_name AS "toWardName",
+
+                itr.to_bed_id AS "toBedId",
+                tb.bed_number AS "toBedName",
+
+                itr.transfer_reason_id AS "transferReasonId",
+                mtr.transfer_reason_name AS "transferReason",
+
+              
+                itr.transfer_status AS "transferStatus",
+
+                itr.clinical_notes AS "clinicalNotes",
+
+                itr.doctor_id AS "doctorId",
+               
+                             TRIM(
+                    CONCAT_WS(
+                        ' ',
+                        NULLIF(TRIM(usr.first_name), ''),
+                        NULLIF(TRIM(usr.middle_name), ''),
+                        NULLIF(TRIM(usr.last_name), '')
+                    )
+                ) AS "doctorName",
+
+                p.uhid_no AS "uhidNo"
+
+            FROM ip_transfer_request itr
+
+            INNER JOIN inpatient i
+                ON i.inpatient_id = itr.inpatient_id
+
+            INNER JOIN patient p
+                ON p.patient_id = itr.patient_id
+
+            LEFT JOIN mas_gender mg
+                ON mg.id = p.p_gender_id
+
+            LEFT JOIN mas_ward fw
+                ON fw.ward_id = itr.from_ward_id
+
+            LEFT JOIN mas_bed fb
+                ON fb.bed_id = itr.from_bed_id
+
+            INNER JOIN mas_ward tw
+                ON tw.ward_id = itr.to_ward_id
+
+            INNER JOIN mas_bed tb
+                ON tb.bed_id = itr.to_bed_id
+
+            LEFT JOIN mas_ipd_transfer_reason mtr
+                ON mtr.transfer_reason_id = itr.transfer_reason_id
+
+            LEFT JOIN users usr
+                ON usr.user_id = itr.doctor_id
+
+          WHERE (
+        itr.to_ward_id IN (:wardIds)
+        OR itr.from_ward_id IN (:wardIds)
+      )
+  AND LOWER(itr.transfer_status) = LOWER(:transferStatusComplete)
+            ORDER BY itr.request_datetime DESC
+            """, nativeQuery = true)
+    List<PendingToTransferProjectionResponse>
+    findTransferCompleteByWardId(@Param("wardIds") List<Long> wardIds,
+                                        @Param("transferStatusComplete") String transferStatus
+    );
+
+
+
+    @Query(
+            value = """
+        SELECT transfer_no
+        FROM ip_transfer_request
+        WHERE transfer_no LIKE :financialYearPattern
+        ORDER BY CAST(SPLIT_PART(transfer_no, '/', 3) AS INTEGER) DESC
+        LIMIT 1
+        """,
+            nativeQuery = true
+    )
+    String findLastTransferNoByFinancialYear(
+            @Param("financialYearPattern") String financialYearPattern
+    );
+
+
+}

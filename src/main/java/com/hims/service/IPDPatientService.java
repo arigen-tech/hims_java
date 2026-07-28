@@ -53,4 +53,10 @@ public interface IPDPatientService {
     ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(Long inpatientId,String transferStatus);
 
     ApiResponse<String> saveInpatientBookingInvestigation(@Valid InpatientBookingInvestigationRequest request);
+
+    ApiResponse<List<PendingToTransferResponse>> wardTransferList( List<Long> wardIds);
+
+   ApiResponse<String> saveIpDiagnosisEntry(@Valid IpDiagnosisEntryRequest request);
+
+    ApiResponse<List<IpDiagnosisEntryResponse>> getIpDiagnosisEntry(Long inpatientID);
 }

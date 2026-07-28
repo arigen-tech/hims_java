@@ -211,24 +211,61 @@ public class IPDPatientController {
 
         return ResponseEntity.ok(response);
     }
+    /**
+     * Updates a pending ward transfer request status.
+     *
+     * @param inpatientId   ID of the inpatient whose transfer request is being updated
+     * @param transferStatus new transfer status, such as C for completed or R for rejected
+     * @return API response containing the status update result
+     */
+    @PutMapping("wardPendingToTransferRequestStatusCompleteAndReject/{inpatientId}/{transferStatus}"
+    )
+    public ApiResponse<String> updateWardTransferRequestStatus(
+            @PathVariable Long inpatientId,
+            @PathVariable String transferStatus) {
 
-    @PutMapping("wardPendingToTransferRequestStatusCompleteAndReject/{inpatientId}/{transferStatus}")
-    public ApiResponse<String> updateAdmissionInternalStatus(@PathVariable Long inpatientId,@PathVariable String transferStatus) {
+        // Log the incoming transfer-status update request.
+        log.info("Request received to update ward transfer status, " + "inpatientId: {}, transferStatus: {}",
+                inpatientId,
+                transferStatus
+        );
 
-        log.info("Request received to change wardPendingToTransferRequestStatusCompleteAndReject for inpatientId: {}", inpatientId);
-
-        return ipdPatientService.wardPendingToTransferRequestStatusCompleteAndReject(inpatientId,transferStatus);
+        // Call the service method to complete or reject the transfer request.
+        return ipdPatientService.wardPendingToTransferRequestStatusCompleteAndReject(inpatientId, transferStatus);
     }
-
-
-
-
-
-
     @PostMapping("saveInpatientBookingInvestigation")
     public ApiResponse<String> saveInpatientBookingInvestigation(@Valid @RequestBody InpatientBookingInvestigationRequest request) {
         log.info("Request received to save inpatient booking investigation. inpatientId: {}", request.getInpatientId());
         return ipdPatientService.saveInpatientBookingInvestigation(request);
+    }
+
+
+    @GetMapping("wardTransferList/{wardIds}")
+    public ResponseEntity<ApiResponse<List<PendingToTransferResponse>>> wardTransferList(  @RequestParam  List<Long> wardIds){
+
+        log.info("Request received to fetch pending transfer requests for wardIds: {}", wardIds);
+
+        ApiResponse<List<PendingToTransferResponse>> response = ipdPatientService.wardTransferList(wardIds);
+
+        return ResponseEntity.ok(response);
+    }
+
+   @PostMapping("saveIpDiagnosisEntry")
+   public ApiResponse<String> saveIpDiagnosisEntry(@Valid @RequestBody IpDiagnosisEntryRequest  request) {
+
+       log.info("Request received to saveIpDiagnosisEntry Request");
+
+       return ipdPatientService.saveIpDiagnosisEntry(request);
+   }
+
+   @GetMapping("getIpDiagnosisEntry/{inpatientID}")
+   public ResponseEntity<ApiResponse<List<IpDiagnosisEntryResponse>>> getIpDiagnosisEntry(@PathVariable Long inpatientID){
+
+        log.info("Request received to fetch getIpDiagnosisEntry for inpatientID: {}", inpatientID);
+
+        ApiResponse<List<IpDiagnosisEntryResponse>> response = ipdPatientService.getIpDiagnosisEntry(inpatientID);
+
+        return ResponseEntity.ok(response);
     }
 
 
