@@ -83,4 +83,7 @@ public class DgOrderDt {
     @JoinColumn(name = "order_tracking_status_id")
     private LabOrderTrackingStatus orderTrackingStatus;
 
+    @Column(name = "remarks", length = 200)
+    private String remarks;
+
 }

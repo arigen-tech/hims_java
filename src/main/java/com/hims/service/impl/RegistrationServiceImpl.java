@@ -325,7 +325,8 @@ public class RegistrationServiceImpl implements RegistrationService {
                         new TypeReference<>() {},
                         AppConstants.PATIENT_NOT_APPLICABLE_FOR_SERVICE_REGISTRATION,
                         400);
-            }            log.info("Fetching patient details for patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
+            }
+            log.info("Fetching patient details for patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
 
             // Default to OPD if serviceCategoryCode is null or empty
             String categoryCode = (serviceCategoryCode == null || serviceCategoryCode.trim().isEmpty())

@@ -99,6 +99,8 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             dto.setPrice(obj[6] != null ? ((Number) obj[6]).doubleValue() : 0.0);
             dto.setMainChargeCodeId(obj[7] != null ? ((Number) obj[7]).longValue() : null);
             dto.setMainChargeCodeName(obj[8] != null ? obj[8].toString() : null);
+            dto.setSampleName(obj[9] != null ? obj[9].toString() : null);
+            dto.setContainer(obj[10] != null ? obj[10].toString() : null);
             return dto;
         }).collect(Collectors.toList());
 

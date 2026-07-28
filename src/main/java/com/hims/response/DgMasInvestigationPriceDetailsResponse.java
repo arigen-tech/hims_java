@@ -15,4 +15,6 @@ public class DgMasInvestigationPriceDetailsResponse {
     private String genderApplicable;
     private String discount;
     private Double price;
+    private String sampleName;
+    private String container;
 }
