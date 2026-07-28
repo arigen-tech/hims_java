@@ -154,7 +154,22 @@ public class IPDPatientController {
 
         return ipdPatientService.saveVitalsDetails(request);
     }
+    @Operation(summary = "Save Intake/Output Details",
+            description = """
+                Saves intake and output details for an inpatient.
 
+                Rules:
+                - ioType = 'I' (Intake):
+                    - intakeTypeId is required.
+                    - intakeItemId is required.
+                    - outputTypeId must be null.
+
+                - ioType = 'O' (Output):
+                    - outputTypeId is required.
+                    - intakeTypeId must be null.
+                    - intakeItemId must be null.
+                """
+    )
     @PostMapping("saveIntakeOutputDetails")
     public ApiResponse<String> saveIntakeOutputDetails(@Valid @RequestBody IpIntakeOutputSaveRequest request) {
 
@@ -267,6 +282,26 @@ public class IPDPatientController {
 
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Fetches Intake or Output details for a given inpatient.
+     *
+     * @param inpatientID the unique ID of the inpatient
+     * @param ioType the type of record to fetch:
+     *               "I" - Intake details
+     *               "O" - Output details
+     * @return ResponseEntity containing the list of intake/output details
+     */
+    @GetMapping("getIntakeOutputDetails/{inpatientID}/{ioType}")
+    public ResponseEntity<ApiResponse<List<IntakeOutputResponse>>> getIntakeOutputDetails(@PathVariable Long inpatientID,@PathVariable String ioType){
+
+        log.info("Request received to fetch saveIntakeOutputDetails for inpatientID: {}", inpatientID);
+
+        ApiResponse<List<IntakeOutputResponse>> response = ipdPatientService.getIntakeOutputDetails(inpatientID,ioType);
+
+        return ResponseEntity.ok(response);
+    }
+
 
 
 

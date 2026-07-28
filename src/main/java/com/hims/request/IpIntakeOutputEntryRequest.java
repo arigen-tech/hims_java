@@ -24,17 +24,7 @@ public class IpIntakeOutputEntryRequest {
     // Required when ioType = O
     private Long outputTypeId;
 
-    // Mainly used for intake
-    private Long routeId;
-
     private BigDecimal quantity;
 
-    private String unit;
 
-    private LocalDateTime observationDatetime;
-
-   // private String shift;
-
-    @Size(max = 500, message = "Remarks cannot exceed 500 characters")
-    private String remarks;
 }

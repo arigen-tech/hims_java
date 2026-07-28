@@ -138,6 +138,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasIpdTransferReasonRepository masIpdTransferReasonRepository;
     @Autowired
     IpTransferRequestRepository ipTransferRequestRepository;
+    @Autowired
+    MasIpdPaymentStatusRepository masIpdPaymentStatusRepository;
+    @Autowired
+    MasIpdBillStatusRepository masIpdBillStatusRepository;
 
 
 
@@ -169,6 +173,12 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long bedStatusTransferRequestId;
     @Value("${ip.internal.status.transfer.pending.id}")
     Long ipInternalStatusTransferPendingId ;
+
+    @Value("${ip.payment.status.partial}")
+    Long ipPaymentStatusPartial ;
+    @Value("${ip.bill.status.open}")
+    Long ipBillStatusOpen;
+
 
 
     @Override
@@ -709,13 +719,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                                     currentDateTime
                             )
                             .orElseThrow(() -> new RuntimeException(
-                                    "No active consultation tariff found for the current date. "
-                                            + "Doctor ID: " + request.getDoctorId()
-                                            + ", Department ID: "
-                                            + request.getVisitDepartmentId()
-                                            + ", Visit Type ID: "
-                                            + request.getVisitType()
-                            ));
+                                    "Consultation fee is not defined for this doctor"));
 
 
 
@@ -739,6 +743,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                             .lastUpdateDate(currentDateTime)
                             .createdBy(loggedInUser.getFullName())
                             .lastUpdatedBy(loggedInUser.getFullName())
+                            .visitType(visitType)
                             .build();
 
             MasIpdServiceCategory billingCategory = masIpdServiceCategoryRepository.findById(ipdServiceCategoryId)
@@ -1087,7 +1092,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             ipBedAllocation.setAllocationEndDate(LocalDateTime.now());
 
-
+            ipBedAllocationRepository.save(bedAllocation);
             log.info("Transfer request completed successfully for inpatientId: {}", inpatientId);
 
         } else {
@@ -1108,7 +1113,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         masBedRepository.save(destinationBed);
         ipTransferRequestRepository.save(ipTransferRequest1);
-        ipBedAllocationRepository.save(bedAllocation);
         inpatientRepository.save(inpatient);
         ipBedAllocationRepository.save(ipBedAllocation);
 
@@ -1142,6 +1146,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 .doctorName(projection.getDoctorName())
                 .departmentId(projection.getDepartmentId())
                 .departmentName(projection.getDepartmentName())
+                .visitTypeName(projection.getVisitTypeName())
+                .visitTypeId(projection.getVisitTypeId())
                 .build();
     }
 
@@ -1160,14 +1166,13 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         entity.setInpatient(inpatient);
         entity.setPatient(patient);
         entity.setQuantity(request.getQuantity());
-        entity.setUnit("ml");
         entity.setObservationDatetime( currentDateTime);
-        entity.setRemarks(request.getRemarks());
+        entity.setIoType(ioType);
         entity.setLastUpdateDate(currentDateTime);
         entity.setCreatedBy(userName.getFullName());
         entity.setLastUpdatedBy(userName.getFullName());
 
-        if ("I".equals(ioType)) {
+        if (AppConstants.IO_TYPE_I.equals(ioType)) {
 
             MasIntakeType intakeType = masIntakeTypeRepository.getReferenceById(request.getIntakeTypeId());
 
@@ -1175,10 +1180,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             entity.setIntakeType(intakeType);
             entity.setIntakeItem(intakeItem);
-            if (request.getRouteId() != null)
-            {
-                entity.setRoute(masRouteRepository.getReferenceById(request.getRouteId()));
-            }
             entity.setOutputType(null);
 
         } else {
@@ -1204,6 +1205,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         ipDiagnosisEntry.setPatient(patient);
         ipDiagnosisEntry.setDepartment(masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow());
         ipDiagnosisEntry.setRecordedBy(userRepo.findById(request.getTreatingDoctor()).orElseThrow());
+        ipDiagnosisEntry.setDiagnosisType(AppConstants.WORKING_DIAGNOSIS_TYPE);
         ipDiagnosisEntry.setDiagnosisText(request.getWorkingDiagnosis());
         ipDiagnosisEntry.setCreatedBy(user.getFullName());
         ipDiagnosisEntry.setLastUpdateDate(LocalDateTime.now());
@@ -1234,6 +1236,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         billingHeader.setUpdatedBy(user.getFullName());
         billingHeader.setCreatedAt(LocalDateTime.now());
         billingHeader.setUpdatedAt(LocalDateTime.now());
+        billingHeader.setPatientPaidAmount(request.getAdvanceAmount());
+        billingHeader.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusOpen).orElseThrow());
+        billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPartial).orElseThrow());
 
         IpdBillingHeader savedBillingHeader = ipdBillingHeaderRepository.save(billingHeader);
 
@@ -1867,6 +1872,60 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             return ResponseUtils.createFailureResponse(null,new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+    @Override
+    public ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientId, String ioType) {
+
+        log.info("Fetching Intake/Output details for inpatientId: {}, ioType: {}", inpatientId, ioType);
+
+        List<IntakeOutputProjection> projections = ipIntakeOutputEntryRepository.getIntakeOutputDetails(inpatientId, ioType);
+
+        log.info("Total records fetched from database: {}", projections.size());
+
+        if (projections.isEmpty()) {
+            log.warn("No Intake/Output records found for inpatientId: {}, ioType: {}", inpatientId, ioType);
+
+            return ResponseUtils.createNotFoundResponse("No intake/output records found.", HttpStatus.NOT_FOUND.value());
+        }
+
+        List<IntakeOutputResponse> responses = projections.stream().map(p -> {
+
+            IntakeOutputResponse response = new IntakeOutputResponse();
+
+            response.setInpatientId(p.getInpatientId());
+            response.setIoEntryId(p.getIoEntryId());
+            response.setDateTime(p.getDateTime());
+            response.setIoType(p.getIoType());
+
+            if (AppConstants.IO_TYPE_I.equalsIgnoreCase(ioType)) {
+
+                log.debug("Mapping Intake record. ioEntryId: {}", p.getIoEntryId());
+
+                response.setIntakeTypeId(p.getIntakeTypeId());
+                response.setIntakeTypeName(p.getIntakeTypeName());
+                response.setIntakeItemId(p.getIntakeItemId());
+                response.setIntakeItemName(p.getIntakeItemName());
+                response.setQuantity(p.getIntakeQuantity());
+
+            } else if (AppConstants.IO_TYPE_O.equalsIgnoreCase(ioType)) {
+
+                log.debug("Mapping Output record. ioEntryId: {}", p.getIoEntryId());
+
+                response.setOutputTypeId(p.getOutputTypeId());
+                response.setOutputName(p.getOutputName());
+                response.setQuantity(p.getIntakeQuantity());
+            }
+
+            return response;
+
+        }).toList();
+
+        log.info("Successfully mapped {} Intake/Output records for inpatientId: {}",
+                responses.size(), inpatientId);
+
+        return ResponseUtils.createSuccessResponse(
+                responses,
+                new TypeReference<List<IntakeOutputResponse>>() {});
     }
     private List<LabRadioInvestigationRequest> resolveInvestigations(InpatientBookingInvestigationRequest request) {
         if (request.getInvestigationReq() != null && !request.getInvestigationReq().isEmpty()) {

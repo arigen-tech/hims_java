@@ -179,6 +179,10 @@ public class AppConstants {
     public static final String WORKING_DIAGNOSIS_TYPE= "W";
     public static final String ICD_DIAGNOSIS_TYPE= "I";
     public static final String DIAGNOSIS_STATUS= "A";
+    public static final String IO_TYPE_I= "I";
+
+    public static final String IO_TYPE_O= "O";
+
 
 
 
