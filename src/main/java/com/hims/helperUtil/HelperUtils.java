@@ -1,6 +1,11 @@
 package com.hims.helperUtil;
 
 import com.hims.constants.AppConstants;
+import com.hims.entity.DgMasInvestigation;
+import com.hims.entity.MasSubChargeCode;
+import com.hims.entity.repository.DgMasInvestigationRepository;
+import com.hims.entity.repository.MasSubChargeCodeRepository;
+import com.hims.exception.SDDException;
 import com.hims.utils.RandomNumGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +24,12 @@ public class HelperUtils {
 
     @Autowired
     public RandomNumGenerator randomNumGenerator;
+
+    @Autowired
+    private DgMasInvestigationRepository dgMasInvestigationRepository;
+
+    @Autowired
+    private MasSubChargeCodeRepository subChargeCodeRepository;
 
     // FOR dev  D:\BmsBackend\webapps\bmsreport
     public static String LASTFOLDERPATH = "D:/payroll/webapps/bmsreport";
@@ -152,5 +163,33 @@ public class HelperUtils {
 
         return cleaned.toUpperCase();
     }
+
+    public Long getDepartmentFromInvestigation(Long investigationId) {
+        if (investigationId == null) {
+            throw new SDDException("investigation", 400, "Investigation ID cannot be null");
+        }
+
+        DgMasInvestigation investigation = dgMasInvestigationRepository.findById(investigationId)
+                .orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found with ID: " + investigationId));
+
+        if (investigation.getSubChargeCodeId() == null) {
+            throw new SDDException("subcharge", 400, "Subcharge code not configured for investigation ID: " + investigationId);
+        }
+
+        Long subChargeId = investigation.getSubChargeCodeId().getSubId();
+        if (subChargeId == null) {
+            throw new SDDException("subcharge", 400, "SubCharge ID is null for investigation ID: " + investigationId);
+        }
+
+        MasSubChargeCode subChargeCode = subChargeCodeRepository.findById(subChargeId)
+                .orElseThrow(() -> new SDDException("subcharge", 404, "Subcharge code not found for investigation ID: " + investigationId));
+
+        if (subChargeCode.getMasDepartment() == null) {
+            throw new SDDException("department", 400, "Department not configured for subcharge code");
+        }
+
+        return subChargeCode.getMasDepartment().getId();
+    }
+
 
 }

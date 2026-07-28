@@ -11,5 +11,6 @@ public class LabRadioInvestigationRequest {
     private int actualAmount;
     private int discountedAmount;
     private String type;
+    private String remarks;
 
 }
