@@ -6,6 +6,7 @@ import com.hims.entity.*;
 import com.hims.entity.projection.PrescriptionDetailProjection;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.PaidCancelledAppointmentMapper;
 import com.hims.projection.*;
 import com.hims.request.*;
@@ -21,6 +22,7 @@ import com.hims.utils.StockFound;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
@@ -135,6 +137,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private Integer laboratoryDepartment;
     @Value("${app.opdDepartmentType}")
     private Long departmentTypeOpd;
+
+    @Autowired
+    HelperUtils helperUtils;
 
 
     public String createOrderNum() {
@@ -494,7 +499,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
 
             // Group investigations by department
-            Map<Long, Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>>> grouped = request.getInvestigation().stream().filter(Objects::nonNull).collect(Collectors.groupingBy(inv -> getDepartmentFromInvestigation(inv.getId()), Collectors.groupingBy(OpdPatientDetailCreateRequest.Investigation::getInvestigationDate)));
+            Map<Long, Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>>> grouped = request.getInvestigation().stream().filter(Objects::nonNull).collect(Collectors.groupingBy(inv -> helperUtils.getDepartmentFromInvestigation(inv.getId()), Collectors.groupingBy(OpdPatientDetailCreateRequest.Investigation::getInvestigationDate)));
 
             if (grouped.containsKey(Long.valueOf(laboratoryDepartment))) {
                 log.info("Processing LAB investigations");
@@ -555,30 +560,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         });
     }
 
-    private Long getDepartmentFromInvestigation(Long investigationId) {
-        if (investigationId == null) {
-            throw new SDDException("investigation", 400, "Investigation ID cannot be null");
-        }
-
-        DgMasInvestigation investigation = dgMasInvestigationRepository.findById(investigationId).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found with ID: " + investigationId));
-
-        if (investigation.getSubChargeCodeId() == null) {
-            throw new SDDException("subcharge", 400, "Subcharge code not configured for investigation ID: " + investigationId);
-        }
-
-        Long subChargeId = investigation.getSubChargeCodeId().getSubId();
-        if (subChargeId == null) {
-            throw new SDDException("subcharge", 400, "SubCharge ID is null for investigation ID: " + investigationId);
-        }
-
-        MasSubChargeCode subChargeCode = subChargeCodeRepository.findById(subChargeId).orElseThrow(() -> new SDDException("subcharge", 404, "Subcharge code not found for investigation ID: " + investigationId));
-
-        if (subChargeCode.getMasDepartment() == null) {
-            throw new SDDException("department", 400, "Department not configured for subcharge code");
-        }
-
-        return subChargeCode.getMasDepartment().getId();
-    }
 
     private void validateCreateRequest(OpdPatientDetailCreateRequest request) {
         if (request == null) {
@@ -1309,7 +1290,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         for (RecallOpdPatientDetailRequest.InvestigationRequest inv : request.getInvestigations()) {
             if (inv == null || inv.getInvestigationId() == null || inv.getInvestigationDate() == null) continue;
 
-            Long departmentId = getDepartmentFromInvestigation(inv.getInvestigationId());
+            Long departmentId = helperUtils.getDepartmentFromInvestigation(inv.getInvestigationId());
             if (departmentId.equals(Long.valueOf(laboratoryDepartment))) {
                 labInvestigations.add(inv);
             } else if (departmentId.equals(Long.valueOf(radiologyDepartment))) {
@@ -1768,7 +1749,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 DgOrderDt savedOrderDt = dgOrderDtRepo.save(dgOrderDt);
                 log.debug("LAB Order Detail saved - Detail ID: {}", savedOrderDt.getId());
 
-//              Billing Details save if need need some more change
+//              Billing Details save if need some more change
 //                BillingDetail billingDetail = new BillingDetail();
 //                billingDetail.setBillingHd(savedBillingHeader);
 //                billingDetail.setBillHd(savedBillingHeader);

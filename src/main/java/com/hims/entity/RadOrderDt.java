@@ -107,4 +107,8 @@ public class RadOrderDt {
     @Column(name = "report_date")
     private LocalDate reportDate;
 
+    @Column(name = "remarks", length = 200)
+    private String remarks;
+
+
 }

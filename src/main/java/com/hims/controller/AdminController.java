@@ -34,10 +34,10 @@ public class AdminController {
      * Create or update appointment setup configuration
      */
 
-    @PostMapping("/createAppointmentSetup")
-    public ResponseEntity<ApiResponse<AppsetupResponse>> createAppointmentSetup(@RequestBody AppointmentReq request) {
-        log.info("POST /adminController/createAppointmentSetup called");
-        return new ResponseEntity<>(adminService.createAppointmentSetup(request), HttpStatus.OK);
+    @PostMapping("/createOrUpdateAppointmentSetup")
+    public ResponseEntity<ApiResponse<AppsetupResponse>> createOrUpdateAppointmentSetup(@RequestBody AppointmentReq request) {
+        log.info("POST /adminController/createOrUpdateAppointmentSetup called");
+        return new ResponseEntity<>(adminService.createOrUpdateAppointmentSetup(request), HttpStatus.OK);
 
     }
     /**

@@ -18,5 +18,4 @@ public class InpatientBookingInvestigationRequest {
     private String sample;
     private String container;
     private String resultUnit;
-    private String remarks;
 }

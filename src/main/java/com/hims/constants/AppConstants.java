@@ -130,6 +130,10 @@ public class AppConstants {
     public static final String DISPLAY_PATIENT_STATUS = "wp";
     public static final String PAYMENT_PARTIAL_PENDING = "P";
     public static final String PACKAGE = "P";
+    public static final String BILLING_REFUND_STATUS_COMPLETED_CODE = STATUS_Y;
+    public static final String BILLING_REFUND_STATUS_PENDING_CODE = STATUS_N;
+    public static final String BILLING_REFUND_STATUS_COMPLETED_LABEL = "COMPLETED";
+    public static final String BILLING_REFUND_STATUS_PENDING_LABEL = "PENDING";
 
 
     // Billing Template
@@ -188,9 +192,10 @@ public class AppConstants {
     public static final String RADIOTYPE = "RAD";
 
     public static final String PATIENT_NOT_APPLICABLE_FOR_SERVICE_REGISTRATION = "The patient is currently admitted. Service registration is not allowed for this patient.";
+    public static final String PATIENT_STATUS_ADMITTED = "ADMITTED";
 
-
-
+    public static final String APPOINTMENT_SETUP_SUCCESS_MSG = "Appointment setup created successfully";
+    public static final String APPOINTMENT_UPDATE_SUCCESS_MSG = "Appointment setup updated successfully";
 
 
 
