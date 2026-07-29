@@ -47,7 +47,7 @@ public class IpDischargeMedication {
     private String instruction;
 
     @Column(name = "status", length = 1)
-    private String status = "Y";
+    private String status;
 
     @Column(name = "created_by", length = 100)
     private String createdBy;

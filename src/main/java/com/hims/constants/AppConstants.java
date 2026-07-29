@@ -184,8 +184,10 @@ public class AppConstants {
     public static final String ICD_DIAGNOSIS_TYPE= "I";
     public static final String DIAGNOSIS_STATUS= "A";
     public static final String IO_TYPE_I= "I";
-
     public static final String IO_TYPE_O= "O";
+    public static final String IP_DISCHARGE_SUMMARY_STATUS_DRAFT= "D";
+    public static final String IP_DISCHARGE_SUMMARY_STATUS_SUMMIT= "S";
+
 
 
 

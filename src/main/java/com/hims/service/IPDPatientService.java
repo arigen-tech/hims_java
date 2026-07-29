@@ -61,4 +61,8 @@ public interface IPDPatientService {
     ApiResponse<List<IpDiagnosisEntryResponse>> getIpDiagnosisEntry(Long inpatientID);
 
     ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientID);
+
+    ApiResponse<String> saveDischargeSummary(@Valid IpDischargeSummarySaveRequest request);
+
+    ApiResponse<PaymentStatusResponse> getPaymentStatus(Long inpatientID);
 }

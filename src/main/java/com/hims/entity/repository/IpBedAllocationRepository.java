@@ -121,4 +121,6 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
             @Param("activeAdmissionStatusId") Long activeAdmissionStatusId
     );
     Optional<IpBedAllocation> findFirstByInpatient_InpatientIdAndAllocationEndDateIsNullOrderByAllocationStartDateDesc(Long inpatientId);
+
+    Optional<IpBedAllocation> findTopByInpatient_InpatientIdOrderByAllocationStartDateDesc(Long inpatientId);
 }
