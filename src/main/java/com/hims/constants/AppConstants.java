@@ -201,6 +201,8 @@ public class AppConstants {
     public static final String APPOINTMENT_SETUP_SUCCESS_MSG = "Appointment setup created successfully";
     public static final String APPOINTMENT_UPDATE_SUCCESS_MSG = "Appointment setup updated successfully";
 
+    public static final String SOURCE_TYPE_OPD = "OPD";
+    public static final String SOURCE_TYPE_IPD = "IPD";
 
 
 
