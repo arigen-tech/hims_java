@@ -203,6 +203,9 @@ public class AppConstants {
 
     public static final String DOCTOR_ROSTER_NOT_FOUND_MSG = "Doctor roster is not created yet. Please create a weekly roster Mon-Sat before taking appointments.";
     public static final String CONSULTATION_FEE_NOT_SET_MSG = "Consultation fee not set for this doctor in selected department. Validate tariff before confirming appointment.";
+    public static final String SOURCE_TYPE_OPD = "OPD";
+    public static final String SOURCE_TYPE_IPD = "IPD";
+
 
 
 
