@@ -59,4 +59,6 @@ public interface IPDPatientService {
    ApiResponse<String> saveIpDiagnosisEntry(@Valid IpDiagnosisEntryRequest request);
 
     ApiResponse<List<IpDiagnosisEntryResponse>> getIpDiagnosisEntry(Long inpatientID);
+
+    ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientID);
 }

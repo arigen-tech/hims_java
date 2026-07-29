@@ -13,24 +13,27 @@ import java.util.List;
 @Repository
 public interface IpDailyCaseSheetEntryRepository extends JpaRepository<IpDailyCaseSheetEntry,Long> {
     @Query("""
-        SELECT
-            entry.caseSheetEntryId AS caseSheetEntryId,
-            entry.inpatient.inpatientId AS inpatient,
-            entry.doctorNotes AS notes,
-            entry.investigationSummary AS investigation,
-            entry.medicineSummary AS medicines,
-            entry.procedureSummary AS procedure,
-            entry.carePlanChanges AS plan,
-            entry.nextFollowUpPlan AS followUp,
-            entry.visitDatetime AS visitDateTime,
-                     entry.doctor.userId AS doctorId,
-                      entry.doctorName AS doctorName,
-                      entry.visitDepartment.id AS departmentId,
-                      entry.visitDepartment.departmentName AS departmentName
-        FROM IpDailyCaseSheetEntry entry
-        WHERE entry.inpatient.inpatientId = :inpatientId
-        ORDER BY entry.visitDatetime DESC
-        """)
+    SELECT
+        entry.caseSheetEntryId AS caseSheetEntryId,
+        entry.inpatient.inpatientId AS inpatient,
+        entry.doctorNotes AS notes,
+        entry.investigationSummary AS investigation,
+        entry.medicineSummary AS medicines,
+        entry.procedureSummary AS procedure,
+        entry.carePlanChanges AS plan,
+        entry.nextFollowUpPlan AS followUp,
+        entry.visitDatetime AS visitDateTime,
+        entry.doctor.userId AS doctorId,
+        entry.doctorName AS doctorName,
+        entry.visitDepartment.id AS departmentId,
+        entry.visitDepartment.departmentName AS departmentName,
+        vt.visitTypeId AS visitTypeId,
+        vt.visitTypeName AS visitTypeName
+    FROM IpDailyCaseSheetEntry entry
+    LEFT JOIN entry.visitType vt
+    WHERE entry.inpatient.inpatientId = :inpatientId
+    ORDER BY entry.visitDatetime DESC
+    """)
     List<DailyCaseSheetEntryProjectionResponse> findDailyCaseSheetEntries(
             @Param("inpatientId") Long inpatientId
     );
