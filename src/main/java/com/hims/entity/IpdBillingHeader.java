@@ -135,7 +135,7 @@ public class IpdBillingHeader {
     @Column(name = "refund_status", length = 1)
     private String refundStatus;
 
-    @Column(name = " outstanding_amount.", precision = 12, scale = 2)
+    @Column(name = "outstanding_amount", precision = 12, scale = 2)
     private BigDecimal outstandingAmount;
 
 }
