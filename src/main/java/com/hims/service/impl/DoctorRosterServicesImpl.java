@@ -1,5 +1,6 @@
 package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -130,7 +131,7 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
                 return ResponseUtils.createFailureResponse(
                         new ArrayList<>(),
                         new TypeReference<List<DoctorRosterDTO>>() {},
-                        "No doctor roster found",
+                        AppConstants.DOCTOR_ROSTER_NOT_FOUND_MSG,
                         HttpStatus.NOT_FOUND.value()
                 );
             }
@@ -153,7 +154,7 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
                 return ResponseUtils.createFailureResponse(
                         new ArrayList<>(),
                         new TypeReference<List<DoctorRosterDTO>>() {},
-                        "Doctor Tariff is not Defined",
+                        AppConstants.CONSULTATION_FEE_NOT_SET_MSG,
                         HttpStatus.NOT_FOUND.value()
                 );
             }

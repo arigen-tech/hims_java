@@ -600,7 +600,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         List<RadOrderDt> orderDetailsToSave = new ArrayList<>();
         
         for (LabRadioInvestigationRequest inv : investigations) {
-            if ("i".equalsIgnoreCase(inv.getType())) {
+            if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(inv.getType())) {
                 DgMasInvestigation entity = investigationsMap.get(inv.getId());
                 if (entity == null) {
                     log.warn("Investigation not found with ID: {}", inv.getId());
@@ -613,7 +613,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                 billingService.saveBillingDetail(billing, dt, inv, serviceCategoryRad, true);
 
 
-            } else if ("p".equalsIgnoreCase(inv.getType())) {
+            } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(inv.getType())) {
                 DgInvestigationPackage pkg = packagesMap.get(inv.getId());
                 if (pkg == null) {
                     log.warn("Package not found with ID: {}", inv.getId());
