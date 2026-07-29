@@ -1,7 +1,7 @@
 package com.hims.utils;
 
 public enum HMISTransaction {
-
+//
     
     ADMISSION_NO("ADMISSION_NO", "ADM"),
     DISCHARGE_NO("DISCHARGE_NO", "DIS"),
