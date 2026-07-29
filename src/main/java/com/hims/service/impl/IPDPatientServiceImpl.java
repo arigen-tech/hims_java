@@ -1931,16 +1931,16 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         }
     }
     @Override
-    public ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientId, String ioType) {
+    public ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientId) {
 
-        log.info("Fetching Intake/Output details for inpatientId: {}, ioType: {}", inpatientId, ioType);
+        log.info("Fetching Intake/Output details for inpatientId: {}", inpatientId);
 
-        List<IntakeOutputProjection> projections = ipIntakeOutputEntryRepository.getIntakeOutputDetails(inpatientId, ioType);
+        List<IntakeOutputProjection> projections = ipIntakeOutputEntryRepository.getIntakeOutputDetails(inpatientId);
 
         log.info("Total records fetched from database: {}", projections.size());
 
         if (projections.isEmpty()) {
-            log.warn("No Intake/Output records found for inpatientId: {}, ioType: {}", inpatientId, ioType);
+            log.warn("No Intake/Output records found for inpatientId: {}", inpatientId);
 
             return ResponseUtils.createNotFoundResponse("No intake/output records found.", HttpStatus.NOT_FOUND.value());
         }
@@ -1954,7 +1954,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             response.setDateTime(p.getDateTime());
             response.setIoType(p.getIoType());
 
-            if (AppConstants.IO_TYPE_I.equalsIgnoreCase(ioType)) {
+            if (AppConstants.IO_TYPE_I.equalsIgnoreCase(p.getIoType())) {
 
                 log.debug("Mapping Intake record. ioEntryId: {}", p.getIoEntryId());
 
@@ -1964,7 +1964,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 response.setIntakeItemName(p.getIntakeItemName());
                 response.setQuantity(p.getIntakeQuantity());
 
-            } else if (AppConstants.IO_TYPE_O.equalsIgnoreCase(ioType)) {
+            } else if (AppConstants.IO_TYPE_O.equalsIgnoreCase(p.getIoType())) {
 
                 log.debug("Mapping Output record. ioEntryId: {}", p.getIoEntryId());
 

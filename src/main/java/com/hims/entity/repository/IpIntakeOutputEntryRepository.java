@@ -29,11 +29,8 @@ public interface IpIntakeOutputEntryRepository extends JpaRepository<IpIntakeOut
             LEFT JOIN io.intakeItem ii
             LEFT JOIN io.outputType ot
             WHERE io.inpatient.inpatientId = :inpatientId
-              AND LOWER(io.ioType) = LOWER(:ioType)
             ORDER BY io.observationDatetime DESC
             """)
-    List<IntakeOutputProjection> getIntakeOutputDetails(
-            @Param("inpatientId") Long inpatientId,
-            @Param("ioType") String ioType);
+    List<IntakeOutputProjection> getIntakeOutputDetails(@Param("inpatientId") Long inpatientId);
 
 }

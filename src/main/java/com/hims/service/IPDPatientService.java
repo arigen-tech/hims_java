@@ -60,7 +60,7 @@ public interface IPDPatientService {
 
     ApiResponse<List<IpDiagnosisEntryResponse>> getIpDiagnosisEntry(Long inpatientID);
 
-    ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientID, String ioType);
+    ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientID);
 
     ApiResponse<String> saveDischargeSummary(@Valid IpDischargeSummarySaveRequest request);
 

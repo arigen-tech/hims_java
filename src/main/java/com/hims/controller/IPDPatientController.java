@@ -292,12 +292,12 @@ public class IPDPatientController {
      *               "O" - Output details
      * @return ResponseEntity containing the list of intake/output details
      */
-    @GetMapping("getIntakeOutputDetails/{inpatientID}/{ioType}")
-    public ResponseEntity<ApiResponse<List<IntakeOutputResponse>>> getIntakeOutputDetails(@PathVariable Long inpatientID,@PathVariable String ioType){
+    @GetMapping("getIntakeOutputDetails/{inpatientID}")
+    public ResponseEntity<ApiResponse<List<IntakeOutputResponse>>> getIntakeOutputDetails(@PathVariable Long inpatientID){
 
         log.info("Request received to fetch saveIntakeOutputDetails for inpatientID: {}", inpatientID);
 
-        ApiResponse<List<IntakeOutputResponse>> response = ipdPatientService.getIntakeOutputDetails(inpatientID,ioType);
+        ApiResponse<List<IntakeOutputResponse>> response = ipdPatientService.getIntakeOutputDetails(inpatientID);
 
         return ResponseEntity.ok(response);
     }
