@@ -17,8 +17,7 @@ public interface TransactionSequenceRepository extends JpaRepository<Transaction
     /**
      * Fetches the transaction sequence row and acquires a database row lock.
      * This prevents duplicate sequence generation when multiple users
-     * request a transaction number simultaneously.
-     *
+     * request a transaction number simultaneously.     *
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
