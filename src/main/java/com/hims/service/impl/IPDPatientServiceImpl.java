@@ -10,7 +10,9 @@ import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
+import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISTransaction;
 import com.hims.utils.ResponseUtils;
 import jakarta.validation.Valid;
 import com.hims.utils.SaveIpdBillingDetails;
@@ -159,6 +161,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasPatientDischargeConditionRepository masPatientDischargeConditionRepository;
     @Autowired
     MasDischargeReasonRepository masDischargeReasonRepository;
+    @Autowired
+    IpdBlReceiptHdRepository ipdBlReceiptHdRepository;
+    @Autowired
+    IpdBlReceiptDtRepository ipdBlReceiptDtRepository;
+    @Autowired
+    MasReceiptTypeRepository masReceiptTypeRepository;
+    @Autowired
+    TransactionSequenceService transactionSequenceService;
+
+
 
 
 
@@ -202,6 +214,12 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Value("${ipd.admission.status.discharge}")
     Long ipdDischargeStatusDischarge;
+
+    @Value("${mas.receipt_type.advance.collection}")
+    Long masReceiptTypeAdvanceCollection;
+
+    @Value("${ip.payment.status.pending}")
+    Long   ipPaymentStatusPending;
 
 
     @Override
@@ -272,7 +290,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         } catch (Exception e) {
             log.error("Error while saving IPD patient details for patientId: {}. Error: {}", request != null ? request.getPatientId() : null, e.getMessage(),
                     e);
-            throw new RuntimeException("Error while saving IPD patient details: " + e.getMessage(), e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},e.getMessage(),
+                    400
+            );
         }
     }
 
@@ -1095,12 +1115,15 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             // Update the inpatient's current ward.
             inpatient.setAdmittingWardId(ipTransferRequest1.getToWard());
+            inpatient.setRoom(ipTransferRequest1.getToBed().getRoomId());
+            inpatient.setBed(ipTransferRequest1.getToBed());
 
             // Update the inpatient's internal status.
             inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusId).orElseThrow(() -> new RuntimeException(
                                     "IPD internal status not found with ID: " + ipInternalStatusId)));
             inpatient.setLastUpdatedBy(updatedBy);
             inpatient.setLastUpdateDate(currentDateTime);
+
 
             // Update the bed-allocation details with the destination ward and bed.
             bedAllocation.setInpatient(inpatient);
@@ -1238,56 +1261,140 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         ipDiagnosisEntryRepository.save(ipDiagnosisEntry);
         log.info("IpDiagnosisEntry saved successfully for inpatientId: {}", inpatient.getInpatientId());
     }
-
     private void saveIpdBillingAndPaymentDetails(IpdPatientRequest request, Inpatient inpatient) {
-        User user=authUtil.getCurrentUser();
+
+        User user = authUtil.getCurrentUser();
         LocalDateTime now = LocalDateTime.now();
 
-        BigDecimal advanceAmount = request.getAdvanceAmount() != null ? request.getAdvanceAmount() : BigDecimal.ZERO;
+        // ====================== Calculate Total Advance ======================
+        BigDecimal totalAdvance = BigDecimal.ZERO;
 
+        if (request.getPaymentRequests() != null && !request.getPaymentRequests().isEmpty()) {
+            totalAdvance = request.getPaymentRequests().stream()
+                    .map(IpdPatientRequest.PaymentRequest::getAdvanceAmount)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
 
-        MasIpdBillingType billingType = masIpdBillingTypeRepository.findById(request.getPaymentType())
-                .orElseThrow(() -> new RuntimeException("Invalid billing type id: " + request.getPaymentType()));
+        // ====================== Billing Type ======================
+        MasIpdBillingType billingType = null;
 
+        if (request.getPaymentRequests() != null && !request.getPaymentRequests().isEmpty()) {
+            Long billingTypeId = request.getPaymentRequests().get(0).getPaymentType();
+
+            if (billingTypeId != null) {
+                billingType = masIpdBillingTypeRepository.findById(billingTypeId)
+                        .orElseThrow(() -> new RuntimeException("Invalid Billing Type Id : " + billingTypeId));
+            }
+        }
+        // ====================== Billing Header ======================
         IpdBillingHeader billingHeader = new IpdBillingHeader();
 
         billingHeader.setUhid(request.getUhid());
         billingHeader.setInpatientId(inpatientRepository.findById(inpatient.getInpatientId()).orElseThrow());
         billingHeader.setPatientName(request.getPatientName());
         billingHeader.setBillingType(billingType);
+        billingHeader.setPatientPaidAmount(totalAdvance);
+        billingHeader.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusOpen).orElseThrow());
+
+        if (totalAdvance.compareTo(BigDecimal.ZERO) > 0) {
+            billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPartial).orElseThrow());
+       } else {
+            billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPending).orElseThrow());
+        }
+
         billingHeader.setCreatedBy(user.getFullName());
         billingHeader.setUpdatedBy(user.getFullName());
-        billingHeader.setCreatedAt(LocalDateTime.now());
-        billingHeader.setUpdatedAt(LocalDateTime.now());
-        billingHeader.setPatientPaidAmount(request.getAdvanceAmount());
-        billingHeader.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusOpen).orElseThrow());
-        billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPartial).orElseThrow());
+        billingHeader.setCreatedAt(now);
+        billingHeader.setUpdatedAt(now);
 
         IpdBillingHeader savedBillingHeader = ipdBillingHeaderRepository.save(billingHeader);
 
-        log.info("IPD billing header saved successfully for inpatientId: {}, billId: {}",
-                inpatient.getInpatientId(), savedBillingHeader.getBillId());
+        log.info("Billing Header Saved Successfully. Bill Id : {}", savedBillingHeader.getBillId());
 
-        IpPaymentDetail paymentDetail = new IpPaymentDetail();
+        // ====================== No Advance Paid ======================
+        if (totalAdvance.compareTo(BigDecimal.ZERO) <= 0) {
+
+            log.info("No advance payment collected. Only Billing Header created for InpatientId : {}",
+                    inpatient.getInpatientId());
+
+            return;
+        }
+
+        // ====================== Receipt Header ======================
+        IpdBlReceiptHd receiptHd = new IpdBlReceiptHd();
+
+        receiptHd.setReceiptNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RECEIPT_NO, inpatient.getPatient().getPatientHospital().getId()));
+
+        receiptHd.setReceiptDate(now);
+        receiptHd.setInpatient(inpatient);
+        receiptHd.setBill(savedBillingHeader);
+
+        receiptHd.setReceiptType(masReceiptTypeRepository.findById(masReceiptTypeAdvanceCollection)
+                        .orElseThrow(() -> new RuntimeException("Invalid Receipt Type")));
+
+        receiptHd.setTotalAmount(totalAdvance);
+        receiptHd.setCreatedBy(user.getFullName());
+        receiptHd.setCreatedDate(now);
+        receiptHd.setLastChgBy(user.getFullName());
+        receiptHd.setLastChgDate(now);
+
+        IpdBlReceiptHd savedReceiptHd = ipdBlReceiptHdRepository.save(receiptHd);
+
+        log.info("Receipt Header Saved Successfully. Receipt Id : {}",
+                savedReceiptHd.getReceiptId());
+
+        // ====================== Payment Details & Receipt Details ======================
+        for (IpdPatientRequest.PaymentRequest payment : request.getPaymentRequests()) {
+
+            if (payment.getAdvanceAmount() == null
+                    || payment.getAdvanceAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+
+            MasPaymentMode paymentMode = masPaymentModeRepository.findById(payment.getPaymentMode())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Invalid Payment Mode : " + payment.getPaymentMode()));
+
+            // -------- Payment Detail --------
+            IpPaymentDetail paymentDetail = new IpPaymentDetail();
 
             paymentDetail.setInpatient(inpatient);
             paymentDetail.setBill(savedBillingHeader);
-            if (request.getPaymentMode() != null) {
-                MasPaymentMode paymentMode = masPaymentModeRepository.findById(request.getPaymentMode())
-                        .orElseThrow(() -> new RuntimeException("Invalid payment mode id: " + request.getPaymentMode()));
-                paymentDetail.setPaymentMode(paymentMode);
-            }
-            paymentDetail.setAmount(advanceAmount);
+            paymentDetail.setAmount(payment.getAdvanceAmount());
             paymentDetail.setPaymentDate(now);
+            paymentDetail.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPartial).orElseThrow());
+            paymentDetail.setReceipt(savedReceiptHd);
+            paymentDetail.setReceiptAmount(payment.getAdvanceAmount());
             paymentDetail.setLastChgBy(user.getFullName());
             paymentDetail.setLastChgDate(now);
 
             ipPaymentDetailRepository.save(paymentDetail);
 
-            log.info("IPD advance payment saved successfully for inpatientId: {}, amount: {}", inpatient.getInpatientId(), advanceAmount);
+            // -------- Receipt Detail --------
+            IpdBlReceiptDt receiptDt = new IpdBlReceiptDt();
 
+            receiptDt.setReceipt(savedReceiptHd);
+            receiptDt.setPaymentMode(paymentMode);
+            receiptDt.setAmount(payment.getAdvanceAmount());
+            receiptDt.setCreatedBy(user.getFullName());
+            receiptDt.setCreatedDate(now);
+            receiptDt.setLastChgBy(user.getFullName());
+            receiptDt.setLastChgDate(now);
+
+            ipdBlReceiptDtRepository.save(receiptDt);
+
+            log.info("Payment Detail & Receipt Detail saved. Mode : {}, Amount : {}",
+                    paymentMode.getModeName(),
+                    payment.getAdvanceAmount());
+        }
+
+        log.info(
+                "IPD Billing & Payment Process Completed Successfully. InpatientId : {}, BillId : {}, ReceiptId : {}",
+                inpatient.getInpatientId(),
+                savedBillingHeader.getBillId(),
+                savedReceiptHd.getReceiptId());
     }
-
     private Inpatient saveInpatientDetails(IpdPatientRequest request, Patient patient, Visit visit) {
         User user = authUtil.getCurrentUser();
 
@@ -1306,6 +1413,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         inpatient.setAdmissionStatus(masAdmissionStatusRepository.findById(activeAdmissionStatusId).orElseThrow());
         inpatient.setDietPreference(masDietPreferenceRepository.findById(request.getDietPreferenceId()).orElseThrow());
         inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusId).orElseThrow());
+        inpatient.setRoom(masRoomRepository.findById(request.getRoomId()).orElseThrow());
+        inpatient.setBed(masBedRepository.findById(request.getBedId()).orElseThrow());
+        inpatient.setInitialDiagnosis(request.getWorkingDiagnosis());
 
         if (request.getAdmissionTypeId() != null) {
             inpatient.setAdmissionType(masAdmissionTypeRepository.getReferenceById(request.getAdmissionTypeId()));
@@ -1860,6 +1970,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 // ICD diagnosis
                 diagnosisEntry.setDiagnosisText(icd.getIcdName());
                 diagnosisEntry.setIcd(icd);
+                inpatient.setIcdDiagnosis(icd);
             }
 
             diagnosisEntry.setStatus(request.getStatus().toUpperCase());
@@ -2010,16 +2121,11 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             //=========================
             if (AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT.equalsIgnoreCase(request.getStatus())) {
 
-                Optional<IpdBillingHeader> billingHeaderOptional = ipdBillingHeaderRepository.findByInpatientId_InpatientId(request.getInpatientId());
+//
+                PaymentStatusResponse response = fetchPaymentStatus(request.getInpatientId());
 
-                if (billingHeaderOptional.isEmpty()) {
-
-                    return ResponseUtils.createNotFoundResponse("Billing details not found.", HttpStatus.NOT_FOUND.value());
-                }
-                IpdBillingHeader billingHeader = billingHeaderOptional.get();
-
-                if (!billingHeader.getBillStatus().getBillStatusId().equals(ipBillStatusFinal) && !billingHeader.getPaymentStatus().getPaymentStatusId().equals(ipPaymentStatusPaid)
-                        && billingHeader.getOutstandingAmount().compareTo(BigDecimal.ZERO) != 0) {
+                if (!response.getBillStatusId().equals(ipBillStatusFinal) && !response.getPaymentStatusId().equals(ipPaymentStatusPaid)
+                        && response.getOutstandingAmount().compareTo(BigDecimal.ZERO) != 0) {
 
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                             "Bill must be FINAL, Payment must be PAID and Outstanding Amount must be 0 before submitting discharge summary.",
@@ -2029,6 +2135,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 // UPDATE IPD STATUS ONLY ON SUBMIT
                 //=========================
                 inpatient.setAdmissionStatus(masAdmissionStatusRepository.findById(ipdDischargeStatusDischarge).orElseThrow());
+                inpatient.setDischargeDate(LocalDate.now());
+                inpatient.setDischargeTime(LocalTime.now());
                 Optional<IpBedAllocation> bedAllocation = ipBedAllocationRepository.findTopByInpatient_InpatientIdOrderByAllocationStartDateDesc(inpatient.getInpatientId());
                 IpBedAllocation ipBedAllocation=bedAllocation.get();
                 ipBedAllocation.setAllocationEndDate(LocalDateTime.now());
@@ -2146,19 +2254,83 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         log.info("Fetching payment status for inpatientId: {}", inpatientId);
 
-        Optional<PaymentStatusResponse> response = ipdBillingHeaderRepository.getPaymentStatus(inpatientId);
-
-        if (response.isEmpty()) {
-            log.warn("Payment status not found for inpatientId: {}", inpatientId);
-            return ResponseUtils.createNotFoundResponse(
-                    "Payment status not found",
-                    HttpStatus.NOT_FOUND.value());
-        }
+        PaymentStatusResponse response = fetchPaymentStatus(inpatientId);
 
         log.info("Payment status fetched successfully for inpatientId: {}", inpatientId);
 
-        return ResponseUtils.createSuccessResponse(response.get(), new TypeReference<PaymentStatusResponse>() {});
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<PaymentStatusResponse>() {});
     }
+    private PaymentStatusResponse fetchPaymentStatus(Long inpatientId) {
+
+        return ipdBillingHeaderRepository.getPaymentStatus(inpatientId);
+    }
+
+
+    @Override
+    public ApiResponse<DischargeSummaryResponse> getDischargeSummary(Long inpatientId) {
+
+        Optional<DischargeSummaryProjection> optionalProjection =
+                ipDischargeSummaryRepository.getDischargeSummary(inpatientId);
+
+        if (optionalProjection.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse(
+                    "Discharge summary not found",
+                    HttpStatus.NOT_FOUND.value());
+        }
+
+        DischargeSummaryProjection projection = optionalProjection.get();
+
+        DischargeSummaryResponse response = new DischargeSummaryResponse();
+
+        response.setDischargeSummaryId(projection.getDischargeSummaryId());
+        response.setInpatientId(projection.getInpatientId());
+        response.setDischargeDate(projection.getDischargeDate());
+        response.setPrimaryDiagnosis(projection.getPrimaryDiagnosis());
+        response.setSecondaryDiagnosis(projection.getSecondaryDiagnosis());
+        response.setPresentingComplaints(projection.getPresentingComplaints());
+        response.setHistoryOfIllness(projection.getHistoryOfIllness());
+        response.setPastHistory(projection.getPastHistory());
+        response.setExaminationFindings(projection.getExaminationFindings());
+        response.setProcedureDetails(projection.getProcedureDetails());
+        response.setHospitalCourse(projection.getHospitalCourse());
+        response.setConditionId(projection.getConditionId());
+        response.setConditionName(projection.getConditionName());
+        response.setDischargeReasonId(projection.getDischargeReasonId());
+        response.setDischargeReasonName(projection.getDischargeReasonName());
+        response.setDischargedTo(projection.getDischargedTo());
+        response.setReferredHospitalName(projection.getReferredHospitalName());
+        response.setDischargeAdvice(projection.getDischargeAdvice());
+        response.setFollowUpAdvice(projection.getFollowUpAdvice());
+        response.setStatus(projection.getStatus());
+        response.setBillStatusId(projection.getBillStatusId());
+        response.setBillStatus(projection.getBillStatus());
+        response.setPaymentStatusId(projection.getPaymentStatusId());
+        response.setPaymentStatus(projection.getPaymentStatus());
+
+        List<IpDischargeMedicationResponse> medicationResponses =
+                ipDischargeMedicationRepository.getMedicationList(projection.getDischargeSummaryId())
+                        .stream()
+                        .map(item -> {
+                            IpDischargeMedicationResponse dto = new IpDischargeMedicationResponse();
+                            dto.setMedicationId(item.getMedicationId());
+                            dto.setMedicineName(item.getMedicineName());
+                            dto.setDosage(item.getDosage());
+                            dto.setFrequency(item.getFrequency());
+                            dto.setTotalDoses(item.getTotalDoses());
+                            dto.setRoute(item.getRoute());
+                            dto.setInstruction(item.getInstruction());
+                            return dto;
+                        })
+                        .toList();
+
+        response.setMedications(medicationResponses);
+
+        return ResponseUtils.createSuccessResponse(
+                response,
+                new TypeReference<>() {},
+                "Discharge summary fetched successfully");
+    }
+
     private List<LabRadioInvestigationRequest> resolveInvestigations(InpatientBookingInvestigationRequest request) {
         if (request.getInvestigationReq() != null && !request.getInvestigationReq().isEmpty()) {
             return request.getInvestigationReq();
