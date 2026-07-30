@@ -1115,12 +1115,15 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             // Update the inpatient's current ward.
             inpatient.setAdmittingWardId(ipTransferRequest1.getToWard());
+            inpatient.setRoom(ipTransferRequest1.getToBed().getRoomId());
+            inpatient.setBed(ipTransferRequest1.getToBed());
 
             // Update the inpatient's internal status.
             inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusId).orElseThrow(() -> new RuntimeException(
                                     "IPD internal status not found with ID: " + ipInternalStatusId)));
             inpatient.setLastUpdatedBy(updatedBy);
             inpatient.setLastUpdateDate(currentDateTime);
+
 
             // Update the bed-allocation details with the destination ward and bed.
             bedAllocation.setInpatient(inpatient);
@@ -1967,6 +1970,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 // ICD diagnosis
                 diagnosisEntry.setDiagnosisText(icd.getIcdName());
                 diagnosisEntry.setIcd(icd);
+                inpatient.setIcdDiagnosis(icd);
             }
 
             diagnosisEntry.setStatus(request.getStatus().toUpperCase());
@@ -2117,16 +2121,11 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             //=========================
             if (AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT.equalsIgnoreCase(request.getStatus())) {
 
-                Optional<IpdBillingHeader> billingHeaderOptional = ipdBillingHeaderRepository.findByInpatientId_InpatientId(request.getInpatientId());
+//
+                PaymentStatusResponse response = fetchPaymentStatus(request.getInpatientId());
 
-                if (billingHeaderOptional.isEmpty()) {
-
-                    return ResponseUtils.createNotFoundResponse("Billing details not found.", HttpStatus.NOT_FOUND.value());
-                }
-                IpdBillingHeader billingHeader = billingHeaderOptional.get();
-
-                if (!billingHeader.getBillStatus().getBillStatusId().equals(ipBillStatusFinal) && !billingHeader.getPaymentStatus().getPaymentStatusId().equals(ipPaymentStatusPaid)
-                        && billingHeader.getOutstandingAmount().compareTo(BigDecimal.ZERO) != 0) {
+                if (!response.getBillStatusId().equals(ipBillStatusFinal) && !response.getPaymentStatusId().equals(ipPaymentStatusPaid)
+                        && response.getOutstandingAmount().compareTo(BigDecimal.ZERO) != 0) {
 
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                             "Bill must be FINAL, Payment must be PAID and Outstanding Amount must be 0 before submitting discharge summary.",
@@ -2255,19 +2254,83 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         log.info("Fetching payment status for inpatientId: {}", inpatientId);
 
-        Optional<PaymentStatusResponse> response = ipdBillingHeaderRepository.getPaymentStatus(inpatientId);
-
-        if (response.isEmpty()) {
-            log.warn("Payment status not found for inpatientId: {}", inpatientId);
-            return ResponseUtils.createNotFoundResponse(
-                    "Payment status not found",
-                    HttpStatus.NOT_FOUND.value());
-        }
+        PaymentStatusResponse response = fetchPaymentStatus(inpatientId);
 
         log.info("Payment status fetched successfully for inpatientId: {}", inpatientId);
 
-        return ResponseUtils.createSuccessResponse(response.get(), new TypeReference<PaymentStatusResponse>() {});
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<PaymentStatusResponse>() {});
     }
+    private PaymentStatusResponse fetchPaymentStatus(Long inpatientId) {
+
+        return ipdBillingHeaderRepository.getPaymentStatus(inpatientId);
+    }
+
+
+    @Override
+    public ApiResponse<DischargeSummaryResponse> getDischargeSummary(Long inpatientId) {
+
+        Optional<DischargeSummaryProjection> optionalProjection =
+                ipDischargeSummaryRepository.getDischargeSummary(inpatientId);
+
+        if (optionalProjection.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse(
+                    "Discharge summary not found",
+                    HttpStatus.NOT_FOUND.value());
+        }
+
+        DischargeSummaryProjection projection = optionalProjection.get();
+
+        DischargeSummaryResponse response = new DischargeSummaryResponse();
+
+        response.setDischargeSummaryId(projection.getDischargeSummaryId());
+        response.setInpatientId(projection.getInpatientId());
+        response.setDischargeDate(projection.getDischargeDate());
+        response.setPrimaryDiagnosis(projection.getPrimaryDiagnosis());
+        response.setSecondaryDiagnosis(projection.getSecondaryDiagnosis());
+        response.setPresentingComplaints(projection.getPresentingComplaints());
+        response.setHistoryOfIllness(projection.getHistoryOfIllness());
+        response.setPastHistory(projection.getPastHistory());
+        response.setExaminationFindings(projection.getExaminationFindings());
+        response.setProcedureDetails(projection.getProcedureDetails());
+        response.setHospitalCourse(projection.getHospitalCourse());
+        response.setConditionId(projection.getConditionId());
+        response.setConditionName(projection.getConditionName());
+        response.setDischargeReasonId(projection.getDischargeReasonId());
+        response.setDischargeReasonName(projection.getDischargeReasonName());
+        response.setDischargedTo(projection.getDischargedTo());
+        response.setReferredHospitalName(projection.getReferredHospitalName());
+        response.setDischargeAdvice(projection.getDischargeAdvice());
+        response.setFollowUpAdvice(projection.getFollowUpAdvice());
+        response.setStatus(projection.getStatus());
+        response.setBillStatusId(projection.getBillStatusId());
+        response.setBillStatus(projection.getBillStatus());
+        response.setPaymentStatusId(projection.getPaymentStatusId());
+        response.setPaymentStatus(projection.getPaymentStatus());
+
+        List<IpDischargeMedicationResponse> medicationResponses =
+                ipDischargeMedicationRepository.getMedicationList(projection.getDischargeSummaryId())
+                        .stream()
+                        .map(item -> {
+                            IpDischargeMedicationResponse dto = new IpDischargeMedicationResponse();
+                            dto.setMedicationId(item.getMedicationId());
+                            dto.setMedicineName(item.getMedicineName());
+                            dto.setDosage(item.getDosage());
+                            dto.setFrequency(item.getFrequency());
+                            dto.setTotalDoses(item.getTotalDoses());
+                            dto.setRoute(item.getRoute());
+                            dto.setInstruction(item.getInstruction());
+                            return dto;
+                        })
+                        .toList();
+
+        response.setMedications(medicationResponses);
+
+        return ResponseUtils.createSuccessResponse(
+                response,
+                new TypeReference<>() {},
+                "Discharge summary fetched successfully");
+    }
+
     private List<LabRadioInvestigationRequest> resolveInvestigations(InpatientBookingInvestigationRequest request) {
         if (request.getInvestigationReq() != null && !request.getInvestigationReq().isEmpty()) {
             return request.getInvestigationReq();
