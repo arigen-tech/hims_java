@@ -206,6 +206,8 @@ public class AppConstants {
     public static final String SOURCE_TYPE_OPD = "OPD";
     public static final String SOURCE_TYPE_IPD = "IPD";
 
+    public static final String SOURCE_LAB = "lab source";
+
 
 
 

@@ -10,7 +10,9 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.RadiologyService;
+import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISTransaction;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -86,6 +88,8 @@ public class RadiologyServiceImpl implements RadiologyService {
     PaymentDetailRepository paymentDetailRepository;
     @Autowired
     private RadStudyReportRepository radStudyReportRepository;
+    @Autowired
+    private TransactionSequenceService transactionSequenceService;
 
 
     @Override
@@ -650,7 +654,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         RadOrderDt dt = new RadOrderDt();
         dt.setRadOrderhd(hd);
         dt.setSubChargecode(subChargeCode);
-        dt.setOrderAccessionNo(randomNumGenerator.generateOrderNumber("RAD", true, true));
+        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, hd.getHospital().getId()));
         dt.setAppointmentDate(inv.getAppointmentDate());
         dt.setBillingHd(billing);
         dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
