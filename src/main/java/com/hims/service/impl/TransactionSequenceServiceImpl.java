@@ -1,8 +1,11 @@
 package com.hims.service.impl;
 
+import com.hims.constants.AppConstants;
 import com.hims.entity.TransactionSequence;
+import com.hims.entity.repository.MasHospitalRepository;
 import com.hims.entity.repository.TransactionSequenceRepository;
 import com.hims.service.TransactionSequenceService;
+import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
 import com.hims.utils.HMISUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,11 +13,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 public class TransactionSequenceServiceImpl implements TransactionSequenceService {
 
     @Autowired
     private TransactionSequenceRepository transactionSequenceRepository;
+
+    @Autowired
+    MasHospitalRepository masHospitalRepository;
+
+    @Autowired
+    AuthUtil authUtil;
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
@@ -28,12 +39,22 @@ public class TransactionSequenceServiceImpl implements TransactionSequenceServic
                         transactionType.getTransactionName(),
                         hospitalId,
                         financialYear)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Transaction sequence not configured for "
-                                        + transactionType.getTransactionName()
-                                        + " and Financial Year "
-                                        + financialYear));
+                .orElseGet(() -> {
+                    TransactionSequence newSequence = new TransactionSequence();
+
+                    newSequence.setTransactionName(transactionType.getTransactionName());
+                    newSequence.setTransactionPrefix(transactionType.getPrefix());
+                    newSequence.setHospital(
+                            masHospitalRepository.findById(hospitalId)
+                                    .orElseThrow(() -> new RuntimeException("Hospital not found"))
+                    );
+                    newSequence.setFinancialYear(financialYear);
+                    newSequence.setCurrentSequence(0L);
+                    newSequence.setStatus(AppConstants.STATUS_Y.toLowerCase());
+                    newSequence.setLastChgBy(authUtil.getCurrentUser().getUserId());
+                    newSequence.setLastChgDate(LocalDateTime.now());
+                    return transactionSequenceRepository.save(newSequence);
+                });
 
         Long nextSequence = sequence.getCurrentSequence() + 1;
 
