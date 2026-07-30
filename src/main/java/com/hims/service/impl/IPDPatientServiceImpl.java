@@ -1124,7 +1124,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             inpatient.setLastUpdatedBy(updatedBy);
             inpatient.setLastUpdateDate(currentDateTime);
 
-
             // Update the bed-allocation details with the destination ward and bed.
             bedAllocation.setInpatient(inpatient);
             bedAllocation.setPatient(inpatient.getPatient());
