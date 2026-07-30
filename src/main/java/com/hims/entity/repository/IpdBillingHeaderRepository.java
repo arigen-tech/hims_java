@@ -31,7 +31,7 @@ public interface IpdBillingHeaderRepository extends JpaRepository<IpdBillingHead
     LEFT JOIN b.paymentStatus ps
     WHERE i.inpatientId = :inpatientId
     """)
-    Optional<PaymentStatusResponse> getPaymentStatus(@Param("inpatientId") Long inpatientId);
+    PaymentStatusResponse getPaymentStatus(@Param("inpatientId") Long inpatientId);
 
 
 }
