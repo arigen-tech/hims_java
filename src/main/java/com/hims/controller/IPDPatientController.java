@@ -302,6 +302,24 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/saveDischargeSummary")
+    public ApiResponse<String> saveDischargeSummary(@Valid @RequestBody IpDischargeSummarySaveRequest request) {
+
+        log.info("Request received to save discharge summary for inpatientId: {}", request.getInpatientId());
+
+        return ipdPatientService.saveDischargeSummary(request);
+    }
+
+    @GetMapping("getPaymentStatus/{inpatientID}")
+    public ResponseEntity<ApiResponse<PaymentStatusResponse>> getPaymentStatus(@PathVariable Long inpatientID){
+
+        log.info("Request received to fetch getPaymentStatus for inpatientID: {}", inpatientID);
+
+        ApiResponse<PaymentStatusResponse> response = ipdPatientService.getPaymentStatus(inpatientID);
+
+        return ResponseEntity.ok(response);
+    }
+
 
 
 
