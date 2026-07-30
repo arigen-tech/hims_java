@@ -5,7 +5,7 @@ package com.hims.service;
 import com.hims.entity.User;
 import com.hims.jwt.JwtRequest;
 import com.hims.jwt.JwtResponce;
-import com.hims.jwt.OtpRequest;
+import com.hims.request.ContextSwitchRequest;
 import com.hims.request.PasswordChangeReq;
 import com.hims.request.ResetPasswordReq;
 import com.hims.request.UserCreationReq;
@@ -25,6 +25,8 @@ public interface AuthService {
     ApiResponse<DefaultResponse> createFirstUser(UserCreationReq userCreationReq);
 
     ApiResponse<JwtResponce> login(JwtRequest request);
+
+    ApiResponse<JwtResponce> switchContext(ContextSwitchRequest request, Principal principal);
 
 //    ApiResponse<JwtResponce> loginWithOtp(OtpRequest request);
 

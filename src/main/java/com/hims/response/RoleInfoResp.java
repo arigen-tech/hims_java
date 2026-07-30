@@ -10,6 +10,7 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 public class RoleInfoResp {
+    private Long roleId;
     private String userFullName;
     private String username;
     private String roleCode;
