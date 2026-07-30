@@ -2122,12 +2122,20 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             if (AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT.equalsIgnoreCase(request.getStatus())) {
 
 //
+
+
                 PaymentStatusResponse response = fetchPaymentStatus(request.getInpatientId());
 
-                if (!response.getBillStatusId().equals(ipBillStatusFinal) && !response.getPaymentStatusId().equals(ipPaymentStatusPaid)
-                        && response.getOutstandingAmount().compareTo(BigDecimal.ZERO) != 0) {
+                if (response.getBillStatusId() == null
+                        || response.getPaymentStatusId() == null
+                        || response.getOutstandingAmount() == null
+                        || !ipBillStatusFinal.equals(response.getBillStatusId())
+                        || !ipPaymentStatusPaid.equals(response.getPaymentStatusId())
+                        || response.getOutstandingAmount().compareTo(BigDecimal.ZERO) != 0) {
 
-                    return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    return ResponseUtils.createFailureResponse(
+                            null,
+                            new TypeReference<>() {},
                             "Bill must be FINAL, Payment must be PAID and Outstanding Amount must be 0 before submitting discharge summary.",
                             HttpStatus.BAD_REQUEST.value());
                 }
