@@ -147,4 +147,12 @@ public class Inpatient {
     @JoinColumn(name = "ip_internal_status_id")
     private MasIpdInternalStatus masIpdInternalStatus;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id")
+    private MasRoom room;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bed_id")
+    private MasBed bed;
+
 }

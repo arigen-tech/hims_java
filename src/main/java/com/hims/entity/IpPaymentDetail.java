@@ -15,10 +15,10 @@ public class IpPaymentDetail {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "payment_id", nullable = false)
+    @Column(name = "payment_id")
     private Long paymentId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inpatient_id", nullable = false)
     private Inpatient inpatient;
 
@@ -26,18 +26,8 @@ public class IpPaymentDetail {
     @JoinColumn(name = "bill_id")
     private IpdBillingHeader bill;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payment_mode_id")
-    private MasPaymentMode paymentMode;
-
-    @Column(name = "amount",  precision = 12, scale = 2)
+    @Column(name = "amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
-
-    @Column(name = "transaction_id", length = 100)
-    private String transactionId;
-
-    @Column(name = "reference_no", length = 100)
-    private String referenceNo;
 
     @Column(name = "payment_date")
     private LocalDateTime paymentDate;
@@ -46,7 +36,7 @@ public class IpPaymentDetail {
     @JoinColumn(name = "payment_status_id")
     private MasIpdPaymentStatus paymentStatus;
 
-    @Column(name = "remarks", length = 255)
+    @Column(name = "remarks")
     private String remarks;
 
     @Column(name = "last_chg_by", length = 300)
@@ -57,6 +47,13 @@ public class IpPaymentDetail {
 
     @Column(name = "status", length = 1)
     private String status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "receipt_id")
+    private IpdBlReceiptHd receipt;
+
+    @Column(name = "receipt_amount", precision = 12, scale = 2)
+    private BigDecimal receiptAmount;
 
 
 }
