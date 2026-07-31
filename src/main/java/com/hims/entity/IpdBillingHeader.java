@@ -38,7 +38,7 @@ public class IpdBillingHeader {
     private String patientName;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "billing_type_id", nullable = false)
+    @JoinColumn(name = "billing_type_id")
     private MasIpdBillingType billingType;
 
     @ManyToOne(fetch = FetchType.LAZY)

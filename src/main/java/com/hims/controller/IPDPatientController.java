@@ -320,6 +320,17 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("getDischargeSummary/{inpatientID}")
+    public ResponseEntity<ApiResponse<DischargeSummaryResponse>> getDischargeSummary(@PathVariable Long inpatientID){
+
+        log.info("Request received to fetch getDischargeSummary for inpatientID: {}", inpatientID);
+
+        ApiResponse<DischargeSummaryResponse> response = ipdPatientService.getDischargeSummary(inpatientID);
+
+        return ResponseEntity.ok(response);
+    }
+
+
 
 
 
