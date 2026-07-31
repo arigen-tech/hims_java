@@ -31,6 +31,7 @@ public interface IpDischargeMedicationRepository extends JpaRepository<IpDischar
                 m.medicineName AS medicineName,
                 m.dosage AS dosage,
                 m.frequency AS frequency,
+                m.durationDays AS durationDays,
                 m.totalDoses AS totalDoses,
                 m.route AS route,
                 m.instruction AS instruction
