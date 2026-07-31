@@ -2229,6 +2229,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     medication.setMedicineName(medicationRequest.getMedicineName());
                     medication.setDosage(medicationRequest.getDosage());
                     medication.setFrequency(medicationRequest.getFrequency());
+                    medication.setDurationDays(medicationRequest.getDurationDays());
                     medication.setTotalDoses(medicationRequest.getTotalDoses());
                     medication.setRoute(medicationRequest.getRoute());
                     medication.setInstruction(medicationRequest.getInstruction());
@@ -2329,6 +2330,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                             dto.setMedicineName(item.getMedicineName());
                             dto.setDosage(item.getDosage());
                             dto.setFrequency(item.getFrequency());
+                            dto.setDurationDays(item.getDurationDays());
                             dto.setTotalDoses(item.getTotalDoses());
                             dto.setRoute(item.getRoute());
                             dto.setInstruction(item.getInstruction());
@@ -2368,10 +2370,10 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
         hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
         hd.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
-        hd.setSource("ipd");
+        hd.setSource(AppConstants.SOURCE_TYPE_IPD);
         hd.setHospitalId(currentUser.getHospital().getId());
         hd.setPrescribedBy(currentUser.getUserId() != null ? currentUser.getUserId().intValue() : 0);
-        hd.setDepartmentId(laboratoryDepartment);
+        hd.setDepartmentId(authUtil.getCurrentDepartmentId());
         hd.setInvestigationRequestNo(0);
         hd.setPatientId(inpatient.getPatient());
         hd.setDiscountId(null);
@@ -2415,8 +2417,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         hd.setAppointmentDate(appointmentDate);
         hd.setPatient(inpatient.getPatient());
         hd.setHospital(currentUser.getHospital());
-        hd.setDepartment(masDepartmentRepository.findById(radiologyDepartment)
-                .orElseThrow(() -> new SDDException(404,"Radiology department not found with id: " + radiologyDepartment)));
+        hd.setDepartment(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId())
+                .orElseThrow(() -> new SDDException(404,"Department not found with id: " + authUtil.getCurrentDepartmentId())));
         hd.setPrescribedBy(currentUser.getFullName());
         hd.setCreatedby(currentUser.getFullName());
         hd.setCreatedon(Instant.now());

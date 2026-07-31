@@ -100,38 +100,43 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     }
 
     @Override
-    public ApiResponse<List<OpdTemplateResponse>> getAllTemplateInvestigations(int flag) {
+    public ApiResponse<List<OpdTemplateResponse>> getAllTemplateInvestigations(int flag, Long doctorId) {
+
+        if (flag != 0 && flag != 1) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Invalid flag value. Use 0 or 1.",
+                    400);
+        }
+
         try {
-            List<OpdTemplate> templates;
 
-            if (flag == 1) {
-                templates = opdTempRepo.findByStatusIgnoreCase(AppConstants.STATUS_Y);
-            } else if (flag == 0) {
-                templates = opdTempRepo.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y, AppConstants.STATUS_N));
-            } else {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Invalid flag value. Use 0 or 1.", 400);
-            }
+            List<OpdTemplate> templates = opdTempRepo.findTemplates(
+                    flag,
+                    doctorId,
+                    AppConstants.INVESTIGATION,
+                    AppConstants.STATUS_Y,
+                    List.of(AppConstants.STATUS_Y, AppConstants.STATUS_N));
 
-            templates = templates.stream()
-                    .filter(t -> t.getOpdTemplateType() != null && t.getOpdTemplateType().equalsIgnoreCase("I"))
-                    .collect(Collectors.toList());
-
-            List<OpdTemplateResponse> responses = templates.stream().map(template -> {
-                List<OpdTemplateTreatment> treatments = opdTemplateTreatmentRepository.findByTemplate(template);
-                List<OpdTemplateInvestigation> investigations = opdTempInvestRepo.findByOpdTemplateId(template);
-                return mapToResponse(template, investigations);
-            }).collect(Collectors.toList());
+            List<OpdTemplateResponse> responses = templates.stream()
+                    .map(template -> {
+                        List<OpdTemplateInvestigation> investigations =
+                                opdTempInvestRepo.findByOpdTemplateId(template);
+                        return mapToResponse(template, investigations);
+                    })
+                    .toList();
 
             return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
 
         } catch (Exception e) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    "Failed to fetch OPD Template Treatments: " + e.getMessage(),
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Failed to fetch OPD Template Investigations: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-
 
     @Override
     public ApiResponse<OpdTemplateResponse> saveInvestigationTemplate(OpdTemplateRequest opdTempReq) {
@@ -532,28 +537,23 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
 
 
     @Override
-    public ApiResponse<List<OpdTemplateResponse>> getAllOpdTemplateTreatments(int flag) {
+    public ApiResponse<List<OpdTemplateResponse>> getAllOpdTemplateTreatments(int flag, Long doctorId) {
         try {
-            List<OpdTemplate> templates;
-
-            // Filter based on flag
-            if (flag == 1) {
-                templates = opdTempRepo.findByStatusIgnoreCase(AppConstants.STATUS_Y);
-            } else if (flag == 0) {
-                templates = opdTempRepo.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y, AppConstants.STATUS_N));
-            } else {
+            if (flag != 0 && flag != 1) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid flag value. Use 0 or 1.", 400);
             }
 
-            templates = templates.stream()
-                    .filter(t -> t.getOpdTemplateType() != null && t.getOpdTemplateType().equalsIgnoreCase("P"))
-                    .collect(Collectors.toList());
+            List<OpdTemplate> templates = opdTempRepo.findTemplates(
+                    flag,
+                    doctorId,
+                    AppConstants.TEMPLATE_TYPE_PRESCRIPTION,
+                    AppConstants.STATUS_Y,
+                    List.of(AppConstants.STATUS_Y, AppConstants.STATUS_N));
 
             // Map to response
             List<OpdTemplateResponse> responses = templates.stream().map(template -> {
                 List<OpdTemplateTreatment> treatments = opdTemplateTreatmentRepository.findByTemplate(template);
-                List<OpdTemplateInvestigation> investigations = opdTempInvestRepo.findByOpdTemplateId(template);
                 return mapTemplateTreatmentToResponse(template, treatments);
             }).collect(Collectors.toList());
 

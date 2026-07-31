@@ -14,7 +14,9 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
+import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISTransaction;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -118,14 +120,14 @@ public class BillingServiceImpl implements BillingService {
     @Autowired
     PaidCancelledAppointmentMapper paidCancelledAppointmentMapper;
 
-
+    @Autowired
+    TransactionSequenceService transactionSequenceService;
 
 
     @Override
     @Transactional
     public ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount) {
         BillingHeader header = new BillingHeader();
-        String orderNum = helperUtils.createInvoices();
         OpdBillingPaymentResponse response = new OpdBillingPaymentResponse();
         User currentUser = authUtil.getCurrentUser();
         BigDecimal tax = BigDecimal.ZERO;
@@ -216,7 +218,7 @@ public class BillingServiceImpl implements BillingService {
             header.setUpdatedDt(Instant.now());
             header.setCreatedDt(Instant.now());
             header.setInvoiceNo("");
-            header.setBillNo(orderNum);
+            header.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
             header.setUpdatedAt(OffsetDateTime.now());
             header.setBillingDate(Instant.now());
             header.setDiscount(discount);
@@ -1333,8 +1335,7 @@ public class BillingServiceImpl implements BillingService {
             String serviceCategoryCode, boolean isRadiology) {
 
         BillingHeader billingHeader = new BillingHeader();
-        String orderNum = helperUtils.createInvoices();
-        billingHeader.setBillNo(orderNum);
+        billingHeader.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
 
         billingHeader.setPatient(vId.getPatient());
         billingHeader.setVisit(vId);

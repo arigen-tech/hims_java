@@ -10,7 +10,9 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
+import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISTransaction;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -102,6 +104,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     @Autowired
     HelperUtils helperUtils;
+
+    @Autowired
+    TransactionSequenceService transactionSequenceService;
 
     @Value("${app.laboratoryDepartment}")
     private Long laboratoryDepartment;
@@ -220,11 +225,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public ApiResponse<LabRadiologyRegistrationResponse> registerAndBookingLaboratory(
-            LabRadioRegistrationRequest registrationRequest) {
-
+    public ApiResponse<LabRadiologyRegistrationResponse> registerAndBookingLaboratory(LabRadioRegistrationRequest registrationRequest) {
         log.info("Starting lab registration process");
-
         PatientRequest patient = registrationRequest.getPatient();
         if (patient == null) {
             throw new SDDException("patient", 400, "Patient data is required");
@@ -254,7 +256,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             }
 
             Visit savedVisit = createVisitForLabRadio(savedPatient, laboratoryDepartment);
-
             List<LabRadioInvestigationRequest> invList = registrationRequest.getInvestigationReq();
             if (invList == null || invList.isEmpty()) {
                 throw new SDDException("investigation", 400, "Investigation list cannot be empty");
@@ -262,14 +263,11 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
             invList.forEach(inv -> {
                 if (inv.getAppointmentDate() == null) {
-                    throw new SDDException("appointmentDate", 400,
-                            "Appointment date required for investigationId: " + inv.getId());
+                    throw new SDDException("appointmentDate", 400, "Appointment date required for investigationId: " + inv.getId());
                 }
             });
 
-            Map<LocalDate, List<LabRadioInvestigationRequest>> grouped =
-                    invList.stream().collect(Collectors.groupingBy(LabRadioInvestigationRequest::getAppointmentDate));
-
+            Map<LocalDate, List<LabRadioInvestigationRequest>> grouped = invList.stream().collect(Collectors.groupingBy(LabRadioInvestigationRequest::getAppointmentDate));
             String currentUsername = currentUser.getFullName();
             LocalDate today = LocalDate.now();
             LocalTime now = LocalTime.now();
@@ -300,34 +298,24 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 }
 
                 savedVisit.setBillingHd(billingHeader);
-
                 visitRepository.save(savedVisit);
-
                 for (LabRadioInvestigationRequest inv : investigations) {
 
                     if (AppConstants.INVESTIGATION.equalsIgnoreCase(inv.getType())) {
-
                         DgMasInvestigation invEntity = investigation.findById(inv.getId())
-                                .orElseThrow(() -> new SDDException("investigation", 400,
-                                        "Invalid investigation ID: " + inv.getId()));
-
+                                .orElseThrow(() -> new SDDException("investigation", 400, "Invalid investigation ID: " + inv.getId()));
                         DgOrderDt dt = createOrderDetailForInvestigation(savedHd, invEntity, inv, currentUser, today);
                         DgOrderDt savedDt = labDtRepository.save(dt);
-
                         savedDt.setBillingHd(billingHeader);
                         labDtRepository.save(savedDt);
-
                         billingService.saveBillingDetail(billingHeader, savedDt, inv, serviceCategoryLab, false);
 
                     } else if (AppConstants.STATUS_P.equalsIgnoreCase(inv.getType())) {
 
                         DgInvestigationPackage pkgObj = dgInvestigationPackageRepository.findById(inv.getId())
-                                .orElseThrow(() -> new SDDException("package", 400,
-                                        "Invalid package ID: " + inv.getId()));
+                                .orElseThrow(() -> new SDDException("package", 400, "Invalid package ID: " + inv.getId()));
 
-                        List<PackageInvestigationMapping> mappings =
-                                packageInvestigationMappingRepository.findByPackageId(pkgObj);
-
+                        List<PackageInvestigationMapping> mappings = packageInvestigationMappingRepository.findByPackageId(pkgObj);
                         for (PackageInvestigationMapping map : mappings) {
                             DgMasInvestigation investId = map.getInvestId();
 
@@ -340,23 +328,18 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                                     today,
                                     now
                             );
-
                             DgOrderDt savedDt = labDtRepository.save(dt);
                             savedDt.setBillingHd(billingHeader);
                             labDtRepository.save(savedDt);
                         }
-
                         billingService.saveBillingDetailPackage(billingHeader, pkgObj, inv, serviceCategoryLab);
-
                     } else {
                         throw new SDDException("Investigation type", 400, "Invalid investigation type");
                     }
                 }
-
                 response.setBillinghdId(billingHeader.getId());
             }
-
-            response.setMsg("Success");
+            response.setMsg("success");
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
 
         } catch (SDDException e) {
@@ -385,7 +368,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         visit.setVisitDate(visitDate);
         visit.setLastChgDate(visitDate);
         visit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS);
-        
         String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), visitDate);
         visit.setVisitType(visitType);
 
@@ -393,18 +375,16 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     }
 
     private DgOrderHd buildOrderHd(Patient patient, Visit visit, User currentUser, LocalDate appointmentDate, LocalDate today, LocalTime now) {
-
         if (patient == null || visit == null || currentUser == null) {
             throw new SDDException("order", 400, "Invalid data for creating order header");
         }
-
         try {
             DgOrderHd hd = new DgOrderHd();
 
             hd.setAppointmentDate(appointmentDate);
             hd.setOrderDate(today);
             hd.setOrderTime(Instant.now());
-            hd.setOrderNo(helperUtils.createInvoiceNumber());
+            hd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
             hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
             hd.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
@@ -412,54 +392,41 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             hd.setDepartmentId(visit.getDepartment().getId());
             hd.setPatientId(patient);
             hd.setVisitId(visit);
-            hd.setSource("lab source");
+            hd.setSource(AppConstants.SOURCE_LAB.toLowerCase());
             hd.setDiscountId(1);
             hd.setCreatedBy(currentUser.getFullName());
             hd.setLastChgBy(currentUser.getFullName());
             hd.setCreatedOn(today);
             hd.setLastChgDate(today);
             hd.setLastChgTime(now.toString());
-
             return hd;
-
         } catch (Exception e) {
             throw new SDDException("order", 500, "Error while building order header");
         }
     }
 
     private DgOrderDt buildOrderDetailForPackage(DgOrderHd hd, DgMasInvestigation invest, DgInvestigationPackage pkg, LabRadioInvestigationRequest inv, String userFullName, LocalDate today, LocalTime now) {
-
         if (hd == null || invest == null || pkg == null) {
             throw new SDDException("orderDetail", 400, "Invalid data for package order detail");
         }
-
         try {
             DgOrderDt dt = new DgOrderDt();
-
             dt.setOrderhdId(hd);
             dt.setInvestigationId(invest);
-
             dt.setMainChargecodeId(invest.getMainChargeCodeId().getChargecodeId());
             dt.setSubChargeid(invest.getSubChargeCodeId().getSubId());
-
             dt.setPackageId(pkg);
             dt.setAppointmentDate(inv.getAppointmentDate());
-
             dt.setOrderQty(1);
-
             dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             dt.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
             dt.setOrderTrackingStatus(getOrderedStatus());
-
             dt.setCreatedBy(userFullName);
             dt.setLastChgBy(userFullName);
-
             dt.setCreatedon(Instant.now());
             dt.setLastChgDate(today);
             dt.setLastChgTime(now.toString());
-
             return dt;
-
         } catch (Exception e) {
             throw new SDDException("orderDetail", 500, "Error while creating package order detail");
         }
@@ -470,22 +437,17 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     public ApiResponse<AppsetupResponse> updateDetailsAndBookingLaboratory(LabRadioUpdateRequest labReq) {
 
         log.info("Starting lab update + booking");
-
         User currentUser = authUtil.getCurrentUser();
         Long departmentId = laboratoryDepartment;
-
         if (currentUser == null) {
             throw new SDDException("user", 401, "Current user not found");
         }
-
         if (labReq == null || labReq.getPatient() == null || labReq.getPatient().getId() == null) {
             throw new SDDException("patient", 400, "Patient ID must not be null");
         }
-
         if (departmentId == null) {
             throw new SDDException("department", 400, "Department ID is required");
         }
-
         try {
             Patient patient = patientService.updatePatientDetails(labReq.getPatient(), true);
             if (patient == null) {
@@ -511,10 +473,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             AppsetupResponse res = new AppsetupResponse();
 
             for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : grouped.entrySet()) {
-
                 LocalDate date = entry.getKey();
                 List<LabRadioInvestigationRequest> investigations = entry.getValue();
-
                 MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
 
                 BigDecimal sum = BigDecimal.ZERO;
@@ -524,11 +484,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 for (LabRadioInvestigationRequest inv : investigations) {
                     sum = sum.add(BigDecimal.valueOf(inv.getActualAmount()));
                     disc = disc.add(BigDecimal.valueOf(inv.getDiscountedAmount()));
-
                     if (servCat.getGstApplicable()) {
                         BigDecimal net = BigDecimal.valueOf(inv.getActualAmount())
                                 .subtract(BigDecimal.valueOf(inv.getDiscountedAmount()));
-
                         tax = tax.add(net.multiply(BigDecimal.valueOf(servCat.getGstPercent()))
                                 .divide(BigDecimal.valueOf(100)));
                     }
@@ -553,37 +511,28 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
                 savedVisit.setBillingHd(billingHeader);
                 visitRepository.save(savedVisit);
-
                 res.setBillinghdId(billingHeader.getId().toString());
 
                 for (LabRadioInvestigationRequest inv : investigations) {
-
-                    if ("i".equalsIgnoreCase(inv.getType())) {
-
+                    if (AppConstants.INVESTIGATION.equalsIgnoreCase(inv.getType())) {
                         DgMasInvestigation invEntity = investigation.findById(inv.getId())
                                 .orElseThrow(() -> new SDDException("investigation", 400,
                                         "Invalid investigation ID: " + inv.getId()));
-
                         DgOrderDt dt = createOrderDetailForInvestigation(
                                 savedHd, invEntity, inv, currentUser, LocalDate.now()
                         );
-
                         dt.setBillingHd(billingHeader);
                         labDtRepository.save(dt);
 
                         billingService.saveBillingDetail(billingHeader, dt, inv, serviceCategoryLab, false);
 
-                    } else if (AppConstants.STATUS_P.equalsIgnoreCase(inv.getType())) {
-
+                    } else if (AppConstants.PACKAGE.equalsIgnoreCase(inv.getType())) {
                         DgInvestigationPackage pkg = dgInvestigationPackageRepository.findById(inv.getId())
                                 .orElseThrow(() -> new SDDException("package", 400,
                                         "Invalid package ID: " + inv.getId()));
-
                         List<PackageInvestigationMapping> mappings =
                                 packageInvestigationMappingRepository.findByPackageId(pkg);
-
                         for (PackageInvestigationMapping map : mappings) {
-
                             DgOrderDt dt = buildOrderDetailForPackage(
                                     savedHd,
                                     map.getInvestId(),
@@ -597,7 +546,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                             dt.setBillingHd(billingHeader);
                             labDtRepository.save(dt);
                         }
-
                         billingService.saveBillingDetailPackage(billingHeader, pkg, inv, serviceCategoryLab);
 
                     } else {
@@ -622,32 +570,30 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
         BillingHeader billingHeader = new BillingHeader();
-        String orderNum = helperUtils.createInvoices();
-        billingHeader.setBillNo(orderNum);// Auto generated
+        billingHeader.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
         billingHeader.setPatient(vId.getPatient());
         billingHeader.setVisit(vId);
         billingHeader.setPatientDisplayName(vId.getPatient().getPatientFn());
-        LocalDate dob = vId.getPatient().getPatientDob();//get DOB from Patient table and calculate age
+        LocalDate dob = vId.getPatient().getPatientDob();
         billingHeader.setPatientAge(ageCalculator(dob));
         billingHeader.setPatientGender(vId.getPatient().getPatientGender().getGenderName());
         billingHeader.setPatientAddress(vId.getPatient().getPatientAddress1());
         billingHeader.setHospital(currentUser.getHospital());
         billingHeader.setHospitalName(vId.getPatient().getPatientHospital().getHospitalName());
         billingHeader.setHospitalAddress(vId.getHospital().getAddress());
-        billingHeader.setHospitalMobileNo(vId.getHospital().getContactNumber());  //column is not exist in Patient table
-        billingHeader.setHospitalGstin(vId.getHospital().getGstnNo());  //column is not exist in Patient table
+        billingHeader.setHospitalMobileNo(vId.getHospital().getContactNumber());
+        billingHeader.setHospitalGstin(vId.getHospital().getGstnNo());
         billingHeader.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));  ///for which table
-        billingHeader.setReferredBy(vId.getDoctorName());//few doute
+        billingHeader.setReferredBy(vId.getDoctorName());
         billingHeader.setBillingDate(Instant.now());
-        billingHeader.setPaymentStatus("n");
+        billingHeader.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
         billingHeader.setVisit(vId);
         billingHeader.setHdorder(hdId);
-        // billingHeader.setBillingHdId(hdId.getId());
-        billingHeader.setTotalAmount(sum);//.subtract(disc).add(tax)
+        billingHeader.setTotalAmount(sum);
         billingHeader.setDiscountAmount(disc);
         billingHeader.setNetAmount(sum.subtract(disc).add(tax));
         billingHeader.setTaxTotal(tax);
-        //billingHeader.setDiscount();//id is Pass
+        //billingHeader.setDiscount();
         //billingHeader.setDiscountAmount(BigDecimal.valueOf(labReq.getDiscountAmount()));
         billingHeader.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
         billingHeader.setCreatedDt(Instant.now());
@@ -661,10 +607,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         BillingDetail billingDetail = new BillingDetail();
         billingDetail.setBillingHd(bhdId);
         billingDetail.setBillHd(bhdId);
-        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));//pass from property file..
-
-        billingDetail.setItemName(dtId.getInvestigationId().getInvestigationName());  // investigation or packeg  name to be store
-        // billingDetail.setQuantity(1);//default
+        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));
+        billingDetail.setItemName(dtId.getInvestigationId().getInvestigationName());
         billingDetail.setInvestigation(dtId.getInvestigationId());
         billingDetail.setPackageField(dtId.getPackageId());
         billingDetail.setCreatedDt(OffsetDateTime.now());
@@ -674,13 +618,11 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setBasePrice(BigDecimal.valueOf(investigation.getActualAmount()));
         billingDetail.setDiscount(BigDecimal.valueOf(investigation.getDiscountedAmount()));
         billingDetail.setTariff(BigDecimal.valueOf(investigation.getActualAmount()));
-        // billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()));
         billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount())));
 
         MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
         BigDecimal tax = BigDecimal.ZERO;
         if (sevcat.getGstApplicable()) {
-            /// tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount())).divide(BigDecimal.valueOf(100));
             tax = BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount()))).divide(BigDecimal.valueOf(100));
         }
         billingDetail.setTaxAmount(tax);
@@ -697,20 +639,15 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         return billingDetailRepository.save(billingDetail);
     }
     private BillingDetail BillingDetaiDataSavePackage(BillingHeader bhdId, DgInvestigationPackage pack, LabInvestigationReq req) {
-        ///  Billing details
         BillingDetail billingDetail = new BillingDetail();
         billingDetail.setBillingHd(bhdId);
         billingDetail.setBillHd(bhdId);
-        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));//pass from property file..
-
-        billingDetail.setItemName(pack.getPackName());  // investigation or packeg  name to be store
-        ///  billingDetail.set
-        //billingDetail.setInvestigation(dtId.getInvestigationId());
+        billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));
+        billingDetail.setItemName(pack.getPackName());
         billingDetail.setPackageField(pack);
         billingDetail.setCreatedDt(OffsetDateTime.now());
         billingDetail.setUpdatedDt(OffsetDateTime.now());
         billingDetail.setCreatedAt(Instant.now());
-
         billingDetail.setQuantity(1);
         billingDetail.setBasePrice(BigDecimal.valueOf(req.getActualAmount()));
         billingDetail.setDiscount(BigDecimal.valueOf(req.getDiscountedAmount()));
@@ -725,13 +662,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
         billingDetail.setNetAmount(billingDetail.getAmountAfterDiscount().add(billingDetail.getTaxAmount()));
         billingDetail.setTotal(billingDetail.getNetAmount());
-        billingDetail.setPaymentStatus("n");
-
-
-        //not null column
-        // billingDetail.setDetailId();
-        // billingDetail.setChargeCost();
-        // billingDetail.setOpdService(getOpdService().getId());
+        billingDetail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
         return billingDetailRepository.save(billingDetail);
     }
 
@@ -781,7 +712,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         try {
             log.debug("Calculating billing amounts");
 
-            //  Calculate sum, discount, tax based on ALL items in request
             BigDecimal sum = BigDecimal.ZERO;
             BigDecimal tax = BigDecimal.ZERO;
             BigDecimal disc = BigDecimal.ZERO;
@@ -801,7 +731,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             }
             log.info("Billing calculation done. Sum={}, Discount={}, Tax={}", sum, disc, tax);
 
-            //  Create BillingHeader
             BillingHeader billingHeader = BillingHeaderDataSave(
                     existingOrderHd,
                     visit,
@@ -816,32 +745,27 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             log.info("Billing header created. BillingHdId={}", billingHeader.getId());
 
 
-            //  Get ALL existing order details for this order
             List<DgOrderDt> allOrderDetails = labDtRepository.findByOrderhdId(existingOrderHd);
             log.info("Found {} order details for OrderHdId={}",
                     allOrderDetails.size(), existingOrderHd.getId());
             System.out.println("Found " + allOrderDetails.size() + " existing order details for orderhdid: " + existingOrderHd.getId());
 
-            //  Link ALL order details to billing header
             for (DgOrderDt orderDetail : allOrderDetails) {
                 orderDetail.setBillingHd(billingHeader);
                 labDtRepository.save(orderDetail);
                 System.out.println("✓ Linked order detail ID: " + orderDetail.getId() + " to billing header");
             }
 
-            //  Create BillingDetail rows ONLY for items that exist in order details
-            // This is the KEY FIX - match request items with existing order details
             for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {
                 if (inv.getType().equalsIgnoreCase("i")) {
                     // Investigation type
                     DgMasInvestigation invEntity = investigation.findById(inv.getId())
                             .orElseThrow(() -> new IllegalArgumentException("Invalid Investigation ID: " + inv.getId()));
 
-                    // Find matching order detail in the existing order
                     DgOrderDt matchingOrderDt = allOrderDetails.stream()
                             .filter(dt -> dt.getInvestigationId() != null &&
                                     dt.getInvestigationId().getInvestigationId() == invEntity.getInvestigationId() &&
-                                    dt.getPackageId() == null) // Investigation, not package
+                                    dt.getPackageId() == null)
                             .findFirst()
                             .orElse(null);
 
@@ -849,16 +773,12 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         System.err.println("WARNING: No order detail found for investigation ID: " + inv.getId());
                         continue;
                     }
-
-                    System.out.println("✓ Creating billing detail for investigation: " + invEntity.getInvestigationName() + " (OrderDt ID: " + matchingOrderDt.getId() + ")");
+                    System.out.println("Creating billing detail for investigation: " + invEntity.getInvestigationName() + " (OrderDt ID: " + matchingOrderDt.getId() + ")");
                     BillingDetaiDataSave(billingHeader, matchingOrderDt, inv);
-
                 } else {
-                    // Package type
                     DgInvestigationPackage pkgObj = dgInvestigationPackageRepository.findById(inv.getId())
                             .orElseThrow(() -> new IllegalArgumentException("Invalid package ID: " + inv.getId()));
 
-                    // Find matching order detail in the existing order
                     DgOrderDt matchingOrderDt = allOrderDetails.stream()
                             .filter(dt -> dt.getPackageId() != null &&
                                     dt.getPackageId().getPackId() == pkgObj.getPackId())
@@ -870,7 +790,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         continue;
                     }
 
-                    System.out.println("✓ Creating billing detail for package: " + pkgObj.getPackName() + " (OrderDt ID: " + matchingOrderDt.getId() + ")");
+                    System.out.println("Creating billing detail for package: " + pkgObj.getPackName() + " (OrderDt ID: " + matchingOrderDt.getId() + ")");
                     BillingDetaiDataSavePackage(billingHeader, pkgObj, inv);
                 }
             }
@@ -884,11 +804,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             res.setMsg("Success");
             return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {
             });
-
         } catch (Exception e) {
             log.error("Exception occurred during lab billing for OrderHdId={}",
                     labReq.getOrderhdid(), e);
-
             e.printStackTrace();
             return ResponseUtils.createFailureResponse(res, new TypeReference<>() {
             }, "Internal Server Error: " + e.getMessage(), 500);
@@ -897,7 +815,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
         int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
-        return count > 0 ? "F" : "N";
+        return count > 0 ? AppConstants.STATUS_F : AppConstants.STATUS_N;
     }
 
 }

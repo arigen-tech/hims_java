@@ -9,6 +9,8 @@ public interface IpDischargeMedicationProjection {
 
     String getFrequency();
 
+    Integer getDurationDays();
+
     Integer getTotalDoses();
 
     String getRoute();

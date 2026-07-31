@@ -12,7 +12,7 @@ import java.util.List;
 public interface OpdTemplateService {
     public ApiResponse<OpdTemplateResponse> getByTemplateId(Long templateId);
 
-    public ApiResponse<List<OpdTemplateResponse>> getAllTemplateInvestigations(int flag);
+    public ApiResponse<List<OpdTemplateResponse>> getAllTemplateInvestigations(int flag, Long doctorId);
 
     public ApiResponse<OpdTemplateResponse> saveInvestigationTemplate(OpdTemplateRequest opdTempReq);
 
@@ -20,7 +20,7 @@ public interface OpdTemplateService {
 
     public ApiResponse<InvestigationByTemplateResponse> multiInvestigationTemplate (InvestigationByTemplateRequest investByTempReq);
 
-    public ApiResponse<List<OpdTemplateResponse>> getAllOpdTemplateTreatments(int flag);
+    public ApiResponse<List<OpdTemplateResponse>> getAllOpdTemplateTreatments(int flag, Long doctorId);
 
     public ApiResponse<OpdTemplateResponse> saveOpdTemplateTreatment(OpdTemplateRequest request);
 
