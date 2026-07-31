@@ -2223,6 +2223,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     medication.setMedicineName(medicationRequest.getMedicineName());
                     medication.setDosage(medicationRequest.getDosage());
                     medication.setFrequency(medicationRequest.getFrequency());
+                    medication.setDurationDays(medicationRequest.getDurationDays());
                     medication.setTotalDoses(medicationRequest.getTotalDoses());
                     medication.setRoute(medicationRequest.getRoute());
                     medication.setInstruction(medicationRequest.getInstruction());
@@ -2323,6 +2324,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                             dto.setMedicineName(item.getMedicineName());
                             dto.setDosage(item.getDosage());
                             dto.setFrequency(item.getFrequency());
+                            dto.setDurationDays(item.getDurationDays());
                             dto.setTotalDoses(item.getTotalDoses());
                             dto.setRoute(item.getRoute());
                             dto.setInstruction(item.getInstruction());

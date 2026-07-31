@@ -8,6 +8,7 @@ public class IpDischargeMedicationRequest {
     private String medicineName;
     private String dosage;
     private String frequency;
+    private Integer durationDays;
     private Integer totalDoses;
     private String route;
     private String instruction;
