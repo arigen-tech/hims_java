@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Service
@@ -22,10 +23,10 @@ public class TransactionSequenceServiceImpl implements TransactionSequenceServic
     private TransactionSequenceRepository transactionSequenceRepository;
 
     @Autowired
-    MasHospitalRepository masHospitalRepository;
+    private MasHospitalRepository masHospitalRepository;
 
     @Autowired
-    AuthUtil authUtil;
+    private AuthUtil  authUtil;
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)

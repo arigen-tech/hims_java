@@ -44,13 +44,15 @@ public class OpdTemplateController {
     @GetMapping("/getInvestigationsTemplates/{flag}")
     @Operation(
             summary = "Get All OPD Template Investigations by Status",
-            description = "Retrieves all OPD templates with their associated investigations filtered by status flag. " +
-                    "Flag 0 returns all templates, Flag 1 returns only active templates."
+            description = "Retrieves OPD investigation templates filtered by status and optionally by doctor."
     )
     public ResponseEntity<ApiResponse<List<OpdTemplateResponse>>> getTemplateInvestigations(
-            @PathVariable int flag) {
-        log.info("Fetching OPD template investigations with flag: {}", flag);
-        return new ResponseEntity<>(opdTempService.getAllTemplateInvestigations(flag), HttpStatus.OK);
+            @PathVariable int flag,
+            @RequestParam(required = false) Long doctorId) {
+
+        log.info("Fetching OPD template investigations with flag: {} and doctorId: {}", flag, doctorId);
+
+        return ResponseEntity.ok(opdTempService.getAllTemplateInvestigations(flag, doctorId));
     }
 
     @PostMapping("/saveInvestigationTemplate")
@@ -81,9 +83,12 @@ public class OpdTemplateController {
         return opdTempService.updateOpdTemplateTreatment(templateId, request);
     }
 
-    @GetMapping("/getAll/{flag}")
-    public ApiResponse<List<OpdTemplateResponse>> getAllOpdTemplateTreatments(@PathVariable int flag) {
-        return opdTempService.getAllOpdTemplateTreatments(flag);
+    @GetMapping("/getAllTreatmentTemplate/{flag}")
+    public ApiResponse<List<OpdTemplateResponse>> getAllOpdTemplateTreatments(
+            @PathVariable int flag,
+            @RequestParam(required = false) Long doctorId) {
+        log.info("Fetching OPD treatment templates with flag: {} and doctorId: {}", flag, doctorId);
+        return opdTempService.getAllOpdTemplateTreatments(flag, doctorId);
     }
 
 }

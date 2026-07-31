@@ -5,7 +5,6 @@ import com.hims.utils.HMISTransaction;
 
 public interface TransactionSequenceService {
 
-    String generateTransactionNumber(HMISTransaction transaction,
-                                     Long hospitalId);
+    String generateTransactionNumber(HMISTransaction transaction, Long hospitalId);
 
 }
