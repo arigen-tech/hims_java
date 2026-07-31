@@ -174,15 +174,15 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
 
 
-    @Value("${ipd.admission.status.active}")
-     Long activeAdmissionStatusId;
+    @Value("${ipd.admission.status.admitted}")
+     Long admitAdmissionStatusId;
 
     @Value("${bed.status.available.id}")
     Long bedStatusId;
     @Value("${bed.status.Occupied.id}")
     Long bedStatusOccupiedId;
-    @Value("${ip.internal.status.id}")
-    Long ipInternalStatusId;
+    @Value("${ip.internal.status.nrw.id}")
+    Long ipInternalStatusNrwId;
     @Value("${ip.internal.status.rw.id}")
     Long ipInternalStatusRwId;
 
@@ -370,7 +370,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     public ApiResponse<List<WardWiseDetailsResponse>> getNursingDashboardByWard(Long wardId) {
         try {
 
-            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(wardId,activeAdmissionStatusId);
+            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(wardId,admitAdmissionStatusId);
 
         List<WardWiseDetailsResponse> responseList = projections.stream()
                         .map(item -> new WardWiseDetailsResponse(
@@ -1119,8 +1119,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             inpatient.setBed(ipTransferRequest1.getToBed());
 
             // Update the inpatient's internal status.
-            inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusId).orElseThrow(() -> new RuntimeException(
-                                    "IPD internal status not found with ID: " + ipInternalStatusId)));
+            inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusNrwId).orElseThrow(() -> new RuntimeException(
+                                    "IPD internal status not found with ID: " + ipInternalStatusNrwId)));
             inpatient.setLastUpdatedBy(updatedBy);
             inpatient.setLastUpdateDate(currentDateTime);
 
@@ -1333,6 +1333,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                         .orElseThrow(() -> new RuntimeException("Invalid Receipt Type")));
 
         receiptHd.setTotalAmount(totalAdvance);
+        receiptHd.setReceiptStatus(AppConstants.IP_RECEIPT_STATUS.toLowerCase());
         receiptHd.setCreatedBy(user.getFullName());
         receiptHd.setCreatedDate(now);
         receiptHd.setLastChgBy(user.getFullName());
@@ -1362,7 +1363,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             paymentDetail.setBill(savedBillingHeader);
             paymentDetail.setAmount(payment.getAdvanceAmount());
             paymentDetail.setPaymentDate(now);
-            paymentDetail.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPartial).orElseThrow());
+            paymentDetail.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid).orElseThrow());
             paymentDetail.setReceipt(savedReceiptHd);
             paymentDetail.setReceiptAmount(payment.getAdvanceAmount());
             paymentDetail.setLastChgBy(user.getFullName());
@@ -1403,15 +1404,15 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         inpatient.setVisit(visit);
         inpatient.setAdmissionDate(request.getAdmissionDate());
         inpatient.setAdmissionTime(request.getAdmissionTime());
-        inpatient.setAdmissionNo(generateAdmissionNo());
+        inpatient.setAdmissionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.ADMISSION_NO, patient.getPatientHospital().getId()));
         inpatient.setConsentTakenBy(request.getConsentTakenBy());
         inpatient.setMlcCase(request.getMlcCase());
         inpatient.setPoliceIntimationRequired(request.getPoliceIntimationRequired());
         inpatient.setAdmissionAdvisedFrom(request.getAdmissionAdvisedFrom());
         inpatient.setAdmissionConsentTaken(request.getAdmissionConsentTaken());
-        inpatient.setAdmissionStatus(masAdmissionStatusRepository.findById(activeAdmissionStatusId).orElseThrow());
+        inpatient.setAdmissionStatus(masAdmissionStatusRepository.findById(admitAdmissionStatusId).orElseThrow());
         inpatient.setDietPreference(masDietPreferenceRepository.findById(request.getDietPreferenceId()).orElseThrow());
-        inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusId).orElseThrow());
+        inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusNrwId).orElseThrow());
         inpatient.setRoom(masRoomRepository.findById(request.getRoomId()).orElseThrow());
         inpatient.setBed(masBedRepository.findById(request.getBedId()).orElseThrow());
         inpatient.setInitialDiagnosis(request.getWorkingDiagnosis());
@@ -2107,6 +2108,14 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             //=========================
             Optional<IpDischargeSummary> existingSummary = ipDischargeSummaryRepository.findByInpatient_InpatientId(request.getInpatientId());
 
+            if(AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT.equalsIgnoreCase(existingSummary.get().getStatus())){
+
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "discharge summary already submitting",
+                        HttpStatus.BAD_REQUEST.value());
+
+            }
+
             Optional<Inpatient> inpatientOptional = inpatientRepository.findById(request.getInpatientId());
 
             if (inpatientOptional.isEmpty()) {
@@ -2119,9 +2128,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             // SUBMIT VALIDATION
             //=========================
             if (AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT.equalsIgnoreCase(request.getStatus())) {
-
-//
-
 
                 PaymentStatusResponse response = fetchPaymentStatus(request.getInpatientId());
 

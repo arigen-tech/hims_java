@@ -187,6 +187,8 @@ public class AppConstants {
     public static final String IO_TYPE_O= "O";
     public static final String IP_DISCHARGE_SUMMARY_STATUS_DRAFT= "D";
     public static final String IP_DISCHARGE_SUMMARY_STATUS_SUMMIT= "S";
+    public static final String IP_RECEIPT_STATUS= "A";
+
 
 
 
