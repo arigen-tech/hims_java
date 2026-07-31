@@ -1,10 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.MasDepartment;
-import com.hims.entity.MasOpdMedicalAdvise;
-import com.hims.entity.MasOutputType;
-import com.hims.entity.User;
+import com.hims.entity.*;
 import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasOpdMedicalAdviseRepository;
 import com.hims.request.MasOpdMedicalAdviseRequest;
@@ -61,12 +58,15 @@ public class MasOpdMedicalAdviseServiceImpl implements MasOpdMedicalAdviseServic
     public ApiResponse<MasOpdMedicalAdviseResponse> create(MasOpdMedicalAdviseRequest request) {
         try {
             User user = authUtil.getCurrentUser();
-            Optional<MasDepartment> masDepartment= masDepartmentRepository.findById(request.getDepartmentId());
+            MasDepartment masDepartment = null;
+            if (request.getDepartmentId() != null) {
+                masDepartment = masDepartmentRepository.findById(request.getDepartmentId()).orElse(null);
+            }
 
             MasOpdMedicalAdvise advise =
                     MasOpdMedicalAdvise.builder()
                             .medicalAdviseName(request.getMedicalAdviceName())
-                            .departmentId(masDepartment.orElse(null))
+                            .departmentId(masDepartment)
                             .status("y")
                             .createdBy(user.getFirstName())
                             .lastUpdatedBy(user.getFirstName())
@@ -87,18 +87,18 @@ public class MasOpdMedicalAdviseServiceImpl implements MasOpdMedicalAdviseServic
     @Override
     public ApiResponse<MasOpdMedicalAdviseResponse> update(Long id, MasOpdMedicalAdviseRequest request) {
         try {
-            MasOpdMedicalAdvise advise =
-                    masOpdMedicalAdviseRepository.findById(id).orElse(null);
-            Optional<MasDepartment> masDepartment= masDepartmentRepository.findById(request.getDepartmentId());
-
+            MasDepartment masDepartment = null;
+            if (request.getDepartmentId() != null) {
+                masDepartment = masDepartmentRepository.findById(request.getDepartmentId()).orElse(null);
+            }
+            MasOpdMedicalAdvise advise = masOpdMedicalAdviseRepository.findById(id).orElse(null);
             if (advise == null)
-                return ResponseUtils.createNotFoundResponse(
-                        "Medical advice not found", 404);
+                return ResponseUtils.createNotFoundResponse("Medical advice not found", 404);
 
             User user = authUtil.getCurrentUser();
 
             advise.setMedicalAdviseName(request.getMedicalAdviceName());
-            advise.setDepartmentId( masDepartment.orElse(null));
+            advise.setDepartmentId( masDepartment);
             advise.setLastUpdatedBy(user.getFirstName());
             advise.setLastUpdateDate(LocalDateTime.now());
 
@@ -123,11 +123,8 @@ public class MasOpdMedicalAdviseServiceImpl implements MasOpdMedicalAdviseServic
                 return ResponseUtils.createNotFoundResponse(
                         "Medical advice not found", 404);
 
-            if (!status.equals("y")
-                    && !status.equals("n"))
-                return ResponseUtils.createFailureResponse(
-                        null, new TypeReference<>() {},
-                        "Invalid status", 400);
+            if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n"))
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status", 400);
 
             User user = authUtil.getCurrentUser();
 
@@ -146,12 +143,26 @@ public class MasOpdMedicalAdviseServiceImpl implements MasOpdMedicalAdviseServic
         }
     }
 
+    @Override
+    public ApiResponse<MasOpdMedicalAdviseResponse> getById(Long id) {
+        MasOpdMedicalAdvise obj = masOpdMedicalAdviseRepository.findById(id).orElse(null);
+
+        if (obj == null)
+            return ResponseUtils.createNotFoundResponse("Mas Opd Medical Advise ID not found", 404);
+
+        return ResponseUtils.createSuccessResponse(toResponse(obj), new TypeReference<>() {});
+
+    }
+
     private MasOpdMedicalAdviseResponse toResponse(MasOpdMedicalAdvise m) {
         MasOpdMedicalAdviseResponse response=new MasOpdMedicalAdviseResponse();
         response.setMedicalAdviseId(m.getMedicalAdviseId());
         response.setMedicalAdviseName(m.getMedicalAdviseName());
-        response.setDepartmentId(m.getDepartmentId().getId());
-        response.setDepartmentName(m.getDepartmentId().getDepartmentName());
+
+        response .setDepartmentId(m.getDepartmentId() != null ? m.getDepartmentId().getId() : null);
+
+        response  .setDepartmentName(m.getDepartmentId() != null ? m.getDepartmentId().getDepartmentName() : null);
+
         response.setStatus(m.getStatus());
         response.setLastUpdateDate(m.getLastUpdateDate());
         return response;

@@ -14,11 +14,11 @@ public class OpdTemplateInvestigation {
     @Column(name = "template_investigation_id", nullable = false)
     private Long templateInvestigationId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "template_id")
     private OpdTemplate opdTemplateId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "investigation_id")
     private DgMasInvestigation investigationId;
 }

@@ -59,7 +59,9 @@ public class OpdPatientRecallResponce {
     //==================== Investigation ==================
     private String labFlag;
     private String radioFlag;
-    private List<NewDgOrderHd> dgOrderHdList;
+    private List<LabOrderHd> labOrderHds;
+    private List<RadOrderHd> radOrderHds;
+
 
 
     //======================== Treatment ====================
@@ -81,13 +83,14 @@ public class OpdPatientRecallResponce {
     private String admissionWardCategoryName;
     private String admissionWardName;
     private String admissionPriority;
-    private Integer vacantBed;
-    private Integer occupiedBed;
+
 
     //  =========================== referral ==============================
     private String referralFlag;
     private String referralRemarks;
     private Instant referralDate;
+    private String referTo;
+    private String referredHospitalName;
 
     // =================== follow up =========
 
@@ -95,27 +98,51 @@ public class OpdPatientRecallResponce {
     private Instant followUpDate;
     private Long followUpDays;
 
+    private PregnancyDetails pregnancyDetails;
+
     //=========================== DgOrderHd =====================
     @Getter
     @Setter
-    public static class NewDgOrderHd {
-        private Integer dgOrderHdId;
+    public static class LabOrderHd {
+        private Integer OrderHdId;
         private LocalDate orderDate;
         private String orderNo;
         private String orderStatus;
         private String collectionStatus;
         private String paymentStatus;
         private LocalDate appointmentDate ;
-        private List<NewDgOrderDt> dgOrderDts;
+        private List<LabOrderDt> labOrderDts;
+
+    }
+    @Getter
+    @Setter
+    public static class RadOrderHd {
+        private Integer OrderHdId;
+        private LocalDate orderDate;
+        private String paymentStatus;
+        private LocalDate appointmentDate ;
+        private List<RadOrderDt> radOrderDts;
 
     }
 
     //=========================== DgOrderDt =====================
     @Getter
     @Setter
-    public static class NewDgOrderDt {
-        private Integer dgOrderDtId;
+    public static class LabOrderDt {
+        private Integer OrderDtId;
         private int orderQty;
+        private String orderStatus;
+        private LocalDate appointmentDate;
+        private Long investigationId;
+        private String billingStatus;
+        private Long packageId;
+        private Integer billingHd;
+        private String investigationName;
+    }
+    @Getter
+    @Setter
+    public static class RadOrderDt {
+        private Integer OrderDtId;
         private String orderStatus;
         private LocalDate appointmentDate;
         private Long investigationId;
@@ -163,5 +190,15 @@ public class OpdPatientRecallResponce {
         private Long id;
         private Long icdId;
         private String icdDiagName;
+    }
+
+    @Getter
+    @Setter
+    public static class PregnancyDetails {
+        private Boolean isPregnant;
+        private LocalDate lmpDate;
+        private LocalDate edd;
+        private LocalDate currentEdd;
+        private String gestationPeriod;
     }
 }

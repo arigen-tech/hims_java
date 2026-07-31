@@ -14,7 +14,7 @@ public interface OpdTemplateService {
 
     public ApiResponse<List<OpdTemplateResponse>> getAllTemplateInvestigations(int flag);
 
-    public ApiResponse<OpdTemplateResponse> createOpdTemplate(OpdTemplateRequest opdTempReq);
+    public ApiResponse<OpdTemplateResponse> saveInvestigationTemplate(OpdTemplateRequest opdTempReq);
 
     public ApiResponse<String> updateOpdTemplate(OpdTempInvReq opdTempInvReq);
 

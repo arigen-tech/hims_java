@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasRole;
 import com.hims.entity.User;
 import com.hims.entity.UserDepartment;
@@ -14,7 +15,9 @@ import com.hims.service.AuthService;
 import com.hims.service.UserService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +28,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     @Autowired
@@ -40,6 +44,8 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     MasDepartmentRepository masDepartmentRepository;
+    @Value("${app.role.doctor}")
+    private Long roleId;
 
 //    @Override
 //    public ApiResponse<List<UserResponse>> getAllDoctorsBySpeciality(Long speciality) {
@@ -145,28 +151,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ApiResponse<List<UserResponse>> getDoctorsByDepartment() {
-
-        long currdeptId = authUtil.getCurrentDepartmentId();
-        // Fetch DOCTOR role
-        Optional<MasRole> doctorRoleOpt = masRoleRepository.findByRoleDesc("DOCTOR");
-        if (doctorRoleOpt.isEmpty()) {
-            return ResponseUtils.createFailureResponse(
-                    null, new TypeReference<>() {},
-                    "Doctor role not found", 500
+        try {
+        long currDeptId = authUtil.getCurrentDepartmentId();
+      //   Fetch DOCTOR role
+       Optional<MasRole> doctorRoleOpt = masRoleRepository.findById(roleId);
+       if (doctorRoleOpt.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("Doctor role not found",HttpStatus.NOT_FOUND.value()
             );
         }
-
-        Long doctorRoleId = doctorRoleOpt.get().getId();
-
-        // Fetch users by department
-        List<User> users = userDepartmentRepository.findUsersByDepartment(currdeptId);
+       // Fetch users by department
+        List<UserResponse> users = userDepartmentRepository.getUsersByDepartment(currDeptId);
 
         List<UserResponse> response = users.stream()
                 .filter(user -> user.getRoleId() != null)
                 .filter(user -> Arrays.stream(user.getRoleId().split(","))
                         .map(String::trim)
                         .map(Long::valueOf)
-                        .anyMatch(roleId -> roleId.equals(doctorRoleId)))
+                        .anyMatch(roleId -> roleId.equals(doctorRoleOpt.get().getId())))
                 .map(user -> {
                     UserResponse doctor = new UserResponse();
                     doctor.setUserId(user.getUserId());
@@ -178,6 +179,11 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
 
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("getDoctorsByDepartment fetching error",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
     }
 
 

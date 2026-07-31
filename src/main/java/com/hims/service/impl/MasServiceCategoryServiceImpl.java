@@ -44,7 +44,7 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
         List<MasServiceCategory> response;
 
         if (flag == 1) {
-            response = masServiceCategoryRepository.findAllByStatusOrderByServiceCatNameAsc("y");
+            response = masServiceCategoryRepository.findAllByStatusIgnoreCaseOrderByServiceCatNameAsc("y");
         } else {
             response = masServiceCategoryRepository.findAllByOrderByStatusDescLastChgDtDesc();
         }
@@ -154,12 +154,13 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
 
 
     @Override
-    public ApiResponse<GstConfigResponse> getGstConfig(int flag , Integer catId) {
+    public ApiResponse<GstConfigResponse> getGstConfig(int flag , String catCode) {
         MasServiceCategory category;
-        if(catId!=null){
+        if(catCode!=null){
+            category = masServiceCategoryRepository.findByServiceCateCode(catCode);
+        }
+        else{
              category = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOpdCode);
-        }else{
-             category = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLabCode);
         }
 
         ApiResponse<GstConfigResponse> apiResponse = new ApiResponse<>();

@@ -1,6 +1,11 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.*;
+import com.hims.response.BatchNameForStockResponse;
+import com.hims.response.OpeningBalanceStockResponse;
+import com.hims.response.OpeningBalanceStockResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -65,8 +70,7 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
 
     List<StoreItemBatchStock> findByItemId(MasStoreItem itemId);
 
-
-
+    List<StoreItemBatchStock> findByItemIdAndHospitalId_IdAndDepartmentId_Id(MasStoreItem itemId,Long hospitalId, Long departmentId);
 
 
     @Query("""
@@ -103,4 +107,173 @@ public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBa
 
 
     List<StoreItemBatchStock> findByItemIdItemId(Long itemId);
+
+    @Query("""
+SELECT COALESCE(SUM(s.closingStock),0)
+FROM StoreItemBatchStock s
+WHERE s.itemId.itemId = :itemId
+  AND s.hospitalId.id = :hospitalId
+  AND s.departmentId.id = :departmentId
+  AND s.closingStock > 0
+  AND (s.expiryDate IS NULL OR s.expiryDate >= :threshold)
+""")
+    Long getAvailableStock(
+            @Param("itemId") Long itemId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("threshold") LocalDate threshold
+    );
+
+    @Query("""
+    SELECT s FROM StoreItemBatchStock s
+    WHERE s.itemId = :itemId
+        AND s.departmentId.id = :departmentId
+        AND s.hospitalId.id = :hospitalId
+        AND UPPER(TRIM(s.batchNo)) = UPPER(TRIM(:batchNo))
+        AND s.manufacturerId.manufacturerId = :manufacturerId
+        AND s.expiryDate = :expiryDate
+      
+""")
+    Optional<StoreItemBatchStock> findExistingBatchStockForDrug(
+            @Param("itemId") MasStoreItem itemId,
+            @Param("departmentId") Long departmentId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("batchNo") String batchNo,
+            @Param("manufacturerId") Long manufacturerId,
+            @Param("expiryDate") LocalDate expiryDate
+
+    );
+
+    @Query("""
+    SELECT s FROM StoreItemBatchStock s
+    WHERE s.itemId = :itemId
+        AND s.departmentId.id = :departmentId
+        AND s.hospitalId.id = :hospitalId
+        AND UPPER(TRIM(s.batchNo)) = UPPER(TRIM(:batchNo))
+        AND s.manufacturerId.manufacturerId = :manufacturerId
+""")
+    Optional<StoreItemBatchStock> findExistingBatchStockForNonDrug(
+            @Param("itemId") MasStoreItem itemId,
+            @Param("departmentId") Long departmentId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("batchNo") String batchNo,
+            @Param("manufacturerId") Long manufacturerId
+
+    );
+
+    @Query("""
+SELECT new com.hims.response.BatchNameForStockResponse(
+    s.batchNo,
+    s.manufactureDate,
+    s.expiryDate,
+    s.closingStock,
+    (
+        SELECT COALESCE(SUM(s2.closingStock), 0)
+        FROM StoreItemBatchStock s2
+        WHERE s2.itemId.itemId = :itemId
+          AND s2.hospitalId.id = :hospitalId
+          AND s2.departmentId.id = :departmentId
+          AND COALESCE(:expDate, s2.expiryDate) <= s2.expiryDate
+    ),
+    s.manufacturerId.manufacturerId
+)
+FROM StoreItemBatchStock s
+WHERE s.itemId.itemId = :itemId
+  AND s.hospitalId.id = :hospitalId
+  AND s.departmentId.id = :departmentId
+  AND COALESCE(:expDate, s.expiryDate) <= s.expiryDate
+""")
+    List<BatchNameForStockResponse> findBatchNameForStockWithOptionalExpiry(
+            @Param("itemId") Long itemId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("expDate") LocalDate expDate
+    );
+
+    @Query("""
+SELECT new com.hims.response.OpeningBalanceStockResponseDto(
+    s.stockId,
+    i.itemId,
+    i.nomenclature,
+    i.pvmsNo,
+    s.openingBalanceQty,
+    u.unitName,
+    s.batchNo,
+    s.manufactureDate,
+    s.expiryDate,
+    m.manufacturerName,
+    sec.sectionName,
+    sec.sectionId,
+    cls.itemClassId,
+    cls.itemClassName,
+    b.brandName,
+    s.mrpPerUnit,
+    s.closingStock
+)
+FROM StoreItemBatchStock s
+JOIN s.itemId i
+JOIN i.unitAU u
+JOIN i.itemClassId cls
+JOIN cls.masStoreSection sec
+LEFT JOIN s.manufacturerId m
+LEFT JOIN s.brandId b
+
+WHERE s.hospitalId.id = :hospitalId
+AND s.departmentId.id = :departmentId
+AND s.expiryDate >= CURRENT_DATE
+
+AND (:sectionId IS NULL OR sec.sectionId = :sectionId)
+AND (:classId IS NULL OR cls.itemClassId = :classId)
+AND (:itemId IS NULL OR i.itemId = :itemId)
+ORDER BY i.nomenclature ASC
+""")
+    List<OpeningBalanceStockResponseDto> getStockDetails(
+            Long hospitalId,
+            Long departmentId,
+            Long sectionId,
+            Long classId,
+            Long itemId
+    );
+
+    @Query("""
+SELECT new com.hims.response.OpeningBalanceStockResponse(
+    MIN(s.stockId),
+    i.itemId,
+    i.nomenclature,
+    i.pvmsNo,
+    COALESCE(SUM(s.openingBalanceQty),0),
+    COALESCE(SUM(s.closingStock),0),
+    u.unitName,
+    sec.sectionId,
+    sec.sectionName,
+    cls.itemClassId,
+    cls.itemClassName
+)
+FROM StoreItemBatchStock s
+JOIN s.itemId i
+JOIN i.unitAU u
+JOIN i.itemClassId cls
+JOIN cls.masStoreSection sec
+WHERE s.hospitalId.id = :hospitalId
+AND s.departmentId.id = :departmentId
+AND s.expiryDate >= CURRENT_DATE
+
+AND (:sectionId IS NULL OR sec.sectionId = :sectionId)
+AND (:classId IS NULL OR cls.itemClassId = :classId)
+AND (:itemId IS NULL OR i.itemId = :itemId)
+
+GROUP BY
+i.itemId, i.nomenclature, i.pvmsNo,
+u.unitName,
+sec.sectionId, sec.sectionName,
+cls.itemClassId, cls.itemClassName
+ORDER BY i.nomenclature ASC
+""")
+    List<OpeningBalanceStockResponse> getStockSummary(
+            Long hospitalId,
+            Long departmentId,
+            Long sectionId,
+            Long classId,
+            Long itemId
+    );
 }

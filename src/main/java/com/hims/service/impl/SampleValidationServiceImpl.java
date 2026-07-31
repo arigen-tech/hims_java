@@ -12,6 +12,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +58,15 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Autowired
+    private LabOrderTrackingStatusRepository labOrderTrackingStatusRepository;
+
+    @Value("${lab.track-order-status-sample.validate}")
+    private Long validatedStatusId;
+
+    @Value("${lab.track-order-status-sample.reject}")
+    private Long rejectedStatusId;
+
 
     private String getCurrentTimeFormatted(Instant instant) {
         LocalTime time = instant
@@ -70,52 +80,97 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
     @Override
     @Transactional
     public ApiResponse<String> validateInvestigations(List<InvestigationValidationRequest> requests) {
+
         try {
             log.info("Investigation validation process started...");
+            log.debug("Total investigations received for validation={}",
+                    requests != null ? requests.size() : 0);
 
-            // 0) current user check
+            // =====================  CURRENT USER =====================
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
+                log.warn("Current user not found during investigation validation");
                 return ResponseUtils.createFailureResponse(
-                        null, new TypeReference<>() {},
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                        null,
+                        new TypeReference<>() {},
+                        "Current user not found",
+                        HttpStatus.UNAUTHORIZED.value());
             }
 
-            Long headerId = requests.get(0).getSampleHeaderId();
+            String validatedBy =
+                    currentUser.getFirstName() + " " +
+                            currentUser.getMiddleName() + " " +
+                            currentUser.getLastName();
+            log.debug("Validation performed by={}", validatedBy);
 
-            // 1) LOOP ALL DETAILS
+
+            Long headerId = requests.get(0).getSampleHeaderId();
+            log.info("SampleCollectionHeaderId={}", headerId);
+
+            // ===================== 1. FETCH HEADER ONCE =====================
+            DgSampleCollectionHeader header =
+                    headerRepo.findById(headerId)
+                            .orElseThrow(() -> new RuntimeException("Header not found"));
+            log.debug("Header fetched successfully");
+
+            // ===================== 2. FETCH ORDER HD ONCE =====================
+            DgOrderHd orderHd =
+                    orderHdRepo.findByPatientId_IdAndVisitId_Id(
+                            header.getPatientId().getId(),
+                            header.getVisitId().getId()
+                    );
+
+            // ===================== 3. CACHE TRACKING STATUS =====================
+            LabOrderTrackingStatus validatedStatus =
+                    labOrderTrackingStatusRepository
+                            .findById(validatedStatusId).orElseThrow();
+
+            LabOrderTrackingStatus rejectedStatus =
+                    labOrderTrackingStatusRepository
+                            .findById(rejectedStatusId).orElseThrow();
+
+            // ===================== 4. LOOP ALL REQUESTS =====================
             for (InvestigationValidationRequest req : requests) {
 
-                // fetch details
                 DgSampleCollectionDetails details =
                         detailsRepo.findById(req.getDetailId())
-                                .orElseThrow(() -> new RuntimeException("Details not found"));
+                                .orElseThrow(() ->
+                                        new RuntimeException("Details not found"));
 
-                DgSampleCollectionHeader header = details.getSampleCollectionHeader();
-                Long investigationId = details.getInvestigationId().getInvestigationId();
                 boolean accepted = Boolean.TRUE.equals(req.getAccepted());
+                String detailStatus = accepted ? "y" : "r";
 
-                // 2) UPDATE SAMPLE COLLECTION DETAILS
+                Long investigationId =
+                        details.getInvestigationId().getInvestigationId();
 
-                int orderHdId = header.getVisitId().getBillingHd().getHdorder().getId();
+                int orderHdId =
+                        header.getVisitId()
+                                .getBillingHd()
+                                .getHdorder()
+                                .getId();
 
-                LabTurnAroundTime labTurnAroundTime = labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_Id(orderHdId, investigationId, header.getPatientId().getId());
-                String detailStatus;
-                if(accepted){
-                    detailStatus="y";
-                    labTurnAroundTime.setIsReject(false);
-                }else{
-                    detailStatus="r";
-                    labTurnAroundTime.setIsReject(true);
-                }
-//                String detailStatus = accepted ? "y" : "r";
-                detailsRepo.updateValidation(details.getSampleCollectionDetailsId(), detailStatus);
+                // ===================== 5. LAB TURN AROUND TIME =====================
+                LabTurnAroundTime tat =
+                        labTurnAroundTimeRepository
+                                .findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndGeneratedSampleId(
+                                        orderHdId,
+                                        investigationId,
+                                        header.getPatientId().getId(),
+                                        details.getSampleGeneratedId()
+                                );
 
-                // 🔥 VERY IMPORTANT FIX — to ensure header sees updated statuses
-//                entityManager.flush();
-//                entityManager.clear();
+                tat.setIsReject(!accepted);
+                tat.setSampleValidatedBy(validatedBy);
+                tat.setSampleValidatedDateTime(LocalDateTime.now());
+                labTurnAroundTimeRepository.save(tat);
+                log.debug("TAT updated for investigationId={}", investigationId);
 
-                // set entity fields also
+                // ===================== 6. UPDATE SAMPLE DETAILS =====================
+                detailsRepo.updateValidation(
+                        details.getSampleCollectionDetailsId(),
+                        detailStatus
+                );
+
                 details.setValidated(detailStatus);
 
                 if (!accepted) {
@@ -126,127 +181,105 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                     details.setOldSampleCollectionHdIdForReject(null);
                 }
 
-
-
-
-                labTurnAroundTime.setSampleValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
-                labTurnAroundTime.setSampleValidatedDateTime(LocalDateTime.now());
-                labTurnAroundTimeRepository.save(labTurnAroundTime);
-
-
                 detailsRepo.save(details);
 
-                // 3) IF REJECTED → UPDATE ORDERDT
-                DgOrderHd orderHd = orderHdRepo.findByPatientId_IdAndVisitId_Id(
-                        header.getPatientId().getId(),
-                        header.getVisitId().getId()
-                );
-
+                // ===================== 7. UPDATE ORDER DT =====================
                 if (orderHd != null) {
+
                     DgOrderDt orderDt =
-                            orderDtRepo.findByOrderhdId_IdAndInvestigationId_InvestigationId(
-                                    orderHd.getId(),
-                                    investigationId
-                            );
+                            orderDtRepo
+                                    .findByOrderhdId_IdAndInvestigationId_InvestigationId(
+                                            orderHd.getId(),
+                                            investigationId
+                                    );
 
                     if (orderDt != null) {
+
                         String orderDtStatus = accepted ? "y" : "n";
-                        orderDtRepo.updateOrderStatus((long) orderDt.getId(), orderDtStatus);
 
-                        // update entity
+                        orderDtRepo.updateOrderStatus(
+                                (long) orderDt.getId(),
+                                orderDtStatus
+                        );
+
                         orderDt.setOrderStatus(orderDtStatus);
-                        orderDtRepo.save(orderDt);
+                        orderDt.setOrderTrackingStatus(
+                                accepted ? validatedStatus : rejectedStatus
+                        );
 
-                        log.info("OrderDt {} -> {}", orderDt.getId(), orderDtStatus);
+                        orderDtRepo.save(orderDt);
                     }
                 }
-            } // end loop
+            }
 
-            // 4) UPDATE HEADER VALIDATION STATUS
-            List<String> headerStatuses = detailsRepo.getValidationStatusOfHeader(headerId);
+            // ===================== 8. UPDATE HEADER STATUS =====================
+            List<String> headerStatuses =
+                    detailsRepo.getValidationStatusOfHeader(headerId);
 
-            boolean allAccepted = headerStatuses.stream().allMatch(s -> s.equals("y"));
-            boolean allRejected = headerStatuses.stream().allMatch(s -> s.equals("r"));
+            boolean allAccepted =
+                    headerStatuses.stream().allMatch("y"::equals);
 
-
+            boolean allRejected =
+                    headerStatuses.stream().allMatch("r"::equals);
 
             String finalHeaderStatus =
                     allAccepted ? "y" :
-                            allRejected ? "r" :
-                                    "y"; // partial = y
-
-//            int i = headerRepo.updateValidationStatus(headerId, finalHeaderStatus);
-
-//            log.info("Header Validation Update = {}", i);
-
-            // 5) SET HEADER VALIDATION DATE + VALIDATED BY
-            DgSampleCollectionHeader header =
-                    headerRepo.findById(headerId).orElseThrow();
+                            allRejected ? "r" : "y"; // partial = y
 
             header.setValidated(finalHeaderStatus);
-
             header.setValidation_date(LocalDate.now());
             header.setValidationTime(Instant.now());
-            header.setValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
-
-
-            //LabTurnAroundTime Set
-
-            LabTurnAroundTime labTurnAroundTime= new LabTurnAroundTime();
-            labTurnAroundTime.setSampleValidatedBy(currentUser.getFirstName()+" "+currentUser);
-
+            header.setValidatedBy(validatedBy);
             headerRepo.save(header);
 
-
-
-            // 6) UPDATE ORDERHD STATUS
-            DgOrderHd orderHd =
-                    orderHdRepo.findByPatientId_IdAndVisitId_Id(
-                            header.getPatientId().getId(),
-                            header.getVisitId().getId()
-                    );
-
+            // ===================== 9. UPDATE ORDER HD =====================
             if (orderHd != null) {
 
                 List<String> orderDtStatuses =
-                        orderDtRepo.getOrderStatusesOfOrderHd((long) orderHd.getId());
+                        orderDtRepo.getOrderStatusesOfOrderHd(
+                                (long) orderHd.getId()
+                        );
 
-                boolean allOrderDtRejected =
-                        orderDtStatuses.stream().allMatch(s -> s.equals("n"));
+                boolean allOrderRejected =
+                        orderDtStatuses.stream().allMatch("n"::equals);
 
-                boolean allOrderDtAccepted =
-                        orderDtStatuses.stream().allMatch(s -> s.equals("y"));
+                boolean allOrderAccepted =
+                        orderDtStatuses.stream().allMatch("y"::equals);
 
-                String finalOrderStatus;
-                if (allOrderDtRejected) {
-                    finalOrderStatus = "n";
-                } else if (allOrderDtAccepted) {
-                    finalOrderStatus = "y";
-                } else {
-                    finalOrderStatus = "p";
-                }
+                String finalOrderStatus =
+                        allOrderRejected ? "n" :
+                                allOrderAccepted ? "y" : "p";
 
-                orderHdRepo.updateOrderStatus((long) orderHd.getId(), finalOrderStatus);
+                orderHdRepo.updateOrderStatus(
+                        (long) orderHd.getId(),
+                        finalOrderStatus
+                );
 
                 orderHd.setOrderStatus(finalOrderStatus);
                 orderHdRepo.save(orderHd);
-
-                log.info("OrderHd {} Updated to {}", orderHd.getId(), finalOrderStatus);
+                log.info("OrderHd status updated, orderHdId={}, status={}",
+                        orderHd.getId(), finalOrderStatus);
             }
-
+            log.info("Investigation validation completed successfully");
+            // ===================== 10. SUCCESS =====================
             return ResponseUtils.createSuccessResponse(
                     "Investigation validated successfully",
-                    new TypeReference<String>() {});
-        }
-        catch (Exception e) {
+                    new TypeReference<String>() {}
+            );
+
+        } catch (Exception e) {
+
             log.error("Sample Validate Error :: ", e);
+
             return ResponseUtils.createFailureResponse(
-                    null, new TypeReference<>() {},
-                    "Internal Server Error", HttpStatus.BAD_REQUEST.value());
+                    null,
+                    new TypeReference<>() {},
+                    "Internal Server Error",
+                    HttpStatus.BAD_REQUEST.value()
+            );
         }
-
-
     }
+
     @Override
     @Transactional
     public ApiResponse<List<SampleValidationResponse>> getInvestigationsWithOrderStatusNAndP() {
@@ -264,6 +297,8 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                         DgSampleCollectionHeader h = d.getSampleCollectionHeader();
                         return h.getPatientId().getId() + "_" + h.getSampleCollectionHeaderId();
                     }));
+            log.debug("Grouped headers count={}", grouped.size());
+
 
             // Step 3: Convert each group into SampleValidationResponse
             List<SampleValidationResponse> responseList = grouped.entrySet().stream()
@@ -322,7 +357,8 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                     })
                     .toList();
 
-            log.info("Investigation status process ended..");
+            log.info("Investigation status process ended successfully, responseCount={}",
+                    responseList.size());
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
         } catch (Exception e) {
@@ -335,120 +371,169 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
 
     @Override
     public ApiResponse<List<ResultResponse>> getValidatedResultEntries() {
+
         try {
+            log.info("Result entry fetch process started");
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
+                log.warn("Current user not found while fetching result status");
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
 
-            // Fetch details using your query
-            List<DgSampleCollectionDetails> detailsList = detailsRepo.findAllByHeaderResultEntryAndValidationStatusLogic();
+            List<DgSampleCollectionDetails> detailsList =
+                    detailsRepo.findAllByHeaderResultEntryAndValidationStatusLogic();
+            log.info("Total sample collection details fetched={}", detailsList.size());
 
-            // 🟢 Group by Sample Collection Header (not patient + subChargeCode)
+
+            // ===================== CACHE MAPS =====================
+            Map<Long, DgOrderHd> orderHdCache = new HashMap<>();
+            Map<Long, MasSubChargeCode> subChargeCache = new HashMap<>();
+            Map<Long, List<DgSubMasInvestigation>> subInvestigationCache = new HashMap<>();
+            Map<Long, List<DgFixedValue>> fixedValueCache = new HashMap<>();
+            Map<String, DgNormalValue> normalValueCache = new HashMap<>();
+
             Map<String, ResultResponse> responseMap = new LinkedHashMap<>();
 
             for (DgSampleCollectionDetails detail : detailsList) {
 
                 DgSampleCollectionHeader header = detail.getSampleCollectionHeader();
                 Long headerId = header.getSampleCollectionHeaderId();
-                String key = String.valueOf(headerId); // Grouping by header ID
+                String key = String.valueOf(headerId);
+                log.debug("Processing headerId={}, detailId={}",
+                        headerId, detail.getSampleCollectionDetailsId());
 
-                // Group by Header
-                ResultResponse response = responseMap.computeIfAbsent(
-                        key,
-                        k -> {
-                            ResultResponse r = new ResultResponse();
-                            var patient = header.getPatientId();
+                // ===================== HEADER GROUP =====================
+                ResultResponse response = responseMap.computeIfAbsent(key, k -> {
+                    log.debug("Creating ResultResponse for headerId={}", headerId);
 
-                            String fullName = Stream.of(
-                                            patient.getPatientFn(),
-                                            patient.getPatientMn(),
-                                            patient.getPatientLn()
-                                    )
-                                    .filter(Objects::nonNull)
-                                    .filter(s -> !s.isBlank())
-                                    .collect(Collectors.joining(" "));
+                    ResultResponse r = new ResultResponse();
+                    var patient = header.getPatientId();
 
-                            r.setPatientId(patient.getId());
-                            r.setPatientName(fullName);
-                            r.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null);
-                            r.setRelationId(patient.getPatientRelation() != null ? patient.getPatientRelation().getId() : null);
-                            r.setPatientGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
-                            r.setPatientAge(patient.getPatientAge());
-                            r.setPatientPhoneNo(patient.getPatientMobileNumber());
+                    String fullName = Stream.of(
+                                    patient.getPatientFn(),
+                                    patient.getPatientMn(),
+                                    patient.getPatientLn()
+                            )
+                            .filter(Objects::nonNull)
+                            .filter(s -> !s.isBlank())
+                            .collect(Collectors.joining(" "));
 
-                            DgOrderHd dgOrderHd = labHdRepository.findByVisitId(header.getVisitId());
-                            r.setOrderDate(String.valueOf(dgOrderHd.getOrderDate()));
-                            r.setOrderTime(getCurrentTimeFormatted(dgOrderHd.getOrderTime()));
-                            r.setCollectedBy(header.getCollection_by());
-                            r.setValidatedBy(header.getValidatedBy());
-                            r.setValidatedDate(header.getValidation_date());
-                            r.setValidatedTime(header.getValidationTime()!=null?getCurrentTimeFormatted(header.getValidationTime()):null);
-                            r.setCollectedDate(header.getCollection_time());
-                            r.setCollectedTime(header.getCollection_time() != null ? header.getCollection_time().toLocalTime() : null);
-                            r.setOrderNo(dgOrderHd.getOrderNo());
-                            r.setDepartment(header.getDepartmentId() != null ? header.getDepartmentId().getDepartmentName() : null);
+                    r.setPatientId(patient.getId());
+                    r.setPatientName(fullName);
+                    r.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null);
+                    r.setRelationId(patient.getPatientRelation() != null ? patient.getPatientRelation().getId() : null);
+                    r.setPatientGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
+                    r.setPatientAge(patient.getPatientAge());
+                    r.setPatientPhoneNo(patient.getPatientMobileNumber());
 
-                            MasSubChargeCode masSubChargeCode =
-                                    subChargeCodeRepository.findById(header.getSubChargeCode().getSubId()).orElseThrow();
-                            r.setMainChargeCodeId(masSubChargeCode.getMainChargeId().getChargecodeId());
-                            r.setDoctorName(header.getHospitalId() != null ? header.getHospitalId().getHospitalName() : null);
-                            r.setVisitId(header.getVisitId() != null ? header.getVisitId().getId() : null);
-                            r.setSampleCollectionHeaderId(headerId);
-                            r.setSubChargeCodeId(header.getSubChargeCode().getSubId());
-                            r.setSubChargeCodeName(header.getSubChargeCode().getSubName());
-                            r.setResultInvestigationResponseList(new ArrayList<>());
-                            return r;
-                        }
-                );
+                    // -------- Order HD (CACHED) --------
+                    DgOrderHd orderHd = orderHdCache.computeIfAbsent(
+                            header.getVisitId().getId(),
+                            id -> labHdRepository.findByVisitId(header.getVisitId())
+                    );
 
-                // 🧩 Group by Investigation
-                ResultInvestigationResponse investigation = response.getResultInvestigationResponseList().stream()
-                        .filter(i -> i.getInvestigationId().equals(detail.getInvestigationId().getInvestigationId()))
-                        .findFirst()
-                        .orElseGet(() -> {
-                            DgMasInvestigation invObj = detail.getInvestigationId();
+                    r.setOrderDate(String.valueOf(orderHd.getOrderDate()));
+                    r.setOrderTime(getCurrentTimeFormatted(orderHd.getOrderTime()));
+                    r.setOrderNo(orderHd.getOrderNo());
 
-                            ResultInvestigationResponse inv = new ResultInvestigationResponse();
-                            inv.setInvestigationId(invObj.getInvestigationId());
-                            inv.setInvestigationName(invObj.getInvestigationName());
-                            inv.setSampleCollectionDetailsId(detail.getSampleCollectionDetailsId());
-                            inv.setResultType(invObj.getInvestigationType());
-                            inv.setGeneratedSampleId(detail.getSampleGeneratedId());
+                    r.setCollectedBy(header.getCollection_by());
+                    r.setValidatedBy(header.getValidatedBy());
+                    r.setValidatedDate(header.getValidation_date());
+                    r.setValidatedTime(
+                            header.getValidationTime() != null
+                                    ? getCurrentTimeFormatted(header.getValidationTime())
+                                    : null
+                    );
+                    r.setCollectedDate(header.getCollection_time());
+                    r.setCollectedTime(
+                            header.getCollection_time() != null
+                                    ? header.getCollection_time().toLocalTime()
+                                    : null
+                    );
 
-                            // --- Sample details
-                            if (invObj.getSampleId() != null) {
-                                inv.setSampleId(invObj.getSampleId().getId());
-                                inv.setSampleName(invObj.getSampleId().getSampleDescription());
-                            }
+                    r.setDepartment(
+                            header.getDepartmentId() != null
+                                    ? header.getDepartmentId().getDepartmentName()
+                                    : null
+                    );
 
-                            // --- Unit details
-                            if (invObj.getUomId() != null) {
-                                inv.setUnitId(invObj.getUomId().getId());
-                                inv.setUnitName(invObj.getUomId().getName());
-                            }
+                    // -------- Sub Charge Code (CACHED) --------
+                    MasSubChargeCode subChargeCode =
+                            subChargeCache.computeIfAbsent(
+                                    header.getSubChargeCode().getSubId(),
+                                    id -> subChargeCodeRepository.findById(id).orElseThrow()
+                            );
 
-                            String normalRange = null;
-                            if (invObj.getNormalValue() != null && !invObj.getNormalValue().isBlank()) {
-                                normalRange = invObj.getNormalValue();
-                            } else if (invObj.getMinNormalValue() != null && invObj.getMaxNormalValue() != null) {
-                                normalRange = invObj.getMinNormalValue() + " - " + invObj.getMaxNormalValue();
-                            }
+                    r.setMainChargeCodeId(subChargeCode.getMainChargeId().getChargecodeId());
+                    r.setSubChargeCodeId(subChargeCode.getSubId());
+                    r.setSubChargeCodeName(subChargeCode.getSubName());
 
-                            inv.setNormalValue(normalRange);
+                    r.setDoctorName(
+                            header.getHospitalId() != null
+                                    ? header.getHospitalId().getHospitalName()
+                                    : null
+                    );
 
-                            inv.setResultSubInvestigationResponseList(new ArrayList<>());
-                            response.getResultInvestigationResponseList().add(inv);
-                            return inv;
-                        });
+                    r.setVisitId(header.getVisitId().getId());
+                    r.setSampleCollectionHeaderId(headerId);
+                    r.setResultInvestigationResponseList(new ArrayList<>());
+                    return r;
+                });
 
-                // 🧪 Fetch Sub-Investigations
+                // ===================== INVESTIGATION GROUP =====================
+                ResultInvestigationResponse investigation =
+                        response.getResultInvestigationResponseList()
+                                .stream()
+                                .filter(i -> i.getInvestigationId()
+                                        .equals(detail.getInvestigationId().getInvestigationId()))
+                                .findFirst()
+                                .orElseGet(() -> {
+
+                                    DgMasInvestigation invObj = detail.getInvestigationId();
+                                    ResultInvestigationResponse inv = new ResultInvestigationResponse();
+
+                                    inv.setInvestigationId(invObj.getInvestigationId());
+                                    inv.setInvestigationName(invObj.getInvestigationName());
+                                    inv.setSampleCollectionDetailsId(detail.getSampleCollectionDetailsId());
+                                    inv.setResultType(invObj.getInvestigationType());
+                                    inv.setGeneratedSampleId(detail.getSampleGeneratedId());
+
+                                    if (invObj.getSampleId() != null) {
+                                        inv.setSampleId(invObj.getSampleId().getId());
+                                        inv.setSampleName(invObj.getSampleId().getSampleDescription());
+                                    }
+
+                                    if (invObj.getUomId() != null) {
+                                        inv.setUnitId(invObj.getUomId().getId());
+                                        inv.setUnitName(invObj.getUomId().getName());
+                                    }
+
+                                    String normalRange = invObj.getNormalValue();
+                                    if ((normalRange == null || normalRange.isBlank())
+                                            && invObj.getMinNormalValue() != null
+                                            && invObj.getMaxNormalValue() != null) {
+                                        normalRange =
+                                                invObj.getMinNormalValue() + " - " + invObj.getMaxNormalValue();
+                                    }
+
+                                    inv.setNormalValue(normalRange);
+                                    inv.setResultSubInvestigationResponseList(new ArrayList<>());
+
+                                    response.getResultInvestigationResponseList().add(inv);
+                                    return inv;
+                                });
+
+                // ===================== SUB INVESTIGATIONS (CACHED) =====================
                 List<DgSubMasInvestigation> subList =
-                        dgSubMasInvestigationRepository.findByInvestigationId(detail.getInvestigationId().getInvestigationId());
+                        subInvestigationCache.computeIfAbsent(
+                                detail.getInvestigationId().getInvestigationId(),
+                                id -> dgSubMasInvestigationRepository.findByInvestigationId(id)
+                        );
 
                 for (DgSubMasInvestigation subInvest : subList) {
+
                     ResultSubInvestigationResponse sub = new ResultSubInvestigationResponse();
                     sub.setSubInvestigationId(subInvest.getSubInvestigationId());
                     sub.setSubInvestigationName(subInvest.getSubInvestigationName());
@@ -459,10 +544,12 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                     sub.setResultType(subInvest.getResultType());
                     sub.setGeneratedSampleId(detail.getSampleGeneratedId());
 
-                    // --- Patient info for Normal Range
+                    // -------- Normal Value (CACHED) --------
                     var patient = header.getPatientId();
-                    String gender = patient.getPatientGender() != null ? patient.getPatientGender().getGenderCode() : null;
-                    String ageStr = patient.getPatientAge(); // e.g. "24Y 8M 9D"
+                    String gender = patient.getPatientGender() != null
+                            ? patient.getPatientGender().getGenderCode()
+                            : null;
+                    String ageStr = patient.getPatientAge();
 
                     Long ageInYears = null;
                     if (ageStr != null && ageStr.matches("\\d+Y.*")) {
@@ -471,51 +558,72 @@ private LabTurnAroundTimeRepository labTurnAroundTimeRepository;
                         } catch (Exception ignored) {}
                     }
 
-                    // --- Fetch Normal Value
-                    DgNormalValue dgNormalValue = null;
-                    if (ageInYears != null && gender != null) {
-                        dgNormalValue = dgNormalValueRepository
-                                .findFirstBySubInvestigationIdAndSexAndFromAgeLessThanEqualAndToAgeGreaterThanEqual(
-                                        subInvest, gender.substring(0, 1).toUpperCase(), ageInYears, ageInYears);
-                    } else {
-                        dgNormalValue = dgNormalValueRepository.findBySubInvestigationId(subInvest);
-                    }
+                    String normalKey =
+                            subInvest.getSubInvestigationId() + "|" + gender + "|" + ageInYears;
+
+                    Long finalAgeInYears = ageInYears;
+                    Long finalAgeInYears1 = ageInYears;
+                    DgNormalValue dgNormalValue =
+                            normalValueCache.computeIfAbsent(normalKey, k -> {
+                                if (finalAgeInYears != null && gender != null) {
+                                    return dgNormalValueRepository
+                                            .findFirstBySubInvestigationIdAndSexAndFromAgeLessThanEqualAndToAgeGreaterThanEqual(
+                                                    subInvest,
+                                                    gender.substring(0, 1).toUpperCase(),
+                                                    finalAgeInYears,
+                                                    finalAgeInYears1
+                                            );
+                                }
+                                return dgNormalValueRepository.findBySubInvestigationId(subInvest);
+                            });
 
                     if (dgNormalValue != null) {
-                        String normalRange = null;
-                        if (dgNormalValue.getNormalValue() != null && !dgNormalValue.getNormalValue().isBlank()) {
-                            normalRange = dgNormalValue.getNormalValue();
-                        } else if (dgNormalValue.getMinNormalValue() != null && dgNormalValue.getMaxNormalValue() != null) {
-                            normalRange = dgNormalValue.getMinNormalValue() + " - " + dgNormalValue.getMaxNormalValue();
+                        String normalRange = dgNormalValue.getNormalValue();
+                        if ((normalRange == null || normalRange.isBlank())
+                                && dgNormalValue.getMinNormalValue() != null
+                                && dgNormalValue.getMaxNormalValue() != null) {
+                            normalRange =
+                                    dgNormalValue.getMinNormalValue() + " - " +
+                                            dgNormalValue.getMaxNormalValue();
                         }
-
                         sub.setNormalValue(normalRange);
                         sub.setNormalId(dgNormalValue.getNormalId());
                     }
 
-                    // --- Fetch Fixed Values
-                    List<DgFixedValue> dgFixedValue = dgFixedValueRepository.findBySubInvestigationId(subInvest);
-                    List<DgFixedValueResponse> dgFixedValueResponses = new ArrayList<>();
-                    for (DgFixedValue dgFixedValue1 : dgFixedValue) {
-                        DgFixedValueResponse dgFixedValueResponse = new DgFixedValueResponse();
-                        dgFixedValueResponse.setFixedId(dgFixedValue1.getFixedId());
-                        dgFixedValueResponse.setFixedValue(dgFixedValue1.getFixedValue());
-                        dgFixedValueResponse.setSubInvestigationId(subInvest.getSubInvestigationId());
-                        dgFixedValueResponses.add(dgFixedValueResponse);
+                    // -------- Fixed Values (CACHED) --------
+                    List<DgFixedValue> fixedValues =
+                            fixedValueCache.computeIfAbsent(
+                                    subInvest.getSubInvestigationId(),
+                                    id -> dgFixedValueRepository.findBySubInvestigationId(subInvest)
+                            );
+
+                    List<DgFixedValueResponse> fixedResponses = new ArrayList<>();
+                    for (DgFixedValue fv : fixedValues) {
+                        DgFixedValueResponse fr = new DgFixedValueResponse();
+                        fr.setFixedId(fv.getFixedId());
+                        fr.setFixedValue(fv.getFixedValue());
+                        fr.setSubInvestigationId(subInvest.getSubInvestigationId());
+                        fixedResponses.add(fr);
                     }
-                    sub.setDgFixedValueResponseList(dgFixedValueResponses);
+
+                    sub.setDgFixedValueResponseList(fixedResponses);
                     sub.setFixedValueExpectedResult(subInvest.getFixedValueExpectedValue());
 
                     investigation.getResultSubInvestigationResponseList().add(sub);
                 }
             }
-
-            //  Return success response
-            return ResponseUtils.createSuccessResponse(new ArrayList<>(responseMap.values()), new TypeReference<>() {});
+            log.info("Result entry fetch completed successfully, headerCount={}",
+                    responseMap.size());
+            return ResponseUtils.createSuccessResponse(
+                    new ArrayList<>(responseMap.values()),
+                    new TypeReference<>() {}
+            );
 
         } catch (Exception e) {
             log.error("Investigation status Error :: ", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {},
                     "Internal Server Error", HttpStatus.BAD_REQUEST.value());
         }
     }

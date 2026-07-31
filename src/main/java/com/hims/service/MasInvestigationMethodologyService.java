@@ -11,7 +11,7 @@ import java.util.List;
 public interface MasInvestigationMethodologyService {
     ApiResponse<String> create(MasInvestigationMethodologyRequest request);
 
-    ApiResponse<List<MasInvestigationMethodologyResponse>> get();
+    ApiResponse<List<MasInvestigationMethodologyResponse>> getAll();
 
     ApiResponse<String> update(Long id, MasInvestigationMethodologyRequest request);
 

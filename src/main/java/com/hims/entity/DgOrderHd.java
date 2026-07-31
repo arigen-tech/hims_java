@@ -59,32 +59,36 @@ public class DgOrderHd {
     private String otherInvestigation;
 
     @Column(name = "hospital_id")
-    private int hospitalId ;
+    private Long hospitalId ;
 
     @Column(name = "prescribed_by")
     private int prescribedBy ;
 
     @Column(name = "department_id")
-    private int departmentId ;
+    private Long departmentId ;
 
     @Column(name = "investigation_request_no")
     private int investigationRequestNo;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "visit_id")
     private Visit visitId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id")
     private Patient patientId;
 
     @Column(name = "discount_id")
-    private int discountId;
+    private Integer discountId;
 
     @Column(name = "last_chg_by", length = 50)
     private String lastChgBy;
 
     @Column(name = "order_time")
     private Instant orderTime;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inpatient_id")
+    private Inpatient inpatientId;
 
 }

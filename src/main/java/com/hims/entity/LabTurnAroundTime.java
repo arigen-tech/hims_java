@@ -59,4 +59,6 @@ public class LabTurnAroundTime {
 
     @Column(name = "is_reject")
     private Boolean isReject;
+
+    private String generatedSampleId;
 }

@@ -16,6 +16,10 @@ public class MasWardResponse {
     private Long careLevelId;
     private String careLevelName;
 
+    private Long departmentId;
+    private String departmentName;
+
+
     private String status;
 
     private LocalDate lastUpdateDate;

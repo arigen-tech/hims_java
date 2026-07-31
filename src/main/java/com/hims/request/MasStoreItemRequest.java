@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -26,10 +27,12 @@ public class MasStoreItemRequest {
     private BigDecimal  reOrderLevelStore;
     private BigDecimal  reOrderLevelWard;
     private String hsnCode;
+    private String  isGeneric;
+    private String dangerousDrug;
+    private List<Long> facility;
+    private String drugSchedule;
+    //  private String dosage;
 
-
-
-  //  private String dosage;
 
 
 

@@ -15,7 +15,7 @@ public class PendingBillingResponse {
     private String patientName;
     private String mobileNo;
     private String age;
-    private String sex;
+    private String gender;
     private String relation;
     private String billingType;
     private String consultedDoctor;
@@ -35,7 +35,9 @@ public class PendingBillingResponse {
     private String sessionName;
     private BigDecimal registrationCost;
 
+    private Long billingPolicyId;
 
+    private String appointmentDateForRadiology;
     private List<Long> billingHeaderIds;
     private List<AppointmentBlock> appointments;
     private List<BillingDetailResponse> details;

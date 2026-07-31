@@ -1,11 +1,12 @@
 package com.hims.response;
 
-import com.hims.entity.MasStoreUnit;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Setter
 @Getter
@@ -41,8 +42,21 @@ public class MasStoreItemResponse {
     private String groupName;
     private String itemClassName;
     private BigDecimal hsnGstPercent;
-    private Integer reOrderLevelDispensary;
-    private Integer reOrderLevelStore;
+    private BigDecimal reOrderLevelDispensary;
+    private BigDecimal reOrderLevelStore;
+    private String  isGeneric;
+    private String dangerousDrug;
+    private List<MasFacilityCodeResponse> facilityCode;
+    private String drugSchedule;
+    @Data
+
+    public static class MasFacilityCodeResponse{
+         Long facilityId;
+         String facilityCode;
+
+
+    }
+
 
 
 

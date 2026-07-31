@@ -13,5 +13,5 @@ public interface MasServiceCategoryService {
 
     ApiResponse<MasServiceCategory> updateStatus(Long id, String status);
 
-    ApiResponse<GstConfigResponse> getGstConfig(int flag , Integer catId);
+    ApiResponse<GstConfigResponse> getGstConfig(int flag , String catCode);
 }

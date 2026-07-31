@@ -8,6 +8,7 @@ import lombok.Setter;
 public class DgMasInvestigationSingleReqest {
     private String investigationName;
     private String confidential;
+    private String pandemic;
     private Long mainChargeCodeId;
     private Long subChargeCodeId;
     private Long sampleId;
@@ -23,4 +24,9 @@ public class DgMasInvestigationSingleReqest {
     private String preparationRequired;
     private Integer tatHours;
     private Integer estimatedDays;
+    private String contrastRequired;
+    private String loincCode;
+    private String invServiceType;
+
+
 }

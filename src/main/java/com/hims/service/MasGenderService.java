@@ -10,7 +10,7 @@ import java.util.List;
 public interface MasGenderService {
     ApiResponse<List<MasGenderResponse>> getAllGenders(int flag);
     public ApiResponse<MasGenderResponse> addGender(MasGenderRequest genderRequest);
-    public ApiResponse<MasGenderResponse> updateGender(Long id, MasGenderResponse genderDetails);
+    public ApiResponse<MasGenderResponse> updateGender(Long id, MasGenderRequest genderDetails);
     public ApiResponse<MasGenderResponse> changeGenderStatus(Long id, String status);
     public ApiResponse<MasGenderResponse> findById(Long id);
 

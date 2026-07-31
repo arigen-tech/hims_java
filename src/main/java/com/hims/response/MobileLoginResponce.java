@@ -9,5 +9,5 @@ public class MobileLoginResponce {
     String message;
     String mobileNo;
     String sessionId;
-    List<PatientIdResponse> patientIdResponseList;
+  //  List<PatientIdResponse> patientIdResponseList;
 }

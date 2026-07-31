@@ -2,13 +2,16 @@ package com.hims.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "store_internal_indent_m")
-@Data
+@Getter
+@Setter
 public class StoreInternalIndentM {
 
     @Id
@@ -79,6 +82,9 @@ public class StoreInternalIndentM {
 
     @Column(name = "is_return", length = 2)
     private String isReturn;
+
+    @Column(name = "indent_type_drug_or_nondrug", length = 1)
+    private String indentType;
 
 
 }

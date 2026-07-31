@@ -1,12 +1,16 @@
 package com.hims.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.time.Instant;
 import java.time.LocalDate;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class MasDepartmentResponse {
     private Long id;
     private String departmentCode;
@@ -22,4 +26,5 @@ public class MasDepartmentResponse {
     private String departmentNo;
     private Long wardCategoryId;
     private String wardCategoryName;
+    private String indentApplicable;
 }

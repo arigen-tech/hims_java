@@ -2,11 +2,14 @@ package com.hims.entity.repository;
 
 import com.hims.entity.DgOrderHd;
 import com.hims.entity.Visit;
-import com.hims.response.PendingSampleResponse;
+import com.hims.response.PendingSampleHeaderResponse;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -23,7 +26,9 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
 
     List<DgOrderHd> findByPaymentStatusInAndOrderStatusIn(List<String> paymentStatuses, List<String> orderStatusFilter);
 
+
     List<DgOrderHd> findAllByVisitId(Visit visit);
+
 
 
 //    @Query("SELECT h FROM DgOrderHd h " +
@@ -75,12 +80,86 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
 //            "WHERE h.patientId.id = :patientId  AND h.visitId.id = :visitId")
 //    DgOrderHd findByPatientIdAndVisitId(Long patientId, Long visitId);
 
-    DgOrderHd findByPatientId_IdAndVisitId_Id(Long id, Long id1);
 
 
 
-//    Optional<DgOrderHd> findByPatientId_IdAndOrderStatus(Long patientId, String n);
+    DgOrderHd findByPatientId_IdAndVisitId_Id(Long patientId, Long visitId);
+
+    List<DgOrderHd> findByPatientId_IdAndHospitalId(Long patientId, Long hospitalId);
+    @Query(value = """
+    SELECT d.orderHd_id
+    FROM dg_orderhd d
+    WHERE d.patient_id = :patientId
+      AND d.hospital_id = :hospitalId
+    """, nativeQuery = true)
+    List<Long> findByDgOrderHdIdByPatient(@Param("patientId") Long patientId,
+                                                   @Param("hospitalId") Long hospitalId);
+
+    @Query("""
+SELECT new com.hims.response.PendingSampleHeaderResponse(
+    h.orderDate,
+    CONCAT(
+        COALESCE(p.patientFn, ''), ' ',
+        COALESCE(p.patientMn, ''), ' ',
+        COALESCE(p.patientLn, '')
+    ),
+    rel.relationName,
+    p.patientAge,
+    g.genderName,
+    p.patientMobileNumber,
+    d.departmentName,
+    CONCAT(
+        COALESCE(doc.firstName, ''), ' ',
+        COALESCE(doc.middleName, ''), ' ',
+        COALESCE(doc.lastName, '')
+    ),
+    h.orderStatus,
+    CAST(h.id AS long),
+    v.id
+)
+FROM DgOrderHd h
+LEFT JOIN h.patientId p
+LEFT JOIN p.patientRelation rel
+LEFT JOIN p.patientGender g
+LEFT JOIN h.visitId v
+LEFT JOIN v.department d
+LEFT JOIN v.doctor doc
+WHERE h.hospitalId = :hospitalId
+
+AND (
+    :patientName IS NULL OR
+    LOWER(CONCAT(
+        COALESCE(p.patientFn, ''), ' ',
+        COALESCE(p.patientMn, ''), ' ',
+        COALESCE(p.patientLn, '')
+    )) LIKE :patientName
+)
+
+AND (
+    :patientMobileNumber IS NULL OR p.patientMobileNumber = :patientMobileNumber
+)
+
+AND (
+    (:patientName IS NOT NULL OR :patientMobileNumber IS NOT NULL)
+    OR (h.appointmentDate BETWEEN :startDate AND :endDate)
+)
+
+AND LOWER(h.paymentStatus) IN :paymentStatuses
+AND LOWER(h.orderStatus) IN :orderStatuses
+""")
+    Page<PendingSampleHeaderResponse> findPendingSamples(
+            Long hospitalId,
+            String patientName,
+            String patientMobileNumber,
+            LocalDate startDate,
+            LocalDate endDate,
+            List<String> paymentStatuses,
+            List<String> orderStatuses,
+            Pageable pageable
+    );
+
+
+
+
+    List<DgOrderHd> findAllByVisitId_Id(Long visitId);
 }
-
-
-

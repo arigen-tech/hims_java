@@ -20,13 +20,13 @@ public class MasServiceOpd {
     private Long id;
 
     @Size(max = 20)
-    @NotNull
-    @Column(name = "service_code", nullable = false, length = 20)
+
+    @Column(name = "service_code", length = 20)
     private String serviceCode;
 
     @Size(max = 400)
-    @NotNull
-    @Column(name = "service_name", nullable = false, length = 400)
+
+    @Column(name = "service_name", length = 400)
     private String serviceName;
 
     @NotNull
@@ -34,19 +34,19 @@ public class MasServiceOpd {
     private BigDecimal baseTariff;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "service_cat_id", nullable = false)
     private MasServiceCategory serviceCategory;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hospital_id")
     private MasHospital hospitalId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private MasDepartment departmentId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id")
     private User doctorId;
 

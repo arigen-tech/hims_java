@@ -41,11 +41,11 @@ public class Visit {
     @Column(name = "priority")
     private Long priority;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
     private MasDepartment department;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id")
     private User doctor;
 
@@ -54,20 +54,20 @@ public class Visit {
     private String doctorName;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "hospital_id", nullable = false)
     private MasHospital hospital;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ini_doctor_id")
     private User iniDoctor;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id")
     private MasOpdSession session;
 
@@ -97,5 +97,16 @@ public class Visit {
     @Size(max = 2)
     @Column(name = "display_patient_status", length = 2)
     private String displayPatientStatus;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cancelled_reason_id")
+    private MasAppointmentChangeReason reason;
+
+    @Column(name = "cancelled_datetime")
+    private Instant cancelledDateTime;
+
+    @Column(name = "cancelled_by")
+    private String cancelledBy;
 
 }

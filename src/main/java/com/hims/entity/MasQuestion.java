@@ -16,9 +16,10 @@ public class MasQuestion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column( name="id")
     private Long id;
 
-    @Column(length = 500, nullable = false)
+    @Column( name="question",length = 500, nullable = false)
     private String question;
 
     @ManyToOne()
@@ -28,7 +29,7 @@ public class MasQuestion {
     @Column(name = "option_value")
     private Integer optionValue;
 
-    @Column(length = 1)
+    @Column( name="status",length = 1)
     private String status;
 
     @Column(name = "last_chg_by")

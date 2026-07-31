@@ -2,6 +2,8 @@ package com.hims.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -9,7 +11,8 @@ import java.util.Date;
 
 @Entity
 @Table(name = "store_issue_t")
-@Data
+@Getter
+@Setter
 public class StoreIssueT {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

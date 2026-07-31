@@ -44,14 +44,14 @@ public class MasRoomServiceImpl implements MasRoomService {
             MasRoomCategory category = masRoomCategoryRepo.findById(request.getRoomCategoryId())
                     .orElseThrow(() -> new RuntimeException("Invalid Room Category Id"));
 
-            MasDepartment department = departmentRepository.findById(request.getDeptId())
-                    .orElseThrow(() -> new RuntimeException("Invalid Department Id"));
+            MasWard ward = masWardRepo.findById(request.getDeptId())
+                    .orElseThrow(() -> new RuntimeException("Invalid Ward Id"));
 
             MasRoom entity = new MasRoom();
             entity.setRoomName(request.getRoomName());
             entity.setNoOfBeds(request.getNoOfBeds());
             entity.setMasRoomCategory(category);
-            entity.setMasDepartment(department);
+            entity.setMasWard(ward);
             entity.setStatus("y");
             entity.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
             entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
@@ -82,13 +82,13 @@ public class MasRoomServiceImpl implements MasRoomService {
             MasRoomCategory category = masRoomCategoryRepo.findById(request.getRoomCategoryId())
                     .orElseThrow(() -> new RuntimeException("Invalid Room Category Id"));
 
-            MasDepartment department = departmentRepository.findById(request.getDeptId())
-                    .orElseThrow(() -> new RuntimeException("Invalid Department Id"));
+            MasWard ward = masWardRepo.findById(request.getDeptId())
+                    .orElseThrow(() -> new RuntimeException("Invalid Ward Id"));
 
             entity.setRoomName(request.getRoomName());
             entity.setNoOfBeds(request.getNoOfBeds());
             entity.setMasRoomCategory(category);
-            entity.setMasDepartment(department);
+            entity.setMasWard(ward);
             entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
 //            entity.setLastUpdatedDate(LocalDate.now());
 
@@ -190,9 +190,9 @@ public class MasRoomServiceImpl implements MasRoomService {
         response.setLastUpdatedDate(entity.getLastUpdatedDate());
 
         response.setNoOfBeds(entity.getNoOfBeds());
-        if (entity.getMasDepartment() != null) {
-            response.setDepartmentId(entity.getMasDepartment().getId());
-            response.setWardName(entity.getMasDepartment().getDepartmentName());
+        if (entity.getMasWard()!= null) {
+            response.setDepartmentId(entity.getMasWard().getWardId());
+            response.setWardName(entity.getMasWard().getWardName());
         }
 
         if (entity.getMasRoomCategory() != null) {

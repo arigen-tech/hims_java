@@ -16,7 +16,6 @@ import java.time.Instant;
 @Table(name = "opd_patient_details")
 public class OpdPatientDetail {
     @Id
-    @NotNull
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "opd_patient_details_id", nullable = false)
     private Long opdPatientDetailsId;
@@ -134,27 +133,27 @@ public class OpdPatientDetail {
     @Column(name = "police_name", length = 100)
     private String policeName;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "patient_id")
     private Patient patient;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "visit_id")
     private Visit visit;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "department_id")
     private MasDepartment department;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "hospital_id")
     private MasHospital hospital;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "doctor_id")
     private User doctor;
@@ -202,5 +201,11 @@ public class OpdPatientDetail {
     @Size(max = 500)
     @Column(name = "referral_remark", length = 500)
     private String referralRemarks;
+
+    @Column(name = "referred_hospital_name")
+    private String referredHospitalName;
+
+    @Column(name = "refer_to")
+    private String referTo;
 
 }

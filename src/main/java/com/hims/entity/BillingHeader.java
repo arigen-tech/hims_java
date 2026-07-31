@@ -143,4 +143,13 @@ public class BillingHeader {
     @JoinColumn(name = "visit_id", nullable = false)
     private Visit visit;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="billing_Policy_Id")
+    private BillingPolicyMaster billingPolicy;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "RadOrderHd_id")
+    private RadOrderHd radOrderHd;
+
 }

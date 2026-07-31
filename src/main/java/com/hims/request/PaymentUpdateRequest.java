@@ -1,5 +1,6 @@
 package com.hims.request;
 
+import com.hims.response.LabRadiologyRegistrationResponse;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,8 +12,8 @@ import java.util.List;
 public class PaymentUpdateRequest {
 
     private String billingType;
-    private List<Integer> billHeaderIds;
-    private int billHeaderId;
+    private List<LabRadiologyRegistrationResponse.BillingDto> billHeaderIds;
+    private Integer billHeaderId;
     private BigDecimal amount;
     private String mode;
     private String paymentReferenceNo;

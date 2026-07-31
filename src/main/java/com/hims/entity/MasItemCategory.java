@@ -33,7 +33,7 @@ public class MasItemCategory {
     @Column(name = "last_chg_time", length = 10)
     private String lastChgTime;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id")
     private MasStoreSection masStoreSection;
 

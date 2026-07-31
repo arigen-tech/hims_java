@@ -3,10 +3,9 @@ package com.hims.controller;
 import com.hims.request.DgMasInvestigationMultiRequest;
 import com.hims.request.DgMasInvestigationRequest;
 import com.hims.request.DgMasInvestigationSingleReqest;
-import com.hims.response.ApiResponse;
-import com.hims.response.DgMasInvestigationResponse;
-import com.hims.response.DgMasInvestigationSingleResponse;
+import com.hims.response.*;
 import com.hims.service.DgMasInvestigationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpEntity;
@@ -21,23 +20,28 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/DgMasInvestigation")
+@Slf4j
 public class DgMasInvestigationController {
 
     @Autowired
     private DgMasInvestigationService dgMasInvestigationService;
 
     @GetMapping("/price-details")
-    public ApiResponse<List<DgMasInvestigationResponse>> getInvestigationPriceDetails(
-            @RequestParam String genderApplicable
+    public ApiResponse<List<DgMasInvestigationPriceDetailsResponse>> getInvestigationPriceDetails(
+            @RequestParam String genderApplicable,@RequestParam(required = false) Boolean radioFlag
            // @RequestParam String investigationName
-    ) {return dgMasInvestigationService.getPriceDetails(genderApplicable);
+    ) {
+        if (radioFlag == null)
+            radioFlag=false;
+        return dgMasInvestigationService.getPriceDetails(genderApplicable,radioFlag);
     }
-
     @GetMapping("/getAll/{flag}")
-    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(@PathVariable int flag) {
-        return dgMasInvestigationService.getAllInvestigations(flag);
-    }
+    public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(
+            @PathVariable int flag,
+            @RequestParam(required = false) Long mainChargeCodeId) {
 
+        return dgMasInvestigationService.getAllInvestigations(flag, mainChargeCodeId);
+    }
     @GetMapping("/dynamic/all")
     public ApiResponse<Page<DgMasInvestigationResponse>> getAllInvestigationsDynamic(
             @RequestParam int flag,
@@ -49,9 +53,16 @@ public class DgMasInvestigationController {
         return dgMasInvestigationService
                 .getAllInvestigationsDynamic(flag, page, size, search, mainChargeCodeId);
     }
+    @GetMapping("/dgMasInvestigationByMainChargeCodeId")
+    public ApiResponse<List<MasInvestigationByMainChargeCodeResponse>> dgMasInvestigationByMainChargeCodeId(
+            @RequestParam Long mainChargeCodeId
+    ) {
+        return dgMasInvestigationService.dgMasInvestigationByMainChargeCodeId( mainChargeCodeId);
+    }
 
 
-    @GetMapping("/uniqueInvestigation/types")
+
+    @GetMapping("/investigationCategoryTypes")
     public ResponseEntity<?> getInvestigationTypes() {
 
         Map<String, Object> response = new HashMap<>();
@@ -83,6 +94,24 @@ public class DgMasInvestigationController {
     public ResponseEntity<ApiResponse<String>> updateMultiInvestigation(
             @RequestBody DgMasInvestigationMultiRequest dmiMultiReq ) {
         return new ResponseEntity<>(dgMasInvestigationService.updateMultipleInvestigation(dmiMultiReq), HttpStatus.OK);
+    }
+
+    @GetMapping("/mas-investigation/all")
+    public  ResponseEntity<?> getAll(){
+        return  ResponseEntity.ok(dgMasInvestigationService.getAllInvestigations());
+    }
+
+    @GetMapping("/getDgMasInvestigationBySearch")
+    public ApiResponse<Page<InvestigationResponse>> getDgMasInvestigation(
+            @RequestParam Long investigationId,
+            @RequestParam String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        log.info("Request received for getDgMasInvestigation | investigationId: {}, search: {}, page: {}, size: {}",
+                investigationId, search, page, size);
+
+        return dgMasInvestigationService.getDgMasInvestigation(investigationId, search, page, size);
     }
 
 }

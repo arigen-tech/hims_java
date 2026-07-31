@@ -15,18 +15,18 @@ public class MasBed {
     @Column(name = "bed_id")
     private Long bedId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
     private MasRoom roomId;
 
     @Column(name = "bed_number", length = 20)
     private String bedNumber;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bed_type_id")
     private MasBedType bedTypeId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bed_status_id")
     private MasBedStatus bedStatusId;
 

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Signs_symptoms_report_1" pageWidth="421" pageHeight="595" whenNoDataType="NoPages" columnWidth="421" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="4bb4abaf-4c1b-4012-8336-5dab1daed21e">
+	<property name="ireport.scriptlethandling" value="0"/>
+	<property name="ireport.encoding" value="UTF-8"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<import value="net.sf.jasperreports.engine.*"/>
+	<import value="java.util.*"/>
+	<import value="net.sf.jasperreports.engine.data.*"/>
+	<parameter name="visit_id" class="java.lang.Long"/>
+	<queryString>
+		<![CDATA[select 
+	patient_signs_symptoms
+from opd_patient_details
+where visit_id=$P{visit_id}]]>
+	</queryString>
+	<field name="patient_signs_symptoms" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_signs_symptoms"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_signs_symptoms"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_patient_details"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="18" splitType="Stretch">
+			<staticText>
+				<reportElement x="2" y="3" width="263" height="14" uuid="735bd8d0-bde0-45f9-9765-c5ffd5899e62"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Signs and symptoms  :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" mode="Transparent" x="100" y="3" width="261" height="15" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="d3bcf192-a9ee-41f4-a721-07e79b0a0e6f"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement verticalAlignment="Top">
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{patient_signs_symptoms}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="1" y="12" width="97" height="1" uuid="fc331e2a-5a44-4717-948b-5e01ffc25c69"/>
+				<graphicElement>
+					<pen lineColor="rgba(0, 0, 0, 0.5882353)"/>
+				</graphicElement>
+			</line>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

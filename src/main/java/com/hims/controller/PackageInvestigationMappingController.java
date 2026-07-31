@@ -2,6 +2,7 @@ package com.hims.controller;
 
 import com.hims.request.PackageInvestigationMappingRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.InvestigationPackageDTO;
 import com.hims.response.PackageInvestigationMappingDTO;
 import com.hims.service.PackageInvestigationMappingService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,7 +52,7 @@ public class PackageInvestigationMappingController {
     }
 
     @GetMapping("/getAllPackageMap/{flag}")
-    public ResponseEntity<ApiResponse<List<PackageInvestigationMappingDTO>>> getAllPackageMap (@PathVariable int flag){
+    public ResponseEntity<ApiResponse<List<InvestigationPackageDTO>>> getAllPackageMap (@PathVariable int flag){
         return new ResponseEntity<>(mapService.getAllPackageMap(flag), HttpStatus.OK);
     }
 

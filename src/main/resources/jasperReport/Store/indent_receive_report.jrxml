@@ -1,0 +1,582 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Medical_Store_Indent_Issue_report_1" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="535" leftMargin="30" rightMargin="30" topMargin="20" bottomMargin="20" uuid="78f22eb3-b83a-473e-a91d-8674698dc7ac">
+	<property name="ireport.scriptlethandling" value="0"/>
+	<property name="ireport.encoding" value="UTF-8"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<import value="net.sf.jasperreports.engine.*"/>
+	<import value="java.util.*"/>
+	<import value="net.sf.jasperreports.engine.data.*"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="receive_m_id" class="java.lang.Long"/>
+	<queryString>
+		<![CDATA[select distinct
+	mh.hospital_name,
+	md.department_name as from_department,
+	siim.indent_no,
+	to_char(siim.indent_date, 'dd/MM/yyyy') as indent_date,
+	to_char(siim.received_date, 'dd/MM/yyyy') as received_date,
+	sim.issue_no as civno,
+	hd.received_by,
+	msi.pvms_no,
+	msi.nomenclature,
+	msu.unit_name,
+	dt.expiry_date,
+	dt.batch_no,
+	concat(dt.brand_name, '/', dt.manufacturer_name) as brand_manufacturer,
+	cast(dt.issued_qty as bigint) as issued_qty,
+	cast((dt.received_qty * sit.unit_price) as numeric(14,2)) as total_cost,
+	sit.unit_price as unit_price,
+	coalesce(cast(dt.received_qty as bigint), 0) as received_qty,
+	case siim.indent_type_drug_or_nondrug
+		when 'D' then 'Drug'
+		when 'N' then 'Non Drug'
+	end as indent_type
+from store_indent_receive_t dt
+left join store_indent_receive_m hd on dt.receive_m_id = hd.receive_m_id
+left join mas_department md on hd.received_dept_id = md.department_id
+left join store_issue_t sit on dt.store_issue_t_id = sit.store_issue_t_id
+left join store_issue_m sim on sit.store_issue_m_id = sim.store_issue_m_id
+left join mas_store_item msi on dt.item_id = msi.item_id
+left join mas_store_unit msu on msi.unit_au = msu.unit_id
+left join store_internal_indent_t siit on dt.indent_t_id = siit.indent_t_id
+left join store_internal_indent_m siim on siit.indent_m_id = siim.indent_m_id
+left join mas_hospital mh on sim.hospital_id = mh.hospital_id
+where dt.receive_m_id = $P{receive_m_id}]]>
+	</queryString>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<field name="from_department" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="from_department"/>
+		<property name="com.jaspersoft.studio.field.label" value="from_department"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_department"/>
+	</field>
+	<field name="indent_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="indent_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="indent_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_internal_indent_m"/>
+	</field>
+	<field name="indent_date" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="indent_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="indent_date"/>
+	</field>
+	<field name="received_date" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="received_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="received_date"/>
+	</field>
+	<field name="civno" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="civno"/>
+		<property name="com.jaspersoft.studio.field.label" value="civno"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_issue_m"/>
+	</field>
+	<field name="received_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="received_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="received_by"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_indent_receive_m"/>
+	</field>
+	<field name="pvms_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pvms_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="pvms_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="nomenclature" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="nomenclature"/>
+		<property name="com.jaspersoft.studio.field.label" value="nomenclature"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="unit_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="unit_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="unit_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_unit"/>
+	</field>
+	<field name="expiry_date" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="expiry_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="expiry_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_indent_receive_t"/>
+	</field>
+	<field name="batch_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="batch_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="batch_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_indent_receive_t"/>
+	</field>
+	<field name="brand_manufacturer" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="brand_manufacturer"/>
+		<property name="com.jaspersoft.studio.field.label" value="brand_manufacturer"/>
+	</field>
+	<field name="issued_qty" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="issued_qty"/>
+		<property name="com.jaspersoft.studio.field.label" value="issued_qty"/>
+	</field>
+	<field name="total_cost" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="total_cost"/>
+		<property name="com.jaspersoft.studio.field.label" value="total_cost"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_issue_m"/>
+	</field>
+	<field name="unit_price" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="unit_price"/>
+		<property name="com.jaspersoft.studio.field.label" value="unit_price"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_issue_t"/>
+	</field>
+	<field name="received_qty" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="received_qty"/>
+		<property name="com.jaspersoft.studio.field.label" value="received_qty"/>
+	</field>
+	<field name="indent_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="indent_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="indent_type"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="78" splitType="Stretch">
+			<image scaleImage="RealSize">
+				<reportElement x="40" y="10" width="130" height="50" uuid="84c4ea5b-7f56-46e8-ad81-9e53f1d9194e"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="0" y="0" width="782" height="21" uuid="cef2346d-f53a-4d9f-a2c6-0ecd87b3f394"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="21" width="782" height="21" uuid="55580e03-8673-4a87-b581-51b90281410d"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{from_department}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="42" width="782" height="21" uuid="ce8bdadc-fbab-4e73-b767-fec9c520e2a0"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Indent Receive Report" + " - " + $F{indent_type}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="44" splitType="Stretch">
+			<staticText>
+				<reportElement x="3" y="2" width="56" height="19" uuid="ea70b2d0-bd42-487b-94a4-349037c6aa1e"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Indent No.]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement key="textField" x="629" y="3" width="145" height="18" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="b037e240-a4f2-43c7-a5c7-da4a46cc4c24"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{received_date}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="60" y="24" width="189" height="20" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="a56fd60b-f141-4322-ba68-5f41aba4b655"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{civno}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-28" positionType="Float" x="0" y="24" width="551" height="1" uuid="2eafebde-904c-4a99-9f37-a89c05852fd3"/>
+				<graphicElement>
+					<pen lineWidth="0.0" lineStyle="Solid"/>
+				</graphicElement>
+			</line>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement key="textField" x="340" y="2" width="180" height="20" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="9fd4f92b-0191-417a-9194-575c182a9297"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{indent_date}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="59" y="2" width="190" height="20" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="00f4e01b-d5c0-43e7-8b4f-a55b2baa2944"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{indent_no}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="339" y="24" width="181" height="20" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="84472dd5-c224-47ce-aa2e-0cbf73c01ad6"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{received_by}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="3" y="25" width="56" height="19" uuid="b51ead34-95c0-441c-8d30-3a6f51ba521f"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Issue No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="272" y="3" width="66" height="19" uuid="2dd688fd-746d-4f23-a907-314944514c78"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Indent Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="534" y="2" width="92" height="19" uuid="c08a71d7-a146-4c8f-b67b-953a297f79ee"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Received Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="272" y="26" width="67" height="15" uuid="240241b3-3036-45b7-a080-3eb86fc0f185"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Received By]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="36" splitType="Stretch">
+			<staticText>
+				<reportElement x="434" y="8" width="128" height="26" uuid="f8c74d30-898f-4887-839f-d771953c04e5"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Brand/Manufacturer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="8" width="66" height="26" uuid="4930d4b7-cc08-4279-b249-34a3839e4be3"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Item Code]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-1" x="0" y="3" width="782" height="1" uuid="eeb71d6f-62be-4364-ae2a-9c5a3fb2a659"/>
+			</line>
+			<line>
+				<reportElement key="line-2" x="0" y="35" width="782" height="1" uuid="4e1585b3-0697-4ab4-b483-a8cbe76313ff"/>
+			</line>
+			<line>
+				<reportElement key="line-3" x="0" y="3" width="1" height="33" uuid="be9de570-fe7c-40e9-bc53-54f9d9ec2df3"/>
+			</line>
+			<line>
+				<reportElement key="line-4" x="780" y="3" width="1" height="33" uuid="abb46574-3587-4b37-bac3-abbb1b6486f1"/>
+			</line>
+			<line>
+				<reportElement key="line-6" x="75" y="3" width="1" height="33" uuid="bea89449-7a54-41ed-b48b-4919906c94b8"/>
+			</line>
+			<line>
+				<reportElement key="line-7" x="249" y="3" width="1" height="33" uuid="6032f443-356b-4dca-853c-2fb045e83bbb"/>
+			</line>
+			<line>
+				<reportElement key="line-8" x="369" y="3" width="1" height="32" uuid="704d50e4-874e-440f-95e1-5ab54e9b9161"/>
+			</line>
+			<line>
+				<reportElement key="line-9" x="428" y="3" width="1" height="32" uuid="4e6fccae-8909-4c81-afda-c06cf786ee8e"/>
+			</line>
+			<line>
+				<reportElement key="line-10" x="567" y="3" width="1" height="32" uuid="6c9e06ff-50ff-4235-9171-51e0fb4480fe"/>
+			</line>
+			<line>
+				<reportElement key="line-12" x="619" y="3" width="1" height="32" uuid="b9140383-b940-4c8b-a87a-6c2e356b8052"/>
+			</line>
+			<line>
+				<reportElement key="line-13" x="676" y="3" width="1" height="32" uuid="ab5b6899-e03b-4512-9f44-326daabebe87"/>
+			</line>
+			<line>
+				<reportElement key="line-29" x="725" y="3" width="1" height="32" uuid="48571aa4-4603-46cb-8242-41b44f11dfbc"/>
+			</line>
+			<line>
+				<reportElement key="line-7" x="295" y="2" width="1" height="33" uuid="601a8b6a-6785-44fe-9683-b3aa7d43939d"/>
+			</line>
+			<staticText>
+				<reportElement x="80" y="8" width="163" height="27" uuid="936a0801-c171-4bb8-9a43-83936dca0b7d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Item Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="253" y="8" width="38" height="26" uuid="53993609-c721-4f5e-baf6-0114d8f0e42e"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Unit]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="576" y="8" width="38" height="26" uuid="827d1005-562f-43f9-be69-d70163992eaa"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Qty Issued]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="624" y="8" width="48" height="26" uuid="899f7e21-044f-4d43-9aaf-353fc2e5ec1b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Qty Received]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="681" y="8" width="38" height="26" uuid="dd93f845-8def-4818-bb12-8db009cbeea2"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Unit Rate]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="299" y="8" width="69" height="26" uuid="1909817b-b13b-4f7a-a9c9-78056ba2830d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DOE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="373" y="8" width="52" height="26" uuid="63ee5fe7-2d0d-4749-b6b2-f64c58e20299"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Batch No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="729" y="8" width="46" height="26" uuid="26f92843-2db6-4384-a8b9-412ba40a9543"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Cost]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="25" splitType="Stretch">
+			<line>
+				<reportElement key="line-16" positionType="Float" x="0" y="23" width="782" height="1" uuid="d19e64d5-e6ce-4374-9c27-11d7819ed7cd"/>
+			</line>
+			<line>
+				<reportElement key="line-17" positionType="Float" stretchType="RelativeToTallestObject" x="0" y="-1" width="1" height="26" uuid="507fb8a3-63dc-403e-9b03-580995bb8165"/>
+			</line>
+			<line>
+				<reportElement key="line-18" positionType="Float" stretchType="RelativeToTallestObject" x="780" y="-1" width="1" height="26" uuid="bdb4e76e-e24a-40ea-96a1-7294cd48be76"/>
+			</line>
+			<line>
+				<reportElement key="line-20" positionType="Float" stretchType="RelativeToTallestObject" x="75" y="-1" width="1" height="26" uuid="7808357e-0110-42f6-b487-597844f07eb6"/>
+			</line>
+			<line>
+				<reportElement key="line-21" positionType="Float" stretchType="RelativeToTallestObject" x="249" y="-1" width="1" height="26" uuid="4bc146a8-9698-457f-818a-9cacb5a7958e"/>
+			</line>
+			<line>
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToTallestObject" x="369" y="-2" width="1" height="27" uuid="3902a48f-3978-4f1e-a7ae-a8cc9ee3184f"/>
+			</line>
+			<line>
+				<reportElement key="line-23" positionType="Float" stretchType="RelativeToTallestObject" x="428" y="-1" width="1" height="26" uuid="b73ee31b-3fc0-424a-9bef-64f94e572eba"/>
+			</line>
+			<line>
+				<reportElement key="line-24" positionType="Float" stretchType="RelativeToTallestObject" x="619" y="-4" width="1" height="26" uuid="f43280d2-9439-4ea5-b6a3-b2da5d7b1baf"/>
+			</line>
+			<line>
+				<reportElement key="line-25" positionType="Float" stretchType="RelativeToTallestObject" x="676" y="-2" width="1" height="26" uuid="3ed276be-99dc-4d83-a9fc-bceb37957173"/>
+			</line>
+			<line>
+				<reportElement key="line-27" positionType="Float" stretchType="RelativeToTallestObject" x="567" y="-1" width="1" height="26" uuid="514a2117-8bc1-4d3d-a931-ff9f73dc2fef"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="3" y="2" width="66" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="2ade47bb-4b66-4693-b73a-55b060434e19"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pvms_no}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="80" y="2" width="163" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="3d594cb3-2f00-4dfe-8704-98095f3aee22"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nomenclature}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement key="textField" x="300" y="2" width="68" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="aaedbefc-6d10-4858-a48a-396c7a73773e"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{expiry_date}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="253" y="2" width="38" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="29f290ce-746c-4e53-89a3-e57228f10fe3"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{unit_name}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" x="374" y="3" width="51" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="04d67367-4d9b-4f49-9e78-1441ec5bb6f0"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{batch_no}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-30" positionType="Float" stretchType="RelativeToTallestObject" x="725" y="-1" width="1" height="26" uuid="965a99b4-7a79-4c03-95ce-f48b59d7c2f1"/>
+			</line>
+			<textField textAdjust="StretchHeight" pattern="###0" isBlankWhenNull="true">
+				<reportElement key="textField-2" x="729" y="3" width="46" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="7f55c3d8-2eb6-4696-a8f0-1f3ea4dc629d"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.text.DecimalFormat("#,##0.00").format($F{total_cost})]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-21" positionType="Float" stretchType="RelativeToTallestObject" x="295" y="-2" width="1" height="26" uuid="074b99bb-906e-42f4-8fd5-c8aae49a0893"/>
+			</line>
+			<textField textAdjust="StretchHeight" pattern="###0" isBlankWhenNull="true">
+				<reportElement key="textField" x="575" y="3" width="40" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="a5357f1e-8b16-4dd7-ae0f-16e1de4cd561"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{issued_qty}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="681" y="2" width="34" height="20" uuid="4f399874-c8a9-447e-be5f-8cd0ee32ebb9"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{unit_price}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="###0" isBlankWhenNull="true">
+				<reportElement key="textField" x="622" y="3" width="48" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="40df7071-a83d-4d7b-9d46-dfe868569b3c"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{received_qty}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement key="textField" x="434" y="0" width="128" height="18" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="1abddd9f-bf81-4682-b309-b0fcd1bd9df9"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{brand_manufacturer}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="26" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="782" height="26" uuid="b9a63044-b10d-4db4-a513-fa747ea4236a"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOUND]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

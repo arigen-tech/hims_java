@@ -15,7 +15,7 @@ public class MasGenderRequest {
     private String genderCode;
     @NotNull
     private String genderName;
-    private String status;
+
 
 //    @Size(max = 5)
 //    private String code;

@@ -1,20 +1,27 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.DgMasInvestigation;
 import com.hims.entity.MasInvestigationPriceDetails;
 import com.hims.entity.User;
 import com.hims.entity.repository.DgMasInvestigationRepository;
 import com.hims.entity.repository.MasInvestigationPriceDetailsRepository;
 import com.hims.entity.repository.UserRepo;
+import com.hims.projection.MasInvestigationPriceDetailsProjection;
 import com.hims.request.MasInvestigationPriceDetailsRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.MasInvestigationPriceDetailsProjectionResponse;
 import com.hims.response.MasInvestigationPriceDetailsResponse;
 import com.hims.service.MasInvestigationPriceDetailsService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -53,13 +60,34 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
     }
 
     @Override
-    public ApiResponse<List<MasInvestigationPriceDetailsResponse>> getAllPriceDetails(int flag) {
+    public ApiResponse<Page<MasInvestigationPriceDetailsProjectionResponse>> getAllPriceDetails(
+            int flag, int page, int size, String investigationName) {
+
         try {
-            List<MasInvestigationPriceDetails> priceDetailsList;
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+            String investigationNameLike = investigationName == null || investigationName.trim().isEmpty()
+                    ? null
+                    : "%" + investigationName.toLowerCase().trim() + "%";
+
+            Page<MasInvestigationPriceDetailsProjection> paged;
+
             if (flag == 1) {
-                priceDetailsList = repository.findByStatusIgnoreCase("Y");
+                paged = repository.getAllPriceDetails(
+                        AppConstants.STATUS_Y,
+                        investigationNameLike,
+                        pageable
+                );
             } else if (flag == 0) {
-                priceDetailsList = repository.findByStatusInIgnoreCase(List.of("Y", "N"));
+                paged = repository.getAllPriceDetail(
+                        List.of(
+                                AppConstants.STATUS_Y.toLowerCase(),
+                                AppConstants.STATUS_N.toLowerCase()
+                        ),
+                        AppConstants.STATUS_Y,
+                        investigationNameLike,
+                        pageable
+                );
             } else {
                 return ResponseUtils.createFailureResponse(
                         null,
@@ -69,20 +97,16 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                 );
             }
 
-            // Check if the list is null
-            if (priceDetailsList == null) {
-                priceDetailsList = new ArrayList<>();
-            }
+            Page<MasInvestigationPriceDetailsProjectionResponse> response =
+                    paged.map(this::convertedToResponse);
 
-            List<MasInvestigationPriceDetailsResponse> responseList = priceDetailsList.stream()
-                    .map(this::mapToResponse)
-                    .collect(Collectors.toList());
+            return ResponseUtils.createSuccessResponse(
+                    response,
+                    new TypeReference<Page<MasInvestigationPriceDetailsProjectionResponse>>() {}
+            );
 
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
         } catch (Exception e) {
-            // Log the error
             e.printStackTrace();
-            // Return a meaningful error response
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},
@@ -91,7 +115,6 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             );
         }
     }
-
     @Override
     public ApiResponse<MasInvestigationPriceDetailsResponse> findById(Long id) {
         return repository.findById(id)
@@ -164,63 +187,96 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
 
     @Override
     @Transactional
-    public ApiResponse<MasInvestigationPriceDetailsResponse> updatePriceDetails(Long id, MasInvestigationPriceDetailsRequest request) {
+    public ApiResponse<MasInvestigationPriceDetailsResponse> updatePriceDetails(
+            Long id,
+            MasInvestigationPriceDetailsRequest request) {
+
         try {
-            // Find the record being updated
-            Optional<MasInvestigationPriceDetails> optionalExisting = repository.findById(id);
-            if (optionalExisting.isEmpty()) {
-                return ResponseUtils.createNotFoundResponse("Record not found with ID: " + id, HttpStatus.NOT_FOUND.value());
+            log.info("updatePriceDetails() Started...");
+
+            if(request.getFromDt().isEqual(request.getToDt())){
+                return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Date For Modification",HttpStatus.BAD_REQUEST.value());
             }
 
+            // 1. Fetch existing record
+            Optional<MasInvestigationPriceDetails> optionalExisting = repository.findById(id);
+            if (optionalExisting.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse(
+                        "Record not found with ID: " + id,
+                        HttpStatus.NOT_FOUND.value());
+            }
+
+            // 2. Validate current user
             User currentUser = getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Current user not found",
+                        HttpStatus.UNAUTHORIZED.value());
             }
 
             MasInvestigationPriceDetails currentRecord = optionalExisting.get();
 
-            // Validate investigation ID
+            // 3. Validate investigation
             Long requestedInvestigationId = request.getInvestigationId();
-            Optional<DgMasInvestigation> investigationOpt = investigationRepository.findById(requestedInvestigationId);
+            Optional<DgMasInvestigation> investigationOpt =
+                    investigationRepository.findById(requestedInvestigationId);
+
             if (investigationOpt.isEmpty()) {
-                return ResponseUtils.createNotFoundResponse("Investigation not found with ID: " + requestedInvestigationId, HttpStatus.NOT_FOUND.value());
+                return ResponseUtils.createNotFoundResponse(
+                        "Investigation not found with ID: " + requestedInvestigationId,
+                        HttpStatus.NOT_FOUND.value());
             }
 
-            // Check if from date is after to date
+            // 4. Validate date order
             if (request.getFromDt().isAfter(request.getToDt())) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
                         "From date cannot be after To date",
-                        HttpStatus.BAD_REQUEST.value()
-                );
+                        HttpStatus.BAD_REQUEST.value());
             }
 
-            // Check if the date range is modified and within the same investigation
-            if (currentRecord.getInvestigation().getInvestigationId().equals(requestedInvestigationId)) {
-                // If updating the same investigation, check if new dates are within the original range
-                if (request.getFromDt().isEqual(currentRecord.getFromDate()) &&
-                        request.getToDt().isEqual(currentRecord.getToDate())) {
-                    // Same exact dates, only price change, allow it
-                } else if (!request.getFromDt().isAfter(currentRecord.getToDate())) {
-                    // New from date must be after the current to date
+            // 5. SAME investigation rules
+            if (currentRecord.getInvestigation()
+                    .getInvestigationId()
+                    .equals(requestedInvestigationId)) {
+
+                boolean sameFromDate =
+                        request.getFromDt().isEqual(currentRecord.getFromDate());
+
+                boolean samePrice =
+                        request.getPrice().compareTo(currentRecord.getPrice()) == 0;
+
+                boolean reducingToDate =
+                        request.getToDt().isBefore(currentRecord.getToDate());
+
+                //  ALLOW: closing the price period
+                if (sameFromDate && samePrice && reducingToDate) {
+                    // allowed – do nothing here
+                }
+                //  ALLOW: exact same date range (price correction)
+                else if (request.getFromDt().isEqual(currentRecord.getFromDate())
+                        && request.getToDt().isEqual(currentRecord.getToDate())) {
+                    // allowed
+                }
+                //  BLOCK everything else
+                else if (!request.getFromDt().isAfter(currentRecord.getToDate())) {
                     return ResponseUtils.createFailureResponse(
                             null,
                             new TypeReference<>() {},
-                            "Duplicate date range found for this Price Investigation. Please create a new record for a different date range after " +
-                                    currentRecord.getToDate().toString(),
-                            HttpStatus.BAD_REQUEST.value()
-                    );
+                            "Invalid date modification for this investigation price",
+                            HttpStatus.BAD_REQUEST.value());
                 }
             }
 
-            // Check for overlapping date ranges with OTHER records for the same investigation
-            List<MasInvestigationPriceDetails> existingRecords = repository
-                    .findByInvestigation_investigationId(requestedInvestigationId);
+            // 6. Overlap check with OTHER records (unchanged)
+            List<MasInvestigationPriceDetails> existingRecords =
+                    repository.findByInvestigation_investigationId(requestedInvestigationId);
 
             boolean hasOverlap = existingRecords.stream()
-                    .filter(existing -> !existing.getId().equals(id)) // Exclude the current record being updated
+                    .filter(existing -> !existing.getId().equals(id))
                     .anyMatch(existing ->
                             !request.getToDt().isBefore(existing.getFromDate()) &&
                                     !request.getFromDt().isAfter(existing.getToDate())
@@ -231,11 +287,10 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                         null,
                         new TypeReference<>() {},
                         "Duplicate date range found for investigation ID: " + requestedInvestigationId,
-                        HttpStatus.CONFLICT.value()
-                );
+                        HttpStatus.CONFLICT.value());
             }
 
-            // Update record
+            // 7. Update record (ONLY UPDATE)
             currentRecord.setInvestigation(investigationOpt.get());
             currentRecord.setFromDate(request.getFromDt());
             currentRecord.setToDate(request.getToDt());
@@ -244,17 +299,22 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             currentRecord.setLastChgDt(LocalDateTime.now().toLocalTime());
 
             MasInvestigationPriceDetails updated = repository.save(currentRecord);
-            return ResponseUtils.createSuccessResponse(mapToResponse(updated), new TypeReference<>() {});
+
+            log.info("updatePriceDetails() Ended...");
+            return ResponseUtils.createSuccessResponse(
+                    mapToResponse(updated),
+                    new TypeReference<>() {});
+
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("updatePriceDetails() error ::", e);
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},
-                    "Error updating price details: " + e.getMessage(),
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
+                    "Error updating price details",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
 
     @Override
     @Transactional
@@ -302,5 +362,17 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
         response.setStatus(entity.getStatus());
         response.setLastChgBy(entity.getLastChgBy());
         return response;
+    }
+    private MasInvestigationPriceDetailsProjectionResponse convertedToResponse(
+            MasInvestigationPriceDetailsProjection projection) {
+        return new MasInvestigationPriceDetailsProjectionResponse(
+                projection.getId(),
+                projection.getInvestigationId(),
+                projection.getInvestigationName(),
+                projection.getFromDt(),
+                projection.getToDt(),
+                projection.getPrice(),
+                projection.getStatus()
+        );
     }
 }

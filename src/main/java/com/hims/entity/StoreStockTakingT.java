@@ -36,15 +36,15 @@ public class StoreStockTakingT {
     @Column(name = "stock_deficient")
     private BigDecimal stockDeficient;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stock_id")
     private StoreItemBatchStock stockId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
     private MasStoreItem itemId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "taking_m_id")
     private StoreStockTakingM takingMId;
 

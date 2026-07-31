@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.MasMedicalHistoryRepository;
 import com.hims.request.MasMedicalHistoryRequest;
@@ -28,13 +29,13 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
     @Autowired
     private MasMedicalHistoryRepository masMedicalHistoryRepository;
     @Override
-    public ApiResponse<List<MasMedicalHistoryResponse>> getAllMas(int flag) {
+    public ApiResponse<List<MasMedicalHistoryResponse>> getMasMedicalHistory(int flag) {
         try {
             List<MasMedicalHistory> masWards;
             if(flag==0){
                 masWards= masMedicalHistoryRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
             } else if (flag==1) {
-                masWards= masMedicalHistoryRepository.findByStatusIgnoreCaseOrderByMedicalHistoryNameAsc("y");
+                masWards= masMedicalHistoryRepository.findByStatusIgnoreCaseOrderByMedicalHistoryNameAsc(AppConstants.STATUS_Y);
             }else{
                 return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Flag Value , Provide flag as 0 or 1", HttpStatus.BAD_REQUEST.value());
             }
@@ -42,7 +43,7 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
 
         } catch (Exception e) {
             log.error("getAll() Error :: ",e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 

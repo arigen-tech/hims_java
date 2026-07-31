@@ -64,8 +64,7 @@ public class MobileLoginController {
 
             // OTP verified generate JWT
             String token = jwtUtil.mobileGenerateToken(
-                    otpRequest.getMobileNo(),
-                    otpRequest.getPatientId()
+                    otpRequest.getMobileNo()
             );
 
             AuthResponse authResponse = new AuthResponse();

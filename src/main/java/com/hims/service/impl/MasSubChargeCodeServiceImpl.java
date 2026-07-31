@@ -186,7 +186,7 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
     public ApiResponse<List<MasSubChargeCodeDTO>> getAllSubCharge(int flag){
         List<MasSubChargeCode> subCode;
         if (flag == 1) {
-            subCode = subRepo.findByStatusOrderBySubNameAsc("y");
+            subCode = subRepo.findByStatusIgnoreCaseOrderBySubNameAsc("y");
         } else if (flag == 0) {
             subCode = subRepo.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
