@@ -67,4 +67,6 @@ public interface IPDPatientService {
     ApiResponse<PaymentStatusResponse> getPaymentStatus(Long inpatientID);
 
     ApiResponse<DischargeSummaryResponse> getDischargeSummary(Long inpatientID);
+
+    ApiResponse<Page<InpatientAdvanceCollectionResponse>> getIpdAdvanceCollection(int page, int size, String patientName, String mobileNo, String admissionNo);
 }
