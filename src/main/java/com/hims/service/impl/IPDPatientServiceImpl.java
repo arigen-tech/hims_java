@@ -1292,6 +1292,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         billingHeader.setUhid(request.getUhid());
         billingHeader.setInpatientId(inpatientRepository.findById(inpatient.getInpatientId()).orElseThrow());
         billingHeader.setPatientName(request.getPatientName());
+        billingHeader.setEstimationCost(request.getEstimationCost());
         billingHeader.setBillingType(billingType);
         billingHeader.setPatientPaidAmount(totalAdvance);
         billingHeader.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusOpen).orElseThrow());
@@ -2344,6 +2345,66 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 response,
                 new TypeReference<>() {},
                 "Discharge summary fetched successfully");
+    }
+    @Override
+    public ApiResponse<Page<InpatientAdvanceCollectionResponse>> getIpdAdvanceCollection(
+            int page,
+            int size,
+            String patientName,
+            String mobileNo,
+            String admissionNo) {
+
+        log.info("Fetching IPD advance collection. page: {}, size: {}, patientName: {}, mobileNo: {}, admissionNo: {}",
+                page, size, patientName, mobileNo, admissionNo);
+
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+
+            Page<InpatientAdvanceCollectionProjection> projectionPage = inpatientRepository.getIpdAdvanceCollection(admitAdmissionStatusId,
+                            patientName,
+                            mobileNo,
+                            admissionNo,
+                            pageable);
+
+            Page<InpatientAdvanceCollectionResponse> responsePage = projectionPage.map(this::mapResponse);
+
+            log.info("Successfully fetched {} admitted patient(s).", responsePage.getTotalElements());
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+
+        } catch (Exception ex) {
+
+            log.error("Error while fetching IPD advance collection.", ex);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),HttpStatus.BAD_REQUEST.value());
+        }
+    }
+    private InpatientAdvanceCollectionResponse mapResponse(
+            InpatientAdvanceCollectionProjection p) {
+
+        InpatientAdvanceCollectionResponse response =
+                new InpatientAdvanceCollectionResponse();
+
+        response.setInpatientId(p.getInpatientId());
+        response.setBillingHeaderId(p.getBillingHeaderId());
+        response.setUhid(p.getUhid());
+        response.setPatientName(p.getPatientName());
+        response.setAge(p.getAge());
+        response.setGenderId(p.getGenderId());
+        response.setGender(p.getGender());
+        response.setMobileNo(p.getMobileNo());
+        response.setAdmissionNo(p.getAdmissionNo());
+        response.setWardId(p.getWardId());
+        response.setWard(p.getWard());
+        response.setRooId(p.getRoomId());   // rename to roomId in DTO if possible
+        response.setRoom(p.getRoom());
+        response.setBedId(p.getBedId());
+        response.setBed(p.getBed());
+        response.setAdmissionDateTime(p.getAdmissionDateTime());
+        response.setBillingTypeId(p.getBillingTypeId());
+        response.setBillingType(p.getBillingType());
+
+        return response;
     }
 
     private List<LabRadioInvestigationRequest> resolveInvestigations(InpatientBookingInvestigationRequest request) {

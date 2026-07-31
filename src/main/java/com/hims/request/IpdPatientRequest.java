@@ -148,7 +148,7 @@ public class IpdPatientRequest {
         private BigDecimal advanceAmount;
         private Long paymentMode;
     }
-
+    private BigDecimal estimationCost;
 
 // Financial Details
 
