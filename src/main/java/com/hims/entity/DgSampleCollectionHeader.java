@@ -38,8 +38,9 @@ public class DgSampleCollectionHeader {
     @Column(name = "collection_center_modified_id")
     private Long collectionCenterModifiedId;
 
-    @Column(name = "inpatient_id")
-    private Long inpatientId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inpatient_id")
+    private Inpatient inpatient;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "visit_id")
@@ -89,4 +90,8 @@ public class DgSampleCollectionHeader {
 
     @Column(name = "validation_time")
     private Instant validationTime;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_hd_id")
+    private DgOrderHd dgOrderHd;
 }
