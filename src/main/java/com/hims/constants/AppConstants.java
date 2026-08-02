@@ -119,6 +119,8 @@ public class AppConstants {
     public static  final String LAB_ORDER_DETAIL_NOT_FOUND_ERR_MSG="Invalid order detail Id , order detail not found";
     public static final String RESULT_VALIDATION_SUCCESS_MSG="Result entry validation updated successfully";
     public  static  final String VISIT_NOT_FOUND_ERR_MSG="Invalid visit Id, Visit not found";
+    public  static  final String INPATIENT_NOT_FOUND_ERR_MSG="Invalid Inpatient Id, Inpatient not found";
+    public  static  final String INPATIENT_AND_VISIT_NOT_FOUND_ERR_MSG="Visit/Inpatient not found";
 
     public  static  final  String STATUS_S="S";
     public static final String STATUS_P="P";
@@ -184,9 +186,12 @@ public class AppConstants {
     public static final String ICD_DIAGNOSIS_TYPE= "I";
     public static final String DIAGNOSIS_STATUS= "A";
     public static final String IO_TYPE_I= "I";
+
     public static final String IO_TYPE_O= "O";
     public static final String IP_DISCHARGE_SUMMARY_STATUS_DRAFT= "D";
     public static final String IP_DISCHARGE_SUMMARY_STATUS_SUMMIT= "S";
+    public static final String IP_RECEIPT_STATUS= "A";
+
 
 
 
@@ -210,9 +215,8 @@ public class AppConstants {
 
     public static final String SOURCE_LAB = "lab source";
 
-    public static final String DUPLICATE_APPOINTMENT_MSG = "Patient already has an appointment with the same doctor on this day.";
 
-
+    public static final String ORDER_HD_NOT_FOUND_MSG = "Invalid order Id , Order Hd Id not found";
 
 
     private AppConstants() {

@@ -138,4 +138,9 @@ public class IpdBillingHeader {
     @Column(name = "outstanding_amount", precision = 12, scale = 2)
     private BigDecimal outstandingAmount;
 
+    @Column(name = "estimation_cost", precision = 12, scale = 2)
+    private BigDecimal estimationCost;
+
+
+
 }

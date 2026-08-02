@@ -12,4 +12,5 @@ public class InvestigationValidationRequest {
     private Long detailId;
     private Boolean accepted;
     private String reason;
+    private Long orderHdId;
 }

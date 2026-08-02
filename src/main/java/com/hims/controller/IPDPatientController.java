@@ -330,6 +330,30 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/getIpdAdvanceCollection")
+    public ResponseEntity<ApiResponse<Page<InpatientAdvanceCollectionResponse>>> getIpdAdvanceCollection(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) String admissionNo) {
+
+        log.info("Request received to fetch IPD Advance Collection. page: {}, size: {}, patientName: {}, mobileNo: {}, admissionNo: {}",
+                page, size, patientName, mobileNo, admissionNo);
+
+        ApiResponse<Page<InpatientAdvanceCollectionResponse>> response = ipdPatientService.getIpdAdvanceCollection(
+                            page,
+                            size,
+                            patientName,
+                            mobileNo,
+                            admissionNo);
+
+            log.info("Successfully processed request for IPD Advance Collection.");
+            return ResponseEntity.ok(response);
+
+
+        }
+    }
 
 
 
@@ -341,4 +365,5 @@ public class IPDPatientController {
 
 
 
-}
+
+

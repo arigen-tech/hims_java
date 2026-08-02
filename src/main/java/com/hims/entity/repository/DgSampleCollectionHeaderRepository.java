@@ -18,20 +18,8 @@ import java.util.Optional;
 
 @Repository
 public interface DgSampleCollectionHeaderRepository extends JpaRepository<DgSampleCollectionHeader,Long> {
-
-    @Query("SELECT h FROM DgSampleCollectionHeader h   WHERE h.visitId.id = :visitId   AND h.subChargeCode.id = :subChargeCodeId   AND h. validated = 'n'")
-    Optional<DgSampleCollectionHeader> findByVisitIdAndSubChargeCodeAndValidateStatusN(
-            Long visitId, Long subChargeCodeId);
- //   Optional<DgSampleCollectionHeader> findByVisitIdAndSubChargeCodeAndValidateStatusN(long visitId, Long aLong);
-//    @Modifying
-//    @Transactional
-//    @Query("UPDATE DgSampleCollectionHeader h SET h.validated = :status WHERE h.sampleCollectionHeaderId = :headerId")
-//    int updateOrderStatus(@Param("headerId") Long headerId, @Param("status") String status);
-//
-//    @Modifying
-//    @Transactional
-//    @Query("UPDATE DgSampleCollectionHeader h SET h.sampleOrderStatus = :status WHERE h.sampleCollectionHeaderId = :hdId")
-//    void updateCollectionStatus(@Param("hdId") Long hdId, @Param("status") String status);
+    Optional<DgSampleCollectionHeader> findByDgOrderHd_IdAndSubChargeCode_SubIdAndValidatedIgnoreCase(
+            Integer orderHdId, Long subChargeCodeId,String status);
 
     @Query("""
 SELECT new com.hims.response.SampleHeaderForValidationResponse(
@@ -51,7 +39,9 @@ SELECT new com.hims.response.SampleHeaderForValidationResponse(
     sc.subName,
     v.doctorName,
     r.relationName,
-    h.collection_by
+    h.collection_by,
+    d.departmentName,
+    oh.id
 )
 FROM DgSampleCollectionHeader h
 LEFT JOIN h.patientId p
@@ -59,9 +49,8 @@ LEFT JOIN p.patientGender g
 LEFT JOIN p.patientRelation r
 LEFT JOIN h.subChargeCode sc
 LEFT JOIN h.visitId v
-LEFT JOIN DgOrderHd oh
-    ON oh.patientId.id = p.id
-    AND oh.visitId.id = v.id
+LEFT JOIN h.dgOrderHd oh
+LEFT JOIN MasDepartment d ON d.id=oh.departmentId
 WHERE h.hospitalId.id=:hospitalId
 AND LOWER(h.validated) = LOWER(:validationStatus)
 
@@ -121,7 +110,8 @@ SELECT new com.hims.response.SampleHeaderForResultEntryResponse(
     mc.chargecodeId,
     mc.chargecodeName,
     sc.subId,
-    sc.subName
+    sc.subName,
+    h.inpatient.inpatientId
 )
 
 FROM DgSampleCollectionHeader h
@@ -129,14 +119,11 @@ FROM DgSampleCollectionHeader h
 LEFT JOIN h.patientId p
 LEFT JOIN p.patientRelation rel
 LEFT JOIN p.patientGender g
-
-LEFT JOIN h.departmentId d
 LEFT JOIN h.hospitalId hosp
-
 LEFT JOIN h.subChargeCode sc
 LEFT JOIN sc.mainChargeId mc
-
-LEFT JOIN DgOrderHd oh ON oh.visitId = h.visitId
+LEFT JOIN h.dgOrderHd  oh
+LEFT JOIN MasDepartment d ON d.id=oh.departmentId
 WHERE h.hospitalId.id=:hospitalId
 AND h.result_entry_status = :resultEntryStatus
 AND h.validated = :validationStatus
