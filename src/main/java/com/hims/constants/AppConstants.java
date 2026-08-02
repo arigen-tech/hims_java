@@ -210,6 +210,8 @@ public class AppConstants {
 
     public static final String SOURCE_LAB = "lab source";
 
+    public static final String DUPLICATE_APPOINTMENT_MSG = "Patient already has an appointment with the same doctor on this day.";
+
 
 
 
