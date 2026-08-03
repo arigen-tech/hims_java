@@ -208,7 +208,7 @@ SELECT new com.hims.response.LabIncompleteInvestigationsReportResponse(
                 SELECT MAX(scd2.sampleCollectionDetailsId)
                 FROM DgSampleCollectionDetails scd2
                 WHERE scd2.investigationId.investigationId = inv.investigationId
-                  AND scd2.sampleCollectionHeader.visitId.id = oh.visitId.id
+                  AND scd2.sampleCollectionHeader.dgOrderHd.id = oh.id
             )
     ),
     inv.investigationName,

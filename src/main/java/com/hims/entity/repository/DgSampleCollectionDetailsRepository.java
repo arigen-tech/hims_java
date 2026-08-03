@@ -194,9 +194,7 @@ SELECT new com.hims.response.SampleRejectionInvestigationReportResponse(
 )
 FROM DgSampleCollectionDetails scd
 JOIN scd.sampleCollectionHeader sch
-JOIN sch.visitId v
-JOIN v.billingHd bh
-JOIN bh.hdorder oh
+JOIN sch.dgOrderHd oh
 JOIN sch.patientId p
 LEFT JOIN p.patientGender g
 LEFT JOIN scd.investigationId inv
