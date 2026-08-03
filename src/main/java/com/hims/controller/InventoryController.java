@@ -140,7 +140,7 @@ public class InventoryController {
      * Supports searching both drug items (when sectionId is null) and non-drug items (specific section).
      * Includes batch and stock information in results with pagination.
      *
-     * @param sectionId The store section ID to filter items (null for drugs, specific ID for non-drugs)
+     * @param sectionCode The store section code to filter items (null for drugs, specific ID for non-drugs)
      * @param keyword Search keyword to match against item nomenclature/name
      * @param page Zero-based page number (default: 0)
      * @param size Number of records per page (default: 5)
@@ -148,12 +148,12 @@ public class InventoryController {
      */
     @GetMapping("/item/search")
     public ResponseEntity<?> getStockLedger(
-            @RequestParam(required = false) Long sectionId,
+            @RequestParam(required = false) String sectionCode,
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
-        return ResponseEntity.ok(inventoryService.getStoreItems(sectionId,keyword, page, size));
+        return ResponseEntity.ok(inventoryService.getStoreItems(sectionCode,keyword, page, size));
     }
 
     /**
