@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.projection.ItemProjection;
-import com.hims.projection.MasStoreItemFacilityProjection;
-import com.hims.projection.MasStoreItemsProjection;
-import com.hims.projection.NonDrugStoreItemProjection;
+import com.hims.projection.*;
 import com.hims.request.MasStoreItemRequest;
 import com.hims.request.NonDrugStoreItemRequest;
 import com.hims.response.*;
@@ -29,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -99,6 +95,17 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
     @Value("${hos.define.wardPharmacyId}")
     private Integer warddeptId;
+    @Value("${drugSectionCode}")
+    private String drugSectionCode;
+
+    @Value("${medicalConsumableItemTypeCode}")
+    private String medicalConsumableItemTypeCode;
+
+    @Value("${medicalNonConsumableItemTypeCode}")
+    private String medicalNonConsumableItemTypeCode;
+
+    @Value("${mas.item.group}")
+    private String masItemGroup;
 
 
     private static final Logger log = LoggerFactory.getLogger(DoctorRosterServicesImpl.class);
@@ -344,7 +351,7 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
             masStoreItems = masStoreItemRepository.findActiveItemsBySectionId("y");
 
         } else if (flag == 0) {
-            masStoreItems = masStoreItemRepository.findAllItemsBySectionIdAndStatusIn(sectionId, List.of("y", "n"));
+            masStoreItems = masStoreItemRepository.findAllItemsBySectionIdAndStatusIn(1, List.of("y", "n"));
 
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
@@ -1036,7 +1043,123 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         }
 
     }
+    @Override
+    public ApiResponse<Page<NonDrugStoreItemResponse>> medicalConsumableItem(
+            int page,
+            int size,
+            String  itemName,
+            Integer itemClassId){
 
+        log.info("Fetching Medical Consumable Items. Page: {}, Size: {}, ItemName: {}, ItemClass: {}",
+                page, size, itemName, itemClassId);
+
+        try {
+
+            Pageable pageable = PageRequest.of(page, size);
+
+
+            Page<MedicalConsumableItemProjection> projectionPage = masStoreItemRepository.medicalConsumableItem(
+                            drugSectionCode,
+                            medicalConsumableItemTypeCode,
+                            masItemGroup,
+                            itemName,
+                            itemClassId,
+                            pageable);
+
+            Page<NonDrugStoreItemResponse> responsePage = projectionPage.map(projection -> {
+                NonDrugStoreItemResponse response = new NonDrugStoreItemResponse();
+
+                response.setItemId(projection.getItemId());
+                response.setPvmsNo(projection.getPvmsNo());
+                response.setNomenclature(projection.getNomenclature());
+                response.setGroupId(projection.getGroupId());
+                response.setGroupName(projection.getGroupName());
+                response.setItemTypeId(projection.getItemTypeId());
+                response.setItemTypeName(projection.getItemTypeName());
+                response.setSectionId(projection.getSectionId());
+                response.setSectionName(projection.getSectionName());
+                response.setItemClassId(projection.getItemClassId());
+                response.setItemClassName(projection.getItemClassName());
+                response.setMasItemCategoryId(projection.getMasItemCategoryId());
+                response.setMasItemCategoryName(projection.getMasItemCategoryName());
+                response.setUnitAU(projection.getUnitAU());
+                response.setUnitAuName(projection.getUnitAuName());
+                response.setStatus(projection.getStatus());
+
+                return response;
+            });
+
+            log.info("Successfully fetched {} Medical Consumable Items.",
+                    responsePage.getTotalElements());
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
+            });
+
+        } catch (Exception ex) {
+
+            log.error("Error while fetching Medical Consumable Items", ex);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
+                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<Page<NonDrugStoreItemResponse>> nonMedicalConsumableItem(
+            int page,
+            int size,
+            String  itemName,
+            Integer itemClassId){
+
+        log.info("Fetching Non Medical Consumable Items. Page: {}, Size: {}, ItemName: {}, ItemClass: {}",
+                page, size, itemName, itemClassId);
+
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<MedicalConsumableItemProjection> projectionPage = masStoreItemRepository.nonMedicalConsumableItem(
+                            medicalNonConsumableItemTypeCode,
+                            masItemGroup,
+                            itemName,
+                            itemClassId,
+                            pageable);
+
+            Page<NonDrugStoreItemResponse> responsePage = projectionPage.map(projection -> {
+                NonDrugStoreItemResponse response = new NonDrugStoreItemResponse();
+
+                response.setItemId(projection.getItemId());
+                response.setPvmsNo(projection.getPvmsNo());
+                response.setNomenclature(projection.getNomenclature());
+                response.setGroupId(projection.getGroupId());
+                response.setGroupName(projection.getGroupName());
+                response.setItemTypeId(projection.getItemTypeId());
+                response.setItemTypeName(projection.getItemTypeName());
+                response.setSectionId(projection.getSectionId());
+                response.setSectionName(projection.getSectionName());
+                response.setItemClassId(projection.getItemClassId());
+                response.setItemClassName(projection.getItemClassName());
+                response.setMasItemCategoryId(projection.getMasItemCategoryId());
+                response.setMasItemCategoryName(projection.getMasItemCategoryName());
+                response.setUnitAU(projection.getUnitAU());
+                response.setUnitAuName(projection.getUnitAuName());
+                response.setStatus(projection.getStatus());
+
+                return response;
+            });
+
+            log.info("Successfully fetched {} Medical Consumable Items.",
+                    responsePage.getTotalElements());
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
+            });
+
+        } catch (Exception ex) {
+
+            log.error("Error while fetching Medical Consumable Items", ex);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
+                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
 
     private MasStoreItemResponseWithStock convertToResponseFast(MasStoreItem item,
                                                                 Map<Long, List<StoreItemBatchStock>> stockMap) {

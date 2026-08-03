@@ -5218,6 +5218,37 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
         ApiResponse<NonDrugStoreItemResponse> response = masStoreItemService.getNonDrugItemById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @GetMapping("/getMedicalConsumableItem")
+    public ResponseEntity<ApiResponse<Page<NonDrugStoreItemResponse>>> medicalConsumableItem(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String itemName,
+            @RequestParam(required = false) Integer itemClassId) {
+
+        log.info("Request received to fetch Medical Consumable Items. page={}, size={}, itemId={}, itemClassId={}",
+                page, size, itemName, itemClassId);
+
+        ApiResponse<Page<NonDrugStoreItemResponse>> response =
+                masStoreItemService.medicalConsumableItem(page, size, itemName, itemClassId);
+
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/getNonMedicalConsumableItem")
+    public ResponseEntity<ApiResponse<Page<NonDrugStoreItemResponse>>> nonMedicalConsumableItem(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String itemName,
+            @RequestParam(required = false) Integer itemClassId) {
+
+        log.info("Request received to fetch  Non Medical Consumable Items. page={}, size={}, itemId={}, itemClassId={}",
+                page, size, itemName, itemClassId);
+
+        ApiResponse<Page<NonDrugStoreItemResponse>> response =
+                masStoreItemService.nonMedicalConsumableItem(page, size, itemName, itemClassId);
+
+        return ResponseEntity.ok(response);
+    }
+
 
     //======================================= Mas Admission Source ==================================
 
