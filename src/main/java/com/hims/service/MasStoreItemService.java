@@ -50,11 +50,13 @@ public interface MasStoreItemService {
             int page,
             int size,
             String  itemName,
+            Integer sectionId,
             Integer itemClassId);
     ApiResponse<Page<NonDrugStoreItemResponse>> nonMedicalConsumableItem(
             int page,
             int size,
             String  itemName,
+            Integer sectionId,
             Integer itemClassId);
 }
 
