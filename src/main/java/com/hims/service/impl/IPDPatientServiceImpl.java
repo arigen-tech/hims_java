@@ -169,6 +169,12 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasReceiptTypeRepository masReceiptTypeRepository;
     @Autowired
     TransactionSequenceService transactionSequenceService;
+    @Autowired
+    MasMainChargeCodeRepository masMainChargeCodeRepository;
+    @Autowired
+    MasIpdServiceSubcategoryRepository masIpdServiceSubcategoryRepository;
+    @Autowired
+    MasInvestigationPriceDetailsRepository masInvestigationPriceDetailsRepository;
 
 
 
@@ -188,6 +194,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Value("${ipd.service.category.id}")
     Long ipdServiceCategoryId;
+
+    @Value("${ipd.investigation.service.category.id}")
+    Long ipdInvestigationServiceCategoryId;
+
     @Value("${app.laboratoryDepartment}")
     Long laboratoryDepartment;
     @Value("${app.radiologyDepartment}")
@@ -821,7 +831,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
              * Create billing using the matched tariff.
              *
              */
-            saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,rate,quantity,gstPercent,discountAmount,amount ,gstAmount,netAmount,billingCategory,name);
+            saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,rate,quantity,gstPercent,discountAmount,amount ,gstAmount,netAmount,billingCategory,null,name);
 
             log.info("Daily case sheet entry saved successfully. " + "caseSheetEntryId: {}, inpatientId: {}, tariffId: {}",
                     savedCaseSheetEntry.getCaseSheetEntryId(),
@@ -1787,6 +1797,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             String userName = currentUser.getFullName();
             List<Long> createdLabOrderIds = new ArrayList<>();
             List<Long> createdRadOrderIds = new ArrayList<>();
+            MasIpdServiceCategory billingCategory = masIpdServiceCategoryRepository.findById(ipdInvestigationServiceCategoryId)
+                    .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),
+                            "IPD service category not found with id: " + ipdInvestigationServiceCategoryId));
 
             Map<LocalDate, List<LabRadioInvestigationRequest>> labGroups = grouped.getOrDefault(laboratoryDepartment, Collections.emptyMap());
             for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : labGroups.entrySet()) {
@@ -1798,7 +1811,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
                 for (LabRadioInvestigationRequest item : entry.getValue()) {
                     DgMasInvestigation master = masterMap.get(item.getId());
-                    int count = 1;
                     DgOrderDt orderDt = buildLabOrderDetail(
                             savedHd,
                             master,
@@ -1809,15 +1821,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                             item.getRemarks()
                     );
                     labDtRepository.save(orderDt);
-//                    saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,
-//                            master.getPrice(),
-//                            count,BigDecimal.ZERO,
-//                            master.getDiscount(),
-//                            master.getPrice(),
-//                            BigDecimal.ZERO,
-//                            BigDecimal.ZERO,
-//
-//                            );
+                    saveInvestigationBillingDetails(inpatient, billingCategory, master);
 
                 }
                 createdLabOrderIds.add((long) savedHd.getId());
@@ -1840,6 +1844,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                             item.getRemarks()
                     );
                     radOrderDtRepository.save(orderDt);
+                    saveInvestigationBillingDetails(inpatient, billingCategory, master);
                 }
 
                 createdRadOrderIds.add(savedHd.getId());
@@ -2427,10 +2432,10 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         DgOrderHd hd = new DgOrderHd();
         hd.setOrderDate(LocalDate.now());
         hd.setOrderTime(Instant.now());
-        hd.setOrderNo(randomNumGenerator.generateOrderNumber("LAB", true, true));
+        hd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
         hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
         hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
-        hd.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
+        hd.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
         hd.setSource(AppConstants.SOURCE_TYPE_IPD);
         hd.setHospitalId(currentUser.getHospital().getId());
         hd.setPrescribedBy(currentUser.getUserId() != null ? currentUser.getUserId().intValue() : 0);
@@ -2457,7 +2462,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         dt.setAppointmentDate(appointmentDate);
         dt.setOrderQty(1);
         dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
-        dt.setBillingStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setBillingStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setCreatedBy(currentUser.getFullName());
         dt.setLastChgBy(currentUser.getFullName());
         dt.setLastChgDate(LocalDate.now());
@@ -2485,7 +2490,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         hd.setCreatedon(Instant.now());
         hd.setLastChgBy(currentUser.getFullName());
         hd.setLastChgDate(Instant.now());
-        hd.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
+        hd.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
         hd.setInpatient(inpatient);
         return hd;
     }
@@ -2495,13 +2500,13 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         dt.setRadOrderhd(orderHd);
         dt.setInvestigation(investigation);
         dt.setSubChargecode(investigation.getSubChargeCodeId());
-        dt.setOrderAccessionNo(randomNumGenerator.generateOrderNumber("RAD", true, true));
+        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, currentUser.getHospital().getId()));
         dt.setAppointmentDate(appointmentDate);
         dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
-        dt.setBillingStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setBillingStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setCreatedby(currentUser.getFullName());
         dt.setCreatedon(Instant.now());
@@ -2510,6 +2515,95 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         dt.setRemarks(remarks);
         return dt;
     }
+
+    private void saveInvestigationBillingDetails(Inpatient inpatient,
+                                                 MasIpdServiceCategory billingCategory,
+                                                 DgMasInvestigation investigation) {
+        if (inpatient == null || investigation == null) {
+            throw new SDDException(HttpStatus.BAD_REQUEST.value(),
+                    "Invalid inpatient or investigation data for billing");
+        }
+
+        BigDecimal rate = resolveInvestigationRate(investigation);
+        BigDecimal quantity = BigDecimal.ONE;
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        BigDecimal amount = rate.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal gstPercent = resolveIpdGstPercent(billingCategory);
+        BigDecimal gstAmount = amount.multiply(gstPercent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal netAmount = amount.add(gstAmount).subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
+        MasMainChargeCode chargeCode = masMainChargeCodeRepository
+                .findById(investigation.getMainChargeCodeId().getChargecodeId())
+                .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),"Charge Code not found"));
+
+        MasIpdServiceSubcategory subcategory = masIpdServiceSubcategoryRepository
+                        .findBySubcategoryCode(chargeCode.getChargecodeCode())
+                        .orElseThrow(() -> new RuntimeException("Subcategory not found"));
+        saveIpdBillingDetails.saveInpatientBillingDetails(
+                inpatient,
+                rate,
+                quantity,
+                gstPercent,
+                discountAmount,
+                amount,
+                gstAmount,
+                netAmount,
+                billingCategory,
+                subcategory,
+                investigation.getInvestigationName()
+        );
+    }
+
+    private BigDecimal resolveInvestigationRate(DgMasInvestigation investigation) {
+        LocalDate today = LocalDate.now();
+
+        Optional<MasInvestigationPriceDetails> activePrice = masInvestigationPriceDetailsRepository
+                .findActivePriceByInvestigationAndDate(investigation, today);
+        if (activePrice.isPresent() && activePrice.get().getPrice() != null) {
+            return activePrice.get().getPrice().setScale(2, RoundingMode.HALF_UP);
+        }
+
+        Optional<MasInvestigationPriceDetails> latestPrice = masInvestigationPriceDetailsRepository
+                .findTopByInvestigationOrderByFromDateDesc(investigation);
+        if (latestPrice.isPresent() && latestPrice.get().getPrice() != null) {
+            return latestPrice.get().getPrice().setScale(2, RoundingMode.HALF_UP);
+        }
+
+        if (investigation.getPrice() != null) {
+            return BigDecimal.valueOf(investigation.getPrice()).setScale(2, RoundingMode.HALF_UP);
+        }
+
+        throw new SDDException(HttpStatus.BAD_REQUEST.value(),
+                "Investigation price not configured for investigationId: " + investigation.getInvestigationId());
+    }
+
+//    private BigDecimal resolveInvestigationDiscount(DgMasInvestigation investigation) {
+//        if (investigation.getDiscountApplicable() == null
+//                || !("y".equalsIgnoreCase(investigation.getDiscountApplicable())
+//                || "yes".equalsIgnoreCase(investigation.getDiscountApplicable())
+//                || "1".equalsIgnoreCase(investigation.getDiscountApplicable()))) {
+//            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+//        }
+//
+//        if (investigation.getDiscount() == null || investigation.getDiscount().trim().isEmpty()) {
+//            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+//        }
+//
+//        try {
+//            return new BigDecimal(investigation.getDiscount().trim()).setScale(2, RoundingMode.HALF_UP);
+//        } catch (NumberFormatException ex) {
+//            throw new SDDException(HttpStatus.BAD_REQUEST.value(),
+//                    "Invalid discount configured for investigationId: " + investigation.getInvestigationId());
+//        }
+//    }
+
+    private BigDecimal resolveIpdGstPercent(MasIpdServiceCategory billingCategory) {
+        if (billingCategory == null || billingCategory.getGstPercentage() == null) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+        return billingCategory.getGstPercentage().setScale(2, RoundingMode.HALF_UP);
+    }
+
     private synchronized  String generateTransferNumber() {
 
         LocalDate currentDate = LocalDate.now();

@@ -1044,7 +1044,7 @@ public ApiResponse<Page<MasEmployeeResponse>> getAllEmployees(String employeeNam
         employee.setIdDocumentName(documentPath);
         employee.setLastChangedDate(OffsetDateTime.now().toInstant());
         employee.setLastChangedBy(currentUser.getUsername());
-        employee.setStatus("S");
+        employee.setStatus(AppConstants.STATUS_P);
         employee.setProfileDescription(request.getProfileDescription());
         employee.setMasDesignationId(masDesignation);
         employee.setYearOfExperience(request.getYearOfExperience());
