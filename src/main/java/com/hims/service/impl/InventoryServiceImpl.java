@@ -105,8 +105,14 @@ public class InventoryServiceImpl implements InventoryService {
     @Value( "${drug.expiry.inventory}")
     private int drugExpDay;
 
-    @Value(("${sectionId.drugs}"))
-    private Long sectionIdForDrugs;
+    @Value(("${drugSectionCode}"))
+    private String drugSectionCode;
+
+    @Value(("${medicalNonConsumableItemTypeCode}"))
+    private String medicalNonConsumableItemTypeCode;
+
+    @Value(("${medicalConsumableItemTypeCode}"))
+    private String medicalConsumableItemTypeCode;
 
 
 
@@ -282,7 +288,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(Long sectionId,String keyword, int page, int size) {
+    public ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String sectionCode,String keyword, int page, int size) {
         try {
             log.info("getStoreItems with item contains name {} ,method started...",keyword);
             
@@ -292,10 +298,11 @@ public class InventoryServiceImpl implements InventoryService {
                     Sort.by(Sort.Direction.ASC,"nomenclature")
             );
             Page<ItemStockLedgerWithBatchResponse> responses ;
-            if(sectionId==null){
-                responses=storeItemRepository.searchNonDrugItems(sectionIdForDrugs, keyword, pageable);
+            if(sectionCode==null || sectionCode.trim().isEmpty()){
+                List<String> medicalConsumablesAndNonConsumables = List.of(medicalNonConsumableItemTypeCode, medicalConsumableItemTypeCode);
+                responses=storeItemRepository.searchNonDrugItems(drugSectionCode, keyword,medicalConsumablesAndNonConsumables, pageable);
             }else{
-                responses=storeItemRepository.searchItems(sectionId, keyword, pageable);
+                responses=storeItemRepository.searchItems(sectionCode, keyword, pageable);
             }
             log.info("getStoreItems with item contains name {} ,method ended...",keyword);
             return  ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
@@ -1556,11 +1563,13 @@ public class InventoryServiceImpl implements InventoryService {
         hd.setStatus(AppConstants.BALANCE_SAVED_STATUS.toLowerCase()); // status = saved
         hd.setLastUpdatedDt(LocalDateTime.now());
         String balanceType;
-        if( masStoreSectionRepository.existsById(sectionIdForDrugs.intValue())){
+
+        if(openingBalanceEntryRequest.getBalanceType().equalsIgnoreCase(drugSectionCode)){
             balanceType= AppConstants.ITEM_TYPE_DRUG;
         }else{
             balanceType=AppConstants.ITEM_TYPE_NON_DRUG;
         }
+
         hd.setBalanceType(balanceType);
         StoreBalanceHd savedHd = storeBalanceHdRepository.save(hd);
 
@@ -1663,7 +1672,7 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public ApiResponse<List<OpeningBalanceEntryDetailResponse>> getOpeningBalanceEntryDetailsWrtHeader(Long balanceMId) {
         try {
-            log.info("getOpeningBalanceEntryDetailsWrtHeader method started for balanceMId - {} :: ", balanceMId);
+            log.info("getOpeningBalanceEntryDetailsWrtHeader method started for balanceMId - {} :: hi ", balanceMId);
             List<OpeningBalanceEntryDetailResponse> response =
                     storeBalanceDtRepository.findOpeningBalanceDetailsWrtHeader(balanceMId)
                             .stream()
@@ -1746,7 +1755,7 @@ public class InventoryServiceImpl implements InventoryService {
         hd.setStatus(AppConstants.BALANCE_SUBMIT_STATUS.toLowerCase()); // status = saved
         hd.setLastUpdatedDt(LocalDateTime.now());
         String balanceType;
-        if( masStoreSectionRepository.existsById(sectionIdForDrugs.intValue())){
+        if( request.getBalanceType().equalsIgnoreCase(drugSectionCode)){
             balanceType= AppConstants.ITEM_TYPE_DRUG;
         }else{
             balanceType=AppConstants.ITEM_TYPE_NON_DRUG;
@@ -2611,7 +2620,7 @@ public class InventoryServiceImpl implements InventoryService {
         User currentUser = authUtil.getCurrentUser();
         String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
         String indentType;
-       if( masStoreSectionRepository.existsById(sectionIdForDrugs.intValue())){
+       if( request.getIndentType().equalsIgnoreCase(drugSectionCode)){
            indentType=AppConstants.ITEM_TYPE_DRUG;
        }else{
            indentType=AppConstants.ITEM_TYPE_NON_DRUG;
