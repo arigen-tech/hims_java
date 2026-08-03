@@ -119,13 +119,13 @@ public class LabRegistrationController {
         return  resultService.getResultForInvestigation(patientId,hospitalId);
     }
 
-    @PostMapping("/saveResultEntry")
-    public ResponseEntity<ApiResponse<String>> saveOrUpdate(@RequestBody ResultEntryMainRequest request) {
-        log.info("Received saveOrUpdateResultEntry request for sampleCollectionHeaderId={}, subChargeCodeId={}",
-                request.getSampleCollectionHeaderId(), request.getSubChargeCodeId());
-        ApiResponse<String> response = resultService.saveOrUpdateResultEntry(request);
-        log.info("saveOrUpdateResultEntry response status={}", response.getStatus());
-        return ResponseEntity.ok(response);
-    }
+//    @PostMapping("/saveResultEntry")
+//    public ResponseEntity<ApiResponse<String>> saveOrUpdate(@RequestBody ResultEntryMainRequest request) {
+//        log.info("Received saveOrUpdateResultEntry request for sampleCollectionHeaderId={}, subChargeCodeId={}",
+//                request.getSampleCollectionHeaderId(), request.getSubChargeCodeId());
+//        ApiResponse<String> response = resultService.saveOrUpdateResultEntry(request);
+//        log.info("saveOrUpdateResultEntry response status={}", response.getStatus());
+//        return ResponseEntity.ok(response);
+//    }
     
 }

@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.DgOrderHd;
+import com.hims.entity.Inpatient;
 import com.hims.entity.Visit;
 import com.hims.response.PendingSampleHeaderResponse;
 import jakarta.transaction.Transactional;
@@ -85,6 +86,8 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
 
     DgOrderHd findByPatientId_IdAndVisitId_Id(Long patientId, Long visitId);
 
+    DgOrderHd findByPatientId_IdAndInpatientId_InpatientId(Long patientId, Long inpatientId);
+
     List<DgOrderHd> findByPatientId_IdAndHospitalId(Long patientId, Long hospitalId);
     @Query(value = """
     SELECT d.orderHd_id
@@ -115,14 +118,16 @@ SELECT new com.hims.response.PendingSampleHeaderResponse(
     ),
     h.orderStatus,
     CAST(h.id AS long),
-    v.id
+    v.id,
+    ip.inpatientId
 )
 FROM DgOrderHd h
 LEFT JOIN h.patientId p
 LEFT JOIN p.patientRelation rel
 LEFT JOIN p.patientGender g
 LEFT JOIN h.visitId v
-LEFT JOIN v.department d
+LEFT JOIN h.inpatientId ip
+LEFT JOIN MasDepartment d ON  d.id=h.departmentId
 LEFT JOIN v.doctor doc
 WHERE h.hospitalId = :hospitalId
 

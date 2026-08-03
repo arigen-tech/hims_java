@@ -8,6 +8,7 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.LabService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.hims.constants.AppConstants.INPATIENT_AND_VISIT_NOT_FOUND_ERR_MSG;
 
 
 @Service
@@ -70,6 +73,23 @@ public class LabServiceImpl implements LabService {
     private final MasLabResultAmendmentTypeRepository masLabResultAmendmentTypeRepository;
 
     private final LabResultAmendAuditRepository labResultAmendAuditRepository;
+
+    private final InpatientRepository inpatientRepository;
+
+    private  final PatientRepository patientRepository;
+
+    private final MasRelationRepository masRelationRepository;
+
+    private final MasMainChargeCodeRepository mainChargeCodeRepository;
+
+    private final DgNormalValueRepository dgNormalValueRepository;
+
+    private final MasSubChargeCodeRepository subChargeCodeRepository;
+
+    private final DgMasSampleRepository masSampleRepository;
+
+
+    private final RandomNumGenerator randomNumGenerator;
 
     private  final AuthUtil authUtil;
 
@@ -158,12 +178,32 @@ public class LabServiceImpl implements LabService {
 
             User currentUser = authUtil.getCurrentUser();
 
-            Optional<Visit> visitOpt = visitRepository.findById((long) sampleReq.getVisitId());
-            if (visitOpt.isEmpty()) {
-                log.warn("Visit not found, visitId={}", sampleReq.getVisitId());
-                return ResponseUtils.createNotFoundResponse(AppConstants.VISIT_NOT_FOUND_ERR_MSG, HttpStatus.NOT_FOUND.value());
+
+            Optional<Visit>  visitOpt = visitRepository.findById((long) sampleReq.getVisitId());
+
+
+            Optional<Inpatient> inpatientOpt = Optional.empty();
+            if (sampleReq.getInpatientId() != null) {
+                inpatientOpt = inpatientRepository.findById(sampleReq.getInpatientId());
             }
-            Visit visit = visitOpt.get();
+
+            if (visitOpt.isEmpty() && inpatientOpt.isEmpty()) {
+                log.warn("Visit and Inpatient not found. visitId={}, inpatientId={}",
+                        sampleReq.getVisitId(), sampleReq.getInpatientId());
+
+                return ResponseUtils.createNotFoundResponse(
+                        INPATIENT_AND_VISIT_NOT_FOUND_ERR_MSG,
+                        HttpStatus.NOT_FOUND.value());
+            }
+
+            Visit visit=null;
+            Inpatient inpatient=null;
+            if(visitOpt.isPresent()){
+                 visit= visitOpt.get();
+            }else{
+                 inpatient=inpatientOpt.get();
+            }
+
 
             LocalDateTime now = LocalDateTime.now();
 
@@ -190,13 +230,28 @@ public class LabServiceImpl implements LabService {
                 log.debug("Processing SubChargeCodeId={}, itemCount={}",
                         subChargeCodeId, detailsList.size());
 
-                //FIND OR CREATE HEADER
-                Optional<DgSampleCollectionHeader> existingHeaderOpt =
-                        dgSampleCollectionHeaderRepository
-                                .findByVisitIdAndSubChargeCodeAndValidateStatusN(
-                                        visit.getId(),
-                                        subChargeCodeId.longValue()
-                                );
+                Optional<DgSampleCollectionHeader> existingHeaderOpt=Optional.empty();
+//                if(visit!=null){
+//                   existingHeaderOpt= dgSampleCollectionHeaderRepository
+//                            .findByVisitIdAndSubChargeCodeAndValidateStatusN(
+//                                    visit.getId(),
+//                                    subChargeCodeId.longValue()
+//                            );
+//                }else if (inpatient!=null) {
+//                    existingHeaderOpt=dgSampleCollectionHeaderRepository
+//                            .findByInpatientAndSubChargeCodeAndValidateStatusN(
+//                                    inpatient.getInpatientId(),
+//                                    subChargeCodeId.longValue());
+//                }
+
+                Optional<DgOrderHd> dgOrderHdOpt = labOrderHdRepository.findById(sampleReq.getOrderHdId());
+                if(dgOrderHdOpt.isEmpty()){
+                    return ResponseUtils.createNotFoundResponse(AppConstants.ORDER_HD_NOT_FOUND_MSG,HttpStatus.NOT_FOUND.value());
+                }
+                DgOrderHd dgOrderHd = dgOrderHdOpt.get();
+                existingHeaderOpt=dgSampleCollectionHeaderRepository.findByDgOrderHd_IdAndSubChargeCode_SubIdAndValidatedIgnoreCase(dgOrderHd.getId(),subChargeCodeId.longValue(),AppConstants.STATUS_N);
+
+
 
                 DgSampleCollectionHeader header;
 
@@ -209,8 +264,12 @@ public class LabServiceImpl implements LabService {
                     header = new DgSampleCollectionHeader();
 
                     header.setVisitId(visit);
-                    header.setPatientId(visit.getPatient());
+                    header.setInpatient(inpatient);
+                    header.setPatientId(dgOrderHd.getPatientId());
+
                     header.setHospitalId(currentUser.getHospital());
+
+                    header.setDgOrderHd(dgOrderHd);
 
                     MasDepartment department =
                             masDepartmentRepository.findById(departmentId).orElseThrow();
@@ -301,12 +360,8 @@ public class LabServiceImpl implements LabService {
                         //TURN AROUND TIME
                         LabTurnAroundTime tat = new LabTurnAroundTime();
                         tat.setInvestigation(investigation);
-                        tat.setOrderHd(
-                                labOrderHdRepository
-                                        .findById(sampleReq.getOrderHdId())
-                                        .orElseThrow()
-                        );
-                        tat.setPatient(visit.getPatient());
+                        tat.setOrderHd(dgOrderHd);
+                        tat.setPatient(dgOrderHd.getPatientId());
                         tat.setSampleCollectionDateTime(now);
                         tat.setSampleCollectedBy(fullName);
                         tat.setGeneratedSampleId(sampleId);
@@ -448,14 +503,8 @@ public class LabServiceImpl implements LabService {
                     dgSampleCollectionHeaderRepository.findById(headerId)
                             .orElseThrow(() -> new RuntimeException(AppConstants.SAMPLE_COLLECTION_HEADER_NOT_FOUND_ERR_MSG));
             log.debug("Header fetched successfully");
-
             // ===================== 2. FETCH ORDER HD ONCE =====================
-            DgOrderHd orderHd =
-                    labOrderHdRepository.findByPatientId_IdAndVisitId_Id(
-                            header.getPatientId().getId(),
-                            header.getVisitId().getId()
-                    );
-
+            DgOrderHd orderHd = header.getDgOrderHd();
             // ===================== 3. CACHE TRACKING STATUS =====================
             LabOrderTrackingStatus validatedStatus =
                     labOrderTrackingStatusRepository
@@ -479,17 +528,11 @@ public class LabServiceImpl implements LabService {
                 Long investigationId =
                         details.getInvestigationId().getInvestigationId();
 
-                int orderHdId =
-                        header.getVisitId()
-                                .getBillingHd()
-                                .getHdorder()
-                                .getId();
-
                 // ===================== 5. LAB TURN AROUND TIME =====================
                 LabTurnAroundTime tat =
                         labTurnAroundTimeRepository
                                 .findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndGeneratedSampleId(
-                                        orderHdId,
+                                        header.getDgOrderHd().getId(),
                                         investigationId,
                                         header.getPatientId().getId(),
                                         details.getSampleGeneratedId()
@@ -697,6 +740,219 @@ public class LabServiceImpl implements LabService {
                     AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String>  saveOrUpdateResultEntry(ResultEntryMainRequest request) {
+        log.info("Starting saveOrUpdateResultEntry for patientId={}, visitId={}",
+                request.getPatientId(), request.getVisitId());
+        try {
+            Long depart = authUtil.getCurrentDepartmentId();
+            MasDepartment depObj = masDepartmentRepository.findById(depart).orElseThrow(()-> new RuntimeException("Invalid Dept Id"));
+            User currentUser = authUtil.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {},
+                        "Current user not found", HttpStatus.UNAUTHORIZED.value());
+            }
+            log.debug("Current user={}, department={}", currentUser.getUsername(), depObj.getDepartmentName());
+            //  Check if header already exists for same Sample + SubChargeCode
+            Optional<DgResultEntryHeader> existingHeaderOpt =
+                    dgResultEntryHeaderRepository.findBySampleCollectionHeaderId_SampleCollectionHeaderIdAndSubChargeCodeId_SubId(
+                            request.getSampleCollectionHeaderId(),
+                            request.getSubChargeCodeId()
+                    );
+
+            DgResultEntryHeader header;
+            Optional<DgSampleCollectionHeader> sampleCollectionHeaderOpt = dgSampleCollectionHeaderRepository.findById(request.getSampleCollectionHeaderId());
+            if(sampleCollectionHeaderOpt.isEmpty()){
+                return ResponseUtils.createNotFoundResponse(AppConstants.SAMPLE_COLLECTION_HEADER_NOT_FOUND_ERR_MSG,HttpStatus.NOT_FOUND.value());
+            }
+            DgSampleCollectionHeader dgSampleCollectionHeader = sampleCollectionHeaderOpt.get();
+            DgOrderHd dgOrderH=dgSampleCollectionHeader.getDgOrderHd();
+
+
+            Patient patientId = patientRepository.findById(request.getPatientId()).orElse(null);
+            if (existingHeaderOpt.isPresent()) {
+                log.info("Updating existing ResultEntryHeader id={}", existingHeaderOpt.get().getResultEntryId());
+
+                // Update existing header
+                header = existingHeaderOpt.get();
+                header.setRemarks(request.getClinicalNotes());
+                header.setLastChgdBy(currentUser.getLastChangedBy());
+                header.setLastChgdDate(LocalDate.now());
+                header.setResultStatus("n");
+                header.setLastChgdTime(String.valueOf(LocalTime.now()));
+            } else {
+                log.info("Creating new ResultEntryHeader for sampleCollectionHeaderId={}",
+                        request.getSampleCollectionHeaderId());
+
+                // Create new header
+                header = new DgResultEntryHeader();
+                header.setRelationId(masRelationRepository.findById(request.getRelationId()).orElse(null));
+                header.setRemarks(request.getClinicalNotes());
+                header.setResultDate(LocalDate.now());
+
+                header.setResultTime(String.valueOf(LocalTime.now()));
+
+//                DgSampleCollectionHeader dgSampleCollectionHeader =
+//                        sampleCollectionHeaderOpt
+//                                .orElseThrow(() -> new RuntimeException("Invalid Sample Header ID: " + request.getSampleCollectionHeaderId()));
+
+                header.setSampleCollectionHeaderId(dgSampleCollectionHeader);
+                header.setResultStatus("n");
+                //  header.setVerified("n");
+                header.setDepartmentId(depObj);
+                header.setLastChgdBy(currentUser.getLastChangedBy());
+                header.setLastChgdDate(LocalDate.now());
+                header.setLastChgdTime(String.valueOf(LocalTime.now()));
+                header.setResultNo(createInvoice());
+                header.setHospitalId(currentUser.getHospital());
+                header.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+//                Optional<DgOrderHd> dgOrderH=labHdRepository.findById(Math.toIntExact(request.getPatientId()));
+//                header.setOrderHd(dgOrderH.get());
+                // Optional<DgOrderHd> dgOrderH = labHdRepository.findByPatientId_IdAndOrderstatusN(request.getPatientId(),"n");
+
+//                DgOrderHd orderHd = dgOrderH.orElseThrow(() ->
+//                        new RuntimeException("No order found for patient ID: " + request.getPatientId()));
+                header.setOrderHd(dgOrderH);
+                header.setHinId(patientId);
+                header.setInpatient(dgSampleCollectionHeader.getInpatient());
+                header.setMainChargecodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
+                header.setSubChargeCodeId(subChargeCodeRepository.findById(request.getSubChargeCodeId()).orElse(null));
+                header = dgResultEntryHeaderRepository.save(header);
+                log.info("ResultEntryHeader created with id={}", header.getResultEntryId());
+            }
+            // Save or Update Details
+            for (ResultEntryInvestigationRequest invReq : request.getInvestigationList()) {
+                log.debug("Processing investigationId={}", invReq.getInvestigationId());
+                DgMasInvestigation investigation = dgMasInvestigationRepository.findById(invReq.getInvestigationId())
+                        .orElseThrow(() -> new RuntimeException("Invalid Investigation ID: " + invReq.getInvestigationId()));
+                DgSampleCollectionDetails dgSampleCollectionDetails =
+                        dgSampleCollectionDetailsRepository.findById(invReq.getSampleCollectionDetailsId())
+                                .orElseThrow(() -> new RuntimeException("Invalid sampleCollectionDetails ID: " + invReq.getSampleCollectionDetailsId()));
+
+                // Check if ANY sub-investigation has a result
+                boolean anyResultEntered = invReq.getResultEntryDetailsRequestList().stream()
+                        .anyMatch(subReq -> subReq.getResult() != null && !subReq.getResult().trim().isEmpty());
+
+                // If no sub-investigation result entered, skip this investigation entirely
+                if (!anyResultEntered) {
+                    log.debug("Skipping investigationId={} as no results entered",
+                            invReq.getInvestigationId());
+                    continue;
+                }
+
+                //  If at least one sub-investigation has result → process ALL sub-investigations
+                for (ResultEntrySubInvestigationRequest subReq : invReq.getResultEntryDetailsRequestList()) {
+
+                    //
+                    DgSubMasInvestigation subInvestigation = null;
+                    if (subReq.getSubInvestigationId() != null) {
+                        subInvestigation = dgSubMasInvestigationRepository.findById(subReq.getSubInvestigationId())
+                                .orElse(null);
+                    }
+                    Optional<DgResultEntryDetail> existingDetailOpt =
+                            dgResultEntryDetailRepository.findByResultEntryIdAndInvestigationIdAndSubInvestigationId(
+                                    header, investigation, subInvestigation
+                            );
+
+                    DgResultEntryDetail detail;
+                    if (existingDetailOpt.isPresent()) {
+                        // Update existing
+                        detail = existingDetailOpt.get();
+                        detail.setResult(subReq.getResult());
+                        detail.setRemarks(subReq.getRemarks());
+                    } else {
+                        // Create new
+                        detail = new DgResultEntryDetail();
+                        detail.setResultEntryId(header);
+                        detail.setInvestigationId(investigation);
+                        detail.setSubInvestigationId(subInvestigation);
+                        detail.setSampleCollectionDetailsId(dgSampleCollectionDetails);
+                        detail.setResult(subReq.getResult());
+                        detail.setRemarks(subReq.getRemarks());
+                        detail.setResultType(subReq.getResultType());
+                        detail.setValidated("n");
+                        detail.setSampleId(masSampleRepository.findById(subReq.getSampleId()).orElse(null));
+                        detail.setChargeCodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
+                        if("n".equalsIgnoreCase(subReq.getComparisonType())){
+                            detail.setNormalId(dgNormalValueRepository.findById(subReq.getNormalId()).orElse(null));
+                        }else if("f".equalsIgnoreCase(subReq.getComparisonType())){
+                            detail.setFixedId(dgFixedValueRepository.findById(subReq.getFixedId()).orElse(null));
+                        }else{
+                            detail.setFixedId(null);
+                            detail.setNormalId(null);
+                        }
+                        detail.setNormalRange(subReq.getNormalRange());
+                        detail.setFixedValue(subReq.getFixedValue());
+                        if(subInvestigation!=null){
+                            detail.setUomId(subInvestigation.getUomId());
+                        }else{
+                            detail.setUomId(investigation.getUomId());
+
+                        }
+                        detail.setResultDetailStatus("n");
+                        detail.setGeneratedSampleId(dgSampleCollectionDetails.getSampleGeneratedId());
+                        log.debug("Created new ResultEntryDetail for investigationId={}",
+                                investigation.getInvestigationId());
+                    }
+
+                    DgOrderDt dgOrderDt = labOrderDtRepository.findByOrderhdId_IdAndInvestigationId_InvestigationId(dgOrderH.getId(), investigation.getInvestigationId());
+                    DgOrderDt byId = labOrderDtRepository.findById(dgOrderDt.getId()).orElseThrow(() -> new RuntimeException("Invalid Dg Order Dt Id"));
+                    byId.setOrderTrackingStatus(labOrderTrackingStatusRepository.findById(resultEnteredStatusId).orElseThrow());
+                    labOrderDtRepository.save(byId);
+
+
+                    LabTurnAroundTime labTurnAroundTime=labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(dgOrderH.getId(),investigation.getInvestigationId(),patientId.getId(),false);
+                    labTurnAroundTime.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                    labTurnAroundTime.setResultEntryDateTime(LocalDateTime.now());
+                    labTurnAroundTimeRepository.save( labTurnAroundTime);
+                    dgResultEntryDetailRepository.save(detail);
+
+                }
+
+                // Mark this investigation’s sample details as result entered
+                dgSampleCollectionDetails.setResult_status("y");
+                dgSampleCollectionDetailsRepository.save(dgSampleCollectionDetails);
+            }
+
+            //After all investigations processed
+            updateResultEntryStatusIfComplete(request.getSampleCollectionHeaderId(), request.getSubChargeCodeId());
+            log.info("Result entry saved/updated successfully for sampleCollectionHeaderId={}",
+                    request.getSampleCollectionHeaderId());
+            return ResponseUtils.createSuccessResponse("Result entry saved/updated successfully!", new TypeReference<>() {}
+            );
+
+        } catch (Exception e) {
+            log.error("Error while saving result entry", e);
+            e.printStackTrace();
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Error saving result entry: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    private void updateResultEntryStatusIfComplete(Long sampleHeaderId, Long subChargeCodeId) {
+        List<DgSampleCollectionDetails> allDetails =
+                dgSampleCollectionDetailsRepository
+                        .findBySampleCollectionHeader_SampleCollectionHeaderIdAndSampleCollectionHeader_SubChargeCode_SubId(
+                                sampleHeaderId, subChargeCodeId
+                        );
+
+        boolean allDone = allDetails.stream()
+                .allMatch(d -> "y".equals(d.getResult_status()));
+
+        if (allDone) {
+            DgSampleCollectionHeader headerObj =
+                    dgSampleCollectionHeaderRepository.findById(sampleHeaderId)
+                            .orElseThrow(() -> new RuntimeException("Invalid Sample Header ID: " + sampleHeaderId));
+
+            if ("n".equals(headerObj.getResult_entry_status())) {
+                headerObj.setResult_entry_status("y");
+                dgSampleCollectionHeaderRepository.save(headerObj);
+            }
         }
     }
 
@@ -1342,6 +1598,31 @@ public class LabServiceImpl implements LabService {
          }
      }
 
+    @Override
+    public ApiResponse<Page<OrderTrackingReportResponse>> getOrderTrackingDetailsByPatientId(Long hospitalId, Long patientId, int page, int size) {
+        try {
+            log.info("getOrderTrackingReports method started with hospitalId={}, patientId={}", hospitalId, patientId);
+            log.info("getOrderTrackingDetailsByPatientId() started...");
+            Pageable pageable = PageRequest.of(page, size, Sort.by("orderhdId.orderDate").descending());
+            Page<OrderTrackingReportResponse> result = labOrderDtRepository.getOrderTrackingDetailsByPatientId(
+                    hospitalId,
+                    patientId,
+                    pageable
+            );
+            log.info("getOrderTrackingDetailsByPatientId method ended with hospitalId={}, patientId={}", hospitalId, patientId);
+            return ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error in getOrderTrackingDetailsByPatientId", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Internal Server Error",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
 
     public String generateSampleId(
             String modalityCode,      // "BIO"
@@ -1362,4 +1643,9 @@ public class LabServiceImpl implements LabService {
     private Long extractAgeFromString(String age) {
         return Long.parseLong(age.substring(0, age.indexOf("Y")).trim());
     }
+
+    public String createInvoice() {
+        return randomNumGenerator.generateOrderNumber("RES",true,true);
+    }
+
 }

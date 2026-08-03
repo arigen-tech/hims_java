@@ -96,7 +96,9 @@ public class DgResultEntryHeader {
     private DgSampleCollectionHeader sampleCollectionHeaderId;
 
 
-   // private Integer inpatientId;//
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inpatient_id")
+    private Inpatient inpatient;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "relation_id")

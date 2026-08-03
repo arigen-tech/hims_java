@@ -8,15 +8,8 @@ import java.util.List;
 @Getter
 @Setter
 public class SampleCollectionRequest {
-    //String patientType;
-    //int collectionCenterId;
-   // int OrderByDept;
-    //int inpatientId;
     int visitId;
-    ///int hinId;
     int orderHdId;
+    Long inpatientId;
     List<SampleCollectionInvestigationReq> sampleCollectionReq;
-
-
-
 }

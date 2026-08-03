@@ -69,9 +69,7 @@ SELECT new com.hims.response.SampleHeaderForResultValidationResponse(
     p.patientAge,
     p.patientMobileNumber,
     r.relationName,
-
-    mc.chargecodeName,
-
+    d.departmentName,
     CONCAT(
         COALESCE(doc.firstName, ''), ' ',
         COALESCE(doc.middleName, ''), ' ',
@@ -96,6 +94,7 @@ LEFT JOIN h.relationId r
 LEFT JOIN h.subChargeCodeId sc
 LEFT JOIN h.mainChargecodeId mc
 LEFT JOIN h.sampleCollectionHeaderId sch
+LEFT JOIN MasDepartment d ON d.id=oh.departmentId
 LEFT JOIN sch.visitId v
 LEFT JOIN v.doctor doc
 

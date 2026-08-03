@@ -109,7 +109,7 @@ SELECT new com.hims.response.OrderTrackingReportResponse(
                 SELECT MAX(scd2.sampleCollectionDetailsId)
                 FROM DgSampleCollectionDetails scd2
                 WHERE scd2.investigationId.investigationId = inv.investigationId
-                  AND scd2.sampleCollectionHeader.visitId.id = oh.visitId.id
+                  AND scd2.sampleCollectionHeader.dgOrderHd.id = oh.id
             )
         )
     END,
@@ -143,6 +143,51 @@ AND oh.orderDate <= COALESCE(:toDate, oh.orderDate)
             Pageable pageable
     );
 
+
+    @Query("""
+SELECT new com.hims.response.OrderTrackingReportResponse(
+    oh.id,
+    oh.orderNo,
+    TRIM(CONCAT(
+        COALESCE(p.patientFn, ''), ' ',
+        COALESCE(p.patientMn, ''), ' ',
+        COALESCE(p.patientLn, '')
+    )),
+    p.patientMobileNumber,
+    p.patientAge,
+    g.genderName,
+    CASE
+        WHEN ots.orderStatusId = 1 THEN 'N/A'
+        ELSE (
+            SELECT scd.sampleGeneratedId
+            FROM DgSampleCollectionDetails scd
+            WHERE scd.sampleCollectionDetailsId = (
+                SELECT MAX(scd2.sampleCollectionDetailsId)
+                FROM DgSampleCollectionDetails scd2
+                WHERE scd2.investigationId.investigationId = inv.investigationId
+                  AND scd2.sampleCollectionHeader.dgOrderHd.id= oh.id
+            )
+        )
+    END,
+    inv.investigationName,
+    ots.orderStatusId,
+    ots.orderStatusName,
+    oh.orderDate
+)
+FROM DgOrderDt od
+JOIN od.orderhdId oh
+JOIN oh.patientId p
+LEFT JOIN p.patientGender g
+LEFT JOIN od.investigationId inv
+LEFT JOIN od.orderTrackingStatus ots
+WHERE oh.hospitalId=:hospitalId
+AND p.id=:patientId
+""")
+    Page<OrderTrackingReportResponse> getOrderTrackingDetailsByPatientId(
+            Long hospitalId,
+            Long patientId,
+            Pageable pageable
+    );
 
     @Query("""
 SELECT new com.hims.response.LabIncompleteInvestigationsReportResponse(

@@ -1,14 +1,13 @@
 package com.hims.controller;
 
 
-import com.hims.request.InvestigationValidationRequest;
-import com.hims.request.ResultUpdateRequest;
-import com.hims.request.ResultValidationUpdateRequest;
-import com.hims.request.SampleCollectionRequest;
+import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.service.LabService;
+import com.hims.service.ResultService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -343,6 +342,12 @@ public class LabController {
     @GetMapping("/subInvestigationsForResult/details")
     public ResponseEntity<?> getSubInvestigationsForResultEntry(@RequestParam Long investigationId,@RequestParam String genderCode,@RequestParam String age) {
         return ResponseEntity.ok(labService.getSubInvestigationsForResultEntry(investigationId,genderCode,age));
+    }
+
+    @PostMapping("/saveResultEntry")
+    public ResponseEntity<ApiResponse<String>> saveOrUpdate(@RequestBody ResultEntryMainRequest request) {
+        ApiResponse<String> response = labService.saveOrUpdateResultEntry(request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -936,6 +941,59 @@ public class LabController {
                         patientMobileNumber,
                         fromDate,
                         toDate,
+                        page,
+                        size
+                )
+        );
+    }
+
+    /**
+     * Fetch Laboratory Order Tracking Report
+     *
+     * This API retrieves a comprehensive report of laboratory order tracking,
+     * showing the complete lifecycle of laboratory orders from placement to completion.
+     * It provides visibility into order status, processing times, and workflow efficiency.
+     *
+     * Query Filters:
+     * - Hospital ID: Filters records for the specified hospital
+     * - Patient Name: Optional partial search filter for patient name (case-insensitive)
+     * - Patient Mobile Number: Optional exact match filter for patient mobile number
+     * - From Date: Optional start date filter for order date
+     * - To Date: Optional end date filter for order date
+     *
+     * Data Retrieved:
+     * - Order header information (order number, date, status)
+     * - Patient information (name, mobile number, demographics)
+     * - Investigation/test details with current status
+     * - Order lifecycle timestamps (ordered, collected, validated, completed)
+     * - Department and referring doctor information
+     * - Order priority and urgency indicators
+     * - Current processing stage and next steps
+     *
+     * Sorting: Results are sorted by order date (descending)
+     *
+     * Use Case:
+     * This report helps laboratory staff and clinicians track order progress,
+     * identify bottlenecks in the testing process, and improve turnaround times.
+     * It's essential for managing laboratory workflow and patient care coordination.
+     *
+     * @param hospitalId ID of the hospital (required)
+     * @param patientId Patient ID for search (required)
+     * @param page Page number for pagination (optional, default: 0)
+     * @param size Number of records per page (optional, default: 5)
+     * @return Paginated list of order tracking reports with complete order lifecycle information
+     */
+    @GetMapping("/orderTrackingByPatientId")
+    public ResponseEntity<?> getOrderTrackingDetailsByPatientId(
+            @RequestParam Long  hospitalId,
+            @RequestParam Long patientId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        return ResponseEntity.ok(
+                labService.getOrderTrackingDetailsByPatientId(
+                        hospitalId,
+                        patientId,
                         page,
                         size
                 )
