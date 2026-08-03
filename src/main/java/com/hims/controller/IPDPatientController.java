@@ -353,7 +353,33 @@ public class IPDPatientController {
 
 
         }
-    }
+//    @GetMapping("/getPendingTrackingIPDBillList")
+//    public ResponseEntity<ApiResponse<Page<PendingTrackingIPDBillResponse>>> getPendingTrackingIPDBillList(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "5") int size,
+//            @RequestParam(required = false) Long,
+//            @RequestParam(required = false) String mobileNo,
+//            @RequestParam(required = false) String admissionNo) {
+//
+//        log.info("Request received to fetch getPendingTrackingIPDBillList. page: {}, size: {}, patientName: {}, mobileNo: {}, admissionNo: {}",
+//                page, size, patientName, mobileNo, admissionNo);
+//
+//        ApiResponse<Page<PendingTrackingIPDBillResponse>> response = ipdPatientService.getPendingTrackingIPDBillList(
+//                page,
+//                size,
+//                patientName,
+//                mobileNo,
+//                admissionNo);
+//
+//
+//        return ResponseEntity.ok(response);
+
+
+   // }
+
+
+
+}
 
 
 
