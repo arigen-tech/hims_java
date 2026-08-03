@@ -18,4 +18,6 @@ public interface MasStoreSectionService {
     ApiResponse<MasStoreSectionResponse> updateStoreSection(int id, MasStoreSectionRequest masStoreSectionRequest);
 
     ApiResponse<List<MasStoreSectionResponse>> findStoreSectionByItemType(int id);
+
+    ApiResponse<List<MasStoreSectionResponse>> getSectionByItemType(String itemTypeCode);
 }

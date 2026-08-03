@@ -517,6 +517,12 @@ AND (
         :itemClassId IS NULL
         OR ic.item_class_id = :itemClassId
     )
+    
+AND (
+        :sectionId IS NULL
+        OR s.section_id = :sectionId
+    )
+
 
 ORDER BY i.nomenclature
 """,
@@ -558,6 +564,7 @@ AND (
             @Param("medicalConsumableItemTypeCode") String medicalConsumableItemTypeCode,
             @Param("groupCode") String groupCode,
             @Param("itemName") String itemName,
+            @Param("sectionId") Integer sectionId,
             @Param("itemClassId") Integer itemClassId,
             Pageable pageable);
     @Query(value = """
@@ -619,6 +626,12 @@ AND (
         :itemClassId IS NULL
         OR ic.item_class_id = :itemClassId
     )
+       
+AND (
+        :sectionId IS NULL
+        OR s.section_id = :sectionId
+    )
+
 
 ORDER BY i.nomenclature
 """,
@@ -656,6 +669,7 @@ WHERE
             @Param("medicalNonConsumableItemTypeCode") String medicalNonConsumableItemTypeCode,
             @Param("groupCode") String groupCode,
             @Param("itemName") String itemName,
+            @Param("sectionId") Integer sectionId,
             @Param("itemClassId") Integer itemClassId,
             Pageable pageable);
 }

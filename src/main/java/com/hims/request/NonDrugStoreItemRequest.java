@@ -15,5 +15,6 @@ public class NonDrugStoreItemRequest {
     private Integer itemClassId;
     private Integer masItemCategoryId;
     private Long unitAU;
+    private String hsn;
 
 }
