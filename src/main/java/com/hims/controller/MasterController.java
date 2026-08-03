@@ -1262,6 +1262,11 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     public ApiResponse<List<MasStoreSectionResponse>> findStoreSectionByItemType(@PathVariable int id) {
         return masStoreSectionService.findStoreSectionByItemType(id);
     }
+    @GetMapping("/getSectionByItemType/{itemTypeCode}")
+    public ApiResponse<List<MasStoreSectionResponse>> getSectionByItemType(@PathVariable String itemTypeCode) {
+        return masStoreSectionService.getSectionByItemType(itemTypeCode);
+    }
+
 
 
 
@@ -5223,13 +5228,14 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(required = false) String itemName,
+            @RequestParam(required = false) Integer sectionId,
             @RequestParam(required = false) Integer itemClassId) {
 
         log.info("Request received to fetch Medical Consumable Items. page={}, size={}, itemId={}, itemClassId={}",
                 page, size, itemName, itemClassId);
 
         ApiResponse<Page<NonDrugStoreItemResponse>> response =
-                masStoreItemService.medicalConsumableItem(page, size, itemName, itemClassId);
+                masStoreItemService.medicalConsumableItem(page, size, itemName,sectionId, itemClassId);
 
         return ResponseEntity.ok(response);
     }
@@ -5238,13 +5244,14 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(required = false) String itemName,
+            @RequestParam(required = false) Integer sectionId,
             @RequestParam(required = false) Integer itemClassId) {
 
         log.info("Request received to fetch  Non Medical Consumable Items. page={}, size={}, itemId={}, itemClassId={}",
                 page, size, itemName, itemClassId);
 
         ApiResponse<Page<NonDrugStoreItemResponse>> response =
-                masStoreItemService.nonMedicalConsumableItem(page, size, itemName, itemClassId);
+                masStoreItemService.nonMedicalConsumableItem(page, size, itemName,sectionId, itemClassId);
 
         return ResponseEntity.ok(response);
     }

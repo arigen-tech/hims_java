@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -351,7 +352,7 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
             masStoreItems = masStoreItemRepository.findActiveItemsBySectionId("y");
 
         } else if (flag == 0) {
-            masStoreItems = masStoreItemRepository.findAllItemsBySectionIdAndStatusIn(1, List.of("y", "n"));
+            masStoreItems = masStoreItemRepository.findAllItemsBySectionIdAndStatusIn(sectionId, List.of("y", "n"));
 
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
@@ -559,7 +560,7 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
                         "MasStoreItem not found with ID: " + id, HttpStatus.NOT_FOUND.value());
             }
             MasStoreItem entity = masStoreItem.get();
-            if (status.equals("y") || status.equals("n")) {
+            if (status.equalsIgnoreCase("y") || status.equalsIgnoreCase("n")) {
                 entity.setStatus(status);
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
@@ -826,6 +827,10 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             masStoreItem.setLastChgBy(currentUser.getUserId());
             masStoreItem.setLastChgDate(LocalDate.now());
             masStoreItem.setLastChgTime(getCurrentTimeFormatted());
+            Optional<MasHSN> masHSN = masHsnRepository.findById(nonDrugStoreItemRequest.getHsn());
+            if (masHSN.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
+            }
 
             Optional<MasStoreUnit> masStoreUnit1 = masStoreUnitRepository.findById(nonDrugStoreItemRequest.getUnitAU());
             if (masStoreUnit1.isEmpty()) {
@@ -927,7 +932,10 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             item.setLastChgTime(getCurrentTimeFormatted());
 
 
-
+            Optional<MasHSN> masHSN = masHsnRepository.findById(request.getHsn());
+            if (masHSN.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
+            }
 
             if (request.getUnitAU() != null) {
                 item.setUnitAU(masStoreUnitRepository.findById(request.getUnitAU())
@@ -1048,6 +1056,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             int page,
             int size,
             String  itemName,
+            Integer sectionId,
             Integer itemClassId){
 
         log.info("Fetching Medical Consumable Items. Page: {}, Size: {}, ItemName: {}, ItemClass: {}",
@@ -1063,6 +1072,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
                             medicalConsumableItemTypeCode,
                             masItemGroup,
                             itemName,
+                            sectionId,
                             itemClassId,
                             pageable);
 
@@ -1109,6 +1119,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             int page,
             int size,
             String  itemName,
+            Integer sectionId,
             Integer itemClassId){
 
         log.info("Fetching Non Medical Consumable Items. Page: {}, Size: {}, ItemName: {}, ItemClass: {}",
@@ -1120,6 +1131,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
                             medicalNonConsumableItemTypeCode,
                             masItemGroup,
                             itemName,
+                             sectionId,
                             itemClassId,
                             pageable);
 
@@ -1327,6 +1339,8 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setNomenclature(item.getNomenclature());
         response.setPvmsNo(item.getPvmsNo());
         response.setStatus(item.getStatus());
+
+        response.setHsn(item.getHsnCode() != null ? item.getHsnCode().getHsnCode() : null);
 
         response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
         response.setGroupName(item.getGroupId() != null ? item.getGroupId().getGroupName() : null);

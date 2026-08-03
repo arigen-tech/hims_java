@@ -20,4 +20,5 @@ public class NonDrugStoreItemResponse {
     private Long unitAU;
     private String unitAuName;
     private String status;
+    private String hsn;
 }

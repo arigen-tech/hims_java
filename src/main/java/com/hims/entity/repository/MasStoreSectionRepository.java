@@ -23,4 +23,6 @@ public interface MasStoreSectionRepository extends JpaRepository<MasStoreSection
     List<MasStoreSection> findByMasItemTypeIdOrderBySectionNameAsc(int id);
 
     List<MasStoreSection> findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
+
+    List<MasStoreSection> findByMasItemType_CodeOrderBySectionNameAsc(String itemTypeCode);
 }
