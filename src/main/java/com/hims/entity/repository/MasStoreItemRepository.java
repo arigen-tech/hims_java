@@ -222,8 +222,9 @@ GROUP BY
         m.nomenclature
     )
     FROM MasStoreItem m
+    LEFT JOIN m.sectionId s
     WHERE m.status = 'y'
-      AND m.sectionId.sectionId = :sectionId
+      AND s.sectionCode = :sectionCode
       AND (
             LOWER(m.nomenclature) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(m.pvmsNo) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -231,7 +232,7 @@ GROUP BY
     ORDER BY m.nomenclature ASC
 """)
     Page<ItemStockLedgerWithBatchResponse> searchItems(
-            @Param("sectionId") Long sectionId,
+            @Param("sectionCode") String sectionCode,
             @Param("keyword") String keyword,
             Pageable pageable
     );
@@ -243,8 +244,11 @@ GROUP BY
         m.nomenclature
     )
     FROM MasStoreItem m
+    LEFT JOIN m.sectionId s
+    LEFT JOIN m.itemTypeId t
     WHERE m.status = 'y'
-      AND m.sectionId.sectionId != :sectionId
+      AND s.sectionCode != :sectionCode
+      AND t.code IN (:medicalConsumablesAndNonConsumables)
       AND (
             LOWER(m.nomenclature) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(m.pvmsNo) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -252,8 +256,9 @@ GROUP BY
     ORDER BY m.nomenclature ASC
 """)
     Page<ItemStockLedgerWithBatchResponse> searchNonDrugItems(
-            @Param("sectionId") Long sectionId,
+            @Param("sectionCode") String sectionCode,
             @Param("keyword") String keyword,
+            @Param("medicalConsumablesAndNonConsumables") List<String> medicalConsumablesAndNonConsumables,
             Pageable pageable
     );
     @Query("""

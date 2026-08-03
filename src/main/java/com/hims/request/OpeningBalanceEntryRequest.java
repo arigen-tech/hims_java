@@ -10,6 +10,7 @@ public class OpeningBalanceEntryRequest {
     private String enteredBy;
     private LocalDateTime enteredDt;
     private String status;
+    private String balanceType;
     private List<OpeningBalanceDtRequest> storeBalanceDtList;
     private List<Long> deletedDt;
 }

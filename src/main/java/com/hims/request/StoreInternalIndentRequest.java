@@ -8,13 +8,10 @@ import java.util.List;
 
 @Data
 public class StoreInternalIndentRequest {
-    private Long indentMId;            // null for create, present for update
-           // optional
-    private LocalDateTime indentDate;  // optional, defaulted when null
-    private Long toDeptId;             // requested department id
-//    private BigDecimal totalCost;      // optional - will be recalculated
-//    private String sourceType;         // "M"=Manual, "R"=ROL, "P"=Previous (optional)
-
+    private Long indentMId;
+    private LocalDateTime indentDate;
+    private Long toDeptId;
+    private String indentType;
     private List<Long> deletedT;
 
     private List<StoreInternalIndentDetailRequest> items;
