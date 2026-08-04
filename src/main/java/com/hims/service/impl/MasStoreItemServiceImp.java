@@ -156,8 +156,13 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 //        masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore());
 //        masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary());
         masStoreItem.setIsGeneric(masStoreItemRequest.getIsGeneric());
-        masStoreItem.setDangerousDrug(masStoreItem.getDangerousDrug());
+        masStoreItem.setDangerousDrug(masStoreItemRequest.getDangerousDrug());
         masStoreItem.setDrugSchedule(masStoreItemRequest.getDrugSchedule());
+        masStoreItem.setHighValueDrug(normalizeYN(masStoreItemRequest.getHighValueDrug()));
+        masStoreItem.setAvailableInOpd(normalizeYN(masStoreItemRequest.getAvailableInOpd()));
+        masStoreItem.setAvailableInIpd(normalizeYN(masStoreItemRequest.getAvailableInIpd()));
+        masStoreItem.setAvailableInEmergency(normalizeYN(masStoreItemRequest.getAvailableInEmergency()));
+        masStoreItem.setAvailableInOt(normalizeYN(masStoreItemRequest.getAvailableInOt()));
 
 
         Optional<MasStoreUnit> masStoreUnit = masStoreUnitRepository.findById(masStoreItemRequest.getDispUnit());
@@ -444,6 +449,11 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
             item.setIsGeneric(request.getIsGeneric());
             item.setDangerousDrug(request.getDangerousDrug());
             item.setDrugSchedule(request.getDrugSchedule());
+            item.setHighValueDrug(normalizeYN(request.getHighValueDrug()));
+            item.setAvailableInOpd(normalizeYN(request.getAvailableInOpd()));
+            item.setAvailableInIpd(normalizeYN(request.getAvailableInIpd()));
+            item.setAvailableInEmergency(normalizeYN(request.getAvailableInEmergency()));
+            item.setAvailableInOt(normalizeYN(request.getAvailableInOt()));
 
             if (request.getDispUnit() != null) {
                 item.setDispUnit(masStoreUnitRepository.findById(request.getDispUnit())
@@ -1250,6 +1260,11 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setDangerousDrug(item.getDangerousDrug());
         response.setIsGeneric(item.getIsGeneric());
         response.setDrugSchedule(item.getDrugSchedule());
+        response.setHighValueDrug(item.getHighValueDrug());
+        response.setAvailableInOpd(item.getAvailableInOpd());
+        response.setAvailableInIpd(item.getAvailableInIpd());
+        response.setAvailableInEmergency(item.getAvailableInEmergency());
+        response.setAvailableInOt(item.getAvailableInOt());
 
         List<MasStoreItemResponse.MasFacilityCodeResponse> facilityList = new ArrayList<>();
         List<StoreItemFacilityMap> storeItemFacilityMaps=storeItemFacilityMapRepository.findByItemItemId(item.getItemId());
@@ -1279,6 +1294,11 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setDangerousDrug(item.getDangerousDrug());
         response.setIsGeneric(item.getIsGeneric());
         response.setDrugSchedule(item.getDrugSchedule());
+        response.setHighValueDrug(item.getHighValueDrug());
+        response.setAvailableInOpd(item.getAvailableInOpd());
+        response.setAvailableInIpd(item.getAvailableInIpd());
+        response.setAvailableInEmergency(item.getAvailableInEmergency());
+        response.setAvailableInOt(item.getAvailableInOt());
 
 
         response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
@@ -1416,10 +1436,25 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setIsGeneric(item.getIsGeneric());
         response.setDangerousDrug(item.getDangerousDrug());
         response.setDrugSchedule(item.getDrugSchedule());
+        response.setHighValueDrug(item.getHighValueDrug());
+        response.setAvailableInOpd(item.getAvailableInOpd());
+        response.setAvailableInIpd(item.getAvailableInIpd());
+        response.setAvailableInEmergency(item.getAvailableInEmergency());
+        response.setAvailableInOt(item.getAvailableInOt());
         response.setFacilityCode(facilityMap.getOrDefault(item.getItemId(), Collections.emptyList()));
 
         return response;
     }
 
+    String normalizeYN(String val) {
+        if (val == null) {
+            return null;
+        }
+        String lower = val.trim().toLowerCase();
+        if ("y".equals(lower) || "n".equals(lower)) {
+            return lower;
+        }
+        return val;
+    }
 
 }

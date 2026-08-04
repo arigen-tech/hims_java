@@ -379,7 +379,12 @@ GROUP BY
 
         m.dangerousDrug AS dangerousDrug,
         m.isGeneric AS isGeneric,
-        m.drugSchedule AS drugSchedule
+        m.drugSchedule AS drugSchedule,
+        m.highValueDrug AS highValueDrug,
+        m.availableInOpd AS availableInOpd,
+        m.availableInIpd AS availableInIpd,
+        m.availableInEmergency AS availableInEmergency,
+        m.availableInOt AS availableInOt
 
     FROM MasStoreItem m
     LEFT JOIN m.dispUnit du
@@ -441,7 +446,12 @@ ORDER BY m.lastChgDate DESC, m.lastChgTime DESC
 
         m.dangerousDrug AS dangerousDrug,
         m.isGeneric AS isGeneric,
-        m.drugSchedule AS drugSchedule
+        m.drugSchedule AS drugSchedule,
+        m.highValueDrug AS highValueDrug,
+        m.availableInOpd AS availableInOpd,
+        m.availableInIpd AS availableInIpd,
+        m.availableInEmergency AS availableInEmergency,
+        m.availableInOt AS availableInOt
 
     FROM MasStoreItem m
     LEFT JOIN m.dispUnit du
