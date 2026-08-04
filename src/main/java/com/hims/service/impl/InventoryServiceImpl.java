@@ -1429,7 +1429,8 @@ public class InventoryServiceImpl implements InventoryService {
                             issueT,
                             indentT.getItemId(),
                             issueT.getStockId(),
-                            qtyRejected
+                            qtyRejected,
+                            storeDept
                     ));
 
 
@@ -2201,16 +2202,20 @@ public class InventoryServiceImpl implements InventoryService {
         MasStoreItem item;
         StoreItemBatchStock stock;
         BigDecimal rejectedQty;
+
+        MasDepartment department;
+
         String rejectionReason;
 
         public StoreReturnItemDetail(StoreIndentReceiveT receiveT, StoreIssueT issueT,
                                      MasStoreItem item, StoreItemBatchStock stock,
-                                     BigDecimal rejectedQty) {
+                                     BigDecimal rejectedQty,MasDepartment department) {
             this.receiveT = receiveT;
             this.issueT = issueT;
             this.item = item;
             this.stock = stock;
             this.rejectedQty = rejectedQty;
+            this.department = department;
 //            this.rejectionReason = rejectionReason;
         }
     }
@@ -2366,7 +2371,8 @@ public class InventoryServiceImpl implements InventoryService {
                     itemDetail.stock.getStockId(),
                     "REJECTED DURING RECEIVING",
                     "RETURN NO: " + returnNo,
-                    returnNo
+                    returnNo,
+                    itemDetail.department
             );
         }
 
@@ -2377,7 +2383,7 @@ public class InventoryServiceImpl implements InventoryService {
         receiveMRepository.save(receiveM);
     }
 
-    private void returnedLedger(BigDecimal qtyBefore,long qtyReturned,Long indentTId,Long stockId,String rejectedReason,String remarks,String referenceNum){
+    private void returnedLedger(BigDecimal qtyBefore,long qtyReturned,Long indentTId,Long stockId,String rejectedReason,String remarks,String referenceNum,MasDepartment department){
 
         StoreItemBatchStock stock = storeItemBatchStockRepository.findById(stockId)
                 .orElseThrow(() -> new EntityNotFoundException(AppConstants.STOCK_NOT_FOUND_ERR_MSG));
@@ -2404,7 +2410,7 @@ public class InventoryServiceImpl implements InventoryService {
         ledger.setQtyAfter(qtyBefore);
         ledger.setQtyReject(BigDecimal.valueOf(qtyReturned));
         ledger.setReferenceNum(referenceNum);
-        ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found")));
+        ledger.setDept(department);
         ledger.setHospital(currentUser.getHospital());
         ledger.setTxnSource(AppConstants.TRANSACTION_TYPE_AND_SOURCE_RETURN);
         storeStockLedgerRepository.save(ledger);
