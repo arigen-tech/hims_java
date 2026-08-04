@@ -1427,6 +1427,8 @@ public ApiResponse<Page<MasEmployeeResponse>> getAllEmployees(String employeeNam
         response.setEmployeeTypeId(projection.getEmployeeTypeId());
         response.setEmployeeType(projection.getEmployeeType());
         response.setStatus(projection.getStatus());
+        response.setRoleId(projection.getRoleId());
+        response.setRoleName(projection.getRoleName());
         return response;
     }
 }

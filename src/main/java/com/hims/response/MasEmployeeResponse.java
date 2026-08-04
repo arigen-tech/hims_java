@@ -19,5 +19,7 @@ public class MasEmployeeResponse {
     private  Long employeeTypeId;
     private  String employeeType;
     private  String status;
+    private Long roleId;
+    private String roleName;
 
 }
