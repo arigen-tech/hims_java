@@ -48,6 +48,11 @@ public class MasStoreItemResponse {
     private String dangerousDrug;
     private List<MasFacilityCodeResponse> facilityCode;
     private String drugSchedule;
+    private String highValueDrug;
+    private String availableInOpd;
+    private String availableInIpd;
+    private String availableInEmergency;
+    private String availableInOt;
     @Data
 
     public static class MasFacilityCodeResponse{
