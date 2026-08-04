@@ -1,0 +1,572 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Advance_receipt" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="663a0e77-c446-4f91-b46f-8392c6e70b67">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<parameter name="receiptId" class="java.lang.Integer"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+    rh.receipt_id,
+    rh.receipt_no,
+    rh.receipt_date,
+    rh.inpatient_id,
+    COALESCE( ip.admission_no, ip.inpatient_id::TEXT) AS ip_no,
+    p.uhid_no AS patient_id,
+    CONCAT(p.p_fn, ' ', COALESCE(p.p_mn || ' ', ''), p.p_ln) AS patient_name,
+    ip.admission_date + COALESCE(ip.admission_time, TIME '00:00:00') AS admit_date_time,
+    mb.bed_number,
+    ip.consent_taken_by AS doctor_name,
+    concat(p.p_address1, ' , ', p.p_address2, ' , ', p.p_city, ' , ', p.p_pincode) AS patient_address,
+    mh.gstn_no AS gstin_no,
+    COALESCE(
+        mrt.receipt_type_name,
+        'Deposit/Advance'
+    ) AS recipt_type,
+    mpm.mode_name AS mode_of_payment,
+    rd.amount,
+    rh.total_amount,
+    rh.remarks AS receipt_remarks,
+    msc.service_cat_name,
+    msc.sac_code,
+    num_to_words(rh.total_amount) as total_amount_words,
+    rh.last_chg_by
+FROM ipd_bl_receipt_hd rh
+INNER JOIN inpatient ip ON ip.inpatient_id = rh.inpatient_id
+LEFT JOIN patient p ON p.patient_id = ip.patient
+LEFT JOIN mas_bed mb ON mb.bed_id = ip.bed_id
+LEFT JOIN mas_receipt_type mrt ON mrt.receipt_type_id = rh.receipt_type_id
+LEFT JOIN ipd_bl_receipt_dt rd ON rd.receipt_id = rh.receipt_id
+LEFT JOIN mas_payment_mode mpm ON mpm.payment_mode_id = rd.payment_mode_id
+left join mas_hospital mh on p.p_hospital_id = mh.hospital_id 
+left join mas_service_category msc on rh.service_category_id = msc.id
+WHERE rh.receipt_id = $P{receiptId}]]>
+	</queryString>
+	<field name="receipt_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="receipt_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="receipt_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ipd_bl_receipt_hd"/>
+	</field>
+	<field name="receipt_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="receipt_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="receipt_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ipd_bl_receipt_hd"/>
+	</field>
+	<field name="receipt_date" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="receipt_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="receipt_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ipd_bl_receipt_hd"/>
+	</field>
+	<field name="inpatient_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="inpatient_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="inpatient_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ipd_bl_receipt_hd"/>
+	</field>
+	<field name="ip_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="ip_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="ip_no"/>
+	</field>
+	<field name="patient_id" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="patient_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ipd_billing_header"/>
+	</field>
+	<field name="admit_date_time" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="admit_date_time"/>
+		<property name="com.jaspersoft.studio.field.label" value="admit_date_time"/>
+	</field>
+	<field name="bed_number" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="bed_number"/>
+		<property name="com.jaspersoft.studio.field.label" value="bed_number"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_bed"/>
+	</field>
+	<field name="doctor_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="doctor_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="doctor_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="inpatient"/>
+	</field>
+	<field name="patient_address" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_address"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_address"/>
+	</field>
+	<field name="gstin_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gstin_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="gstin_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<field name="recipt_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="recipt_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="recipt_type"/>
+	</field>
+	<field name="mode_of_payment" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="mode_of_payment"/>
+		<property name="com.jaspersoft.studio.field.label" value="mode_of_payment"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_payment_mode"/>
+	</field>
+	<field name="amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ipd_bl_receipt_dt"/>
+	</field>
+	<field name="total_amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="total_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="total_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ipd_bl_receipt_hd"/>
+	</field>
+	<field name="receipt_remarks" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="receipt_remarks"/>
+		<property name="com.jaspersoft.studio.field.label" value="receipt_remarks"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ipd_bl_receipt_hd"/>
+	</field>
+	<field name="service_cat_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="service_cat_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="service_cat_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_service_category"/>
+	</field>
+	<field name="sac_code" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="sac_code"/>
+		<property name="com.jaspersoft.studio.field.label" value="sac_code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_service_category"/>
+	</field>
+	<field name="total_amount_words" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="total_amount_words"/>
+		<property name="com.jaspersoft.studio.field.label" value="total_amount_words"/>
+	</field>
+	<field name="last_chg_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="last_chg_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="last_chg_by"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ipd_bl_receipt_hd"/>
+	</field>
+	<variable name="S.No" class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[new Integer (0)]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="57" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="7" width="555" height="23" uuid="f1b491be-ab57-4a8f-8c82-108d40a515f5"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Deposit Receipt]]></text>
+			</staticText>
+			<image>
+				<reportElement x="9" y="7" width="171" height="50" uuid="4d0996e7-80d3-49d8-a225-d8cf9c8d3215"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="144" splitType="Stretch">
+			<staticText>
+				<reportElement x="7" y="17" width="83" height="14" uuid="b62ad3e2-aff2-46b2-990c-a5d4c4d03366"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[IPNO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="57" width="83" height="14" uuid="82514ad1-1f14-495c-88d6-1c83fd683388"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="77" width="83" height="14" uuid="d5968a8c-c833-4756-87df-972672b4e22f"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient Address]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="110" width="83" height="14" uuid="bb9214b1-470e-4b7f-8cb1-521ff11c8d19"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Doctor]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="130" width="83" height="14" uuid="f678879f-d05f-4823-b45e-4724ad9da18b"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bed]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="94" y="130" width="3" height="14" uuid="99c1efb3-3fae-4007-9f53-ff09e9256575"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="94" y="110" width="3" height="14" uuid="90db141f-aaff-432b-b443-338da7c1989c"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="94" y="77" width="3" height="14" uuid="255983b0-7937-4edd-a122-797a9a3a06d3"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="94" y="57" width="3" height="14" uuid="b0caefa1-4120-4857-ad50-fa57fde79e18"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="94" y="17" width="3" height="14" uuid="1c5e1a45-4ee8-46d9-b535-2bfee931c406"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="37" width="83" height="14" uuid="52863a72-7d94-44fe-9c7b-4393985735d5"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient ID]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="94" y="37" width="3" height="14" uuid="d16f936e-96da-453d-bfed-d5d303c3b854"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="17" width="105" height="14" uuid="8a682b2a-c1c5-42a9-a2db-33eb2d26c743"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Receipt No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="400" y="17" width="3" height="14" uuid="4129caef-a50c-49bd-9888-658d0c4b0c37"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="37" width="105" height="14" uuid="a298b65e-7f4b-4ee9-998e-504ffba2310e"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Receipt Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="400" y="37" width="3" height="14" uuid="0095ee44-7768-4cc9-a9d2-86f65d9e46d0"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="57" width="105" height="14" uuid="cca4cf52-55da-4930-8f87-d2d3cb3e00e0"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Admit Date & Time]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="400" y="57" width="3" height="14" uuid="cd58c71a-b1ec-4fb5-8d00-cd0dd5a7586d"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="77" width="105" height="14" uuid="b80fa685-691f-4c3c-9ec8-bfa7f536194f"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GSTN No]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="400" y="77" width="3" height="14" uuid="2e30db2f-3876-49d5-b966-9fe46512698f"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="100" y="17" width="145" height="14" uuid="476d2ed1-7b75-4e45-92a7-a0f1d4eaad1c"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ip_no}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="100" y="37" width="145" height="14" uuid="2a92e3bf-f1ab-4d2b-9da3-5fec121935c0"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{patient_id}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="100" y="57" width="145" height="14" uuid="98a2575a-7a3c-4d15-b56a-e1a80d121f29"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="100" y="77" width="145" height="14" uuid="8a12d920-ebb2-412f-8258-dbc6759d83b9"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{patient_address}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="100" y="110" width="145" height="14" uuid="391643b5-c80b-4541-8eca-12642fde1415"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{doctor_name}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="100" y="130" width="145" height="14" uuid="3d9dc35d-e8b0-40e2-a213-5f0a15dfeb95"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{bed_number}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="406" y="17" width="133" height="14" uuid="805c87b5-7ca6-4964-bb23-c1208eb7355d"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{receipt_no}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="406" y="37" width="133" height="14" uuid="9c362198-67d7-4fd6-8f12-b3b0e4440f01"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{receipt_date}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="406" y="57" width="133" height="14" uuid="babb0425-2ecb-4aa7-9968-8d597386622e"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{admit_date_time}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="406" y="77" width="133" height="14" uuid="a7f68315-b1f3-4f26-a886-5ca9b37b1630"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gstin_no}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="27" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="6" width="1" height="20" uuid="f920f150-cec1-4daf-8145-965041431a41"/>
+			</line>
+			<line>
+				<reportElement x="0" y="6" width="555" height="1" uuid="3fec8e54-bc9b-4374-86ce-e5d5e3292305"/>
+			</line>
+			<line>
+				<reportElement x="0" y="26" width="555" height="1" uuid="3316e23f-453c-484a-a6f7-126cbc248d91"/>
+			</line>
+			<staticText>
+				<reportElement x="8" y="9" width="42" height="14" uuid="d1478f52-6142-448c-a7ef-1dc614d6588a"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S. No.]]></text>
+			</staticText>
+			<line>
+				<reportElement x="58" y="6" width="1" height="20" uuid="997ae032-db73-4c43-8e27-35ef52ccadb5"/>
+			</line>
+			<staticText>
+				<reportElement x="65" y="9" width="74" height="14" uuid="3ee0adcd-9b0f-4be6-b57a-2f5bca86a6e8"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SAC Code]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="151" y="9" width="89" height="14" uuid="0c76b657-e0a3-43a7-bcf6-d8ca3b9b6246"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Service Name]]></text>
+			</staticText>
+			<line>
+				<reportElement x="144" y="6" width="1" height="20" uuid="b46a6e29-2db2-4887-b8bc-60df94de1abd"/>
+			</line>
+			<staticText>
+				<reportElement x="256" y="9" width="89" height="14" uuid="1b066c5d-b37f-4cc4-9b21-1f73f9511420"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Mode of payment]]></text>
+			</staticText>
+			<line>
+				<reportElement x="245" y="6" width="1" height="20" uuid="8865ac46-a79c-4466-b6ec-0430c253e812"/>
+			</line>
+			<staticText>
+				<reportElement x="360" y="8" width="183" height="14" uuid="ea7923ba-2e90-4f74-8ad1-1599127c0ac8"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount]]></text>
+			</staticText>
+			<line>
+				<reportElement x="354" y="6" width="1" height="20" uuid="c9d4845a-2ba0-4dc5-85e9-438e83d989ba"/>
+			</line>
+			<line>
+				<reportElement x="554" y="6" width="1" height="20" uuid="a6fd294b-0bd0-485b-8a13-a7c46a776e34"/>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="20" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="19" width="555" height="1" uuid="4478d00b-f119-4de2-9fdb-f5cb77802b7b"/>
+			</line>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToBandHeight" x="0" y="-20" width="1" height="39" uuid="b9b7a509-17c5-4d08-a15d-fd97ce541a1f"/>
+			</line>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToBandHeight" x="58" y="-20" width="1" height="39" uuid="66e5ec27-adab-42d1-b4e1-21f4b9d96082"/>
+			</line>
+			<textField>
+				<reportElement x="8" y="2" width="42" height="14" uuid="63a844d5-509a-4435-8c42-d7a16c65880c"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{S.No}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToBandHeight" x="144" y="-20" width="1" height="39" uuid="d3ce555a-b43e-4a0d-9cd4-b137eee66c4b"/>
+			</line>
+			<textField isBlankWhenNull="true">
+				<reportElement x="65" y="2" width="74" height="14" uuid="123277a4-88bf-41a1-bf2e-fbf56aeb5748"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sac_code}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToBandHeight" x="245" y="-20" width="1" height="39" uuid="8327c203-0181-4400-9299-d1e8e2de07dd"/>
+			</line>
+			<textField isBlankWhenNull="true">
+				<reportElement x="151" y="2" width="89" height="14" uuid="ac7a37ca-031f-44ad-9b3d-6d8834a39fbb"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{service_cat_name}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToBandHeight" x="354" y="-20" width="1" height="39" uuid="78ef147d-3cbb-415b-8ece-1a9f7106160f"/>
+			</line>
+			<textField isBlankWhenNull="true">
+				<reportElement x="256" y="2" width="89" height="14" uuid="7b258543-37c9-4c72-9879-de188a6ec171"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mode_of_payment}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToBandHeight" x="554" y="-20" width="1" height="39" uuid="ab6cbd20-3e6b-4c91-932a-e17362989f30"/>
+			</line>
+			<textField>
+				<reportElement x="360" y="1" width="183" height="14" uuid="f9fb88d5-546b-4788-afb0-34da8c0936a5"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{amount}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="132" splitType="Stretch">
+			<staticText>
+				<reportElement x="7" y="42" width="93" height="14" uuid="61b30fbb-979e-4d05-ab33-a48e976524f5"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount of words]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="103" y="42" width="3" height="14" uuid="8bfd2ea5-7788-43c1-aa2c-e3c57b48dfd3"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="8" y="60" width="337" height="14" uuid="3560ee1a-225d-4a1f-85ef-3fa334f3c3f9"/>
+				<textElement textAlignment="Left" markup="html">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Received with thanks from " + "<b>" + $F{patient_name} + "</b>"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="9" y="78" width="336" height="14" uuid="e80dad52-2b14-4e9f-bd31-a277791565bb"/>
+				<textElement textAlignment="Left" markup="html">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["On account of IP/NO " + "<b>"+$F{ip_no}+ "</b>"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="358" y="10" width="185" height="14" uuid="dc395dd6-b2db-4667-973a-24d5aabfb739"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{total_amount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="112" y="42" width="431" height="14" uuid="0122486b-9c5f-4a2c-8323-a29a36d5be31"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{total_amount_words}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="7" y="10" width="93" height="14" uuid="db097195-5a8e-48f8-8909-da42633069d4"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="420" y="118" width="112" height="14" uuid="b2458cd2-84ef-458f-9c11-4b08f9dc3c77"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Submitted by]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="420" y="102" width="112" height="14" uuid="664efc46-003e-4182-9d27-ab336000c170"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{last_chg_by}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>
