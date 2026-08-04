@@ -32,8 +32,10 @@ public class MasStoreItemRequest {
     private List<Long> facility;
     private String drugSchedule;
     //  private String dosage;
-
-
-
+    private String highValueDrug;
+    private String availableInOpd;
+    private String availableInIpd;
+    private String availableInEmergency;
+    private String availableInOt;
 
 }
