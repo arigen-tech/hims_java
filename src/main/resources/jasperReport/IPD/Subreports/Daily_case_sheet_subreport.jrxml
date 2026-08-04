@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Daily_case_sheet_subreport" pageWidth="595" pageHeight="842" columnWidth="595" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="2c84aa26-9c20-44ba-a28c-4211e2657032">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<parameter name="inPatientId" class="java.lang.Integer"/>
+	<queryString language="SQL">
+		<![CDATA[select 
+	idcse.visit_datetime,
+	idcse.doctor_name,
+	md.department_name ,
+	idcse.doctor_notes,
+	idcse.investigation_summary ,
+	idcse. medicine_summary ,
+	idcse.care_plan_changes,
+	mvt.visit_type_name
+from ip_daily_case_sheet_entry idcse
+left join mas_department md on idcse.visit_department_id  = md.department_id
+left join mas_visit_type mvt on idcse.visit_type_id = mvt.visit_type_id 
+where idcse.inpatient_id = $P{inPatientId}]]>
+	</queryString>
+	<field name="visit_datetime" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="visit_datetime"/>
+		<property name="com.jaspersoft.studio.field.label" value="visit_datetime"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_daily_case_sheet_entry"/>
+	</field>
+	<field name="doctor_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="doctor_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="doctor_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_daily_case_sheet_entry"/>
+	</field>
+	<field name="department_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="department_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="department_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_department"/>
+	</field>
+	<field name="doctor_notes" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="doctor_notes"/>
+		<property name="com.jaspersoft.studio.field.label" value="doctor_notes"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_daily_case_sheet_entry"/>
+	</field>
+	<field name="investigation_summary" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="investigation_summary"/>
+		<property name="com.jaspersoft.studio.field.label" value="investigation_summary"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_daily_case_sheet_entry"/>
+	</field>
+	<field name="medicine_summary" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="medicine_summary"/>
+		<property name="com.jaspersoft.studio.field.label" value="medicine_summary"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_daily_case_sheet_entry"/>
+	</field>
+	<field name="care_plan_changes" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="care_plan_changes"/>
+		<property name="com.jaspersoft.studio.field.label" value="care_plan_changes"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_daily_case_sheet_entry"/>
+	</field>
+	<field name="visit_type_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="visit_type_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="visit_type_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_visit_type"/>
+	</field>
+	<sortField name="visit_datetime" order="Descending"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<columnHeader>
+		<band height="65" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="5" width="44" height="26" uuid="fbd93eb2-a975-4a07-9a3e-6999894ccaf1"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Date/ Time]]></text>
+			</staticText>
+			<line>
+				<reportElement x="60" y="5" width="1" height="54" uuid="43a8ea07-7739-4a64-9f46-6d43f12a118d"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="66" y="5" width="78" height="13" uuid="cd822136-50d1-4ec5-a7d9-d9fbf7e9eb69"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Doctor]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="66" y="19" width="78" height="13" uuid="b8480dd7-af0b-4b8d-81c1-d17794a9f22f"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Department]]></text>
+			</staticText>
+			<line>
+				<reportElement x="152" y="5" width="1" height="54" uuid="46379660-0be3-4ad8-ab4c-550735f1c65a"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="160" y="5" width="83" height="12" uuid="70d57674-a996-4c39-b781-e11ddb09ce25"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Notes]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="19" width="83" height="12" uuid="825a7e41-5916-44d5-a263-fe633e41fb80"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Investigation]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="33" width="83" height="12" uuid="2d9b59b4-1f21-41b3-ac23-ab633a6a8130"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Medicines]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="47" width="83" height="12" uuid="d4baa648-eea0-4add-a68a-6be0c14e32dc"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Plan]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="64" width="555" height="1" uuid="c8665873-6dca-4600-b8fd-a4485c2b94c6"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="1" y="0" width="555" height="1" uuid="388174b7-e82d-470e-949a-793083a91c8c"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="66" y="33" width="78" height="13" uuid="a5482e3c-6747-42d0-a0b7-cf31e6916f4b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Visit Type]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="74" splitType="Stretch">
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yy hh:mm a">
+				<reportElement x="10" y="5" width="44" height="13" uuid="c3d71992-93e4-4b04-a5d3-165f1314e4fa"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{visit_datetime}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="66" y="5" width="82" height="13" uuid="568e20da-d4e0-4c6f-be2e-a4778ed4ab62">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{doctor_name}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="66" y="24" width="82" height="13" uuid="c5a01ac7-4a00-41cd-ad8c-58469ede7af6"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement stretchType="RelativeToBandHeight" x="60" y="5" width="1" height="60" uuid="2a125e4e-63f1-4997-8cab-752b847c784d"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement stretchType="RelativeToBandHeight" x="152" y="5" width="1" height="60" uuid="377fc660-880a-4400-b809-6d711cdab628"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="160" y="62" width="390" height="12" isPrintWhenDetailOverflows="true" uuid="be6378fb-e2a7-40a9-b29b-c2f2196ca723"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" -- " + $F{care_plan_changes}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="160" y="43" width="390" height="12" isPrintWhenDetailOverflows="true" uuid="b093d473-b078-4f90-b2c3-9218d28c7681"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" -- " + $F{medicine_summary}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="160" y="24" width="390" height="12" isPrintWhenDetailOverflows="true" uuid="65f1dcf1-02a4-4f9d-9794-936bb3b12555"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" -- " + $F{investigation_summary}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="160" y="5" width="390" height="12" isPrintWhenDetailOverflows="true" uuid="90c575fa-508d-4e32-bebd-de696beb263d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" -- " + $F{doctor_notes}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="66" y="43" width="82" height="13" uuid="ad30b6b1-5754-4337-bb15-905bd1903d84">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{visit_type_name}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>
