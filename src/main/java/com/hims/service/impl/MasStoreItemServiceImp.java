@@ -394,6 +394,56 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
     }
 }
+
+@Override
+public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPaginated(
+        int flag,
+        int page,
+        int size,
+        String nomenclature,
+        Integer itemClassId,
+        Integer masItemCategoryid) {
+
+    try {
+        Pageable pageable = PageRequest.of(page, size);
+        Integer querySectionId = (flag == 1) ? null : sectionId;
+
+        Page<MasStoreItemsProjection> projectionPage = masStoreItemRepository.findItemsWithOutStockPaginated(
+                flag, querySectionId, nomenclature, itemClassId, masItemCategoryid, pageable);
+
+        List<Long> itemIds = projectionPage.getContent().stream()
+                .map(MasStoreItemsProjection::getItemId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, List<MasStoreItemResponse.MasFacilityCodeResponse>> facilityMap = Collections.emptyMap();
+
+        if (!itemIds.isEmpty()) {
+            facilityMap = storeItemFacilityMapRepository.findFacilityByItemIds(itemIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            MasStoreItemFacilityProjection::getItemId,
+                            Collectors.mapping(f -> {
+                                MasStoreItemResponse.MasFacilityCodeResponse res = new MasStoreItemResponse.MasFacilityCodeResponse();
+                                res.setFacilityId(f.getFacilityId());
+                                res.setFacilityCode(f.getFacilityCode());
+                                return res;
+                            }, Collectors.toList())
+                    ));
+        }
+
+        Map<Long, List<MasStoreItemResponse.MasFacilityCodeResponse>> finalFacilityMap = facilityMap;
+
+        Page<MasStoreItemResponse> responsePage = projectionPage.map(item -> convertProjectionToResponse(item, finalFacilityMap));
+
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+
+    } catch (Exception e) {
+        log.error("Error while fetching Mas Store Items without stock paginated. Flag: {}", flag, e);
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+    }
+}
     @Override
     public ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request) {
         try {
