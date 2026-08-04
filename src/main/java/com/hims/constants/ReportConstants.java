@@ -23,6 +23,9 @@ public final class ReportConstants {
     public static final String JASPER_BASE_PATH_REGISTRATION = "/jasperReport/Registration/";
     public static final String JASPER_BASE_PATH_BILLING = "/jasperReport/Billing/";
     public static final String JASPER_BASE_PATH_BLOOD_BANK = "/jasperReport/BloodBank/";
+    public static final String JASPER_BASE_PATH_IPD = "/jasperReport/IPD/";
+
+    public static final String IPD_SUB_REPORT_DIR = "Subreports/";
 
     public static final String ASSET_LOGO = "/Assets/arigen_health.png";
 
@@ -160,4 +163,19 @@ public final class ReportConstants {
 
     public static final String COMPONENT_WISE_STOCK_JASPER = "Component_wise_stock_report";
     public static final String COMPONENT_WISE_STOCK_REPORT = "ComponentWiseStockReport";
+
+    public static final String IP_DAILY_CASE_SHEET_JASPER = "Daily_case_sheet";
+    public static final String IP_DAILY_CASE_SHEET_REPORT = "dailyCaseSheet";
+
+    public static final String IP_VITALS_JASPER = "Vitals_report";
+    public static final String IP_VITALS_REPORT = "vitalsReport";
+
+    public static final String DISCHARGE_SUMMARY_JASPER = "Discharge_summary";
+    public static final String DISCHARGE_SUMMARY_REPORT = "dischargeSummary";
+
+    public static final String ADVANCE_RECEIPT_JASPER = "Advance_receipt";
+    public static final String ADVANCE_RECEIPT_REPORT = "advanceReceipt";
+
+    public static final String IP_INVESTIGATION_JASPER = "IP_investigation_report";
+    public static final String IP_INVESTIGATION_REPORT = "ipInvestigationReport";
 }

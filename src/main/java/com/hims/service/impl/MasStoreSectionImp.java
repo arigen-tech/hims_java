@@ -188,6 +188,32 @@ public class MasStoreSectionImp implements MasStoreSectionService {
         return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
         });
     }
+    @Override
+    public ApiResponse<List<MasStoreSectionResponse>> getSectionByItemType(String itemTypeCode) {
+
+        log.info("Fetching sections for itemTypeCode : {}", itemTypeCode);
+
+        try {
+
+            List<MasStoreSection> masStoreSections = masStoreSectionRepository.findByMasItemType_CodeOrderBySectionNameAsc(itemTypeCode);
+
+            List<MasStoreSectionResponse> responses = masStoreSections.stream()
+                    .map(this::mapToResponse)
+                    .toList();
+
+            return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error fetching sections for itemTypeCode : {}", itemTypeCode, e);
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Failed to fetch sections.",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
 
     private MasStoreSectionResponse mapToResponse(MasStoreSection masStoreSection) {
         MasStoreSectionResponse response = new  MasStoreSectionResponse();

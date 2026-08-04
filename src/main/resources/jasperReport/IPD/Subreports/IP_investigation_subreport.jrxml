@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Investigation_subreport" pageWidth="595" pageHeight="842" columnWidth="595" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c9d48984-5f97-4a5d-9c28-6d1ae06e572f">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<subDataset name="ipInvestigationSummary" uuid="1075ef0c-95f1-426c-a7d6-ff0b6256f8d4">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+		<parameter name="inPatientId" class="java.lang.Integer"/>
+		<queryString language="SQL">
+			<![CDATA[WITH investigation_status AS
+(
+    SELECT
+        hd.orderhd_id,
+
+        CASE
+            WHEN LOWER(COALESCE(dred.validated, 'n')) = 'y'
+                THEN TRUE
+            ELSE FALSE
+        END AS is_completed
+
+    FROM dg_result_entry_header dreh
+
+    INNER JOIN dg_orderhd hd
+        ON hd.orderhd_id = dreh.order_hd_id
+
+    INNER JOIN dg_result_entry_detail dred
+        ON dred.result_entry_id = dreh.result_entry_id
+
+    WHERE dreh.inpatient_id = $P{inPatientId}
+),
+
+order_status AS
+(
+    SELECT
+        orderhd_id,
+
+        BOOL_AND(is_completed) AS fully_completed
+
+    FROM investigation_status
+
+    GROUP BY orderhd_id
+)
+
+SELECT
+    COUNT(*) AS total_orders,
+
+    COUNT(*) FILTER (
+        WHERE fully_completed = TRUE
+    ) AS completed_orders,
+
+    COUNT(*) FILTER (
+        WHERE fully_completed = FALSE
+    ) AS pending_orders
+
+FROM order_status;]]>
+		</queryString>
+		<field name="total_orders" class="java.lang.Long">
+			<property name="com.jaspersoft.studio.field.name" value="total_orders"/>
+			<property name="com.jaspersoft.studio.field.label" value="total_orders"/>
+		</field>
+		<field name="completed_orders" class="java.lang.Long">
+			<property name="com.jaspersoft.studio.field.name" value="completed_orders"/>
+			<property name="com.jaspersoft.studio.field.label" value="completed_orders"/>
+		</field>
+		<field name="pending_orders" class="java.lang.Long">
+			<property name="com.jaspersoft.studio.field.name" value="pending_orders"/>
+			<property name="com.jaspersoft.studio.field.label" value="pending_orders"/>
+		</field>
+	</subDataset>
+	<parameter name="inPatientId" class="java.lang.Integer"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+    COALESCE(
+        hd.order_time,
+        hd.order_date::timestamp
+    ) AS order_datetime,
+    CASE (dred.result_type)
+        WHEN 's' THEN 'Single'
+        WHEN 'm' THEN 'Multiple'
+        ELSE 'Template'
+    END AS result_type,
+    dmi.investigation_name AS test_name,
+    CASE
+        WHEN LOWER(COALESCE(dred.validated, 'n')) = 'y'
+            THEN 'Completed'
+
+        WHEN COALESCE(
+            dscd.collection_time,
+            dsch.collection_time
+        ) IS NOT NULL
+            THEN 'Collected'
+
+        ELSE 'Pending'
+    END AS status,
+ 	dred.result,
+    COALESCE(
+        dscd.collection_time,
+        dsch.collection_time
+    ) AS collected_on,
+    CASE
+        WHEN dsch.validation_date IS NOT NULL
+        THEN
+            dsch.validation_date
+            + COALESCE(
+                dsch.validation_time,
+                TIME '00:00:00'
+            )
+        ELSE NULL
+    END AS completed_on,
+    hd.createdby AS ordered_by,
+    concat(me.emp_fn, ' ', me.emp_ln) as doctor_name
+FROM dg_result_entry_header dreh
+INNER JOIN dg_orderhd hd
+    ON hd.orderhd_id = dreh.order_hd_id
+INNER JOIN dg_result_entry_detail dred
+    ON dred.result_entry_id = dreh.result_entry_id
+INNER JOIN dg_mas_investigation dmi
+    ON dmi.investigation_id = dred.investigation_id
+LEFT JOIN dg_sample_collection_details dscd
+    ON dscd.sample_collection_details_id =
+       dred.sample_collection_details_id
+   AND dscd.investigation_id =
+       dred.investigation_id
+LEFT JOIN dg_sample_collection_header dsch
+    ON dsch.sample_collection_header_id =
+       COALESCE(
+           dscd.sample_collection_header_id,
+           dreh.sample_collection_header_id
+       )
+left join users u on hd.prescribed_by = u.user_id
+left join mas_employee me on u.employee_id = me.emp_id
+WHERE dreh.inpatient_id = $P{inPatientId}]]>
+	</queryString>
+	<field name="order_datetime" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="order_datetime"/>
+		<property name="com.jaspersoft.studio.field.label" value="order_datetime"/>
+	</field>
+	<field name="result_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="result_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="result_type"/>
+	</field>
+	<field name="test_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="test_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="test_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_mas_investigation"/>
+	</field>
+	<field name="status" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="status"/>
+		<property name="com.jaspersoft.studio.field.label" value="status"/>
+	</field>
+	<field name="result" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="result"/>
+		<property name="com.jaspersoft.studio.field.label" value="result"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_result_entry_detail"/>
+	</field>
+	<field name="collected_on" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="collected_on"/>
+		<property name="com.jaspersoft.studio.field.label" value="collected_on"/>
+	</field>
+	<field name="completed_on" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="completed_on"/>
+		<property name="com.jaspersoft.studio.field.label" value="completed_on"/>
+	</field>
+	<field name="ordered_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="ordered_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="ordered_by"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_orderhd"/>
+	</field>
+	<field name="doctor_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="doctor_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="doctor_name"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="29">
+			<staticText>
+				<reportElement x="5" y="10" width="91" height="13" uuid="d3dcb62d-7393-4cbc-91df-ee598f885edf"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Order Date/ Time]]></text>
+			</staticText>
+			<line>
+				<reportElement x="97" y="10" width="1" height="13" uuid="bfda9f12-6d99-4163-87af-0b54fb76e0d5"/>
+			</line>
+			<staticText>
+				<reportElement x="100" y="10" width="32" height="13" uuid="56807f08-f1ce-4a8d-a6f4-4621a296b037"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Type]]></text>
+			</staticText>
+			<line>
+				<reportElement x="134" y="10" width="1" height="13" uuid="a13a02a3-55a4-40ba-8e84-cd26a3e68a6e"/>
+			</line>
+			<staticText>
+				<reportElement x="137" y="10" width="60" height="13" uuid="2882484d-c44f-4d49-a51f-c93b66664b26"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Test Name]]></text>
+			</staticText>
+			<line>
+				<reportElement x="199" y="10" width="1" height="13" uuid="8d4f45af-2603-4d11-bc4b-93e8304242d3"/>
+			</line>
+			<staticText>
+				<reportElement x="203" y="10" width="56" height="13" uuid="f7cdcc6a-b618-48e3-8040-7e799c411d96"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Status]]></text>
+			</staticText>
+			<line>
+				<reportElement x="262" y="10" width="1" height="13" uuid="50369c87-a8db-4135-81ce-36fcacd36fb4"/>
+			</line>
+			<staticText>
+				<reportElement x="266" y="10" width="34" height="13" uuid="26a4306e-7801-4f5f-b3ab-2513ddf8baa3"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Result]]></text>
+			</staticText>
+			<line>
+				<reportElement x="301" y="10" width="1" height="13" uuid="86a2be94-c367-471e-bdba-803da562ea13"/>
+			</line>
+			<staticText>
+				<reportElement x="305" y="10" width="68" height="13" uuid="59c2862b-9947-4a6a-a0f9-c8383d15238a"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Collected On]]></text>
+			</staticText>
+			<line>
+				<reportElement x="372" y="10" width="1" height="13" uuid="88dd8db5-baef-4bb0-a44e-99c013edd62a"/>
+			</line>
+			<staticText>
+				<reportElement x="376" y="10" width="72" height="13" uuid="44500743-37ab-4586-bd8c-073896fdb25a"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Completed On]]></text>
+			</staticText>
+			<line>
+				<reportElement x="450" y="10" width="1" height="13" uuid="3f338a11-a42c-4c4c-a968-da2bbc370dbf"/>
+			</line>
+			<staticText>
+				<reportElement x="454" y="10" width="44" height="13" uuid="3b888df5-06c7-4d72-b48f-846caa838446"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ordered]]></text>
+			</staticText>
+			<line>
+				<reportElement x="501" y="10" width="1" height="13" uuid="f514e041-8402-48cf-8a10-632a97cab44d"/>
+			</line>
+			<staticText>
+				<reportElement x="505" y="10" width="48" height="13" uuid="eace40f2-896d-449a-baae-66b012d3162c"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Doctor]]></text>
+			</staticText>
+			<line>
+				<reportElement positionType="Float" x="0" y="5" width="555" height="1" uuid="f29f28fc-35c4-4137-af5b-a25b0e1fc830"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement x="0" y="28" width="555" height="1" uuid="a20daeb0-c4d8-4e7e-a11d-8ba43eebd06e"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+		</band>
+	</title>
+	<detail>
+		<band height="18" splitType="Stretch">
+			<textField pattern="dd/MM/yy h:mm a" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="5" y="5" width="91" height="13" uuid="198f84c3-7775-41d5-b4bb-3bc383c6e264"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{order_datetime}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="97" y="5" width="1" height="13" uuid="df6c116d-434f-4951-b04e-5dcf2616dc75"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="100" y="5" width="32" height="13" uuid="97ca2e94-f5c3-4611-aad3-6f10d56375fa"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{result_type}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="134" y="5" width="1" height="13" uuid="4351af57-7f4a-46e7-8c1c-813a8407a5b7"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="137" y="5" width="60" height="13" uuid="fc0cc031-b196-4374-a952-7ad8c88d54d3"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{test_name}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="199" y="5" width="1" height="13" uuid="f245472d-949c-48bf-a3a7-9a6f54ea3f62"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="203" y="5" width="56" height="13" uuid="f925d195-1500-444c-bd93-8dea785214ad"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="262" y="5" width="1" height="13" uuid="7c9c2b33-4dc7-49a4-9582-9859b513fdef"/>
+			</line>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="301" y="5" width="1" height="13" uuid="6da7ae2a-7e70-4d37-bed1-db06b2bdc2f9"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="266" y="5" width="34" height="13" uuid="1ff51f5c-d0b2-46b7-8f3a-e878927a1b33"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{result}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yy h:mm a" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="305" y="5" width="52" height="13" uuid="63fa0850-d593-44f9-8a6c-dd94a05398e7"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{collected_on}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="372" y="5" width="1" height="13" uuid="6818f910-6728-4900-a1d4-5038c7d45ce4"/>
+			</line>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yy h:mm a" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="376" y="5" width="52" height="13" uuid="97211117-1a52-4eee-b249-b105d7b15bf3"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{completed_on}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="450" y="5" width="1" height="13" uuid="0b962c8f-cd6b-4133-8049-394c7d75c9d7"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="454" y="5" width="44" height="13" uuid="defb2d66-f0a4-48d6-9407-c090e4159213"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ordered_by}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="501" y="5" width="1" height="13" uuid="a9bbd3d6-e953-4e97-a1e7-a93af6c0e2d7"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="505" y="5" width="48" height="13" uuid="28cb69d9-bd0c-440e-b56b-2bbf1fef3fd7"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{doctor_name}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="74" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="10" width="71" height="13" uuid="bd0af675-52b5-44f3-b396-9a8b0e2d4a39"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Summary :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="11" y="28" width="70" height="13" uuid="0afae444-cc3c-4e18-9f5d-c6ab1c0c2f56"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Orders]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="84" y="28" width="6" height="13" uuid="357fc82b-2383-4965-90e4-a91e0494f60b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="11" y="45" width="70" height="13" uuid="f2bcea9b-f86d-49ca-8178-eef69509cab2"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Completed]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="84" y="45" width="6" height="13" uuid="6073aca8-ebe8-4e26-af25-127af47be32e"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="11" y="61" width="70" height="13" uuid="cc2da2c7-357d-495a-91ef-8af8353800eb"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pending]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="84" y="61" width="6" height="13" uuid="55b4867f-f2a0-4775-9d71-326977a58bb7"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<componentElement>
+				<reportElement x="92" y="27" width="60" height="47" uuid="c8aa51d8-0b7a-4a59-ad11-181d46d720ca"/>
+				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
+					<datasetRun subDataset="ipInvestigationSummary" uuid="73a0cb10-02c8-4c67-9e84-048e96a7eda6">
+						<datasetParameter name="inPatientId">
+							<datasetParameterExpression><![CDATA[$P{inPatientId}]]></datasetParameterExpression>
+						</datasetParameter>
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:listContents height="47" width="60">
+						<textField>
+							<reportElement x="1" y="1" width="59" height="13" uuid="0dafd83a-1571-43df-8e71-1ffb7481f6ca"/>
+							<textElement>
+								<font fontName="DejaVu Sans Condensed" isBold="false"/>
+							</textElement>
+							<textFieldExpression><![CDATA[$F{total_orders}]]></textFieldExpression>
+						</textField>
+						<textField>
+							<reportElement x="1" y="18" width="59" height="13" uuid="b8d8eb1c-40bd-4400-9474-aa3ba2819644"/>
+							<textElement>
+								<font fontName="DejaVu Sans Condensed" isBold="false"/>
+							</textElement>
+							<textFieldExpression><![CDATA[$F{completed_orders}]]></textFieldExpression>
+						</textField>
+						<textField>
+							<reportElement x="1" y="34" width="59" height="13" uuid="d14b0e9f-f026-450f-9bcf-d33ffa7daebf"/>
+							<textElement>
+								<font fontName="DejaVu Sans Condensed" isBold="false"/>
+							</textElement>
+							<textFieldExpression><![CDATA[$F{pending_orders}]]></textFieldExpression>
+						</textField>
+					</jr:listContents>
+				</jr:list>
+			</componentElement>
+		</band>
+	</summary>
+</jasperReport>

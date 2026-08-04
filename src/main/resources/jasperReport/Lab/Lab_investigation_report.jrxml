@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Lab_investigation_report" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="64a7418b-a86b-43e1-af1d-d034e8220358">
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hmis_db"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<style name="Crosstab_CH" mode="Opaque" backcolor="#FFFFFF">
 		<box>
@@ -70,406 +70,320 @@
 	<subDataset name="units" uuid="d14b49e4-1dbb-4b3c-887c-64246afa458e">
 		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hmis_db"/>
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
-		<parameter name="sub_chargecode_name" class="java.lang.String"/>
-		<parameter name="investigation_sample" class="java.lang.String"/>
+		<parameter name="sub_chargecode_id" class="java.lang.Long"/>
+		<parameter name="investigation_id" class="java.lang.Long"/>
+		<parameter name="sample_id" class="java.lang.Long"/>
 		<parameter name="orderhd_id" class="java.lang.Integer"/>
 		<queryString>
-			<![CDATA[WITH selected_patient AS (
-    SELECT dreh.hin_id AS patient_id
-    FROM dg_result_entry_header dreh
-    WHERE dreh.order_hd_id = $P{orderhd_id}
+			<![CDATA[WITH selected_order AS (
+    SELECT doh.patient_id
+    FROM dg_orderhd doh
+    WHERE doh.orderhd_id = $P{orderhd_id}
+      AND EXISTS (
+          SELECT 1
+          FROM dg_orderdt dod
+          WHERE dod.orderhd_id = doh.orderhd_id
+            AND dod.investigation_id = $P{investigation_id}
+      )
 ),
-
-current_collection_date AS (
-    SELECT
-        MAX(DATE(dsch.collection_time)) AS collection_date
+current_cutoff AS (
+    SELECT MAX(dsch.collection_time) AS cutoff_ts
     FROM dg_result_entry_header dreh
     JOIN dg_result_entry_detail dred
-        ON dreh.result_entry_id = dred.result_entry_id
+        ON dred.result_entry_id = dreh.result_entry_id
     JOIN dg_sample_collection_details dscd
-        ON dred.sample_collection_details_id = dscd.sample_collection_details_id
+        ON dscd.sample_collection_details_id = dred.sample_collection_details_id
     JOIN dg_sample_collection_header dsch
-        ON dscd.sample_collection_header_id = dsch.sample_collection_header_id
+        ON dsch.sample_collection_header_id = dscd.sample_collection_header_id
+    JOIN dg_mas_investigation dmi
+        ON dmi.investigation_id = dred.investigation_id
     WHERE dreh.order_hd_id = $P{orderhd_id}
       AND dred.validated = 'y'
+      AND dred.investigation_id = $P{investigation_id}
+      AND COALESCE(dscd.sample_id, dred.sample_id, dmi.sample_id)
+            IS NOT DISTINCT FROM $P{sample_id}
 ),
-
-last_five_collection_dates AS (
-    SELECT DISTINCT
-        DATE(dsch.collection_time) AS collection_date
-    FROM dg_result_entry_header dreh
+history_rows AS (
+    SELECT
+        COALESCE(dsmi.sub_investigation_name, dmi.investigation_name)
+            AS sub_investigation_name,
+        mim.method_name,
+        dsch.collection_time::date AS collection_date,
+        dsch.collection_time::time AS collection_time,
+        dsch.collection_time AS collection_ts,
+        dred.result,
+        du.uom_name AS unit
+    FROM selected_order so
+    JOIN dg_result_entry_header dreh
+        ON dreh.hin_id = so.patient_id
     JOIN dg_result_entry_detail dred
-        ON dreh.result_entry_id = dred.result_entry_id
+        ON dred.result_entry_id = dreh.result_entry_id
     JOIN dg_sample_collection_details dscd
-        ON dred.sample_collection_details_id = dscd.sample_collection_details_id
+        ON dscd.sample_collection_details_id = dred.sample_collection_details_id
     JOIN dg_sample_collection_header dsch
-        ON dscd.sample_collection_header_id = dsch.sample_collection_header_id
-    JOIN selected_patient sp
-        ON dreh.hin_id = sp.patient_id
-    CROSS JOIN current_collection_date ccd
+        ON dsch.sample_collection_header_id = dscd.sample_collection_header_id
+    JOIN dg_mas_investigation dmi
+        ON dmi.investigation_id = dred.investigation_id
+    LEFT JOIN dg_sub_mas_investigation dsmi
+        ON dsmi.sub_investigation_id = dred.sub_investigation_id
+    LEFT JOIN dg_uom du
+        ON du.uom_id = dred.uom_id
+    LEFT JOIN mas_investigation_methodology mim
+        ON mim.method_id = dmi.method_id
+    CROSS JOIN current_cutoff cc
     WHERE dred.validated = 'y'
-      AND DATE(dsch.collection_time) <= ccd.collection_date
-    ORDER BY DATE(dsch.collection_time) DESC
-    LIMIT 5
+      AND COALESCE(dreh.sub_chargecode_id, dmi.sub_chargecode_id)
+            IS NOT DISTINCT FROM $P{sub_chargecode_id}
+      AND dred.investigation_id = $P{investigation_id}
+      AND COALESCE(dscd.sample_id, dred.sample_id, dmi.sample_id)
+            IS NOT DISTINCT FROM $P{sample_id}
+      AND cc.cutoff_ts IS NOT NULL
+      AND dsch.collection_time <= cc.cutoff_ts
+),
+ranked_history AS (
+    SELECT
+        hr.*,
+        DENSE_RANK() OVER (ORDER BY hr.collection_ts DESC) AS history_rank
+    FROM history_rows hr
 )
-
 SELECT
-    msc.sub_chargecode_name,
-
-    (dmi.investigation_name || ',' || dms.sample_description) AS investigation_sample,
-
-    CASE
-        WHEN dsmi.sub_investigation_name IS NULL
-            THEN dmi.investigation_name
-        ELSE dsmi.sub_investigation_name
-    END AS sub_investigation_name,
-
-    mim.method_name,
-
-    TO_CHAR(dsch.collection_time, 'DD/Mon/YY') AS collection_date,
-    TO_CHAR(dsch.collection_time, 'HH12:MIAM') AS collection_time,
-    dsch.collection_time AS collection_ts,
-
-    dred.result AS result,
-    du.uom_name AS unit
-
-FROM dg_result_entry_header dreh
-
-LEFT JOIN dg_result_entry_detail dred
-    ON dreh.result_entry_id = dred.result_entry_id
-
-LEFT JOIN dg_sample_collection_details dscd
-    ON dred.sample_collection_details_id = dscd.sample_collection_details_id
-
-LEFT JOIN dg_sample_collection_header dsch
-    ON dscd.sample_collection_header_id = dsch.sample_collection_header_id
-
-LEFT JOIN dg_mas_investigation dmi
-    ON dred.investigation_id = dmi.investigation_id
-
-LEFT JOIN dg_sub_mas_investigation dsmi
-    ON dred.sub_investigation_id = dsmi.sub_investigation_id
-
-LEFT JOIN dg_uom du
-    ON dred.uom_id = du.uom_id
-
-LEFT JOIN mas_sub_chargecode msc
-    ON dreh.sub_chargecode_id = msc.sub_chargecode_id
-
-LEFT JOIN dg_mas_sample dms
-    ON dscd.sample_id = dms.sample_id
-
-LEFT JOIN mas_investigation_methodology mim
-    ON dmi.method_id = mim.method_id
-
-JOIN last_five_collection_dates lfcd
-    ON DATE(dsch.collection_time) = lfcd.collection_date
-
-WHERE dred.validated = 'y'
-  AND msc.sub_chargecode_name = $P{sub_chargecode_name}
-  AND (dmi.investigation_name || ',' || dms.sample_description) = $P{investigation_sample}
-
-ORDER BY collection_ts]]>
+    sub_investigation_name,
+    method_name,
+    collection_date,
+    collection_time,
+    collection_ts,
+    result,
+    unit
+FROM ranked_history
+WHERE history_rank <= 5
+ORDER BY
+    collection_ts DESC,
+    sub_investigation_name]]>
 		</queryString>
-		<field name="sub_chargecode_name" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="sub_chargecode_name"/>
-			<property name="com.jaspersoft.studio.field.label" value="sub_chargecode_name"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="mas_sub_chargecode"/>
-		</field>
-		<field name="investigation_sample" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="investigation_sample"/>
-			<property name="com.jaspersoft.studio.field.label" value="investigation_sample"/>
-		</field>
-		<field name="sub_investigation_name" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="sub_investigation_name"/>
-			<property name="com.jaspersoft.studio.field.label" value="sub_investigation_name"/>
-		</field>
-		<field name="method_name" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="method_name"/>
-			<property name="com.jaspersoft.studio.field.label" value="method_name"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="mas_investigation_methodology"/>
-		</field>
-		<field name="collection_date" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="collection_date"/>
-			<property name="com.jaspersoft.studio.field.label" value="collection_date"/>
-		</field>
-		<field name="collection_time" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="collection_time"/>
-			<property name="com.jaspersoft.studio.field.label" value="collection_time"/>
-		</field>
-		<field name="collection_ts" class="java.sql.Timestamp">
-			<property name="com.jaspersoft.studio.field.name" value="collection_ts"/>
-			<property name="com.jaspersoft.studio.field.label" value="collection_ts"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="dg_sample_collection_header"/>
-		</field>
-		<field name="result" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="result"/>
-			<property name="com.jaspersoft.studio.field.label" value="result"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="dg_result_entry_detail"/>
-		</field>
-		<field name="unit" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="unit"/>
-			<property name="com.jaspersoft.studio.field.label" value="unit"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="dg_uom"/>
-		</field>
+		<field name="sub_investigation_name" class="java.lang.String"/>
+		<field name="method_name" class="java.lang.String"/>
+		<field name="collection_date" class="java.sql.Date"/>
+		<field name="collection_time" class="java.sql.Time"/>
+		<field name="collection_ts" class="java.sql.Timestamp"/>
+		<field name="result" class="java.lang.String"/>
+		<field name="unit" class="java.lang.String"/>
 	</subDataset>
 	<subDataset name="unit_bioref" uuid="85d61754-5d16-4223-ad8b-175ac5ca8372">
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hmis_db"/>
-		<parameter name="sub_chargecode_name" class="java.lang.String"/>
-		<parameter name="investigation_sample" class="java.lang.String"/>
-		<parameter name="sub_investigation_name" class="java.lang.String"/>
+		<parameter name="sub_chargecode_id" class="java.lang.Long"/>
+		<parameter name="investigation_id" class="java.lang.Long"/>
+		<parameter name="sample_id" class="java.lang.Long"/>
 		<parameter name="orderhd_id" class="java.lang.Integer"/>
 		<queryString language="SQL">
-			<![CDATA[WITH selected_patient AS (
-    SELECT dreh.hin_id AS patient_id
-    FROM dg_result_entry_header dreh
-    WHERE dreh.order_hd_id = $P{orderhd_id}
-),
-
-current_collection_date AS (
-    SELECT
-        MAX(DATE(dsch.collection_time)) AS collection_date
-    FROM dg_result_entry_header dreh
-    JOIN dg_result_entry_detail dred
-        ON dreh.result_entry_id = dred.result_entry_id
-    JOIN dg_sample_collection_details dscd
-        ON dred.sample_collection_details_id = dscd.sample_collection_details_id
-    JOIN dg_sample_collection_header dsch
-        ON dscd.sample_collection_header_id = dsch.sample_collection_header_id
-    WHERE dreh.order_hd_id = $P{orderhd_id}
-      AND dred.validated = 'y'
-),
-
-last_five_collection_dates AS (
-    SELECT DISTINCT
-        DATE(dsch.collection_time) AS collection_date
-    FROM dg_result_entry_header dreh
-    JOIN dg_result_entry_detail dred
-        ON dreh.result_entry_id = dred.result_entry_id
-    JOIN dg_sample_collection_details dscd
-        ON dred.sample_collection_details_id = dscd.sample_collection_details_id
-    JOIN dg_sample_collection_header dsch
-        ON dscd.sample_collection_header_id = dsch.sample_collection_header_id
-    JOIN selected_patient sp
-        ON dreh.hin_id = sp.patient_id
-    CROSS JOIN current_collection_date ccd
-    WHERE dred.validated = 'y'
-      AND DATE(dsch.collection_time) <= ccd.collection_date
-    ORDER BY DATE(dsch.collection_time) DESC
-    LIMIT 5
-)
-
-SELECT DISTINCT
-    msc.sub_chargecode_name,
-
-    (dmi.investigation_name || ',' || dms.sample_description) AS investigation_sample,
-
-    CASE
-        WHEN dsmi.sub_investigation_name IS NULL
-            THEN dmi.investigation_name
-        ELSE dsmi.sub_investigation_name
-    END AS sub_investigation_name,
-
+			<![CDATA[SELECT DISTINCT
+    COALESCE(dsmi.sub_investigation_name, dmi.investigation_name)
+        AS sub_investigation_name,
     du.uom_name AS unit,
-
-    dred.normal_range::text AS bio_ref
-
+    COALESCE(NULLIF(BTRIM(dred.normal_range), ''), '') AS bio_ref
 FROM dg_result_entry_header dreh
-
-LEFT JOIN dg_result_entry_detail dred
-    ON dreh.result_entry_id = dred.result_entry_id
-
-LEFT JOIN dg_sample_collection_details dscd
-    ON dred.sample_collection_details_id = dscd.sample_collection_details_id
-
-LEFT JOIN dg_sample_collection_header dsch
-    ON dscd.sample_collection_header_id = dsch.sample_collection_header_id
-
-LEFT JOIN dg_mas_investigation dmi
-    ON dred.investigation_id = dmi.investigation_id
-
+JOIN dg_result_entry_detail dred
+    ON dred.result_entry_id = dreh.result_entry_id
+JOIN dg_sample_collection_details dscd
+    ON dscd.sample_collection_details_id = dred.sample_collection_details_id
+JOIN dg_mas_investigation dmi
+    ON dmi.investigation_id = dred.investigation_id
 LEFT JOIN dg_sub_mas_investigation dsmi
-    ON dred.sub_investigation_id = dsmi.sub_investigation_id
-
+    ON dsmi.sub_investigation_id = dred.sub_investigation_id
 LEFT JOIN dg_uom du
-    ON dred.uom_id = du.uom_id
-
-LEFT JOIN mas_sub_chargecode msc
-    ON dreh.sub_chargecode_id = msc.sub_chargecode_id
-
-LEFT JOIN dg_mas_sample dms
-    ON dscd.sample_id = dms.sample_id
-
-JOIN last_five_collection_dates lfcd
-    ON DATE(dsch.collection_time) = lfcd.collection_date
-
-WHERE dred.validated = 'y'
-  AND msc.sub_chargecode_name = $P{sub_chargecode_name}
-  AND (dmi.investigation_name || ',' || dms.sample_description) = $P{investigation_sample}
-  AND (
-        CASE
-            WHEN dsmi.sub_investigation_name IS NULL
-                THEN dmi.investigation_name
-            ELSE dsmi.sub_investigation_name
-        END
-      ) = $P{sub_investigation_name};]]>
+    ON du.uom_id = dred.uom_id
+WHERE dreh.order_hd_id = $P{orderhd_id}
+  AND dred.validated = 'y'
+  AND COALESCE(dreh.sub_chargecode_id, dmi.sub_chargecode_id)
+        IS NOT DISTINCT FROM $P{sub_chargecode_id}
+  AND dred.investigation_id = $P{investigation_id}
+  AND COALESCE(dscd.sample_id, dred.sample_id, dmi.sample_id)
+        IS NOT DISTINCT FROM $P{sample_id}
+  AND EXISTS (
+      SELECT 1
+      FROM dg_orderdt dod
+      WHERE dod.orderhd_id = $P{orderhd_id}
+        AND dod.investigation_id = dred.investigation_id
+  )
+ORDER BY sub_investigation_name]]>
 		</queryString>
-		<field name="sub_chargecode_name" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="sub_chargecode_name"/>
-			<property name="com.jaspersoft.studio.field.label" value="sub_chargecode_name"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="mas_sub_chargecode"/>
-		</field>
-		<field name="investigation_sample" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="investigation_sample"/>
-			<property name="com.jaspersoft.studio.field.label" value="investigation_sample"/>
-		</field>
-		<field name="sub_investigation_name" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="sub_investigation_name"/>
-			<property name="com.jaspersoft.studio.field.label" value="sub_investigation_name"/>
-		</field>
-		<field name="unit" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="unit"/>
-			<property name="com.jaspersoft.studio.field.label" value="unit"/>
-			<property name="com.jaspersoft.studio.field.tree.path" value="dg_uom"/>
-		</field>
-		<field name="bio_ref" class="java.lang.String">
-			<property name="com.jaspersoft.studio.field.name" value="bio_ref"/>
-			<property name="com.jaspersoft.studio.field.label" value="bio_ref"/>
-		</field>
+		<field name="sub_investigation_name" class="java.lang.String"/>
+		<field name="unit" class="java.lang.String"/>
+		<field name="bio_ref" class="java.lang.String"/>
 	</subDataset>
 	<parameter name="orderhd_id" class="java.lang.Integer"/>
 	<parameter name="path" class="java.lang.String" isForPrompting="false"/>
 	<queryString>
-		<![CDATA[WITH selected_order AS (
+		<![CDATA[WITH current_order AS (
     SELECT
-        dreh.hin_id AS patient_id
-    FROM dg_result_entry_header dreh
-    WHERE dreh.order_hd_id = $P{orderhd_id}
+        doh.orderhd_id,
+        doh.order_date,
+        doh.order_no,
+        doh.patient_id,
+        doh.inpatient_id,
+        CASE
+            WHEN doh.inpatient_id IS NOT NULL THEN 'IPD'
+            ELSE 'OPD'
+        END AS order_type,
+        COALESCE(ip.admission_no, doh.inpatient_id::text) AS admission_no,
+        p.p_mobile_number AS mobile_no,
+        p.uhid_no,
+        CONCAT_WS(
+            ' ',
+            NULLIF(BTRIM(p.p_fn), ''),
+            NULLIF(BTRIM(p.p_mn), ''),
+            NULLIF(BTRIM(p.p_ln), '')
+        ) AS patient_name,
+        CONCAT_WS(
+            '/',
+            NULLIF(BTRIM(p.p_age), ''),
+            NULLIF(BTRIM(mg.gender_code), '')
+        ) AS age_gender,
+        mr.relation_name AS ref_doctor,
+        mh.address AS centre,
+        COALESCE(
+            bill.patient_address,
+            NULLIF(
+                CONCAT_WS(
+                    ', ',
+                    NULLIF(BTRIM(p.p_address1), ''),
+                    NULLIF(BTRIM(p.p_address2), ''),
+                    NULLIF(BTRIM(p.p_city), ''),
+                    COALESCE(
+                        NULLIF(BTRIM(p.p_pincode), ''),
+                        NULLIF(BTRIM(p.pincode), '')
+                    )
+                ),
+                ''
+            ),
+            'Not Available'
+        ) AS patient_address,
+        CASE
+            WHEN doh.inpatient_id IS NOT NULL THEN
+                CONCAT_WS(
+                    ' / ',
+                    COALESCE(ip.admission_no, doh.inpatient_id::text),
+                    p.uhid_no
+                )
+            ELSE COALESCE(p.uhid_no, '')
+        END AS patient_identifier
+    FROM dg_orderhd doh
+    JOIN patient p
+        ON p.patient_id = doh.patient_id
+    LEFT JOIN inpatient ip
+        ON ip.inpatient_id = doh.inpatient_id
+    LEFT JOIN mas_gender mg
+        ON mg.id = p.p_gender_id
+    LEFT JOIN mas_relation mr
+        ON mr.relation_id = p.p_relation_id
+    LEFT JOIN mas_hospital mh
+        ON mh.hospital_id = doh.hospital_id
+    LEFT JOIN LATERAL (
+        SELECT NULLIF(BTRIM(bh.patient_address), '') AS patient_address
+        FROM billing_header bh
+        WHERE bh.hdorder_id = doh.orderhd_id
+          AND NULLIF(BTRIM(bh.patient_address), '') IS NOT NULL
+        ORDER BY bh.bill_hd_id DESC
+        LIMIT 1
+    ) bill ON TRUE
+    WHERE doh.orderhd_id = $P{orderhd_id}
 ),
-
-current_collection_date AS (
+current_order_tests AS (
+    SELECT DISTINCT dod.investigation_id
+    FROM dg_orderdt dod
+    WHERE dod.orderhd_id = $P{orderhd_id}
+      AND dod.investigation_id IS NOT NULL
+),
+current_results AS (
     SELECT
-        MAX(DATE(dsch.collection_time)) AS collection_date
+        dreh.order_hd_id,
+        dreh.result_date,
+        dreh.result_time,
+        COALESCE(dreh.sub_chargecode_id, dmi.sub_chargecode_id)
+            AS sub_chargecode_id,
+        dred.investigation_id,
+        dred.sub_investigation_id,
+        COALESCE(dscd.sample_id, dred.sample_id, dmi.sample_id) AS sample_id,
+        dsch.collection_time,
+        msc.sub_chargecode_name,
+        dmi.investigation_name,
+        dms.sample_description,
+        COALESCE(dsmi.sub_investigation_name, dmi.investigation_name)
+            AS sub_investigation_name,
+        COALESCE(
+            NULLIF(BTRIM(dmi.interpretation), ''),
+            'No interpretations available at the moment'
+        ) AS interpretation
     FROM dg_result_entry_header dreh
     JOIN dg_result_entry_detail dred
-        ON dreh.result_entry_id = dred.result_entry_id
+        ON dred.result_entry_id = dreh.result_entry_id
+    JOIN current_order_tests cot
+        ON cot.investigation_id = dred.investigation_id
     JOIN dg_sample_collection_details dscd
-        ON dred.sample_collection_details_id = dscd.sample_collection_details_id
+        ON dscd.sample_collection_details_id = dred.sample_collection_details_id
     JOIN dg_sample_collection_header dsch
-        ON dscd.sample_collection_header_id = dsch.sample_collection_header_id
+        ON dsch.sample_collection_header_id = dscd.sample_collection_header_id
+    JOIN dg_mas_investigation dmi
+        ON dmi.investigation_id = dred.investigation_id
+    LEFT JOIN dg_sub_mas_investigation dsmi
+        ON dsmi.sub_investigation_id = dred.sub_investigation_id
+    LEFT JOIN mas_sub_chargecode msc
+        ON msc.sub_chargecode_id =
+           COALESCE(dreh.sub_chargecode_id, dmi.sub_chargecode_id)
+    LEFT JOIN dg_mas_sample dms
+        ON dms.sample_id =
+           COALESCE(dscd.sample_id, dred.sample_id, dmi.sample_id)
     WHERE dreh.order_hd_id = $P{orderhd_id}
       AND dred.validated = 'y'
-),
-
-last_five_collection_dates AS (
-    SELECT DISTINCT
-        dreh.hin_id,
-        DATE(dsch.collection_time) AS collection_date
-    FROM dg_result_entry_header dreh
-    JOIN dg_result_entry_detail dred
-        ON dreh.result_entry_id = dred.result_entry_id
-    JOIN dg_sample_collection_details dscd
-        ON dred.sample_collection_details_id = dscd.sample_collection_details_id
-    JOIN dg_sample_collection_header dsch
-        ON dscd.sample_collection_header_id = dsch.sample_collection_header_id
-    JOIN selected_order so
-        ON dreh.hin_id = so.patient_id
-    CROSS JOIN current_collection_date ccd
-    WHERE dred.validated = 'y'
-      AND DATE(dsch.collection_time) <= ccd.collection_date
-    ORDER BY collection_date DESC
-    LIMIT 5
 )
-
-SELECT
-    dreh.order_hd_id,
-    to_char(doh.order_date, 'DD/MM/YYYY') AS order_date,
-    doh.order_no,
-    dreh.hin_id,
-    bh.patient_address,
-    p.p_mobile_number AS mobile_no,
-    p.uhid_no,
-
-    CASE
-        WHEN p.p_mn IS NULL OR p.p_mn = ''
-            THEN CONCAT(p.p_fn, ' ', p.p_ln)
-        ELSE CONCAT(p.p_fn, ' ', p.p_mn, ' ', p.p_ln)
-    END AS patient_name,
-
-    CONCAT(p_age, '/', mg.gender_code) AS age_gender,
-    mr.relation_name AS ref_doctor,
-    mh.address AS centre,
-    p.uhid_no AS uhid,
-
-    to_char(dsch.collection_time, 'DD/Mon/YY HH12:MIAM') AS collection_datetime,
-    to_char((result_date::date + result_time::time), 'DD/Mon/YY HH12:MIAM') AS result_datetime,
-
-    msc.sub_chargecode_name,
-
-    dmi.investigation_name || ',' || dms.sample_description AS investigation_sample,
-
-    CASE
-        WHEN dsmi.sub_investigation_name IS NULL
-            THEN dmi.investigation_name
-        ELSE dsmi.sub_investigation_name
-    END AS sub_investigation_name,
-
-    COALESCE(dmi.interpretation,
-        'No interpretations available at the moment') AS interpretation
-
-FROM dg_result_entry_header dreh
-
-LEFT JOIN dg_result_entry_detail dred
-    ON dreh.result_entry_id = dred.result_entry_id
-
-LEFT JOIN dg_sample_collection_details dscd
-    ON dred.sample_collection_details_id = dscd.sample_collection_details_id
-
-LEFT JOIN dg_sample_collection_header dsch
-    ON dscd.sample_collection_header_id = dsch.sample_collection_header_id
-
-LEFT JOIN dg_mas_investigation dmi
-    ON dred.investigation_id = dmi.investigation_id
-
-LEFT JOIN dg_sub_mas_investigation dsmi
-    ON dred.sub_investigation_id = dsmi.sub_investigation_id
-
-LEFT JOIN mas_sub_chargecode msc
-    ON dreh.sub_chargecode_id = msc.sub_chargecode_id
-
-LEFT JOIN dg_mas_sample dms
-    ON dscd.sample_id = dms.sample_id
-
-LEFT JOIN patient p
-    ON dreh.hin_id = p.patient_id
-
-LEFT JOIN mas_gender mg
-    ON p.p_gender_id = mg.id
-
-LEFT JOIN mas_relation mr
-    ON p.p_relation_id = mr.relation_id
-
-LEFT JOIN mas_hospital mh
-    ON dreh.hospital_id = mh.hospital_id
-
-LEFT JOIN dg_orderhd doh
-    ON dreh.order_hd_id = doh.orderhd_id
-
-LEFT JOIN billing_header bh
-    ON doh.orderhd_id = bh.hdorder_id
-
-JOIN last_five_collection_dates lfcd
-    ON DATE(dsch.collection_time) = lfcd.collection_date
-   AND dreh.hin_id = lfcd.hin_id
-
-WHERE dred.validated = 'y'
-
+SELECT DISTINCT
+    co.orderhd_id AS order_hd_id,
+    TO_CHAR(co.order_date, 'DD/MM/YYYY') AS order_date,
+    co.order_no,
+    co.patient_id AS hin_id,
+    co.patient_address,
+    co.mobile_no,
+    co.uhid_no,
+    co.patient_name,
+    co.age_gender,
+    co.ref_doctor,
+    co.centre,
+    co.uhid_no AS uhid,
+    co.order_type,
+    co.admission_no,
+    co.patient_identifier,
+    TO_CHAR(
+        MAX(cr.collection_time) OVER (),
+        'DD/Mon/YY HH12:MIAM'
+    ) AS collection_datetime,
+    TO_CHAR(
+        MAX(
+            CASE
+                WHEN cr.result_date IS NOT NULL
+                 AND NULLIF(BTRIM(cr.result_time), '') IS NOT NULL
+                THEN cr.result_date::timestamp
+                     + NULLIF(BTRIM(cr.result_time), '')::time
+                ELSE cr.result_date::timestamp
+            END
+        ) OVER (),
+        'DD/Mon/YY HH12:MIAM'
+    ) AS result_datetime,
+    cr.sub_chargecode_id,
+    cr.investigation_id,
+    cr.sample_id,
+    cr.sub_chargecode_name,
+    CONCAT_WS(',', cr.investigation_name, cr.sample_description)
+        AS investigation_sample,
+    cr.sub_investigation_name,
+    cr.interpretation
+FROM current_order co
+JOIN current_results cr
+    ON cr.order_hd_id = co.orderhd_id
 ORDER BY
-    msc.sub_chargecode_name,
-    investigation_sample,
-    sub_investigation_name,
-    dsch.collection_time DESC;]]>
+    cr.sub_chargecode_name,
+    cr.investigation_id,
+    cr.sample_id NULLS FIRST,
+    cr.sub_investigation_name]]>
 	</queryString>
 	<field name="order_hd_id" class="java.lang.Integer">
 		<property name="com.jaspersoft.studio.field.name" value="order_hd_id"/>
@@ -529,6 +443,9 @@ ORDER BY
 		<property name="com.jaspersoft.studio.field.label" value="uhid"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
 	</field>
+	<field name="order_type" class="java.lang.String"/>
+	<field name="admission_no" class="java.lang.String"/>
+	<field name="patient_identifier" class="java.lang.String"/>
 	<field name="collection_datetime" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="collection_datetime"/>
 		<property name="com.jaspersoft.studio.field.label" value="collection_datetime"/>
@@ -537,6 +454,9 @@ ORDER BY
 		<property name="com.jaspersoft.studio.field.name" value="result_datetime"/>
 		<property name="com.jaspersoft.studio.field.label" value="result_datetime"/>
 	</field>
+	<field name="sub_chargecode_id" class="java.lang.Long"/>
+	<field name="investigation_id" class="java.lang.Long"/>
+	<field name="sample_id" class="java.lang.Long"/>
 	<field name="sub_chargecode_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="sub_chargecode_name"/>
 		<property name="com.jaspersoft.studio.field.label" value="sub_chargecode_name"/>
@@ -594,7 +514,7 @@ ORDER BY
 		</groupFooter>
 	</group>
 	<group name="g_investigation_sample">
-		<groupExpression><![CDATA[$F{investigation_sample}]]></groupExpression>
+		<groupExpression><![CDATA[$F{investigation_id} + "|" + String.valueOf($F{sample_id})]]></groupExpression>
 		<groupHeader>
 			<band height="90">
 				<textField>
@@ -615,11 +535,14 @@ ORDER BY
 					<crosstabDataset>
 						<dataset>
 							<datasetRun subDataset="units" uuid="3312baba-6494-40ab-8c0c-54909bfbeeee">
-								<datasetParameter name="sub_chargecode_name">
-									<datasetParameterExpression><![CDATA[$F{sub_chargecode_name}]]></datasetParameterExpression>
+								<datasetParameter name="sub_chargecode_id">
+									<datasetParameterExpression><![CDATA[$F{sub_chargecode_id}]]></datasetParameterExpression>
 								</datasetParameter>
-								<datasetParameter name="investigation_sample">
-									<datasetParameterExpression><![CDATA[$F{investigation_sample}]]></datasetParameterExpression>
+								<datasetParameter name="investigation_id">
+									<datasetParameterExpression><![CDATA[$F{investigation_id}]]></datasetParameterExpression>
+								</datasetParameter>
+								<datasetParameter name="sample_id">
+									<datasetParameterExpression><![CDATA[$F{sample_id}]]></datasetParameterExpression>
 								</datasetParameter>
 								<datasetParameter name="orderhd_id">
 									<datasetParameterExpression><![CDATA[$P{orderhd_id}]]></datasetParameterExpression>
@@ -669,12 +592,12 @@ ORDER BY
 						</crosstabTotalRowHeader>
 					</rowGroup>
 					<columnGroup name="collection_date" height="20" mergeHeaderCells="false">
-						<bucket order="Descending" class="java.lang.String">
+						<bucket order="Descending" class="java.sql.Date">
 							<bucketExpression><![CDATA[$F{collection_date}]]></bucketExpression>
 						</bucket>
 						<crosstabColumnHeader>
 							<cellContents mode="Opaque" style="Crosstab_CH">
-								<textField>
+								<textField pattern="dd/MM/yy">
 									<reportElement x="0" y="0" width="60" height="20" uuid="5785db88-f8aa-4ed5-b555-37624a4eea11"/>
 									<textElement>
 										<font size="10" isBold="true"/>
@@ -693,12 +616,12 @@ ORDER BY
 						</crosstabTotalColumnHeader>
 					</columnGroup>
 					<columnGroup name="collection_time" height="20">
-						<bucket order="Descending" class="java.lang.String">
+						<bucket order="Descending" class="java.sql.Time">
 							<bucketExpression><![CDATA[$F{collection_time}]]></bucketExpression>
 						</bucket>
 						<crosstabColumnHeader>
 							<cellContents mode="Opaque" style="Crosstab_CH">
-								<textField>
+								<textField pattern="hh:mm a">
 									<reportElement x="0" y="0" width="60" height="20" uuid="0dd6c65f-b2f7-4714-911c-c9d046a3b7fa"/>
 									<textElement>
 										<font size="10" isBold="true"/>
@@ -732,7 +655,7 @@ ORDER BY
 					</crosstabCell>
 				</crosstab>
 				<componentElement>
-					<reportElement isPrintRepeatedValues="false" x="430" y="30" width="124" height="50" uuid="4c787a69-03fe-4f32-b509-76f7db761570">
+					<reportElement isPrintRepeatedValues="false" x="430" y="30" width="125" height="50" uuid="4c787a69-03fe-4f32-b509-76f7db761570">
 						<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
 						<property name="com.jaspersoft.studio.table.style.table_header" value="Table_TH"/>
 						<property name="com.jaspersoft.studio.table.style.column_header" value="Table_CH"/>
@@ -740,24 +663,24 @@ ORDER BY
 					</reportElement>
 					<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
 						<datasetRun subDataset="unit_bioref" uuid="a3eebea1-5baf-43ef-9ec3-fea6ebd282d2">
-							<datasetParameter name="sub_chargecode_name">
-								<datasetParameterExpression><![CDATA[$F{sub_chargecode_name}]]></datasetParameterExpression>
+							<datasetParameter name="sub_chargecode_id">
+								<datasetParameterExpression><![CDATA[$F{sub_chargecode_id}]]></datasetParameterExpression>
 							</datasetParameter>
-							<datasetParameter name="investigation_sample">
-								<datasetParameterExpression><![CDATA[$F{investigation_sample}]]></datasetParameterExpression>
+							<datasetParameter name="investigation_id">
+								<datasetParameterExpression><![CDATA[$F{investigation_id}]]></datasetParameterExpression>
 							</datasetParameter>
-							<datasetParameter name="sub_investigation_name">
-								<datasetParameterExpression><![CDATA[$F{sub_investigation_name}]]></datasetParameterExpression>
+							<datasetParameter name="sample_id">
+								<datasetParameterExpression><![CDATA[$F{sample_id}]]></datasetParameterExpression>
 							</datasetParameter>
 							<datasetParameter name="orderhd_id">
 								<datasetParameterExpression><![CDATA[$P{orderhd_id}]]></datasetParameterExpression>
 							</datasetParameter>
 							<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 						</datasetRun>
-						<jr:column width="40" uuid="62b92b92-97aa-4920-ba1e-b81198280af8">
+						<jr:column width="35" uuid="62b92b92-97aa-4920-ba1e-b81198280af8">
 							<jr:columnHeader style="Table_CH" height="30">
 								<staticText>
-									<reportElement x="0" y="0" width="40" height="30" uuid="d7f2773a-b700-418f-8b94-5f4d5a0e4c8b"/>
+									<reportElement x="0" y="0" width="35" height="30" uuid="d7f2773a-b700-418f-8b94-5f4d5a0e4c8b"/>
 									<textElement verticalAlignment="Middle">
 										<font size="10" isBold="true"/>
 									</textElement>
@@ -766,7 +689,7 @@ ORDER BY
 							</jr:columnHeader>
 							<jr:detailCell style="Table_TD" height="30">
 								<textField>
-									<reportElement x="0" y="0" width="40" height="30" uuid="222555a6-553c-4082-84eb-be75277dd497"/>
+									<reportElement x="0" y="0" width="35" height="30" uuid="222555a6-553c-4082-84eb-be75277dd497"/>
 									<textElement>
 										<font size="10"/>
 									</textElement>
@@ -774,10 +697,10 @@ ORDER BY
 								</textField>
 							</jr:detailCell>
 						</jr:column>
-						<jr:column width="100" uuid="46b4531c-8dd5-49d1-b819-d3e98863662f">
+						<jr:column width="90" uuid="46b4531c-8dd5-49d1-b819-d3e98863662f">
 							<jr:columnHeader style="Table_CH" height="30">
 								<staticText>
-									<reportElement x="0" y="0" width="100" height="30" uuid="72517b04-2a50-4477-84e1-95890da1a6ef"/>
+									<reportElement x="0" y="0" width="90" height="30" uuid="72517b04-2a50-4477-84e1-95890da1a6ef"/>
 									<textElement verticalAlignment="Middle">
 										<font size="10" isBold="true"/>
 									</textElement>
@@ -786,7 +709,7 @@ ORDER BY
 							</jr:columnHeader>
 							<jr:detailCell style="Table_TD" height="30">
 								<textField>
-									<reportElement x="0" y="0" width="100" height="30" uuid="9a6d6b60-85bc-4e60-8a72-253032de25e3"/>
+									<reportElement x="0" y="0" width="90" height="30" uuid="9a6d6b60-85bc-4e60-8a72-253032de25e3"/>
 									<textElement>
 										<font size="10"/>
 									</textElement>
@@ -863,13 +786,15 @@ ORDER BY
 				</textElement>
 				<text><![CDATA[Address]]></text>
 			</staticText>
-			<staticText>
+			<textField>
 				<reportElement x="0" y="8" width="555" height="30" uuid="f35f9bc4-5c64-4c4c-81a6-f55807937226"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
-				<text><![CDATA[Laboratory Investigation Report]]></text>
-			</staticText>
+				<textFieldExpression><![CDATA["IPD".equals($F{order_type})
+    ? "IPD Laboratory Investigation Report"
+    : "Laboratory Investigation Report"]]></textFieldExpression>
+			</textField>
 			<staticText>
 				<reportElement x="100" y="50" width="10" height="15" uuid="aaf5c6e3-7099-40a9-b52f-8099b9823632"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
@@ -898,13 +823,15 @@ ORDER BY
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
-			<staticText>
+			<textField>
 				<reportElement x="240" y="81" width="140" height="14" uuid="cfa08d4a-6d6f-4b86-adaf-92ba56639d8a"/>
 				<textElement verticalAlignment="Middle">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
-				<text><![CDATA[OP/IP No/UHID]]></text>
-			</staticText>
+				<textFieldExpression><![CDATA["IPD".equals($F{order_type})
+    ? "Admission No / UHID"
+    : "UHID"]]></textFieldExpression>
+			</textField>
 			<staticText>
 				<reportElement x="240" y="95" width="140" height="14" uuid="3dea8686-b6fc-40d2-beca-d29496c6405c"/>
 				<textElement verticalAlignment="Middle">
@@ -973,7 +900,7 @@ ORDER BY
 				<textElement textAlignment="Left" verticalAlignment="Middle">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{uhid}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$F{patient_identifier}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement x="390" y="95" width="155" height="14" uuid="cda92c15-3aff-4460-8759-8aed915fd69b"/>

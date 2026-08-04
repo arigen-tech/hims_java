@@ -7,18 +7,11 @@ import com.hims.entity.projection.PrescriptionDetailProjection;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
-import com.hims.mapper.PaidCancelledAppointmentMapper;
 import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
-import com.hims.service.OpdEntDetailsService;
-import com.hims.service.OpdObgDetailsService;
-import com.hims.service.OpdOpthDetailsService;
-import com.hims.service.OpdPatientDetailService;
-import com.hims.utils.AuthUtil;
-import com.hims.utils.RandomNumGenerator;
-import com.hims.utils.ResponseUtils;
-import com.hims.utils.StockFound;
+import com.hims.service.*;
+import com.hims.utils.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,23 +63,15 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     private final PatientPrescriptionDtRepository patientPrescriptionDtRepository;
 
-    private final RandomNumGenerator randomNumGenerator;
-
     private final AuthUtil authUtil;
 
     private final MasStoreItemRepository masStoreItemRepository;
-
-    private final ProcedureDetailsRepository procedureDetailsRepository;
 
     private final MasCareLevelRepo masCareLevelRepository;
 
     private final MasWardCategoryRepository masWardCategoryRepository;
 
     private final MasDepartmentRepository masDepartmentRepository;
-
-    private final BillingHeaderRepository billingHeaderRepository;
-
-    private final BillingDetailRepository billingDetailRepository;
 
     private final LabOrderTrackingStatusRepository labOrderTrackingStatusRepository;
 
@@ -96,13 +81,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     private final MasServiceCategoryRepository masServiceCategoryRepository;
 
-    private final PatientPrescriptionHdRepository prescriptionHdRepository;
-
     private final PatientPrescriptionDtRepository prescriptionDtRepository;
-
-    private final MasSubChargeCodeRepository subChargeCodeRepository;
-    private final MasHospitalRepository masHospitalRepository;
-
 
     private final OpdOpthDetailsService opdOpthDetailsService;
     private final OpdObgDetailsService opdObgDetailsService;
@@ -113,10 +92,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasQuestionHeadingRepository masQuestionHeadingRepository;
     private final OpdQuestionMasterRepository opdQuestionMasterRepository;
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
-
-
-    private final PaidCancelledAppointmentMapper paidCancelledAppointmentMapper;
-
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -135,16 +110,14 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     @Value("${app.laboratoryDepartment}")
     private Integer laboratoryDepartment;
-    @Value("${app.opdDepartmentType}")
-    private Long departmentTypeOpd;
+
 
     @Autowired
     HelperUtils helperUtils;
 
+    @Autowired
+    TransactionSequenceService transactionSequenceService;
 
-    public String createOrderNum() {
-        return randomNumGenerator.generateOrderNumber("OPD", true, true);
-    }
 
     @Override
     public ApiResponse<OpdPatientVitalResponse> getOpdPatientByVisit(Long visitId) {
@@ -495,7 +468,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             if (request.getInvestigation().stream().anyMatch(i -> i == null || i.getInvestigationDate() == null)) {
                 throw new SDDException("investigation", 400, "Investigation date cannot be null");
             }
-            String orderNum = createOrderNum();
             LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
 
             // Group investigations by department
@@ -503,7 +475,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             if (grouped.containsKey(Long.valueOf(laboratoryDepartment))) {
                 log.info("Processing LAB investigations");
-                processLabInvestigations(grouped.get(Long.valueOf(laboratoryDepartment)), patient, visit, user, deptId, orderNum, labOrderedStatus);
+                processLabInvestigations(grouped.get(Long.valueOf(laboratoryDepartment)), patient, visit, user, deptId,
+                        transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, user.getHospital().getId()), labOrderedStatus);
                 hasLabInvestigations = true;
             }
             if (grouped.containsKey(Long.valueOf(radiologyDepartment))) {
@@ -1308,7 +1281,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     private void createLabInvestigations(List<RecallOpdPatientDetailRequest.InvestigationRequest> investigations, Patient patient, Visit visit, User user) {
-        String orderNum = createOrderNum();
         LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found"));
 
         Map<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> groupedByDate = investigations.stream().filter(inv -> inv.getInvestigationDate() != null).collect(Collectors.groupingBy(RecallOpdPatientDetailRequest.InvestigationRequest::getInvestigationDate));
@@ -1321,7 +1293,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             dgOrderHd.setAppointmentDate(appointmentDate);
             dgOrderHd.setOrderDate(LocalDate.now());
             dgOrderHd.setOrderTime(Instant.now());
-            dgOrderHd.setOrderNo(orderNum);
+            dgOrderHd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, user.getHospital().getId()));
             dgOrderHd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             dgOrderHd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
             dgOrderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.equalsIgnoreCase(user.getHospital().getLabBilling()) ? AppConstants.PAYMENT_NOT_PAID.toLowerCase() : AppConstants.PAYMENT_PAID.toLowerCase());
@@ -1401,7 +1373,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 RadOrderDt radOrderDt = new RadOrderDt();
                 radOrderDt.setRadOrderhd(savedRadOrderHd);
                 radOrderDt.setInvestigation(invEntity);
-                radOrderDt.setOrderAccessionNo(createOrderNum());
+                radOrderDt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, user.getHospital().getId()));
                 radOrderDt.setSubChargecode(invEntity.getSubChargeCodeId());
                 radOrderDt.setAppointmentDate(inv.getInvestigationDate());
                 radOrderDt.setLastChgBy(user.getFirstName() + " " + user.getLastName());
@@ -1886,7 +1858,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 RadOrderDt radOrderDt = new RadOrderDt();
                 radOrderDt.setRadOrderhd(savedRadOrderHd);
                 radOrderDt.setInvestigation(invEntity);
-                radOrderDt.setOrderAccessionNo(randomNumGenerator.generateOrderNumber("RAD", true, true));
+                radOrderDt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, currentUser.getHospital().getId()));
                 radOrderDt.setSubChargecode(invEntity.getSubChargeCodeId());
                 radOrderDt.setAppointmentDate(invObj.getInvestigationDate());
                 radOrderDt.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());

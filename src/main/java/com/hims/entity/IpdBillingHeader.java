@@ -38,7 +38,7 @@ public class IpdBillingHeader {
     private String patientName;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "billing_type_id", nullable = false)
+    @JoinColumn(name = "billing_type_id")
     private MasIpdBillingType billingType;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -135,7 +135,12 @@ public class IpdBillingHeader {
     @Column(name = "refund_status", length = 1)
     private String refundStatus;
 
-    @Column(name = " outstanding_amount.", precision = 12, scale = 2)
+    @Column(name = "outstanding_amount", precision = 12, scale = 2)
     private BigDecimal outstandingAmount;
+
+    @Column(name = "estimation_cost", precision = 12, scale = 2)
+    private BigDecimal estimationCost;
+
+
 
 }

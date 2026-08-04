@@ -60,5 +60,13 @@ public interface IPDPatientService {
 
     ApiResponse<List<IpDiagnosisEntryResponse>> getIpDiagnosisEntry(Long inpatientID);
 
-    ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientID, String ioType);
+    ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientID);
+
+    ApiResponse<String> saveDischargeSummary(@Valid IpDischargeSummarySaveRequest request);
+
+    ApiResponse<PaymentStatusResponse> getPaymentStatus(Long inpatientID);
+
+    ApiResponse<DischargeSummaryResponse> getDischargeSummary(Long inpatientID);
+
+    ApiResponse<Page<InpatientAdvanceCollectionResponse>> getIpdAdvanceCollection(int page, int size, String patientName, String mobileNo, String admissionNo);
 }

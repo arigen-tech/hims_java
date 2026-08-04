@@ -1,9 +1,6 @@
 package com.hims.service;
 
-import com.hims.request.InvestigationValidationRequest;
-import com.hims.request.ResultUpdateRequest;
-import com.hims.request.ResultValidationUpdateRequest;
-import com.hims.request.SampleCollectionRequest;
+import com.hims.request.*;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,6 +20,8 @@ public interface LabService {
     ApiResponse<List<InvestigationResultResponse>> getInvestigationsForResultEntry(Long sampleCollectionHeaderId);
     ApiResponse<List<SubInvestigationResultResponse>> getSubInvestigationsForResultEntry(Long investigationId,String genderCode,String age);
     ApiResponse<List<FixedValueResultResponse>> getFixedValuesResultDropdown(Long subInvestigationId);
+
+    ApiResponse<String> saveOrUpdateResultEntry(ResultEntryMainRequest request);
     ApiResponse<Page<SampleHeaderForResultValidationResponse>> getSampleHeaderForResultValidation(Long hospitalId, String patientName, String patientMobileNumber, int page, int size) ;
     ApiResponse<List<InvestigationsForResultValidation>> getInvestigationsForResultValidation(Long resultEntryHeaderId) ;
     ApiResponse<List<SubInvestigationsForResultValidationResponse>> getSubInvestigationsForResultValidation(Long resultEntryDetailId,Long investigationId);
@@ -107,7 +106,10 @@ public interface LabService {
             int size);
 
 
-
-
-
+    ApiResponse<Page<OrderTrackingReportResponse>>  getOrderTrackingDetailsByPatientId(
+            Long hospitalId,
+            Long patientId,
+            int page,
+            int size
+    );
 }

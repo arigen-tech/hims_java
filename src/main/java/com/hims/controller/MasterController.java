@@ -331,6 +331,8 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     private MasIpNursingAssessmentValueService masIpNursingAssessmentValueService;
     @Autowired
     private MasIpdTransferReasonService masIpdTransferReasonService;
+    @Autowired
+    private MasDischargeReasonService masDischargeReasonService;
 
 
 
@@ -1260,6 +1262,11 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     public ApiResponse<List<MasStoreSectionResponse>> findStoreSectionByItemType(@PathVariable int id) {
         return masStoreSectionService.findStoreSectionByItemType(id);
     }
+    @GetMapping("/getSectionByItemType/{itemTypeCode}")
+    public ApiResponse<List<MasStoreSectionResponse>> getSectionByItemType(@PathVariable String itemTypeCode) {
+        return masStoreSectionService.getSectionByItemType(itemTypeCode);
+    }
+
 
 
 
@@ -5216,6 +5223,39 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
         ApiResponse<NonDrugStoreItemResponse> response = masStoreItemService.getNonDrugItemById(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @GetMapping("/getMedicalConsumableItem")
+    public ResponseEntity<ApiResponse<Page<NonDrugStoreItemResponse>>> medicalConsumableItem(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String itemName,
+            @RequestParam(required = false) Integer sectionId,
+            @RequestParam(required = false) Integer itemClassId) {
+
+        log.info("Request received to fetch Medical Consumable Items. page={}, size={}, itemId={}, itemClassId={}",
+                page, size, itemName, itemClassId);
+
+        ApiResponse<Page<NonDrugStoreItemResponse>> response =
+                masStoreItemService.medicalConsumableItem(page, size, itemName,sectionId, itemClassId);
+
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/getNonMedicalConsumableItem")
+    public ResponseEntity<ApiResponse<Page<NonDrugStoreItemResponse>>> nonMedicalConsumableItem(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String itemName,
+            @RequestParam(required = false) Integer sectionId,
+            @RequestParam(required = false) Integer itemClassId) {
+
+        log.info("Request received to fetch  Non Medical Consumable Items. page={}, size={}, itemId={}, itemClassId={}",
+                page, size, itemName, itemClassId);
+
+        ApiResponse<Page<NonDrugStoreItemResponse>> response =
+                masStoreItemService.nonMedicalConsumableItem(page, size, itemName,sectionId, itemClassId);
+
+        return ResponseEntity.ok(response);
+    }
+
 
     //======================================= Mas Admission Source ==================================
 
@@ -5339,6 +5379,11 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
     @GetMapping("/masIpdTransferReason/getAll/{flag}")
     public ApiResponse<List<MasIpdTransferReasonResponse>> masIpdTransferReason(@PathVariable int flag) {
         return masIpdTransferReasonService.getAll(flag);
+    }
+
+    @GetMapping("/masDischargeReason/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasDischargeReasonResponse>>> masDischargeReason(@PathVariable int flag) {
+        return ResponseEntity.ok(masDischargeReasonService.getAll(flag));
     }
 
 }

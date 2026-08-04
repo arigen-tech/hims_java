@@ -38,5 +38,6 @@ public class SampleHeaderForResultEntryResponse {
     private String mainChargeCodeName;
     private Long subChargeCodeId;
     private String subChargeCodeName;
+    private Long inpatientId;
 
 }

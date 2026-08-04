@@ -18,6 +18,7 @@ public class ResultEntryMainRequest {
     private Long sampleCollectionHeaderId;
     private Long patientId;
     private Long visitId;
+    private Long inpatientId;
 
     private List<ResultEntryInvestigationRequest> investigationList;
 }

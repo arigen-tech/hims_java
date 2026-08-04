@@ -292,16 +292,90 @@ public class IPDPatientController {
      *               "O" - Output details
      * @return ResponseEntity containing the list of intake/output details
      */
-    @GetMapping("getIntakeOutputDetails/{inpatientID}/{ioType}")
-    public ResponseEntity<ApiResponse<List<IntakeOutputResponse>>> getIntakeOutputDetails(@PathVariable Long inpatientID,@PathVariable String ioType){
+    @GetMapping("getIntakeOutputDetails/{inpatientID}")
+    public ResponseEntity<ApiResponse<List<IntakeOutputResponse>>> getIntakeOutputDetails(@PathVariable Long inpatientID){
 
         log.info("Request received to fetch saveIntakeOutputDetails for inpatientID: {}", inpatientID);
 
-        ApiResponse<List<IntakeOutputResponse>> response = ipdPatientService.getIntakeOutputDetails(inpatientID,ioType);
+        ApiResponse<List<IntakeOutputResponse>> response = ipdPatientService.getIntakeOutputDetails(inpatientID);
 
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/saveDischargeSummary")
+    public ApiResponse<String> saveDischargeSummary(@Valid @RequestBody IpDischargeSummarySaveRequest request) {
+
+        log.info("Request received to save discharge summary for inpatientId: {}", request.getInpatientId());
+
+        return ipdPatientService.saveDischargeSummary(request);
+    }
+
+    @GetMapping("getPaymentStatus/{inpatientID}")
+    public ResponseEntity<ApiResponse<PaymentStatusResponse>> getPaymentStatus(@PathVariable Long inpatientID){
+
+        log.info("Request received to fetch getPaymentStatus for inpatientID: {}", inpatientID);
+
+        ApiResponse<PaymentStatusResponse> response = ipdPatientService.getPaymentStatus(inpatientID);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("getDischargeSummary/{inpatientID}")
+    public ResponseEntity<ApiResponse<DischargeSummaryResponse>> getDischargeSummary(@PathVariable Long inpatientID){
+
+        log.info("Request received to fetch getDischargeSummary for inpatientID: {}", inpatientID);
+
+        ApiResponse<DischargeSummaryResponse> response = ipdPatientService.getDischargeSummary(inpatientID);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/getIpdAdvanceCollection")
+    public ResponseEntity<ApiResponse<Page<InpatientAdvanceCollectionResponse>>> getIpdAdvanceCollection(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) String admissionNo) {
+
+        log.info("Request received to fetch IPD Advance Collection. page: {}, size: {}, patientName: {}, mobileNo: {}, admissionNo: {}",
+                page, size, patientName, mobileNo, admissionNo);
+
+        ApiResponse<Page<InpatientAdvanceCollectionResponse>> response = ipdPatientService.getIpdAdvanceCollection(
+                            page,
+                            size,
+                            patientName,
+                            mobileNo,
+                            admissionNo);
+
+            log.info("Successfully processed request for IPD Advance Collection.");
+            return ResponseEntity.ok(response);
+
+
+        }
+//    @GetMapping("/getPendingTrackingIPDBillList")
+//    public ResponseEntity<ApiResponse<Page<PendingTrackingIPDBillResponse>>> getPendingTrackingIPDBillList(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "5") int size,
+//            @RequestParam(required = false) Long,
+//            @RequestParam(required = false) String mobileNo,
+//            @RequestParam(required = false) String admissionNo) {
+//
+//        log.info("Request received to fetch getPendingTrackingIPDBillList. page: {}, size: {}, patientName: {}, mobileNo: {}, admissionNo: {}",
+//                page, size, patientName, mobileNo, admissionNo);
+//
+//        ApiResponse<Page<PendingTrackingIPDBillResponse>> response = ipdPatientService.getPendingTrackingIPDBillList(
+//                page,
+//                size,
+//                patientName,
+//                mobileNo,
+//                admissionNo);
+//
+//
+//        return ResponseEntity.ok(response);
+
+
+   // }
 
 
 
