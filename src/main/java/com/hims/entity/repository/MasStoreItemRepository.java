@@ -385,7 +385,8 @@ GROUP BY
         m.availableInOpd AS availableInOpd,
         m.availableInIpd AS availableInIpd,
         m.availableInEmergency AS availableInEmergency,
-        m.availableInOt AS availableInOt
+        m.availableInOt AS availableInOt,
+        m.dosageUnit AS dosageUnit
 
     FROM MasStoreItem m
     LEFT JOIN m.dispUnit du
@@ -452,7 +453,8 @@ ORDER BY m.lastChgDate DESC, m.lastChgTime DESC
         m.availableInOpd AS availableInOpd,
         m.availableInIpd AS availableInIpd,
         m.availableInEmergency AS availableInEmergency,
-        m.availableInOt AS availableInOt
+        m.availableInOt AS availableInOt,
+        m.dosageUnit AS dosageUnit
 
     FROM MasStoreItem m
     LEFT JOIN m.dispUnit du
@@ -567,12 +569,15 @@ WHERE
             OR :itemName = ''
           OR LOWER(i.nomenclature) LIKE LOWER(CONCAT('%', :itemName, '%'))
           )
-                  
-
-AND (
+       AND (
         :itemClassId IS NULL
         OR ic.item_class_id = :itemClassId
     )
+      AND (
+        :sectionId IS NULL
+        OR s.section_id = :sectionId
+    )
+
 """,
             nativeQuery = true)
     Page<MedicalConsumableItemProjection> medicalConsumableItem(
@@ -734,7 +739,8 @@ WHERE
         m.availableInOpd AS availableInOpd,
         m.availableInIpd AS availableInIpd,
         m.availableInEmergency AS availableInEmergency,
-        m.availableInOt AS availableInOt
+        m.availableInOt AS availableInOt,
+        m.dosageUnit AS dosageUnit
 
     FROM MasStoreItem m
     LEFT JOIN m.dispUnit du

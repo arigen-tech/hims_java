@@ -213,6 +213,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long ipPaymentStatusPartial ;
     @Value("${ip.bill.status.open}")
     Long ipBillStatusOpen;
+    @Value("${ip.bill.status.Interim}")
+    Long ipBillStatusInterim;
 
     @Value("${ipd.admission.status.readyForDischarge}")
     Long readyForDischargeId;
@@ -230,6 +232,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Value("${ip.payment.status.pending}")
     Long   ipPaymentStatusPending;
+    @Value("${ip.bill.status.close}")
+    Long   ipBillStatusClose;
 
 
     @Override
@@ -1305,14 +1309,19 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         billingHeader.setEstimationCost(request.getEstimationCost());
         billingHeader.setBillingType(billingType);
         billingHeader.setPatientPaidAmount(totalAdvance);
-        billingHeader.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusOpen).orElseThrow());
 
-        if (totalAdvance.compareTo(BigDecimal.ZERO) > 0) {
-            billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPartial).orElseThrow());
-       } else {
-            billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPending).orElseThrow());
-        }
 
+        // ====================== Outstanding Amount ======================
+
+        BigDecimal netAmount = billingHeader.getNetAmount() != null
+                ? billingHeader.getNetAmount()
+                : BigDecimal.ZERO;
+
+        BigDecimal outstandingAmount = netAmount.subtract(totalAdvance);
+
+        billingHeader.setOutstandingAmount(outstandingAmount);
+        billingHeader.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusInterim).orElseThrow());
+        billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPending).orElseThrow());
         billingHeader.setCreatedBy(user.getFullName());
         billingHeader.setUpdatedBy(user.getFullName());
         billingHeader.setCreatedAt(now);
@@ -2114,12 +2123,11 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             //=========================
             Optional<IpDischargeSummary> existingSummary = ipDischargeSummaryRepository.findByInpatient_InpatientId(request.getInpatientId());
 
-            if(AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT.equalsIgnoreCase(existingSummary.get().getStatus())){
+            if (existingSummary.map(summary -> AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT
+                            .equalsIgnoreCase(summary.getStatus())).orElse(false)) {
 
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "discharge summary already submitting",
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Discharge summary already submitted",
                         HttpStatus.BAD_REQUEST.value());
-
             }
 
             Optional<Inpatient> inpatientOptional = inpatientRepository.findById(request.getInpatientId());
@@ -2130,6 +2138,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             Inpatient inpatient = inpatientOptional.get();
 
+            Optional<IpdBillingHeader> ipdBillingHeader= ipdBillingHeaderRepository.findByInpatientId_InpatientId(request.getInpatientId());
+             IpdBillingHeader ipdBillingHeader1=ipdBillingHeader.get();
             //=========================
             // SUBMIT VALIDATION
             //=========================
@@ -2162,6 +2172,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 Optional<MasBed> masBed=masBedRepository.findById(bedAllocation.get().getBed().getBedId());
                 MasBed masBed1=masBed.get();
                 masBed1.setBedStatusId(masBedStatusRepo.findById(bedStatusId).orElseThrow());
+                ipdBillingHeader1.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipBillStatusClose).orElseThrow());
+                ipdBillingHeaderRepository.save(ipdBillingHeader1);
                 ipBedAllocationRepository.save(ipBedAllocation);
                 masBedRepository.save(masBed1);
             }
@@ -2211,7 +2223,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             // change ip internal status
             inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(readyForDischargeId).orElseThrow());
             inpatientRepository.save(inpatient);
-
+            //change bill status final
+            ipdBillingHeader1.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusFinal).orElseThrow());
+            ipdBillingHeaderRepository.save(ipdBillingHeader1);
             // DELETE SELECTED MEDICATIONS
 
             if (request.getDeleteMedicationIds() != null && !request.getDeleteMedicationIds().isEmpty()) {
@@ -2383,6 +2397,198 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),HttpStatus.BAD_REQUEST.value());
         }
+    }
+    @Override
+    public ApiResponse<Page<PendingTrackingIPDBillResponse>> getPendingTrackingIPDBillList(
+            int page,
+            int size,
+            Long wardId,
+            Long billType,
+            BigDecimal outStandingAmount) {
+
+        log.info("Fetching Pending Tracking IPD Bill List. page={}, size={}, wardId={}, billType={}, outStandingAmount={}",
+                page, size, wardId, billType, outStandingAmount);
+
+        try {
+
+            Pageable pageable = PageRequest.of(page, size);
+
+            Page<PendingTrackingIPDBillProjection> projectionPage =
+                    ipdBillingHeaderRepository.getPendingTrackingIPDBillList(admitAdmissionStatusId,
+                            wardId,
+                            billType,
+                            outStandingAmount,
+                            pageable);
+
+            Page<PendingTrackingIPDBillResponse> responsePage = projectionPage.map(this::convertToResponse);
+
+            log.info("Successfully fetched {} Pending Tracking IPD Bill records.", responsePage.getTotalElements());
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while fetching Pending Tracking IPD Bill List.", e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),HttpStatus.BAD_REQUEST.value());
+
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> saveAdvanceCollection(AdvanceCollectionRequest request) {
+        log.info("Saving advance collection for inpatientId : {}", request.getInpatientId());
+        try{
+
+        User user = authUtil.getCurrentUser();
+
+        Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
+        if (inpatient.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("Inpatient  not found", HttpStatus.NOT_FOUND.value());
+        }
+        Inpatient inpatient1=inpatient.get();
+
+        Optional<IpdBillingHeader> billingHeader = ipdBillingHeaderRepository.findByInpatientId_InpatientId(request.getInpatientId());
+        if (billingHeader.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("IpdBillingHeader not found", HttpStatus.NOT_FOUND.value());
+        }
+        IpdBillingHeader ipdBillingHeader=billingHeader.get();
+
+        BigDecimal totalAmount = request.getRequests().stream()
+                .map(AdvanceCollectionRequest.AdvanceCollectionDetailsRequest::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Receipt Header
+        IpdBlReceiptHd receiptHd = new IpdBlReceiptHd();
+        receiptHd.setReceiptNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RECEIPT_NO, inpatient.get().getPatient().getPatientHospital().getId()));
+        receiptHd.setReceiptDate(request.getCollectionDateTime());
+        receiptHd.setInpatient(inpatient.get());
+        receiptHd.setBill(billingHeader.get());
+        receiptHd.setTotalAmount(totalAmount);
+        receiptHd.setCreatedBy(user.getUsername());
+        receiptHd.setCreatedDate(LocalDateTime.now());
+        receiptHd.setReceiptType(masReceiptTypeRepository.findById(masReceiptTypeAdvanceCollection)
+                .orElseThrow(() -> new RuntimeException("Invalid Receipt Type")));
+        receiptHd.setReceiptStatus(AppConstants.IP_RECEIPT_STATUS.toLowerCase());
+        receiptHd.setCreatedBy(user.getFullName());
+        receiptHd.setLastChgBy(user.getFullName());
+        receiptHd.setLastChgDate(LocalDateTime.now());
+        receiptHd.setReceiptType(masReceiptTypeRepository.findById(request.getCollectionTypeId()).orElseThrow());
+        receiptHd = ipdBlReceiptHdRepository.save(receiptHd);
+
+        // Receipt Details + Payment Details
+        for (AdvanceCollectionRequest.AdvanceCollectionDetailsRequest dto : request.getRequests()) {
+
+            MasPaymentMode paymentMode = masPaymentModeRepository.findById(dto.getModeType())
+                    .orElseThrow(() -> new RuntimeException("Payment mode not found"));
+
+            // Receipt Detail
+            IpdBlReceiptDt receiptDt = new IpdBlReceiptDt();
+            receiptDt.setReceipt(receiptHd);
+            receiptDt.setPaymentMode(paymentMode);
+            receiptDt.setAmount(dto.getAmount());
+            receiptDt.setCreatedBy(user.getUsername());
+            receiptDt.setCreatedDate(LocalDateTime.now());
+            receiptDt.setCreatedBy(user.getFullName());
+            receiptDt.setLastChgBy(user.getFullName());
+            receiptDt.setLastChgDate(LocalDateTime.now());
+            ipdBlReceiptDtRepository .save(receiptDt);
+
+            // Payment Detail
+            IpPaymentDetail payment = new IpPaymentDetail();
+            payment.setInpatient(inpatient.get());
+            payment.setBill(billingHeader.get());
+            payment.setReceipt(receiptHd);
+            payment.setAmount(dto.getAmount());
+            payment.setReceiptAmount(dto.getAmount());
+            payment.setPaymentDate(request.getCollectionDateTime());
+            payment.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid).orElseThrow());
+            payment.setLastChgBy(user.getUsername());
+            payment.setLastChgDate(LocalDateTime.now());
+            ipPaymentDetailRepository.save(payment);
+        }
+        BigDecimal netAmount = billingHeader.get().getNetAmount() != null
+                ? billingHeader.get().getNetAmount()
+                : BigDecimal.ZERO;
+
+        BigDecimal existingPaidAmount = billingHeader.get().getPatientPaidAmount() != null
+                ? billingHeader.get().getPatientPaidAmount()
+                : BigDecimal.ZERO;
+
+        // Add current advance to already paid amount
+        BigDecimal patientPaidAmount = existingPaidAmount.add(totalAmount);
+
+        // Calculate Outstanding Amount
+        BigDecimal outstandingAmount = netAmount.subtract(patientPaidAmount);
+        // Update Billing Header
+        ipdBillingHeader.setPatientPaidAmount(patientPaidAmount);
+        ipdBillingHeader.setOutstandingAmount(outstandingAmount);
+        ipdBillingHeader.setUpdatedBy(user.getUsername());
+        ipdBillingHeader.setUpdatedAt(LocalDateTime.now());
+
+        // If Bill Final and Outstanding = 0 then Payment Status = Paid
+
+        if (outstandingAmount.compareTo(BigDecimal.ZERO) == 0
+                    && ipdBillingHeader.getBillStatus() != null
+                    && ipdBillingHeader.getBillStatus().getBillStatusId().equals(ipBillStatusFinal)) {
+
+                ipdBillingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid)
+                                .orElseThrow(() -> new RuntimeException("Paid status not found")));
+            }
+        ipdBillingHeaderRepository.save(ipdBillingHeader);
+
+        return ResponseUtils.createSuccessResponse("Saving advance collection", new TypeReference<>() {});
+
+    } catch (Exception e) {
+            log.error("Error while fetching Pending Tracking IPD Bill List.", e);
+
+            throw new RuntimeException("Failed to save advance collection.", e);
+    }
+
+    }
+    @Override
+    public ApiResponse<List<PreviousPaymentHistoryResponse>> previousPaymentHistory(Long billingHeaderId) {
+
+        List<PreviousPaymentHistoryResponse> response = ipdBlReceiptDtRepository.previousPaymentHistory(billingHeaderId);
+
+        return ResponseUtils.createSuccessResponse(
+                response,
+                new TypeReference<>() {},
+                "Previous payment history fetched successfully");
+    }
+
+    private PendingTrackingIPDBillResponse convertToResponse(PendingTrackingIPDBillProjection p) {
+
+        PendingTrackingIPDBillResponse response = new PendingTrackingIPDBillResponse();
+
+        response.setInpatientId(p.getInpatientId());
+        response.setBillingHeaderId(p.getBillingHeaderId());
+        response.setUhid(p.getUhid());
+        response.setPatientName(p.getPatientName());
+        response.setAge(p.getAge());
+        response.setGenderId(p.getGenderId());
+        response.setGender(p.getGender());
+        response.setMobileNo(p.getMobileNo());
+        response.setAdmissionNo(p.getAdmissionNo());
+        response.setWardId(p.getWardId());
+        response.setWard(p.getWard());
+        response.setRoomId(p.getRoomId());
+        response.setRoom(p.getRoom());
+        response.setBedId(p.getBedId());
+        response.setBed(p.getBed());
+        response.setAdmissionDateTime(p.getAdmissionDateTime());
+        response.setBillingTypeId(p.getBillingTypeId());
+        response.setBillingType(p.getBillingType());
+        response.setTotalAmount(p.getTotalAmount());
+        response.setEstimationCost(p.getEstimationCost());
+        response.setPatientPaid(p.getPatientPaid());
+        response.setOutStandingAmount(p.getOutStandingAmount());
+        response.setBillStatusId(p.getBillStatusId());
+        response.setBillStatus(p.getBillStatus());
+        response.setPaymentStatusId(p.getPaymentStatusId());
+        response.setPaymentStatus(p.getPaymentStatus());
+
+        return response;
     }
     private InpatientAdvanceCollectionResponse mapResponse(
             InpatientAdvanceCollectionProjection p) {

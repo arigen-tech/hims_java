@@ -83,4 +83,6 @@ public interface MasStoreItemsProjection {
 
     String getAvailableInOt();
 
+    String getDosageUnit();
+
 }
