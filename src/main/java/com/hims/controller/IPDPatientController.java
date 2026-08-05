@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -353,29 +354,49 @@ public class IPDPatientController {
 
 
         }
-//    @GetMapping("/getPendingTrackingIPDBillList")
-//    public ResponseEntity<ApiResponse<Page<PendingTrackingIPDBillResponse>>> getPendingTrackingIPDBillList(
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "5") int size,
-//            @RequestParam(required = false) Long,
-//            @RequestParam(required = false) String mobileNo,
-//            @RequestParam(required = false) String admissionNo) {
-//
-//        log.info("Request received to fetch getPendingTrackingIPDBillList. page: {}, size: {}, patientName: {}, mobileNo: {}, admissionNo: {}",
-//                page, size, patientName, mobileNo, admissionNo);
-//
-//        ApiResponse<Page<PendingTrackingIPDBillResponse>> response = ipdPatientService.getPendingTrackingIPDBillList(
-//                page,
-//                size,
-//                patientName,
-//                mobileNo,
-//                admissionNo);
-//
-//
-//        return ResponseEntity.ok(response);
+    @GetMapping("/getPendingTrackingIPDBillList")
+    public ResponseEntity<ApiResponse<Page<PendingTrackingIPDBillResponse>>> getPendingTrackingIPDBillList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) Long wardId,
+            @RequestParam(required = false) Long billType,
+            @RequestParam(required = false) BigDecimal outStandingAmount) {
+
+        log.info("Request received for Pending Tracking IPD Bill List. page={}, size={}, wardId={}, billType={}, outStandingAmount={}",
+                page, size, wardId, billType, outStandingAmount);
 
 
-   // }
+            ApiResponse<Page<PendingTrackingIPDBillResponse>> response =
+                    ipdPatientService.getPendingTrackingIPDBillList(
+                            page,
+                            size,
+                            wardId,
+                            billType,
+                            outStandingAmount);
+
+            log.info("Successfully fetched Pending Tracking IPD Bill List.");
+
+            return ResponseEntity.ok(response);
+
+    }
+    @PostMapping("/saveAdvanceCollection")
+    public ApiResponse<String> saveDischargeSummary(@Valid @RequestBody AdvanceCollectionRequest request) {
+
+        log.info("Request received to save discharge summary for inpatientId: {}", request.getInpatientId());
+
+        return ipdPatientService.saveAdvanceCollection(request);
+    }
+
+
+    @GetMapping("previousPaymentHistory/{billingHeaderID}")
+    public ResponseEntity<ApiResponse<List<PreviousPaymentHistoryResponse>>> previousPaymentHistory(@PathVariable Long billingHeaderID){
+
+        log.info("Request received to fetch PreviousPaymentHistory for billingHeaderID: {}", billingHeaderID);
+
+        ApiResponse<List<PreviousPaymentHistoryResponse>> response = ipdPatientService.previousPaymentHistory(billingHeaderID);
+
+        return ResponseEntity.ok(response);
+    }
 
 
 
@@ -387,3 +408,8 @@ public class IPDPatientController {
 
 
 }
+
+
+
+
+
