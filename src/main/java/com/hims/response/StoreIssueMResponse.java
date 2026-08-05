@@ -15,5 +15,7 @@ public class StoreIssueMResponse {
     private Long indentMId;
     private String indentNo;
     private LocalDateTime indentDate;
+    private String requestedDeptName;
+    private String indentType;
 
 }
