@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Vitals_subreport" pageWidth="595" pageHeight="842" columnWidth="595" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="523a8ba1-e04b-4570-a5d1-5ed55457c887">
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="inPatientId" class="java.lang.Integer"/>
+	<queryString>
+		<![CDATA[select
+	iv.inpatient_id,
+    to_char(iv.observation_datetime, 'DD/MM/YYYY HH12:MI AM') as observation_datetime,
+    CONCAT(iv.bp_systolic, '/', iv.bp_diastolic) AS bp,
+    iv.temperature,
+    iv.pulse,
+    iv.respiration,
+    iv.spo2,
+    iv.pain_score,
+    coalesce(iv.notes, 'NA') AS remarks,
+    iv.last_updated_by AS taken_by,
+
+    CONCAT(
+        ROUND(AVG(iv.bp_systolic) OVER (), 0),
+        '/',
+        ROUND(AVG(iv.bp_diastolic) OVER (), 0)
+    ) AS avg_bp,
+
+    ROUND(MAX(iv.temperature) OVER (), 1) AS max_temperature,
+    ROUND(MAX(iv.pulse) OVER (), 0) AS max_pulse,
+    ROUND(MIN(iv.respiration) OVER (), 0) AS min_respiration,
+    ROUND(MIN(iv.spo2) OVER (), 0) AS min_spo2
+FROM ip_vitals iv
+where iv.inpatient_id = $P{inPatientId}]]>
+	</queryString>
+	<field name="inpatient_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="inpatient_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="inpatient_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_vitals"/>
+	</field>
+	<field name="observation_datetime" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="observation_datetime"/>
+		<property name="com.jaspersoft.studio.field.label" value="observation_datetime"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_vitals"/>
+	</field>
+	<field name="bp" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="bp"/>
+		<property name="com.jaspersoft.studio.field.label" value="bp"/>
+	</field>
+	<field name="temperature" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="temperature"/>
+		<property name="com.jaspersoft.studio.field.label" value="temperature"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_vitals"/>
+	</field>
+	<field name="pulse" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="pulse"/>
+		<property name="com.jaspersoft.studio.field.label" value="pulse"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_vitals"/>
+	</field>
+	<field name="respiration" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="respiration"/>
+		<property name="com.jaspersoft.studio.field.label" value="respiration"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_vitals"/>
+	</field>
+	<field name="spo2" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="spo2"/>
+		<property name="com.jaspersoft.studio.field.label" value="spo2"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_vitals"/>
+	</field>
+	<field name="pain_score" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="pain_score"/>
+		<property name="com.jaspersoft.studio.field.label" value="pain_score"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_vitals"/>
+	</field>
+	<field name="remarks" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="remarks"/>
+		<property name="com.jaspersoft.studio.field.label" value="remarks"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_vitals"/>
+	</field>
+	<field name="taken_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="taken_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="taken_by"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_vitals"/>
+	</field>
+	<field name="avg_bp" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="avg_bp"/>
+		<property name="com.jaspersoft.studio.field.label" value="avg_bp"/>
+	</field>
+	<field name="max_temperature" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="max_temperature"/>
+		<property name="com.jaspersoft.studio.field.label" value="max_temperature"/>
+	</field>
+	<field name="max_pulse" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="max_pulse"/>
+		<property name="com.jaspersoft.studio.field.label" value="max_pulse"/>
+	</field>
+	<field name="min_respiration" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="min_respiration"/>
+		<property name="com.jaspersoft.studio.field.label" value="min_respiration"/>
+	</field>
+	<field name="min_spo2" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="min_spo2"/>
+		<property name="com.jaspersoft.studio.field.label" value="min_spo2"/>
+	</field>
+	<sortField name="observation_datetime" order="Descending"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<columnHeader>
+		<band height="24" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="23" width="555" height="1" uuid="8c3d2566-8ba2-4d8c-abba-d4d99744efd8"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="0" width="555" height="1" uuid="033cba04-adda-4246-be1a-a6aa3d44042a"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="10" y="5" width="100" height="13" uuid="dd48f1f3-38a4-4cd6-addf-840903852de4"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Date/Time ]]></text>
+			</staticText>
+			<line>
+				<reportElement x="113" y="5" width="1" height="13" uuid="23150bd5-c8b9-4b11-ac0b-a0027f42ac65"/>
+			</line>
+			<staticText>
+				<reportElement x="118" y="5" width="32" height="13" uuid="be4aa57a-a0c1-43fb-8848-6f78751b1ddf"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[BP]]></text>
+			</staticText>
+			<line>
+				<reportElement x="155" y="5" width="1" height="13" uuid="318bfd1d-7c01-43bb-97a5-495034cb13b2"/>
+			</line>
+			<staticText>
+				<reportElement x="160" y="5" width="30" height="13" uuid="ecf0d674-459c-4088-8b63-0dc6aaa255e7"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Temp]]></text>
+			</staticText>
+			<line>
+				<reportElement x="195" y="5" width="1" height="13" uuid="1f5408f7-8851-4173-bafc-ad1b91901823"/>
+			</line>
+			<staticText>
+				<reportElement x="199" y="5" width="30" height="13" uuid="7d701d02-a341-4f8f-b775-627ca5ee2cef"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pulse]]></text>
+			</staticText>
+			<line>
+				<reportElement x="235" y="5" width="1" height="13" uuid="c8bba71c-e47c-499d-9f11-eb792e68a2b9"/>
+			</line>
+			<staticText>
+				<reportElement x="239" y="5" width="30" height="13" uuid="1a7a3e52-128a-4aac-8fc1-0607a3127182"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Resp]]></text>
+			</staticText>
+			<line>
+				<reportElement x="273" y="4" width="1" height="13" uuid="264ccb62-847a-46e1-a0a3-58ad98de07fb"/>
+			</line>
+			<staticText>
+				<reportElement x="278" y="5" width="30" height="13" uuid="0b6a78cc-db9c-4450-9443-e4173721dd2f"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SPO2]]></text>
+			</staticText>
+			<line>
+				<reportElement x="313" y="5" width="1" height="13" uuid="40c6f447-873b-4ccb-b689-174ce648af10"/>
+			</line>
+			<staticText>
+				<reportElement x="318" y="5" width="30" height="13" uuid="92e6c1ef-8f2c-4d6d-b834-bf87be4c306e"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pain]]></text>
+			</staticText>
+			<line>
+				<reportElement x="352" y="5" width="1" height="13" uuid="2f957a4c-65be-4067-8579-056da6252ffd"/>
+			</line>
+			<staticText>
+				<reportElement x="356" y="5" width="41" height="13" uuid="33420299-afc1-47b1-839a-91a7c7db0290"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Remarks]]></text>
+			</staticText>
+			<line>
+				<reportElement x="400" y="5" width="1" height="13" uuid="cc8c0625-b216-45c4-b65f-017f9cc56cba"/>
+			</line>
+			<staticText>
+				<reportElement x="403" y="5" width="48" height="13" uuid="37b6c1b0-2838-42e5-a8d6-7a0840a937f6"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Taken By]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="18" splitType="Stretch">
+			<textField>
+				<reportElement x="10" y="5" width="100" height="13" uuid="ed3b17a6-9188-470a-9fa3-a8c6eb4d2d1f"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{observation_datetime}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="113" y="5" width="1" height="13" uuid="295cec58-0e15-4abf-b14e-3c83c73f7ebb"/>
+			</line>
+			<textField>
+				<reportElement x="118" y="5" width="32" height="13" uuid="e09ca940-0a10-4959-96ce-07dea97c34dc"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{bp}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="155" y="5" width="1" height="13" uuid="53295711-5117-44cf-b4bf-411e3588f6a7"/>
+			</line>
+			<textField>
+				<reportElement x="160" y="5" width="30" height="13" uuid="82da85fd-1131-4b7f-b9c9-fec86b8ebadd"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{temperature}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="195" y="5" width="1" height="13" uuid="0774b705-3b01-47f2-81fc-ab81c9290bc6"/>
+			</line>
+			<textField>
+				<reportElement x="199" y="5" width="30" height="13" uuid="d2d2b741-ba98-490d-b23b-1274678f6e9b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pulse}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="235" y="5" width="1" height="13" uuid="321964ea-69ba-433d-815f-3145a2f5ad10"/>
+			</line>
+			<textField>
+				<reportElement x="239" y="5" width="30" height="13" uuid="40defd86-faa3-432a-b6cd-25b75dc86011"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{respiration}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="273" y="4" width="1" height="13" uuid="d0badd36-84fa-4103-950d-63304c3e1de0"/>
+			</line>
+			<textField>
+				<reportElement x="278" y="5" width="30" height="13" uuid="185f6e16-ebf4-4e8a-8180-498cf0fdc040"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{spo2}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="313" y="5" width="1" height="13" uuid="70450441-4371-464e-a314-b196baf83c1a"/>
+			</line>
+			<textField>
+				<reportElement x="318" y="5" width="30" height="13" uuid="8f478e5d-f786-433b-91b8-8f8f4c909746"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pain_score}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="352" y="5" width="1" height="13" uuid="a408a450-aa6b-45d6-9b35-d2310054f11d"/>
+			</line>
+			<textField>
+				<reportElement x="356" y="5" width="41" height="13" uuid="a8fa4de1-52eb-4f17-b167-f7c37e41b595"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{remarks}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="400" y="5" width="1" height="13" uuid="6ab29bfa-d2b2-4abd-a2a4-cbea0d9dc8b8"/>
+			</line>
+			<textField>
+				<reportElement x="403" y="5" width="48" height="13" uuid="3aeeb524-d09c-4412-8233-d509e1760891"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{taken_by}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="90" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="10" width="71" height="13" uuid="5ff8cc2d-8922-49ec-b8a5-04be197e3c5f"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Summary :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="11" y="28" width="49" height="13" uuid="548f3b23-7875-4b9f-a3cd-978dcd865e99"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Avg BP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="64" y="28" width="6" height="13" uuid="e0fba2e9-5f20-4a8d-b3d5-e0ae43df9cec"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="11" y="45" width="49" height="13" uuid="672efef1-4de9-4f2b-8cf7-47308267dd23"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Max Temp]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="64" y="45" width="6" height="13" uuid="728dc9a5-e046-423f-9f7b-a5e93f7b9166"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="11" y="61" width="49" height="13" uuid="3eae8c7f-b783-49fc-8a62-cdd93416b2d7"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Min SPO2]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="64" y="61" width="6" height="13" uuid="80241d67-9a9b-439c-b5c3-a1c442cfc9ac"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="11" y="77" width="49" height="13" uuid="9c23b783-d31d-4c12-b02c-a6f9541092e7"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Max Pulse]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="64" y="77" width="6" height="13" uuid="c13ce9ba-52c7-4fc0-8dca-68418d57b4bc"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="73" y="28" width="91" height="13" uuid="16f2962d-fe5c-46c8-a36d-c4315b634354"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{avg_bp}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="73" y="45" width="91" height="13" uuid="471178ca-8528-4b32-a2b2-8f28b6a88ef1"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{max_temperature}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="73" y="61" width="91" height="13" uuid="5cff76c3-e454-4ac6-b173-c631135963ba"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{min_spo2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="73" y="77" width="91" height="13" uuid="8976f3db-affe-486e-a48b-fdc729c34bf7"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{max_pulse}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

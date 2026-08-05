@@ -1453,6 +1453,17 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
         return masStoreItemService.getAllMasStoreItemWithOutStock(flag);
     }
 
+    @GetMapping("/masStoreItemWithotStock/getAllPaginated/{flag}")
+    public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPaginated(
+            @PathVariable int flag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String nomenclature,
+            @RequestParam(required = false) Integer itemClassId,
+            @RequestParam(required = false) Integer masItemCategoryid) {
+        return masStoreItemService.getAllMasStoreItemWithOutStockPaginated(flag, page, size, nomenclature, itemClassId, masItemCategoryid);
+    }
+
     @GetMapping("/getAll/drugsAndNonDrugs")
     public ApiResponse<List<ItemProjection>> getAllDrugs(@RequestParam(required = false) Integer sectionId) {
         return masStoreItemService.getAllDrugs(sectionId);

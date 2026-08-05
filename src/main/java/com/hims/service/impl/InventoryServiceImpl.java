@@ -105,8 +105,14 @@ public class InventoryServiceImpl implements InventoryService {
     @Value( "${drug.expiry.inventory}")
     private int drugExpDay;
 
-    @Value(("${sectionId.drugs}"))
-    private Long sectionIdForDrugs;
+    @Value(("${drugSectionCode}"))
+    private String drugSectionCode;
+
+    @Value(("${medicalNonConsumableItemTypeCode}"))
+    private String medicalNonConsumableItemTypeCode;
+
+    @Value(("${medicalConsumableItemTypeCode}"))
+    private String medicalConsumableItemTypeCode;
 
 
 
@@ -282,7 +288,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(Long sectionId,String keyword, int page, int size) {
+    public ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String sectionCode,String keyword, int page, int size) {
         try {
             log.info("getStoreItems with item contains name {} ,method started...",keyword);
             
@@ -292,10 +298,11 @@ public class InventoryServiceImpl implements InventoryService {
                     Sort.by(Sort.Direction.ASC,"nomenclature")
             );
             Page<ItemStockLedgerWithBatchResponse> responses ;
-            if(sectionId==null){
-                responses=storeItemRepository.searchNonDrugItems(sectionIdForDrugs, keyword, pageable);
+            if(sectionCode==null || sectionCode.trim().isEmpty()){
+                List<String> medicalConsumablesAndNonConsumables = List.of(medicalNonConsumableItemTypeCode, medicalConsumableItemTypeCode);
+                responses=storeItemRepository.searchNonDrugItems(drugSectionCode, keyword,medicalConsumablesAndNonConsumables, pageable);
             }else{
-                responses=storeItemRepository.searchItems(sectionId, keyword, pageable);
+                responses=storeItemRepository.searchItems(sectionCode, keyword, pageable);
             }
             log.info("getStoreItems with item contains name {} ,method ended...",keyword);
             return  ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
@@ -1422,7 +1429,8 @@ public class InventoryServiceImpl implements InventoryService {
                             issueT,
                             indentT.getItemId(),
                             issueT.getStockId(),
-                            qtyRejected
+                            qtyRejected,
+                            storeDept
                     ));
 
 
@@ -1556,11 +1564,13 @@ public class InventoryServiceImpl implements InventoryService {
         hd.setStatus(AppConstants.BALANCE_SAVED_STATUS.toLowerCase()); // status = saved
         hd.setLastUpdatedDt(LocalDateTime.now());
         String balanceType;
-        if( masStoreSectionRepository.existsById(sectionIdForDrugs.intValue())){
+
+        if(openingBalanceEntryRequest.getBalanceType().equalsIgnoreCase(drugSectionCode)){
             balanceType= AppConstants.ITEM_TYPE_DRUG;
         }else{
             balanceType=AppConstants.ITEM_TYPE_NON_DRUG;
         }
+
         hd.setBalanceType(balanceType);
         StoreBalanceHd savedHd = storeBalanceHdRepository.save(hd);
 
@@ -1663,7 +1673,7 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public ApiResponse<List<OpeningBalanceEntryDetailResponse>> getOpeningBalanceEntryDetailsWrtHeader(Long balanceMId) {
         try {
-            log.info("getOpeningBalanceEntryDetailsWrtHeader method started for balanceMId - {} :: ", balanceMId);
+            log.info("getOpeningBalanceEntryDetailsWrtHeader method started for balanceMId - {} :: hi ", balanceMId);
             List<OpeningBalanceEntryDetailResponse> response =
                     storeBalanceDtRepository.findOpeningBalanceDetailsWrtHeader(balanceMId)
                             .stream()
@@ -1746,7 +1756,7 @@ public class InventoryServiceImpl implements InventoryService {
         hd.setStatus(AppConstants.BALANCE_SUBMIT_STATUS.toLowerCase()); // status = saved
         hd.setLastUpdatedDt(LocalDateTime.now());
         String balanceType;
-        if( masStoreSectionRepository.existsById(sectionIdForDrugs.intValue())){
+        if( request.getBalanceType().equalsIgnoreCase(drugSectionCode)){
             balanceType= AppConstants.ITEM_TYPE_DRUG;
         }else{
             balanceType=AppConstants.ITEM_TYPE_NON_DRUG;
@@ -2192,16 +2202,20 @@ public class InventoryServiceImpl implements InventoryService {
         MasStoreItem item;
         StoreItemBatchStock stock;
         BigDecimal rejectedQty;
+
+        MasDepartment department;
+
         String rejectionReason;
 
         public StoreReturnItemDetail(StoreIndentReceiveT receiveT, StoreIssueT issueT,
                                      MasStoreItem item, StoreItemBatchStock stock,
-                                     BigDecimal rejectedQty) {
+                                     BigDecimal rejectedQty,MasDepartment department) {
             this.receiveT = receiveT;
             this.issueT = issueT;
             this.item = item;
             this.stock = stock;
             this.rejectedQty = rejectedQty;
+            this.department = department;
 //            this.rejectionReason = rejectionReason;
         }
     }
@@ -2357,7 +2371,8 @@ public class InventoryServiceImpl implements InventoryService {
                     itemDetail.stock.getStockId(),
                     "REJECTED DURING RECEIVING",
                     "RETURN NO: " + returnNo,
-                    returnNo
+                    returnNo,
+                    itemDetail.department
             );
         }
 
@@ -2368,7 +2383,7 @@ public class InventoryServiceImpl implements InventoryService {
         receiveMRepository.save(receiveM);
     }
 
-    private void returnedLedger(BigDecimal qtyBefore,long qtyReturned,Long indentTId,Long stockId,String rejectedReason,String remarks,String referenceNum){
+    private void returnedLedger(BigDecimal qtyBefore,long qtyReturned,Long indentTId,Long stockId,String rejectedReason,String remarks,String referenceNum,MasDepartment department){
 
         StoreItemBatchStock stock = storeItemBatchStockRepository.findById(stockId)
                 .orElseThrow(() -> new EntityNotFoundException(AppConstants.STOCK_NOT_FOUND_ERR_MSG));
@@ -2395,7 +2410,7 @@ public class InventoryServiceImpl implements InventoryService {
         ledger.setQtyAfter(qtyBefore);
         ledger.setQtyReject(BigDecimal.valueOf(qtyReturned));
         ledger.setReferenceNum(referenceNum);
-        ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found")));
+        ledger.setDept(department);
         ledger.setHospital(currentUser.getHospital());
         ledger.setTxnSource(AppConstants.TRANSACTION_TYPE_AND_SOURCE_RETURN);
         storeStockLedgerRepository.save(ledger);
@@ -2611,7 +2626,7 @@ public class InventoryServiceImpl implements InventoryService {
         User currentUser = authUtil.getCurrentUser();
         String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
         String indentType;
-       if( masStoreSectionRepository.existsById(sectionIdForDrugs.intValue())){
+       if( request.getIndentType().equalsIgnoreCase(drugSectionCode)){
            indentType=AppConstants.ITEM_TYPE_DRUG;
        }else{
            indentType=AppConstants.ITEM_TYPE_NON_DRUG;
