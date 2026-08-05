@@ -153,8 +153,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setLastChgBy(currentUser.getUserId());
         masStoreItem.setLastChgDate(LocalDate.now());
         masStoreItem.setLastChgTime(getCurrentTimeFormatted());
-//        masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore());
-//        masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary());
+        masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore() != null ? masStoreItemRequest.getReOrderLevelStore().intValue() : null);
+        masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary() != null ? masStoreItemRequest.getReOrderLevelDispensary().intValue() : null);
         masStoreItem.setIsGeneric(masStoreItemRequest.getIsGeneric());
         masStoreItem.setDangerousDrug(masStoreItemRequest.getDangerousDrug());
         masStoreItem.setDrugSchedule(masStoreItemRequest.getDrugSchedule());
@@ -163,6 +163,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setAvailableInIpd(normalizeYN(masStoreItemRequest.getAvailableInIpd()));
         masStoreItem.setAvailableInEmergency(normalizeYN(masStoreItemRequest.getAvailableInEmergency()));
         masStoreItem.setAvailableInOt(normalizeYN(masStoreItemRequest.getAvailableInOt()));
+        masStoreItem.setDosageUnit(masStoreItemRequest.getDosageUnit());
 
 
         Optional<MasStoreUnit> masStoreUnit = masStoreUnitRepository.findById(masStoreItemRequest.getDispUnit());
@@ -487,8 +488,8 @@ public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPag
             long deptId = authUtil.getCurrentDepartmentId();
             MasDepartment depObj = masDepartmentRepository.getById(deptId);
             item.setAdispQty(request.getAdispQty());
-//            item.setReOrderLevelStore(request.getReOrderLevelStore());
-//            item.setReOrderLevelDispensary(request.getReOrderLevelDispensary());
+            item.setReOrderLevelStore(request.getReOrderLevelStore() != null ? request.getReOrderLevelStore().intValue() : null);
+            item.setReOrderLevelDispensary(request.getReOrderLevelDispensary() != null ? request.getReOrderLevelDispensary().intValue() : null);
 //            item.setHospitalId(currentUser.getHospital().getId());
 //            item.setDepartmentId(depObj.getId());
             item.setLastChgBy(currentUser.getUserId());
@@ -504,6 +505,7 @@ public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPag
             item.setAvailableInIpd(normalizeYN(request.getAvailableInIpd()));
             item.setAvailableInEmergency(normalizeYN(request.getAvailableInEmergency()));
             item.setAvailableInOt(normalizeYN(request.getAvailableInOt()));
+            item.setDosageUnit(request.getDosageUnit());
 
             if (request.getDispUnit() != null) {
                 item.setDispUnit(masStoreUnitRepository.findById(request.getDispUnit())
@@ -1317,6 +1319,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setAvailableInIpd(item.getAvailableInIpd());
         response.setAvailableInEmergency(item.getAvailableInEmergency());
         response.setAvailableInOt(item.getAvailableInOt());
+        response.setDosageUnit(item.getDosageUnit());
 
         List<MasStoreItemResponse.MasFacilityCodeResponse> facilityList = new ArrayList<>();
         List<StoreItemFacilityMap> storeItemFacilityMaps=storeItemFacilityMapRepository.findByItemItemId(item.getItemId());
@@ -1351,6 +1354,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setAvailableInIpd(item.getAvailableInIpd());
         response.setAvailableInEmergency(item.getAvailableInEmergency());
         response.setAvailableInOt(item.getAvailableInOt());
+        response.setDosageUnit(item.getDosageUnit());
 
 
         response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
@@ -1493,6 +1497,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setAvailableInIpd(item.getAvailableInIpd());
         response.setAvailableInEmergency(item.getAvailableInEmergency());
         response.setAvailableInOt(item.getAvailableInOt());
+        response.setDosageUnit(item.getDosageUnit());
         response.setFacilityCode(facilityMap.getOrDefault(item.getItemId(), Collections.emptyList()));
 
         return response;

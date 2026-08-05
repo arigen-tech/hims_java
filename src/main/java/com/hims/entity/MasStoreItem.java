@@ -135,4 +135,7 @@ public class MasStoreItem {
     @Column(name = "available_in_ot", length = 1)
     private String availableInOt;
 
+    @Column(name = "dosage_unit", length = 50)
+    private String dosageUnit;
+
 }

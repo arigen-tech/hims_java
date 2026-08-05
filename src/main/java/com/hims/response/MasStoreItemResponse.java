@@ -53,6 +53,7 @@ public class MasStoreItemResponse {
     private String availableInIpd;
     private String availableInEmergency;
     private String availableInOt;
+    private String dosageUnit;
     @Data
 
     public static class MasFacilityCodeResponse{
