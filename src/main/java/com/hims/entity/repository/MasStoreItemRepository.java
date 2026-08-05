@@ -384,7 +384,8 @@ GROUP BY
         m.availableInOpd AS availableInOpd,
         m.availableInIpd AS availableInIpd,
         m.availableInEmergency AS availableInEmergency,
-        m.availableInOt AS availableInOt
+        m.availableInOt AS availableInOt,
+        m.dosageUnit AS dosageUnit
 
     FROM MasStoreItem m
     LEFT JOIN m.dispUnit du
@@ -451,7 +452,8 @@ ORDER BY m.lastChgDate DESC, m.lastChgTime DESC
         m.availableInOpd AS availableInOpd,
         m.availableInIpd AS availableInIpd,
         m.availableInEmergency AS availableInEmergency,
-        m.availableInOt AS availableInOt
+        m.availableInOt AS availableInOt,
+        m.dosageUnit AS dosageUnit
 
     FROM MasStoreItem m
     LEFT JOIN m.dispUnit du
@@ -733,7 +735,8 @@ WHERE
         m.availableInOpd AS availableInOpd,
         m.availableInIpd AS availableInIpd,
         m.availableInEmergency AS availableInEmergency,
-        m.availableInOt AS availableInOt
+        m.availableInOt AS availableInOt,
+        m.dosageUnit AS dosageUnit
 
     FROM MasStoreItem m
     LEFT JOIN m.dispUnit du

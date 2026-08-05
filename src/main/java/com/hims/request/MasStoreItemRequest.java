@@ -37,5 +37,6 @@ public class MasStoreItemRequest {
     private String availableInIpd;
     private String availableInEmergency;
     private String availableInOt;
+    private String dosageUnit;
 
 }
