@@ -334,6 +334,10 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     @Autowired
     private MasDischargeReasonService masDischargeReasonService;
 
+    @Autowired
+    private MasReceiptTypeService masReceiptTypeService;
+
+
 
 
 
@@ -5395,6 +5399,12 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
     @GetMapping("/masDischargeReason/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasDischargeReasonResponse>>> masDischargeReason(@PathVariable int flag) {
         return ResponseEntity.ok(masDischargeReasonService.getAll(flag));
+    }
+    @GetMapping("/masReceiptType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasReceiptTypeResponse>>> getAllReceiptType(
+            @PathVariable int flag) {
+
+        return ResponseEntity.ok(masReceiptTypeService.getAll(flag));
     }
 
 }
