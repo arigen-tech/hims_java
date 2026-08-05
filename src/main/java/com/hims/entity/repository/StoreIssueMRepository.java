@@ -33,11 +33,14 @@ public interface StoreIssueMRepository extends JpaRepository<StoreIssueM,Long> {
         sim.storeIssueMId,
         sim.issueNo,
         sim.issueDate,
-        sim.indentMId.indentMId,
-        sim.indentMId.indentNo,
-        sim.indentMId.indentDate
+        m.indentMId,
+        m.indentNo,
+        m.indentDate,
+        sim.fromStoreId.departmentName,
+        m.indentType 
     )
     FROM StoreIssueM sim
+    LEFT JOIN sim.indentMId m
     WHERE sim.toDeptId.id = :toDeptId
     AND sim.issueDate BETWEEN :fromDate AND :toDate
     ORDER BY sim.issueDate DESC
