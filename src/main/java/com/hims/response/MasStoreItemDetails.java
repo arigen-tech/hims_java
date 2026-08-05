@@ -41,5 +41,6 @@ public class MasStoreItemDetails {
         private BigDecimal hsnGstPercent;
         private Integer reOrderLevelDispensary;
         private Integer reOrderLevelStore;
+        private String dosageUnit;
 
 }
