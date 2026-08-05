@@ -923,6 +923,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             masStoreItem.setItemTypeId(masItemType.get());
             masStoreItem.setSectionId(masStoreSection.get());
             masStoreItem.setMasItemCategory(masItemCategory.get());
+            masStoreItem.setHsnCode(masHSN.get());
 
             MasHospital hospital = currentUser.getHospital();
 
@@ -996,6 +997,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             if (masHSN.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
             }
+            item.setHsnCode(masHSN.get());
 
             if (request.getUnitAU() != null) {
                 item.setUnitAU(masStoreUnitRepository.findById(request.getUnitAU())
