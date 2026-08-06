@@ -38,8 +38,8 @@ from store_issue_t sit
 left join store_issue_m sim on sim.store_issue_m_id = sit.store_issue_m_id
 left join store_internal_indent_m siim on sim.store_issue_m_id = siim.store_issue_m_id
 left join mas_store_item msi on sit.item_id = msi.item_id
-where(cast($P{from_date} as date) is null or sim.issue_date >= cast($P{from_date} as date))
-and (cast($P{to_date} as date) is null or sim.issue_date <= cast($P{to_date} as date))
+where (cast($P{from_date} as date) is null or sim.issue_date >= cast($P{from_date} AS date))
+and (cast($P{to_date} as date) is null or sim.issue_date < cast($P{to_date} AS date) + interval '1 day')
 and (sit.item_id = $P{drug_id} or $P{drug_id} = 0)
 and (siim.indent_type_drug_or_nondrug = $P{indent_type} or $P{indent_type} is null)
 and sim.to_dept_id = $P{department_id}
