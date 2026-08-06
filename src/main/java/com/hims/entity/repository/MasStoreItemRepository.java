@@ -568,12 +568,15 @@ WHERE
             OR :itemName = ''
           OR LOWER(i.nomenclature) LIKE LOWER(CONCAT('%', :itemName, '%'))
           )
-                  
-
-AND (
+       AND (
         :itemClassId IS NULL
         OR ic.item_class_id = :itemClassId
     )
+      AND (
+        :sectionId IS NULL
+        OR s.section_id = :sectionId
+    )
+
 """,
             nativeQuery = true)
     Page<MedicalConsumableItemProjection> medicalConsumableItem(

@@ -17,7 +17,7 @@ public class PendingTrackingIPDBillResponse {
     private String admissionNo;
     private Long wardId;
     private String ward;
-    private Long rooId;
+    private Long roomId;
     private String room;
     private Long bedId;
     private String bed;
@@ -25,8 +25,11 @@ public class PendingTrackingIPDBillResponse {
     private Long billingTypeId;
     private String billingType;
     private BigDecimal totalAmount;
+    private BigDecimal estimationCost;
     private BigDecimal patientPaid;
     private BigDecimal outStandingAmount;
     private Long billStatusId;
     private String billStatus;
+    private Long paymentStatusId;
+    private String paymentStatus;
 }
