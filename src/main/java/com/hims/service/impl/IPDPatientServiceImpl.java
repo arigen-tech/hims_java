@@ -2467,8 +2467,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         receiptHd.setTotalAmount(totalAmount);
         receiptHd.setCreatedBy(user.getUsername());
         receiptHd.setCreatedDate(LocalDateTime.now());
-        receiptHd.setReceiptType(masReceiptTypeRepository.findById(masReceiptTypeAdvanceCollection)
-                .orElseThrow(() -> new RuntimeException("Invalid Receipt Type")));
         receiptHd.setReceiptStatus(AppConstants.IP_RECEIPT_STATUS.toLowerCase());
         receiptHd.setCreatedBy(user.getFullName());
         receiptHd.setLastChgBy(user.getFullName());

@@ -336,6 +336,8 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
 
     @Autowired
     private MasReceiptTypeService masReceiptTypeService;
+    @Autowired
+    private MasPaymentModeService masPaymentModeService;
 
 
 
@@ -5406,5 +5408,11 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
 
         return ResponseEntity.ok(masReceiptTypeService.getAll(flag));
     }
+    @GetMapping("/paymentMode/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasPaymentModeResponse>>> paymentMode(@PathVariable int flag) {
+
+        return ResponseEntity.ok(masPaymentModeService.getAll(flag));
+    }
+
 
 }
