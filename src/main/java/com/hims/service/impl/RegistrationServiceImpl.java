@@ -101,6 +101,8 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Autowired
     DoctorRosterServices doctorRosterServices;
+    @Autowired
+    private HelperUtils helperUtils;
 
 
     @Autowired
@@ -175,7 +177,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 validateDuplicateAppointments(visit, patientObj.getId());
                 for (VisitRequest v : visit) {
                     Instant today = v.getVisitDate();
-                    String visitType = getVisitTypeForFollowUpOrNew(patientObj.getId(), today);
+                    String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patientObj.getId());
                     v.setVisitType(visitType);
                     Visit saved = createSingleAppointment(v, patientObj);
                     savedVisits.add(saved);
@@ -647,7 +649,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             if (visitReq!=null) {
 
                 Instant date = visitReq.getVisitDate();
-                String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), date);
+                String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
                 visitReq.setVisitType(visitType);
                 Visit saved = createSingleAppointment(visitReq, patient);
 
@@ -807,10 +809,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         patient = patientRepository.save(patient);
         return patient;
     }
-    private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
-        int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
-        return count > 0 ? "F" : "N";
-    }
+
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
 
         validateDuplicateAppointment(visit, patient.getId(), null);
@@ -875,7 +874,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         } else {
             newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
         }
-        newVisit.setVisitType(visit.getVisitType());
+        newVisit.setVisitType(helperUtils.getVisitTypeForFollowUpOrNew(patient.getId()));
         newVisit.setPatient(patient);
 
         if (visit.getDoctorId() != null) {

@@ -353,9 +353,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     @Query("SELECT COUNT(v) FROM Visit v WHERE v.id = :patientId")
     Long countByPatientId(@Param("patientId") Long patientId);
 
-    @Query("SELECT COUNT(v) FROM Visit v WHERE v.patient.id = :patientId AND DATE(v.visitDate) = :visitDate")
-    int countByPatientIdAndVisitDate(@Param("patientId") Long patientId,
-                                     @Param("visitDate") Instant visitDate);
+    @Query("SELECT COUNT(v) FROM Visit v WHERE v.patient.id = :patientId")
+    int countByPatientIdAndVisitDate(@Param("patientId") Long patientI);
 
 
     @Query(value = """
