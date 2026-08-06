@@ -178,4 +178,10 @@ public final class ReportConstants {
 
     public static final String IP_INVESTIGATION_JASPER = "IP_investigation_report";
     public static final String IP_INVESTIGATION_REPORT = "ipInvestigationReport";
+
+    public static final String DRUG_MASTER_JASPER = "Drug_master_report";
+    public static final String DRUG_MASTER_REPORT = "drugMasterReport";
+
+    public static final String MEDICAL_CONSUMABLE_NON_CONSUMABLE_JASPER = "Medical_consumable_non_consumable";
+    public static final String MEDICAL_CONSUMABLE_NON_CONSUMABLE_REPORT = "MedicalConsumable/Non-Consumable";
 }
