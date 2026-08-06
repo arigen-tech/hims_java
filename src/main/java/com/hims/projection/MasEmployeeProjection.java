@@ -28,4 +28,8 @@ public interface MasEmployeeProjection {
     String getEmployeeType();
 
     String getStatus();
+
+    Long getRoleId();
+
+    String getRoleName();
 }

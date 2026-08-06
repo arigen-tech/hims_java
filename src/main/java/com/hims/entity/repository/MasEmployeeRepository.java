@@ -44,7 +44,9 @@ public interface MasEmployeeRepository extends JpaRepository<MasEmployee, Long> 
                 ut.user_type_id AS employeeTypeId,
                 ut.user_type_name AS employeeType,
 
-                e.status AS status
+                e.status AS status,
+                mr.id AS roleId,
+                mr.role_desc AS roleName
 
             FROM mas_employee e
             LEFT JOIN mas_gender g 
@@ -53,6 +55,8 @@ public interface MasEmployeeRepository extends JpaRepository<MasEmployee, Long> 
                 ON et.id = e.employment_type_id
             LEFT JOIN mas_user_type ut 
                 ON ut.user_type_id = e.employee_type_id
+            LEFT JOIN mas_role mr
+                ON e.role_id = mr.id
             WHERE 
                 (
                     :employeeName IS NULL

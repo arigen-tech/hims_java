@@ -596,7 +596,7 @@ public class ReportController {
         Map<String, Object> params = new HashMap<>();
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         params.put("hospital_id", hospitalId);
-        params.put("department_id", departmentId);
+        params.put("deptId", departmentId);
         params.put("from_date", safeFromDate);
         params.put("to_date", safeToDate);
         params.put("item_id", itemId);
