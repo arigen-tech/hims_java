@@ -2,7 +2,6 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
-import com.hims.entity.MasSubChargeCode;
 import com.hims.entity.repository.MasSubChargeCodeRepository;
 import com.hims.projection.ModalityDetailsProjection;
 import com.hims.response.ApiResponse;

@@ -145,6 +145,7 @@ SELECT
     m.lastChgDate as lastChgDate,
     m.lastChgTime as lastChgTime,
     m.adispQty as adispQty,
+    m.dosageUnit as dosageUnit,
 
     uau.unitId as unitAU,
     du.unitId as dispUnit,
@@ -201,7 +202,7 @@ GROUP BY
     cat.itemCategoryName, uau.unitName, du.unitName,
     s.sectionName, it.name, g.groupName, ic.itemClassName,
     h.hsnCode, h.gstRate,
-    m.reOrderLevelDispensary, m.reOrderLevelStore
+    m.reOrderLevelDispensary, m.reOrderLevelStore, m.dosageUnit
 """)
     Optional<MasStoreItemProjection> findItemWithStock(
             @Param("itemId") Long itemId,

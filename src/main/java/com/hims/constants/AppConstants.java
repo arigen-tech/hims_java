@@ -216,7 +216,11 @@ public class AppConstants {
     public static final String SOURCE_LAB = "lab source";
 
 
+
+
     public static final String ORDER_HD_NOT_FOUND_MSG = "Invalid order Id , Order Hd Id not found";
+
+    public static final String DUPLICATE_APPOINTMENT_MSG = "Patient already has an appointment with the same doctor on this day.";
 
 
     private AppConstants() {
