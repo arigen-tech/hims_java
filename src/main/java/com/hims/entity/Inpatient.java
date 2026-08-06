@@ -155,4 +155,10 @@ public class Inpatient {
     @JoinColumn(name = "bed_id")
     private MasBed bed;
 
+    @Column(name = "icd",columnDefinition = "text")
+    private String icd;
+
+
+
+
 }
