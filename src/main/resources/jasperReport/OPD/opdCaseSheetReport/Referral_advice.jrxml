@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Signs_symptoms_report_1" pageWidth="421" pageHeight="595" whenNoDataType="NoPages" columnWidth="421" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="4bb4abaf-4c1b-4012-8336-5dab1daed21e">
+	<property name="ireport.scriptlethandling" value="0"/>
+	<property name="ireport.encoding" value="UTF-8"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<import value="net.sf.jasperreports.engine.*"/>
+	<import value="java.util.*"/>
+	<import value="net.sf.jasperreports.engine.data.*"/>
+	<parameter name="visit_id" class="java.lang.Long"/>
+	<queryString>
+		<![CDATA[select
+	referral_date,
+	referral_remark,
+	referred_hospital_name,
+	refer_to
+from opd_patient_details
+where visit_id = $P{visit_id}]]>
+	</queryString>
+	<field name="referral_date" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="referral_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="referral_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_patient_details"/>
+	</field>
+	<field name="referral_remark" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="referral_remark"/>
+		<property name="com.jaspersoft.studio.field.label" value="referral_remark"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_patient_details"/>
+	</field>
+	<field name="referred_hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="referred_hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="referred_hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_patient_details"/>
+	</field>
+	<field name="refer_to" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="refer_to"/>
+		<property name="com.jaspersoft.studio.field.label" value="refer_to"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_patient_details"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="49" splitType="Stretch">
+			<staticText>
+				<reportElement positionType="Float" x="244" y="17" width="100" height="14" uuid="091b5d22-b371-4f6b-95d0-0b464d21be61"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Refer Hospital :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="3" y="17" width="100" height="14" uuid="3d1f6017-75e9-45fd-8967-379f5897307c"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Refer Date :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy h:mm a" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="56" y="17" width="65" height="14" isRemoveLineWhenBlank="true" uuid="6b3e532d-91b8-4c62-a1e3-21573494603a"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{referral_date}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="166" y="17" width="75" height="14" isRemoveLineWhenBlank="true" uuid="57c90111-d635-4204-adaf-7f87c76f5d13"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{refer_to}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="297" y="17" width="62" height="14" isRemoveLineWhenBlank="true" uuid="1a4076eb-95af-4a08-b18a-4f3b7eb4354a"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{referred_hospital_name}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="###0" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="56" y="34" width="308" height="15" isRemoveLineWhenBlank="true" uuid="584b756f-3b4c-4f0c-a8e8-b40d7b0273d6"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{referral_remark}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="2" width="361" height="14" uuid="8126c811-c050-4346-9794-b110bd0a4b7e"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Referral :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="3" y="34" width="100" height="14" uuid="0e0285e6-f8da-4bdd-90b5-389f1209010e"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Remarks :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="127" y="17" width="100" height="14" uuid="a3b5e1c7-65b6-4046-9c0c-ea3b5dc0bde4"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Refer To :]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

@@ -423,18 +423,36 @@ public class IPDPatientController {
         return ipdPatientService.stopMedicationTreatment(request);
     }
 
+    @PostMapping("saveMarDetails")
+    public ApiResponse<String> saveMarDetails(@Valid @RequestBody List<MarDetailsRequest> request) {
+
+        log.info("saveMarDetails API called with {} record(s)", request != null ? request.size() : 0);
+
+        return ipdPatientService.saveMarDetails(request);
+    }
 
 
 
+    @GetMapping("/getMarAdministrationLog")
+    public ResponseEntity<ApiResponse<Page<IpMarDetailsResponse>>> getMarAdministrationLog(
+            @RequestParam Long inpatientId,
+            @RequestParam(required = false) Long itemId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
 
+        log.info("Request received to fetch MAR Administration Log. inpatientId: {}, itemId: {}, page: {}, size: {}",
+                inpatientId, itemId, page, size);
 
+        ApiResponse<Page<IpMarDetailsResponse>> response = ipdPatientService.getMarAdministrationLog(inpatientId, itemId, page, size);
+        return ResponseEntity.ok(response);
+    }
 
+    @GetMapping("/getMarMedicineList")
+    public ResponseEntity<ApiResponse<List<MarMedicineResponse>>> getMarMedicineList(@RequestParam Long inpatientId) {
 
+        log.info("Request received to fetch unique medicines in MAR log for inpatientId: {}", inpatientId);
 
-
+        ApiResponse<List<MarMedicineResponse>> response = ipdPatientService.getMarMedicineList(inpatientId);
+        return ResponseEntity.ok(response);
+    }
 }
-
-
-
-
-
