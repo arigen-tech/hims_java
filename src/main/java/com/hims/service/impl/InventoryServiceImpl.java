@@ -2575,6 +2575,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         r.setRequestedDeptStocks(p.getRequestedDeptStocks());
         r.setCurrentDeptStocks(p.getCurrentDeptStocks());
+        r.setDosageUnit(p.getDosageUnit());
 
         return r;
     }

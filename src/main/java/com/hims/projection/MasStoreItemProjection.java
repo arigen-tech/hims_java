@@ -39,4 +39,6 @@ public interface MasStoreItemProjection {
 
     Integer getReOrderLevelDispensary();
     Integer getReOrderLevelStore();
+
+    String getDosageUnit();
 }

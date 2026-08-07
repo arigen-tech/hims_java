@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Drug_master_report" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b98fb5c8-19b1-4d50-8022-e5cc4c89efa1">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<parameter name="path" class="java.lang.String"/>
+	<parameter name="itemTypeId" class="java.lang.Integer"/>
+	<parameter name="sectionId" class="java.lang.Integer"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+    msi.pvms_no AS code,
+    msi.nomenclature,
+    mic.item_class_name AS class,
+    micat.item_category_name AS category,
+    inventory_unit.unit_name AS inventory_unit,
+    dispensing_unit.unit_name AS dispensing_unit,
+    msi.hsn_code,
+    msi.drug_schedule,
+    CASE
+        WHEN UPPER(TRIM(msi.available_in_opd)) = 'Y' THEN 'Yes'
+        ELSE 'No'
+    END AS opd,
+    CASE
+        WHEN UPPER(TRIM(msi.available_in_ipd)) = 'Y' THEN 'Yes'
+        ELSE 'No'
+    END AS ipd,
+    CASE
+        WHEN UPPER(TRIM(msi.available_in_emergency)) = 'Y' THEN 'Yes'
+        ELSE 'No'
+    END AS emergency,
+    CASE
+        WHEN UPPER(TRIM(msi.available_in_ot)) = 'Y' THEN 'Yes'
+        ELSE 'No'
+    END AS ot,
+    msi.store_rol,
+    CASE
+        WHEN UPPER(TRIM(msi.status)) = 'Y' THEN 'Active'
+        ELSE 'Inactive'
+    END AS status,
+	mh.hospital_name
+FROM mas_store_item msi
+LEFT JOIN mas_item_class mic ON mic.item_class_id = msi.item_class_id
+LEFT JOIN mas_item_category micat ON micat.item_category_id = msi.item_category_id
+LEFT JOIN mas_store_unit inventory_unit ON inventory_unit.unit_id = msi.unit_au
+LEFT JOIN mas_store_unit dispensing_unit ON dispensing_unit.unit_id = msi.dispensing_unit
+left join mas_hospital mh on msi.hospital_id = mh.hospital_id 
+where msi.item_type_id = $P{itemTypeId}
+and (msi.section_id != $P{sectionId} or $P{sectionId}=0) ]]>
+	</queryString>
+	<field name="code" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="code"/>
+		<property name="com.jaspersoft.studio.field.label" value="code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="nomenclature" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="nomenclature"/>
+		<property name="com.jaspersoft.studio.field.label" value="nomenclature"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="class" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="class"/>
+		<property name="com.jaspersoft.studio.field.label" value="class"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_item_class"/>
+	</field>
+	<field name="category" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="category"/>
+		<property name="com.jaspersoft.studio.field.label" value="category"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_item_category"/>
+	</field>
+	<field name="inventory_unit" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="inventory_unit"/>
+		<property name="com.jaspersoft.studio.field.label" value="inventory_unit"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_unit"/>
+	</field>
+	<field name="dispensing_unit" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="dispensing_unit"/>
+		<property name="com.jaspersoft.studio.field.label" value="dispensing_unit"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_unit"/>
+	</field>
+	<field name="hsn_code" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hsn_code"/>
+		<property name="com.jaspersoft.studio.field.label" value="hsn_code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="drug_schedule" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="drug_schedule"/>
+		<property name="com.jaspersoft.studio.field.label" value="drug_schedule"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="opd" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="opd"/>
+		<property name="com.jaspersoft.studio.field.label" value="opd"/>
+	</field>
+	<field name="ipd" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="ipd"/>
+		<property name="com.jaspersoft.studio.field.label" value="ipd"/>
+	</field>
+	<field name="emergency" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="emergency"/>
+		<property name="com.jaspersoft.studio.field.label" value="emergency"/>
+	</field>
+	<field name="ot" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="ot"/>
+		<property name="com.jaspersoft.studio.field.label" value="ot"/>
+	</field>
+	<field name="store_rol" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="store_rol"/>
+		<property name="com.jaspersoft.studio.field.label" value="store_rol"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="status" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="status"/>
+		<property name="com.jaspersoft.studio.field.label" value="status"/>
+	</field>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_hospital"/>
+	</field>
+	<sortField name="nomenclature"/>
+	<variable name="Sr.no" class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="60" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="25" width="802" height="16" uuid="db9d2253-3346-4b4f-8b77-0474d9a5c5d9"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{itemTypeId} != null && $P{itemTypeId}.intValue() == 3
+    ? "Medical Consumable Master"
+    : $P{itemTypeId} != null && $P{itemTypeId}.intValue() == 4
+        ? "Non Medical Consumable Master"
+        : ""]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="10" y="2" width="177" height="58" uuid="191bf898-19ee-47d2-89f1-f57db009b0de"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="0" y="5" width="802" height="16" uuid="d7b94a63-c5eb-4591-a2d5-ecb0382e664f"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="41" splitType="Stretch">
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="34" y="6" width="1" height="35" uuid="2c545c82-8ae8-4f95-97b1-6d846d471463">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line direction="BottomUp">
+				<reportElement key="line-2" x="0" y="5" width="1" height="35" uuid="40b32c5b-46d9-468d-af27-2eea602b9173">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="3" y="8" width="28" height="16" uuid="6909f38f-a5c3-4f4a-a2ba-d7e6fa06a0d8"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S.No.]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-1" x="0" y="5" width="802" height="1" uuid="22ea8bb0-371e-4ad6-bbb2-91bef471b2ea"/>
+			</line>
+			<line>
+				<reportElement key="line-8" x="0" y="40" width="802" height="1" uuid="3a72420b-b76e-47a0-8949-5b5d041b804b"/>
+			</line>
+			<staticText>
+				<reportElement x="37" y="8" width="42" height="16" uuid="7d147b4c-d4c9-4c11-8036-ee0e49ad79f4"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Code]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="86" y="8" width="90" height="16" uuid="0c5b8ed7-4847-4cb0-a10f-9e3567eb3b09"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nomenclature]]></text>
+			</staticText>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="82" y="5" width="1" height="35" uuid="91c32e99-eb12-4464-b5f3-c37878d488ea">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="179" y="5" width="1" height="35" uuid="bc9ec611-04c4-489a-af67-3cde241e787f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="183" y="8" width="50" height="16" uuid="56459f04-3607-4627-a14b-645e9cc42642"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Class]]></text>
+			</staticText>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="237" y="5" width="1" height="35" uuid="76b159da-f964-4a7b-8b9f-f1078200c5a2">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="240" y="8" width="78" height="16" uuid="56d4e473-80fc-4910-8d5f-4a38fc74f5b1"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Category]]></text>
+			</staticText>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="321" y="5" width="1" height="35" uuid="bd558c0d-1f6d-4ddb-a5e0-63a6b7769e65">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="324" y="8" width="54" height="28" uuid="121ab3f5-b5ba-4e73-bf6f-5289ae58fe5d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Inventory Unit]]></text>
+			</staticText>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="382" y="5" width="1" height="35" uuid="4d432639-a5f3-4501-a469-b962d0508ce9">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="386" y="8" width="62" height="28" uuid="eddeb686-de1f-4ac5-8513-5ed1fe4d4886"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dispensing Unit]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="457" y="8" width="50" height="16" uuid="28cb1cf4-a5e2-48e9-98d8-aa5472e0b2f1"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[HSN Code]]></text>
+			</staticText>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="453" y="5" width="1" height="35" uuid="ef4c7484-c744-4f88-bb80-ab2cbcf3f500">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="512" y="5" width="1" height="35" uuid="6220bde6-d445-4298-b969-b76064f4ca5b">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="515" y="8" width="52" height="28" uuid="703aad20-dc75-4623-a77a-30917151b083"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Drug Schedule]]></text>
+			</staticText>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="570" y="5" width="1" height="35" uuid="fce69361-edc3-4b4e-a365-83af224da88e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="574" y="8" width="26" height="16" uuid="cdcb368f-d6e5-4501-9f55-df3ff223a7b5"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[OPD]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="606" y="8" width="26" height="16" uuid="4d582777-a80b-43fa-8714-be37e121c9d2"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[IPD]]></text>
+			</staticText>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="604" y="5" width="1" height="35" uuid="f0992643-b422-4717-b8e3-c770e69276b2">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="636" y="5" width="1" height="35" uuid="312a1635-ffdc-4e69-8a3b-300423fd3fbe">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="639" y="8" width="62" height="16" uuid="9cc3846b-a374-43f0-8b5a-4af6bdf50428"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Emergency]]></text>
+			</staticText>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="705" y="5" width="1" height="35" uuid="8d63771b-ff2a-4f10-88d3-286366dfd04d">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="708" y="8" width="38" height="28" uuid="ade95a76-9115-4c6f-afc6-e565d22d225c"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Store ROL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="752" y="8" width="46" height="16" uuid="3c0cceb0-2b7f-4021-9f97-5bb5ae57977e"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Status]]></text>
+			</staticText>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="802" y="5" width="1" height="35" uuid="7d6e41bd-a17a-4a70-81e5-b0c21d26e3e7">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line direction="BottomUp">
+				<reportElement key="line-22" x="750" y="5" width="1" height="35" uuid="65ab181a-8ff4-49b6-b637-20ed0bf816fc">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="21" splitType="Prevent">
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="34" y="0" width="1" height="21" uuid="567ad1b6-30b6-44d9-b751-ecc29a754c36">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line direction="BottomUp">
+				<reportElement key="line-2" positionType="Float" stretchType="RelativeToBandHeight" x="0" y="-1" width="1" height="21" uuid="75b1681a-3e9b-4240-bffd-1cd759a66809">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField>
+				<reportElement x="3" y="2" width="28" height="16" uuid="b684652d-169f-407d-9904-107906208627"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sr.no}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="37" y="2" width="42" height="16" uuid="3ed60a1c-154a-4efd-96f0-0db71e7c6257"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{code}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="86" y="2" width="90" height="16" uuid="0963052f-5a83-4081-b6af-eb7f55b59404"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nomenclature}]]></textFieldExpression>
+			</textField>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="82" y="-1" width="1" height="21" uuid="b969e430-781c-412a-8561-6dededee4cb3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="179" y="-1" width="1" height="21" uuid="761862f2-ba83-4e84-9907-37e1abede350">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="183" y="2" width="50" height="16" uuid="81f89d55-fa69-48a3-b06b-5945db30fde9"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{class}]]></textFieldExpression>
+			</textField>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="237" y="-1" width="1" height="21" uuid="7e498b74-250e-4a71-969e-8c9ef2703054">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="240" y="2" width="78" height="16" uuid="cc49719a-f7ff-4e34-89bb-59cba160fc6f"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{category}]]></textFieldExpression>
+			</textField>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="321" y="-1" width="1" height="21" uuid="5cc43b62-04ce-4d35-8a26-e1e9109a5af3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="324" y="2" width="54" height="16" uuid="13d74e33-ebc5-48a7-b1a2-d69a1bc35301"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{inventory_unit}]]></textFieldExpression>
+			</textField>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="382" y="-1" width="1" height="21" uuid="6de46717-b9e5-4410-b886-3acb52d89de8">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="386" y="2" width="62" height="16" uuid="21d806f7-6c35-4fe4-8d78-d88cbd5237ef"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dispensing_unit}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="457" y="2" width="50" height="16" uuid="c0846762-2820-477f-b2d4-6d91e4f8a872"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hsn_code}]]></textFieldExpression>
+			</textField>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="453" y="-1" width="1" height="21" uuid="8f6d6271-1911-4598-a8d7-cafb9791b2a5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="515" y="2" width="52" height="16" uuid="a9471d7f-bb13-4350-b81f-6767db045578"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{drug_schedule}]]></textFieldExpression>
+			</textField>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="570" y="-1" width="1" height="21" uuid="1ed6242f-d312-4855-ad5d-2af862729912">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="512" y="-1" width="1" height="21" uuid="c30144ee-36ec-4fb7-b933-b3ae76d2b54b">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="604" y="-1" width="1" height="21" uuid="14d4bfbe-c74e-4fd9-b46a-56360b84006e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="574" y="2" width="26" height="16" uuid="1a1d8ccc-4440-475b-9e0c-a81d5cee7cbe"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{opd}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="606" y="2" width="26" height="16" uuid="2fed4564-6945-4899-8099-cdb90810dc98"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ipd}]]></textFieldExpression>
+			</textField>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="636" y="-1" width="1" height="21" uuid="75a3ce81-979e-4ca1-899b-629453cb7441">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="639" y="2" width="62" height="16" uuid="16cc5d36-a4a8-4ff4-a425-364f77dd0ecf"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{emergency}]]></textFieldExpression>
+			</textField>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="705" y="-1" width="1" height="21" uuid="0d304fbf-2023-409b-baf4-64bc51ed88d8">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="708" y="2" width="38" height="16" uuid="4ae48262-0964-44b4-820b-d43f9821ce30"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{store_rol}]]></textFieldExpression>
+			</textField>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="750" y="-1" width="1" height="21" uuid="fad87cce-a268-4f72-a527-0e9167422c8f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="752" y="2" width="46" height="16" uuid="265abf57-f809-49bf-aa6a-a4cd93ff9db7"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
+			</textField>
+			<line direction="BottomUp">
+				<reportElement key="line-22" positionType="Float" stretchType="RelativeToBandHeight" x="802" y="-1" width="1" height="21" uuid="6fc6ae4f-d9c4-45e8-9ec2-82bed2f875bb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement key="line-8" positionType="Float" x="0" y="20" width="802" height="1" uuid="48272f56-3e9e-45ca-85fa-b06500a8aa54"/>
+			</line>
+		</band>
+	</detail>
+</jasperReport>

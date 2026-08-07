@@ -143,8 +143,19 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleGeneric(Exception ex) {
-        return ResponseEntity.status(500).body("Something went wrong");
+    public ResponseEntity<ApiResponse<Object>> handleGeneric(Exception ex) {
+        String message = ex.getMessage();
+        if (message == null || message.isBlank()) {
+            message = "Something went wrong";
+        }
+
+        return ResponseEntity.status(500)
+                .body(ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        message,
+                        500
+                ));
     }
 
 }
