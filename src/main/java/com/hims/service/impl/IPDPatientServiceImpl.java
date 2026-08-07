@@ -186,8 +186,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Autowired
     StoreItemBatchStockRepository storeItemBatchStockRepository;
     @Autowired
-    IpMarDetailsRepository ipMarDetailsRepository;
-    @Autowired
     StoreIssueMRepository storeIssueMRepository;
     @Autowired
     StoreIssueTRepository storeIssueTRepository;
