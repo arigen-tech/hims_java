@@ -398,6 +398,31 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("saveMedicationTreatment")
+    public ApiResponse<String> saveMedicationTreatment(@Valid @RequestBody IpMedicinePrescriptionRequest request) {
+
+        log.info("Request received to save MedicationTreatment inpatientId: {}", request.getInpatientId());
+
+        return ipdPatientService.saveMedicationTreatment(request);
+    }
+
+    @GetMapping("getMedicationTreatmentByInpatientId/{inpatientId}")
+    public ResponseEntity<ApiResponse<List<IpMedicinePrescriptionResponse>>> getMedicationTreatmentByInpatientId(@PathVariable Long inpatientId) {
+
+        log.info("Request received to fetch MedicationTreatment for inpatientId: {}", inpatientId);
+
+        ApiResponse<List<IpMedicinePrescriptionResponse>> response = ipdPatientService.getMedicationTreatmentByInpatientId(inpatientId);
+
+        return ResponseEntity.ok(response);
+    }
+    @PostMapping("stopMedicationTreatment")
+    public ApiResponse<String> stopMedicationTreatment(@Valid @RequestBody MedicinePrescriptionRequest request) {
+
+        log.info("Request received to stop MedicationTreatment prescriptionId: {}", request.getPrescriptionId());
+
+        return ipdPatientService.stopMedicationTreatment(request);
+    }
+
 
 
 

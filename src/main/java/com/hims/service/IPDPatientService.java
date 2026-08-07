@@ -76,4 +76,10 @@ public interface IPDPatientService {
     ApiResponse<String> saveAdvanceCollection(@Valid AdvanceCollectionRequest request);
 
     ApiResponse<List<PreviousPaymentHistoryResponse>> previousPaymentHistory(Long billingHeaderID);
+
+    ApiResponse<String> saveMedicationTreatment(@Valid IpMedicinePrescriptionRequest request);
+
+    ApiResponse<List<IpMedicinePrescriptionResponse>> getMedicationTreatmentByInpatientId(Long inpatientId);
+
+    ApiResponse<String> stopMedicationTreatment(@Valid MedicinePrescriptionRequest request);
 }
