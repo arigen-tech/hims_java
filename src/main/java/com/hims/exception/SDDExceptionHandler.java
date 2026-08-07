@@ -2,7 +2,6 @@ package com.hims.exception;
 
 
 
-import com.hims.response.ApiError;
 import com.hims.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -16,14 +15,12 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class SDDExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(SDDException.class)
-    public ResponseEntity<Object> handleSDDException(SDDException sddException) {
-        ApiResponse<ApiError> errorApiResponse = new ApiResponse<>();
+    public ResponseEntity<ApiResponse<String>> handleSDDException(SDDException sddException) {
+        ApiResponse<String> errorApiResponse = new ApiResponse<>();
         errorApiResponse.setMessage(sddException.getMessage());
         errorApiResponse.setStatus(sddException.getStatus());
-        ApiError apiError = new ApiError();
-        apiError.setMessage(sddException.getMessage());
-        errorApiResponse.setResponse(apiError);
-        return new ResponseEntity<>(errorApiResponse, HttpStatus.valueOf(sddException.getStatus()));
+        errorApiResponse.setResponse(sddException.getMessage());
+        return ResponseEntity.status(HttpStatus.valueOf(sddException.getStatus())).body(errorApiResponse);
     }
 
 

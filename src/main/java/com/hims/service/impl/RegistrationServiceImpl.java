@@ -32,6 +32,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.IOException;
@@ -171,6 +172,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         if(visit!=null){
             List<Visit> savedVisits = new ArrayList<>();
             if (!visit.isEmpty()) {
+                validateDuplicateAppointments(visit, patientObj.getId());
                 for (VisitRequest v : visit) {
                     Instant today = v.getVisitDate();
                     String visitType = getVisitTypeForFollowUpOrNew(patientObj.getId(), today);
@@ -231,6 +233,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             OpdPatientDetail opdDetails = null;
 
             if (visitList != null && !visitList.isEmpty()) {
+                validateDuplicateAppointments(visitList, patient.getId());
                 for (VisitRequest v : visitList) {
                     if (v.getPatientId() == null) {
                         v.setPatientId(patient.getId());
@@ -252,7 +255,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                     }
                     updatedVisits.add(visit);
                     if (visit.getHospital().getPreConsultationAvailable()
-                            .equalsIgnoreCase("n")) {
+                            .equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
                         opdDetails = addOpdDetails(visit, opdReq, patient);
                     }
                 }
@@ -810,6 +813,8 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
 
+        validateDuplicateAppointment(visit, patient.getId(), null);
+
         LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate tokenStartTime = visit.getTokenStartTime().atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate tokenEndTime = visit.getTokenEndTime().atZone(ZoneOffset.UTC).toLocalDate();
@@ -1327,6 +1332,8 @@ public class RegistrationServiceImpl implements RegistrationService {
             throw new RuntimeException("Visit ID is required for updating existing visit");
         }
 
+        validateDuplicateAppointment(visit, patient.getId(), visit.getId());
+
         Visit existingVisit = visitRepository.findById(visit.getId())
                 .orElseThrow(() -> new RuntimeException("Visit not found with id: " + visit.getId()));
 
@@ -1360,6 +1367,64 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         return visitRepository.save(existingVisit);
+    }
+
+    private void validateDuplicateAppointments(List<VisitRequest> visitList, Long patientId) {
+        if (visitList == null || visitList.isEmpty() || patientId == null) {
+            return;
+        }
+
+        Map<String, Long> seenAppointments = new HashMap<>();
+        for (VisitRequest visit : visitList) {
+            if (visit == null) {
+                continue;
+            }
+
+            validateDuplicateAppointment(visit, patientId, visit.getId());
+
+            if (visit.getDoctorId() == null || visit.getVisitDate() == null) {
+                continue;
+            }
+
+            LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
+            String appointmentKey = visit.getDoctorId() + "|" + visitDate;
+            Long currentVisitId = visit.getId();
+
+            if (seenAppointments.containsKey(appointmentKey)) {
+                throw new ResponseStatusException(
+                        org.springframework.http.HttpStatus.CONFLICT,
+                        AppConstants.DUPLICATE_APPOINTMENT_MSG
+                );
+            } else {
+                seenAppointments.put(appointmentKey, currentVisitId);
+            }
+        }
+    }
+
+    private void validateDuplicateAppointment(VisitRequest visit, Long patientId, Long excludeVisitId) {
+        if (visit == null || patientId == null || visit.getDoctorId() == null || visit.getSessionId() == null || visit.getVisitDate() == null) {
+            return;
+        }
+
+        LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
+        Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+
+        boolean duplicateExists = visitRepository.existsDuplicatePatientAppointment(
+                patientId,
+                visit.getDoctorId(),
+                startOfDay,
+                endOfDay,
+                AppConstants.VISIT_STATUS_CANCELLED.toLowerCase(),
+                excludeVisitId
+        );
+
+        if (duplicateExists) {
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.CONFLICT,
+                    AppConstants.DUPLICATE_APPOINTMENT_MSG
+            );
+        }
     }
 
     private String cleanStringParameter(String param) {

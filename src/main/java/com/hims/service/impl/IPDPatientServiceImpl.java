@@ -10,16 +10,16 @@ import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
+import com.hims.mapper.IpMarDetailsMapper;
 import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
 import com.hims.utils.ResponseUtils;
-import jakarta.validation.Valid;
 import com.hims.utils.SaveIpdBillingDetails;
-import io.swagger.models.auth.In;
-import lombok.AllArgsConstructor;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -77,6 +77,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private final IpdBillingHeaderRepository ipdBillingHeaderRepository;
     private final MasPaymentModeRepository masPaymentModeRepository;
     private final IpPaymentDetailRepository ipPaymentDetailRepository;
+    private final IpMarDetailsRepository ipMarDetailsRepository;
+    private final IpMarDetailsMapper ipMarDetailsMapper;
     private final IpDocumentRepository ipDocumentRepository;
     private final UserRepo userRepo;
     private final IpDiagnosisEntryRepository ipDiagnosisEntryRepository;
@@ -169,6 +171,28 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasReceiptTypeRepository masReceiptTypeRepository;
     @Autowired
     TransactionSequenceService transactionSequenceService;
+    @Autowired
+    IpMedicinePrescriptionRepository ipMedicinePrescriptionRepository;
+    @Autowired
+    MasStoreItemRepository masStoreItemRepository;
+    @Autowired
+    MasFrequencyRepository masFrequencyRepository;
+    @Autowired
+    MasMainChargeCodeRepository masMainChargeCodeRepository;
+    @Autowired
+    MasIpdServiceSubcategoryRepository masIpdServiceSubcategoryRepository;
+    @Autowired
+    MasInvestigationPriceDetailsRepository masInvestigationPriceDetailsRepository;
+    @Autowired
+    StoreItemBatchStockRepository storeItemBatchStockRepository;
+    @Autowired
+    IpMarDetailsRepository ipMarDetailsRepository;
+    @Autowired
+    StoreIssueMRepository storeIssueMRepository;
+    @Autowired
+    StoreIssueTRepository storeIssueTRepository;
+    @Autowired
+    StoreStockLedgerRepository storeStockLedgerRepository;
 
 
 
@@ -188,6 +212,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Value("${ipd.service.category.id}")
     Long ipdServiceCategoryId;
+
+    @Value("${ipd.investigation.service.category.id}")
+    Long ipdInvestigationServiceCategoryId;
+
     @Value("${app.laboratoryDepartment}")
     Long laboratoryDepartment;
     @Value("${app.radiologyDepartment}")
@@ -203,6 +231,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long ipPaymentStatusPartial ;
     @Value("${ip.bill.status.open}")
     Long ipBillStatusOpen;
+    @Value("${ip.bill.status.Interim}")
+    Long ipBillStatusInterim;
 
     @Value("${ipd.admission.status.readyForDischarge}")
     Long readyForDischargeId;
@@ -220,6 +250,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Value("${ip.payment.status.pending}")
     Long   ipPaymentStatusPending;
+    @Value("${ip.bill.status.close}")
+    Long   ipBillStatusClose;
 
 
     @Override
@@ -821,7 +853,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
              * Create billing using the matched tariff.
              *
              */
-            saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,rate,quantity,gstPercent,discountAmount,amount ,gstAmount,netAmount,billingCategory,name);
+            saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,rate,quantity,gstPercent,discountAmount,amount ,gstAmount,netAmount,billingCategory,null,name);
 
             log.info("Daily case sheet entry saved successfully. " + "caseSheetEntryId: {}, inpatientId: {}, tariffId: {}",
                     savedCaseSheetEntry.getCaseSheetEntryId(),
@@ -1295,14 +1327,19 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         billingHeader.setEstimationCost(request.getEstimationCost());
         billingHeader.setBillingType(billingType);
         billingHeader.setPatientPaidAmount(totalAdvance);
-        billingHeader.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusOpen).orElseThrow());
 
-        if (totalAdvance.compareTo(BigDecimal.ZERO) > 0) {
-            billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPartial).orElseThrow());
-       } else {
-            billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPending).orElseThrow());
-        }
 
+        // ====================== Outstanding Amount ======================
+
+        BigDecimal netAmount = billingHeader.getNetAmount() != null
+                ? billingHeader.getNetAmount()
+                : BigDecimal.ZERO;
+
+        BigDecimal outstandingAmount = netAmount.subtract(totalAdvance);
+
+        billingHeader.setOutstandingAmount(outstandingAmount);
+        billingHeader.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusInterim).orElseThrow());
+        billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPending).orElseThrow());
         billingHeader.setCreatedBy(user.getFullName());
         billingHeader.setUpdatedBy(user.getFullName());
         billingHeader.setCreatedAt(now);
@@ -1787,6 +1824,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             String userName = currentUser.getFullName();
             List<Long> createdLabOrderIds = new ArrayList<>();
             List<Long> createdRadOrderIds = new ArrayList<>();
+            MasIpdServiceCategory billingCategory = masIpdServiceCategoryRepository.findById(ipdInvestigationServiceCategoryId)
+                    .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),
+                            "IPD service category not found with id: " + ipdInvestigationServiceCategoryId));
 
             Map<LocalDate, List<LabRadioInvestigationRequest>> labGroups = grouped.getOrDefault(laboratoryDepartment, Collections.emptyMap());
             for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : labGroups.entrySet()) {
@@ -1798,7 +1838,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
                 for (LabRadioInvestigationRequest item : entry.getValue()) {
                     DgMasInvestigation master = masterMap.get(item.getId());
-                    int count = 1;
                     DgOrderDt orderDt = buildLabOrderDetail(
                             savedHd,
                             master,
@@ -1809,15 +1848,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                             item.getRemarks()
                     );
                     labDtRepository.save(orderDt);
-//                    saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,
-//                            master.getPrice(),
-//                            count,BigDecimal.ZERO,
-//                            master.getDiscount(),
-//                            master.getPrice(),
-//                            BigDecimal.ZERO,
-//                            BigDecimal.ZERO,
-//
-//                            );
+                    saveInvestigationBillingDetails(inpatient, billingCategory, master);
 
                 }
                 createdLabOrderIds.add((long) savedHd.getId());
@@ -1840,6 +1871,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                             item.getRemarks()
                     );
                     radOrderDtRepository.save(orderDt);
+                    saveInvestigationBillingDetails(inpatient, billingCategory, master);
                 }
 
                 createdRadOrderIds.add(savedHd.getId());
@@ -1971,7 +2003,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 // ICD diagnosis
                 diagnosisEntry.setDiagnosisText(icd.getIcdName());
                 diagnosisEntry.setIcd(icd);
-                inpatient.setIcdDiagnosis(icd);
+                inpatient.setIcd(icd.getIcdName());
             }
 
             diagnosisEntry.setStatus(request.getStatus().toUpperCase());
@@ -1981,6 +2013,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             diagnosisEntry.setLastUpdatedBy(currentUser.getFullName());
             diagnosisEntry.setLastUpdateDate(currentDateTime);
 
+            inpatientRepository.save(inpatient);
             IpDiagnosisEntry savedDiagnosis = ipDiagnosisEntryRepository.save(diagnosisEntry);
 
             log.info(
@@ -2109,12 +2142,11 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             //=========================
             Optional<IpDischargeSummary> existingSummary = ipDischargeSummaryRepository.findByInpatient_InpatientId(request.getInpatientId());
 
-            if(AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT.equalsIgnoreCase(existingSummary.get().getStatus())){
+            if (existingSummary.map(summary -> AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT
+                            .equalsIgnoreCase(summary.getStatus())).orElse(false)) {
 
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "discharge summary already submitting",
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Discharge summary already submitted",
                         HttpStatus.BAD_REQUEST.value());
-
             }
 
             Optional<Inpatient> inpatientOptional = inpatientRepository.findById(request.getInpatientId());
@@ -2125,6 +2157,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             Inpatient inpatient = inpatientOptional.get();
 
+            Optional<IpdBillingHeader> ipdBillingHeader= ipdBillingHeaderRepository.findByInpatientId_InpatientId(request.getInpatientId());
+             IpdBillingHeader ipdBillingHeader1=ipdBillingHeader.get();
             //=========================
             // SUBMIT VALIDATION
             //=========================
@@ -2157,6 +2191,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 Optional<MasBed> masBed=masBedRepository.findById(bedAllocation.get().getBed().getBedId());
                 MasBed masBed1=masBed.get();
                 masBed1.setBedStatusId(masBedStatusRepo.findById(bedStatusId).orElseThrow());
+                ipdBillingHeader1.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipBillStatusClose).orElseThrow());
+                ipdBillingHeaderRepository.save(ipdBillingHeader1);
                 ipBedAllocationRepository.save(ipBedAllocation);
                 masBedRepository.save(masBed1);
             }
@@ -2206,7 +2242,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             // change ip internal status
             inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(readyForDischargeId).orElseThrow());
             inpatientRepository.save(inpatient);
-
+            //change bill status final
+            ipdBillingHeader1.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusFinal).orElseThrow());
+            ipdBillingHeaderRepository.save(ipdBillingHeader1);
             // DELETE SELECTED MEDICATIONS
 
             if (request.getDeleteMedicationIds() != null && !request.getDeleteMedicationIds().isEmpty()) {
@@ -2379,6 +2417,566 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),HttpStatus.BAD_REQUEST.value());
         }
     }
+    @Override
+    public ApiResponse<Page<PendingTrackingIPDBillResponse>> getPendingTrackingIPDBillList(
+            int page,
+            int size,
+            Long wardId,
+            Long billType,
+            BigDecimal outStandingAmount) {
+
+        log.info("Fetching Pending Tracking IPD Bill List. page={}, size={}, wardId={}, billType={}, outStandingAmount={}",
+                page, size, wardId, billType, outStandingAmount);
+
+        try {
+
+            Pageable pageable = PageRequest.of(page, size);
+
+            Page<PendingTrackingIPDBillProjection> projectionPage =
+                    ipdBillingHeaderRepository.getPendingTrackingIPDBillList(admitAdmissionStatusId,
+                            wardId,
+                            billType,
+                            outStandingAmount,
+                            pageable);
+
+            Page<PendingTrackingIPDBillResponse> responsePage = projectionPage.map(this::convertToResponse);
+
+            log.info("Successfully fetched {} Pending Tracking IPD Bill records.", responsePage.getTotalElements());
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while fetching Pending Tracking IPD Bill List.", e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),HttpStatus.BAD_REQUEST.value());
+
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> saveAdvanceCollection(AdvanceCollectionRequest request) {
+        log.info("Saving advance collection for inpatientId : {}", request.getInpatientId());
+        try{
+
+        User user = authUtil.getCurrentUser();
+
+        Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
+        if (inpatient.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("Inpatient  not found", HttpStatus.NOT_FOUND.value());
+        }
+        Inpatient inpatient1=inpatient.get();
+
+        Optional<IpdBillingHeader> billingHeader = ipdBillingHeaderRepository.findByInpatientId_InpatientId(request.getInpatientId());
+        if (billingHeader.isEmpty()) {
+            return ResponseUtils.createNotFoundResponse("IpdBillingHeader not found", HttpStatus.NOT_FOUND.value());
+        }
+        IpdBillingHeader ipdBillingHeader=billingHeader.get();
+
+        BigDecimal totalAmount = request.getRequests().stream()
+                .map(AdvanceCollectionRequest.AdvanceCollectionDetailsRequest::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Receipt Header
+        IpdBlReceiptHd receiptHd = new IpdBlReceiptHd();
+        receiptHd.setReceiptNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RECEIPT_NO, inpatient.get().getPatient().getPatientHospital().getId()));
+        receiptHd.setReceiptDate(request.getCollectionDateTime());
+        receiptHd.setInpatient(inpatient.get());
+        receiptHd.setBill(billingHeader.get());
+        receiptHd.setTotalAmount(totalAmount);
+        receiptHd.setCreatedBy(user.getUsername());
+        receiptHd.setCreatedDate(LocalDateTime.now());
+        receiptHd.setReceiptStatus(AppConstants.IP_RECEIPT_STATUS.toLowerCase());
+        receiptHd.setCreatedBy(user.getFullName());
+        receiptHd.setLastChgBy(user.getFullName());
+        receiptHd.setLastChgDate(LocalDateTime.now());
+        receiptHd.setReceiptType(masReceiptTypeRepository.findById(request.getCollectionTypeId()).orElseThrow());
+        receiptHd = ipdBlReceiptHdRepository.save(receiptHd);
+
+        // Receipt Details + Payment Details
+        for (AdvanceCollectionRequest.AdvanceCollectionDetailsRequest dto : request.getRequests()) {
+
+            MasPaymentMode paymentMode = masPaymentModeRepository.findById(dto.getModeType())
+                    .orElseThrow(() -> new RuntimeException("Payment mode not found"));
+
+            // Receipt Detail
+            IpdBlReceiptDt receiptDt = new IpdBlReceiptDt();
+            receiptDt.setReceipt(receiptHd);
+            receiptDt.setPaymentMode(paymentMode);
+            receiptDt.setAmount(dto.getAmount());
+            receiptDt.setCreatedBy(user.getUsername());
+            receiptDt.setCreatedDate(LocalDateTime.now());
+            receiptDt.setCreatedBy(user.getFullName());
+            receiptDt.setLastChgBy(user.getFullName());
+            receiptDt.setLastChgDate(LocalDateTime.now());
+            ipdBlReceiptDtRepository .save(receiptDt);
+
+            // Payment Detail
+            IpPaymentDetail payment = new IpPaymentDetail();
+            payment.setInpatient(inpatient.get());
+            payment.setBill(billingHeader.get());
+            payment.setReceipt(receiptHd);
+            payment.setAmount(dto.getAmount());
+            payment.setReceiptAmount(dto.getAmount());
+            payment.setPaymentDate(request.getCollectionDateTime());
+            payment.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid).orElseThrow());
+            payment.setLastChgBy(user.getUsername());
+            payment.setLastChgDate(LocalDateTime.now());
+            ipPaymentDetailRepository.save(payment);
+        }
+        BigDecimal netAmount = billingHeader.get().getNetAmount() != null
+                ? billingHeader.get().getNetAmount()
+                : BigDecimal.ZERO;
+
+        BigDecimal existingPaidAmount = billingHeader.get().getPatientPaidAmount() != null
+                ? billingHeader.get().getPatientPaidAmount()
+                : BigDecimal.ZERO;
+
+        // Add current advance to already paid amount
+        BigDecimal patientPaidAmount = existingPaidAmount.add(totalAmount);
+
+        // Calculate Outstanding Amount
+        BigDecimal outstandingAmount = netAmount.subtract(patientPaidAmount);
+        // Update Billing Header
+        ipdBillingHeader.setPatientPaidAmount(patientPaidAmount);
+        ipdBillingHeader.setOutstandingAmount(outstandingAmount);
+        ipdBillingHeader.setUpdatedBy(user.getUsername());
+        ipdBillingHeader.setUpdatedAt(LocalDateTime.now());
+
+        // If Bill Final and Outstanding = 0 then Payment Status = Paid
+
+        if (outstandingAmount.compareTo(BigDecimal.ZERO) == 0
+                    && ipdBillingHeader.getBillStatus() != null
+                    && ipdBillingHeader.getBillStatus().getBillStatusId().equals(ipBillStatusFinal)) {
+
+                ipdBillingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid)
+                                .orElseThrow(() -> new RuntimeException("Paid status not found")));
+            }
+        ipdBillingHeaderRepository.save(ipdBillingHeader);
+
+        return ResponseUtils.createSuccessResponse("Saving advance collection", new TypeReference<>() {});
+
+    } catch (Exception e) {
+            log.error("Error while fetching Pending Tracking IPD Bill List.", e);
+
+            throw new RuntimeException("Failed to save advance collection.", e);
+    }
+
+    }
+    @Override
+    public ApiResponse<List<PreviousPaymentHistoryResponse>> previousPaymentHistory(Long billingHeaderId) {
+
+        List<PreviousPaymentHistoryResponse> response = ipdBlReceiptDtRepository.previousPaymentHistory(billingHeaderId);
+
+        return ResponseUtils.createSuccessResponse(
+                response,
+                new TypeReference<>() {},
+                "Previous payment history fetched successfully");
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> saveMedicationTreatment(IpMedicinePrescriptionRequest request) {
+        log.info("Saving medication treatment. inpatientId: {}, itemId: {}",
+                request.getInpatientId(),
+                request.getItemId());
+
+        try {
+            if (request.getInpatientId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            if (request.getItemId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Item ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            if (request.getRouteId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Route ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            if (request.getFrequencyId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Frequency ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            LocalDateTime currentDateTime = LocalDateTime.now();
+            User currentUser = authUtil.getCurrentUser();
+
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
+            if (inpatient == null) {
+                return ResponseUtils.createNotFoundResponse("Inpatient not found with ID: " + request.getInpatientId(), HttpStatus.NOT_FOUND.value());
+            }
+
+            if (inpatient.getAdmittingWardId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Ward is not associated with this inpatient", HttpStatus.BAD_REQUEST.value());
+            }
+
+            MasStoreItem item = masStoreItemRepository.findById(request.getItemId()).orElse(null);
+            if (item == null) {
+                return ResponseUtils.createNotFoundResponse("Item not found with ID: " + request.getItemId(), HttpStatus.NOT_FOUND.value());
+            }
+
+            MasRoute route = masRouteRepository.findById(request.getRouteId()).orElse(null);
+            if (route == null) {
+                return ResponseUtils.createNotFoundResponse("Route not found with ID: " + request.getRouteId(), HttpStatus.NOT_FOUND.value());
+            }
+
+            MasFrequency frequency = masFrequencyRepository.findById(request.getFrequencyId()).orElse(null);
+            if (frequency == null) {
+                return ResponseUtils.createNotFoundResponse("Frequency not found with ID: " + request.getFrequencyId(), HttpStatus.NOT_FOUND.value());
+            }
+
+            String userName = currentUser != null ? currentUser.getFullName() : null;
+
+            IpMedicinePrescription prescription = new IpMedicinePrescription();
+            prescription.setInpatient(inpatient);
+            prescription.setWard(inpatient.getAdmittingWardId());
+            prescription.setItem(item);
+            prescription.setItemName(item.getNomenclature());
+            prescription.setItemClass(item.getItemClassId());
+            prescription.setRoute(route);
+            prescription.setDose(request.getDose());
+            prescription.setFrequency(frequency);
+            prescription.setStartDate(request.getStartDate() != null ? request.getStartDate() : currentDateTime);
+            prescription.setAdministratedBy(request.getAdministratedBy());
+            prescription.setCreatedBy(userName);
+            prescription.setLastUpdatedBy(userName);
+            prescription.setTotalDays(request.getDay());
+            prescription.setLastUpdateDate(currentDateTime);
+
+            IpMedicinePrescription savedPrescription = ipMedicinePrescriptionRepository.save(prescription);
+
+            log.info("Medication treatment saved successfully. prescriptionId: {}, inpatientId: {}",
+                    savedPrescription.getPrescriptionId(),
+                    request.getInpatientId());
+
+            return ResponseUtils.createSuccessResponse("Medication treatment saved successfully", new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while saving medication treatment. inpatientId: {}, itemId: {}", request.getInpatientId(), request.getItemId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<List<IpMedicinePrescriptionResponse>> getMedicationTreatmentByInpatientId(Long inpatientId) {
+        log.info("Fetching medication treatment for inpatientId: {}", inpatientId);
+
+        try {
+            if (inpatientId == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            List<IpMedicinePrescriptionProjection> projections = ipMedicinePrescriptionRepository.getMedicationTreatmentByInpatientId(inpatientId);
+
+            if (projections == null || projections.isEmpty()) {
+                log.warn("No medication treatment found for inpatientId: {}", inpatientId);
+                return ResponseUtils.createNotFoundResponse("No medication treatment found for inpatient ID: " + inpatientId, HttpStatus.NOT_FOUND.value());
+            }
+
+            List<IpMedicinePrescriptionResponse> responseList = projections.stream()
+                    .map(this::mapToMedicinePrescriptionResponse)
+                    .toList();
+
+            log.info("Successfully fetched {} medication treatment records for inpatientId: {}", responseList.size(), inpatientId);
+
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching medication treatment for inpatientId: {}", inpatientId, e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> stopMedicationTreatment(MedicinePrescriptionRequest request) {
+        log.info("Stopping medication treatment. prescriptionId: {}", request.getPrescriptionId());
+
+        try {
+            if (request.getPrescriptionId() == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Prescription ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            IpMedicinePrescription prescription = ipMedicinePrescriptionRepository.findById(request.getPrescriptionId()).orElse(null);
+
+            if (prescription == null) {
+                return ResponseUtils.createNotFoundResponse("Medication treatment not found with prescription ID: " + request.getPrescriptionId(), HttpStatus.NOT_FOUND.value());
+            }
+
+            if (prescription.getStopDate() != null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Medication treatment is already stopped", HttpStatus.BAD_REQUEST.value());
+            }
+
+            LocalDateTime currentDateTime = LocalDateTime.now();
+            User currentUser = authUtil.getCurrentUser();
+            String userName = currentUser != null ? currentUser.getFullName() : null;
+
+            prescription.setStopDate(currentDateTime);
+            prescription.setStopReason(request.getStopReason());
+            prescription.setLastUpdateDate(currentDateTime);
+            prescription.setLastUpdatedBy(userName);
+
+            ipMedicinePrescriptionRepository.save(prescription);
+
+            log.info("Medication treatment stopped successfully. prescriptionId: {}", request.getPrescriptionId());
+
+            return ResponseUtils.createSuccessResponse("Medication treatment stopped successfully", new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while stopping medication treatment. prescriptionId: {}", request.getPrescriptionId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> saveMarDetails(List<MarDetailsRequest> requests) {
+
+        log.info("saveMarDetails started for {} record(s)", requests != null ? requests.size() : 0);
+
+        User user = authUtil.getCurrentUser();
+
+        StoreIssueM issueM = null;
+
+        try {
+            for (MarDetailsRequest request : requests) {
+
+                log.info("Processing MAR entry for prescriptionId={}, batchNo={}, qty={}", request.getPrescriptionId(), request.getBatchNo(), request.getRequestQty());
+
+                // 1. Fetch Prescription
+                IpMedicinePrescription prescription = ipMedicinePrescriptionRepository.findById(request.getPrescriptionId())
+                        .orElseThrow(() -> {return new RuntimeException("Prescription not found");});
+
+                // 2. Fetch Inpatient
+                Inpatient inpatient = prescription.getInpatient();
+
+                // MAR Entry
+
+                IpMarDetails mar = new IpMarDetails();
+
+                mar.setInpatient(inpatient);
+                mar.setPrescription(prescription);
+                mar.setAdministeredQty(request.getRequestQty());
+                mar.setAdministrationTime(request.getDateTime());
+                mar.setAdministeredBy(user.getUsername());
+                mar.setBatchNo(request.getBatchNo());
+                mar.setExpiryDate(request.getExpiryDate());
+                mar.setRemarks(request.getRemark());
+                mar.setCreatedBy(user.getFullName());
+                mar.setLastUpdateDate(LocalDateTime.now());
+                mar.setLastUpdatedBy(user.getFullName());
+                ipMarDetailsRepository.save(mar);
+
+                log.info("MAR entry saved with id={} for inpatientId={}", mar.getMarId(), inpatient.getInpatientId());
+
+                // 3. Find Batch Stock
+                StoreItemBatchStock stock = (StoreItemBatchStock) storeItemBatchStockRepository.findByItemId_ItemIdAndBatchNo(
+                        request.getItemId() , request.getBatchNo()).orElseThrow(() -> {
+                                    return new RuntimeException("Batch not found");});
+
+                BigDecimal currentQty = BigDecimal.valueOf(stock.getClosingStock());
+                BigDecimal currentIpdIssueQty = stock.getIpdIssueQty() != null ? stock.getIpdIssueQty() : BigDecimal.ZERO;
+                BigDecimal updatedIpdIssueQty = currentIpdIssueQty.add(request.getRequestQty());
+                BigDecimal updatedQty = currentQty.subtract(request.getRequestQty());
+
+                if (currentQty.compareTo(request.getRequestQty()) < 0) {
+                    log.error("Insufficient stock for itemId={}, batchNo={}, available={}, requested={}", request.getItemId(), request.getBatchNo(), currentQty, request.getRequestQty());
+                    throw new RuntimeException("Insufficient Stock");
+                }
+
+                //---------------------------------------------------
+                // Update Batch Stock
+                //---------------------------------------------------
+
+                stock.setClosingStock(updatedQty.longValue());
+                stock.setIpdIssueQty(updatedIpdIssueQty);
+
+                storeItemBatchStockRepository.save(stock);
+
+                log.info("Stock updated for batchNo={}, before={}, after={}", request.getBatchNo(), currentQty, updatedQty);
+
+                //---------------------------------------------------
+                // Store Issue Header (only once per save call)
+                //---------------------------------------------------
+
+                if (issueM == null) {
+
+                    String issueNo = generateIssueNumber();
+
+                    issueM = new StoreIssueM();
+                    issueM.setIssueNo(issueNo);
+                    issueM.setIssueDate(LocalDateTime.now());
+                    issueM.setHospitalId(stock.getHospitalId());
+                    issueM.setToDeptId(stock.getDepartmentId());
+                    issueM.setStatus(AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT);
+                    issueM.setIssuedBy(user.getUsername());
+                    issueM.setInpatient(inpatient);
+                    issueM.setIssuedDate(LocalDateTime.now());
+
+                    storeIssueMRepository.save(issueM);
+
+                    log.info("Store issue header created with issueNo={}", issueNo);
+                }
+
+                //---------------------------------------------------
+                // Store Issue Detail
+                //---------------------------------------------------
+
+                StoreIssueT issueT = new StoreIssueT();
+
+                issueT.setStoreIssueMId(issueM);
+                issueT.setItemId(stock.getItemId());
+                issueT.setIssuedQty(request.getRequestQty());
+                issueT.setUnitPrice(stock.getPurchaseRatePerUnit());
+                issueT.setBatchNo(stock.getBatchNo());
+                issueT.setExpiryDate(stock.getExpiryDate());
+                issueT.setStatus(AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT);
+                issueT.setDom(stock.getManufactureDate());
+                issueT.setInpatientIssueQty(request.getRequestQty());
+                issueT.setBrandname(stock.getBrandId() != null ? stock.getBrandId().getBrandName() : null);
+                issueT.setManufacturername(stock.getManufacturerId() != null ? stock.getManufacturerId().getManufacturerName() : null);
+
+                storeIssueTRepository.save(issueT);
+
+                log.info("Store issue detail saved with id={} for issueNo={}", issueT.getStoreIssueTId(), issueM.getIssueNo());
+
+                //---------------------------------------------------
+                // Stock Ledger
+                //---------------------------------------------------
+
+                StoreStockLedger ledger = new StoreStockLedger();
+                ledger.setStockId(stock);
+                ledger.setTxnType(AppConstants.INPATIENT_ISSUE);
+                ledger.setTxnDate(LocalDate.now());
+                ledger.setTxnReferenceId(issueT.getStoreIssueTId());
+                ledger.setQtyBefore(currentQty);
+                ledger.setQtyOut(request.getRequestQty());
+                ledger.setQtyAfter(updatedQty);
+                ledger.setTxnSource(AppConstants.INPATIENT_ISSUE);
+                ledger.setReferenceNum(issueM.getIssueNo());
+                ledger.setCreatedBy(user.getUsername());
+                ledger.setCreatedDt(LocalDateTime.now());
+                ledger.setHospital(stock.getHospitalId());
+                ledger.setDept(stock.getDepartmentId());
+                storeStockLedgerRepository.save(ledger);
+
+                log.info("Stock ledger entry created for stockId={}, txnRefId={}", stock.getStockId(), ledger.getTxnReferenceId());
+
+                //---------------------------------------------------
+                // Billing
+                //---------------------------------------------------
+
+                BigDecimal amount = calculateAmount(stock.getMrpPerUnit(), request.getRequestQty());
+                BigDecimal gstAmount = calculateGST(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
+                BigDecimal netAmount = calculateNetAmount(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
+
+                saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,
+                        stock.getMrpPerUnit(),
+                        request.getRequestQty(),
+                        stock.getGstPercent(),
+                        BigDecimal.ZERO,
+                        amount,
+                        gstAmount,
+                        netAmount,
+                        null,
+                        null,
+                        stock.getItemId().getNomenclature()
+                );
+
+                log.info("Billing entry saved for inpatientId={}, amount={}, netAmount={}", inpatient.getInpatientId(), amount, netAmount);
+            }
+
+            log.info("saveMarDetails completed successfully for {} record(s)", requests.size());
+            return ResponseUtils.createSuccessResponse("mar details save successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("saveMarDetails failed, rolling back transaction. Reason: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+    private BigDecimal calculateGST(BigDecimal rate,
+                                    BigDecimal qty,
+                                    BigDecimal gstPercent) {
+
+        if (rate == null || qty == null || gstPercent == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal amount = rate.multiply(qty);
+
+        return amount.multiply(gstPercent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+    private BigDecimal calculateAmount(BigDecimal rate, BigDecimal qty) {
+
+        if (rate == null || qty == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return rate.multiply(qty).setScale(2, RoundingMode.HALF_UP);
+    }
+    private BigDecimal calculateNetAmount(BigDecimal rate,
+                                           BigDecimal qty,
+                                           BigDecimal gstPercent) {
+
+        BigDecimal amount = calculateAmount(rate, qty);
+
+        BigDecimal gst = calculateGST(rate, qty, gstPercent);
+
+        return amount.add(gst).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private IpMedicinePrescriptionResponse mapToMedicinePrescriptionResponse(IpMedicinePrescriptionProjection projection) {
+        IpMedicinePrescriptionResponse response = new IpMedicinePrescriptionResponse();
+
+        response.setPrescriptionId(projection.getPrescriptionId());
+        response.setInpatientId(projection.getInpatientId());
+        response.setItemId(projection.getItemId());
+        response.setItemName(projection.getItemName());
+        response.setRouteId(projection.getRouteId());
+        response.setRouteName(projection.getRouteName());
+        response.setDose(projection.getDose());
+        response.setFrequencyId(projection.getFrequencyId());
+        response.setFrequencyName(projection.getFrequencyName());
+        response.setStartDate(projection.getStartDate());
+        response.setStopDate(projection.getStopDate());
+        response.setAdministratedBy(projection.getAdministratedBy());
+
+        return response;
+    }
+
+    private PendingTrackingIPDBillResponse convertToResponse(PendingTrackingIPDBillProjection p) {
+
+        PendingTrackingIPDBillResponse response = new PendingTrackingIPDBillResponse();
+
+        response.setInpatientId(p.getInpatientId());
+        response.setBillingHeaderId(p.getBillingHeaderId());
+        response.setUhid(p.getUhid());
+        response.setPatientName(p.getPatientName());
+        response.setAge(p.getAge());
+        response.setGenderId(p.getGenderId());
+        response.setGender(p.getGender());
+        response.setMobileNo(p.getMobileNo());
+        response.setAdmissionNo(p.getAdmissionNo());
+        response.setWardId(p.getWardId());
+        response.setWard(p.getWard());
+        response.setRoomId(p.getRoomId());
+        response.setRoom(p.getRoom());
+        response.setBedId(p.getBedId());
+        response.setBed(p.getBed());
+        response.setAdmissionDateTime(p.getAdmissionDateTime());
+        response.setBillingTypeId(p.getBillingTypeId());
+        response.setBillingType(p.getBillingType());
+        response.setTotalAmount(p.getTotalAmount());
+        response.setEstimationCost(p.getEstimationCost());
+        response.setPatientPaid(p.getPatientPaid());
+        response.setOutStandingAmount(p.getOutStandingAmount());
+        response.setBillStatusId(p.getBillStatusId());
+        response.setBillStatus(p.getBillStatus());
+        response.setPaymentStatusId(p.getPaymentStatusId());
+        response.setPaymentStatus(p.getPaymentStatus());
+
+        return response;
+    }
     private InpatientAdvanceCollectionResponse mapResponse(
             InpatientAdvanceCollectionProjection p) {
 
@@ -2427,10 +3025,10 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         DgOrderHd hd = new DgOrderHd();
         hd.setOrderDate(LocalDate.now());
         hd.setOrderTime(Instant.now());
-        hd.setOrderNo(randomNumGenerator.generateOrderNumber("LAB", true, true));
+        hd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
         hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
         hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
-        hd.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
+        hd.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
         hd.setSource(AppConstants.SOURCE_TYPE_IPD);
         hd.setHospitalId(currentUser.getHospital().getId());
         hd.setPrescribedBy(currentUser.getUserId() != null ? currentUser.getUserId().intValue() : 0);
@@ -2457,7 +3055,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         dt.setAppointmentDate(appointmentDate);
         dt.setOrderQty(1);
         dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
-        dt.setBillingStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setBillingStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setCreatedBy(currentUser.getFullName());
         dt.setLastChgBy(currentUser.getFullName());
         dt.setLastChgDate(LocalDate.now());
@@ -2485,7 +3083,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         hd.setCreatedon(Instant.now());
         hd.setLastChgBy(currentUser.getFullName());
         hd.setLastChgDate(Instant.now());
-        hd.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
+        hd.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
         hd.setInpatient(inpatient);
         return hd;
     }
@@ -2495,13 +3093,13 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         dt.setRadOrderhd(orderHd);
         dt.setInvestigation(investigation);
         dt.setSubChargecode(investigation.getSubChargeCodeId());
-        dt.setOrderAccessionNo(randomNumGenerator.generateOrderNumber("RAD", true, true));
+        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, currentUser.getHospital().getId()));
         dt.setAppointmentDate(appointmentDate);
         dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
-        dt.setBillingStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setBillingStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setCreatedby(currentUser.getFullName());
         dt.setCreatedon(Instant.now());
@@ -2510,6 +3108,95 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         dt.setRemarks(remarks);
         return dt;
     }
+
+    private void saveInvestigationBillingDetails(Inpatient inpatient,
+                                                 MasIpdServiceCategory billingCategory,
+                                                 DgMasInvestigation investigation) {
+        if (inpatient == null || investigation == null) {
+            throw new SDDException(HttpStatus.BAD_REQUEST.value(),
+                    "Invalid inpatient or investigation data for billing");
+        }
+
+        BigDecimal rate = resolveInvestigationRate(investigation);
+        BigDecimal quantity = BigDecimal.ONE;
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        BigDecimal amount = rate.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal gstPercent = resolveIpdGstPercent(billingCategory);
+        BigDecimal gstAmount = amount.multiply(gstPercent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal netAmount = amount.add(gstAmount).subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
+        MasMainChargeCode chargeCode = masMainChargeCodeRepository
+                .findById(investigation.getMainChargeCodeId().getChargecodeId())
+                .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),"Charge Code not found"));
+
+        MasIpdServiceSubcategory subcategory = masIpdServiceSubcategoryRepository
+                        .findBySubcategoryCode(chargeCode.getChargecodeCode())
+                        .orElseThrow(() -> new RuntimeException("Subcategory not found"));
+        saveIpdBillingDetails.saveInpatientBillingDetails(
+                inpatient,
+                rate,
+                quantity,
+                gstPercent,
+                discountAmount,
+                amount,
+                gstAmount,
+                netAmount,
+                billingCategory,
+                subcategory,
+                investigation.getInvestigationName()
+        );
+    }
+
+    private BigDecimal resolveInvestigationRate(DgMasInvestigation investigation) {
+        LocalDate today = LocalDate.now();
+
+        Optional<MasInvestigationPriceDetails> activePrice = masInvestigationPriceDetailsRepository
+                .findActivePriceByInvestigationAndDate(investigation, today);
+        if (activePrice.isPresent() && activePrice.get().getPrice() != null) {
+            return activePrice.get().getPrice().setScale(2, RoundingMode.HALF_UP);
+        }
+
+        Optional<MasInvestigationPriceDetails> latestPrice = masInvestigationPriceDetailsRepository
+                .findTopByInvestigationOrderByFromDateDesc(investigation);
+        if (latestPrice.isPresent() && latestPrice.get().getPrice() != null) {
+            return latestPrice.get().getPrice().setScale(2, RoundingMode.HALF_UP);
+        }
+
+        if (investigation.getPrice() != null) {
+            return BigDecimal.valueOf(investigation.getPrice()).setScale(2, RoundingMode.HALF_UP);
+        }
+
+        throw new SDDException(HttpStatus.BAD_REQUEST.value(),
+                "Investigation price not configured for investigationId: " + investigation.getInvestigationId());
+    }
+
+//    private BigDecimal resolveInvestigationDiscount(DgMasInvestigation investigation) {
+//        if (investigation.getDiscountApplicable() == null
+//                || !("y".equalsIgnoreCase(investigation.getDiscountApplicable())
+//                || "yes".equalsIgnoreCase(investigation.getDiscountApplicable())
+//                || "1".equalsIgnoreCase(investigation.getDiscountApplicable()))) {
+//            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+//        }
+//
+//        if (investigation.getDiscount() == null || investigation.getDiscount().trim().isEmpty()) {
+//            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+//        }
+//
+//        try {
+//            return new BigDecimal(investigation.getDiscount().trim()).setScale(2, RoundingMode.HALF_UP);
+//        } catch (NumberFormatException ex) {
+//            throw new SDDException(HttpStatus.BAD_REQUEST.value(),
+//                    "Invalid discount configured for investigationId: " + investigation.getInvestigationId());
+//        }
+//    }
+
+    private BigDecimal resolveIpdGstPercent(MasIpdServiceCategory billingCategory) {
+        if (billingCategory == null || billingCategory.getGstPercentage() == null) {
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        }
+        return billingCategory.getGstPercentage().setScale(2, RoundingMode.HALF_UP);
+    }
+
     private synchronized  String generateTransferNumber() {
 
         LocalDate currentDate = LocalDate.now();
@@ -2551,4 +3238,65 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         return prefix + "/" + nextNumber;
     }
 
+    // === Helper method to generate issue number ===
+    private String generateIssueNumber() {
+        // Option 1: Simple timestamp-based
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        return "ISS-" + timestamp;
+
+        // Option 2: Sequential number (you'd need to query the last issue number)
+        // Long lastIssueNumber = issueRepository.findMaxIssueNumber();
+        // return "ISS-" + String.format("%06d", (lastIssueNumber == null ? 1 : lastIssueNumber + 1));
+
+        // Option 3: UUID
+        // return "ISS-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+
+    @Override
+    public ApiResponse<Page<IpMarDetailsResponse>> getMarAdministrationLog(Long inpatientId, Long itemId, Integer page, Integer size) {
+        log.info("Request to fetch MAR Administration Log for inpatientId: {}, itemId: {}, page: {}, size: {}", inpatientId, itemId, page, size);
+        try {
+            if (inpatientId == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            Pageable pageable;
+            if (page != null && size != null) {
+                pageable = PageRequest.of(page, size);
+            } else {
+                pageable = PageRequest.of(0, Integer.MAX_VALUE);
+            }
+
+            Page<IpMarDetailsProjection> projections = ipMarDetailsRepository.getMarAdministrationLog(inpatientId, itemId, pageable);
+            Page<IpMarDetailsResponse> responsePage = projections.map(ipMarDetailsMapper::mapToMarDetailsResponse);
+
+            log.info("Successfully fetched {} MAR Administration Log records for inpatientId: {}", responsePage.getTotalElements(), inpatientId);
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching MAR Administration Log for inpatientId: {}", inpatientId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<List<MarMedicineResponse>> getMarMedicineList(Long inpatientId) {
+        log.info("Request to fetch unique medicines in MAR log for inpatientId: {}", inpatientId);
+        try {
+            if (inpatientId == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            List<MarMedicineProjection> projections = ipMarDetailsRepository.getUniqueMedicinesInMar(inpatientId);
+            List<MarMedicineResponse> responseList = projections.stream()
+                    .map(ipMarDetailsMapper::mapToMarMedicineResponse)
+                    .toList();
+
+            log.info("Successfully fetched {} unique medicines for inpatientId: {}", responseList.size(), inpatientId);
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching unique medicines in MAR log for inpatientId: {}", inpatientId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
 }
+

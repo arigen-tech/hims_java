@@ -21,7 +21,7 @@ public interface PatientPrescriptionDtRepository extends JpaRepository<PatientPr
         ppdt.prescription_hd_id AS prescriptionHdId,
         ppdt.item_id AS itemId,
         msi.nomenclature AS itemName,
-        msi.disp_unit AS dispUnit,
+        msi.dispensing_unit AS dispUnit,
         ppdt.dosage AS dosage,
         ppdt.frequency AS frequency,
         ppdt.days AS days,

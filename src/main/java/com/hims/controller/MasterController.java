@@ -334,6 +334,12 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     @Autowired
     private MasDischargeReasonService masDischargeReasonService;
 
+    @Autowired
+    private MasReceiptTypeService masReceiptTypeService;
+    @Autowired
+    private MasPaymentModeService masPaymentModeService;
+
+
 
 
 
@@ -1451,6 +1457,17 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
     @GetMapping("/masStoreItemWithotStock/getAll/{flag}")
     public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(@PathVariable int flag) {
         return masStoreItemService.getAllMasStoreItemWithOutStock(flag);
+    }
+
+    @GetMapping("/masStoreItemWithotStock/getAllPaginated/{flag}")
+    public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPaginated(
+            @PathVariable int flag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String nomenclature,
+            @RequestParam(required = false) Integer itemClassId,
+            @RequestParam(required = false) Integer masItemCategoryid) {
+        return masStoreItemService.getAllMasStoreItemWithOutStockPaginated(flag, page, size, nomenclature, itemClassId, masItemCategoryid);
     }
 
     @GetMapping("/getAll/drugsAndNonDrugs")
@@ -5385,5 +5402,17 @@ public ResponseEntity<ApiResponse<NonDrugStoreItemResponse>> updateNonDrugItem(@
     public ResponseEntity<ApiResponse<List<MasDischargeReasonResponse>>> masDischargeReason(@PathVariable int flag) {
         return ResponseEntity.ok(masDischargeReasonService.getAll(flag));
     }
+    @GetMapping("/masReceiptType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasReceiptTypeResponse>>> getAllReceiptType(
+            @PathVariable int flag) {
+
+        return ResponseEntity.ok(masReceiptTypeService.getAll(flag));
+    }
+    @GetMapping("/paymentMode/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasPaymentModeResponse>>> paymentMode(@PathVariable int flag) {
+
+        return ResponseEntity.ok(masPaymentModeService.getAll(flag));
+    }
+
 
 }

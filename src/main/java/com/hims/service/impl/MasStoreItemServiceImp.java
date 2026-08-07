@@ -153,11 +153,17 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setLastChgBy(currentUser.getUserId());
         masStoreItem.setLastChgDate(LocalDate.now());
         masStoreItem.setLastChgTime(getCurrentTimeFormatted());
-//        masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore());
-//        masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary());
+        masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore() != null ? masStoreItemRequest.getReOrderLevelStore().intValue() : null);
+        masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary() != null ? masStoreItemRequest.getReOrderLevelDispensary().intValue() : null);
         masStoreItem.setIsGeneric(masStoreItemRequest.getIsGeneric());
-        masStoreItem.setDangerousDrug(masStoreItem.getDangerousDrug());
+        masStoreItem.setDangerousDrug(masStoreItemRequest.getDangerousDrug());
         masStoreItem.setDrugSchedule(masStoreItemRequest.getDrugSchedule());
+        masStoreItem.setHighValueDrug(normalizeYN(masStoreItemRequest.getHighValueDrug()));
+        masStoreItem.setAvailableInOpd(normalizeYN(masStoreItemRequest.getAvailableInOpd()));
+        masStoreItem.setAvailableInIpd(normalizeYN(masStoreItemRequest.getAvailableInIpd()));
+        masStoreItem.setAvailableInEmergency(normalizeYN(masStoreItemRequest.getAvailableInEmergency()));
+        masStoreItem.setAvailableInOt(normalizeYN(masStoreItemRequest.getAvailableInOt()));
+        masStoreItem.setDosageUnit(masStoreItemRequest.getDosageUnit());
 
 
         Optional<MasStoreUnit> masStoreUnit = masStoreUnitRepository.findById(masStoreItemRequest.getDispUnit());
@@ -389,6 +395,56 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
     }
 }
+
+@Override
+public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPaginated(
+        int flag,
+        int page,
+        int size,
+        String nomenclature,
+        Integer itemClassId,
+        Integer masItemCategoryid) {
+
+    try {
+        Pageable pageable = PageRequest.of(page, size);
+        Integer querySectionId = (flag == 1) ? null : sectionId;
+
+        Page<MasStoreItemsProjection> projectionPage = masStoreItemRepository.findItemsWithOutStockPaginated(
+                flag, querySectionId, nomenclature, itemClassId, masItemCategoryid, pageable);
+
+        List<Long> itemIds = projectionPage.getContent().stream()
+                .map(MasStoreItemsProjection::getItemId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, List<MasStoreItemResponse.MasFacilityCodeResponse>> facilityMap = Collections.emptyMap();
+
+        if (!itemIds.isEmpty()) {
+            facilityMap = storeItemFacilityMapRepository.findFacilityByItemIds(itemIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            MasStoreItemFacilityProjection::getItemId,
+                            Collectors.mapping(f -> {
+                                MasStoreItemResponse.MasFacilityCodeResponse res = new MasStoreItemResponse.MasFacilityCodeResponse();
+                                res.setFacilityId(f.getFacilityId());
+                                res.setFacilityCode(f.getFacilityCode());
+                                return res;
+                            }, Collectors.toList())
+                    ));
+        }
+
+        Map<Long, List<MasStoreItemResponse.MasFacilityCodeResponse>> finalFacilityMap = facilityMap;
+
+        Page<MasStoreItemResponse> responsePage = projectionPage.map(item -> convertProjectionToResponse(item, finalFacilityMap));
+
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+
+    } catch (Exception e) {
+        log.error("Error while fetching Mas Store Items without stock paginated. Flag: {}", flag, e);
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+    }
+}
     @Override
     public ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request) {
         try {
@@ -432,8 +488,8 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
             long deptId = authUtil.getCurrentDepartmentId();
             MasDepartment depObj = masDepartmentRepository.getById(deptId);
             item.setAdispQty(request.getAdispQty());
-//            item.setReOrderLevelStore(request.getReOrderLevelStore());
-//            item.setReOrderLevelDispensary(request.getReOrderLevelDispensary());
+            item.setReOrderLevelStore(request.getReOrderLevelStore() != null ? request.getReOrderLevelStore().intValue() : null);
+            item.setReOrderLevelDispensary(request.getReOrderLevelDispensary() != null ? request.getReOrderLevelDispensary().intValue() : null);
 //            item.setHospitalId(currentUser.getHospital().getId());
 //            item.setDepartmentId(depObj.getId());
             item.setLastChgBy(currentUser.getUserId());
@@ -444,6 +500,12 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
             item.setIsGeneric(request.getIsGeneric());
             item.setDangerousDrug(request.getDangerousDrug());
             item.setDrugSchedule(request.getDrugSchedule());
+            item.setHighValueDrug(normalizeYN(request.getHighValueDrug()));
+            item.setAvailableInOpd(normalizeYN(request.getAvailableInOpd()));
+            item.setAvailableInIpd(normalizeYN(request.getAvailableInIpd()));
+            item.setAvailableInEmergency(normalizeYN(request.getAvailableInEmergency()));
+            item.setAvailableInOt(normalizeYN(request.getAvailableInOt()));
+            item.setDosageUnit(request.getDosageUnit());
 
             if (request.getDispUnit() != null) {
                 item.setDispUnit(masStoreUnitRepository.findById(request.getDispUnit())
@@ -863,6 +925,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             masStoreItem.setItemTypeId(masItemType.get());
             masStoreItem.setSectionId(masStoreSection.get());
             masStoreItem.setMasItemCategory(masItemCategory.get());
+            masStoreItem.setHsnCode(masHSN.get());
 
             MasHospital hospital = currentUser.getHospital();
 
@@ -936,6 +999,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             if (masHSN.isEmpty()) {
                 return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
             }
+            item.setHsnCode(masHSN.get());
 
             if (request.getUnitAU() != null) {
                 item.setUnitAU(masStoreUnitRepository.findById(request.getUnitAU())
@@ -1250,6 +1314,12 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setDangerousDrug(item.getDangerousDrug());
         response.setIsGeneric(item.getIsGeneric());
         response.setDrugSchedule(item.getDrugSchedule());
+        response.setHighValueDrug(item.getHighValueDrug());
+        response.setAvailableInOpd(item.getAvailableInOpd());
+        response.setAvailableInIpd(item.getAvailableInIpd());
+        response.setAvailableInEmergency(item.getAvailableInEmergency());
+        response.setAvailableInOt(item.getAvailableInOt());
+        response.setDosageUnit(item.getDosageUnit());
 
         List<MasStoreItemResponse.MasFacilityCodeResponse> facilityList = new ArrayList<>();
         List<StoreItemFacilityMap> storeItemFacilityMaps=storeItemFacilityMapRepository.findByItemItemId(item.getItemId());
@@ -1279,6 +1349,12 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setDangerousDrug(item.getDangerousDrug());
         response.setIsGeneric(item.getIsGeneric());
         response.setDrugSchedule(item.getDrugSchedule());
+        response.setHighValueDrug(item.getHighValueDrug());
+        response.setAvailableInOpd(item.getAvailableInOpd());
+        response.setAvailableInIpd(item.getAvailableInIpd());
+        response.setAvailableInEmergency(item.getAvailableInEmergency());
+        response.setAvailableInOt(item.getAvailableInOt());
+        response.setDosageUnit(item.getDosageUnit());
 
 
         response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
@@ -1416,10 +1492,26 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setIsGeneric(item.getIsGeneric());
         response.setDangerousDrug(item.getDangerousDrug());
         response.setDrugSchedule(item.getDrugSchedule());
+        response.setHighValueDrug(item.getHighValueDrug());
+        response.setAvailableInOpd(item.getAvailableInOpd());
+        response.setAvailableInIpd(item.getAvailableInIpd());
+        response.setAvailableInEmergency(item.getAvailableInEmergency());
+        response.setAvailableInOt(item.getAvailableInOt());
+        response.setDosageUnit(item.getDosageUnit());
         response.setFacilityCode(facilityMap.getOrDefault(item.getItemId(), Collections.emptyList()));
 
         return response;
     }
 
+    String normalizeYN(String val) {
+        if (val == null) {
+            return null;
+        }
+        String lower = val.trim().toLowerCase();
+        if ("y".equals(lower) || "n".equals(lower)) {
+            return lower;
+        }
+        return val;
+    }
 
 }

@@ -1,9 +1,6 @@
 package com.hims.utils;
 
-import com.hims.entity.Inpatient;
-import com.hims.entity.IpdBillingDetails;
-import com.hims.entity.IpdBillingHeader;
-import com.hims.entity.MasIpdServiceCategory;
+import com.hims.entity.*;
 import com.hims.entity.repository.IpdBillingDetailsRepository;
 import com.hims.entity.repository.IpdBillingHeaderRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +29,7 @@ IpdBillingDetailsRepository ipdBillingDetailsRepository;
                                                   BigDecimal gstAmount,
                                                   BigDecimal netAmount,
                                                   MasIpdServiceCategory ipdServiceCategoryId,
+                                                  MasIpdServiceSubcategory ipdServiceSubcategory,
                                                   String itemName) {
 
         IpdBillingHeader billingHeader = ipdBillingHeaderRepository.findByInpatientId_InpatientId(inpatient.getInpatientId())
@@ -51,6 +49,7 @@ IpdBillingDetailsRepository ipdBillingDetailsRepository;
         billingDetails.setDiscountAmount(discountAmount);
         billingDetails.setNetAmount(netAmount);
         billingDetails.setCreatedAt(LocalDateTime.now());
+        billingDetails.setSubcategory(ipdServiceSubcategory);
 
         IpdBillingDetails savedBillingDetails = ipdBillingDetailsRepository.save(billingDetails);
 

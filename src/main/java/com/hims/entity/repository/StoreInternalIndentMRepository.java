@@ -310,7 +310,9 @@ SELECT new com.hims.response.StoreIssueMResponse(
     sim.issueDate,
     im.indentMId,
     im.indentNo,
-    im.indentDate
+    im.indentDate,
+    sim.fromStoreId.departmentName,
+    im.indentType
 )
 FROM StoreInternalIndentM im
 LEFT JOIN im.storeIssueMId sim

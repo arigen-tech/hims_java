@@ -5,6 +5,7 @@ import com.hims.response.*;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface IPDPatientService {
@@ -69,4 +70,23 @@ public interface IPDPatientService {
     ApiResponse<DischargeSummaryResponse> getDischargeSummary(Long inpatientID);
 
     ApiResponse<Page<InpatientAdvanceCollectionResponse>> getIpdAdvanceCollection(int page, int size, String patientName, String mobileNo, String admissionNo);
+
+    ApiResponse<Page<PendingTrackingIPDBillResponse>> getPendingTrackingIPDBillList(int page, int size, Long wardId, Long billType, BigDecimal outStandingAmount);
+
+    ApiResponse<String> saveAdvanceCollection(@Valid AdvanceCollectionRequest request);
+
+    ApiResponse<List<PreviousPaymentHistoryResponse>> previousPaymentHistory(Long billingHeaderID);
+
+    ApiResponse<String> saveMedicationTreatment(@Valid IpMedicinePrescriptionRequest request);
+
+    ApiResponse<List<IpMedicinePrescriptionResponse>> getMedicationTreatmentByInpatientId(Long inpatientId);
+
+    ApiResponse<String> stopMedicationTreatment(@Valid MedicinePrescriptionRequest request);
+
+    ApiResponse<String> saveMarDetails(@Valid List<MarDetailsRequest> request);
+
+    ApiResponse<Page<IpMarDetailsResponse>> getMarAdministrationLog(Long inpatientId, Long itemId, Integer page, Integer size);
+
+    ApiResponse<List<MarMedicineResponse>> getMarMedicineList(Long inpatientId);
 }
+

@@ -110,4 +110,7 @@ public class StoreItemBatchStock {
 
     @Column(name = "last_chg_by")
     private String lastChgBy;
+
+    @Column(name = "ipd_issue_qty")
+    private BigDecimal ipdIssueQty;
 }
