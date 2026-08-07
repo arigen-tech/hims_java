@@ -82,4 +82,6 @@ public interface IPDPatientService {
     ApiResponse<List<IpMedicinePrescriptionResponse>> getMedicationTreatmentByInpatientId(Long inpatientId);
 
     ApiResponse<String> stopMedicationTreatment(@Valid MedicinePrescriptionRequest request);
+
+    ApiResponse<String> saveMarDetails(@Valid List<MarDetailsRequest> request);
 }

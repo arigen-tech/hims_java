@@ -182,6 +182,7 @@ WHERE s.itemId.itemId = :itemId
   AND s.hospitalId.id = :hospitalId
   AND s.departmentId.id = :departmentId
   AND COALESCE(:expDate, s.expiryDate) <= s.expiryDate
+  ORDER BY s.expiryDate ASC
 """)
     List<BatchNameForStockResponse> findBatchNameForStockWithOptionalExpiry(
             @Param("itemId") Long itemId,
@@ -276,4 +277,6 @@ ORDER BY i.nomenclature ASC
             Long classId,
             Long itemId
     );
+
+    Optional<Object> findByItemId_ItemIdAndBatchNo(Long itemId, String batchNo);
 }
