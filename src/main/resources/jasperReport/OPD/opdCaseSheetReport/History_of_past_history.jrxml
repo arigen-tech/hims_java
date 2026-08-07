@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="History_of_past_history" pageWidth="421" pageHeight="595" whenNoDataType="NoPages" columnWidth="421" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="9fbf08ce-1efe-485f-b07c-2a6e7a1e2d15">
 	<property name="ireport.scriptlethandling" value="0"/>
 	<property name="ireport.encoding" value="UTF-8"/>
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<import value="net.sf.jasperreports.engine.*"/>
 	<import value="java.util.*"/>
 	<import value="net.sf.jasperreports.engine.data.*"/>
 	<parameter name="visit_id" class="java.lang.Long"/>
 	<queryString>
-		<![CDATA[select past_medical_history
+		<![CDATA[select clinical_examination
 from opd_patient_details
 where visit_id=$P{visit_id}]]>
 	</queryString>
-	<field name="past_medical_history" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="past_medical_history"/>
-		<property name="com.jaspersoft.studio.field.label" value="past_medical_history"/>
+	<field name="clinical_examination" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="clinical_examination"/>
+		<property name="com.jaspersoft.studio.field.label" value="clinical_examination"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="opd_patient_details"/>
 	</field>
 	<background>
@@ -27,23 +27,20 @@ where visit_id=$P{visit_id}]]>
 	</title>
 	<pageHeader>
 		<band height="18" splitType="Stretch">
-			<textField>
-				<reportElement x="100" y="2" width="300" height="16" uuid="6a06963b-82b9-4455-864b-ec2bb63faa6d"/>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="97" y="1" width="300" height="16" uuid="6a06963b-82b9-4455-864b-ec2bb63faa6d"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{past_medical_history}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$F{clinical_examination}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="3" y="1" width="256" height="16" backcolor="#FFFFFF" uuid="9dbcc9d5-7318-4a48-ade3-f8118f81b931"/>
+				<reportElement x="0" y="1" width="256" height="16" backcolor="#FFFFFF" uuid="9dbcc9d5-7318-4a48-ade3-f8118f81b931"/>
 				<textElement>
-					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
 				</textElement>
-				<text><![CDATA[Clinical Diagnosis :]]></text>
+				<text><![CDATA[Clinical Examination :]]></text>
 			</staticText>
-			<line>
-				<reportElement x="3" y="10" width="77" height="1" forecolor="rgba(0, 0, 0, 0.49411765)" uuid="f67803d8-056a-41b3-a737-e1e7369ebd51"/>
-			</line>
 		</band>
 	</pageHeader>
 	<columnHeader>
