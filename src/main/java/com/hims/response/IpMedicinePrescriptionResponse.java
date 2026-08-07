@@ -19,4 +19,5 @@ public class IpMedicinePrescriptionResponse {
     private LocalDateTime startDate;
     private LocalDateTime stopDate;
     private String administratedBy;
+    private Long day;
 }

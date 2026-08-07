@@ -423,6 +423,16 @@ public class IPDPatientController {
         return ipdPatientService.stopMedicationTreatment(request);
     }
 
+    @PostMapping("saveMarDetails")
+    public ApiResponse<String> saveMarDetails(@Valid @RequestBody List<MarDetailsRequest> request) {
+
+        log.info("saveMarDetails API called with {} record(s)", request != null ? request.size() : 0);
+
+        return ipdPatientService.saveMarDetails(request);
+    }
+
+
+
 
 
 

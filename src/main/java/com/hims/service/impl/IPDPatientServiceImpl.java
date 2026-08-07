@@ -18,6 +18,7 @@ import com.hims.utils.SaveIpdBillingDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -40,6 +41,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -178,6 +180,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasIpdServiceSubcategoryRepository masIpdServiceSubcategoryRepository;
     @Autowired
     MasInvestigationPriceDetailsRepository masInvestigationPriceDetailsRepository;
+    @Autowired
+    StoreItemBatchStockRepository storeItemBatchStockRepository;
+    @Autowired
+    IpMarDetailsRepository ipMarDetailsRepository;
+    @Autowired
+    StoreIssueMRepository storeIssueMRepository;
+    @Autowired
+    StoreIssueTRepository storeIssueTRepository;
+    @Autowired
+    StoreStockLedgerRepository storeStockLedgerRepository;
 
 
 
@@ -2712,6 +2724,203 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> saveMarDetails(List<MarDetailsRequest> requests) {
+
+        log.info("saveMarDetails started for {} record(s)", requests != null ? requests.size() : 0);
+
+        User user = authUtil.getCurrentUser();
+
+        StoreIssueM issueM = null;
+
+        try {
+            for (MarDetailsRequest request : requests) {
+
+                log.info("Processing MAR entry for prescriptionId={}, batchNo={}, qty={}", request.getPrescriptionId(), request.getBatchNo(), request.getRequestQty());
+
+                // 1. Fetch Prescription
+                IpMedicinePrescription prescription = ipMedicinePrescriptionRepository.findById(request.getPrescriptionId())
+                        .orElseThrow(() -> {return new RuntimeException("Prescription not found");});
+
+                // 2. Fetch Inpatient
+                Inpatient inpatient = prescription.getInpatient();
+
+                // MAR Entry
+
+                IpMarDetails mar = new IpMarDetails();
+
+                mar.setInpatient(inpatient);
+                mar.setPrescription(prescription);
+                mar.setAdministeredQty(request.getRequestQty());
+                mar.setAdministrationTime(request.getDateTime());
+                mar.setAdministeredBy(user.getUsername());
+                mar.setBatchNo(request.getBatchNo());
+                mar.setExpiryDate(request.getExpiryDate());
+                mar.setRemarks(request.getRemark());
+                mar.setCreatedBy(user.getFullName());
+                mar.setLastUpdateDate(LocalDateTime.now());
+                mar.setLastUpdatedBy(user.getFullName());
+                ipMarDetailsRepository.save(mar);
+
+                log.info("MAR entry saved with id={} for inpatientId={}", mar.getMarId(), inpatient.getInpatientId());
+
+                // 3. Find Batch Stock
+                StoreItemBatchStock stock = (StoreItemBatchStock) storeItemBatchStockRepository.findByItemId_ItemIdAndBatchNo(
+                        request.getItemId() , request.getBatchNo()).orElseThrow(() -> {
+                                    return new RuntimeException("Batch not found");});
+
+                BigDecimal currentQty = BigDecimal.valueOf(stock.getClosingStock());
+                BigDecimal currentIpdIssueQty = stock.getIpdIssueQty() != null ? stock.getIpdIssueQty() : BigDecimal.ZERO;
+                BigDecimal updatedIpdIssueQty = currentIpdIssueQty.add(request.getRequestQty());
+                BigDecimal updatedQty = currentQty.subtract(request.getRequestQty());
+
+                if (currentQty.compareTo(request.getRequestQty()) < 0) {
+                    log.error("Insufficient stock for itemId={}, batchNo={}, available={}, requested={}", request.getItemId(), request.getBatchNo(), currentQty, request.getRequestQty());
+                    throw new RuntimeException("Insufficient Stock");
+                }
+
+                //---------------------------------------------------
+                // Update Batch Stock
+                //---------------------------------------------------
+
+                stock.setClosingStock(updatedQty.longValue());
+                stock.setIpdIssueQty(updatedIpdIssueQty);
+
+                storeItemBatchStockRepository.save(stock);
+
+                log.info("Stock updated for batchNo={}, before={}, after={}", request.getBatchNo(), currentQty, updatedQty);
+
+                //---------------------------------------------------
+                // Store Issue Header (only once per save call)
+                //---------------------------------------------------
+
+                if (issueM == null) {
+
+                    String issueNo = generateIssueNumber();
+
+                    issueM = new StoreIssueM();
+                    issueM.setIssueNo(issueNo);
+                    issueM.setIssueDate(LocalDateTime.now());
+                    issueM.setHospitalId(stock.getHospitalId());
+                    issueM.setToDeptId(stock.getDepartmentId());
+                    issueM.setStatus(AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT);
+                    issueM.setIssuedBy(user.getUsername());
+                    issueM.setInpatient(inpatient);
+                    issueM.setIssuedDate(LocalDateTime.now());
+
+                    storeIssueMRepository.save(issueM);
+
+                    log.info("Store issue header created with issueNo={}", issueNo);
+                }
+
+                //---------------------------------------------------
+                // Store Issue Detail
+                //---------------------------------------------------
+
+                StoreIssueT issueT = new StoreIssueT();
+
+                issueT.setStoreIssueMId(issueM);
+                issueT.setItemId(stock.getItemId());
+                issueT.setIssuedQty(request.getRequestQty());
+                issueT.setUnitPrice(stock.getPurchaseRatePerUnit());
+                issueT.setBatchNo(stock.getBatchNo());
+                issueT.setExpiryDate(stock.getExpiryDate());
+                issueT.setStatus(AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT);
+                issueT.setDom(stock.getManufactureDate());
+                issueT.setInpatientIssueQty(request.getRequestQty());
+                issueT.setBrandname(stock.getBrandId() != null ? stock.getBrandId().getBrandName() : null);
+                issueT.setManufacturername(stock.getManufacturerId() != null ? stock.getManufacturerId().getManufacturerName() : null);
+
+                storeIssueTRepository.save(issueT);
+
+                log.info("Store issue detail saved with id={} for issueNo={}", issueT.getStoreIssueTId(), issueM.getIssueNo());
+
+                //---------------------------------------------------
+                // Stock Ledger
+                //---------------------------------------------------
+
+                StoreStockLedger ledger = new StoreStockLedger();
+                ledger.setStockId(stock);
+                ledger.setTxnType(AppConstants.INPATIENT_ISSUE);
+                ledger.setTxnDate(LocalDate.now());
+                ledger.setTxnReferenceId(issueT.getStoreIssueTId());
+                ledger.setQtyBefore(currentQty);
+                ledger.setQtyOut(request.getRequestQty());
+                ledger.setQtyAfter(updatedQty);
+                ledger.setTxnSource(AppConstants.INPATIENT_ISSUE);
+                ledger.setReferenceNum(issueM.getIssueNo());
+                ledger.setCreatedBy(user.getUsername());
+                ledger.setCreatedDt(LocalDateTime.now());
+                ledger.setHospital(stock.getHospitalId());
+                ledger.setDept(stock.getDepartmentId());
+                storeStockLedgerRepository.save(ledger);
+
+                log.info("Stock ledger entry created for stockId={}, txnRefId={}", stock.getStockId(), ledger.getTxnReferenceId());
+
+                //---------------------------------------------------
+                // Billing
+                //---------------------------------------------------
+
+                BigDecimal amount = calculateAmount(stock.getMrpPerUnit(), request.getRequestQty());
+                BigDecimal gstAmount = calculateGST(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
+                BigDecimal netAmount = calculateNetAmount(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
+
+                saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,
+                        stock.getMrpPerUnit(),
+                        request.getRequestQty(),
+                        stock.getGstPercent(),
+                        BigDecimal.ZERO,
+                        amount,
+                        gstAmount,
+                        netAmount,
+                        null,
+                        null,
+                        stock.getItemId().getNomenclature()
+                );
+
+                log.info("Billing entry saved for inpatientId={}, amount={}, netAmount={}", inpatient.getInpatientId(), amount, netAmount);
+            }
+
+            log.info("saveMarDetails completed successfully for {} record(s)", requests.size());
+            return ResponseUtils.createSuccessResponse("mar details save successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("saveMarDetails failed, rolling back transaction. Reason: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+    private BigDecimal calculateGST(BigDecimal rate,
+                                    BigDecimal qty,
+                                    BigDecimal gstPercent) {
+
+        if (rate == null || qty == null || gstPercent == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal amount = rate.multiply(qty);
+
+        return amount.multiply(gstPercent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+    private BigDecimal calculateAmount(BigDecimal rate, BigDecimal qty) {
+
+        if (rate == null || qty == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return rate.multiply(qty).setScale(2, RoundingMode.HALF_UP);
+    }
+    private BigDecimal calculateNetAmount(BigDecimal rate,
+                                           BigDecimal qty,
+                                           BigDecimal gstPercent) {
+
+        BigDecimal amount = calculateAmount(rate, qty);
+
+        BigDecimal gst = calculateGST(rate, qty, gstPercent);
+
+        return amount.add(gst).setScale(2, RoundingMode.HALF_UP);
+    }
 
     private IpMedicinePrescriptionResponse mapToMedicinePrescriptionResponse(IpMedicinePrescriptionProjection projection) {
         IpMedicinePrescriptionResponse response = new IpMedicinePrescriptionResponse();
@@ -3024,6 +3233,20 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         }
 
         return prefix + "/" + nextNumber;
+    }
+
+    // === Helper method to generate issue number ===
+    private String generateIssueNumber() {
+        // Option 1: Simple timestamp-based
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        return "ISS-" + timestamp;
+
+        // Option 2: Sequential number (you'd need to query the last issue number)
+        // Long lastIssueNumber = issueRepository.findMaxIssueNumber();
+        // return "ISS-" + String.format("%06d", (lastIssueNumber == null ? 1 : lastIssueNumber + 1));
+
+        // Option 3: UUID
+        // return "ISS-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
 }

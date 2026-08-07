@@ -214,6 +214,8 @@ public class AppConstants {
     public static final String SOURCE_TYPE_IPD = "IPD";
 
     public static final String SOURCE_LAB = "lab source";
+    public static final String INPATIENT_ISSUE = "inpatientIssue";
+
 
 
 

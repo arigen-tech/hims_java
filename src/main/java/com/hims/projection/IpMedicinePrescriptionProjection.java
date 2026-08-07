@@ -27,4 +27,5 @@ public interface IpMedicinePrescriptionProjection {
     LocalDateTime getStopDate();
 
     String getAdministratedBy();
+    Long getDay();
 }
