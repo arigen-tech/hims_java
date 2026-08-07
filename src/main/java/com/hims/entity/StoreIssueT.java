@@ -70,4 +70,7 @@ public class StoreIssueT {
 
     @Column(name = "status", length = 2)
     private String status;
+
+    @Column(name = "inpatient_issue_qty")
+    private BigDecimal inpatientIssueQty;
 }

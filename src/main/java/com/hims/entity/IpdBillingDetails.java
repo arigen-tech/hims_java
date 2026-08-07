@@ -31,7 +31,7 @@ public class IpdBillingDetails {
     private IpdBillingHeader billHeader;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "category_id")
     private MasIpdServiceCategory category;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -61,11 +61,11 @@ SELECT
     (i.admission_date + i.admission_time) AS admissionDateTime,
     bt.billing_type_id AS billingTypeId,
     bt.billing_type_name AS billingType,
-    bh.total_amount AS totalAmount,
+    bh.net_amount AS totalAmount,
     bh.estimation_cost AS estimationCost,
     bh.patient_paid_amount AS patientPaid,
     GREATEST( 0,
-     COALESCE(bh.total_amount, 0) - COALESCE(bh.patient_paid_amount, 0)
+     COALESCE(bh.net_amount, 0) - COALESCE(bh.patient_paid_amount, 0)
  ) AS outStandingAmount,
     bs.bill_status_id AS billStatusId,
     bs.status_code AS billStatus,
