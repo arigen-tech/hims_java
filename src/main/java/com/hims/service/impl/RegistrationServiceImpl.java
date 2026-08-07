@@ -894,8 +894,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         if (visit.getIniDoctorId() != null) {
-            assert visit.getDoctorId() != null;
-            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setIniDoctor);
+            newVisit.setIniDoctor(authUtil.getCurrentUser());
         }
 
         if (visit.getSessionId() != null) {

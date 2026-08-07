@@ -92,6 +92,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasQuestionHeadingRepository masQuestionHeadingRepository;
     private final OpdQuestionMasterRepository opdQuestionMasterRepository;
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
+    private final TransactionSequenceService transactionSequenceService;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -115,8 +116,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     @Autowired
     HelperUtils helperUtils;
 
-    @Autowired
-    TransactionSequenceService transactionSequenceService;
 
 
     @Override
@@ -670,6 +669,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         hd.setTotalGst(BigDecimal.ZERO);
         hd.setTotalDiscount(BigDecimal.ZERO);
         hd.setNetAmount(BigDecimal.ZERO);
+        hd.setPrescriptionNumber(transactionSequenceService.generateTransactionNumber(HMISTransaction.PRESCRIPTION_NO, user.getHospital().getId()));
         hd.setVisit(visit);
 
         String medicineBilling = user.getHospital().getMedicineBilling();

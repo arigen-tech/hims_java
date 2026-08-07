@@ -891,8 +891,7 @@ public class PatientServiceImpl implements PatientService {
         }
 
         if (visit.getIniDoctorId() != null) {
-            assert visit.getDoctorId() != null;
-            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setIniDoctor);
+            authUtil.getCurrentUser().getUserId();
         }
 
         if (visit.getSessionId() != null) {
