@@ -90,7 +90,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             )) LIKE LOWER(CONCAT('%', :patientName, '%'))
         )
 
-       
+
         AND (
             :mobileNumber IS NULL OR :mobileNumber = '' OR
             p.p_mobile_number LIKE CONCAT('%', :mobileNumber, '%')
@@ -1251,6 +1251,62 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("refundPendingLabel") String refundPendingLabel,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT
+        v.id AS visitId,
+        p.id AS patientId,
+        TRIM(CONCAT(
+            COALESCE(p.patientFn, ''), ' ',
+            COALESCE(p.patientMn, ''), ' ',
+            COALESCE(p.patientLn, '')
+        )) AS patientName,
+        p.patientMobileNumber AS mobileNumber,
+        p.uhidNo AS uhid,
+        pr.relationName AS relation,
+        g.genderName AS gender,
+        p.patientAge AS age,
+        d.departmentName AS specialty,
+        TRIM(CONCAT(
+            COALESCE(u.firstName, ''), ' ',
+            COALESCE(u.middleName, ''), ' ',
+            COALESCE(u.lastName, '')
+        )) AS doctorName,
+        CAST(v.visitDate AS string) AS visitDateTime
+    FROM Visit v
+    JOIN v.patient p
+    LEFT JOIN v.iniDoctor u
+    LEFT JOIN v.department d
+    LEFT JOIN p.patientRelation pr
+    LEFT JOIN p.patientGender g
+    LEFT JOIN d.departmentType dt
+    WHERE v.visitStatus = :visitStatus
+      AND dt.departmentTypeCode = :departmentTypeCode
+      AND (
+          :mobileNo IS NULL
+          OR :mobileNo = ''
+          OR p.patientMobileNumber LIKE CONCAT('%', :mobileNo, '%')
+      )
+      AND (
+          :patientName IS NULL
+          OR :patientName = ''
+          OR LOWER(
+              TRIM(CONCAT(
+                  COALESCE(p.patientFn, ''), ' ',
+                  COALESCE(p.patientMn, ''), ' ',
+                  COALESCE(p.patientLn, '')
+              ))
+          ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+      )
+    ORDER BY v.visitDate DESC
+    """)
+    Page<OpdReportListProjection> getOpdReportsList(
+            @Param("visitStatus") String visitStatus,
+            @Param("departmentTypeCode") String departmentTypeCode,
+            @Param("mobileNo") String mobileNo,
+            @Param("patientName") String patientName,
             Pageable pageable
     );
     }
