@@ -14,7 +14,6 @@ public class IpProcedureTxnMapper {
         IpProcedureTxnResponse response = new IpProcedureTxnResponse();
         response.setProcedureTxnId(entity.getProcedureTxnId());
         response.setInpatientId(entity.getInpatient() != null ? entity.getInpatient().getInpatientId() : null);
-        response.setProcedureId(entity.getProcedureId());
         response.setProcedureName(entity.getProcedureName());
         response.setProcedureDatetime(entity.getProcedureDatetime());
         response.setPerformedBy(entity.getPerformedBy());

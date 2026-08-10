@@ -197,8 +197,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Autowired
     IpMedicineIssueRepository ipMedicineIssueRepository;
     @Autowired
-     IpProcedureTxnRepository ipProcedureTxnRepository;
-    @Autowired
     MasProcedureRepository masProcedureRepository;
 
 

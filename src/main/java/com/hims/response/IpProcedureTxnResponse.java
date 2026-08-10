@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 public class IpProcedureTxnResponse {
     private Long procedureTxnId;
     private Long inpatientId;
-    private Long procedureId;
     private String procedureName;
     private LocalDateTime procedureDatetime;
     private String performedBy;
