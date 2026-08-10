@@ -813,7 +813,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
 
         validateDuplicateAppointment(visit, patient.getId(), null);
-
+        User currentLoggedInUser = authUtil.getCurrentUser();
         LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate tokenStartTime = visit.getTokenStartTime().atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate tokenEndTime = visit.getTokenEndTime().atZone(ZoneOffset.UTC).toLocalDate();
@@ -867,7 +867,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS.toLowerCase()); // "wp"
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
-        newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
+        newVisit.setDoctorName(currentLoggedInUser.getFullName());
         assert setup != null;
         if (setup.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
             newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -877,8 +877,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         newVisit.setVisitType(helperUtils.getVisitTypeForFollowUpOrNew(patient.getId()));
         newVisit.setPatient(patient);
 
-        if (visit.getDoctorId() != null) {
-            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setDoctor);
+        if (visit.getIniDoctorId() != null) {
+            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setIniDoctor);
         }
 
         if (visit.getHospitalId() != null) {
@@ -893,8 +893,8 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
         }
 
-        if (visit.getIniDoctorId() != null) {
-            newVisit.setIniDoctor(authUtil.getCurrentUser());
+        if (visit.getDoctorId() != null) {
+            newVisit.setDoctor(authUtil.getCurrentUser());
         }
 
         if (visit.getSessionId() != null) {
