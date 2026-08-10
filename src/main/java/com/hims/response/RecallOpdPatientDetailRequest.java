@@ -1,5 +1,8 @@
 package com.hims.response;
 
+import com.hims.request.OpdEntDetailsRequest;
+import com.hims.request.OpdObgDetailsRequest;
+import com.hims.request.OpdPsychiatricDetailsRequest;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -61,6 +64,10 @@ public class RecallOpdPatientDetailRequest {
     private Long departmentId;
     private Long hospitalId;
     private Long doctorId;
+    private Long topicId;
+    private List<OpdPsychiatricDetailsRequest> details;
+    private OpdObgDetailsRequest opdObgDetailsRequest;
+    private OpdEntDetailsRequest entExaminationDetails;
 
     @Data
     public static class TreatmentRequest {
