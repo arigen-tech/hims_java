@@ -867,7 +867,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS.toLowerCase()); // "wp"
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
-        newVisit.setDoctorName(currentLoggedInUser.getFullName());
+        newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
         assert setup != null;
         if (setup.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
             newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -894,7 +894,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
 
         if (visit.getDoctorId() != null) {
-            newVisit.setDoctor(authUtil.getCurrentUser());
+            newVisit.setDoctor(userRepository.getReferenceById(visit.getDoctorId()));
         }
 
         if (visit.getSessionId() != null) {
@@ -1372,20 +1372,21 @@ public class RegistrationServiceImpl implements RegistrationService {
             return;
         }
 
+
         Map<String, Long> seenAppointments = new HashMap<>();
         for (VisitRequest visit : visitList) {
             if (visit == null) {
                 continue;
             }
 
-            validateDuplicateAppointment(visit, patientId, visit.getId());
+
 
             if (visit.getDoctorId() == null || visit.getVisitDate() == null) {
                 continue;
             }
 
             LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
-            String appointmentKey = visit.getDoctorId() + "|" + visitDate;
+            String appointmentKey = visit.getDoctorId() + "|" + visitDate +"|" + visit.getDepartmentId() + "|" + visit.getPatientId();
             Long currentVisitId = visit.getId();
 
             if (seenAppointments.containsKey(appointmentKey)) {
@@ -1399,23 +1400,43 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
     }
 
-    private void validateDuplicateAppointment(VisitRequest visit, Long patientId, Long excludeVisitId) {
-        if (visit == null || patientId == null || visit.getDoctorId() == null || visit.getSessionId() == null || visit.getVisitDate() == null) {
+    private void validateDuplicateAppointment(
+            VisitRequest visit,
+            Long patientId,
+            Long excludeVisitId) {
+
+        if (visit == null
+                || patientId == null
+                || visit.getDoctorId() == null
+                || visit.getDepartmentId() == null
+                || visit.getVisitDate() == null) {
             return;
         }
 
-        LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
-        Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+        LocalDate visitDate =
+                visit.getVisitDate()
+                        .atZone(ZoneOffset.UTC)
+                        .toLocalDate();
 
-        boolean duplicateExists = visitRepository.existsDuplicatePatientAppointment(
-                patientId,
-                visit.getDoctorId(),
-                startOfDay,
-                endOfDay,
-                AppConstants.VISIT_STATUS_CANCELLED.toLowerCase(),
-                excludeVisitId
-        );
+        Instant startOfDay =
+                visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+
+        Instant endOfDay =
+                visitDate.plusDays(1)
+                        .atStartOfDay(ZoneOffset.UTC)
+                        .minusNanos(1)
+                        .toInstant();
+
+        boolean duplicateExists =
+                visitRepository.existsDuplicatePatientAppointment(
+                        patientId,
+                        visit.getDoctorId(),
+                        visit.getDepartmentId(),
+                        startOfDay,
+                        endOfDay,
+                        AppConstants.VISIT_STATUS_CANCELLED,
+                        excludeVisitId
+                );
 
         if (duplicateExists) {
             throw new ResponseStatusException(
@@ -1424,7 +1445,6 @@ public class RegistrationServiceImpl implements RegistrationService {
             );
         }
     }
-
     private String cleanStringParameter(String param) {
         if (param == null || param.trim().isEmpty()) {
             return null;

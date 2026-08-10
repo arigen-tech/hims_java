@@ -538,17 +538,19 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     );
 
     @Query("""
-            select case when count(v) > 0 then true else false end
-            from Visit v
-            where v.patient.id = :patientId
-              and v.doctor.userId = :doctorId
-              and v.visitDate between :startOfDay and :endOfDay
-              and lower(v.visitStatus) <> lower(:cancelledStatus)
-              and (:excludeVisitId is null or v.id <> :excludeVisitId)
-            """)
+    SELECT CASE WHEN COUNT(v) > 0 THEN true ELSE false END
+    FROM Visit v
+    WHERE v.patient.id = :patientId
+      AND v.doctor.userId = :doctorId
+      AND v.department.id = :departmentId
+      AND v.visitDate BETWEEN :startOfDay AND :endOfDay
+      AND LOWER(v.visitStatus) <> LOWER(:cancelledStatus)
+      AND (:excludeVisitId IS NULL OR v.id <> :excludeVisitId)
+    """)
     boolean existsDuplicatePatientAppointment(
             @Param("patientId") Long patientId,
             @Param("doctorId") Long doctorId,
+            @Param("departmentId") Long departmentId,
             @Param("startOfDay") Instant startOfDay,
             @Param("endOfDay") Instant endOfDay,
             @Param("cancelledStatus") String cancelledStatus,
