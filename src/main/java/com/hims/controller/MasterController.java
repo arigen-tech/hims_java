@@ -2151,8 +2151,9 @@ private InsuranceTpaMappingService insuranceTpaMappingService;
             @RequestParam int flag,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String nursingStatus,
             @RequestParam(required = false) String search) {
-        return masProcedureService.getAllProceduresWIthFilter(flag, page, size, search);
+        return masProcedureService.getAllProceduresWIthFilter(flag, page, size,nursingStatus, search);
     }
 
     @GetMapping("masProcedure/getById/{id}")
