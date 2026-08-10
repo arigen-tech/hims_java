@@ -710,7 +710,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             obgRequest.setPatientId(patient.getId());
             obgRequest.setVisitId(visit.getId());
 
-            // Call the OBG service to create or update
             ApiResponse<String> response = opdObgDetailsService.createOrUpdateObgDetails(
                     request.getVisitId(),
                     obgRequest
