@@ -466,4 +466,11 @@ public class IPDPatientController {
         return ipdPatientService.saveInpatientProcedure(request);
     }
 
+
+    @GetMapping("/getProcedureByInpatientId/{inpatientId}")
+    public ResponseEntity<ApiResponse<List<IpProcedureTxnResponse>>> getIpProcedureTxnByInpatientId(@PathVariable Long inpatientId) {
+        log.info("Request received to fetch IpProcedureTxn for inpatientId: {}", inpatientId);
+        ApiResponse<List<IpProcedureTxnResponse>> response = ipdPatientService.getIpProcedureTxnByInpatientId(inpatientId);
+        return ResponseEntity.ok(response);
+    }
 }

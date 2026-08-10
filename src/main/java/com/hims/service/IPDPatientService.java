@@ -90,5 +90,7 @@ public interface IPDPatientService {
     ApiResponse<List<MarMedicineResponse>> getMarMedicineList(Long inpatientId);
 
     ApiResponse<String> saveInpatientProcedure(@Valid InpatientProcedureRequest request);
+
+    ApiResponse<List<IpProcedureTxnResponse>> getIpProcedureTxnByInpatientId(Long inpatientId);
 }
 
