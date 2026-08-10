@@ -193,6 +193,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     StoreStockLedgerRepository storeStockLedgerRepository;
     @Autowired
     IpMedicineIssueRepository ipMedicineIssueRepository;
+    @Autowired
+     IpProcedureTxnRepository ipProcedureTxnRepository;
+    @Autowired
+    MasProcedureRepository masProcedureRepository;
 
 
 
@@ -2617,9 +2621,10 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             if (item == null) {
                 return ResponseUtils.createNotFoundResponse("Item not found with ID: " + request.getItemId(), HttpStatus.NOT_FOUND.value());
             }
-            // Check duplicate item for same inpatient
-            if (ipMedicinePrescriptionRepository.existsByInpatient_InpatientIdAndItem_ItemId(request.getInpatientId(),
-                    request.getItemId())) {
+
+            // Check duplicate item for same inpatient ( active prescription — stop_date null — block)
+            if (ipMedicinePrescriptionRepository.existsByInpatient_InpatientIdAndItem_ItemIdAndStopDateIsNull(
+                    request.getInpatientId(), request.getItemId())) {
 
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Item already added for this inpatient",
@@ -3299,6 +3304,49 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         } catch (Exception e) {
             log.error("Error while fetching unique medicines in MAR log for inpatientId: {}", inpatientId, e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<String> saveInpatientProcedure(InpatientProcedureRequest request) {
+
+        log.info("Saving inpatient procedure. inpatientId={}, procedureId={}", request.getInpatientId(), request.getProcedureId());
+
+        try {
+            // 2. Fetch inpatient
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException(
+                                    "Inpatient not found with id: " + request.getInpatientId()));
+
+            MasProcedure masProcedure = masProcedureRepository.findById(request.getProcedureId()).orElseThrow(() -> new RuntimeException(
+                    "Procedure not found with id: " + request.getInpatientId()));
+
+            // 3. Create procedure transaction
+            IpProcedureTxn procedureTxn = new IpProcedureTxn();
+
+            procedureTxn.setInpatient(inpatient);
+            procedureTxn.setProcedureId(masProcedure);
+            procedureTxn.setProcedureName(masProcedure.getProcedureName());
+            procedureTxn.setProcedureDatetime(request.getProcedureDatetime());
+            procedureTxn.setPerformedBy(request.getPerformedBy());
+            procedureTxn.setRemarks(request.getRemarks());
+            User user = authUtil.getCurrentUser();
+            procedureTxn.setCreatedAt(LocalDateTime.now());
+            procedureTxn.setCreatedBy(user.getFullName());
+            procedureTxn.setUpdatedAt(LocalDateTime.now());
+            procedureTxn.setUpdatedBy(user.getFullName());
+
+            ipProcedureTxnRepository.save(procedureTxn);
+
+            log.info("Inpatient procedure saved successfully. procedureTxnId={}", procedureTxn.getProcedureTxnId());
+
+            return ResponseUtils.createSuccessResponse("Inpatient procedure saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while saving inpatient procedure. inpatientId={}, procedureId={}", request.getInpatientId(), request.getProcedureId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),HttpStatus.BAD_REQUEST.value()
+            );
         }
     }
 }

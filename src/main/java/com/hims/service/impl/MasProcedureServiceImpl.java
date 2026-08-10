@@ -71,18 +71,20 @@ public class MasProcedureServiceImpl implements MasProcedureService {
 
     @Override
     public ApiResponse<Page<MasProcedureResponse>> getAllProceduresWIthFilter(
-            int flag, int page, int size, String search) {
+            int flag, int page, int size,String status, String search) {
         try {
 
         Pageable pageable = PageRequest.of(page, size);Page<MasProcedure> procedurePage;
         boolean hasSearch = (search != null && !search.trim().isEmpty());
-        String searchPattern = "%" + search.toLowerCase() + "%";
+            String searchPattern = hasSearch
+                    ? "%" + search.trim().toLowerCase() + "%"
+                    : "%";
 
         if (hasSearch) {
             //  If flag = 1 → Only status = 'Y'
             if (flag == 1) {
                 procedurePage = repository.searchProcedure(
-                        AppConstants.STATUS_Y.toLowerCase(), searchPattern, pageable
+                        AppConstants.STATUS_Y.toLowerCase(),status, searchPattern, pageable
                 );
             }
             //  Flag != 1 → status IN (Y, N)
@@ -95,7 +97,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         else if (flag == 1) {
             procedurePage = repository.findByStatusIgnoreCase(AppConstants.STATUS_Y.toLowerCase(), pageable);
         } else {
-            procedurePage = repository.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y, AppConstants.STATUS_N.toLowerCase()), pageable);
+            procedurePage = repository.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase()), pageable);
         }
 
         Page<MasProcedureResponse> responsePage = procedurePage.map(this::toResponse);
@@ -131,8 +133,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         MasProcedure p = new MasProcedure();
         p.setProcedureCode(req.getProcedureCode());
         p.setProcedureName(req.getProcedureName());
-        p.setProcedureLevel(req.getProcedureLevel().toUpperCase());
-        p.setDepartment(departmentRepository.findById(req.getDepartmentId()).orElseThrow());
+
         p.setLastChgBy(user.getFullName());
         p.setIpdAllowed(req.getIpdAllowed().toUpperCase());
         p.setStatus(AppConstants.STATUS_Y.toLowerCase());
@@ -157,8 +158,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         }
         procedure.setProcedureCode(req.getProcedureCode());
         procedure.setProcedureName(req.getProcedureName());
-        procedure.setProcedureLevel(req.getProcedureLevel().toUpperCase());
-        procedure.setDepartment(departmentRepository.findById(req.getDepartmentId()).orElseThrow());
+
         procedure.setLastChgBy(user.getFullName());
         procedure.setIpdAllowed(req.getIpdAllowed().toUpperCase());
         procedure.setStatus(AppConstants.STATUS_Y.toLowerCase());
@@ -203,14 +203,11 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         res.setStatus(p.getStatus());
         res.setLastChgBy(p.getLastChgBy());
         res.setLastChgDate(p.getLastChgDate());
-        if (p.getDepartment() != null) {
-            res.setDepartmentId(p.getDepartment().getId());
-            res.setDepartmentName(p.getDepartment().getDepartmentName());
-        }
+
         res.setOpdAllowed(p.getOpdAllowed());
         res.setIpdAllowed(p.getIpdAllowed());
         res.setIsNursing(p.getIsNursing());
-        res.setProcedureLevel(p.getProcedureLevel());
+
         return res;
     }
     private MasProcedureResponse mapToResponse(MasProcedureProjection p) {
@@ -223,12 +220,10 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         res.setStatus(p.getStatus());
         res.setLastChgBy(p.getLastChgBy());
         res.setLastChgDate(p.getLastChgDate());
-        res.setDepartmentId(p.getDepartmentId());
-        res.setDepartmentName(p.getDepartmentName());
+
         res.setOpdAllowed(p.getOpdAllowed());
         res.setIpdAllowed(p.getIpdAllowed());
         res.setIsNursing(p.getIsNursing());
-        res.setProcedureLevel(p.getProcedureLevel());
 
         return res;
     }

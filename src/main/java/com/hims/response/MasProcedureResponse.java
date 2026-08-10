@@ -17,8 +17,6 @@ public class MasProcedureResponse {
     private String status;
     private String lastChgBy;
     private LocalDateTime lastChgDate;
-    private Long departmentId;
-    private String departmentName;
     private String opdAllowed;
     private String ipdAllowed;
     private String isNursing;

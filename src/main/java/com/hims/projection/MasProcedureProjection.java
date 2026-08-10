@@ -11,11 +11,9 @@ public interface MasProcedureProjection {
     String getLastChgBy();
     LocalDateTime getLastChgDate();
 
-    Long getDepartmentId();
-    String getDepartmentName();
 
     String getOpdAllowed();
     String getIpdAllowed();
     String getIsNursing();
-    String getProcedureLevel();
+
 }
