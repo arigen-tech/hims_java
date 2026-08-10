@@ -21,8 +21,9 @@ public class IpProcedureTxn {
     @JoinColumn(name = "inpatient_id", nullable = false)
     private Inpatient inpatient;
 
-    @Column(name = "procedure_id", nullable = false)
-    private Long procedureId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "procedure_id", nullable = false)
+    private MasProcedure procedureId;
 
     @Column(name = "procedure_name", length = 200)
     private String procedureName;
@@ -60,5 +61,5 @@ public class IpProcedureTxn {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-   
+
 }
