@@ -101,6 +101,8 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Autowired
     DoctorRosterServices doctorRosterServices;
+    @Autowired
+    private HelperUtils helperUtils;
 
 
     @Autowired
@@ -175,7 +177,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 validateDuplicateAppointments(visit, patientObj.getId());
                 for (VisitRequest v : visit) {
                     Instant today = v.getVisitDate();
-                    String visitType = getVisitTypeForFollowUpOrNew(patientObj.getId(), today);
+                    String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patientObj.getId());
                     v.setVisitType(visitType);
                     Visit saved = createSingleAppointment(v, patientObj);
                     savedVisits.add(saved);
@@ -647,7 +649,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             if (visitReq!=null) {
 
                 Instant date = visitReq.getVisitDate();
-                String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), date);
+                String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
                 visitReq.setVisitType(visitType);
                 Visit saved = createSingleAppointment(visitReq, patient);
 
@@ -807,14 +809,11 @@ public class RegistrationServiceImpl implements RegistrationService {
         patient = patientRepository.save(patient);
         return patient;
     }
-    private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
-        int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
-        return count > 0 ? "F" : "N";
-    }
+
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
 
         validateDuplicateAppointment(visit, patient.getId(), null);
-
+        User currentLoggedInUser = authUtil.getCurrentUser();
         LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate tokenStartTime = visit.getTokenStartTime().atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate tokenEndTime = visit.getTokenEndTime().atZone(ZoneOffset.UTC).toLocalDate();
@@ -868,18 +867,18 @@ public class RegistrationServiceImpl implements RegistrationService {
         newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS.toLowerCase()); // "wp"
         newVisit.setPriority(visit.getPriority());
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
-        newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
+        newVisit.setDoctorName(currentLoggedInUser.getFullName());
         assert setup != null;
         if (setup.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
             newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
         } else {
             newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
         }
-        newVisit.setVisitType(visit.getVisitType());
+        newVisit.setVisitType(helperUtils.getVisitTypeForFollowUpOrNew(patient.getId()));
         newVisit.setPatient(patient);
 
-        if (visit.getDoctorId() != null) {
-            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setDoctor);
+        if (visit.getIniDoctorId() != null) {
+            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setIniDoctor);
         }
 
         if (visit.getHospitalId() != null) {
@@ -894,9 +893,8 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
         }
 
-        if (visit.getIniDoctorId() != null) {
-            assert visit.getDoctorId() != null;
-            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setIniDoctor);
+        if (visit.getDoctorId() != null) {
+            newVisit.setDoctor(authUtil.getCurrentUser());
         }
 
         if (visit.getSessionId() != null) {

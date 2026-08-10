@@ -10,6 +10,7 @@ import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
+import com.hims.mapper.IpMarDetailsMapper;
 import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
@@ -76,6 +77,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private final IpdBillingHeaderRepository ipdBillingHeaderRepository;
     private final MasPaymentModeRepository masPaymentModeRepository;
     private final IpPaymentDetailRepository ipPaymentDetailRepository;
+    private final IpMarDetailsRepository ipMarDetailsRepository;
+    private final IpMarDetailsMapper ipMarDetailsMapper;
     private final IpDocumentRepository ipDocumentRepository;
     private final UserRepo userRepo;
     private final IpDiagnosisEntryRepository ipDiagnosisEntryRepository;
@@ -182,8 +185,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasInvestigationPriceDetailsRepository masInvestigationPriceDetailsRepository;
     @Autowired
     StoreItemBatchStockRepository storeItemBatchStockRepository;
-    @Autowired
-    IpMarDetailsRepository ipMarDetailsRepository;
     @Autowired
     StoreIssueMRepository storeIssueMRepository;
     @Autowired
@@ -3254,4 +3255,51 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         // return "ISS-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
+    @Override
+    public ApiResponse<Page<IpMarDetailsResponse>> getMarAdministrationLog(Long inpatientId, Long itemId, Integer page, Integer size) {
+        log.info("Request to fetch MAR Administration Log for inpatientId: {}, itemId: {}, page: {}, size: {}", inpatientId, itemId, page, size);
+        try {
+            if (inpatientId == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            Pageable pageable;
+            if (page != null && size != null) {
+                pageable = PageRequest.of(page, size);
+            } else {
+                pageable = PageRequest.of(0, Integer.MAX_VALUE);
+            }
+
+            Page<IpMarDetailsProjection> projections = ipMarDetailsRepository.getMarAdministrationLog(inpatientId, itemId, pageable);
+            Page<IpMarDetailsResponse> responsePage = projections.map(ipMarDetailsMapper::mapToMarDetailsResponse);
+
+            log.info("Successfully fetched {} MAR Administration Log records for inpatientId: {}", responsePage.getTotalElements(), inpatientId);
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching MAR Administration Log for inpatientId: {}", inpatientId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<List<MarMedicineResponse>> getMarMedicineList(Long inpatientId) {
+        log.info("Request to fetch unique medicines in MAR log for inpatientId: {}", inpatientId);
+        try {
+            if (inpatientId == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            List<MarMedicineProjection> projections = ipMarDetailsRepository.getUniqueMedicinesInMar(inpatientId);
+            List<MarMedicineResponse> responseList = projections.stream()
+                    .map(ipMarDetailsMapper::mapToMarMedicineResponse)
+                    .toList();
+
+            log.info("Successfully fetched {} unique medicines for inpatientId: {}", responseList.size(), inpatientId);
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching unique medicines in MAR log for inpatientId: {}", inpatientId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
 }
+

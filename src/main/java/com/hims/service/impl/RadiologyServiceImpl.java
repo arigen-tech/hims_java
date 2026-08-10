@@ -5,6 +5,7 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.helperUtil.HelperUtils;
 import com.hims.projection.RadiologyProjection;
 import com.hims.request.*;
 import com.hims.response.*;
@@ -90,6 +91,9 @@ public class RadiologyServiceImpl implements RadiologyService {
     private RadStudyReportRepository radStudyReportRepository;
     @Autowired
     private TransactionSequenceService transactionSequenceService;
+
+    @Autowired
+    private HelperUtils helperUtils;
 
 
     @Override
@@ -423,10 +427,6 @@ public class RadiologyServiceImpl implements RadiologyService {
         return  billingDetailRepository.save(billingDetail);
     }
 
-    private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
-        int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
-        return count > 0 ? "F" : "N";
-    }
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -568,7 +568,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         visit.setLastChgDate(Instant.now());
         visit.setDisplayPatientStatus("wp");
 
-        String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), Instant.now());
+        String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
         visit.setVisitType(visitType);
 
 

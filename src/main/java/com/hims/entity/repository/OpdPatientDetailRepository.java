@@ -132,4 +132,9 @@ public interface OpdPatientDetailRepository extends JpaRepository<OpdPatientDeta
             @Param("mobileNo") String mobileNo,
             Pageable pageable
     );
+
+
+
+
+
 }
