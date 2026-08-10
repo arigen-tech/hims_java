@@ -368,7 +368,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         visit.setVisitDate(visitDate);
         visit.setLastChgDate(visitDate);
         visit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS);
-        String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), visitDate);
+        String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
         visit.setVisitType(visitType);
 
         return visitRepository.save(visit);
@@ -813,9 +813,5 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         }
     }
 
-    private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
-        int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
-        return count > 0 ? AppConstants.STATUS_F : AppConstants.STATUS_N;
-    }
 
 }

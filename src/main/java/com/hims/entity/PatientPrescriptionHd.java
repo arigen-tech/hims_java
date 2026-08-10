@@ -81,5 +81,8 @@ public class PatientPrescriptionHd {
     @JoinColumn(name = "visit_id")
     private Visit visit;
 
+    @Column(name = "prescription_number", length = 100)
+    private String prescriptionNumber;
+
 
 }

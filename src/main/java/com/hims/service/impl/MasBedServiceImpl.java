@@ -24,6 +24,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import static com.hims.constants.AppConstants.*;
+
 @Slf4j
 @Service
 public class MasBedServiceImpl implements MasBedService {
@@ -45,12 +47,12 @@ public class MasBedServiceImpl implements MasBedService {
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
+                return ResponseUtils.createNotFoundResponse(MSG_CURRENT_USER_NOT_FOUND, HttpStatus.NOT_FOUND.value());
             }
 
             MasBed masBed = new MasBed();
             masBed.setBedNumber(request.getBedNumber());
-            masBed.setStatus("y");
+            masBed.setStatus(STATUS_ACTIVE);
             masBed.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
             masBed.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
             masBed.setLastUpdateDate(LocalDate.now());
@@ -84,7 +86,7 @@ public class MasBedServiceImpl implements MasBedService {
             log.error("addMasBed() Error :: ", e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
-                    "Internal Server Error",
+                    MSG_INTERNAL_ERROR,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -95,7 +97,7 @@ public class MasBedServiceImpl implements MasBedService {
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
+                return ResponseUtils.createNotFoundResponse(MSG_CURRENT_USER_NOT_FOUND, HttpStatus.NOT_FOUND.value());
             }
 
             MasBed masBed = masBedRepository.findById(id)
@@ -134,7 +136,7 @@ public class MasBedServiceImpl implements MasBedService {
             log.error("updateMasBed() Error :: ", e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
-                    "Internal Server Error",
+                    MSG_INTERNAL_ERROR,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -145,7 +147,7 @@ public class MasBedServiceImpl implements MasBedService {
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
+                return ResponseUtils.createNotFoundResponse(MSG_CURRENT_USER_NOT_FOUND, HttpStatus.NOT_FOUND.value());
             }
 
             MasBed masBed = masBedRepository.findById(id)
@@ -165,7 +167,7 @@ public class MasBedServiceImpl implements MasBedService {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {
                     },
-                    "Internal Server Error",
+                    MSG_INTERNAL_ERROR,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -188,7 +190,7 @@ public class MasBedServiceImpl implements MasBedService {
             log.error("findById() Error :: ", e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
-                    "Internal Server Error",
+                    MSG_INTERNAL_ERROR,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -199,10 +201,10 @@ public class MasBedServiceImpl implements MasBedService {
         try {
             List<MasBed> masBeds;
 
-            if (flag == 0) {
+            if (flag == FLAG_ALL) {
                 masBeds = masBedRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
-            } else if (flag == 1) {
-                masBeds = masBedRepository.findByStatusIgnoreCase("y");
+            } else if (flag == FLAG_ACTIVE_ONLY) {
+                masBeds = masBedRepository.findByStatusIgnoreCase(STATUS_ACTIVE);
             } else {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
@@ -220,7 +222,7 @@ public class MasBedServiceImpl implements MasBedService {
             log.error("getAllMasBed Error :: ", e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
-                    "Internal Server Error",
+                    MSG_INTERNAL_ERROR,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }

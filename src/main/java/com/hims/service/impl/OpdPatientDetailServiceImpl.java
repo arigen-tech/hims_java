@@ -92,6 +92,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasQuestionHeadingRepository masQuestionHeadingRepository;
     private final OpdQuestionMasterRepository opdQuestionMasterRepository;
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
+    private final TransactionSequenceService transactionSequenceService;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -115,8 +116,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     @Autowired
     HelperUtils helperUtils;
 
-    @Autowired
-    TransactionSequenceService transactionSequenceService;
 
 
     @Override
@@ -468,7 +467,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             if (request.getInvestigation().stream().anyMatch(i -> i == null || i.getInvestigationDate() == null)) {
                 throw new SDDException("investigation", 400, "Investigation date cannot be null");
             }
-            LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
+            LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId)
+                    .orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
 
             // Group investigations by department
             Map<Long, Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>>> grouped = request.getInvestigation().stream().filter(Objects::nonNull).collect(Collectors.groupingBy(inv -> helperUtils.getDepartmentFromInvestigation(inv.getId()), Collectors.groupingBy(OpdPatientDetailCreateRequest.Investigation::getInvestigationDate)));
@@ -670,6 +670,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         hd.setTotalGst(BigDecimal.ZERO);
         hd.setTotalDiscount(BigDecimal.ZERO);
         hd.setNetAmount(BigDecimal.ZERO);
+        hd.setPrescriptionNumber(transactionSequenceService.generateTransactionNumber(HMISTransaction.PRESCRIPTION_NO, user.getHospital().getId()));
         hd.setVisit(visit);
 
         String medicineBilling = user.getHospital().getMedicineBilling();
@@ -685,6 +686,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private void closeVisit(Visit visit) {
         if (visit != null) {
             visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
+            visit.setDoctor(authUtil.getCurrentUser());
+            visit.setDoctorName(authUtil.getCurrentUser().getFullName());
             visitRepository.save(visit);
             log.info("Closed visit with ID: {}", visit.getId());
         }
@@ -3284,5 +3287,39 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         );
     }
 
+    @Override
+    public ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(Pageable pageable,String mobileNumber, String patientName, Long hospitalId ) {
+
+        log.info("Fetching OPD reports for visitId: {}, page: {}, size: {}",
+                pageable.getPageNumber(), pageable.getPageSize());
+
+
+            Page<OpdReportListProjection> projections =
+                    visitRepository.getOpdReportsList(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPDTYPE, mobileNumber, patientName, pageable);
+
+            Page<OpdReportListResponse> responses = projections.map(projection -> {
+
+                OpdReportListResponse response = new OpdReportListResponse();
+
+                response.setVisitId(projection.getVisitId());
+                response.setPatientId(projection.getPatientId());
+                response.setPatientName(projection.getPatientName());
+                response.setMobileNumber(projection.getMobileNumber());
+                response.setUhid(projection.getUhid());
+                response.setRelation(projection.getRelation());
+                response.setGender(projection.getGender());
+                response.setAge(projection.getAge());
+                response.setSpecialty(projection.getSpecialty());
+                response.setDoctorName(projection.getDoctorName());
+                response.setVisitDateTime(projection.getVisitDateTime());
+
+                return response;
+            });
+
+            return ResponseUtils.createSuccessResponse(
+                    responses,
+                    new TypeReference<>() {}
+            );
+    }
 }
 
