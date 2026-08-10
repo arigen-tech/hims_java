@@ -15,11 +15,11 @@ public class IpBedAllocation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "bed_allocation_id", nullable = false)
+    @Column(name = "bed_allocation_id")
     private Long bedAllocationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ip_admission_id", nullable = false)
+    @JoinColumn(name = "ip_admission_id")
     private Inpatient inpatient;
 
     @ManyToOne(fetch = FetchType.LAZY)

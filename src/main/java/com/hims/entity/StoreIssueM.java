@@ -67,4 +67,8 @@ public class StoreIssueM {
 
     @Column(name = "issued_date")
     private LocalDateTime issuedDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inpatient_id")
+    private Inpatient inpatient;
 }

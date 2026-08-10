@@ -120,8 +120,22 @@ public class MasStoreItem {
     @Column(name = "drug_schedule", length = 10)
     private String drugSchedule;
 
+    @Column(name = "high_value_drug", length = 1)
+    private String highValueDrug;
 
+    @Column(name = "available_in_opd", length = 1)
+    private String availableInOpd;
 
+    @Column(name = "available_in_ipd", length = 1)
+    private String availableInIpd;
 
+    @Column(name = "available_in_emergency", length = 1)
+    private String availableInEmergency;
+
+    @Column(name = "available_in_ot", length = 1)
+    private String availableInOt;
+
+    @Column(name = "dosage_unit", length = 50)
+    private String dosageUnit;
 
 }

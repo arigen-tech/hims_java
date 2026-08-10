@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.helperUtil.HelperUtils;
@@ -1967,14 +1968,14 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 log.debug("Fetching appointment history by patient Id and  using native query");
 
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId, patientId,null,departmentIds, includeHistoryFlag
+                        hospitalId, patientId,null,departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase()
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
             } else {
                 log.debug("Fetching upcoming appointments by mobile and department ");
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId,null,normalizedMobileNo,departmentIds, includeHistoryFlag
+                        hospitalId,null,normalizedMobileNo,departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase()
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();

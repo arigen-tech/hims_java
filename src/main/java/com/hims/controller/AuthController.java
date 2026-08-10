@@ -3,6 +3,7 @@ package com.hims.controller;
 
 import com.hims.entity.User;
 import com.hims.entity.repository.UserRepo;
+import com.hims.request.ContextSwitchRequest;
 import com.hims.jwt.JwtRequest;
 import com.hims.jwt.JwtResponce;
 import com.hims.request.PasswordChangeReq;
@@ -59,6 +60,14 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<JwtResponce>> login(@RequestBody JwtRequest request) {
         return new ResponseEntity<>(authService.login(request), HttpStatus.OK);
+    }
+
+    @Operation(summary = "This API is used to switch active department for the logged-in user.")
+    @PostMapping("/switchContext")
+    public ResponseEntity<ApiResponse<JwtResponce>> switchContext(
+            @RequestBody ContextSwitchRequest request,
+            Principal principal) {
+        return new ResponseEntity<>(authService.switchContext(request, principal), HttpStatus.OK);
     }
 
 //    @Operation(summary = "This API is used to Login with OTP for get Token for access any API.")

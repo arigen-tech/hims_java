@@ -20,20 +20,5 @@ public class PendingSampleHeaderResponse {
     private String priority;
     private Long orderHdId;
     private Long visitId;
-//    private Long investigationId;
-//    private String investigation;
-//    private String sample;
-//    private String collection;
-//    private String subChargeCode;
-//    private Long subChargeCodeId;
-//    private String orderNo;
-//    private Long sampleId;
-//    private Long mainChargcodeId;
-//    private Long collectionId;
-//    private String orderTime;
-    //    private String name;
-
-
-
-
+    private Long inPatientId;
 }

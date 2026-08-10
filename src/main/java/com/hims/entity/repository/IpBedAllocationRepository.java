@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation,Long> {
@@ -35,14 +36,24 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
             ELSE NULL
         END AS patientName,
 
-       
         r.room_name AS roomName,
         b.bed_number AS bedNumber,
         i.admission_date AS admitDate,
-                r.room_id AS roomId,
-                b.bed_id AS bedId,
-                i.consent_taken_by AS doctor,
-               
+        r.room_id AS roomId,
+        b.bed_id AS bedId,
+
+        TRIM(
+            CONCAT_WS(
+                ' ',
+                NULLIF(u.first_name, ''),
+                NULLIF(u.middle_name, ''),
+                NULLIF(u.last_name, '')
+            )
+        ) AS doctor,
+
+        ide.diagnosis_id AS diagnosisId,
+        ide.diagnosis_type AS diagnosisType,
+        ide.diagnosis_text AS diagnosis,
 
         CASE
             WHEN i.admission_date IS NOT NULL THEN
@@ -65,9 +76,12 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
 
     LEFT JOIN ip_bed_allocation iba
         ON iba.bed_id = b.bed_id
-       
+        AND iba.allocation_end_date IS NULL
+
     LEFT JOIN inpatient i
         ON i.inpatient_id = iba.ip_admission_id
+        AND i.admission_status = :activeAdmissionStatusId
+        AND i.admitting_ward_id = :wardId
 
     LEFT JOIN patient p
         ON p.patient_id = i.patient
@@ -81,6 +95,21 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
     LEFT JOIN mas_admission_status mds
         ON mds.admission_status_id = i.admission_status
 
+    LEFT JOIN LATERAL (
+        SELECT
+            diagnosis_id,
+            diagnosis_type,
+            diagnosis_text,
+            recorded_by
+        FROM ip_diagnosis_entry
+        WHERE inpatient_id = i.inpatient_id
+        ORDER BY diagnosis_datetime DESC, diagnosis_id DESC
+        LIMIT 1
+    ) ide ON TRUE
+
+    LEFT JOIN users u
+        ON u.user_id = ide.recorded_by
+
     WHERE w.ward_id = :wardId
 
     ORDER BY
@@ -88,6 +117,10 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
         iba.allocation_start_date DESC
     """, nativeQuery = true)
     List<WardWiseDetailsProjection> getWardWiseDetails(
-            @Param("wardId") Long wardId
+            @Param("wardId") Long wardId,
+            @Param("activeAdmissionStatusId") Long activeAdmissionStatusId
     );
+    Optional<IpBedAllocation> findFirstByInpatient_InpatientIdAndAllocationEndDateIsNullOrderByAllocationStartDateDesc(Long inpatientId);
+
+    Optional<IpBedAllocation> findTopByInpatient_InpatientIdOrderByAllocationStartDateDesc(Long inpatientId);
 }

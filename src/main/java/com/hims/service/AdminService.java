@@ -10,7 +10,7 @@ import java.util.List;
 public interface AdminService {
 
 
-    ApiResponse<AppsetupResponse> createAppointmentSetup(AppointmentReq request);
+    ApiResponse<AppsetupResponse> createOrUpdateAppointmentSetup(AppointmentReq request);
 
     ApiResponse<AppSetupDTO> getAppointmentSetup(Long deptId, Long doctorId, Long sessionId);
 

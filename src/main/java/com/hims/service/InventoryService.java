@@ -34,7 +34,7 @@ public interface InventoryService {
     ApiResponse<Page<StoreStockLedgerReportResponse>> getStoreStockLedgerReport(int page, int size, Long hospitalId, Long itemId, String batchNo);
     ApiResponse<List<MasCommonStatusResponse>> getStatusMapForIndentTracking();
 
-    ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(Long sectionId,String keyword, int page, int size) ;
+    ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String sectionCode,String keyword, int page, int size) ;
     ApiResponse<List<BatchNameForStockResponse>> getBatchesFromItemId(Long itemId,Long hospitalId,Long departmentId);
     ApiResponse<Long> getIssueMIdFromIndentMId(Long indentMId);
     ApiResponse<Long> getReceiveMIdFromIndentMId(Long indentMId);

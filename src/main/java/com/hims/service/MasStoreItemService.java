@@ -18,6 +18,14 @@ public interface MasStoreItemService {
 
     ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(int flag);
 
+    ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPaginated(
+            int flag,
+            int page,
+            int size,
+            String nomenclature,
+            Integer itemClassId,
+            Integer masItemCategoryid);
+
     ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request);
 
     ApiResponse<MasStoreItemResponse> changeMasStoreItemStatus(Long id, String status);
@@ -45,5 +53,18 @@ public interface MasStoreItemService {
     ApiResponse<List<NonDrugStoreItemResponse>> getAllNonDrugItem();
 
     ApiResponse<NonDrugStoreItemResponse> getNonDrugItemById(Long id);
+
+    ApiResponse<Page<NonDrugStoreItemResponse>> medicalConsumableItem(
+            int page,
+            int size,
+            String  itemName,
+            Integer sectionId,
+            Integer itemClassId);
+    ApiResponse<Page<NonDrugStoreItemResponse>> nonMedicalConsumableItem(
+            int page,
+            int size,
+            String  itemName,
+            Integer sectionId,
+            Integer itemClassId);
 }
 

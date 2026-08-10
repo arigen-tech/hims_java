@@ -119,6 +119,8 @@ public class AppConstants {
     public static  final String LAB_ORDER_DETAIL_NOT_FOUND_ERR_MSG="Invalid order detail Id , order detail not found";
     public static final String RESULT_VALIDATION_SUCCESS_MSG="Result entry validation updated successfully";
     public  static  final String VISIT_NOT_FOUND_ERR_MSG="Invalid visit Id, Visit not found";
+    public  static  final String INPATIENT_NOT_FOUND_ERR_MSG="Invalid Inpatient Id, Inpatient not found";
+    public  static  final String INPATIENT_AND_VISIT_NOT_FOUND_ERR_MSG="Visit/Inpatient not found";
 
     public  static  final  String STATUS_S="S";
     public static final String STATUS_P="P";
@@ -130,6 +132,10 @@ public class AppConstants {
     public static final String DISPLAY_PATIENT_STATUS = "wp";
     public static final String PAYMENT_PARTIAL_PENDING = "P";
     public static final String PACKAGE = "P";
+    public static final String BILLING_REFUND_STATUS_COMPLETED_CODE = STATUS_Y;
+    public static final String BILLING_REFUND_STATUS_PENDING_CODE = STATUS_N;
+    public static final String BILLING_REFUND_STATUS_COMPLETED_LABEL = "COMPLETED";
+    public static final String BILLING_REFUND_STATUS_PENDING_LABEL = "PENDING";
 
 
     // Billing Template
@@ -173,16 +179,50 @@ public class AppConstants {
     //Ipd
 
     public static final String IPD_ADMISSION_FLAG= "Y";
+    public static final String IPD_BED_TRANSFER_REQUEST= "P";
+    public static final String IPD_BED_TRANSFER_STATUS_COMPLETE= "C";
+    public static final String IPD_BED_TRANSFER_STATUS_REJECT= "R";
+    public static final String WORKING_DIAGNOSIS_TYPE= "W";
+    public static final String ICD_DIAGNOSIS_TYPE= "I";
+    public static final String DIAGNOSIS_STATUS= "A";
+    public static final String IO_TYPE_I= "I";
+
+    public static final String IO_TYPE_O= "O";
+    public static final String IP_DISCHARGE_SUMMARY_STATUS_DRAFT= "D";
+    public static final String IP_DISCHARGE_SUMMARY_STATUS_SUMMIT= "S";
+    public static final String IP_RECEIPT_STATUS= "A";
+
+
+
+
+
+
 
     public static final String OPDTYPE = "OPD";
     public static final String LABTYPE = "LAB";
     public static final String RADIOTYPE = "RAD";
 
+    public static final String PATIENT_NOT_APPLICABLE_FOR_SERVICE_REGISTRATION = "The patient is currently admitted. Service registration is not allowed for this patient.";
+    public static final String PATIENT_STATUS_ADMITTED = "ADMITTED";
+
+    public static final String APPOINTMENT_SETUP_SUCCESS_MSG = "Appointment setup created successfully";
+    public static final String APPOINTMENT_UPDATE_SUCCESS_MSG = "Appointment setup updated successfully";
+
+    public static final String DOCTOR_ROSTER_NOT_FOUND_MSG = "Doctor roster is not created yet. Please create a weekly roster Mon-Sat before taking appointments.";
+    public static final String CONSULTATION_FEE_NOT_SET_MSG = "Consultation fee not set for this doctor in selected department. Validate tariff before confirming appointment.";
+    public static final String SOURCE_TYPE_OPD = "OPD";
+    public static final String SOURCE_TYPE_IPD = "IPD";
+
+    public static final String SOURCE_LAB = "lab source";
+    public static final String INPATIENT_ISSUE = "IPD_ISSUE";
 
 
 
 
 
+    public static final String ORDER_HD_NOT_FOUND_MSG = "Invalid order Id , Order Hd Id not found";
+
+    public static final String DUPLICATE_APPOINTMENT_MSG = "Patient already has an appointment with the same doctor on this day.";
 
 
     private AppConstants() {

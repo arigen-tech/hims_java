@@ -596,7 +596,7 @@ public class ReportController {
         Map<String, Object> params = new HashMap<>();
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         params.put("hospital_id", hospitalId);
-        params.put("department_id", departmentId);
+        params.put("deptId", departmentId);
         params.put("from_date", safeFromDate);
         params.put("to_date", safeToDate);
         params.put("item_id", itemId);
@@ -1563,6 +1563,210 @@ public class ReportController {
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/ipDailyCaseSheet", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintIpDailyCaseSheet(
+            @RequestParam Integer inPatientId,
+            @RequestParam String flag){
+        Map<String , Object> params = new HashMap<>();
+        params.put("inPatientId", inPatientId);
+        params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_IPD + ReportConstants.IPD_SUB_REPORT_DIR)).toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_DAILY_CASE_SHEET_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf,ReportConstants.IP_DAILY_CASE_SHEET_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_DAILY_CASE_SHEET_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/ipVitalsReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintIpVitalsReport(
+            @RequestParam Integer inPatientId,
+            @RequestParam String flag){
+        Map<String , Object> params = new HashMap<>();
+        params.put("inPatientId", inPatientId);
+        params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_IPD + ReportConstants.IPD_SUB_REPORT_DIR)).toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_VITALS_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf,ReportConstants.IP_VITALS_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_VITALS_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/ipInvestigationReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintIpInvestigationReport(
+            @RequestParam Integer inPatientId,
+            @RequestParam String flag){
+        Map<String , Object> params = new HashMap<>();
+        params.put("inPatientId", inPatientId);
+        params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_IPD + ReportConstants.IPD_SUB_REPORT_DIR)).toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_INVESTIGATION_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf,ReportConstants.IP_INVESTIGATION_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_INVESTIGATION_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/dischageSummary", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintDischargeSummary(
+            @RequestParam Integer inPatientId,
+            @RequestParam String flag){
+        Map<String , Object> params = new HashMap<>();
+        params.put("inPatientId", inPatientId);
+        params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_IPD + ReportConstants.IPD_SUB_REPORT_DIR)).toString());
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.DISCHARGE_SUMMARY_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf,ReportConstants.DISCHARGE_SUMMARY_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.DISCHARGE_SUMMARY_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/advanceReceipt", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintAdvanceReceipt(
+            @RequestParam Integer receiptId,
+            @RequestParam String flag){
+        Map<String , Object> params = new HashMap<>();
+        params.put("receiptId", receiptId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.ADVANCE_RECEIPT_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf,ReportConstants.ADVANCE_RECEIPT_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.ADVANCE_RECEIPT_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/drugMaster", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintDrugMaster(
+            @RequestParam Integer sectionId,
+            @RequestParam String flag){
+        Long safeSectionId = sectionId != null ? sectionId: 0L;
+        Map<String , Object> params = new HashMap<>();
+        params.put("sectionId", safeSectionId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY,ReportConstants.DRUG_MASTER_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf,ReportConstants.DRUG_MASTER_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY,ReportConstants.DRUG_MASTER_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/medicalNonMedicalConsumable", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintAdvanceReceipt(
+            @RequestParam Integer itemTypeId,
+            @RequestParam Integer sectionId,
+            @RequestParam String flag){
+        Long safeSectionId = sectionId != null ? sectionId: 0L;
+        Map<String , Object> params = new HashMap<>();
+        params.put("receiptId", itemTypeId);
+        params.put("sectionId", safeSectionId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.ADVANCE_RECEIPT_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf,ReportConstants.ADVANCE_RECEIPT_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.ADVANCE_RECEIPT_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
                 return ResponseEntity.badRequest()
                         .body(ResponseUtils.createNotFoundResponse(
                                 ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Item_receiving_report" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="fa93e4ad-42b6-4379-8323-d95d3181bb13">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
@@ -20,6 +20,7 @@
 	<parameter name="item_id" class="java.lang.Long">
 		<defaultValueExpression><![CDATA[new Long(0)]]></defaultValueExpression>
 	</parameter>
+	<parameter name="deptId" class="java.lang.Long"/>
 	<queryString>
 		<![CDATA[select distinct
 	mh.hospital_name,
@@ -39,7 +40,8 @@
 	sirt.rejection_reason,
 	md.department_name as to_department,
 	md1.department_name as from_department,
-	hd.received_by
+	hd.received_by,
+	hd.received_date 
 from store_internal_indent_m hd
 left join store_internal_indent_t dt on hd.indent_m_id = dt.indent_m_id
 left join store_issue_t sit on dt.indent_t_id = sit.indent_t_id
@@ -48,9 +50,10 @@ left join mas_store_item msi on dt.item_id = msi.item_id
 left join mas_hospital mh on msi.hospital_id = mh.hospital_id
 left join mas_department md on hd.to_dept_id = md.department_id
 left join mas_department md1 on hd.from_dept_id = md1.department_id
-where (cast($P{from_date} as date) is null or hd.received_date >= cast($P{from_date} as date))
-and (cast($P{to_date} as date) is null or hd.received_date <= cast($P{to_date} as date))
-and dt.item_id = $P{item_id}]]>
+where (cast($P{from_date} as date) is null or hd.received_date >= cast($P{from_date} AS date))
+and (cast($P{to_date} as date) is null or hd.received_date < cast($P{to_date} AS date) + interval '1 day')
+and dt.item_id = $P{item_id}
+and hd.from_dept_id = $P{deptId}]]>
 	</queryString>
 	<field name="hospital_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
@@ -137,6 +140,11 @@ and dt.item_id = $P{item_id}]]>
 		<property name="com.jaspersoft.studio.field.label" value="received_by"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="store_internal_indent_m"/>
 	</field>
+	<field name="COLUMN_19" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="received_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="received_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="store_internal_indent_m"/>
+	</field>
 	<variable name="S.No." class="java.lang.Integer" calculation="Count">
 		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
 	</variable>
@@ -168,7 +176,7 @@ and dt.item_id = $P{item_id}]]>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{to_department}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$F{from_department}]]></textFieldExpression>
 			</textField>
 		</band>
 	</title>
@@ -211,7 +219,7 @@ and dt.item_id = $P{item_id}]]>
 				</textElement>
 				<text><![CDATA[Report Range]]></text>
 			</staticText>
-			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
 				<reportElement x="98" y="58" width="52" height="14" uuid="81327fb1-5de1-4639-9f9f-62d8537502ff"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
@@ -247,7 +255,9 @@ and dt.item_id = $P{item_id}]]>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="87" y="58" width="7" height="14" uuid="4091e475-9cb3-4f6a-a781-10ceb89a903e"/>
+				<reportElement x="87" y="58" width="7" height="14" uuid="4091e475-9cb3-4f6a-a781-10ceb89a903e">
+					<printWhenExpression><![CDATA[$P{from_date} != null && $P{to_date} != null]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
@@ -269,7 +279,7 @@ and dt.item_id = $P{item_id}]]>
 				</textElement>
 				<text><![CDATA[to]]></text>
 			</staticText>
-			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
 				<reportElement x="162" y="58" width="70" height="14" uuid="97691f2f-859b-4936-b563-37d191502541"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
@@ -422,7 +432,7 @@ and dt.item_id = $P{item_id}]]>
 		</band>
 	</columnHeader>
 	<detail>
-		<band height="35" splitType="Stretch">
+		<band height="31" splitType="Stretch">
 			<textField>
 				<reportElement x="2" y="1" width="18" height="21" uuid="557f1bc4-2b43-4544-8feb-de19fdb210d3"/>
 				<textElement>
@@ -557,7 +567,7 @@ and dt.item_id = $P{item_id}]]>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{from_department}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$F{to_department}]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>

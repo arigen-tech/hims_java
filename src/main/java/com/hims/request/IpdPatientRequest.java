@@ -129,18 +129,27 @@ public class IpdPatientRequest {
     }
 
 
-// Financial Details
-
-    private Long paymentType;
-    private String advanceCollected;
-    private BigDecimal advanceAmount;
-    private Long paymentMode;
     private String patientName;
     private String uhid;
+
 
     // Doctor & Diagnosis
     private Long departmentId;
     private Long treatingDoctor;
     private String workingDiagnosis;
+    List<PaymentRequest> paymentRequests;
+
+    @Getter
+    @Setter
+    public static class PaymentRequest {
+        // Financial Details
+        private Long paymentType;
+        private String advanceCollected;
+        private BigDecimal advanceAmount;
+        private Long paymentMode;
+    }
+    private BigDecimal estimationCost;
+
+// Financial Details
 
 }

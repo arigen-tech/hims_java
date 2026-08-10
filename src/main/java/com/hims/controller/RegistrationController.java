@@ -102,16 +102,20 @@ public class RegistrationController {
     @GetMapping("/checkDuplicatePatient")
     public ResponseEntity<Boolean> checkDuplicatePatient(
             @RequestParam String firstName,
-            @RequestParam String dob,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dob,
             @RequestParam Long gender,
             @RequestParam String mobile,
             @RequestParam Long relation) {
-        log.info("GET /registration/checkDuplicatePatient called");
-        boolean exists = patientRepository.existsByPatientFnAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(
-                firstName.trim(), LocalDate.parse(dob), gender, mobile.trim(), relation);
+
+        log.info(
+                "Duplicate patient check request received: firstName={}, dob={}, gender={}, mobile={}, relation={}",
+                firstName, dob, gender, mobile, relation
+        );
+
+        boolean exists = registrationService.checkDuplicatePatient(firstName, dob, gender, mobile, relation);
+        log.info("Duplicate patient check completed, exists={}", exists);
         return ResponseEntity.ok(exists);
     }
-
     /**
      * Get patient full details for follow-up
      * @param patientId the unique ID of the patient (required)

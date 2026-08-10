@@ -6,21 +6,16 @@ import com.hims.entity.*;
 import com.hims.entity.projection.PrescriptionDetailProjection;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
-import com.hims.mapper.PaidCancelledAppointmentMapper;
+import com.hims.helperUtil.HelperUtils;
 import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
-import com.hims.service.OpdEntDetailsService;
-import com.hims.service.OpdObgDetailsService;
-import com.hims.service.OpdOpthDetailsService;
-import com.hims.service.OpdPatientDetailService;
-import com.hims.utils.AuthUtil;
-import com.hims.utils.RandomNumGenerator;
-import com.hims.utils.ResponseUtils;
-import com.hims.utils.StockFound;
+import com.hims.service.*;
+import com.hims.utils.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
@@ -68,23 +63,15 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     private final PatientPrescriptionDtRepository patientPrescriptionDtRepository;
 
-    private final RandomNumGenerator randomNumGenerator;
-
     private final AuthUtil authUtil;
 
     private final MasStoreItemRepository masStoreItemRepository;
-
-    private final ProcedureDetailsRepository procedureDetailsRepository;
 
     private final MasCareLevelRepo masCareLevelRepository;
 
     private final MasWardCategoryRepository masWardCategoryRepository;
 
     private final MasDepartmentRepository masDepartmentRepository;
-
-    private final BillingHeaderRepository billingHeaderRepository;
-
-    private final BillingDetailRepository billingDetailRepository;
 
     private final LabOrderTrackingStatusRepository labOrderTrackingStatusRepository;
 
@@ -94,13 +81,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     private final MasServiceCategoryRepository masServiceCategoryRepository;
 
-    private final PatientPrescriptionHdRepository prescriptionHdRepository;
-
     private final PatientPrescriptionDtRepository prescriptionDtRepository;
-
-    private final MasSubChargeCodeRepository subChargeCodeRepository;
-    private final MasHospitalRepository masHospitalRepository;
-
 
     private final OpdOpthDetailsService opdOpthDetailsService;
     private final OpdObgDetailsService opdObgDetailsService;
@@ -111,8 +92,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasQuestionHeadingRepository masQuestionHeadingRepository;
     private final OpdQuestionMasterRepository opdQuestionMasterRepository;
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
-    private final PaidCancelledAppointmentMapper paidCancelledAppointmentMapper;
-
+    private final TransactionSequenceService transactionSequenceService;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -131,13 +111,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     @Value("${app.laboratoryDepartment}")
     private Integer laboratoryDepartment;
-    @Value("${app.opdDepartmentType}")
-    private Long departmentTypeOpd;
 
 
-    public String createOrderNum() {
-        return randomNumGenerator.generateOrderNumber("OPD", true, true);
-    }
+    @Autowired
+    HelperUtils helperUtils;
+
+
 
     @Override
     public ApiResponse<OpdPatientVitalResponse> getOpdPatientByVisit(Long visitId) {
@@ -488,15 +467,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             if (request.getInvestigation().stream().anyMatch(i -> i == null || i.getInvestigationDate() == null)) {
                 throw new SDDException("investigation", 400, "Investigation date cannot be null");
             }
-            String orderNum = createOrderNum();
-            LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
+            LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId)
+                    .orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
 
             // Group investigations by department
-            Map<Long, Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>>> grouped = request.getInvestigation().stream().filter(Objects::nonNull).collect(Collectors.groupingBy(inv -> getDepartmentFromInvestigation(inv.getId()), Collectors.groupingBy(OpdPatientDetailCreateRequest.Investigation::getInvestigationDate)));
+            Map<Long, Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>>> grouped = request.getInvestigation().stream().filter(Objects::nonNull).collect(Collectors.groupingBy(inv -> helperUtils.getDepartmentFromInvestigation(inv.getId()), Collectors.groupingBy(OpdPatientDetailCreateRequest.Investigation::getInvestigationDate)));
 
             if (grouped.containsKey(Long.valueOf(laboratoryDepartment))) {
                 log.info("Processing LAB investigations");
-                processLabInvestigations(grouped.get(Long.valueOf(laboratoryDepartment)), patient, visit, user, deptId, orderNum, labOrderedStatus);
+                processLabInvestigations(grouped.get(Long.valueOf(laboratoryDepartment)), patient, visit, user, deptId,
+                        transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, user.getHospital().getId()), labOrderedStatus);
                 hasLabInvestigations = true;
             }
             if (grouped.containsKey(Long.valueOf(radiologyDepartment))) {
@@ -553,30 +533,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         });
     }
 
-    private Long getDepartmentFromInvestigation(Long investigationId) {
-        if (investigationId == null) {
-            throw new SDDException("investigation", 400, "Investigation ID cannot be null");
-        }
-
-        DgMasInvestigation investigation = dgMasInvestigationRepository.findById(investigationId).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found with ID: " + investigationId));
-
-        if (investigation.getSubChargeCodeId() == null) {
-            throw new SDDException("subcharge", 400, "Subcharge code not configured for investigation ID: " + investigationId);
-        }
-
-        Long subChargeId = investigation.getSubChargeCodeId().getSubId();
-        if (subChargeId == null) {
-            throw new SDDException("subcharge", 400, "SubCharge ID is null for investigation ID: " + investigationId);
-        }
-
-        MasSubChargeCode subChargeCode = subChargeCodeRepository.findById(subChargeId).orElseThrow(() -> new SDDException("subcharge", 404, "Subcharge code not found for investigation ID: " + investigationId));
-
-        if (subChargeCode.getMasDepartment() == null) {
-            throw new SDDException("department", 400, "Department not configured for subcharge code");
-        }
-
-        return subChargeCode.getMasDepartment().getId();
-    }
 
     private void validateCreateRequest(OpdPatientDetailCreateRequest request) {
         if (request == null) {
@@ -714,6 +670,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         hd.setTotalGst(BigDecimal.ZERO);
         hd.setTotalDiscount(BigDecimal.ZERO);
         hd.setNetAmount(BigDecimal.ZERO);
+        hd.setPrescriptionNumber(transactionSequenceService.generateTransactionNumber(HMISTransaction.PRESCRIPTION_NO, user.getHospital().getId()));
         hd.setVisit(visit);
 
         String medicineBilling = user.getHospital().getMedicineBilling();
@@ -729,6 +686,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private void closeVisit(Visit visit) {
         if (visit != null) {
             visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
+            visit.setDoctor(authUtil.getCurrentUser());
+            visit.setDoctorName(authUtil.getCurrentUser().getFullName());
             visitRepository.save(visit);
             log.info("Closed visit with ID: {}", visit.getId());
         }
@@ -1228,6 +1187,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         handleRecallFollowUp(opd, request);
         handleRecallReferral(opd, request);
         opdPatientDetailRepository.save(opd);
+        handleRecallPregnancyDetails(opd, request.getPregnancyDetails(), user);
         replaceIcdDiagnosis(request, opd, user);
         replaceInvestigations(request, patient, visit, user);
         replaceTreatments(request, patient, visit, user);
@@ -1306,7 +1266,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         for (RecallOpdPatientDetailRequest.InvestigationRequest inv : request.getInvestigations()) {
             if (inv == null || inv.getInvestigationId() == null || inv.getInvestigationDate() == null) continue;
 
-            Long departmentId = getDepartmentFromInvestigation(inv.getInvestigationId());
+            Long departmentId = helperUtils.getDepartmentFromInvestigation(inv.getInvestigationId());
             if (departmentId.equals(Long.valueOf(laboratoryDepartment))) {
                 labInvestigations.add(inv);
             } else if (departmentId.equals(Long.valueOf(radiologyDepartment))) {
@@ -1324,7 +1284,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     private void createLabInvestigations(List<RecallOpdPatientDetailRequest.InvestigationRequest> investigations, Patient patient, Visit visit, User user) {
-        String orderNum = createOrderNum();
         LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found"));
 
         Map<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> groupedByDate = investigations.stream().filter(inv -> inv.getInvestigationDate() != null).collect(Collectors.groupingBy(RecallOpdPatientDetailRequest.InvestigationRequest::getInvestigationDate));
@@ -1337,7 +1296,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             dgOrderHd.setAppointmentDate(appointmentDate);
             dgOrderHd.setOrderDate(LocalDate.now());
             dgOrderHd.setOrderTime(Instant.now());
-            dgOrderHd.setOrderNo(orderNum);
+            dgOrderHd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, user.getHospital().getId()));
             dgOrderHd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             dgOrderHd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
             dgOrderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.equalsIgnoreCase(user.getHospital().getLabBilling()) ? AppConstants.PAYMENT_NOT_PAID.toLowerCase() : AppConstants.PAYMENT_PAID.toLowerCase());
@@ -1417,7 +1376,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 RadOrderDt radOrderDt = new RadOrderDt();
                 radOrderDt.setRadOrderhd(savedRadOrderHd);
                 radOrderDt.setInvestigation(invEntity);
-                radOrderDt.setOrderAccessionNo(createOrderNum());
+                radOrderDt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, user.getHospital().getId()));
                 radOrderDt.setSubChargecode(invEntity.getSubChargeCodeId());
                 radOrderDt.setAppointmentDate(inv.getInvestigationDate());
                 radOrderDt.setLastChgBy(user.getFirstName() + " " + user.getLastName());
@@ -1617,6 +1576,33 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
     }
 
+    private void handleRecallPregnancyDetails(
+            OpdPatientDetail opd,
+            RecallOpdPatientDetailRequest.PregnancyDetails pregnancyDetails,
+            User user
+    ) {
+        if (opd == null || pregnancyDetails == null || opd.getVisit() == null || opd.getPatient() == null) {
+            return;
+        }
+
+        Long visitId = opd.getVisit().getId();
+        OpdPatientPregnancyDetails pregnancyEntity = opdPatientPregnancyDetailsRepository
+                .findByVisit_Id(visitId)
+                .orElseGet(OpdPatientPregnancyDetails::new);
+
+        pregnancyEntity.setVisit(opd.getVisit());
+        pregnancyEntity.setPatient(opd.getPatient());
+        pregnancyEntity.setIsPregnant(pregnancyDetails.getIsPregnant());
+        pregnancyEntity.setLmpDate(pregnancyDetails.getLmpDate());
+        pregnancyEntity.setEdd(pregnancyDetails.getEdd());
+        pregnancyEntity.setCurrentEdd(pregnancyDetails.getCurrentEdd());
+        pregnancyEntity.setGestationPeriod(pregnancyDetails.getGestationPeriod());
+        pregnancyEntity.setLastChgDate(Instant.now());
+        pregnancyEntity.setLastChgBy(user != null ? user.getFullName() : null);
+
+        opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
+    }
+
     private boolean isYes(String flag) {
         return flag != null && flag.equalsIgnoreCase("y");
     }
@@ -1738,7 +1724,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 DgOrderDt savedOrderDt = dgOrderDtRepo.save(dgOrderDt);
                 log.debug("LAB Order Detail saved - Detail ID: {}", savedOrderDt.getId());
 
-//              Billing Details save if need need some more change
+//              Billing Details save if need some more change
 //                BillingDetail billingDetail = new BillingDetail();
 //                billingDetail.setBillingHd(savedBillingHeader);
 //                billingDetail.setBillHd(savedBillingHeader);
@@ -1875,7 +1861,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 RadOrderDt radOrderDt = new RadOrderDt();
                 radOrderDt.setRadOrderhd(savedRadOrderHd);
                 radOrderDt.setInvestigation(invEntity);
-                radOrderDt.setOrderAccessionNo(randomNumGenerator.generateOrderNumber("RAD", true, true));
+                radOrderDt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, currentUser.getHospital().getId()));
                 radOrderDt.setSubChargecode(invEntity.getSubChargeCodeId());
                 radOrderDt.setAppointmentDate(invObj.getInvestigationDate());
                 radOrderDt.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
@@ -2354,6 +2340,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 response.setTreatmentAdvice(opdPatientObj.getTreatmentAdvice());
             }
 
+            if (basicData != null) {
+                response.setPregnancyDetails(
+                        mapPregnancyDetails(
+                                opdPatientPregnancyDetailsRepository.findByVisit_Id(visitId).orElse(null)
+                        )
+                );
+            } else {
+                response.setPregnancyDetails(null);
+            }
+
             // ================= DG / RADIO =================
             response.setLabOrderHds(buildDgOrderHdList(dgOrderHdList));
 
@@ -2598,6 +2594,23 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         // ---------------- FLAGS ----------------
         response.setLabFlag(opd.getLabFlag());
         response.setRadioFlag(opd.getRadioFlag());
+    }
+
+    private OpdPatientRecallResponce.PregnancyDetails mapPregnancyDetails(
+            OpdPatientPregnancyDetails pregnancyDetails
+    ) {
+        if (pregnancyDetails == null) {
+            return null;
+        }
+
+        OpdPatientRecallResponce.PregnancyDetails response =
+                new OpdPatientRecallResponce.PregnancyDetails();
+        response.setIsPregnant(pregnancyDetails.getIsPregnant());
+        response.setLmpDate(pregnancyDetails.getLmpDate());
+        response.setEdd(pregnancyDetails.getEdd());
+        response.setCurrentEdd(pregnancyDetails.getCurrentEdd());
+        response.setGestationPeriod(pregnancyDetails.getGestationPeriod());
+        return response;
     }
 
     private List<OpdPatientRecallResponce.LabOrderHd> buildDgOrderHdList(List<DgOrderHd> hdList) {
@@ -2945,6 +2958,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }
 
 
+
             Page<PreviousOpdPsychiatryHistoryResponse> responsePage = headerPage.map(header -> {
                 PreviousOpdPsychiatryHistoryResponse response = new PreviousOpdPsychiatryHistoryResponse();
                 response.setAssessmentHeaderId(header.getAssessmentHeaderId());
@@ -3211,171 +3225,101 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return opdPsychiatryAssessmentHeaderRepository.save(savedHeader);
     }
 
-    private void handlePregnancyDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails, User user) {
+    private void handlePregnancyDetails(
+            OpdPatientDetail opd,
+            OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails,
+            User user
+    ) {
         if (pregnancyDetails == null) {
             return;
         }
 
-        // Delete existing pregnancy details if any
-        opdPatientPregnancyDetailsRepository.deleteByOpdPatientDetail_OpdPatientDetailsId(opd.getOpdPatientDetailsId());
+        if (opd.getVisit() == null) {
+            throw new IllegalArgumentException(
+                    "Visit is required to save pregnancy details"
+            );
+        }
 
-        // Create new pregnancy details
-        OpdPatientPregnancyDetails pregnancyEntity = OpdPatientPregnancyDetails.builder()
-                .opdPatientDetail(opd)
-                .opdPatientDetailsId(opd.getOpdPatientDetailsId())
-                .visitId(opd.getVisit() != null ? opd.getVisit().getId() : null)
-                .patientId(opd.getPatient() != null ? opd.getPatient().getId() : null)
-                .isPregnant(pregnancyDetails.getIsPregnant())
-                .lmpDate(pregnancyDetails.getLmpDate())
-                .edd(pregnancyDetails.getEdd())
-                .currentEdd(pregnancyDetails.getCurrentEdd())
-                .gestationPeriod(pregnancyDetails.getGestationPeriod())
-                .lastChgDate(Instant.now())
-                .lastChgBy(user.getFullName())
-                .build();
+        if (opd.getPatient() == null) {
+            throw new IllegalArgumentException(
+                    "Patient is required to save pregnancy details"
+            );
+        }
 
-        opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
-        log.info("Saved pregnancy details for OPD patient ID: {}", opd.getOpdPatientDetailsId());
+        Long visitId = opd.getVisit().getId();
+        log.info(
+                "Saving pregnancy details for visitId={}, isPregnant={}, lmpDate={}, edd={}, currentEdd={}, gestationPeriod={}",
+                visitId,
+                pregnancyDetails.getIsPregnant(),
+                pregnancyDetails.getLmpDate(),
+                pregnancyDetails.getEdd(),
+                pregnancyDetails.getCurrentEdd(),
+                pregnancyDetails.getGestationPeriod()
+        );
+
+        OpdPatientPregnancyDetails pregnancyEntity =
+                opdPatientPregnancyDetailsRepository
+                        .findByVisit_Id(visitId)
+                        .orElseGet(OpdPatientPregnancyDetails::new);
+
+        pregnancyEntity.setVisit(opd.getVisit());
+        pregnancyEntity.setPatient(opd.getPatient());
+        pregnancyEntity.setIsPregnant(pregnancyDetails.getIsPregnant());
+        pregnancyEntity.setLmpDate(pregnancyDetails.getLmpDate());
+        pregnancyEntity.setEdd(pregnancyDetails.getEdd());
+        pregnancyEntity.setCurrentEdd(pregnancyDetails.getCurrentEdd());
+        pregnancyEntity.setGestationPeriod(
+                pregnancyDetails.getGestationPeriod()
+        );
+        pregnancyEntity.setLastChgDate(Instant.now());
+        pregnancyEntity.setLastChgBy(
+                user != null ? user.getFullName() : null
+        );
+
+        OpdPatientPregnancyDetails savedEntity =
+                opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
+
+        log.info(
+                "Pregnancy details saved successfully. pregnancyDetailsId: {}, OPD patient ID: {}, visit ID: {}",
+                savedEntity.getPregnancyDetailsId(),
+                opd.getOpdPatientDetailsId(),
+                visitId
+        );
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public ApiResponse<Page<PaidCancelledAppointmentResponse>>
-    getBillingRefundPatientList(
-            int page,
-            int size,
-            String patientName,
-            String mobileNo,
-            String billingService,
-            LocalDate fromDate,
-            LocalDate toDate
-    ) {
+    public ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(Pageable pageable,String mobileNumber, String patientName, Long hospitalId ) {
 
-        try {
-            log.info(
-                    "Fetching billing refund patient list: " +
-                            "page={}, size={}, patientName={}, mobileNo={}, " +
-                            "billingService={}, fromDate={}, toDate={}",
-                    page,
-                    size,
-                    patientName,
-                    mobileNo,
-                    billingService,
-                    fromDate,
-                    toDate
-            );
+        log.info("Fetching OPD reports for visitId: {}, page: {}, size: {}",
+                pageable.getPageNumber(), pageable.getPageSize());
 
-            validatePagination(page, size);
-            validateDateRange(fromDate, toDate);
 
-            patientName = cleanValue(patientName);
-            mobileNo = cleanValue(mobileNo);
+            Page<OpdReportListProjection> projections =
+                    visitRepository.getOpdReportsList(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPDTYPE, mobileNumber, patientName, pageable);
 
-            billingService = cleanValue(billingService);
+            Page<OpdReportListResponse> responses = projections.map(projection -> {
 
-            Pageable pageable = PageRequest.of(page, size);
+                OpdReportListResponse response = new OpdReportListResponse();
 
-            Page<PaidCancelledAppointmentProjection> projectionPage =
-                    visitRepository.getBillingRefundPatientList(
-                            patientName,
-                            mobileNo,
-                            billingService,
-                            fromDate,
-                            toDate,
-                            pageable
-                    );
+                response.setVisitId(projection.getVisitId());
+                response.setPatientId(projection.getPatientId());
+                response.setPatientName(projection.getPatientName());
+                response.setMobileNumber(projection.getMobileNumber());
+                response.setUhid(projection.getUhid());
+                response.setRelation(projection.getRelation());
+                response.setGender(projection.getGender());
+                response.setAge(projection.getAge());
+                response.setSpecialty(projection.getSpecialty());
+                response.setDoctorName(projection.getDoctorName());
+                response.setVisitDateTime(projection.getVisitDateTime());
 
-            Page<PaidCancelledAppointmentResponse> responsePage =
-                    projectionPage.map(paidCancelledAppointmentMapper::mapToResponse);
-
-            log.info(
-                    "Billing refund patient list fetched successfully. " +
-                            "Total records={}",
-                    responsePage.getTotalElements()
-            );
+                return response;
+            });
 
             return ResponseUtils.createSuccessResponse(
-                    responsePage,
-                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
-                    },
-                    "Billing refund patient list fetched successfully"
+                    responses,
+                    new TypeReference<>() {}
             );
-
-        } catch (IllegalArgumentException exception) {
-            log.warn("Invalid billing refund search request: {}", exception.getMessage());
-
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
-                    },
-                    exception.getMessage(),
-                    HttpStatus.BAD_REQUEST.value()
-            );
-
-        } catch (Exception exception) {
-            log.error("Error while fetching billing refund patient list",
-exception);
-
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
-                    },
-                    "Unable to fetch billing refund patient list",
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
-        }
-    }
-
-    private void validatePagination(int page, int size) {
-
-        if (page < 0) {
-            throw new IllegalArgumentException(
-                    "Page number cannot be negative"
-            );
-        }
-
-        if (size <= 0) {
-            throw new IllegalArgumentException(
-                    "Page size must be greater than zero"
-            );
-        }
-
-        if (size > 100) {
-            throw new IllegalArgumentException(
-                    "Page size cannot be greater than 100"
-            );
-        }
-    }
-
-    private void validateDateRange(
-            LocalDate fromDate,
-            LocalDate toDate
-    ) {
-
-        if (fromDate == null && toDate == null) {
-            return;
-        }
-
-        if (fromDate == null || toDate == null) {
-            throw new IllegalArgumentException(
-                    "Both from date and to date are required when using date filter"
-            );
-        }
-
-        if (fromDate.isAfter(toDate)) {
-            throw new IllegalArgumentException(
-                    "From date cannot be greater than to date"
-            );
-        }
-    }
-
-    private String cleanValue(String value) {
-
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-
-        return value.trim();
     }
 }
 

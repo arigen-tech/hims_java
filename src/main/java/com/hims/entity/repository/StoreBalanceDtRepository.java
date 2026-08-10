@@ -23,8 +23,8 @@ SELECT
 
     item.itemId AS itemId,
     item.nomenclature AS itemName,
-    item.unitAU.unitName AS itemUnit,
-    item.hsnCode.gstRate AS itemGst,
+    unit.unitName AS itemUnit,
+    hsn.gstRate AS itemGst,
     item.pvmsNo AS itemCode,
 
     sbd.batchNo AS batchNo,
@@ -45,14 +45,18 @@ SELECT
     sbd.totalPurchaseCost AS totalPurchaseCost,
     sbd.totalMrp AS totalMrpValue,
 
-    sbd.brandId.brandId AS brandId,
-    sbd.manufacturerId.manufacturerId AS manufacturerId,
+    brand.brandId AS brandId,
+    manufacturer.manufacturerId AS manufacturerId,
 
-    sbd.brandId.brandName AS brandName,
-    sbd.manufacturerId.manufacturerName AS manufacturerName
+    brand.brandName AS brandName,
+    manufacturer.manufacturerName AS manufacturerName
 
 FROM StoreBalanceDt sbd
 LEFT JOIN sbd.itemId item
+LEFT JOIN item.unitAU unit
+LEFT JOIN item.hsnCode hsn
+LEFT JOIN sbd.brandId brand
+LEFT JOIN sbd.manufacturerId manufacturer
 WHERE sbd.balanceMId.balanceMId = :balanceMId
 """)
     List<OpeningBalanceEntryDetailProjection> findOpeningBalanceDetailsWrtHeader(@Param("balanceMId") Long balanceMId);

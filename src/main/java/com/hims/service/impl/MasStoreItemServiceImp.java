@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.projection.ItemProjection;
-import com.hims.projection.MasStoreItemFacilityProjection;
-import com.hims.projection.MasStoreItemsProjection;
-import com.hims.projection.NonDrugStoreItemProjection;
+import com.hims.projection.*;
 import com.hims.request.MasStoreItemRequest;
 import com.hims.request.NonDrugStoreItemRequest;
 import com.hims.response.*;
@@ -99,6 +96,17 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
 
     @Value("${hos.define.wardPharmacyId}")
     private Integer warddeptId;
+    @Value("${drugSectionCode}")
+    private String drugSectionCode;
+
+    @Value("${medicalConsumableItemTypeCode}")
+    private String medicalConsumableItemTypeCode;
+
+    @Value("${medicalNonConsumableItemTypeCode}")
+    private String medicalNonConsumableItemTypeCode;
+
+    @Value("${mas.item.group}")
+    private String masItemGroup;
 
 
     private static final Logger log = LoggerFactory.getLogger(DoctorRosterServicesImpl.class);
@@ -145,11 +153,17 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setLastChgBy(currentUser.getUserId());
         masStoreItem.setLastChgDate(LocalDate.now());
         masStoreItem.setLastChgTime(getCurrentTimeFormatted());
-//        masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore());
-//        masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary());
+        masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore() != null ? masStoreItemRequest.getReOrderLevelStore().intValue() : null);
+        masStoreItem.setReOrderLevelDispensary(masStoreItemRequest.getReOrderLevelDispensary() != null ? masStoreItemRequest.getReOrderLevelDispensary().intValue() : null);
         masStoreItem.setIsGeneric(masStoreItemRequest.getIsGeneric());
-        masStoreItem.setDangerousDrug(masStoreItem.getDangerousDrug());
+        masStoreItem.setDangerousDrug(masStoreItemRequest.getDangerousDrug());
         masStoreItem.setDrugSchedule(masStoreItemRequest.getDrugSchedule());
+        masStoreItem.setHighValueDrug(normalizeYN(masStoreItemRequest.getHighValueDrug()));
+        masStoreItem.setAvailableInOpd(normalizeYN(masStoreItemRequest.getAvailableInOpd()));
+        masStoreItem.setAvailableInIpd(normalizeYN(masStoreItemRequest.getAvailableInIpd()));
+        masStoreItem.setAvailableInEmergency(normalizeYN(masStoreItemRequest.getAvailableInEmergency()));
+        masStoreItem.setAvailableInOt(normalizeYN(masStoreItemRequest.getAvailableInOt()));
+        masStoreItem.setDosageUnit(masStoreItemRequest.getDosageUnit());
 
 
         Optional<MasStoreUnit> masStoreUnit = masStoreUnitRepository.findById(masStoreItemRequest.getDispUnit());
@@ -381,6 +395,56 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
     }
 }
+
+@Override
+public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPaginated(
+        int flag,
+        int page,
+        int size,
+        String nomenclature,
+        Integer itemClassId,
+        Integer masItemCategoryid) {
+
+    try {
+        Pageable pageable = PageRequest.of(page, size);
+        Integer querySectionId = (flag == 1) ? null : sectionId;
+
+        Page<MasStoreItemsProjection> projectionPage = masStoreItemRepository.findItemsWithOutStockPaginated(
+                flag, querySectionId, nomenclature, itemClassId, masItemCategoryid, pageable);
+
+        List<Long> itemIds = projectionPage.getContent().stream()
+                .map(MasStoreItemsProjection::getItemId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, List<MasStoreItemResponse.MasFacilityCodeResponse>> facilityMap = Collections.emptyMap();
+
+        if (!itemIds.isEmpty()) {
+            facilityMap = storeItemFacilityMapRepository.findFacilityByItemIds(itemIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            MasStoreItemFacilityProjection::getItemId,
+                            Collectors.mapping(f -> {
+                                MasStoreItemResponse.MasFacilityCodeResponse res = new MasStoreItemResponse.MasFacilityCodeResponse();
+                                res.setFacilityId(f.getFacilityId());
+                                res.setFacilityCode(f.getFacilityCode());
+                                return res;
+                            }, Collectors.toList())
+                    ));
+        }
+
+        Map<Long, List<MasStoreItemResponse.MasFacilityCodeResponse>> finalFacilityMap = facilityMap;
+
+        Page<MasStoreItemResponse> responsePage = projectionPage.map(item -> convertProjectionToResponse(item, finalFacilityMap));
+
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+
+    } catch (Exception e) {
+        log.error("Error while fetching Mas Store Items without stock paginated. Flag: {}", flag, e);
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+    }
+}
     @Override
     public ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request) {
         try {
@@ -424,8 +488,8 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
             long deptId = authUtil.getCurrentDepartmentId();
             MasDepartment depObj = masDepartmentRepository.getById(deptId);
             item.setAdispQty(request.getAdispQty());
-//            item.setReOrderLevelStore(request.getReOrderLevelStore());
-//            item.setReOrderLevelDispensary(request.getReOrderLevelDispensary());
+            item.setReOrderLevelStore(request.getReOrderLevelStore() != null ? request.getReOrderLevelStore().intValue() : null);
+            item.setReOrderLevelDispensary(request.getReOrderLevelDispensary() != null ? request.getReOrderLevelDispensary().intValue() : null);
 //            item.setHospitalId(currentUser.getHospital().getId());
 //            item.setDepartmentId(depObj.getId());
             item.setLastChgBy(currentUser.getUserId());
@@ -436,6 +500,12 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
             item.setIsGeneric(request.getIsGeneric());
             item.setDangerousDrug(request.getDangerousDrug());
             item.setDrugSchedule(request.getDrugSchedule());
+            item.setHighValueDrug(normalizeYN(request.getHighValueDrug()));
+            item.setAvailableInOpd(normalizeYN(request.getAvailableInOpd()));
+            item.setAvailableInIpd(normalizeYN(request.getAvailableInIpd()));
+            item.setAvailableInEmergency(normalizeYN(request.getAvailableInEmergency()));
+            item.setAvailableInOt(normalizeYN(request.getAvailableInOt()));
+            item.setDosageUnit(request.getDosageUnit());
 
             if (request.getDispUnit() != null) {
                 item.setDispUnit(masStoreUnitRepository.findById(request.getDispUnit())
@@ -552,7 +622,7 @@ public ApiResponse<List<MasStoreItemResponse>> getAllMasStoreItemWithOutStock(in
                         "MasStoreItem not found with ID: " + id, HttpStatus.NOT_FOUND.value());
             }
             MasStoreItem entity = masStoreItem.get();
-            if (status.equals("y") || status.equals("n")) {
+            if (status.equalsIgnoreCase("y") || status.equalsIgnoreCase("n")) {
                 entity.setStatus(status);
             } else {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
@@ -819,6 +889,10 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             masStoreItem.setLastChgBy(currentUser.getUserId());
             masStoreItem.setLastChgDate(LocalDate.now());
             masStoreItem.setLastChgTime(getCurrentTimeFormatted());
+            Optional<MasHSN> masHSN = masHsnRepository.findById(nonDrugStoreItemRequest.getHsn());
+            if (masHSN.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
+            }
 
             Optional<MasStoreUnit> masStoreUnit1 = masStoreUnitRepository.findById(nonDrugStoreItemRequest.getUnitAU());
             if (masStoreUnit1.isEmpty()) {
@@ -851,6 +925,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             masStoreItem.setItemTypeId(masItemType.get());
             masStoreItem.setSectionId(masStoreSection.get());
             masStoreItem.setMasItemCategory(masItemCategory.get());
+            masStoreItem.setHsnCode(masHSN.get());
 
             MasHospital hospital = currentUser.getHospital();
 
@@ -920,7 +995,11 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             item.setLastChgTime(getCurrentTimeFormatted());
 
 
-
+            Optional<MasHSN> masHSN = masHsnRepository.findById(request.getHsn());
+            if (masHSN.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("MasHSN not found", 404);
+            }
+            item.setHsnCode(masHSN.get());
 
             if (request.getUnitAU() != null) {
                 item.setUnitAU(masStoreUnitRepository.findById(request.getUnitAU())
@@ -1036,7 +1115,127 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         }
 
     }
+    @Override
+    public ApiResponse<Page<NonDrugStoreItemResponse>> medicalConsumableItem(
+            int page,
+            int size,
+            String  itemName,
+            Integer sectionId,
+            Integer itemClassId){
 
+        log.info("Fetching Medical Consumable Items. Page: {}, Size: {}, ItemName: {}, ItemClass: {}",
+                page, size, itemName, itemClassId);
+
+        try {
+
+            Pageable pageable = PageRequest.of(page, size);
+
+
+            Page<MedicalConsumableItemProjection> projectionPage = masStoreItemRepository.medicalConsumableItem(
+                            drugSectionCode,
+                            medicalConsumableItemTypeCode,
+                            masItemGroup,
+                            itemName,
+                            sectionId,
+                            itemClassId,
+                            pageable);
+
+            Page<NonDrugStoreItemResponse> responsePage = projectionPage.map(projection -> {
+                NonDrugStoreItemResponse response = new NonDrugStoreItemResponse();
+
+                response.setItemId(projection.getItemId());
+                response.setPvmsNo(projection.getPvmsNo());
+                response.setNomenclature(projection.getNomenclature());
+                response.setGroupId(projection.getGroupId());
+                response.setGroupName(projection.getGroupName());
+                response.setItemTypeId(projection.getItemTypeId());
+                response.setItemTypeName(projection.getItemTypeName());
+                response.setSectionId(projection.getSectionId());
+                response.setSectionName(projection.getSectionName());
+                response.setItemClassId(projection.getItemClassId());
+                response.setItemClassName(projection.getItemClassName());
+                response.setMasItemCategoryId(projection.getMasItemCategoryId());
+                response.setMasItemCategoryName(projection.getMasItemCategoryName());
+                response.setUnitAU(projection.getUnitAU());
+                response.setUnitAuName(projection.getUnitAuName());
+                response.setStatus(projection.getStatus());
+
+                return response;
+            });
+
+            log.info("Successfully fetched {} Medical Consumable Items.",
+                    responsePage.getTotalElements());
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
+            });
+
+        } catch (Exception ex) {
+
+            log.error("Error while fetching Medical Consumable Items", ex);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
+                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<Page<NonDrugStoreItemResponse>> nonMedicalConsumableItem(
+            int page,
+            int size,
+            String  itemName,
+            Integer sectionId,
+            Integer itemClassId){
+
+        log.info("Fetching Non Medical Consumable Items. Page: {}, Size: {}, ItemName: {}, ItemClass: {}",
+                page, size, itemName, itemClassId);
+
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<MedicalConsumableItemProjection> projectionPage = masStoreItemRepository.nonMedicalConsumableItem(
+                            medicalNonConsumableItemTypeCode,
+                            masItemGroup,
+                            itemName,
+                             sectionId,
+                            itemClassId,
+                            pageable);
+
+            Page<NonDrugStoreItemResponse> responsePage = projectionPage.map(projection -> {
+                NonDrugStoreItemResponse response = new NonDrugStoreItemResponse();
+
+                response.setItemId(projection.getItemId());
+                response.setPvmsNo(projection.getPvmsNo());
+                response.setNomenclature(projection.getNomenclature());
+                response.setGroupId(projection.getGroupId());
+                response.setGroupName(projection.getGroupName());
+                response.setItemTypeId(projection.getItemTypeId());
+                response.setItemTypeName(projection.getItemTypeName());
+                response.setSectionId(projection.getSectionId());
+                response.setSectionName(projection.getSectionName());
+                response.setItemClassId(projection.getItemClassId());
+                response.setItemClassName(projection.getItemClassName());
+                response.setMasItemCategoryId(projection.getMasItemCategoryId());
+                response.setMasItemCategoryName(projection.getMasItemCategoryName());
+                response.setUnitAU(projection.getUnitAU());
+                response.setUnitAuName(projection.getUnitAuName());
+                response.setStatus(projection.getStatus());
+
+                return response;
+            });
+
+            log.info("Successfully fetched {} Medical Consumable Items.",
+                    responsePage.getTotalElements());
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
+            });
+
+        } catch (Exception ex) {
+
+            log.error("Error while fetching Medical Consumable Items", ex);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
+                    "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
 
     private MasStoreItemResponseWithStock convertToResponseFast(MasStoreItem item,
                                                                 Map<Long, List<StoreItemBatchStock>> stockMap) {
@@ -1115,6 +1314,12 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setDangerousDrug(item.getDangerousDrug());
         response.setIsGeneric(item.getIsGeneric());
         response.setDrugSchedule(item.getDrugSchedule());
+        response.setHighValueDrug(item.getHighValueDrug());
+        response.setAvailableInOpd(item.getAvailableInOpd());
+        response.setAvailableInIpd(item.getAvailableInIpd());
+        response.setAvailableInEmergency(item.getAvailableInEmergency());
+        response.setAvailableInOt(item.getAvailableInOt());
+        response.setDosageUnit(item.getDosageUnit());
 
         List<MasStoreItemResponse.MasFacilityCodeResponse> facilityList = new ArrayList<>();
         List<StoreItemFacilityMap> storeItemFacilityMaps=storeItemFacilityMapRepository.findByItemItemId(item.getItemId());
@@ -1144,6 +1349,12 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setDangerousDrug(item.getDangerousDrug());
         response.setIsGeneric(item.getIsGeneric());
         response.setDrugSchedule(item.getDrugSchedule());
+        response.setHighValueDrug(item.getHighValueDrug());
+        response.setAvailableInOpd(item.getAvailableInOpd());
+        response.setAvailableInIpd(item.getAvailableInIpd());
+        response.setAvailableInEmergency(item.getAvailableInEmergency());
+        response.setAvailableInOt(item.getAvailableInOt());
+        response.setDosageUnit(item.getDosageUnit());
 
 
         response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
@@ -1204,6 +1415,8 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setNomenclature(item.getNomenclature());
         response.setPvmsNo(item.getPvmsNo());
         response.setStatus(item.getStatus());
+
+        response.setHsn(item.getHsnCode() != null ? item.getHsnCode().getHsnCode() : null);
 
         response.setGroupId(item.getGroupId() != null ? item.getGroupId().getId() : null);
         response.setGroupName(item.getGroupId() != null ? item.getGroupId().getGroupName() : null);
@@ -1279,10 +1492,26 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setIsGeneric(item.getIsGeneric());
         response.setDangerousDrug(item.getDangerousDrug());
         response.setDrugSchedule(item.getDrugSchedule());
+        response.setHighValueDrug(item.getHighValueDrug());
+        response.setAvailableInOpd(item.getAvailableInOpd());
+        response.setAvailableInIpd(item.getAvailableInIpd());
+        response.setAvailableInEmergency(item.getAvailableInEmergency());
+        response.setAvailableInOt(item.getAvailableInOt());
+        response.setDosageUnit(item.getDosageUnit());
         response.setFacilityCode(facilityMap.getOrDefault(item.getItemId(), Collections.emptyList()));
 
         return response;
     }
 
+    String normalizeYN(String val) {
+        if (val == null) {
+            return null;
+        }
+        String lower = val.trim().toLowerCase();
+        if ("y".equals(lower) || "n".equals(lower)) {
+            return lower;
+        }
+        return val;
+    }
 
 }

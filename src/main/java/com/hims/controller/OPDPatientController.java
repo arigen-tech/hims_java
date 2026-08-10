@@ -283,28 +283,21 @@ public class OPDPatientController {
 
     }
 
-    @GetMapping("/billingRefundPatientList")
-    public ResponseEntity<ApiResponse<Page<PaidCancelledAppointmentResponse>>> getBillingRefundPatientList(@RequestParam(defaultValue = "0") int page,
-                                                                                                           @RequestParam(defaultValue = "10") int size,
-                                                                                                           @RequestParam(required = false) String patientName,
-                                                                                                           @RequestParam(required = false) String mobileNo,
-                                                                                                           @RequestParam(required = false) String billingService,
-                                                                                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-                                                                                                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-        log.info("Billing refund patient list request received");
-        ApiResponse<Page<PaidCancelledAppointmentResponse>> response =
-                opdPatientDetailService.getBillingRefundPatientList(
-                        page,
-                        size,
-                        patientName,
-                        mobileNo,
-                        billingService,
-                        fromDate,
-                        toDate
-                );
-        return ResponseEntity.ok(response);
+    @GetMapping("/getOpdReportsList")
+    public ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) Long hospitalId
+    ) {
+
+        log.info("Received request to fetch OPD reports. Filters - mobileNo: {}, patientName: {}, hospitalId: {}, page: {}, size: {}",
+                mobileNo, patientName, hospitalId, page, size);
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return opdPatientDetailService.getOpdReportsList(pageable, mobileNo, patientName, hospitalId);
     }
-
-
 
 }

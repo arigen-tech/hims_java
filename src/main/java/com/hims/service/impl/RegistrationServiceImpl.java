@@ -32,6 +32,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.io.IOException;
@@ -100,6 +101,8 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Autowired
     DoctorRosterServices doctorRosterServices;
+    @Autowired
+    private HelperUtils helperUtils;
 
 
     @Autowired
@@ -137,6 +140,14 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Autowired
     private RadOrderDtRepository radOrderDtRepository;
 
+    @Autowired
+    private InpatientRepository inpatientRepository;
+
+    @Autowired
+    private InpatientValidationService inpatientValidationService;
+
+
+
 
     @Override
     @Transactional
@@ -163,9 +174,10 @@ public class RegistrationServiceImpl implements RegistrationService {
         if(visit!=null){
             List<Visit> savedVisits = new ArrayList<>();
             if (!visit.isEmpty()) {
+                validateDuplicateAppointments(visit, patientObj.getId());
                 for (VisitRequest v : visit) {
                     Instant today = v.getVisitDate();
-                    String visitType = getVisitTypeForFollowUpOrNew(patientObj.getId(), today);
+                    String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patientObj.getId());
                     v.setVisitType(visitType);
                     Visit saved = createSingleAppointment(v, patientObj);
                     savedVisits.add(saved);
@@ -223,6 +235,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             OpdPatientDetail opdDetails = null;
 
             if (visitList != null && !visitList.isEmpty()) {
+                validateDuplicateAppointments(visitList, patient.getId());
                 for (VisitRequest v : visitList) {
                     if (v.getPatientId() == null) {
                         v.setPatientId(patient.getId());
@@ -244,7 +257,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                     }
                     updatedVisits.add(visit);
                     if (visit.getHospital().getPreConsultationAvailable()
-                            .equalsIgnoreCase("n")) {
+                            .equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
                         opdDetails = addOpdDetails(visit, opdReq, patient);
                     }
                 }
@@ -310,6 +323,14 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     public ApiResponse<FollowUpPatientResponseDetails> getPatientDetails(Long patientId, String serviceCategoryCode) {
         try {
+
+            if (inpatientValidationService.isPatientCurrentlyAdmitted(patientId)) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        AppConstants.PATIENT_NOT_APPLICABLE_FOR_SERVICE_REGISTRATION,
+                        400);
+            }
             log.info("Fetching patient details for patientId: {}, serviceCategoryCode: {}", patientId, serviceCategoryCode);
 
             // Default to OPD if serviceCategoryCode is null or empty
@@ -628,7 +649,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             if (visitReq!=null) {
 
                 Instant date = visitReq.getVisitDate();
-                String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), date);
+                String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
                 visitReq.setVisitType(visitType);
                 Visit saved = createSingleAppointment(visitReq, patient);
 
@@ -788,12 +809,11 @@ public class RegistrationServiceImpl implements RegistrationService {
         patient = patientRepository.save(patient);
         return patient;
     }
-    private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
-        int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
-        return count > 0 ? "F" : "N";
-    }
+
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
 
+        validateDuplicateAppointment(visit, patient.getId(), null);
+        User currentLoggedInUser = authUtil.getCurrentUser();
         LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate tokenStartTime = visit.getTokenStartTime().atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate tokenEndTime = visit.getTokenEndTime().atZone(ZoneOffset.UTC).toLocalDate();
@@ -854,11 +874,11 @@ public class RegistrationServiceImpl implements RegistrationService {
         } else {
             newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
         }
-        newVisit.setVisitType(visit.getVisitType());
+        newVisit.setVisitType(helperUtils.getVisitTypeForFollowUpOrNew(patient.getId()));
         newVisit.setPatient(patient);
 
-        if (visit.getDoctorId() != null) {
-            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setDoctor);
+        if (visit.getIniDoctorId() != null) {
+            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setIniDoctor);
         }
 
         if (visit.getHospitalId() != null) {
@@ -873,9 +893,8 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
         }
 
-        if (visit.getIniDoctorId() != null) {
-            assert visit.getDoctorId() != null;
-            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setIniDoctor);
+        if (visit.getDoctorId() != null) {
+            newVisit.setDoctor(userRepository.getReferenceById(visit.getDoctorId()));
         }
 
         if (visit.getSessionId() != null) {
@@ -1311,6 +1330,8 @@ public class RegistrationServiceImpl implements RegistrationService {
             throw new RuntimeException("Visit ID is required for updating existing visit");
         }
 
+        validateDuplicateAppointment(visit, patient.getId(), visit.getId());
+
         Visit existingVisit = visitRepository.findById(visit.getId())
                 .orElseThrow(() -> new RuntimeException("Visit not found with id: " + visit.getId()));
 
@@ -1346,6 +1367,84 @@ public class RegistrationServiceImpl implements RegistrationService {
         return visitRepository.save(existingVisit);
     }
 
+    private void validateDuplicateAppointments(List<VisitRequest> visitList, Long patientId) {
+        if (visitList == null || visitList.isEmpty() || patientId == null) {
+            return;
+        }
+
+
+        Map<String, Long> seenAppointments = new HashMap<>();
+        for (VisitRequest visit : visitList) {
+            if (visit == null) {
+                continue;
+            }
+
+
+
+            if (visit.getDoctorId() == null || visit.getVisitDate() == null) {
+                continue;
+            }
+
+            LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
+            String appointmentKey = visit.getDoctorId() + "|" + visitDate +"|" + visit.getDepartmentId() + "|" + visit.getPatientId();
+            Long currentVisitId = visit.getId();
+
+            if (seenAppointments.containsKey(appointmentKey)) {
+                throw new ResponseStatusException(
+                        org.springframework.http.HttpStatus.CONFLICT,
+                        AppConstants.DUPLICATE_APPOINTMENT_MSG
+                );
+            } else {
+                seenAppointments.put(appointmentKey, currentVisitId);
+            }
+        }
+    }
+
+    private void validateDuplicateAppointment(
+            VisitRequest visit,
+            Long patientId,
+            Long excludeVisitId) {
+
+        if (visit == null
+                || patientId == null
+                || visit.getDoctorId() == null
+                || visit.getDepartmentId() == null
+                || visit.getVisitDate() == null) {
+            return;
+        }
+
+        LocalDate visitDate =
+                visit.getVisitDate()
+                        .atZone(ZoneOffset.UTC)
+                        .toLocalDate();
+
+        Instant startOfDay =
+                visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+
+        Instant endOfDay =
+                visitDate.plusDays(1)
+                        .atStartOfDay(ZoneOffset.UTC)
+                        .minusNanos(1)
+                        .toInstant();
+
+        boolean duplicateExists =
+                visitRepository.existsDuplicatePatientAppointment(
+                        patientId,
+                        visit.getDoctorId(),
+                        visit.getDepartmentId(),
+                        startOfDay,
+                        endOfDay,
+                        AppConstants.VISIT_STATUS_CANCELLED,
+                        excludeVisitId
+                );
+
+        if (duplicateExists) {
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.CONFLICT,
+                    AppConstants.DUPLICATE_APPOINTMENT_MSG
+            );
+        }
+    }
     private String cleanStringParameter(String param) {
         if (param == null || param.trim().isEmpty()) {
             return null;
@@ -1497,6 +1596,38 @@ public class RegistrationServiceImpl implements RegistrationService {
         }).toList();
     }
 
+
+    @Override
+    public boolean checkDuplicatePatient(String firstName, LocalDate dob, Long gender,
+            String mobile,
+            Long relation) {
+
+        log.info(
+                "Checking duplicate patient: firstName={}, dob={}, gender={}, mobile={}, relation={}",
+                firstName, dob, gender, mobile, relation
+        );
+
+        String normalizedFirstName = firstName == null ? "" : firstName.trim();
+        String normalizedMobile = mobile == null ? "" : mobile.trim();
+
+
+        boolean exists = patientRepository
+                        .existsByPatientFnIgnoreCaseAndPatientDobAndPatientGenderIdAndPatientMobileNumberAndPatientRelationId(
+                                normalizedFirstName,
+                                dob,
+                                gender,
+                                normalizedMobile,
+                                relation
+                        );
+
+        log.info(
+                "Duplicate patient check result: firstName={}, mobile={}, exists={}",
+                normalizedFirstName,
+                normalizedMobile,
+                exists
+        );
+        return exists;
+    }
 
 }
 

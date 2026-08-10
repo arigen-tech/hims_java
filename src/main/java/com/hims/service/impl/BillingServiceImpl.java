@@ -8,12 +8,15 @@ import com.hims.exception.BillingException;
 import com.hims.exception.GlobalExceptionHandler;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
+import com.hims.mapper.PaidCancelledAppointmentMapper;
 import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
+import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISTransaction;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,6 +28,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,6 +88,9 @@ public class BillingServiceImpl implements BillingService {
     RadOrderHdRepository radOrderHdRepository;
 
     @Autowired
+    OpdRefundDetailsRepository opdRefundDetailsRepository;
+
+    @Autowired
     HelperUtils helperUtils;
 
     @Value("${serviceCategoryRegistration}")
@@ -110,13 +117,17 @@ public class BillingServiceImpl implements BillingService {
     @Value("${serviceCategoryLab}")
     private String LabServiceCategoryCode;
 
+    @Autowired
+    PaidCancelledAppointmentMapper paidCancelledAppointmentMapper;
+
+    @Autowired
+    TransactionSequenceService transactionSequenceService;
 
 
     @Override
     @Transactional
     public ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount) {
         BillingHeader header = new BillingHeader();
-        String orderNum = helperUtils.createInvoices();
         OpdBillingPaymentResponse response = new OpdBillingPaymentResponse();
         User currentUser = authUtil.getCurrentUser();
         BigDecimal tax = BigDecimal.ZERO;
@@ -207,7 +218,7 @@ public class BillingServiceImpl implements BillingService {
             header.setUpdatedDt(Instant.now());
             header.setCreatedDt(Instant.now());
             header.setInvoiceNo("");
-            header.setBillNo(orderNum);
+            header.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
             header.setUpdatedAt(OffsetDateTime.now());
             header.setBillingDate(Instant.now());
             header.setDiscount(discount);
@@ -1324,8 +1335,7 @@ public class BillingServiceImpl implements BillingService {
             String serviceCategoryCode, boolean isRadiology) {
 
         BillingHeader billingHeader = new BillingHeader();
-        String orderNum = helperUtils.createInvoices();
-        billingHeader.setBillNo(orderNum);
+        billingHeader.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
 
         billingHeader.setPatient(vId.getPatient());
         billingHeader.setVisit(vId);
@@ -1484,6 +1494,173 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
 
         return billingDetailRepository.save(billingDetail);
+    }
+
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<PaidCancelledAppointmentResponse>>
+    getBillingRefundPatientList(
+            int page,
+            int size,
+            String patientName,
+            String mobileNo,
+            String billingServiceType,
+            String refundStatus,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        try {
+            log.info(
+                    "Fetching billing refund patient list: " +
+                            "page={}, size={}, patientName={}, mobileNo={}, " +
+                            "billingService={}, refundStatus={}, fromDate={}, toDate={}",
+                    page,
+                    size,
+                    patientName,
+                    mobileNo,
+                    billingServiceType,
+                    refundStatus,
+                    fromDate,
+                    toDate
+            );
+
+            helperUtils.validatePagination(page, size);
+            helperUtils.validateDateRange(fromDate, toDate);
+            patientName = helperUtils.cleanValue(patientName);
+            mobileNo = helperUtils.cleanValue(mobileNo);
+            billingServiceType = helperUtils.cleanValue(billingServiceType);
+            refundStatus = helperUtils.normalizeRefundStatusFilter(refundStatus);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<PaidCancelledAppointmentProjection> projectionPage =
+                    visitRepository.getBillingRefundPatientList(
+                            patientName,
+                            mobileNo,
+                            billingServiceType,
+                            refundStatus,
+                            AppConstants.STATUS_Y.toLowerCase(),
+                            AppConstants.STATUS_N.toLowerCase(),
+                            AppConstants.STATUS_N.toLowerCase(),
+                            AppConstants.BILLING_REFUND_STATUS_COMPLETED_LABEL,
+                            AppConstants.BILLING_REFUND_STATUS_PENDING_LABEL,
+                            fromDate,
+                            toDate,
+                            pageable
+                    );
+
+            Page<PaidCancelledAppointmentResponse> responsePage =
+                    projectionPage.map(paidCancelledAppointmentMapper::mapToResponse);
+
+            log.info("Billing refund patient list fetched successfully. " + "Total records={}",
+                    responsePage.getTotalElements());
+
+            return ResponseUtils.createSuccessResponse(
+                    responsePage,
+                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                    },
+                    "Billing refund patient list fetched successfully"
+            );
+
+        } catch (IllegalArgumentException exception) {
+            log.warn("Invalid billing refund search request: {}", exception.getMessage());
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                    },
+                    exception.getMessage(),
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        } catch (Exception exception) {
+            log.error("Error while fetching billing refund patient list",
+                    exception);
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                    },
+                    "Unable to fetch billing refund patient list",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+
+
+
+
+
+
+    @Override
+    public ApiResponse<List<PatientBillingRefundDetailsResponse>> getPatientBillingRefundDetails(Long billingId) {
+
+        log.info("Fetching patient billing refund details for billingId: {}", billingId);
+        try {
+            if (billingId == null || billingId <= 0) {
+                log.warn("Invalid billingId received: {}", billingId);
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {
+                        },
+                        "Valid billing ID is required",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            List<PatientBillingRefundDetailsProjection> refundDetails =
+                    opdRefundDetailsRepository
+                            .findRefundDetailsByBillingId(billingId);
+
+            List<PatientBillingRefundDetailsResponse> response =
+                    refundDetails.stream()
+                            .map(this::mapToRefundResponse)
+                            .toList();
+
+            log.info(
+                    "{} refund record(s) found for billingId: {}",
+                    response.size(),
+                    billingId
+            );
+
+            return ResponseUtils.createSuccessResponse(
+                    response,
+                    new TypeReference<>() {
+                    }
+            );
+
+        } catch (Exception e) {
+
+            log.error(
+                    "Error while fetching refund details for billingId: {}",
+                    billingId,
+                    e
+            );
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {
+                    },
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+
+    private PatientBillingRefundDetailsResponse mapToRefundResponse(
+            PatientBillingRefundDetailsProjection projection
+    ) {
+
+        return PatientBillingRefundDetailsResponse.builder()
+                .refundStatus(projection.getRefundStatus())
+                .refundAmount(projection.getRefundAmount())
+                .refundMode(projection.getRefundMode())
+                .transactionNumber(projection.getTransactionNumber())
+                .refundDate(projection.getRefundDate())
+                .processedBy(projection.getProcessedBy())
+                .build();
     }
 
 }

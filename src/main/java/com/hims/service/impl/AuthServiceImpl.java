@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -49,6 +50,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private MasHospitalRepository masHospitalRepository;
+
+    @Autowired
+    private MasDepartmentRepository masDepartmentRepository;
 
     @Autowired
     private MasUserTypeRepository masUserTypeRepository;
@@ -265,6 +269,66 @@ public class AuthServiceImpl implements AuthService {
         return ResponseUtils.createSuccessResponse(response, new TypeReference<JwtResponce>() {});
     }
 
+    @Transactional(rollbackFor = {Exception.class})
+    @Override
+    public ApiResponse<JwtResponce> switchContext(com.hims.request.ContextSwitchRequest request, Principal principal) {
+        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "USER NOT AUTHENTICATED", 401);
+        }
+        if (request.getDepartmentId() == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "DEPARTMENT ID CANNOT BE BLANK", 400);
+        }
+
+        try {
+            User user = userRepo.findByUserNameAndStatus(principal.getName(), AppConstants.STATUS_Y.toLowerCase());
+            if (user == null) {
+                user = userRepo.findByPhoneNumberAndStatus(principal.getName(), AppConstants.STATUS_Y.toLowerCase());
+            }
+            if (user == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ACTIVE USER NOT FOUND", 400);
+            }
+
+            List<UserDepartment> userDepartments = userDepartmentRepository.findByUser_UserIdAndStatus(user.getUserId(), AppConstants.STATUS_Y.toLowerCase());
+            Optional<UserDepartment> selectedDepartment = userDepartments.stream()
+                    .filter(dept -> dept.getDepartment() != null
+                            && dept.getDepartment().getId() != null
+                            && dept.getDepartment().getId().equals(request.getDepartmentId()))
+                    .findFirst();
+
+            if (selectedDepartment.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "SELECTED DEPARTMENT IS NOT ASSIGNED TO THIS USER", 403);
+            }
+
+            MasDepartment department = masDepartmentRepository.findById(request.getDepartmentId())
+                    .orElse(null);
+            if (department == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "DEPARTMENT NOT FOUND", 404);
+            }
+
+            TokenWithExpiry accessTokenWithExpiry = helper.generateAccessTokenWithExpiry(user, department.getId());
+            TokenWithExpiry refreshTokenWithExpiry = helper.generateRefreshTokenWithExpiry(user, department.getId());
+
+            JwtResponce response = JwtResponce.builder()
+                    .jwtToken(accessTokenWithExpiry.getToken())
+                    .jwtTokenExpiry(accessTokenWithExpiry.getExpiryTime())
+                    .refreshToken(refreshTokenWithExpiry.getToken())
+                    .refreshTokenExpiry(refreshTokenWithExpiry.getExpiryTime())
+                    .username(user.getUsername())
+                    .userId(user.getUserId())
+                    .roleId(user.getRoleId())
+                    .hospitalId(user.getHospital().getId())
+                    .departmentId(department.getId())
+                    .departmentName(department.getDepartmentName())
+                    .departmentCode(department.getDepartmentCode())
+                    .build();
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<JwtResponce>() {});
+        } catch (Exception e) {
+            logger.error("An error occurred while switching user context", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "An error occurred while switching user context", 500);
+        }
+    }
+
 
 
 //    @Transactional(rollbackFor = {Exception.class})
@@ -418,27 +482,40 @@ public class AuthServiceImpl implements AuthService {
         if (isActiveUser == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ACTIVE USER NOT FOUND", 400);
         }
-        List<RoleInfoResp> obj = new ArrayList<RoleInfoResp>();
-//        List<UserRole> roleObj = userRoleRepo.findByUserIdAndStatus(isActiveUser, "y");
-//        if (roleObj.size() <= 0) {
-//            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ACTIVE USER HAVE NOT ANY ROLE", 400);
-//        }
+        List<RoleInfoResp> obj = new ArrayList<>();
         try {
-//            for (UserRole item : roleObj) {
-//                RoleInfoResp rolResp = new RoleInfoResp();
-//                MasRole masRole = masRoleRepo.findByRoleCodeAndStatus(item.getRole().getRoleCode(), "y");
-//                rolResp.setUserFullName(isActiveUser.getFirstName());
-//                rolResp.setUserName(isActiveUser.getUsername() +" or "+isActiveUser.getPhoneNumber());
-//                rolResp.setRoleCode(masRole.getRoleCode());
-//                rolResp.setRoleDesc(masRole.getRoleDesc());
-//                rolResp.setStatus(masRole.getStatus());
-//                obj.add(rolResp);
-//            }
+            Set<Long> roleIds = parseRoleIds(isActiveUser.getRoleId());
+            if (roleIds.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ACTIVE USER HAVE NOT ANY ROLE", 400);
+            }
+
+            List<MasRole> roles = masRoleRepository.findAllById(roleIds);
+            for (MasRole role : roles) {
+                RoleInfoResp rolResp = new RoleInfoResp();
+                rolResp.setRoleId(role.getId());
+                rolResp.setUserFullName(isActiveUser.getFullName());
+                rolResp.setUsername(isActiveUser.getUsername() + " or " + isActiveUser.getPhoneNumber());
+                rolResp.setRoleCode(role.getRoleCode());
+                rolResp.setRoleDesc(role.getRoleDesc());
+                rolResp.setStatus(role.getStatus());
+                obj.add(rolResp);
+            }
+            obj.sort(Comparator.comparing(RoleInfoResp::getRoleDesc, Comparator.nullsLast(String::compareToIgnoreCase)));
         } catch (Exception e) {
             logger.error("An error occurred while getting role list", e);
         }
-        return ResponseUtils.createSuccessResponse(obj, new TypeReference<List<RoleInfoResp>>() {
-        });
+        return ResponseUtils.createSuccessResponse(obj, new TypeReference<List<RoleInfoResp>>() {});
+    }
+
+    private Set<Long> parseRoleIds(String rolesCsv) {
+        if (rolesCsv == null || rolesCsv.isBlank()) {
+            return Collections.emptySet();
+        }
+        return Arrays.stream(rolesCsv.split(","))
+                .map(String::trim)
+                .filter(id -> !id.isEmpty())
+                .map(Long::parseLong)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
 

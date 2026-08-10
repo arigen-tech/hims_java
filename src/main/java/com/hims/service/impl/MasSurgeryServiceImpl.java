@@ -2,11 +2,11 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
-import com.hims.entity.MasDepartment;
 import com.hims.entity.MasSurgery;
+import com.hims.entity.MasSurgeryType;
 import com.hims.entity.User;
-import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasSurgeryRepository;
+import com.hims.entity.repository.MasSurgeryTypeRepository;
 import com.hims.request.MasSurgeryRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasSurgeryResponse;
@@ -28,9 +28,11 @@ import java.util.List;
 public class MasSurgeryServiceImpl implements MasSurgeryService {
 
     private final MasSurgeryRepository repository;
-    private final MasDepartmentRepository departmentRepository;
+    private final MasSurgeryTypeRepository surgeryTypeRepository;
+
     @Autowired
-    private  AuthUtil authUtil;
+    private AuthUtil authUtil;
+
     @Override
     public ApiResponse<List<MasSurgeryResponse>> getAllMasSurgery(int flag) {
         try {
@@ -57,6 +59,7 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
             );
         }
     }
+
     @Override
     public ApiResponse<MasSurgeryResponse> getByIdMasSurgery(Long id) {
         try {
@@ -76,16 +79,18 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
     public ApiResponse<MasSurgeryResponse> createMasSurgery(MasSurgeryRequest request) {
         try {
             User user = authUtil.getCurrentUser();
-            MasDepartment dept = departmentRepository.findById(request.getDepartmentId())
-                    .orElseThrow(() -> new RuntimeException("Invalid Department"));
+            MasSurgeryType surgeryType = surgeryTypeRepository.findById(request.getSurgeryTypeId())
+                    .orElseThrow(() -> new RuntimeException("Invalid Surgery Type"));
 
             MasSurgery entity = MasSurgery.builder()
                     .surgeryCode(request.getSurgeryCode())
                     .surgeryName(request.getSurgeryName())
-                    .department(dept)
+                    .surgeryType(surgeryType)
                     .surgeryLevel(request.getSurgeryLevel())
                     .isAnesthesiaRequired(request.getIsAnesthesiaRequired())
-                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .isAdmissionRequired(request.getIsAdmissionRequired())
+                    .isImplantRequired(request.getIsImplantRequired())
+                    .status(AppConstants.STATUS_Y)
                     .lastUpdatedBy(user.getFullName())
                     .lastUpdatedDate(LocalDateTime.now())
                     .build();
@@ -109,12 +114,16 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
             }
             User user = authUtil.getCurrentUser();
 
-            MasDepartment dept = departmentRepository.findById(request.getDepartmentId()).orElseThrow(() -> new RuntimeException("Invalid Department"));
+            MasSurgeryType surgeryType = surgeryTypeRepository.findById(request.getSurgeryTypeId())
+                    .orElseThrow(() -> new RuntimeException("Invalid Surgery Type"));
+
             entity.setSurgeryCode(request.getSurgeryCode());
             entity.setSurgeryName(request.getSurgeryName());
-            entity.setDepartment(dept);
+            entity.setSurgeryType(surgeryType);
             entity.setSurgeryLevel(request.getSurgeryLevel());
             entity.setIsAnesthesiaRequired(request.getIsAnesthesiaRequired());
+            entity.setIsAdmissionRequired(request.getIsAdmissionRequired());
+            entity.setIsImplantRequired(request.getIsImplantRequired());
             entity.setLastUpdatedBy(user.getFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
             repository.save(entity);
@@ -140,7 +149,7 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
                         "Invalid status", HttpStatus.BAD_REQUEST.value());
             }
             User user = authUtil.getCurrentUser();
-            entity.setStatus(status.toLowerCase());
+            entity.setStatus(status.toUpperCase());
             entity.setLastUpdatedBy(user.getFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
             repository.save(entity);
@@ -159,10 +168,12 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
         res.setSurgeryId(e.getSurgeryId());
         res.setSurgeryCode(e.getSurgeryCode());
         res.setSurgeryName(e.getSurgeryName());
-        res.setDepartmentId(e.getDepartment()!=null?e.getDepartment().getId():null);
-        res.setDepartmentName(e.getDepartment()!=null?e.getDepartment().getDepartmentName():null);
+        res.setSurgeryTypeId(e.getSurgeryType() != null ? e.getSurgeryType().getSurgeryTypeId() : null);
+        res.setSurgeryTypeName(e.getSurgeryType() != null ? e.getSurgeryType().getSurgeryTypeName() : null);
         res.setSurgeryLevel(e.getSurgeryLevel());
         res.setIsAnesthesiaRequired(e.getIsAnesthesiaRequired());
+        res.setIsAdmissionRequired(e.getIsAdmissionRequired());
+        res.setIsImplantRequired(e.getIsImplantRequired());
         res.setStatus(e.getStatus());
         return res;
     }

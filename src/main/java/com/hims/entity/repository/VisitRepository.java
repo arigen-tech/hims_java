@@ -90,7 +90,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             )) LIKE LOWER(CONCAT('%', :patientName, '%'))
         )
 
-       
+
         AND (
             :mobileNumber IS NULL OR :mobileNumber = '' OR
             p.p_mobile_number LIKE CONCAT('%', :mobileNumber, '%')
@@ -353,9 +353,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     @Query("SELECT COUNT(v) FROM Visit v WHERE v.id = :patientId")
     Long countByPatientId(@Param("patientId") Long patientId);
 
-    @Query("SELECT COUNT(v) FROM Visit v WHERE v.patient.id = :patientId AND DATE(v.visitDate) = :visitDate")
-    int countByPatientIdAndVisitDate(@Param("patientId") Long patientId,
-                                     @Param("visitDate") Instant visitDate);
+    @Query("SELECT COUNT(v) FROM Visit v WHERE v.patient.id = :patientId")
+    int countByPatientIdAndVisitDate(@Param("patientId") Long patientI);
 
 
     @Query(value = """
@@ -538,6 +537,26 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             String visitStatus
     );
 
+    @Query("""
+    SELECT CASE WHEN COUNT(v) > 0 THEN true ELSE false END
+    FROM Visit v
+    WHERE v.patient.id = :patientId
+      AND v.doctor.userId = :doctorId
+      AND v.department.id = :departmentId
+      AND v.visitDate BETWEEN :startOfDay AND :endOfDay
+      AND LOWER(v.visitStatus) <> LOWER(:cancelledStatus)
+      AND (:excludeVisitId IS NULL OR v.id <> :excludeVisitId)
+    """)
+    boolean existsDuplicatePatientAppointment(
+            @Param("patientId") Long patientId,
+            @Param("doctorId") Long doctorId,
+            @Param("departmentId") Long departmentId,
+            @Param("startOfDay") Instant startOfDay,
+            @Param("endOfDay") Instant endOfDay,
+            @Param("cancelledStatus") String cancelledStatus,
+            @Param("excludeVisitId") Long excludeVisitId
+    );
+
 
     @Query("""
                 select v
@@ -625,7 +644,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                         (:mobileNo IS NOT NULL AND :mobileNo <> '' AND p.p_mobile_number = :mobileNo)
                     )
                 AND (:includeAllHistory = true OR v.visit_date >= CURRENT_DATE)  -- Include all history if flag is true, otherwise only future appointments
-                AND LOWER(v.visit_status) IN ('y', 'c', 'n')
+                AND LOWER(v.visit_status) IN (:visitStatus)
                 AND v.department_id IN (:departmentIds)
                 ORDER BY v.visit_date ASC
             """, nativeQuery = true)
@@ -634,7 +653,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("patientId") Long patientId,
             @Param("mobileNo") String mobileNo,
             @Param("departmentIds") List<Long> departmentIds,
-            @Param("includeAllHistory") Boolean includeAllHistory
+            @Param("includeAllHistory") Boolean includeAllHistory,
+            @Param("visitStatus") String visitStatus
     );
 
 
@@ -1037,157 +1057,259 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     @Query(
             value = """
+            SELECT
+                v.visit_id AS visitId,
+                v.patient_id AS patientId,
+                v.billing_hd_id AS billingHeaderId,
+                p.uhid_no AS registrationNo,
+
+                TRIM(
+                    CONCAT(
+                        COALESCE(p.p_fn, ''), ' ',
+                        COALESCE(p.p_mn, ''), ' ',
+                        COALESCE(p.p_ln, '')
+                    )
+                ) AS patientName,
+
+                p.p_mobile_number AS mobileNo,
+                p.p_age AS age,
+                g.gender_name AS gender,
+                dt.department_type_name AS billingType,
+                v.visit_date AS date,
+                bh.net_amount AS billingAmount,
+                v.cancelled_datetime AS cancelledDate,
+                d.department_name AS departmentName,
+                rd.refundDate AS refundDate,
+                COALESCE(rd.refundStatus, 'PENDING') AS refundStatus
+
+            FROM visit v
+
+            INNER JOIN patient p
+                ON p.patient_id = v.patient_id
+
+            LEFT JOIN mas_gender g
+                ON g.id = p.p_gender_id
+
+            LEFT JOIN mas_department d
+                ON d.department_id = v.department_id
+
+            LEFT JOIN mas_department_type dt
+                ON dt.department_type_id = d.department_type_id
+
+            LEFT JOIN (
                 SELECT
-                    v.visit_id AS visitId,
-                    v.patient_id AS patientId,
-                    v.billing_hd_id AS billingHeaderId,
-                    p.uhid_no AS registrationNo,
+                    ord.billing_hd_id,
+                    MAX(ord.refund_date) AS refundDate,
+                    CASE
+                        WHEN MAX(ord.processed_date) IS NOT NULL THEN :refundCompletedStatus
+                        WHEN MAX(ord.refund_date) IS NOT NULL THEN :refundPendingStatus
+                        ELSE :refundDefaultStatus
+                    END AS refundStatusCode,
+                    CASE
+                        WHEN MAX(ord.processed_date) IS NOT NULL THEN :refundCompletedLabel
+                        WHEN MAX(ord.refund_date) IS NOT NULL THEN :refundPendingLabel
+                        ELSE :refundPendingLabel
+                    END AS refundStatus
+                FROM opd_refund_details ord
+                GROUP BY ord.billing_hd_id
+            ) rd
+                ON rd.billing_hd_id = v.billing_hd_id
 
-                    TRIM(
-                        CONCAT(
-                            COALESCE(p.p_fn, ''), ' ',
-                            COALESCE(p.p_mn, ''), ' ',
-                            COALESCE(p.p_ln, '')
-                        )
-                    ) AS patientName,
+            INNER JOIN billing_header bh
+                ON bh.bill_hd_id = v.billing_hd_id
 
-                    p.p_mobile_number AS mobileNo,
-                    p.p_age AS age,
-                    g.gender_name AS gender,
-                    dt.department_type_name AS billingType,
-                    v.visit_date AS date,
-                    bh.net_amount AS billingAmount,
-                    v.cancelled_datetime AS cancelledDate,
-                    d.department_name AS departmentName
+            WHERE LOWER(v.visit_status) = 'c'
+              AND LOWER(v.billing_status) = 'y'
+              AND COALESCE(bh.net_amount, 0) > 0
 
-                FROM visit v
+              AND (
+                  :patientName IS NULL
+                  OR :patientName = ''
+                  OR LOWER(
+                      CONCAT(
+                          COALESCE(p.p_fn, ''), ' ',
+                          COALESCE(p.p_mn, ''), ' ',
+                          COALESCE(p.p_ln, '')
+                      )
+                  ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+              )
 
-                INNER JOIN patient p
-                    ON p.patient_id = v.patient_id
+              AND (
+                  :mobileNo IS NULL
+                  OR :mobileNo = ''
+                  OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+              )
 
-                LEFT JOIN mas_gender g
-                    ON g.id = p.p_gender_id
+              AND (
+                  :billingService IS NULL
+                  OR :billingService = ''
+                  OR LOWER(COALESCE(dt.department_type_code, '')) LIKE LOWER(CONCAT('%', :billingService, '%'))
+              )
 
-                LEFT JOIN mas_department d
-                    ON d.department_id = v.department_id
-                LEFT JOIN mas_department_type dt
-                    ON dt.department_type_id = d.department_type_id
-                INNER JOIN billing_header bh
-                    ON bh.bill_hd_id = v.billing_hd_id
+              AND (
+                  :refundStatus IS NULL
+                  OR :refundStatus = ''
+                  OR COALESCE(rd.refundStatusCode, :refundDefaultStatus) = :refundStatus
+              )
 
-                WHERE LOWER(v.visit_status)
-                    = 'c'
+              AND (
+                  :fromDate IS NULL
+                  OR CAST(v.cancelled_datetime AS DATE) >= :fromDate
+              )
 
-                  AND LOWER(v.billing_status)
-                    = 'y'
+              AND (
+                  :toDate IS NULL
+                  OR CAST(v.cancelled_datetime AS DATE) <= :toDate
+              )
 
-                  AND COALESCE(bh.net_amount, 0) > 0
-
-                  AND (
-                      :patientName IS NULL
-                      OR :patientName = ''
-                      OR LOWER(
-                          CONCAT(
-                              COALESCE(p.p_fn, ''), ' ',
-                              COALESCE(p.p_mn, ''), ' ',
-                              COALESCE(p.p_ln, '')
-                          )
-                      ) LIKE LOWER(CONCAT('%', :patientName, '%'))
-                  )
-
-                  AND (
-                      :mobileNo IS NULL
-                      OR :mobileNo = ''
-                      OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
-                  )
-
-                  AND (
-                      :billingService IS NULL
-                      OR :billingService = ''
-                      OR LOWER(COALESCE(dt.department_type_code, ''))
-                          = LOWER(:billingService)
-                  )
-
-                  AND (
-                      :fromDate IS NULL
-                      OR CAST(v.cancelled_datetime AS DATE) >= :fromDate
-                  )
-                  
-                  AND (
-                      :toDate IS NULL
-                      OR CAST(v.cancelled_datetime AS DATE) <= :toDate
-                  )
-                """,
+            ORDER BY v.cancelled_datetime DESC
+            """,
 
             countQuery = """
-                SELECT COUNT(v.visit_id)
+            SELECT COUNT(v.visit_id)
 
-                FROM visit v
+            FROM visit v
 
-                INNER JOIN patient p
-                    ON p.patient_id = v.patient_id
-                LEFT JOIN mas_department d
-                    ON d.department_id = v.department_id
-                LEFT JOIN mas_department_type dt
-                    ON dt.department_type_id = d.department_type_id
-                INNER JOIN billing_header bh
-                    ON bh.bill_hd_id = v.billing_hd_id
+            INNER JOIN patient p
+                ON p.patient_id = v.patient_id
 
-                WHERE LOWER(COALESCE(v.visit_status, ''))
-                    = 'c'
+            LEFT JOIN mas_department d
+                ON d.department_id = v.department_id
 
-                  AND LOWER(COALESCE(v.billing_status, ''))
-                    = 'y'
+            LEFT JOIN mas_department_type dt
+                ON dt.department_type_id = d.department_type_id
 
-                  AND COALESCE(bh.net_amount, 0) > 0
+            INNER JOIN billing_header bh
+                ON bh.bill_hd_id = v.billing_hd_id
 
-                  AND (
-                      :patientName IS NULL
-                      OR :patientName = ''
-                      OR LOWER(
-                          CONCAT(
-                              COALESCE(p.p_fn, ''), ' ',
-                              COALESCE(p.p_mn, ''), ' ',
-                              COALESCE(p.p_ln, '')
-                          )
-                      ) LIKE LOWER(CONCAT('%', :patientName, '%'))
-                  )
+            LEFT JOIN (
+                SELECT
+                    ord.billing_hd_id,
+                    CASE
+                        WHEN MAX(ord.processed_date) IS NOT NULL THEN :refundCompletedStatus
+                        WHEN MAX(ord.refund_date) IS NOT NULL THEN :refundPendingStatus
+                        ELSE :refundDefaultStatus
+                    END AS refundStatusCode
+                FROM opd_refund_details ord
+                GROUP BY ord.billing_hd_id
+            ) rd
+                ON rd.billing_hd_id = v.billing_hd_id
 
-                  AND (
-                      :mobileNo IS NULL
-                      OR :mobileNo = ''
-                      OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
-                  )
+            WHERE LOWER(v.visit_status) = 'c'
+              AND LOWER(v.billing_status) = 'y'
+              AND COALESCE(bh.net_amount, 0) > 0
 
-                  AND (
-                      :billingService IS NULL
-                      OR :billingService = ''
-                      OR LOWER(COALESCE(dt.department_type_code, ''))
-                          = LOWER(:billingService)
-                  )
+              AND (
+                  :patientName IS NULL
+                  OR :patientName = ''
+                  OR LOWER(
+                      CONCAT(
+                          COALESCE(p.p_fn, ''), ' ',
+                          COALESCE(p.p_mn, ''), ' ',
+                          COALESCE(p.p_ln, '')
+                      )
+                  ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+              )
 
-                 AND (
-                         :fromDate IS NULL
-                         OR CAST(v.cancelled_datetime AS DATE) >= :fromDate
-                     )
-                    
-                     AND (
-                         :toDate IS NULL
-                         OR CAST(v.cancelled_datetime AS DATE) <= :toDate
-                     )
-                """,
+              AND (
+                  :mobileNo IS NULL
+                  OR :mobileNo = ''
+                  OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+              )
+
+              AND (
+                  :billingService IS NULL
+                  OR :billingService = ''
+                  OR LOWER(COALESCE(dt.department_type_code, '')) LIKE LOWER(CONCAT('%', :billingService, '%'))
+              )
+
+              AND (
+                  :refundStatus IS NULL
+                  OR :refundStatus = ''
+                  OR COALESCE(rd.refundStatusCode, :refundDefaultStatus) = :refundStatus
+              )
+
+              AND (
+                  :fromDate IS NULL
+                  OR CAST(v.cancelled_datetime AS DATE) >= :fromDate
+              )
+
+              AND (
+                  :toDate IS NULL
+                  OR CAST(v.cancelled_datetime AS DATE) <= :toDate
+              )
+            """,
             nativeQuery = true
     )
     Page<PaidCancelledAppointmentProjection> getBillingRefundPatientList(
             @Param("patientName") String patientName,
             @Param("mobileNo") String mobileNo,
             @Param("billingService") String billingService,
+            @Param("refundStatus") String refundStatus,
+            @Param("refundCompletedStatus") String refundCompletedStatus,
+            @Param("refundPendingStatus") String refundPendingStatus,
+            @Param("refundDefaultStatus") String refundDefaultStatus,
+            @Param("refundCompletedLabel") String refundCompletedLabel,
+            @Param("refundPendingLabel") String refundPendingLabel,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT
+        v.id AS visitId,
+        p.id AS patientId,
+        TRIM(CONCAT(
+            COALESCE(p.patientFn, ''), ' ',
+            COALESCE(p.patientMn, ''), ' ',
+            COALESCE(p.patientLn, '')
+        )) AS patientName,
+        p.patientMobileNumber AS mobileNumber,
+        p.uhidNo AS uhid,
+        pr.relationName AS relation,
+        g.genderName AS gender,
+        p.patientAge AS age,
+        d.departmentName AS specialty,
+        TRIM(CONCAT(
+            COALESCE(u.firstName, ''), ' ',
+            COALESCE(u.middleName, ''), ' ',
+            COALESCE(u.lastName, '')
+        )) AS doctorName,
+        CAST(v.visitDate AS string) AS visitDateTime
+    FROM Visit v
+    JOIN v.patient p
+    LEFT JOIN v.iniDoctor u
+    LEFT JOIN v.department d
+    LEFT JOIN p.patientRelation pr
+    LEFT JOIN p.patientGender g
+    LEFT JOIN d.departmentType dt
+    WHERE v.visitStatus = :visitStatus
+      AND dt.departmentTypeCode = :departmentTypeCode
+      AND (
+          :mobileNo IS NULL
+          OR :mobileNo = ''
+          OR p.patientMobileNumber LIKE CONCAT('%', :mobileNo, '%')
+      )
+      AND (
+          :patientName IS NULL
+          OR :patientName = ''
+          OR LOWER(
+              TRIM(CONCAT(
+                  COALESCE(p.patientFn, ''), ' ',
+                  COALESCE(p.patientMn, ''), ' ',
+                  COALESCE(p.patientLn, '')
+              ))
+          ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+      )
+    ORDER BY v.visitDate DESC
+    """)
+    Page<OpdReportListProjection> getOpdReportsList(
+            @Param("visitStatus") String visitStatus,
+            @Param("departmentTypeCode") String departmentTypeCode,
+            @Param("mobileNo") String mobileNo,
+            @Param("patientName") String patientName,
+            Pageable pageable
+    );
     }
-
-
-
 

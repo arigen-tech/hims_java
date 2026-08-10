@@ -1,12 +1,9 @@
 package com.hims.entity.repository;
 
-import com.hims.entity.MasItemCategory;
 import com.hims.entity.MasStoreItem;
-import com.hims.projection.ItemProjection;
-import com.hims.projection.MasStoreItemProjection;
-import com.hims.projection.MasStoreItemsProjection;
-import com.hims.projection.NonDrugStoreItemProjection;
+import com.hims.projection.*;
 import com.hims.response.ItemStockLedgerWithBatchResponse;
+import com.hims.response.NonDrugStoreItemResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,7 +12,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -149,6 +145,7 @@ SELECT
     m.lastChgDate as lastChgDate,
     m.lastChgTime as lastChgTime,
     m.adispQty as adispQty,
+    m.dosageUnit as dosageUnit,
 
     uau.unitId as unitAU,
     du.unitId as dispUnit,
@@ -205,7 +202,7 @@ GROUP BY
     cat.itemCategoryName, uau.unitName, du.unitName,
     s.sectionName, it.name, g.groupName, ic.itemClassName,
     h.hsnCode, h.gstRate,
-    m.reOrderLevelDispensary, m.reOrderLevelStore
+    m.reOrderLevelDispensary, m.reOrderLevelStore, m.dosageUnit
 """)
     Optional<MasStoreItemProjection> findItemWithStock(
             @Param("itemId") Long itemId,
@@ -226,8 +223,9 @@ GROUP BY
         m.nomenclature
     )
     FROM MasStoreItem m
+    LEFT JOIN m.sectionId s
     WHERE m.status = 'y'
-      AND m.sectionId.sectionId = :sectionId
+      AND s.sectionCode = :sectionCode
       AND (
             LOWER(m.nomenclature) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(m.pvmsNo) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -235,7 +233,7 @@ GROUP BY
     ORDER BY m.nomenclature ASC
 """)
     Page<ItemStockLedgerWithBatchResponse> searchItems(
-            @Param("sectionId") Long sectionId,
+            @Param("sectionCode") String sectionCode,
             @Param("keyword") String keyword,
             Pageable pageable
     );
@@ -247,8 +245,11 @@ GROUP BY
         m.nomenclature
     )
     FROM MasStoreItem m
+    LEFT JOIN m.sectionId s
+    LEFT JOIN m.itemTypeId t
     WHERE m.status = 'y'
-      AND m.sectionId.sectionId != :sectionId
+      AND s.sectionCode != :sectionCode
+      AND t.code IN (:medicalConsumablesAndNonConsumables)
       AND (
             LOWER(m.nomenclature) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(m.pvmsNo) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -256,8 +257,9 @@ GROUP BY
     ORDER BY m.nomenclature ASC
 """)
     Page<ItemStockLedgerWithBatchResponse> searchNonDrugItems(
-            @Param("sectionId") Long sectionId,
+            @Param("sectionCode") String sectionCode,
             @Param("keyword") String keyword,
+            @Param("medicalConsumablesAndNonConsumables") List<String> medicalConsumablesAndNonConsumables,
             Pageable pageable
     );
     @Query("""
@@ -332,7 +334,7 @@ GROUP BY
 
         ORDER BY m.lastChgDate DESC,  m.lastChgTime DESC
         """)
-    List<NonDrugStoreItemProjection> getAllNonDrugItems( @Param("sectionId") Integer sectionId);
+    List<NonDrugStoreItemProjection> getAllNonDrugItems(@Param("sectionId") Integer sectionId);
 
     List<MasStoreItem> findBySectionIdSectionIdAndStatusIgnoreCaseOrderByLastChgDateDescLastChgTimeDesc(Integer sectionId, String y);
 
@@ -378,7 +380,13 @@ GROUP BY
 
         m.dangerousDrug AS dangerousDrug,
         m.isGeneric AS isGeneric,
-        m.drugSchedule AS drugSchedule
+        m.drugSchedule AS drugSchedule,
+        m.highValueDrug AS highValueDrug,
+        m.availableInOpd AS availableInOpd,
+        m.availableInIpd AS availableInIpd,
+        m.availableInEmergency AS availableInEmergency,
+        m.availableInOt AS availableInOt,
+        m.dosageUnit AS dosageUnit
 
     FROM MasStoreItem m
     LEFT JOIN m.dispUnit du
@@ -440,7 +448,13 @@ ORDER BY m.lastChgDate DESC, m.lastChgTime DESC
 
         m.dangerousDrug AS dangerousDrug,
         m.isGeneric AS isGeneric,
-        m.drugSchedule AS drugSchedule
+        m.drugSchedule AS drugSchedule,
+        m.highValueDrug AS highValueDrug,
+        m.availableInOpd AS availableInOpd,
+        m.availableInIpd AS availableInIpd,
+        m.availableInEmergency AS availableInEmergency,
+        m.availableInOt AS availableInOt,
+        m.dosageUnit AS dosageUnit
 
     FROM MasStoreItem m
     LEFT JOIN m.dispUnit du
@@ -460,5 +474,312 @@ ORDER BY m.lastChgDate DESC, m.lastChgTime DESC
     List<MasStoreItemsProjection> findAllItemsBySectionIdAndStatusIn(
             @Param("sectionId") Integer sectionId,
             @Param("statusList") List<String> statusList
+    );
+    @Query(value = """
+SELECT
+    i.item_id AS itemId,
+    i.pvms_no AS pvmsNo,
+    i.nomenclature AS nomenclature,
+
+    g.group_id AS groupId,
+    g.group_name AS groupName,
+
+    it.item_type_id AS itemTypeId,
+    it.item_type_name AS itemTypeName,
+
+    s.section_id AS sectionId,
+    s.section_name AS sectionName,
+
+    ic.item_class_id AS itemClassId,
+    ic.item_class_name AS itemClassName,
+
+    c.item_category_id AS masItemCategoryId,
+    c.item_category_name AS masItemCategoryName,
+
+    u.unit_id AS unitAU,
+    u.unit_name AS unitAuName,
+
+    i.status AS status
+
+FROM mas_store_item i
+
+INNER JOIN mas_store_section s
+        ON s.section_id = i.section_id
+
+INNER JOIN mas_item_type it
+        ON it.item_type_id = i.item_type_id
+
+INNER JOIN mas_store_group g
+        ON g.group_id = i.group_id
+
+LEFT JOIN mas_item_class ic
+       ON ic.item_class_id = i.item_class_id
+
+LEFT JOIN mas_item_category c
+       ON c.item_category_id = i.item_category_id
+
+LEFT JOIN mas_store_unit u
+       ON u.unit_id = i.unit_au
+
+WHERE
+      s.section_code <> :drugSectionCode
+  AND it.item_type_code = :medicalConsumableItemTypeCode
+  AND g.group_code = :groupCode
+AND (
+        :itemName IS NULL
+        OR :itemName = ''
+        OR LOWER(i.nomenclature) LIKE LOWER(CONCAT('%', :itemName, '%'))
+    )
+
+AND (
+        :itemClassId IS NULL
+        OR ic.item_class_id = :itemClassId
+    )
+    
+AND (
+        :sectionId IS NULL
+        OR s.section_id = :sectionId
+    )
+
+
+ORDER BY i.nomenclature
+""",
+            countQuery = """
+SELECT COUNT(*)
+FROM mas_store_item i
+
+INNER JOIN mas_store_section s
+        ON s.section_id = i.section_id
+
+INNER JOIN mas_item_type it
+        ON it.item_type_id = i.item_type_id
+
+INNER JOIN mas_store_group g
+        ON g.group_id = i.group_id
+
+LEFT JOIN mas_item_class ic
+       ON ic.item_class_id = i.item_class_id
+
+WHERE
+      s.section_code <> :drugSectionCode
+  AND it.item_type_code = :medicalConsumableItemTypeCode
+  AND g.group_code = :groupCode
+       AND (
+          :itemName IS NULL
+            OR :itemName = ''
+          OR LOWER(i.nomenclature) LIKE LOWER(CONCAT('%', :itemName, '%'))
+          )
+       AND (
+        :itemClassId IS NULL
+        OR ic.item_class_id = :itemClassId
+    )
+      AND (
+        :sectionId IS NULL
+        OR s.section_id = :sectionId
+    )
+
+""",
+            nativeQuery = true)
+    Page<MedicalConsumableItemProjection> medicalConsumableItem(
+            @Param("drugSectionCode") String drugSectionCode,
+            @Param("medicalConsumableItemTypeCode") String medicalConsumableItemTypeCode,
+            @Param("groupCode") String groupCode,
+            @Param("itemName") String itemName,
+            @Param("sectionId") Integer sectionId,
+            @Param("itemClassId") Integer itemClassId,
+            Pageable pageable);
+    @Query(value = """
+SELECT
+    i.item_id AS itemId,
+    i.pvms_no AS pvmsNo,
+    i.nomenclature AS nomenclature,
+
+    g.group_id AS groupId,
+    g.group_name AS groupName,
+
+    it.item_type_id AS itemTypeId,
+    it.item_type_name AS itemTypeName,
+
+    s.section_id AS sectionId,
+    s.section_name AS sectionName,
+
+    ic.item_class_id AS itemClassId,
+    ic.item_class_name AS itemClassName,
+
+    c.item_category_id AS masItemCategoryId,
+    c.item_category_name AS masItemCategoryName,
+
+    u.unit_id AS unitAU,
+    u.unit_name AS unitAuName,
+
+    i.status AS status
+
+FROM mas_store_item i
+
+INNER JOIN mas_store_section s
+        ON s.section_id = i.section_id
+
+INNER JOIN mas_item_type it
+        ON it.item_type_id = i.item_type_id
+
+INNER JOIN mas_store_group g
+        ON g.group_id = i.group_id
+
+LEFT JOIN mas_item_class ic
+       ON ic.item_class_id = i.item_class_id
+
+LEFT JOIN mas_item_category c
+       ON c.item_category_id = i.item_category_id
+
+LEFT JOIN mas_store_unit u
+       ON u.unit_id = i.unit_au
+
+WHERE
+     it.item_type_code = :medicalNonConsumableItemTypeCode
+  AND g.group_code = :groupCode
+AND (
+        :itemName IS NULL
+        OR :itemName = ''
+        OR LOWER(i.nomenclature) LIKE LOWER(CONCAT('%', :itemName, '%'))
+    )
+
+AND (
+        :itemClassId IS NULL
+        OR ic.item_class_id = :itemClassId
+    )
+       
+AND (
+        :sectionId IS NULL
+        OR s.section_id = :sectionId
+    )
+
+
+ORDER BY i.nomenclature
+""",
+            countQuery = """
+SELECT COUNT(*)
+FROM mas_store_item i
+
+INNER JOIN mas_store_section s
+        ON s.section_id = i.section_id
+
+INNER JOIN mas_item_type it
+        ON it.item_type_id = i.item_type_id
+
+INNER JOIN mas_store_group g
+        ON g.group_id = i.group_id
+
+LEFT JOIN mas_item_class ic
+       ON ic.item_class_id = i.item_class_id
+
+WHERE
+      it.item_type_code = :medicalNonConsumableItemTypeCode
+  AND g.group_code = :groupCode
+       AND (
+          :itemName IS NULL
+            OR :itemName = ''
+          OR LOWER(i.nomenclature) LIKE LOWER(CONCAT('%', :itemName, '%'))
+          )
+       AND (
+        :itemClassId IS NULL
+        OR ic.item_class_id = :itemClassId
+    )
+""",
+            nativeQuery = true)
+    Page<MedicalConsumableItemProjection> nonMedicalConsumableItem(
+            @Param("medicalNonConsumableItemTypeCode") String medicalNonConsumableItemTypeCode,
+            @Param("groupCode") String groupCode,
+            @Param("itemName") String itemName,
+            @Param("sectionId") Integer sectionId,
+            @Param("itemClassId") Integer itemClassId,
+            Pageable pageable);
+
+    @Query(value = """
+    SELECT
+        m.itemId AS itemId,
+        m.pvmsNo AS pvmsNo,
+        m.nomenclature AS nomenclature,
+        m.status AS status,
+        m.lastChgBy AS lastChgBy,
+        m.lastChgDate AS lastChgDate,
+        m.lastChgTime AS lastChgTime,
+        m.adispQty AS adispQty,
+
+        du.unitId AS dispUnit,
+        du.unitName AS dispUnitName,
+
+        au.unitId AS unitAU,
+        au.unitName AS unitAuName,
+
+        sec.sectionId AS sectionId,
+        sec.sectionName AS sectionName,
+
+        it.id AS itemTypeId,
+        it.name AS itemTypeName,
+
+        grp.id AS groupId,
+        grp.groupName AS groupName,
+
+        cls.itemClassId AS itemClassId,
+        cls.itemClassName AS itemClassName,
+
+        cat.itemCategoryId AS masItemCategoryid,
+        cat.itemCategoryName AS masItemCategoryName,
+
+        hsn.hsnCode AS hsnCode,
+        hsn.gstRate AS hsnGstPercent,
+
+        m.reOrderLevelDispensary AS reOrderLevelDispensary,
+        m.reOrderLevelStore AS reOrderLevelStore,
+
+        m.dangerousDrug AS dangerousDrug,
+        m.isGeneric AS isGeneric,
+        m.drugSchedule AS drugSchedule,
+        m.highValueDrug AS highValueDrug,
+        m.availableInOpd AS availableInOpd,
+        m.availableInIpd AS availableInIpd,
+        m.availableInEmergency AS availableInEmergency,
+        m.availableInOt AS availableInOt,
+        m.dosageUnit AS dosageUnit
+
+    FROM MasStoreItem m
+    LEFT JOIN m.dispUnit du
+    LEFT JOIN m.unitAU au
+    LEFT JOIN m.sectionId sec
+    LEFT JOIN m.itemTypeId it
+    LEFT JOIN m.groupId grp
+    LEFT JOIN m.itemClassId cls
+    LEFT JOIN m.masItemCategory cat
+    LEFT JOIN m.hsnCode hsn
+
+    WHERE 
+      ((:flag = 1 AND LOWER(m.status) = 'y') OR (:flag = 0 AND LOWER(m.status) IN ('y', 'n')))
+      AND (:sectionId IS NULL OR sec.sectionId = :sectionId)
+      AND (:nomenclature IS NULL OR :nomenclature = '' OR LOWER(m.nomenclature) LIKE LOWER(CONCAT('%', :nomenclature, '%')))
+      AND (:itemClassId IS NULL OR cls.itemClassId = :itemClassId)
+      AND (:masItemCategoryid IS NULL OR cat.itemCategoryId = :masItemCategoryid)
+
+    ORDER BY m.status DESC, m.lastChgDate DESC, m.lastChgTime DESC
+    """,
+    countQuery = """
+    SELECT COUNT(m)
+    FROM MasStoreItem m
+    LEFT JOIN m.sectionId sec
+    LEFT JOIN m.itemClassId cls
+    LEFT JOIN m.masItemCategory cat
+    WHERE 
+      ((:flag = 1 AND LOWER(m.status) = 'y') OR (:flag = 0 AND LOWER(m.status) IN ('y', 'n')))
+      AND (:sectionId IS NULL OR sec.sectionId = :sectionId)
+      AND (:nomenclature IS NULL OR :nomenclature = '' OR LOWER(m.nomenclature) LIKE LOWER(CONCAT('%', :nomenclature, '%')))
+      AND (:itemClassId IS NULL OR cls.itemClassId = :itemClassId)
+      AND (:masItemCategoryid IS NULL OR cat.itemCategoryId = :masItemCategoryid)
+    """)
+    Page<MasStoreItemsProjection> findItemsWithOutStockPaginated(
+            @Param("flag") int flag,
+            @Param("sectionId") Integer sectionId,
+            @Param("nomenclature") String nomenclature,
+            @Param("itemClassId") Integer itemClassId,
+            @Param("masItemCategoryid") Integer masItemCategoryid,
+            Pageable pageable
     );
 }

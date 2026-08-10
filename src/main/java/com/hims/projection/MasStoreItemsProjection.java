@@ -73,5 +73,16 @@ public interface MasStoreItemsProjection {
 
     String getDrugSchedule();
 
+    String getHighValueDrug();
+
+    String getAvailableInOpd();
+
+    String getAvailableInIpd();
+
+    String getAvailableInEmergency();
+
+    String getAvailableInOt();
+
+    String getDosageUnit();
 
 }

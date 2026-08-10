@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Patient_details" pageWidth="550" pageHeight="842" columnWidth="550" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="6b917bda-c067-4a50-b94b-a72345a07b35">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="inPatientId" class="java.lang.Integer"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+    CONCAT( p.p_fn, ' ', COALESCE(p.p_mn || ' ', ''), p.p_ln) AS patient_name,
+    SPLIT_PART(p.p_age, 'Y', 1)::INT AS p_age,
+    mg.gender_code,
+    ip.inpatient_id,
+    ip.admission_no,
+    p.uhid_no,
+    p.p_mobile_number,
+    concat(me.emp_fn, ' ', me.emp_ln) AS doctor_name,
+    mb.bed_number,
+
+    TO_CHAR(iba.allocation_start_date, 'DD/MM/YYYY') AS allocation_date,
+    COALESCE(ide.diagnosis_text, ip.initial_diagnosis,ip.icd ) AS diagnosis_text
+FROM inpatient ip
+LEFT JOIN patient p ON p.patient_id = ip.patient
+LEFT JOIN mas_gender mg ON mg.id = p.p_gender_id
+LEFT JOIN (
+    SELECT DISTINCT ON (ip_admission_id)
+        ip_admission_id,
+        bed_id,
+        allocation_start_date
+    FROM ip_bed_allocation
+    ORDER BY
+        ip_admission_id,
+        allocation_start_date DESC
+) iba
+    ON iba.ip_admission_id = ip.inpatient_id
+LEFT JOIN mas_bed mb ON mb.bed_id = COALESCE(iba.bed_id, ip.bed_id)
+LEFT JOIN (
+    SELECT DISTINCT ON (inpatient_id)
+        inpatient_id,
+        diagnosis_text,
+        diagnosis_datetime,
+        recorded_by
+    FROM ip_diagnosis_entry
+    ORDER BY
+        inpatient_id,
+        diagnosis_datetime DESC
+) ide
+    ON ide.inpatient_id = ip.inpatient_id
+inner join users u on ide.recorded_by = u.user_id
+inner join mas_employee me on u.employee_id = me.emp_id
+WHERE ip.inpatient_id = $P{inPatientId}]]>
+	</queryString>
+	<field name="patient_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_name"/>
+	</field>
+	<field name="p_age" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="p_age"/>
+		<property name="com.jaspersoft.studio.field.label" value="p_age"/>
+	</field>
+	<field name="gender_code" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gender_code"/>
+		<property name="com.jaspersoft.studio.field.label" value="gender_code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_gender"/>
+	</field>
+	<field name="inpatient_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="inpatient_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="inpatient_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="inpatient"/>
+	</field>
+	<field name="admission_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="admission_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="admission_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="inpatient"/>
+	</field>
+	<field name="uhid_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="uhid_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="uhid_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="p_mobile_number" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="p_mobile_number"/>
+		<property name="com.jaspersoft.studio.field.label" value="p_mobile_number"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="doctor_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="doctor_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="doctor_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_daily_case_sheet_entry"/>
+	</field>
+	<field name="bed_number" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="bed_number"/>
+		<property name="com.jaspersoft.studio.field.label" value="bed_number"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_bed"/>
+	</field>
+	<field name="allocation_date" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="allocation_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="allocation_date"/>
+	</field>
+	<field name="diagnosis_text" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="diagnosis_text"/>
+		<property name="com.jaspersoft.studio.field.label" value="diagnosis_text"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="ip_diagnosis_entry"/>
+	</field>
+	<summary>
+		<band height="97" splitType="Stretch">
+			<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.FreeLayout"/>
+			<textField textAdjust="StretchHeight">
+				<reportElement positionType="Float" x="0" y="83" width="550" height="12" uuid="84fb3502-ca3a-4dca-8204-b128b6ffe305"/>
+				<textElement markup="html">
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA["<b>Diagnosis:</b> " + $F{diagnosis_text}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement positionType="Float" x="0" y="71" width="550" height="12" uuid="91424696-ee01-478d-acf8-d751e0b387cb"/>
+				<textElement markup="html">
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA["<b>Ward/Bed:</b> " + $F{bed_number}+ "  |  " + "<b>Doctor:</b> " +  $F{doctor_name}  + "  |  " + "<b>Addmission Date & Time:</b> " + $F{allocation_date}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement positionType="Float" x="0" y="59" width="550" height="12" uuid="f34b4dfd-6048-4c5d-b380-df8863e163a8"/>
+				<textElement markup="html">
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<textFieldExpression><![CDATA["<b>Patient:</b> " + $F{patient_name}
++ " (" + $F{p_age} + "/" + $F{gender_code} + ")"
++ "  |  <b>IP:</b> " + $F{inpatient_id}
++ "  |  <b>UHID:</b> " + $F{uhid_no}
++ "  |  <b>Mob:</b> " + $F{p_mobile_number}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="200" height="45" uuid="b74ed705-e137-44e3-b364-bef4d25967ad"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+		</band>
+	</summary>
+</jasperReport>

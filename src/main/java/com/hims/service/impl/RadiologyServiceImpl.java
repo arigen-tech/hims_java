@@ -5,12 +5,15 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.helperUtil.HelperUtils;
 import com.hims.projection.RadiologyProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.RadiologyService;
+import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISTransaction;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -86,6 +89,11 @@ public class RadiologyServiceImpl implements RadiologyService {
     PaymentDetailRepository paymentDetailRepository;
     @Autowired
     private RadStudyReportRepository radStudyReportRepository;
+    @Autowired
+    private TransactionSequenceService transactionSequenceService;
+
+    @Autowired
+    private HelperUtils helperUtils;
 
 
     @Override
@@ -419,10 +427,6 @@ public class RadiologyServiceImpl implements RadiologyService {
         return  billingDetailRepository.save(billingDetail);
     }
 
-    private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
-        int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
-        return count > 0 ? "F" : "N";
-    }
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -564,7 +568,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         visit.setLastChgDate(Instant.now());
         visit.setDisplayPatientStatus("wp");
 
-        String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), Instant.now());
+        String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
         visit.setVisitType(visitType);
 
 
@@ -600,7 +604,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         List<RadOrderDt> orderDetailsToSave = new ArrayList<>();
         
         for (LabRadioInvestigationRequest inv : investigations) {
-            if ("i".equalsIgnoreCase(inv.getType())) {
+            if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(inv.getType())) {
                 DgMasInvestigation entity = investigationsMap.get(inv.getId());
                 if (entity == null) {
                     log.warn("Investigation not found with ID: {}", inv.getId());
@@ -613,7 +617,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                 billingService.saveBillingDetail(billing, dt, inv, serviceCategoryRad, true);
 
 
-            } else if ("p".equalsIgnoreCase(inv.getType())) {
+            } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(inv.getType())) {
                 DgInvestigationPackage pkg = packagesMap.get(inv.getId());
                 if (pkg == null) {
                     log.warn("Package not found with ID: {}", inv.getId());
@@ -650,7 +654,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         RadOrderDt dt = new RadOrderDt();
         dt.setRadOrderhd(hd);
         dt.setSubChargecode(subChargeCode);
-        dt.setOrderAccessionNo(randomNumGenerator.generateOrderNumber("RAD", true, true));
+        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, hd.getHospital().getId()));
         dt.setAppointmentDate(inv.getAppointmentDate());
         dt.setBillingHd(billing);
         dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
@@ -963,13 +967,18 @@ public class RadiologyServiceImpl implements RadiologyService {
             radDt.setStudyStatus(status);
             radOrderDtRepository.save(radDt);
 
-            if (AppConstants.STATUS_Y.equalsIgnoreCase(status)) {
+            if (AppConstants.STATUS_Y.equalsIgnoreCase(status)
+                    || AppConstants.VISIT_STATUS_CANCELLED.equalsIgnoreCase(status)) {
                 Visit visit = Optional.ofNullable(radDt.getRadOrderhd())
                         .map(RadOrderHd::getVisit)
                         .orElse(null);
 
                 if (visit != null) {
-                    visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
+                    if (AppConstants.STATUS_Y.equalsIgnoreCase(status)) {
+                        visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
+                    } else {
+                        visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
+                    }
                     visitRepository.save(visit);
                     log.info("Visit status updated successfully for visitId={} newStatus={}",
                             visit.getId(), visit.getVisitStatus());

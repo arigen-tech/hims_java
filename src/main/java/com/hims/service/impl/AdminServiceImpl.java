@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.projection.AppSetupProjection;
@@ -73,7 +74,7 @@ public class AdminServiceImpl implements AdminService {
 
 
     @Override
-    public ApiResponse<AppsetupResponse> createAppointmentSetup(AppointmentReq appointmentReq) {
+    public ApiResponse<AppsetupResponse> createOrUpdateAppointmentSetup(AppointmentReq appointmentReq) {
         AppsetupResponse res = new AppsetupResponse();
         try {
             log.info("appSetup called: deptId={}, doctorId={}, sessionId={}", appointmentReq.getDepartmentId(), appointmentReq.getDoctorId(),
@@ -81,8 +82,7 @@ public class AdminServiceImpl implements AdminService {
 
             User currentUser = getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                        },
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
             MasDepartment department = departmentRepository.findById(appointmentReq.getDepartmentId())
@@ -98,13 +98,13 @@ public class AdminServiceImpl implements AdminService {
                     entry = appSetupRepository.findById(key.getId())
                             .orElseThrow(() -> new SDDException("id", 404, "Appointment setup not found"));
                 } else {
-                    // Count the number of existing entries with the same departmentId, doctorId, and sessionId
                     long existingCount = appSetupRepository.countByDeptAndDoctorIdAndSession(department, doctor, session);
 
                     if (existingCount >= 7) {
                         throw new SDDException("duplicate_entry", 409, "An appointment setup with these details already exists 7 times");
                     }
                     entry = new AppSetup();
+                    res.setMsg(AppConstants.APPOINTMENT_SETUP_SUCCESS_MSG);
                 }
                 entry.setDept(department);
                 entry.setDoctorId(doctor);
@@ -128,7 +128,9 @@ public class AdminServiceImpl implements AdminService {
                 log.info("AppSetup saved: id={}, day={}, startTime={}, endTime={}",
                         saved.getId(), key.getDay(), key.getStartTime(), key.getEndTime());
             }
-            res.setMsg("Success");
+            if(res.getMsg() == null) {
+                res.setMsg(AppConstants.APPOINTMENT_UPDATE_SUCCESS_MSG);
+            }
             log.info("appSetup completed successfully: deptId={}, doctorId={}, sessionId={}",
                     appointmentReq.getDepartmentId(), appointmentReq.getDoctorId(), appointmentReq.getSessionId());
             return ResponseUtils.createSuccessResponse(res, new TypeReference<AppsetupResponse>() {
