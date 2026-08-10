@@ -191,6 +191,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     StoreIssueTRepository storeIssueTRepository;
     @Autowired
     StoreStockLedgerRepository storeStockLedgerRepository;
+    @Autowired
+    IpMedicineIssueRepository ipMedicineIssueRepository;
 
 
 
@@ -250,6 +252,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long   ipPaymentStatusPending;
     @Value("${ip.bill.status.close}")
     Long   ipBillStatusClose;
+
+    @Value("${ipd.service.category.drug}")
+    Long   IPDServiceCategoryDrug;
 
 
     @Override
@@ -2612,6 +2617,16 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             if (item == null) {
                 return ResponseUtils.createNotFoundResponse("Item not found with ID: " + request.getItemId(), HttpStatus.NOT_FOUND.value());
             }
+            // Check duplicate item for same inpatient
+            if (ipMedicinePrescriptionRepository.existsByInpatient_InpatientIdAndItem_ItemId(request.getInpatientId(),
+                    request.getItemId())) {
+
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Item already added for this inpatient",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
 
             MasRoute route = masRouteRepository.findById(request.getRouteId()).orElse(null);
             if (route == null) {
@@ -2733,8 +2748,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         User user = authUtil.getCurrentUser();
 
-        StoreIssueM issueM = null;
-
         try {
             for (MarDetailsRequest request : requests) {
 
@@ -2766,20 +2779,24 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
                 log.info("MAR entry saved with id={} for inpatientId={}", mar.getMarId(), inpatient.getInpatientId());
 
-                // 3. Find Batch Stock
-                StoreItemBatchStock stock = (StoreItemBatchStock) storeItemBatchStockRepository.findByItemId_ItemIdAndBatchNo(
-                        request.getItemId() , request.getBatchNo()).orElseThrow(() -> {
-                                    return new RuntimeException("Batch not found");});
+               // 3. Find Batch Stock (locked)
+                StoreItemBatchStock stock = storeItemBatchStockRepository.findByItemIdAndBatchNoForUpdate(request.getItemId(), request.getBatchNo(),request.getDepartmentId())
+                        .orElseThrow(() -> new RuntimeException("Batch not found"));
 
                 BigDecimal currentQty = BigDecimal.valueOf(stock.getClosingStock());
+
+                //---------------------------------------------------
+                // Runtime stock check — available qty >= requested qty
+                //---------------------------------------------------
+                if (currentQty.compareTo(request.getRequestQty()) < 0) {
+                    log.error("Insufficient stock for itemId={}, batchNo={}, available={}, requested={}",
+                            request.getItemId(), request.getBatchNo(), currentQty, request.getRequestQty());
+                    throw new RuntimeException("Insufficient Stock");
+                }
+
                 BigDecimal currentIpdIssueQty = stock.getIpdIssueQty() != null ? stock.getIpdIssueQty() : BigDecimal.ZERO;
                 BigDecimal updatedIpdIssueQty = currentIpdIssueQty.add(request.getRequestQty());
                 BigDecimal updatedQty = currentQty.subtract(request.getRequestQty());
-
-                if (currentQty.compareTo(request.getRequestQty()) < 0) {
-                    log.error("Insufficient stock for itemId={}, batchNo={}, available={}, requested={}", request.getItemId(), request.getBatchNo(), currentQty, request.getRequestQty());
-                    throw new RuntimeException("Insufficient Stock");
-                }
 
                 //---------------------------------------------------
                 // Update Batch Stock
@@ -2791,51 +2808,39 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 storeItemBatchStockRepository.save(stock);
 
                 log.info("Stock updated for batchNo={}, before={}, after={}", request.getBatchNo(), currentQty, updatedQty);
-
                 //---------------------------------------------------
-                // Store Issue Header (only once per save call)
-                //---------------------------------------------------
-
-                if (issueM == null) {
-
-                    String issueNo = generateIssueNumber();
-
-                    issueM = new StoreIssueM();
-                    issueM.setIssueNo(issueNo);
-                    issueM.setIssueDate(LocalDateTime.now());
-                    issueM.setHospitalId(stock.getHospitalId());
-                    issueM.setToDeptId(stock.getDepartmentId());
-                    issueM.setStatus(AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT);
-                    issueM.setIssuedBy(user.getUsername());
-                    issueM.setInpatient(inpatient);
-                    issueM.setIssuedDate(LocalDateTime.now());
-
-                    storeIssueMRepository.save(issueM);
-
-                    log.info("Store issue header created with issueNo={}", issueNo);
-                }
-
-                //---------------------------------------------------
-                // Store Issue Detail
+                // Store IpMedicineIssue
                 //---------------------------------------------------
 
-                StoreIssueT issueT = new StoreIssueT();
+                IpMedicineIssue ipMedicineIssue = new IpMedicineIssue();
 
-                issueT.setStoreIssueMId(issueM);
-                issueT.setItemId(stock.getItemId());
-                issueT.setIssuedQty(request.getRequestQty());
-                issueT.setUnitPrice(stock.getPurchaseRatePerUnit());
-                issueT.setBatchNo(stock.getBatchNo());
-                issueT.setExpiryDate(stock.getExpiryDate());
-                issueT.setStatus(AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT);
-                issueT.setDom(stock.getManufactureDate());
-                issueT.setInpatientIssueQty(request.getRequestQty());
-                issueT.setBrandname(stock.getBrandId() != null ? stock.getBrandId().getBrandName() : null);
-                issueT.setManufacturername(stock.getManufacturerId() != null ? stock.getManufacturerId().getManufacturerName() : null);
+                ipMedicineIssue.setInpatient(inpatient);
+                ipMedicineIssue.setPrescription(prescription);
+                ipMedicineIssue.setMarDetails(mar);
+                ipMedicineIssue.setItem(stock.getItemId());
+                ipMedicineIssue.setBatch(stock);
+                ipMedicineIssue.setBatchNo(request.getBatchNo());
+                ipMedicineIssue.setExpiryDate(request.getExpiryDate());
+                ipMedicineIssue.setIssueQty(request.getRequestQty());
+                ipMedicineIssue.setIssueDatetime(LocalDateTime.now());
+                ipMedicineIssue.setIssuedBy(user.getUserId());
+                ipMedicineIssue.setCreatedBy(user.getUserId());
+                ipMedicineIssue.setCreatedOn(LocalDateTime.now());
+                ipMedicineIssue.setLastChgBy(user.getUserId());
+                ipMedicineIssue.setLastChgOn(LocalDateTime.now());
+                ipMedicineIssue.setRemarks(request.getRemark());
 
-                storeIssueTRepository.save(issueT);
+                ipMedicineIssueRepository.save(ipMedicineIssue);
 
-                log.info("Store issue detail saved with id={} for issueNo={}", issueT.getStoreIssueTId(), issueM.getIssueNo());
+                log.info("IpMedicineIssue saved with id={} for inpatientId={}, prescriptionId={}, marId={}, batchNo={}, issueQty={}",
+                        ipMedicineIssue.getIpMedicineIssueId(),
+                        inpatient.getInpatientId(),
+                        prescription.getPrescriptionId(),
+                        mar.getMarId(),
+                        request.getBatchNo(),
+                        request.getRequestQty()
+                );
+
 
                 //---------------------------------------------------
                 // Stock Ledger
@@ -2845,12 +2850,11 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 ledger.setStockId(stock);
                 ledger.setTxnType(AppConstants.INPATIENT_ISSUE);
                 ledger.setTxnDate(LocalDate.now());
-                ledger.setTxnReferenceId(issueT.getStoreIssueTId());
+                ledger.setTxnReferenceId(ipMedicineIssue.getIpMedicineIssueId());
                 ledger.setQtyBefore(currentQty);
                 ledger.setQtyOut(request.getRequestQty());
                 ledger.setQtyAfter(updatedQty);
                 ledger.setTxnSource(AppConstants.INPATIENT_ISSUE);
-                ledger.setReferenceNum(issueM.getIssueNo());
                 ledger.setCreatedBy(user.getUsername());
                 ledger.setCreatedDt(LocalDateTime.now());
                 ledger.setHospital(stock.getHospitalId());
@@ -2866,6 +2870,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 BigDecimal amount = calculateAmount(stock.getMrpPerUnit(), request.getRequestQty());
                 BigDecimal gstAmount = calculateGST(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
                 BigDecimal netAmount = calculateNetAmount(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
+                Optional<MasIpdServiceCategory> masIpdServiceCategory=masIpdServiceCategoryRepository.findById(IPDServiceCategoryDrug);
 
                 saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,
                         stock.getMrpPerUnit(),
@@ -2875,7 +2880,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                         amount,
                         gstAmount,
                         netAmount,
-                        null,
+                        masIpdServiceCategory.get(),
                         null,
                         stock.getItemId().getNomenclature()
                 );

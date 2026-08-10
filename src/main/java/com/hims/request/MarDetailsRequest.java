@@ -16,6 +16,7 @@ public class MarDetailsRequest {
     private LocalDate expiryDate;
     private String givenBy;
     private String remark;
+    private Long departmentId;
 
 
 
