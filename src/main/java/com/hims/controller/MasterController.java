@@ -5,7 +5,6 @@ import com.hims.projection.ItemProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
-import com.hims.service.impl.MasWardRoomTariffServiceImpl;
 import com.hims.service.impl.UserDepartmentServiceImpl;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -1519,11 +1518,11 @@ public class MasterController {
         return masHsnService.getAllMasStoreItem(flag);
     }
 
-    @GetMapping("/masHSN/getById/{id}")
-    public ResponseEntity<ApiResponse<MasHsnResponse>> getMasHSNById(@PathVariable String id) {
-        ApiResponse<MasHsnResponse> response = masHsnService.findById(id);
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
+//    @GetMapping("/masHSN/getById/{id}")
+//    public ResponseEntity<ApiResponse<MasHsnResponse>> getMasHSNById(@PathVariable String id) {
+//        ApiResponse<MasHsnResponse> response = masHsnService.findById(id);
+//        return new ResponseEntity<>(response, HttpStatus.OK);
+//    }
 
     @PostMapping("/masHSN/create")
     public ResponseEntity<ApiResponse<MasHsnResponse>> addMasHSN(@RequestBody MasHsnRequest masHsnRequest) {
@@ -1733,12 +1732,10 @@ public class MasterController {
         ApiResponse<List<MasInvestigationMethodologyResponse >> response = masInvestigationMethodologyService.get();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-    @GetMapping("/masInvestigationMethodology/getById/{id}")
+    @GetMapping("/masHSN/getById/{id}")
     public ResponseEntity<ApiResponse<MasInvestigationMethodologyResponse >> getMasHSNById(@PathVariable Long id) {
-        ApiResponse<MasInvestigationMethodologyResponse > response = masInvestigationMethodologyService.findById(id);
-    public ResponseEntity<ApiResponse<List<MasInvestigationMethodologyResponse>>> getMethodology() {
-        ApiResponse<List<MasInvestigationMethodologyResponse>> response = masInvestigationMethodologyService.getAll();
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        ApiResponse<MasInvestigationMethodologyResponse> response = masInvestigationMethodologyService.findById(id);
+        return ResponseEntity.ok(response);
     }
     @GetMapping("/masInvestigationMethodology/getById/{id}")
     public ResponseEntity<ApiResponse<MasInvestigationMethodologyResponse>> getMasInvestigationMethodologyById(@PathVariable Long id) {

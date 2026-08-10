@@ -25,7 +25,7 @@ public class MasRoleServiceImpl implements MasRoleService {
     private MasRoleRepository masRoleRepository;
 
     private boolean isValidStatus(String status) {
-        return STATUS_ACTIVE.equalsIgnoreCase(status) || STATUS_INACTIVE.equalsIgnoreCase(status);
+        return STATUS_Y.equalsIgnoreCase(status) || STATUS_N.equalsIgnoreCase(status);
     }
 
     @Override
@@ -92,9 +92,9 @@ public class MasRoleServiceImpl implements MasRoleService {
     public ApiResponse<List<MasRoleResponse>> getAllRoles(int flag) {
         List<MasRole> roles;
 
-        if (flag == FLAG_ACTIVE_ONLY) {
-            roles = masRoleRepository.findByStatusIgnoreCase(STATUS_ACTIVE);
-        } else if (flag == FLAG_ALL) {
+        if (flag == 1) {
+            roles = masRoleRepository.findByStatusIgnoreCase(STATUS_Y);
+        } else if (flag == 0) {
             roles = masRoleRepository.findAllByOrderByStatusDescUpdatedOnDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, MSG_INVALID_FLAG, 400);
