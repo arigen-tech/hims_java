@@ -95,6 +95,9 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     DoctorRosterServices doctorRosterServices;
 
+    @Autowired
+    HelperUtils helperUtils;
+
 
     @Value("${upload.image.path}")
     private String baseUrl;
@@ -158,7 +161,7 @@ public class PatientServiceImpl implements PatientService {
             if (!visit.isEmpty()) {
                 for (VisitRequest v : visit) {
                     Instant today = v.getVisitDate();
-                    String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), today);
+                    String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
                     v.setVisitType(visitType);
                     Visit saved = createSingleAppointment(v, patient);
                     savedVisits.add(saved);
@@ -183,10 +186,6 @@ public class PatientServiceImpl implements PatientService {
     }
 
 
-    private String getVisitTypeForFollowUpOrNew(Long patientId, Instant visitDate) {
-        int count = visitRepository.countByPatientIdAndVisitDate(patientId, visitDate);
-        return count > 0 ? "F" : "N";
-    }
 
     public OPDBillingPatientResponse buildFinalResponse(Patient patient, List<Visit> savedVisits) {
         OPDBillingPatientResponse response = new OPDBillingPatientResponse();
@@ -892,8 +891,7 @@ public class PatientServiceImpl implements PatientService {
         }
 
         if (visit.getIniDoctorId() != null) {
-            assert visit.getDoctorId() != null;
-            userRepository.findById(visit.getDoctorId()).ifPresent(newVisit::setIniDoctor);
+            authUtil.getCurrentUser().getUserId();
         }
 
         if (visit.getSessionId() != null) {
@@ -1163,7 +1161,7 @@ public class PatientServiceImpl implements PatientService {
             if (visitReq!=null) {
 
                 Instant date = visitReq.getVisitDate();
-                String visitType = getVisitTypeForFollowUpOrNew(patient.getId(), date);
+                String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
                 visitReq.setVisitType(visitType);
                 Visit saved = createSingleAppointment(visitReq, patient);
 

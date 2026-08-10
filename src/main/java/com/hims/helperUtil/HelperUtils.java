@@ -5,6 +5,7 @@ import com.hims.entity.DgMasInvestigation;
 import com.hims.entity.MasSubChargeCode;
 import com.hims.entity.repository.DgMasInvestigationRepository;
 import com.hims.entity.repository.MasSubChargeCodeRepository;
+import com.hims.entity.repository.VisitRepository;
 import com.hims.exception.SDDException;
 import com.hims.utils.RandomNumGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ public class HelperUtils {
 
     @Autowired
     private MasSubChargeCodeRepository subChargeCodeRepository;
+
+    @Autowired
+    private VisitRepository visitRepository;
 
     // FOR dev  D:\BmsBackend\webapps\bmsreport
     public static String LASTFOLDERPATH = "D:/payroll/webapps/bmsreport";
@@ -189,6 +193,12 @@ public class HelperUtils {
         }
 
         return subChargeCode.getMasDepartment().getId();
+    }
+
+
+    public String getVisitTypeForFollowUpOrNew(Long patientId) {
+        int count = visitRepository.countByPatientIdAndVisitDate(patientId);
+        return count > 0 ? AppConstants.STATUS_F : AppConstants.STATUS_N;
     }
 
 
