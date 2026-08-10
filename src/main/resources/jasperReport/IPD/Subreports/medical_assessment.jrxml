@@ -1,0 +1,624 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="nursing_assessment" pageWidth="595" pageHeight="842" columnWidth="595" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="8f0f57e5-0c9f-4555-afc8-c37eb8836ed1">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<parameter name="assessmentId" class="java.lang.Integer"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+    COALESCE(
+        NULLIF(TRIM(inma.chief_complaint), ''),
+        '-'
+    ) AS chief_complaint,
+    COALESCE(
+        NULLIF(TRIM(inma.history_present_illness), ''),
+        '-'
+    ) AS history_present_illness,
+    COALESCE(
+        NULLIF(TRIM(inma.family_history), ''),
+        '-'
+    ) AS family_history,
+    COALESCE(
+        NULLIF(TRIM(inma.medication_history), ''),
+        '-'
+    ) AS medication_history,
+    COALESCE(
+        NULLIF(TRIM(inma.allergies), ''),
+        '-'
+    ) AS allergies,
+    COALESCE(
+        inma.pulse::text,
+        '-'
+    ) AS pulse,
+    CASE
+        WHEN inma.systolic_bp IS NULL
+             AND inma.diastolic_bp IS NULL
+            THEN '-'
+        ELSE CONCAT(
+            COALESCE(inma.systolic_bp::text, '-'),
+            '/',
+            COALESCE(inma.diastolic_bp::text, '-')
+        )
+    END AS bp,
+    CASE
+        WHEN inma.temperature IS NULL
+            THEN '-'
+        ELSE CONCAT(
+            inma.temperature::text,
+            CASE
+                WHEN NULLIF(TRIM(inma.temperature_unit), '') IS NOT NULL
+                    THEN ' ' || TRIM(inma.temperature_unit)
+                ELSE ''
+            END
+        )
+    END AS temperature,
+    COALESCE(
+        inma.respiratory_rate::text,
+        '-'
+    ) AS respiratory_rate,
+    COALESCE(
+        inma.spo2::text,
+        '-'
+    ) AS spo2,
+    COALESCE(
+        NULLIF(TRIM(inma.general_examination_notes), ''),
+        '-'
+    ) AS general_examination_notes,
+    COALESCE(
+        NULLIF(TRIM(inma.system_rs_examination), ''),
+        '-'
+    ) AS respiratory_system,
+    COALESCE(
+        NULLIF(TRIM(inma.system_cvs_examination), ''),
+        '-'
+    ) AS cardiovascular_system,
+    COALESCE(
+        NULLIF(TRIM(inma.system_pa_examination), ''),
+        '-'
+    ) AS abdomen,
+    COALESCE(
+        NULLIF(TRIM(inma.system_cns_examination), ''),
+        '-'
+    ) AS central_nervous_system,
+    COALESCE(
+        NULLIF(TRIM(inma.provisional_diagnosis), ''),
+        '-'
+    ) AS provisional_diagnosis,
+    COALESCE(
+        NULLIF(TRIM(inma.created_by), ''),
+        '-'
+    ) AS prepared_by,
+    COALESCE(
+        NULLIF(TRIM(inma.updated_by), ''),
+        '-'
+    ) AS reviewed_by
+FROM ip_nursing_medical_assessment inma
+WHERE inma.assessment_id = $P{assessmentId};]]>
+	</queryString>
+	<field name="chief_complaint" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="chief_complaint"/>
+		<property name="com.jaspersoft.studio.field.label" value="chief_complaint"/>
+	</field>
+	<field name="history_present_illness" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="history_present_illness"/>
+		<property name="com.jaspersoft.studio.field.label" value="history_present_illness"/>
+	</field>
+	<field name="family_history" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="family_history"/>
+		<property name="com.jaspersoft.studio.field.label" value="family_history"/>
+	</field>
+	<field name="medication_history" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="medication_history"/>
+		<property name="com.jaspersoft.studio.field.label" value="medication_history"/>
+	</field>
+	<field name="allergies" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="allergies"/>
+		<property name="com.jaspersoft.studio.field.label" value="allergies"/>
+	</field>
+	<field name="pulse" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pulse"/>
+		<property name="com.jaspersoft.studio.field.label" value="pulse"/>
+	</field>
+	<field name="bp" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="bp"/>
+		<property name="com.jaspersoft.studio.field.label" value="bp"/>
+	</field>
+	<field name="temperature" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="temperature"/>
+		<property name="com.jaspersoft.studio.field.label" value="temperature"/>
+	</field>
+	<field name="respiratory_rate" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="respiratory_rate"/>
+		<property name="com.jaspersoft.studio.field.label" value="respiratory_rate"/>
+	</field>
+	<field name="spo2" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="spo2"/>
+		<property name="com.jaspersoft.studio.field.label" value="spo2"/>
+	</field>
+	<field name="general_examination_notes" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="general_examination_notes"/>
+		<property name="com.jaspersoft.studio.field.label" value="general_examination_notes"/>
+	</field>
+	<field name="respiratory_system" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="respiratory_system"/>
+		<property name="com.jaspersoft.studio.field.label" value="respiratory_system"/>
+	</field>
+	<field name="cardiovascular_system" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="cardiovascular_system"/>
+		<property name="com.jaspersoft.studio.field.label" value="cardiovascular_system"/>
+	</field>
+	<field name="abdomen" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="abdomen"/>
+		<property name="com.jaspersoft.studio.field.label" value="abdomen"/>
+	</field>
+	<field name="central_nervous_system" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="central_nervous_system"/>
+		<property name="com.jaspersoft.studio.field.label" value="central_nervous_system"/>
+	</field>
+	<field name="provisional_diagnosis" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="provisional_diagnosis"/>
+		<property name="com.jaspersoft.studio.field.label" value="provisional_diagnosis"/>
+	</field>
+	<field name="prepared_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="prepared_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="prepared_by"/>
+	</field>
+	<field name="reviewed_by" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="reviewed_by"/>
+		<property name="com.jaspersoft.studio.field.label" value="reviewed_by"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="57" splitType="Stretch">
+			<staticText>
+				<reportElement positionType="Float" x="0" y="0" width="555" height="16" uuid="dd43f920-52b2-47f8-925b-a63dbbef7da2"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<text><![CDATA[=====================================================================================]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="21" width="271" height="15" uuid="d0c91c1e-1bab-4182-b2f8-2f6d4e406d08"/>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="DejaVu Sans Condensed" size="12"/>
+				</textElement>
+				<text><![CDATA[B. MEDICAL ASSESSMENT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="41" width="555" height="16" uuid="fb235092-e5fe-48ab-880e-3542977e5fcd"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<text><![CDATA[=====================================================================================]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="689" splitType="Prevent">
+			<staticText>
+				<reportElement positionType="Float" x="8" y="13" width="112" height="14" uuid="4dcc25f9-d26f-4014-9533-a8eb069ad48e"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cheif Complaint]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="71" width="172" height="14" uuid="3e153125-03aa-46cd-a102-7dc6a6ea2d53"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[History Of Present Illness]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="129" width="112" height="14" uuid="8972eee5-7041-42d6-b42b-557e76b70feb"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Family History]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="187" width="112" height="14" uuid="68e444b8-c0a3-4457-8ba9-ec3cf9b5ccc7"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Medication History]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="245" width="112" height="14" uuid="f57cc86b-27f5-4b55-8c63-fe9921ae4402"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Allergies]]></text>
+			</staticText>
+			<line>
+				<reportElement positionType="Float" x="0" y="31" width="555" height="1" uuid="156b7e88-58a4-455f-abba-8956db62f739"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="89" width="555" height="1" uuid="7cfebc31-2437-45bb-b421-500d22a5c3af"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="147" width="555" height="1" uuid="8082ada8-5272-4ff1-bbc6-f60e8e43b6e3"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="205" width="555" height="1" uuid="6bf740ec-41fd-43f2-a7b5-2402aeadf6a6"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="263" width="555" height="1" uuid="d00531f2-bb33-490a-a35f-7d95f67669b9"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="54" width="555" height="1" uuid="87454ec6-0577-470e-a2cd-aeba3dc0e4b9"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="112" width="555" height="1" uuid="3ab8a8fc-fcf4-4fbc-be1f-4a6699cf797e"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="170" width="555" height="1" uuid="f4ba0ee4-7b73-4333-8735-2d1f3b39fcff"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="228" width="555" height="1" uuid="b2f5ce49-9a79-43f3-87eb-061a0e28ba3c"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="1" y="286" width="555" height="1" uuid="6a85daeb-a237-48a1-9bdf-ac44f0da01bc"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="303" width="112" height="14" uuid="87c0096a-f9e9-4d82-8cfa-e4ea077c09ad"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[General Examination]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="327" width="92" height="14" uuid="d67d6e4d-4544-493c-b8cc-f9d329e5676f"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pulse]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="345" width="92" height="14" uuid="67b8f7b0-4ab6-49d9-968f-8d43b344dfc7"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[BP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="363" width="92" height="14" uuid="3f645fde-a187-4bad-ace6-0002e34f57e2"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Temperature]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="381" width="92" height="14" uuid="3364e53a-9219-4863-99f5-383a12f34e2b"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Respiratory Rate]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="399" width="92" height="14" uuid="0d345784-1079-470a-b85e-726e09a75cc0"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SPO2]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="435" width="152" height="14" uuid="9f58d448-22ff-4dcc-b229-ee3cd1a4753a"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[General Examination Notes]]></text>
+			</staticText>
+			<line>
+				<reportElement positionType="Float" x="0" y="453" width="555" height="1" uuid="f3da54e4-a53c-478e-943e-667dcb698cab"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="1" y="476" width="555" height="1" uuid="bbd993bd-716a-4bea-8f2e-d62341b2a176"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="493" width="132" height="14" uuid="5e6d117a-bb60-4bc9-b1c6-9fe679b38592"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Systematic Examination]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="514" width="132" height="14" uuid="60ead4e3-4370-4d4d-99b0-11640da8a8c5"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Respiratory System]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="532" width="132" height="14" uuid="28e9f6bd-ce53-42de-8986-055d7558fd37"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cardiovascular System]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="550" width="132" height="14" uuid="9e1dc09f-7f0c-4292-ace8-b4bb027ee691"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Abdomen]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="568" width="132" height="14" uuid="7c8640c6-dec8-478e-ad28-0de998f57965"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Central Nervous System]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="595" width="152" height="14" uuid="05af4f82-28d2-40d2-b5b4-1224d0c330f8"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Provisional Diagnosis]]></text>
+			</staticText>
+			<line>
+				<reportElement positionType="Float" x="0" y="613" width="555" height="1" uuid="2e2e72c0-f57a-46e7-b672-8ec5d48e416f"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="1" y="636" width="555" height="1" uuid="ae61ca21-958a-47a4-bda2-c986a7e561c4"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="670" width="82" height="14" uuid="de461929-7cbc-447e-a57b-60ec61057d13"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Prepared by :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="293" y="670" width="82" height="14" uuid="f9f14ef7-1763-45f0-986a-8745188a59c4"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Reviewed by :]]></text>
+			</staticText>
+			<textField>
+				<reportElement positionType="Float" x="8" y="36" width="522" height="14" uuid="aa7846b5-bcd8-4720-84cf-bfafd94d64e3"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{chief_complaint}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="8" y="94" width="522" height="14" uuid="e0adeccc-30bc-4e0d-9145-60e66ba35074"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{history_present_illness}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="8" y="152" width="522" height="14" uuid="0b3c488f-1a20-4de7-8e68-2908078d353a"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{family_history}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="10" y="210" width="522" height="14" uuid="d4ada4de-8ed6-45cd-b1fa-37be8bbdc58f"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{medication_history}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="8" y="268" width="522" height="14" uuid="baa8c1f7-dd65-46fa-b4b8-e710b27c1d65"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{allergies}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="104" y="327" width="3" height="14" uuid="ba8a57c1-65d5-414a-8827-9f397d37122b"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="104" y="345" width="3" height="14" uuid="372ac7e5-248c-4e6e-9358-629228ab8c00"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="104" y="363" width="3" height="14" uuid="18fb51c6-1889-4e9e-ad65-1665cea8187e"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="104" y="381" width="3" height="14" uuid="17dfc013-12fb-487b-ae79-7e11f6de6953"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="104" y="399" width="3" height="14" uuid="f163cf90-6eea-4c8e-9d68-1186ba8bb1a4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement positionType="Float" x="112" y="327" width="92" height="14" uuid="9f87d42d-ac7e-467c-a363-83f4adf17db3"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pulse}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="112" y="345" width="92" height="14" uuid="779f4cd3-494e-4ef1-945f-5fd300e6cc68"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{bp}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="112" y="363" width="92" height="14" uuid="a5f31861-d6db-4101-bbd7-c4bb3d7d4a19"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{temperature}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="112" y="381" width="92" height="14" uuid="2e23ec8f-262a-4ac1-b782-66054829b9eb"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{respiratory_rate}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="112" y="399" width="92" height="14" uuid="8439cb43-8ecf-44ff-8a30-1fab81e94f12"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{spo2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="8" y="458" width="522" height="14" uuid="6374160e-7739-4b62-8e47-b07cba28ea31"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{general_examination_notes}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="145" y="514" width="3" height="14" uuid="73ecfa40-6ad4-4a6d-9fd2-cca164794f87"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="145" y="532" width="3" height="14" uuid="ba6148df-f7d1-43a5-ae38-c04fc139b263"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="145" y="550" width="3" height="14" uuid="986b8672-2e5a-4124-b2c0-830f2777af3e"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="145" y="568" width="3" height="14" uuid="511fa485-1b56-4285-9bd6-0eebd5880447"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement positionType="Float" x="152" y="514" width="132" height="14" uuid="d3817e59-2b84-45cf-9218-d1a71cd2bcb0"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{respiratory_system}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="152" y="532" width="132" height="14" uuid="e2592a48-fd84-483b-b1bf-d1896c6e8644"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cardiovascular_system}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="152" y="550" width="132" height="14" uuid="cbcfd16a-3c9c-4190-a2f6-a3cdcd910d9b"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{abdomen}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="152" y="568" width="132" height="14" uuid="8fc26b54-7464-41f1-b915-da0398497aad"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{central_nervous_system}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="8" y="618" width="522" height="14" uuid="dc361080-457c-406b-a418-0c1910371636"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{provisional_diagnosis}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="8" y="652" width="82" height="14" uuid="695e5ec9-9730-4450-bbee-68238c73db2e"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{prepared_by}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="293" y="652" width="82" height="14" uuid="6a996d9c-2003-45ab-946c-3b71ec40c76f"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{reviewed_by}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

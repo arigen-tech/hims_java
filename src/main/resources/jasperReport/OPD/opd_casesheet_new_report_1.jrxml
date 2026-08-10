@@ -44,7 +44,8 @@
     opd.icd_diag,
     opd.working_diag,
     opd.admission_flag,
-    opd.referral_flag
+    opd.referral_flag,
+    opd.final_medical_advice
 FROM opd_patient_details opd
 LEFT JOIN patient p
     ON opd.patient_id = p.patient_id
@@ -165,6 +166,11 @@ WHERE opd.visit_id = $P{visit_id}]]>
 	<field name="referral_flag" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="referral_flag"/>
 		<property name="com.jaspersoft.studio.field.label" value="referral_flag"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_patient_details"/>
+	</field>
+	<field name="final_medical_advice" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="final_medical_advice"/>
+		<property name="com.jaspersoft.studio.field.label" value="final_medical_advice"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="opd_patient_details"/>
 	</field>
 	<group name="A">
@@ -459,7 +465,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
 				</textElement>
-				<text><![CDATA[Case Sheet]]></text>
+				<text><![CDATA[OPD Slip]]></text>
 			</staticText>
 		</band>
 	</title>
@@ -472,8 +478,11 @@ WHERE opd.visit_id = $P{visit_id}]]>
 	<columnFooter>
 		<band splitType="Stretch"/>
 	</columnFooter>
+	<lastPageFooter>
+		<band height="42"/>
+	</lastPageFooter>
 	<summary>
-		<band height="201" splitType="Stretch">
+		<band height="181" splitType="Stretch">
 			<subreport isUsingCache="true">
 				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="7" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="26155b52-9de3-4371-81a0-ffaa2397c4f2"/>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -579,45 +588,8 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Admission_advice.jasper"]]></subreportExpression>
 			</subreport>
-			<staticText>
-				<reportElement positionType="Float" x="234" y="142" width="124" height="14" uuid="1a75e5ca-0e3a-436f-9476-1de5e57a136d"/>
-				<textElement>
-					<font fontName="DejaVu Sans Condensed" size="9" isBold="true"/>
-				</textElement>
-				<text><![CDATA[OPD Submitted By]]></text>
-			</staticText>
-			<textField isBlankWhenNull="true">
-				<reportElement positionType="Float" x="234" y="158" width="123" height="10" uuid="7000f69c-c4da-45bb-8d9d-7eb4e734933c"/>
-				<textElement textAlignment="Left">
-					<font fontName="DejaVu Sans Condensed" size="7" isBold="false"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{doc_name}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement positionType="Float" x="234" y="168" width="123" height="10" uuid="5f969a37-704b-453d-8f1a-a7611aba158d"/>
-				<textElement textAlignment="Left">
-					<font fontName="DejaVu Sans Condensed" size="7" isBold="false"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{qualification}]]></textFieldExpression>
-			</textField>
-			<staticText>
-				<reportElement positionType="Float" x="234" y="178" width="28" height="10" uuid="5a3094e6-0349-4d0f-b542-c0e9f81b5e8c">
-					<printWhenExpression><![CDATA[$F{medical_registration_no} != null]]></printWhenExpression>
-				</reportElement>
-				<textElement>
-					<font size="6"/>
-				</textElement>
-				<text><![CDATA[Reg No.]]></text>
-			</staticText>
-			<textField isBlankWhenNull="true">
-				<reportElement positionType="Float" x="263" y="178" width="94" height="10" uuid="843e2504-a657-4ca1-8423-ca720b6312e9"/>
-				<textElement textAlignment="Left">
-					<font fontName="DejaVu Sans Condensed" size="7" isBold="false"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{medical_registration_no}]]></textFieldExpression>
-			</textField>
 			<subreport isUsingCache="true">
-				<reportElement positionType="Float" x="1" y="100" width="359" height="11" uuid="df1a1aa7-961e-4a89-ac07-6193bbca977b">
+				<reportElement positionType="Float" x="1" y="99" width="359" height="11" uuid="df1a1aa7-961e-4a89-ac07-6193bbca977b">
 					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{referral_flag})]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -630,7 +602,9 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Referral_advice.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="112" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="5f79e2ad-10d8-4dc2-b518-d1de58779f7e"/>
+				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="121" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="5f79e2ad-10d8-4dc2-b518-d1de58779f7e">
+					<printWhenExpression><![CDATA[$F{final_medical_advice} != null]]></printWhenExpression>
+				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -640,6 +614,54 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Final_medical_advice.jasper"]]></subreportExpression>
 			</subreport>
+			<subreport isUsingCache="true">
+				<reportElement positionType="Float" x="1" y="110" width="359" height="11" uuid="52ac575c-4c3f-4ccf-a52f-eb1d5a4a28c9">
+					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{referral_flag})]]></printWhenExpression>
+				</reportElement>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="visit_id">
+					<subreportParameterExpression><![CDATA[$P{visit_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Follow_up.jasper"]]></subreportExpression>
+			</subreport>
+			<staticText>
+				<reportElement positionType="Float" x="230" y="141" width="124" height="10" uuid="725ea85c-2f14-4985-b97a-bc1798612a6b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[OPD Submitted By]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="230" y="151" width="123" height="10" uuid="68ecaae3-b127-4c6b-a3e6-919c49d1258b"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Dr. " + $F{doc_name}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="230" y="161" width="123" height="10" uuid="7948ca96-13d3-4dfe-99fa-0982604a7d6d"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{qualification}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="230" y="171" width="30" height="10" uuid="2d88fe63-27bb-4f57-bf97-5e44f8ca396e"/>
+				<textElement>
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[Reg No. -]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="259" y="171" width="94" height="10" uuid="a91b1ce9-e50c-4176-8536-6c5e389275ab"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{medical_registration_no}]]></textFieldExpression>
+			</textField>
 		</band>
 	</summary>
 	<noData>

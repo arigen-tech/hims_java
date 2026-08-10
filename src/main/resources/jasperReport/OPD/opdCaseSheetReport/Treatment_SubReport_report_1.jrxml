@@ -24,7 +24,9 @@ from patient_prescription_dt ppd
 left join patient_prescription_hd pph on pph.prescription_hd_id = ppd.prescription_hd_id
 left join mas_store_item msi on msi.item_id = ppd.item_id
 left join mas_store_unit msu on msu.unit_id = msi.unit_au
-left join opd_patient_details opd on opd.patient_id = pph.patient_id
+left join opd_patient_details opd 
+		on opd.patient_id = pph.patient_id 
+		and opd.visit_id = pph.visit_id 
 where opd.visit_id = $P{visit_id}
 and $P{option} = 0
 order by msi.nomenclature]]>
