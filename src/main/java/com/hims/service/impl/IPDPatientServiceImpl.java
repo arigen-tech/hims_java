@@ -11,6 +11,7 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
 import com.hims.mapper.IpMarDetailsMapper;
+import com.hims.mapper.IpProcedureTxnMapper;
 import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
@@ -79,6 +80,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private final IpPaymentDetailRepository ipPaymentDetailRepository;
     private final IpMarDetailsRepository ipMarDetailsRepository;
     private final IpMarDetailsMapper ipMarDetailsMapper;
+    private final IpProcedureTxnRepository ipProcedureTxnRepository;
+    private final IpProcedureTxnMapper ipProcedureTxnMapper;
     private final IpDocumentRepository ipDocumentRepository;
     private final UserRepo userRepo;
     private final IpDiagnosisEntryRepository ipDiagnosisEntryRepository;
@@ -3298,6 +3301,27 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
         } catch (Exception e) {
             log.error("Error while fetching unique medicines in MAR log for inpatientId: {}", inpatientId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<List<IpProcedureTxnResponse>> getIpProcedureTxnByInpatientId(Long inpatientId) {
+        log.info("Request to fetch IpProcedureTxn for inpatientId: {}", inpatientId);
+        try {
+            if (inpatientId == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            List<IpProcedureTxn> entities = ipProcedureTxnRepository.findByInpatientInpatientId(inpatientId);
+            List<IpProcedureTxnResponse> dtoList = entities.stream()
+                    .map(ipProcedureTxnMapper::mapToDTO)
+                    .toList();
+
+            log.info("Successfully fetched {} IpProcedureTxn records for inpatientId: {}", dtoList.size(), inpatientId);
+            return ResponseUtils.createSuccessResponse(dtoList, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching IpProcedureTxn for inpatientId: {}", inpatientId, e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }

@@ -88,5 +88,7 @@ public interface IPDPatientService {
     ApiResponse<Page<IpMarDetailsResponse>> getMarAdministrationLog(Long inpatientId, Long itemId, Integer page, Integer size);
 
     ApiResponse<List<MarMedicineResponse>> getMarMedicineList(Long inpatientId);
+
+    ApiResponse<List<IpProcedureTxnResponse>> getIpProcedureTxnByInpatientId(Long inpatientId);
 }
 
