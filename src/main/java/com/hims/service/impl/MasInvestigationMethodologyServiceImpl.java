@@ -71,7 +71,7 @@ public class MasInvestigationMethodologyServiceImpl implements MasInvestigationM
     }
 
     @Override
-    public ApiResponse<List<MasInvestigationMethodologyResponse>> getAll() {
+    public ApiResponse<List<MasInvestigationMethodologyResponse>> get() {
         try {
             List<MasInvestigationMethodology> masInvestigationCategories =
                     masInvestigationMethodologyRepository.findAllByOrderByMethodNameAsc();

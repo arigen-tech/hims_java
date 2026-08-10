@@ -1729,6 +1729,13 @@ public class MasterController {
     }
 
     @GetMapping("/masInvestigationMethodology/findAll")
+    public ResponseEntity<ApiResponse<List<MasInvestigationMethodologyResponse >>> getMethodology() {
+        ApiResponse<List<MasInvestigationMethodologyResponse >> response = masInvestigationMethodologyService.get();
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/masInvestigationMethodology/getById/{id}")
+    public ResponseEntity<ApiResponse<MasInvestigationMethodologyResponse >> getMasHSNById(@PathVariable Long id) {
+        ApiResponse<MasInvestigationMethodologyResponse > response = masInvestigationMethodologyService.findById(id);
     public ResponseEntity<ApiResponse<List<MasInvestigationMethodologyResponse>>> getMethodology() {
         ApiResponse<List<MasInvestigationMethodologyResponse>> response = masInvestigationMethodologyService.getAll();
         return new ResponseEntity<>(response, HttpStatus.OK);
