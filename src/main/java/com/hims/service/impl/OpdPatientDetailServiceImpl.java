@@ -467,7 +467,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             if (request.getInvestigation().stream().anyMatch(i -> i == null || i.getInvestigationDate() == null)) {
                 throw new SDDException("investigation", 400, "Investigation date cannot be null");
             }
-            LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
+            LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId)
+                    .orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
 
             // Group investigations by department
             Map<Long, Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>>> grouped = request.getInvestigation().stream().filter(Objects::nonNull).collect(Collectors.groupingBy(inv -> helperUtils.getDepartmentFromInvestigation(inv.getId()), Collectors.groupingBy(OpdPatientDetailCreateRequest.Investigation::getInvestigationDate)));
@@ -685,6 +686,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private void closeVisit(Visit visit) {
         if (visit != null) {
             visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
+            visit.setDoctor(authUtil.getCurrentUser());
+            visit.setDoctorName(authUtil.getCurrentUser().getFullName());
             visitRepository.save(visit);
             log.info("Closed visit with ID: {}", visit.getId());
         }
