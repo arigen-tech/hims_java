@@ -49,7 +49,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
     private  Long WARD_ID;
 
     private boolean isValidStatus(String status) {
-        return STATUS_ACTIVE_UPPER.equalsIgnoreCase(status) || STATUS_INACTIVE_UPPER.equalsIgnoreCase(status);
+        return STATUS_Y.equalsIgnoreCase(status) || STATUS_N.equalsIgnoreCase(status);
     }
 
     private String getCurrentTimeFormatted() {
@@ -166,9 +166,9 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
     public ApiResponse<List<MasDepartmentResponse>> getAllDepartments(int flag) {
         List<MasDepartment> departments;
 
-        if (flag == FLAG_ACTIVE_ONLY) {
-            departments = masDepartmentRepository.findByStatusIgnoreCaseOrderByDepartmentNameAsc(STATUS_ACTIVE_UPPER);
-        } else if (flag == FLAG_ALL) {
+        if (flag == 1) {
+            departments = masDepartmentRepository.findByStatusIgnoreCaseOrderByDepartmentNameAsc(STATUS_Y);
+        } else if (flag == 0) {
             departments = masDepartmentRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, MSG_INVALID_FLAG, 400);

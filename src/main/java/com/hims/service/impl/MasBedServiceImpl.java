@@ -47,12 +47,12 @@ public class MasBedServiceImpl implements MasBedService {
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createNotFoundResponse(MSG_CURRENT_USER_NOT_FOUND, HttpStatus.NOT_FOUND.value());
+                return ResponseUtils.createNotFoundResponse(CURRENT_USER_NOT_FOUND_MSG, HttpStatus.NOT_FOUND.value());
             }
 
             MasBed masBed = new MasBed();
             masBed.setBedNumber(request.getBedNumber());
-            masBed.setStatus(STATUS_ACTIVE);
+            masBed.setStatus(STATUS_Y.toLowerCase());
             masBed.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
             masBed.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
             masBed.setLastUpdateDate(LocalDate.now());
@@ -86,7 +86,7 @@ public class MasBedServiceImpl implements MasBedService {
             log.error("addMasBed() Error :: ", e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
-                    MSG_INTERNAL_ERROR,
+                    INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -97,7 +97,7 @@ public class MasBedServiceImpl implements MasBedService {
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createNotFoundResponse(MSG_CURRENT_USER_NOT_FOUND, HttpStatus.NOT_FOUND.value());
+                return ResponseUtils.createNotFoundResponse(CURRENT_USER_NOT_FOUND_MSG, HttpStatus.NOT_FOUND.value());
             }
 
             MasBed masBed = masBedRepository.findById(id)
@@ -136,7 +136,7 @@ public class MasBedServiceImpl implements MasBedService {
             log.error("updateMasBed() Error :: ", e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
-                    MSG_INTERNAL_ERROR,
+                    INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -147,7 +147,7 @@ public class MasBedServiceImpl implements MasBedService {
         try {
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createNotFoundResponse(MSG_CURRENT_USER_NOT_FOUND, HttpStatus.NOT_FOUND.value());
+                return ResponseUtils.createNotFoundResponse(CURRENT_USER_NOT_FOUND_MSG, HttpStatus.NOT_FOUND.value());
             }
 
             MasBed masBed = masBedRepository.findById(id)
@@ -167,7 +167,7 @@ public class MasBedServiceImpl implements MasBedService {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {
                     },
-                    MSG_INTERNAL_ERROR,
+                    INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -190,7 +190,7 @@ public class MasBedServiceImpl implements MasBedService {
             log.error("findById() Error :: ", e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
-                    MSG_INTERNAL_ERROR,
+                    INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -201,10 +201,10 @@ public class MasBedServiceImpl implements MasBedService {
         try {
             List<MasBed> masBeds;
 
-            if (flag == FLAG_ALL) {
+            if (flag == 0) {
                 masBeds = masBedRepository.findAllByOrderByStatusDescLastUpdateDateDesc();
-            } else if (flag == FLAG_ACTIVE_ONLY) {
-                masBeds = masBedRepository.findByStatusIgnoreCase(STATUS_ACTIVE);
+            } else if (flag == 1) {
+                masBeds = masBedRepository.findByStatusIgnoreCase(STATUS_Y.toLowerCase());
             } else {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
@@ -222,7 +222,7 @@ public class MasBedServiceImpl implements MasBedService {
             log.error("getAllMasBed Error :: ", e);
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
-                    MSG_INTERNAL_ERROR,
+                    INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }

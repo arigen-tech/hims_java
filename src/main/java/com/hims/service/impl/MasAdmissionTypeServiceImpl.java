@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasAdmissionType;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasAdmissionTypeRepository;
@@ -31,7 +32,7 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
     public ApiResponse<List<MasAdmissionTypeResponse>> getAll(int flag) {
         try {
             List<MasAdmissionType> list =
-                    (flag == FLAG_ACTIVE_ONLY) ? repository.findByStatusIgnoreCaseOrderByAdmissionTypeNameAsc(STATUS_ACTIVE) : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
+                    (flag == 1) ? repository.findByStatusIgnoreCaseOrderByAdmissionTypeNameAsc(STATUS_Y.toLowerCase()) : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             List<MasAdmissionTypeResponse> response =
                     list.stream().map(this::toResponse).collect(Collectors.toList());
@@ -66,7 +67,7 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
             MasAdmissionType data = MasAdmissionType.builder()
                     .admissionTypeName(request.getAdmissionTypeName())
                     .description(request.getDescription())
-                    .status(STATUS_ACTIVE)
+                    .status(STATUS_Y.toLowerCase())
                     .createdBy(user.getFirstName())
                     .lastUpdatedBy(user.getFirstName())
                     .lastUpdateDate(LocalDateTime.now())
@@ -113,7 +114,7 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
             if (data == null)
                 return ResponseUtils.createNotFoundResponse("ID Not Found!", 404);
 
-            if (!status.equals(STATUS_ACTIVE) && !status.equals(STATUS_INACTIVE))
+            if (!status.equals(STATUS_Y.toLowerCase()) && !status.equals(STATUS_N.toLowerCase()))
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid Status!", 400);
 
