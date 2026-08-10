@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
+import static com.hims.constants.AppConstants.*;
+
 @Service
 @Slf4j
 public class MasDepartmentServiceImpl implements MasDepartmentService {
@@ -47,7 +49,7 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
     private  Long WARD_ID;
 
     private boolean isValidStatus(String status) {
-        return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
+        return STATUS_Y.equalsIgnoreCase(status) || STATUS_N.equalsIgnoreCase(status);
     }
 
     private String getCurrentTimeFormatted() {
@@ -165,11 +167,11 @@ public class MasDepartmentServiceImpl implements MasDepartmentService {
         List<MasDepartment> departments;
 
         if (flag == 1) {
-            departments = masDepartmentRepository.findByStatusIgnoreCaseOrderByDepartmentNameAsc("Y");
+            departments = masDepartmentRepository.findByStatusIgnoreCaseOrderByDepartmentNameAsc(STATUS_Y);
         } else if (flag == 0) {
             departments = masDepartmentRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, MSG_INVALID_FLAG, 400);
         }
 
         List<MasDepartmentResponse> responses = departments.stream()
