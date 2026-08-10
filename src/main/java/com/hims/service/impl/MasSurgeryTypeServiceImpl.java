@@ -2,15 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
-import com.hims.entity.MasSurgery;
 import com.hims.entity.MasSurgeryType;
 import com.hims.entity.User;
-import com.hims.entity.repository.MasSurgeryRepository;
 import com.hims.entity.repository.MasSurgeryTypeRepository;
-import com.hims.request.MasSurgeryRequest;
+import com.hims.request.MasSurgeryTypeRequest;
 import com.hims.response.ApiResponse;
-import com.hims.response.MasSurgeryResponse;
-import com.hims.service.MasSurgeryService;
+import com.hims.response.MasSurgeryTypeResponse;
+import com.hims.service.MasSurgeryTypeService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -25,19 +23,17 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class MasSurgeryServiceImpl implements MasSurgeryService {
+public class MasSurgeryTypeServiceImpl implements MasSurgeryTypeService {
 
-    private final MasSurgeryRepository repository;
-    private final MasSurgeryTypeRepository surgeryTypeRepository;
+    private final MasSurgeryTypeRepository repository;
 
     @Autowired
     private AuthUtil authUtil;
 
     @Override
-    public ApiResponse<List<MasSurgeryResponse>> getAllMasSurgery(int flag) {
+    public ApiResponse<List<MasSurgeryTypeResponse>> getAllMasSurgeryType(int flag) {
         try {
-
-            List<MasSurgery> list;
+            List<MasSurgeryType> list;
             if (flag == 1) {
                 list = repository.findActive(AppConstants.STATUS_Y);
             } else if (flag == 0) {
@@ -52,7 +48,7 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
             );
 
         } catch (Exception e) {
-            log.error("Error fetching surgery list", e);
+            log.error("Error fetching surgery type list", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
@@ -61,36 +57,31 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
     }
 
     @Override
-    public ApiResponse<MasSurgeryResponse> getByIdMasSurgery(Long id) {
+    public ApiResponse<MasSurgeryTypeResponse> getByIdMasSurgeryType(Long id) {
         try {
             return repository.findById(id)
                     .map(e -> ResponseUtils.createSuccessResponse(
                             toResponse(e), new TypeReference<>() {}))
                     .orElse(ResponseUtils.createNotFoundResponse(
-                            "Surgery not found", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+                            "Surgery type not found", HttpStatus.INTERNAL_SERVER_ERROR.value()));
         } catch (Exception e) {
-            log.error("mas surgery error", e);
+            log.error("mas surgery type error", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
     @Override
-    public ApiResponse<MasSurgeryResponse> createMasSurgery(MasSurgeryRequest request) {
+    public ApiResponse<MasSurgeryTypeResponse> createMasSurgeryType(MasSurgeryTypeRequest request) {
         try {
             User user = authUtil.getCurrentUser();
-            MasSurgeryType surgeryType = surgeryTypeRepository.findById(request.getSurgeryTypeId())
-                    .orElseThrow(() -> new RuntimeException("Invalid Surgery Type"));
 
-            MasSurgery entity = MasSurgery.builder()
-                    .surgeryCode(request.getSurgeryCode())
-                    .surgeryName(request.getSurgeryName())
-                    .surgeryType(surgeryType)
-                    .surgeryLevel(request.getSurgeryLevel())
-                    .isAnesthesiaRequired(request.getIsAnesthesiaRequired())
-                    .isAdmissionRequired(request.getIsAdmissionRequired())
-                    .isImplantRequired(request.getIsImplantRequired())
-                    .status(AppConstants.STATUS_Y)
+            MasSurgeryType entity = MasSurgeryType.builder()
+                    .surgeryTypeCode(request.getSurgeryTypeCode())
+                    .surgeryTypeName(request.getSurgeryTypeName())
+                    .description(request.getDescription())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(user.getFullName())
                     .lastUpdatedBy(user.getFullName())
                     .lastUpdatedDate(LocalDateTime.now())
                     .build();
@@ -99,49 +90,42 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
             return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {});
 
         } catch (Exception e) {
-            log.error("Error creating surgery", e);
+            log.error("Error creating surgery type", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Creation failed", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
     @Override
-    public ApiResponse<MasSurgeryResponse> updateMasSurgery(Long id, MasSurgeryRequest request) {
+    public ApiResponse<MasSurgeryTypeResponse> updateMasSurgeryType(Long id, MasSurgeryTypeRequest request) {
         try {
-            MasSurgery entity = repository.findById(id).orElse(null);
+            MasSurgeryType entity = repository.findById(id).orElse(null);
             if (entity == null) {
-                return ResponseUtils.createNotFoundResponse("Surgery not found", 404);
+                return ResponseUtils.createNotFoundResponse("Surgery type not found", 404);
             }
             User user = authUtil.getCurrentUser();
 
-            MasSurgeryType surgeryType = surgeryTypeRepository.findById(request.getSurgeryTypeId())
-                    .orElseThrow(() -> new RuntimeException("Invalid Surgery Type"));
-
-            entity.setSurgeryCode(request.getSurgeryCode());
-            entity.setSurgeryName(request.getSurgeryName());
-            entity.setSurgeryType(surgeryType);
-            entity.setSurgeryLevel(request.getSurgeryLevel());
-            entity.setIsAnesthesiaRequired(request.getIsAnesthesiaRequired());
-            entity.setIsAdmissionRequired(request.getIsAdmissionRequired());
-            entity.setIsImplantRequired(request.getIsImplantRequired());
+            entity.setSurgeryTypeCode(request.getSurgeryTypeCode());
+            entity.setSurgeryTypeName(request.getSurgeryTypeName());
+            entity.setDescription(request.getDescription());
             entity.setLastUpdatedBy(user.getFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {});
 
         } catch (Exception e) {
-            log.error("mas surgery error", e);
+            log.error("mas surgery type error", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Update failed", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
     @Override
-    public ApiResponse<MasSurgeryResponse> changeStatusMasSurgery(Long id, String status) {
+    public ApiResponse<MasSurgeryTypeResponse> changeStatusMasSurgeryType(Long id, String status) {
         try {
-            MasSurgery entity = repository.findById(id).orElse(null);
+            MasSurgeryType entity = repository.findById(id).orElse(null);
             if (entity == null) {
-                return ResponseUtils.createNotFoundResponse("Surgery not found", 404);
+                return ResponseUtils.createNotFoundResponse("Surgery type not found", 404);
             }
 
             if (!status.equalsIgnoreCase(AppConstants.STATUS_Y.toLowerCase()) && !status.equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
@@ -149,31 +133,25 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
                         "Invalid status", HttpStatus.BAD_REQUEST.value());
             }
             User user = authUtil.getCurrentUser();
-            entity.setStatus(status.toUpperCase());
+            entity.setStatus(status.toLowerCase());
             entity.setLastUpdatedBy(user.getFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {});
 
         } catch (Exception e) {
-            log.error("mas surgery error", e);
+            log.error("mas surgery type error", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Status update failed", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
-    private MasSurgeryResponse toResponse(MasSurgery e) {
-
-        MasSurgeryResponse res = new MasSurgeryResponse();
-        res.setSurgeryId(e.getSurgeryId());
-        res.setSurgeryCode(e.getSurgeryCode());
-        res.setSurgeryName(e.getSurgeryName());
-        res.setSurgeryTypeId(e.getSurgeryType() != null ? e.getSurgeryType().getSurgeryTypeId() : null);
-        res.setSurgeryTypeName(e.getSurgeryType() != null ? e.getSurgeryType().getSurgeryTypeName() : null);
-        res.setSurgeryLevel(e.getSurgeryLevel());
-        res.setIsAnesthesiaRequired(e.getIsAnesthesiaRequired());
-        res.setIsAdmissionRequired(e.getIsAdmissionRequired());
-        res.setIsImplantRequired(e.getIsImplantRequired());
+    private MasSurgeryTypeResponse toResponse(MasSurgeryType e) {
+        MasSurgeryTypeResponse res = new MasSurgeryTypeResponse();
+        res.setSurgeryTypeId(e.getSurgeryTypeId());
+        res.setSurgeryTypeCode(e.getSurgeryTypeCode());
+        res.setSurgeryTypeName(e.getSurgeryTypeName());
+        res.setDescription(e.getDescription());
         res.setStatus(e.getStatus());
         return res;
     }

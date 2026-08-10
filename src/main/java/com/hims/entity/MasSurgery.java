@@ -1,4 +1,5 @@
 package com.hims.entity;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,14 +26,20 @@ public class MasSurgery {
     private String surgeryName;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id")
-    private MasDepartment department;
+    @JoinColumn(name = "surgery_type_id")
+    private MasSurgeryType surgeryType;
 
     @Column(name = "surgery_level", length = 3)
     private String surgeryLevel;
 
     @Column(name = "is_anesthesia_required", length = 1)
     private String isAnesthesiaRequired;
+
+    @Column(name = "is_admission_required", length = 1)
+    private String isAdmissionRequired;
+
+    @Column(name = "is_implant_required", length = 1)
+    private String isImplantRequired;
 
     @Column(name = "status", length = 1)
     private String status;
