@@ -78,9 +78,9 @@ public class MasMaritalStatusServiceImpl implements MasMaritalStatusService {
     public ApiResponse<List<MasMaritalStatusResponse>> getAllMaritalStatuses(int flag) {
         List<MasMaritalStatus> statuses;
 
-        if (flag == FLAG_ACTIVE_ONLY) {
-            statuses = masMaritalStatusRepository.findByStatusIgnoreCaseOrderByNameAsc(STATUS_ACTIVE_UPPER);
-        } else if (flag == FLAG_ALL) {
+        if (flag == 1) {
+            statuses = masMaritalStatusRepository.findByStatusIgnoreCaseOrderByNameAsc(STATUS_Y);
+        } else if (flag == 0) {
             statuses = masMaritalStatusRepository.findAllByOrderByStatusDescLastChgDateDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, MSG_INVALID_FLAG, 400);

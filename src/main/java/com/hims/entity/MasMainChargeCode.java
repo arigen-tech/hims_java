@@ -6,9 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
 
 import static com.hims.constants.AppConstants.*;
 
@@ -32,8 +30,8 @@ public class MasMainChargeCode {
 
     @Size(max = 1)
     @Column(name = "status", nullable = false, length = 1)
-    @Pattern(regexp = STATUS_PATTERN, message = "Status must be y, n, Y, or N")
-    private String status = STATUS_ACTIVE;
+    @Pattern(regexp ="y|n", message = "Status must be y, n, Y, or N")
+    private String status = STATUS_Y.toLowerCase();
 
     @Size(max = 12)
     @Column(name = "last_chg_by", nullable = false, length = 12)

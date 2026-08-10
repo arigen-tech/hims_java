@@ -56,7 +56,7 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
     @Override
     public ApiResponse<MasFrequencyResponse> createMasFrequency(MasFrequencyRequest masFrequencyRequest) {
         MasFrequency masFrequency = new MasFrequency();
-        if (!(STATUS_ACTIVE.equalsIgnoreCase(masFrequencyRequest.getStatus()) || STATUS_INACTIVE.equalsIgnoreCase(masFrequencyRequest.getStatus()))) {
+        if (!(STATUS_Y.equalsIgnoreCase(masFrequencyRequest.getStatus()) || STATUS_N.equalsIgnoreCase(masFrequencyRequest.getStatus()))) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, "Invalid status. Status should be 'Y' or 'N'", 400);
         } else {
@@ -68,7 +68,7 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
             if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
-                        MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
+                        CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
             }
             masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
             masFrequency.setLastChgTime(getCurrentTimeFormatted());
@@ -95,7 +95,7 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
             if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
-                        MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
+                        CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
             }
             masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
             masFrequency.setLastChgTime(getCurrentTimeFormatted());
@@ -115,13 +115,13 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
         Optional<MasFrequency> oldMasFrequency=masFrequencyRepository.findById(id);
         if(oldMasFrequency.isPresent()){
             MasFrequency masFrequency=oldMasFrequency.get();
-            if(STATUS_ACTIVE.equalsIgnoreCase(status)||STATUS_INACTIVE.equalsIgnoreCase(status)){
+            if(STATUS_Y.equalsIgnoreCase(status)||STATUS_N.equalsIgnoreCase(status)){
                 masFrequency.setStatus(status);
                 User currentUser = getCurrentUser();
                 if (currentUser == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
-                            MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
+                            CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
                 }
                 masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
                 masFrequency.setLastChgTime(getCurrentTimeFormatted());
@@ -155,9 +155,9 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
         List<MasFrequency> masFrequency;
 
 
-        if (flag == FLAG_ACTIVE_ONLY) {
-            masFrequency= masFrequencyRepository.findByStatusIgnoreCaseOrderByFrequencyNameAsc(STATUS_ACTIVE_UPPER);
-        } else if (flag == FLAG_ALL) {
+        if (flag == 1) {
+            masFrequency= masFrequencyRepository.findByStatusIgnoreCaseOrderByFrequencyNameAsc(STATUS_Y);
+        } else if (flag == 0) {
             masFrequency= masFrequencyRepository.findAllByOrderByStatusDescLastChgDateDescLastChgTimeDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, MSG_INVALID_FLAG, 400);

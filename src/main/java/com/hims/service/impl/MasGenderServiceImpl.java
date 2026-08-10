@@ -44,9 +44,9 @@ public class MasGenderServiceImpl implements MasGenderService {
     public ApiResponse<List<MasGenderResponse>> getAllGenders(int flag) {
         List<MasGender> genders;
 
-        if (flag == FLAG_ACTIVE_ONLY) {
-            genders = masGenderRepository.findByStatusIgnoreCaseOrderByGenderNameAsc(STATUS_ACTIVE_UPPER);
-        } else if (flag == FLAG_ALL) {
+        if (flag == 1) {
+            genders = masGenderRepository.findByStatusIgnoreCaseOrderByGenderNameAsc(STATUS_Y);
+        } else if (flag == 0) {
             genders = masGenderRepository.findAllByOrderByStatusDescLastChgDtDesc();
         } else {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, MSG_INVALID_FLAG, 400);
@@ -98,7 +98,7 @@ public class MasGenderServiceImpl implements MasGenderService {
             if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
-                        MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
+                        CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
             }
             gender.setLastChgBy(String.valueOf(currentUser.getUserId()));
 
@@ -128,7 +128,7 @@ public class MasGenderServiceImpl implements MasGenderService {
                 if (currentUser == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
-                            MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
+                            CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
                 }
                 existingGender.setLastChgBy(String.valueOf(currentUser.getUserId()));
 
@@ -156,7 +156,7 @@ public class MasGenderServiceImpl implements MasGenderService {
                 MasGender existingGender = existingGenderOpt.get();
 
                 // Ensure the status is either "Y" (Active) or "N" (Inactive)
-                if (!status.equalsIgnoreCase(STATUS_ACTIVE) && !status.equalsIgnoreCase(STATUS_INACTIVE)) {
+                if (!status.equalsIgnoreCase(STATUS_Y) && !status.equalsIgnoreCase(STATUS_N)) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<MasGenderResponse>() {
                     }, "Invalid status value. Use 'Y' for Active and 'N' for Inactive.", 400);
                 }
@@ -166,7 +166,7 @@ public class MasGenderServiceImpl implements MasGenderService {
                 if (currentUser == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
-                            MSG_CURRENT_USER_NOT_FOUND, HttpStatus.UNAUTHORIZED.value());
+                            CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
                 }
                 existingGender.setLastChgBy(String.valueOf(currentUser.getUserId()));
 
