@@ -31,12 +31,14 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
 
     @Query("""
         SELECT p FROM MasProcedure p
-        WHERE p.status = :status
+        WHERE LOWER(p.status) = :status
+            and LOWER(p.isNursing)=:isNursing
         AND (LOWER(p.procedureCode) LIKE :search 
              OR LOWER(p.procedureName) LIKE :search)
     """)
     Page<MasProcedure> searchProcedure(
             @Param("status") String status,
+            @Param("isNursing") String isNursing,
             @Param("search") String search,
             Pageable pageable
     );
@@ -44,7 +46,7 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
     // Search when flag != 1 → include both Y and N
     @Query("""
         SELECT p FROM MasProcedure p
-        WHERE p.status IN :statusList
+         WHERE LOWER(p.status) IN :statusList
         AND (LOWER(p.procedureCode) LIKE :search
              OR LOWER(p.procedureName) LIKE :search)
     """)
@@ -67,14 +69,12 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
         p.status AS status,
         p.lastChgBy AS lastChgBy,
         p.lastChgDate AS lastChgDate,
-        d.id AS departmentId,
-        d.departmentName AS departmentName,
         p.opdAllowed AS opdAllowed,
         p.ipdAllowed AS ipdAllowed,
-        p.isNursing AS isNursing,
-        p.procedureLevel AS procedureLevel
+        p.isNursing AS isNursing
+    
     FROM MasProcedure p
-    LEFT JOIN p.department d
+   
     WHERE (:flag = 0 OR LOWER(p.status) = :status)
     ORDER BY  p.lastChgDate DESC
 """)
@@ -84,7 +84,7 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
 
     @Query("""
     SELECT p FROM MasProcedure p
-    WHERE p.status = :status
+     WHERE LOWER(p.status) IN :status
     AND (:search IS NULL OR 
          LOWER(p.procedureName) LIKE LOWER(CONCAT('%', :search, '%')))
 """)

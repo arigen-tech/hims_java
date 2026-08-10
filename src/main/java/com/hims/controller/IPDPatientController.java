@@ -455,4 +455,22 @@ public class IPDPatientController {
         ApiResponse<List<MarMedicineResponse>> response = ipdPatientService.getMarMedicineList(inpatientId);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("saveInpatientProcedure")
+    public ApiResponse<String> saveInpatientProcedure(@Valid @RequestBody InpatientProcedureRequest request) {
+        log.info("saveInpatientProcedure API called. inpatientId={}, procedureId={}, procedureDatetime={}, performedBy={}",
+                request != null ? request.getInpatientId() : null,
+                request != null ? request.getProcedureId() : null,
+                request != null ? request.getProcedureDatetime() : null,
+                request != null ? request.getPerformedBy() : null);
+        return ipdPatientService.saveInpatientProcedure(request);
+    }
+
+
+    @GetMapping("/getProcedureByInpatientId/{inpatientId}")
+    public ResponseEntity<ApiResponse<List<IpProcedureTxnResponse>>> getIpProcedureTxnByInpatientId(@PathVariable Long inpatientId) {
+        log.info("Request received to fetch IpProcedureTxn for inpatientId: {}", inpatientId);
+        ApiResponse<List<IpProcedureTxnResponse>> response = ipdPatientService.getIpProcedureTxnByInpatientId(inpatientId);
+        return ResponseEntity.ok(response);
+    }
 }

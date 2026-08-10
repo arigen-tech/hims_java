@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.hims.constants.AppConstants.*;
+
 @Service
 public class MasRoleServiceImpl implements MasRoleService {
 
@@ -23,7 +25,7 @@ public class MasRoleServiceImpl implements MasRoleService {
     private MasRoleRepository masRoleRepository;
 
     private boolean isValidStatus(String status) {
-        return "y".equalsIgnoreCase(status) || "n".equalsIgnoreCase(status);
+        return STATUS_Y.equalsIgnoreCase(status) || STATUS_N.equalsIgnoreCase(status);
     }
 
     @Override
@@ -91,11 +93,11 @@ public class MasRoleServiceImpl implements MasRoleService {
         List<MasRole> roles;
 
         if (flag == 1) {
-            roles = masRoleRepository.findByStatusIgnoreCase("y");
+            roles = masRoleRepository.findByStatusIgnoreCase(STATUS_Y);
         } else if (flag == 0) {
             roles = masRoleRepository.findAllByOrderByStatusDescUpdatedOnDesc();
         } else {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid flag value. Use 0 or 1.", 400);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, MSG_INVALID_FLAG, 400);
         }
 
         List<MasRoleResponse> responses = roles.stream()

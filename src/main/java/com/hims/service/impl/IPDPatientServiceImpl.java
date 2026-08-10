@@ -11,6 +11,7 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
 import com.hims.mapper.IpMarDetailsMapper;
+import com.hims.mapper.IpProcedureTxnMapper;
 import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
@@ -79,6 +80,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private final IpPaymentDetailRepository ipPaymentDetailRepository;
     private final IpMarDetailsRepository ipMarDetailsRepository;
     private final IpMarDetailsMapper ipMarDetailsMapper;
+    private final IpProcedureTxnRepository ipProcedureTxnRepository;
+    private final IpProcedureTxnMapper ipProcedureTxnMapper;
     private final IpDocumentRepository ipDocumentRepository;
     private final UserRepo userRepo;
     private final IpDiagnosisEntryRepository ipDiagnosisEntryRepository;
@@ -193,6 +196,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     StoreStockLedgerRepository storeStockLedgerRepository;
     @Autowired
     IpMedicineIssueRepository ipMedicineIssueRepository;
+    @Autowired
+    MasProcedureRepository masProcedureRepository;
 
 
 
@@ -2617,9 +2622,10 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             if (item == null) {
                 return ResponseUtils.createNotFoundResponse("Item not found with ID: " + request.getItemId(), HttpStatus.NOT_FOUND.value());
             }
-            // Check duplicate item for same inpatient
-            if (ipMedicinePrescriptionRepository.existsByInpatient_InpatientIdAndItem_ItemId(request.getInpatientId(),
-                    request.getItemId())) {
+
+            // Check duplicate item for same inpatient ( active prescription — stop_date null — block)
+            if (ipMedicinePrescriptionRepository.existsByInpatient_InpatientIdAndItem_ItemIdAndStopDateIsNull(
+                    request.getInpatientId(), request.getItemId())) {
 
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Item already added for this inpatient",
@@ -3298,6 +3304,70 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
         } catch (Exception e) {
             log.error("Error while fetching unique medicines in MAR log for inpatientId: {}", inpatientId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<String> saveInpatientProcedure(InpatientProcedureRequest request) {
+
+        log.info("Saving inpatient procedure. inpatientId={}, procedureId={}", request.getInpatientId(), request.getProcedureId());
+
+        try {
+            // 2. Fetch inpatient
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException(
+                                    "Inpatient not found with id: " + request.getInpatientId()));
+
+            MasProcedure masProcedure = masProcedureRepository.findById(request.getProcedureId()).orElseThrow(() -> new RuntimeException(
+                    "Procedure not found with id: " + request.getInpatientId()));
+
+            // 3. Create procedure transaction
+            IpProcedureTxn procedureTxn = new IpProcedureTxn();
+
+            procedureTxn.setInpatient(inpatient);
+            procedureTxn.setProcedureId(masProcedure);
+            procedureTxn.setProcedureName(masProcedure.getProcedureName());
+            procedureTxn.setProcedureDatetime(request.getProcedureDatetime());
+            procedureTxn.setPerformedBy(request.getPerformedBy());
+            procedureTxn.setRemarks(request.getRemarks());
+            User user = authUtil.getCurrentUser();
+            procedureTxn.setCreatedAt(LocalDateTime.now());
+            procedureTxn.setCreatedBy(user.getFullName());
+            procedureTxn.setUpdatedAt(LocalDateTime.now());
+            procedureTxn.setUpdatedBy(user.getFullName());
+
+            ipProcedureTxnRepository.save(procedureTxn);
+
+            log.info("Inpatient procedure saved successfully. procedureTxnId={}", procedureTxn.getProcedureTxnId());
+
+            return ResponseUtils.createSuccessResponse("Inpatient procedure saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while saving inpatient procedure. inpatientId={}, procedureId={}", request.getInpatientId(), request.getProcedureId(), e);
+
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),HttpStatus.BAD_REQUEST.value()
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<List<IpProcedureTxnResponse>> getIpProcedureTxnByInpatientId(Long inpatientId) {
+        log.info("Request to fetch IpProcedureTxn for inpatientId: {}", inpatientId);
+        try {
+            if (inpatientId == null) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+            }
+
+            List<IpProcedureTxn> entities = ipProcedureTxnRepository.findByInpatientInpatientId(inpatientId);
+            List<IpProcedureTxnResponse> dtoList = entities.stream()
+                    .map(ipProcedureTxnMapper::mapToDTO)
+                    .toList();
+
+            log.info("Successfully fetched {} IpProcedureTxn records for inpatientId: {}", dtoList.size(), inpatientId);
+            return ResponseUtils.createSuccessResponse(dtoList, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching IpProcedureTxn for inpatientId: {}", inpatientId, e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
