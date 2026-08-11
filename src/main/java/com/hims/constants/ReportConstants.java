@@ -187,4 +187,7 @@ public final class ReportConstants {
 
     public static final String IP_INITIAL_ASSESSMENT_JASPER = "IPD_initial_assessment";
     public static final String IP_INITIAL_ASSESSMENT_REPORT = "InitialAssessment";
+
+    public static final String PRESCRIPTION_ISSUE_SLIP_JASPER = "Prescription_issue_slip";
+    public static final String PRESCRIPTION_ISSUE_SLIP_REPORT = "PrescriptionIssueSlip";
 }
