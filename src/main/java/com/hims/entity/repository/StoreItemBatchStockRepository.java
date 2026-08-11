@@ -165,6 +165,7 @@ WHERE s.itemId.itemId = :itemId
 
     @Query("""
 SELECT new com.hims.response.BatchNameForStockResponse(
+    s.stockId,
     s.batchNo,
     s.manufactureDate,
     s.expiryDate,
@@ -183,6 +184,7 @@ FROM StoreItemBatchStock s
 WHERE s.itemId.itemId = :itemId
   AND s.hospitalId.id = :hospitalId
   AND s.departmentId.id = :departmentId
+  AND s.closingStock > 0
   AND COALESCE(:expDate, s.expiryDate) <= s.expiryDate
   ORDER BY s.expiryDate ASC
 """)

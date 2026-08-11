@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class BatchNameForStockResponse {
 
+    private Long stockId;
     private String batchName;
     private LocalDate dom;
     private LocalDate doe;
