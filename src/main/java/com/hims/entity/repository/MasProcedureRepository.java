@@ -30,12 +30,14 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
 
 
     @Query("""
-        SELECT p FROM MasProcedure p
-        WHERE LOWER(p.status) = :status
-            and LOWER(p.isNursing)=:isNursing
-        AND (LOWER(p.procedureCode) LIKE :search 
-             OR LOWER(p.procedureName) LIKE :search)
-    """)
+    SELECT p FROM MasProcedure p
+    WHERE LOWER(p.status) = :status
+      AND (:isNursing IS NULL OR LOWER(p.isNursing) = :isNursing)
+      AND (
+          LOWER(p.procedureCode) LIKE :search
+          OR LOWER(p.procedureName) LIKE :search
+      )
+""")
     Page<MasProcedure> searchProcedure(
             @Param("status") String status,
             @Param("isNursing") String isNursing,
