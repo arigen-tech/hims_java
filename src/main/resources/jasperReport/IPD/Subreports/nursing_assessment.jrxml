@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="nursing_assessment" pageWidth="595" pageHeight="842" columnWidth="595" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="8f0f57e5-0c9f-4555-afc8-c37eb8836ed1">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<parameter name="assessmentId" class="java.lang.Integer"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+    COALESCE(NULLIF(TRIM(inma.consciousness), ''), '-') AS consciousness,
+    COALESCE(inma.gcs_score::text, '-') AS gcs_score,
+    COALESCE(inma.pain_score::text, '-') AS pain_score,
+    COALESCE(NULLIF(TRIM(inma.mobility_status), ''), '-') AS mobility_status,
+    COALESCE(NULLIF(TRIM(inma.fall_risk), ''), '-') AS fall_risk,
+    COALESCE(NULLIF(TRIM(inma.pressure_sore_risk), ''), '-') AS pressure_sore_risk,
+    COALESCE(NULLIF(TRIM(inma.skin_condition), ''), '-') AS skin_condition,
+    CASE inma.iv_line_present
+        WHEN 'Y' THEN 'Yes'
+        WHEN 'N' THEN 'No'
+        ELSE '-'
+    END AS iv_line_present,
+    COALESCE(NULLIF(TRIM(inma.iv_site), ''), '-') AS iv_site,
+    CASE inma.drain_present
+        WHEN 'Y' THEN 'Yes'
+        WHEN 'N' THEN 'No'
+        ELSE '-'
+    END AS drain_present,
+    COALESCE(NULLIF(TRIM(inma.drain_type), ''), '-') AS drain_type,
+    CASE inma.catheter_present
+        WHEN 'Y' THEN 'Yes'
+        WHEN 'N' THEN 'No'
+        ELSE '-'
+    END AS catheter_present,
+    COALESCE(NULLIF(TRIM(inma.catheter_type), ''), '-') AS catheter_type,
+    COALESCE(NULLIF(TRIM(inma.nutrition_risk), ''), '-') AS nutrition_risk,
+    COALESCE(NULLIF(TRIM(inma.infection_risk), ''), '-') AS infection_risk,
+    CASE inma.patient_orientation_done
+        WHEN 'Y' THEN 'Yes'
+        WHEN 'N' THEN 'No'
+        ELSE '-'
+    END AS patient_orientation,
+    CASE inma.relative_orientation_done
+        WHEN 'Y' THEN 'Yes'
+        WHEN 'N' THEN 'No'
+        ELSE '-'
+    END AS relative_orientation,
+    COALESCE(NULLIF(TRIM(inma.nursing_care_plan), ''), '-') AS nursing_care_plan
+FROM ip_nursing_medical_assessment inma
+WHERE inma.assessment_id = $P{assessmentId};  ]]>
+	</queryString>
+	<field name="consciousness" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="consciousness"/>
+		<property name="com.jaspersoft.studio.field.label" value="consciousness"/>
+	</field>
+	<field name="gcs_score" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gcs_score"/>
+		<property name="com.jaspersoft.studio.field.label" value="gcs_score"/>
+	</field>
+	<field name="pain_score" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pain_score"/>
+		<property name="com.jaspersoft.studio.field.label" value="pain_score"/>
+	</field>
+	<field name="mobility_status" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="mobility_status"/>
+		<property name="com.jaspersoft.studio.field.label" value="mobility_status"/>
+	</field>
+	<field name="fall_risk" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="fall_risk"/>
+		<property name="com.jaspersoft.studio.field.label" value="fall_risk"/>
+	</field>
+	<field name="pressure_sore_risk" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pressure_sore_risk"/>
+		<property name="com.jaspersoft.studio.field.label" value="pressure_sore_risk"/>
+	</field>
+	<field name="skin_condition" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="skin_condition"/>
+		<property name="com.jaspersoft.studio.field.label" value="skin_condition"/>
+	</field>
+	<field name="iv_line_present" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="iv_line_present"/>
+		<property name="com.jaspersoft.studio.field.label" value="iv_line_present"/>
+	</field>
+	<field name="iv_site" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="iv_site"/>
+		<property name="com.jaspersoft.studio.field.label" value="iv_site"/>
+	</field>
+	<field name="drain_present" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="drain_present"/>
+		<property name="com.jaspersoft.studio.field.label" value="drain_present"/>
+	</field>
+	<field name="drain_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="drain_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="drain_type"/>
+	</field>
+	<field name="catheter_present" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="catheter_present"/>
+		<property name="com.jaspersoft.studio.field.label" value="catheter_present"/>
+	</field>
+	<field name="catheter_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="catheter_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="catheter_type"/>
+	</field>
+	<field name="nutrition_risk" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="nutrition_risk"/>
+		<property name="com.jaspersoft.studio.field.label" value="nutrition_risk"/>
+	</field>
+	<field name="infection_risk" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="infection_risk"/>
+		<property name="com.jaspersoft.studio.field.label" value="infection_risk"/>
+	</field>
+	<field name="patient_orientation" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_orientation"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_orientation"/>
+	</field>
+	<field name="relative_orientation" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="relative_orientation"/>
+		<property name="com.jaspersoft.studio.field.label" value="relative_orientation"/>
+	</field>
+	<field name="nursing_care_plan" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="nursing_care_plan"/>
+		<property name="com.jaspersoft.studio.field.label" value="nursing_care_plan"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="57" splitType="Stretch">
+			<staticText>
+				<reportElement positionType="Float" x="0" y="0" width="555" height="16" uuid="dd43f920-52b2-47f8-925b-a63dbbef7da2"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<text><![CDATA[=====================================================================================]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="21" width="271" height="15" uuid="d0c91c1e-1bab-4182-b2f8-2f6d4e406d08"/>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font fontName="DejaVu Sans Condensed" size="12"/>
+				</textElement>
+				<text><![CDATA[A. NURSING ASSESSMENT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="41" width="555" height="16" uuid="fb235092-e5fe-48ab-880e-3542977e5fcd"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
+				<text><![CDATA[=====================================================================================]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="444" splitType="Stretch">
+			<staticText>
+				<reportElement positionType="Float" x="8" y="13" width="112" height="14" uuid="4dcc25f9-d26f-4014-9533-a8eb069ad48e"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Conciousness]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="13" width="3" height="14" uuid="506d05cf-f21a-4a92-9542-603c70c1d902"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="31" width="112" height="14" uuid="3e153125-03aa-46cd-a102-7dc6a6ea2d53"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GCS Score]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="49" width="112" height="14" uuid="8972eee5-7041-42d6-b42b-557e76b70feb"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pain Score]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="67" width="112" height="14" uuid="68e444b8-c0a3-4457-8ba9-ec3cf9b5ccc7"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Mobility]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="85" width="112" height="14" uuid="f57cc86b-27f5-4b55-8c63-fe9921ae4402"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fall Risk]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="103" width="112" height="14" uuid="8ab343ba-04e7-4316-8158-9cb1bbf23eb1"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pressure Sore Risk]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="122" width="112" height="14" uuid="c04d88af-5c21-4cef-9aea-5cec84a3d39b"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Skin Conndition]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="31" width="3" height="14" uuid="ce398e33-5242-4b42-85c6-ffad2c0370c8"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="49" width="3" height="14" uuid="0ae4efc6-54f3-4494-9ef6-46331b3db0d3"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="67" width="3" height="14" uuid="dcf46198-3d3a-4a2c-8322-5e05f293e500"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="85" width="3" height="14" uuid="0c3ed14b-9f2c-42c9-bdae-2db041a18e56"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="103" width="3" height="14" uuid="e49a5381-d0d8-4d4d-bf3c-f7bee6f14d3d"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="122" width="3" height="14" uuid="3288b733-b3c1-4313-afce-3c1a12b68573"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="152" width="112" height="14" uuid="fb345956-1e3b-4159-bb89-3b3e522b66a2"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[IV Line]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="170" width="112" height="14" uuid="18df9da1-37f9-4ec7-b0d4-4a4a200019e3"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Site]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="188" width="112" height="14" uuid="bb22cceb-e9fa-4fa8-9347-e8182087e5e0"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Drain]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="206" width="112" height="14" uuid="8c1e96db-74e5-4e3e-afb4-72b8aaa47d31"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Drain Type]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="224" width="112" height="14" uuid="54514f2c-d459-410b-8bbc-ad0e678a863f"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Catheter]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="243" width="112" height="14" uuid="59b49148-8403-4000-ac90-bd36b6f92519"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Catheter Type]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="152" width="3" height="14" uuid="d813cf02-b667-4ff3-942c-868fb9336257"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="170" width="3" height="14" uuid="55a3e8e9-c5d5-4dc4-baf3-ed51870fb7be"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="188" width="3" height="14" uuid="aab47163-9039-4737-bfd1-7e497269ed3f"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="206" width="3" height="14" uuid="17f0618c-a9d7-4974-9418-a37b8fedfe11"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="224" width="3" height="14" uuid="7f0f9783-0968-4de8-b3f4-a25f4550c017"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="144" y="243" width="3" height="14" uuid="ba202534-bcdf-4bdc-87d7-96776418c55b"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="7" y="273" width="112" height="14" uuid="630dc161-0fb6-4798-b73a-81143932dd43"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nutrition Risk]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="7" y="291" width="112" height="14" uuid="72ed99f4-4194-44dd-872f-78067af9d370"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Infection Risk]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="7" y="321" width="112" height="14" uuid="64cda354-e3bc-419b-bbcd-673c841e5fa0"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient Orientation]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="7" y="340" width="112" height="14" uuid="c1e8e527-ed9a-412a-823a-0ff8173ff14d"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Relative Orinetation]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="143" y="273" width="3" height="14" uuid="9408d931-fe29-48f0-b855-ae4c7ca8c435"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="143" y="291" width="3" height="14" uuid="35a30a8a-5636-48bc-96d6-c1b522c3e993"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="143" y="321" width="3" height="14" uuid="0b872274-34e1-40c3-b5b5-d9df085cd7f7"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="143" y="340" width="3" height="14" uuid="102a9932-b205-46c5-a6f9-322a77e68169"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="370" width="112" height="14" uuid="c07389c3-788c-4cc8-8511-8fe190e970c1"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nursing Care Plan]]></text>
+			</staticText>
+			<line>
+				<reportElement positionType="Float" x="0" y="389" width="555" height="1" uuid="9ca8abc7-206f-46e5-835f-7f5cf7b46f98"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dashed"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement positionType="Float" x="153" y="13" width="147" height="14" uuid="3322b59a-945c-4035-84ec-ea85ff6d2c7a"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{consciousness}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="31" width="147" height="14" uuid="8abdc89c-e41f-47cb-864c-21354c8d743d"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gcs_score}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="49" width="147" height="14" uuid="975ae601-3b84-4474-b5f2-b23926a3d1c4"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pain_score}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="67" width="147" height="14" uuid="cc4cde34-c34f-4412-9056-76832a5f7d11"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mobility_status}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="85" width="147" height="14" uuid="d0fe6478-499f-4d8d-836b-e7df34d50da9"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fall_risk}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="103" width="147" height="14" uuid="3c5290a9-26ce-470b-ba1b-a81b77d5fe74"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pressure_sore_risk}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="122" width="147" height="14" uuid="49e3c285-1c6f-42ff-82b7-5044aca77719"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{skin_condition}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="152" width="147" height="14" uuid="ae76e304-fa89-4d7d-a885-c5acb28dad18"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{iv_line_present}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="170" width="147" height="14" uuid="bb0dbb0a-ffeb-4078-95df-728d52a9005a"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{iv_site}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="188" width="147" height="14" uuid="701e5bcb-7871-4bb1-a989-acde8c4ea25c"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{drain_present}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="206" width="147" height="14" uuid="4c61c445-1ff3-484d-afce-8c1503728949"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{drain_type}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="224" width="147" height="14" uuid="7933d9ae-58fd-4cb6-a707-41db7e2cea2a"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{catheter_present}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="153" y="243" width="147" height="14" uuid="88ba0d15-e799-4806-92a2-12e770d6d8a4"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{catheter_type}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="152" y="273" width="147" height="14" uuid="ff40b331-37a7-4bae-82bb-3e3ab8cc36a5"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nutrition_risk}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="152" y="291" width="147" height="14" uuid="9e93def9-b473-449d-a2c0-41b639cb391a"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{infection_risk}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="152" y="321" width="147" height="14" uuid="e9823799-89d0-43ae-9d1c-88303e86c63d"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{patient_orientation}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="152" y="340" width="147" height="14" uuid="9b5702c6-f700-494f-b190-419d225e10a4"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{relative_orientation}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement positionType="Float" x="8" y="397" width="532" height="14" uuid="b2962e9b-2f2f-49dc-95e1-a8539b64b84a"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nursing_care_plan}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

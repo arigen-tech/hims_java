@@ -35,4 +35,10 @@ public interface IpMedicinePrescriptionRepository extends JpaRepository<IpMedici
     List<IpMedicinePrescriptionProjection> getMedicationTreatmentByInpatientId(
             @Param("inpatientId") Long inpatientId
     );
-}
+
+
+
+        boolean existsByInpatient_InpatientIdAndItem_ItemIdAndStopDateIsNull(
+                Long inpatientId, Long itemId);
+    }
+

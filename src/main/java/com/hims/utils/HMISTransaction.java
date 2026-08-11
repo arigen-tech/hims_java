@@ -11,7 +11,8 @@ public enum HMISTransaction {
     RECEIPT_NO("RECEIPT_NO", "RCPT"),
     APPOINTMENT_NO("APPOINTMENT_NO", "APT"),
     OT_NO("OT_NO", "OT"),
-    REFUND_NO("REFUND_NO", "REF");
+    REFUND_NO("REFUND_NO", "REF"),
+    PRESCRIPTION_NO("PRESCRIPTION_NO", "PRES");
 
     private final String transactionName;
     private final String prefix;
