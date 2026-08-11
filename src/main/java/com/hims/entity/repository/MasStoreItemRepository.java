@@ -525,6 +525,10 @@ WHERE
       s.section_code <> :drugSectionCode
   AND it.item_type_code = :medicalConsumableItemTypeCode
   AND g.group_code = :groupCode
+  AND (
+       :flag = 0
+           OR (:flag = 1 AND LOWER(i.status) = LOWER(:status))
+   )
 AND (
         :itemName IS NULL
         OR :itemName = ''
@@ -564,11 +568,16 @@ WHERE
       s.section_code <> :drugSectionCode
   AND it.item_type_code = :medicalConsumableItemTypeCode
   AND g.group_code = :groupCode
+ AND (
+       :flag = 0
+           OR (:flag = 1 AND LOWER(i.status) = LOWER(:status))
+   )
        AND (
           :itemName IS NULL
             OR :itemName = ''
           OR LOWER(i.nomenclature) LIKE LOWER(CONCAT('%', :itemName, '%'))
           )
+          
        AND (
         :itemClassId IS NULL
         OR ic.item_class_id = :itemClassId
@@ -584,9 +593,12 @@ WHERE
             @Param("drugSectionCode") String drugSectionCode,
             @Param("medicalConsumableItemTypeCode") String medicalConsumableItemTypeCode,
             @Param("groupCode") String groupCode,
+            @Param("status") String  status,
+            @Param("flag") int flag,
             @Param("itemName") String itemName,
             @Param("sectionId") Integer sectionId,
             @Param("itemClassId") Integer itemClassId,
+
             Pageable pageable);
     @Query(value = """
 SELECT

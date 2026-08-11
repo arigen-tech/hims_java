@@ -5250,15 +5250,16 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
     public ResponseEntity<ApiResponse<Page<NonDrugStoreItemResponse>>> medicalConsumableItem(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "0") int flag,
             @RequestParam(required = false) String itemName,
             @RequestParam(required = false) Integer sectionId,
             @RequestParam(required = false) Integer itemClassId) {
 
-        log.info("Request received to fetch Medical Consumable Items. page={}, size={}, itemId={}, itemClassId={}",
-                page, size, itemName, itemClassId);
+        log.info("Request received to fetch Medical Consumable Items. page={}, size={},flag={}, itemId={}, itemClassId={}",
+                page, size,flag, itemName, itemClassId);
 
         ApiResponse<Page<NonDrugStoreItemResponse>> response =
-                masStoreItemService.medicalConsumableItem(page, size, itemName, sectionId, itemClassId);
+                masStoreItemService.medicalConsumableItem(page, size,flag, itemName, sectionId, itemClassId);
 
         return ResponseEntity.ok(response);
     }

@@ -507,4 +507,15 @@ public class IPDPatientController {
     }
 
 
+    @PostMapping("saveNursingCareProcedure")
+    public ApiResponse<String> saveNursingCareProcedure(@Valid @RequestBody List<ConsumableEntryRequest> request) {
+
+        log.info("saveNursingCareProcedure API called with {} record(s)", request != null ? request.size() : 0);
+
+        return ipdPatientService.saveNursingCareProcedure(request);
+    }
+
+
+
+
 }
