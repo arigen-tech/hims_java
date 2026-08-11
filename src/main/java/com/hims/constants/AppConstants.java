@@ -223,6 +223,7 @@ public class AppConstants {
 
 
     public static final String ORDER_HD_NOT_FOUND_MSG = "Invalid order Id , Order Hd Id not found";
+    public static final String PRESCRIPTION_STATUS_CLOSED = "C";
 
     public static final String DUPLICATE_APPOINTMENT_MSG = "Patient already has an appointment with the same doctor on this day.";
     public static final String MSG_INVALID_FLAG = "Invalid flag";

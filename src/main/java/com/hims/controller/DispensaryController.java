@@ -2,10 +2,13 @@ package com.hims.controller;
 
 import com.hims.request.*;
 import com.hims.response.*;
+import com.hims.service.DispensaryService;
 import com.hims.service.IndentService;
 import com.hims.service.OpeningBalanceEntryService;
 import com.hims.service.PhysicalBatchStockService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,14 +20,16 @@ import java.util.List;
 
 @RestController
 @Tag(name = "DispensaryController")
-@RequestMapping("/openingBalanceEntry")
+@RequestMapping("/dispensary")
+@RequiredArgsConstructor
 public class DispensaryController {
-    @Autowired
-    private OpeningBalanceEntryService openingBalanceEntryService;
-    @Autowired
-    private PhysicalBatchStockService physicalBatchStockService;
-    @Autowired
-    private IndentService indentService;
+
+    private final OpeningBalanceEntryService openingBalanceEntryService;
+    private final PhysicalBatchStockService physicalBatchStockService;
+    private final IndentService indentService;
+
+    private final DispensaryService dispensaryService;
+
 
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<OpeningBalanceEntryResponse>> addOpeningBalanceEntry(@RequestBody OpeningBalanceEntryRequest openingBalanceEntryRequest) {
@@ -138,6 +143,32 @@ public class DispensaryController {
     @GetMapping("/getIndent/{id}")
     public ResponseEntity<ApiResponse<String>> getIndent(@PathVariable Long id){
         return ResponseEntity.ok(indentService.getIndent(id));
+    }
+
+    @GetMapping("/pendingPrescriptionHeaders/{hospitalId}")
+    public ResponseEntity<?> getPendingPrescriptionHeaders(@PathVariable Long hospitalId,
+                                                           @RequestParam(required = false) Long departmentId,
+                                                           @RequestParam(required = false) String patientName,
+                                                           @RequestParam(required = false) String patientMobileNo,
+                                                           @RequestParam(defaultValue = "0") int page,
+                                                           @RequestParam(defaultValue = "5") int size) {
+        return ResponseEntity.ok(dispensaryService.getPendingPrescriptionsHeaders(hospitalId, departmentId,patientName,patientMobileNo, page, size));
+    }
+
+
+    @GetMapping("/pendingPrescriptionDetails/{prescriptionHeaderId}")
+    public ResponseEntity<?> getPendingPrescriptionHeaders(@PathVariable Long prescriptionHeaderId) {
+        return ResponseEntity.ok(dispensaryService.getPendingPrescriptionsDetailsWrtHeader(prescriptionHeaderId));
+    }
+
+    @PutMapping("/approvePrescription")
+    public ResponseEntity<?> approvePrescription(@Valid @RequestBody PrescriptionHeaderApproveRequest request) {
+        return ResponseEntity.ok(dispensaryService.approvePrescription(request));
+    }
+
+    @PutMapping("/closePrescription/{prescriptionHeaderId}")
+    public ResponseEntity<?> closePendingPrescription(@PathVariable Long prescriptionHeaderId) {
+        return ResponseEntity.ok(dispensaryService.closePendingPrescription(prescriptionHeaderId));
     }
 
 
