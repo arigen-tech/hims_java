@@ -1119,6 +1119,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
     public ApiResponse<Page<NonDrugStoreItemResponse>> medicalConsumableItem(
             int page,
             int size,
+            int flag,
             String  itemName,
             Integer sectionId,
             Integer itemClassId){
@@ -1135,6 +1136,8 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
                             drugSectionCode,
                             medicalConsumableItemTypeCode,
                             masItemGroup,
+                            AppConstants.STATUS_Y.toLowerCase(),
+                            flag,
                             itemName,
                             sectionId,
                             itemClassId,
