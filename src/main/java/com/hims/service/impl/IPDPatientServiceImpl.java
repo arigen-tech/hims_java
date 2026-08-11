@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,7 +75,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private final MasRoomRepo masRoomRepository;
     private final MasBedRepository masBedRepository;
     private final IpBedAllocationRepository ipBedAllocationRepository;
-    private  final MasIpdBillingTypeRepository masIpdBillingTypeRepository;
+    private final MasIpdBillingTypeRepository masIpdBillingTypeRepository;
     private final IpdBillingHeaderRepository ipdBillingHeaderRepository;
     private final MasPaymentModeRepository masPaymentModeRepository;
     private final IpPaymentDetailRepository ipPaymentDetailRepository;
@@ -198,13 +199,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     IpMedicineIssueRepository ipMedicineIssueRepository;
     @Autowired
     MasProcedureRepository masProcedureRepository;
-
-
-
+    @Autowired
+    MasProcedureConsumableTemplateRepository masProcedureConsumableTemplateRepository;
+    @Autowired
+    MasProcedureConsumableTemplateDetailRepository masProcedureConsumableTemplateDetailRepository;
+    @Autowired
+    IpConsumableTxnRepository ipConsumableTxnRepository;
 
 
     @Value("${ipd.admission.status.admitted}")
-     Long admitAdmissionStatusId;
+    Long admitAdmissionStatusId;
 
     @Value("${bed.status.available.id}")
     Long bedStatusId;
@@ -230,10 +234,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Value("${bed.status.transfer.request.id}")
     Long bedStatusTransferRequestId;
     @Value("${ip.internal.status.transfer.pending.id}")
-    Long ipInternalStatusTransferPendingId ;
+    Long ipInternalStatusTransferPendingId;
 
     @Value("${ip.payment.status.partial}")
-    Long ipPaymentStatusPartial ;
+    Long ipPaymentStatusPartial;
     @Value("${ip.bill.status.open}")
     Long ipBillStatusOpen;
     @Value("${ip.bill.status.Interim}")
@@ -254,12 +258,15 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long masReceiptTypeAdvanceCollection;
 
     @Value("${ip.payment.status.pending}")
-    Long   ipPaymentStatusPending;
+    Long ipPaymentStatusPending;
     @Value("${ip.bill.status.close}")
-    Long   ipBillStatusClose;
+    Long ipBillStatusClose;
 
     @Value("${ipd.service.category.drug}")
-    Long   IPDServiceCategoryDrug;
+    Long IPDServiceCategoryDrug;
+    @Value("${IPD.Service.Category.Medical.Consumables}")
+    Long IPDServiceCategoryMedicalConsumables;
+
 
 
     @Override
@@ -284,11 +291,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             Page<IPDPatientWaitingListResponse> responsePage = waitingListPage.map(this::mapToIPDPatientWaitingListResponse);
 
-            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<IPDPatientWaitingListResponse>>() {}
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<IPDPatientWaitingListResponse>>() {
+                    }
             );
 
         } catch (Exception e) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<Page<IPDPatientWaitingListResponse>>() {}, e.getMessage(),
+            return ResponseUtils.createFailureResponse(null, new TypeReference<Page<IPDPatientWaitingListResponse>>() {
+                    }, e.getMessage(),
                     500
             );
         }
@@ -308,7 +317,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             if (request.getVisitId() != null) {
                 visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new RuntimeException(
-                                        "Visit not found with id: " + request.getVisitId()));
+                        "Visit not found with id: " + request.getVisitId()));
             }
 
             Inpatient inpatient = saveInpatientDetails(request, patient, visit);
@@ -319,18 +328,20 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             saveIpDocumentDetails(request, inpatient, patient);
 
-            saveDoctorDiagnosis(request,inpatient,patient);
+            saveDoctorDiagnosis(request, inpatient, patient);
 
             saveIpdBillingAndPaymentDetails(request, inpatient);
 
             log.info("Saving IPD patient details completed for patientId: {}, inpatientId: {}", patient.getId(), inpatient.getInpatientId());
 
-            return ResponseUtils.createSuccessResponse("IPD patient details saved successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("IPD patient details saved successfully", new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while saving IPD patient details for patientId: {}. Error: {}", request != null ? request.getPatientId() : null, e.getMessage(),
                     e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},e.getMessage(),
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, e.getMessage(),
                     400
             );
         }
@@ -339,13 +350,15 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Override
     public ApiResponse<List<IpdWardResponse>> getWardDetailsByDepartment(Long departmentId) {
         try {
-            List<IpdWardResponse> wardList = masWardRepository.getWardByDepartment(departmentId,AppConstants.STATUS_Y.toLowerCase());
+            List<IpdWardResponse> wardList = masWardRepository.getWardByDepartment(departmentId, AppConstants.STATUS_Y.toLowerCase());
 
-            return ResponseUtils.createSuccessResponse(wardList, new TypeReference<List<IpdWardResponse>>() {});
+            return ResponseUtils.createSuccessResponse(wardList, new TypeReference<List<IpdWardResponse>>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while fetching wards for departmentId: {}", departmentId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG,
                     500
             );
         }
@@ -354,13 +367,15 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Override
     public ApiResponse<List<IpdRoomResponse>> getRoomDetailsByWard(Long wardId) {
         try {
-            List<IpdRoomResponse> roomList = masRoomRepository.getRoomByWard(wardId,bedStatusId,AppConstants.STATUS_Y.toLowerCase());
+            List<IpdRoomResponse> roomList = masRoomRepository.getRoomByWard(wardId, bedStatusId, AppConstants.STATUS_Y.toLowerCase());
 
-            return ResponseUtils.createSuccessResponse(roomList, new TypeReference<List<IpdRoomResponse>>() {});
+            return ResponseUtils.createSuccessResponse(roomList, new TypeReference<List<IpdRoomResponse>>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while fetching wards for departmentId: {}", wardId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG,
                     500
             );
         }
@@ -372,13 +387,15 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         try {
             log.info("Fetching wards and available bed count for wardCategoryId: {}", wardCategoryId);
 
-            List<WardResponse> wardList = masWardRepository.getWardsByCategory(wardCategoryId,bedStatusId,AppConstants.STATUS_Y.toLowerCase());
+            List<WardResponse> wardList = masWardRepository.getWardsByCategory(wardCategoryId, bedStatusId, AppConstants.STATUS_Y.toLowerCase());
 
-            return ResponseUtils.createSuccessResponse(wardList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(wardList, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while fetching wards for wardCategoryId: {}", wardCategoryId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG, 500
             );
         }
     }
@@ -388,7 +405,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         try {
             log.info("Fetching rooms and available bed count for roomId: {}", roomId);
 
-            List<MasBed> beds = masBedRepository.findAllActiveBedsByRoomId(roomId,bedStatusId,AppConstants.STATUS_Y.toLowerCase());
+            List<MasBed> beds = masBedRepository.findAllActiveBedsByRoomId(roomId, bedStatusId, AppConstants.STATUS_Y.toLowerCase());
 
             List<BedResponse> bedResponses = beds.stream()
                     .map(bed -> new BedResponse(
@@ -397,11 +414,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     ))
                     .toList();
 
-            return ResponseUtils.createSuccessResponse(bedResponses, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(bedResponses, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while fetching wards for wardCategoryId: {}", roomId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG, 500
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG, 500
             );
         }
     }
@@ -410,35 +429,37 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     public ApiResponse<List<WardWiseDetailsResponse>> getNursingDashboardByWard(Long wardId) {
         try {
 
-            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(wardId,admitAdmissionStatusId);
+            List<WardWiseDetailsProjection> projections = ipBedAllocationRepository.getWardWiseDetails(wardId, admitAdmissionStatusId);
 
-        List<WardWiseDetailsResponse> responseList = projections.stream()
-                        .map(item -> new WardWiseDetailsResponse(
-                                item.getPatientId(),
-                                item.getIpdPatientId(),
-                                item.getPatientName(),
-                                item.getRoomId(),
-                                item.getRoomName(),
-                                item.getBedId(),
-                                item.getBedNumber(),
-                                item.getAdmitDate(),
-                                item.getDays(),
-                                item.getAdmissionNo(),
-                                item.getAdmissionStatus(),
-                                item.getIpdInternalStatus(),
-                                item.getAge(),
-                                item.getGender(),
-                                item.getDoctor(),
-                                item.getDiagnosisId(),
-                                item.getDiagnosisType(),
-                                item.getDiagnosis()
-                        ))
-                        .toList();
+            List<WardWiseDetailsResponse> responseList = projections.stream()
+                    .map(item -> new WardWiseDetailsResponse(
+                            item.getPatientId(),
+                            item.getIpdPatientId(),
+                            item.getPatientName(),
+                            item.getRoomId(),
+                            item.getRoomName(),
+                            item.getBedId(),
+                            item.getBedNumber(),
+                            item.getAdmitDate(),
+                            item.getDays(),
+                            item.getAdmissionNo(),
+                            item.getAdmissionStatus(),
+                            item.getIpdInternalStatus(),
+                            item.getAge(),
+                            item.getGender(),
+                            item.getDoctor(),
+                            item.getDiagnosisId(),
+                            item.getDiagnosisType(),
+                            item.getDiagnosis()
+                    ))
+                    .toList();
 
-        return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Error while fetching getWardWiseDetails", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG, 500
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG, 500
             );
         }
 
@@ -449,13 +470,14 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         log.info("Fetching total bed count for wardId: {}", wardId);
 
-        TotalBedCountResponse response = masBedRepository.getTotalBedCountByDepartmentId(wardId,bedStatusId,bedStatusOccupiedId);
+        TotalBedCountResponse response = masBedRepository.getTotalBedCountByDepartmentId(wardId, bedStatusId, bedStatusOccupiedId);
 
         if (response == null) {
             response = new TotalBedCountResponse(0L, 0L, 0L, null);
         }
 
-        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
+        });
 
     }
 
@@ -469,20 +491,22 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         );
 
         try {
-            User user=authUtil.getCurrentUser();
+            User user = authUtil.getCurrentUser();
 
             Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
-            if(inpatient.isEmpty()){
+            if (inpatient.isEmpty()) {
 
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
                         "Inpatient not found", HttpStatus.NOT_FOUND.value());
 
             }
 
             Optional<MasHospital> hospital = masHospitalRepository.findById(request.getHospitalId());
-            if(hospital.isEmpty()){
+            if (hospital.isEmpty()) {
 
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
                         "Hospital not found", HttpStatus.NOT_FOUND.value());
 
             }
@@ -560,7 +584,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             IpNursingMedicalAssessment savedAssessment = ipNursingMedicalAssessmentRepository.save(assessment);
 
             // Save an entry in ip_vitals
-             saveIpVitals(request, inpatient.get(), user);
+            saveIpVitals(request, inpatient.get(), user);
 
 
             log.info("IP nursing medical assessment saved successfully. assessmentId: {}, inpatientId: {}",
@@ -568,7 +592,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     request.getInpatientId());
 
             return ResponseUtils.createSuccessResponse("IP nursing medical assessment saved successfully. Assessment ID: "
-                            + savedAssessment.getAssessmentId(), new TypeReference<>() {});
+                    + savedAssessment.getAssessmentId(), new TypeReference<>() {
+            });
 
         } catch (Exception exception) {
             log.error("Error while saving IP nursing medical assessment. inpatientId: {}, hospitalId: {}", request.getInpatientId(), request.getHospitalId(), exception);
@@ -576,6 +601,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             throw new RuntimeException("Unable to save IP nursing medical assessment: " + exception.getMessage(), exception);
         }
     }
+
     private void saveIpVitals(
             IpNursingMedicalAssessmentRequest request,
             Inpatient inpatient,
@@ -609,8 +635,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             throw new RuntimeException("Unable to save IP vitals for inpatient ID: " + inpatient.getInpatientId() + ". Error: " + exception.getMessage(), exception);
         }
     }
+
     @Override
-    public ApiResponse<String> updateAdmissionInternalStatus(Long inpatientId,Long internalStatusId) {
+    public ApiResponse<String> updateAdmissionInternalStatus(Long inpatientId, Long internalStatusId) {
         try {
             User user = authUtil.getCurrentUser();
 
@@ -644,7 +671,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
                 log.warn("No vitals history found for inpatientId: {}", inpatientId);
 
-                return ResponseUtils.createFailureResponse(Collections.emptyList(), new TypeReference<>() {}, "No vitals details found for inpatient ID: " + inpatientId, 404);
+                return ResponseUtils.createFailureResponse(Collections.emptyList(), new TypeReference<>() {
+                }, "No vitals details found for inpatient ID: " + inpatientId, 404);
             }
 
             List<IpVitalsResponse> responseList = vitalsList.stream()
@@ -653,13 +681,15 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             log.info("Successfully fetched {} vitals records for inpatientId: {}", responseList.size(), inpatientId);
 
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
 
             log.error("Error while fetching vitals history for inpatientId: {}", inpatientId, e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
         }
     }
 
@@ -668,18 +698,20 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Saving vitals details started for inpatientId: {}", request.getInpatientId());
 
         try {
-            User user=authUtil.getCurrentUser();
+            User user = authUtil.getCurrentUser();
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
 
             if (inpatient == null) {
                 log.warn("Inpatient not found for inpatientId: {}", request.getInpatientId());
 
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient not found with ID: " + request.getInpatientId(), 404);}
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Inpatient not found with ID: " + request.getInpatientId(), 404);
+            }
 
             IpVitals ipVitals = new IpVitals();
 
             ipVitals.setInpatient(inpatient);
-            ipVitals.setObservationDatetime( LocalDateTime.now());
+            ipVitals.setObservationDatetime(LocalDateTime.now());
             ipVitals.setTemperature(request.getTemperature());
             ipVitals.setPulse(request.getPulse());
             ipVitals.setBpSystolic(request.getBpSystolic());
@@ -695,12 +727,14 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             log.info("Vitals details saved successfully for inpatientId: {}, vitalId: {}", request.getInpatientId(), savedVitals.getIpVitalsId());
 
-            return ResponseUtils.createSuccessResponse("Vitals details saved successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("Vitals details saved successfully", new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while saving vitals details for inpatientId: {}", request.getInpatientId(), e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
         }
     }
 
@@ -711,7 +745,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         try {
             if (request.getEntries() == null || request.getEntries().isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "At least one intake/output entry is required", 400);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "At least one intake/output entry is required", 400);
             }
 
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
@@ -719,7 +754,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             if (inpatient == null) {
                 log.warn("Inpatient not found with inpatientId: {}", request.getInpatientId());
 
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient not found with ID: " + request.getInpatientId(), 404);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Inpatient not found with ID: " + request.getInpatientId(), 404);
             }
 
             Patient patient = inpatient.getPatient();
@@ -727,7 +763,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             if (patient == null) {
                 log.warn("Patient is not associated with inpatientId: {}", request.getInpatientId());
 
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Patient is not associated with this inpatient", 400);}
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Patient is not associated with this inpatient", 400);
+            }
 
             User currentUser = authUtil.getCurrentUser();
             LocalDateTime currentDateTime = LocalDateTime.now();
@@ -748,13 +786,15 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             log.info("Successfully saved {} intake/output entries for inpatientId: {}", savedEntries.size(), request.getInpatientId());
 
-            return ResponseUtils.createSuccessResponse( " intake/output entries saved successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(" intake/output entries saved successfully", new TypeReference<>() {
+            });
 
         } catch (Exception e) {
 
-            log.error("Error while saving intake/output details for inpatientId: {}",request.getInpatientId(), e);
+            log.error("Error while saving intake/output details for inpatientId: {}", request.getInpatientId(), e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
         }
     }
 
@@ -775,7 +815,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             User loggedInUser = authUtil.getCurrentUser();
 
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException("Inpatient not found with ID: "
-                                    + request.getInpatientId()));
+                    + request.getInpatientId()));
 
             Patient patient = inpatient.getPatient();
 
@@ -786,24 +826,23 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             User doctor = userRepo.findById(request.getDoctorId()).orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + request.getDoctorId()));
 
             MasDepartment department = masDepartmentRepository.findById(request.getVisitDepartmentId()).orElseThrow(() -> new RuntimeException(
-                            "Department not found with ID: " + request.getVisitDepartmentId()));
+                    "Department not found with ID: " + request.getVisitDepartmentId()));
 
             MasVisitType visitType = masVisitTypeRepository.findById(request.getVisitType()).orElseThrow(() -> new RuntimeException(
-                            "Visit type not found with ID: " + request.getVisitType()));
+                    "Visit type not found with ID: " + request.getVisitType()));
 
             /*
              * Check current active consultation tariff before saving
              * the case-sheet entry.
              */
             IpdConsultationTariff consultationTariff = ipdConsultationTariffRepository.findCurrentApplicableTariff(
-                                    request.getVisitDepartmentId(),
-                                    request.getDoctorId(),
-                                    request.getVisitType(),
-                                    currentDateTime
-                            )
-                            .orElseThrow(() -> new RuntimeException(
-                                    "Consultation fee is not defined for this doctor"));
-
+                            request.getVisitDepartmentId(),
+                            request.getDoctorId(),
+                            request.getVisitType(),
+                            currentDateTime
+                    )
+                    .orElseThrow(() -> new RuntimeException(
+                            "Consultation fee is not defined for this doctor"));
 
 
             log.info("Consultation tariff found. tariffId: {}, baseTariff: {}", consultationTariff.getTariffId(), consultationTariff.getBaseTariff());
@@ -855,13 +894,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             // netAmount = amount + GST - discount
             BigDecimal netAmount = amount.add(gstAmount).subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
-            String name=consultationTariff.getDoctor().getFullName();
+            String name = consultationTariff.getDoctor().getFullName();
 
             /*
              * Create billing using the matched tariff.
              *
              */
-            saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,rate,quantity,gstPercent,discountAmount,amount ,gstAmount,netAmount,billingCategory,null,name);
+            saveIpdBillingDetails.saveInpatientBillingDetails(inpatient, rate, quantity, gstPercent, discountAmount, amount, gstAmount, netAmount, billingCategory, null, name);
 
             log.info("Daily case sheet entry saved successfully. " + "caseSheetEntryId: {}, inpatientId: {}, tariffId: {}",
                     savedCaseSheetEntry.getCaseSheetEntryId(),
@@ -869,15 +908,18 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     consultationTariff.getTariffId()
             );
 
-            return ResponseUtils.createSuccessResponse("Daily case sheet entry saved successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("Daily case sheet entry saved successfully", new TypeReference<>() {
+            });
 
         } catch (Exception e) {
 
             log.error("Error while saving daily case sheet entry. inpatientId: {}", request.getInpatientId(), e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},e.getMessage(), 404);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, e.getMessage(), 404);
         }
     }
+
     @Override
     public ApiResponse<List<DailyCaseSheetEntryResponse>> getDailyCaseSheetEntry(Long inpatientId) {
 
@@ -889,13 +931,15 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             List<DailyCaseSheetEntryResponse> responseList =
                     projections.stream().map(this::mapToDailyCaseSheetResponse).toList();
 
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
 
         } catch (Exception exception) {
 
             log.error("Error while fetching daily case sheet entries. " + "inpatientId: {}", inpatientId, exception);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG + exception.getMessage(),
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG + exception.getMessage(),
                     500
             );
         }
@@ -906,17 +950,19 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Fetching bed details for wardId: {}", wardId);
 
         try {
-            List<BedDetailsByWardResponse> bedDetails = masBedRepository.getBedDetailsByWard(wardId,bedStatusId);
+            List<BedDetailsByWardResponse> bedDetails = masBedRepository.getBedDetailsByWard(wardId, bedStatusId);
 
-            log.info("Bed details fetched successfully for wardId: {}, totalBeds: {}",   bedDetails.size());
+            log.info("Bed details fetched successfully for wardId: {}, totalBeds: {}", bedDetails.size());
 
-            return ResponseUtils.createSuccessResponse(bedDetails, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(bedDetails, new TypeReference<>() {
+            });
 
         } catch (Exception exception) {
 
             log.error("Error while fetching bed details for wardId: {}", wardId, exception);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Unable to fetch bed details: " + exception.getMessage(),
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, "Unable to fetch bed details: " + exception.getMessage(),
                     500
             );
         }
@@ -932,10 +978,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             User currentUser = authUtil.getCurrentUser();
 
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException(
-                            "Inpatient not found with ID: " + request.getInpatientId()));
+                    "Inpatient not found with ID: " + request.getInpatientId()));
 
             Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new RuntimeException(
-                            "Patient not found with ID: " + request.getPatientId()));
+                    "Patient not found with ID: " + request.getPatientId()));
 
             MasWard fromWard = masWardRepository.findById(request.getFromWard()).orElseThrow(() -> new RuntimeException(
                     "From ward not found with ID: " + request.getFromWard()));
@@ -948,10 +994,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             MasBed toBed = masBedRepository.findById(request.getToBed()).orElseThrow(() -> new RuntimeException("To bed not found with ID: " + request.getToBed()));
 
             User doctor = userRepo.findById(request.getDoctorId()).orElseThrow(() -> new RuntimeException(
-                            "Doctor not found with ID: " + request.getDoctorId()));
+                    "Doctor not found with ID: " + request.getDoctorId()));
 
             MasIpdTransferReason transferReason = masIpdTransferReasonRepository.findById(request.getTransferReasonId())
-                            .orElseThrow(() -> new RuntimeException("Transfer reason not found with ID: " + request.getTransferReasonId()));
+                    .orElseThrow(() -> new RuntimeException("Transfer reason not found with ID: " + request.getTransferReasonId()));
 
 
             IpTransferRequest transferRequest = IpTransferRequest.builder()
@@ -988,17 +1034,20 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     savedRequest.getTransferNo());
 
             return ResponseUtils.createSuccessResponse("Bed transfer request saved successfully. Transfer No: "
-                            + savedRequest.getTransferNo(), new TypeReference<>() {}
+                            + savedRequest.getTransferNo(), new TypeReference<>() {
+                    }
             );
 
         } catch (Exception e) {
 
             log.error("Error while saving bed transfer request. inpatientId: {}", request.getInpatientId(), e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, e.getMessage(),
                     500);
         }
     }
+
     @Override
     public ApiResponse<List<PendingToTransferResponse>> wardPendingToTransferRequest(List<Long> wardIds) {
 
@@ -1009,25 +1058,27 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         try {
             List<PendingToTransferProjectionResponse> projectionList = ipTransferRequestRepository
-                            .findPendingTransferRequestsByWardId(wardIds,AppConstants.IPD_BED_TRANSFER_REQUEST.toLowerCase());
+                    .findPendingTransferRequestsByWardId(wardIds, AppConstants.IPD_BED_TRANSFER_REQUEST.toLowerCase());
 
             List<PendingToTransferResponse> responseList = projectionList.stream()
-                            .map(this::mapToPendingTransferResponse)
-                            .toList();
+                    .map(this::mapToPendingTransferResponse)
+                    .toList();
 
             log.info("Found {} pending transfer requests for destination wardId: {}", responseList.size(), wardIds);
 
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while fetching pending transfer requests for wardId: {}", wardIds, e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
         }
     }
 
-//    @Override
+    //    @Override
 //    @Transactional
 //    public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(Long inpatientId, String transferStatus) {
 //        User user=authUtil.getCurrentUser();
@@ -1071,147 +1122,151 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 //        return ResponseUtils.createSuccessResponse("Status change successfully", new TypeReference<>() {});
 //
 //    }
-@Override
-@Transactional(rollbackFor = Exception.class)
-public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(Long inpatientId, String transferStatus) {
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(Long inpatientId, String transferStatus) {
 
-    log.info("Updating transfer request status for inpatientId: {}, transferStatus: {}", inpatientId, transferStatus);
+        log.info("Updating transfer request status for inpatientId: {}, transferStatus: {}", inpatientId, transferStatus);
 
-    try {
-        // Convert status to uppercase to support values such as c, C, r and R.
-        String normalizedTransferStatus = transferStatus.trim().toUpperCase();
+        try {
+            // Convert status to uppercase to support values such as c, C, r and R.
+            String normalizedTransferStatus = transferStatus.trim().toUpperCase();
 
-        if (!normalizedTransferStatus.equals(AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE) && !normalizedTransferStatus.equals(AppConstants.IPD_BED_TRANSFER_STATUS_REJECT)) {
-            return ResponseUtils.createFailureResponse("Invalid transfer status. Allowed values are C and R", new TypeReference<>() {}.toString(), HttpStatus.BAD_REQUEST.value());
-        }
+            if (!normalizedTransferStatus.equals(AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE) && !normalizedTransferStatus.equals(AppConstants.IPD_BED_TRANSFER_STATUS_REJECT)) {
+                return ResponseUtils.createFailureResponse("Invalid transfer status. Allowed values are C and R", new TypeReference<>() {
+                }.toString(), HttpStatus.BAD_REQUEST.value());
+            }
 
-        // Get the currently logged-in user.
-        User user = authUtil.getCurrentUser();
+            // Get the currently logged-in user.
+            User user = authUtil.getCurrentUser();
 
-        if (user == null) {
-            return ResponseUtils.createFailureResponse("current user not found", new TypeReference<>() {}.toString(), HttpStatus.NOT_FOUND.value());
-        }
+            if (user == null) {
+                return ResponseUtils.createFailureResponse("current user not found", new TypeReference<>() {
+                }.toString(), HttpStatus.NOT_FOUND.value());
+            }
 
-        String updatedBy = user.getFullName();
-        LocalDateTime currentDateTime = LocalDateTime.now();
+            String updatedBy = user.getFullName();
+            LocalDateTime currentDateTime = LocalDateTime.now();
 
-        /*
-         * Fetch the transfer request.
-         */
-        Optional<IpTransferRequest> ipTransferRequest = ipTransferRequestRepository.findByInpatient_InpatientIdAndTransferStatusIgnoreCase(inpatientId,
-                                AppConstants.IPD_BED_TRANSFER_REQUEST);
-
-        if (ipTransferRequest.isEmpty()) {
-            return ResponseUtils.createNotFoundResponse("Inpatient transfer request is not available",
-                    HttpStatus.NOT_FOUND.value()
-            );
-        }
-        IpTransferRequest ipTransferRequest1=ipTransferRequest.get();
-
-        // Fetch inpatient details.
-        Inpatient inpatient = inpatientRepository.findById(inpatientId).orElseThrow(() -> new RuntimeException("Inpatient not found with ID: " + inpatientId));
-
-        /*
-         * Fetch the patient's current bed allocation
-         *
-         */
-
-        // Get the destination bed selected in the transfer request.
-        MasBed destinationBed = ipTransferRequest1.getToBed();
-
-        MasBed fromBed=ipTransferRequest1.getFromBed();
-
-        // new entry Ipd Bed Allocation
-        IpBedAllocation bedAllocation=new IpBedAllocation();
-
-        // Fetch the vacant/available bed status.
-        MasBedStatus availableBedStatus = masBedStatusRepo.findById(bedStatusId)
-                .orElseThrow(() -> new RuntimeException("Available bed status not found with ID: " + bedStatusId));
-
-        Optional<IpBedAllocation> previousAllocation = ipBedAllocationRepository.findFirstByInpatient_InpatientIdAndAllocationEndDateIsNullOrderByAllocationStartDateDesc(inpatientId);
-        IpBedAllocation ipBedAllocation=previousAllocation.get();
-
-        /*
-         * Complete the transfer request.
-         */
-        if (AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE.equals(normalizedTransferStatus)) {
-
-            // Fetch the occupied bed status.
-            MasBedStatus occupiedBedStatus = masBedStatusRepo.findById(bedStatusOccupiedId)
-                    .orElseThrow(() -> new RuntimeException("Occupied bed status not found with ID: " + bedStatusOccupiedId));
-
-            // Mark the destination bed as occupied.
-            destinationBed.setBedStatusId(occupiedBedStatus);
-            // Mark the destination bed as
-            fromBed.setBedStatusId(availableBedStatus);
-
-            // Update the transfer-request details.
-            ipTransferRequest1.setTransferStatus(AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE);
-            ipTransferRequest1.setTransferDatetime(currentDateTime);
-            ipTransferRequest1.setAcceptanceDatetime(currentDateTime);
-            ipTransferRequest1.setAcceptedBy(updatedBy);
-            ipTransferRequest1.setLastUpdatedBy(updatedBy);
-            ipTransferRequest1.setLastUpdateDate(currentDateTime);
-
-            // Update the inpatient's current ward.
-            inpatient.setAdmittingWardId(ipTransferRequest1.getToWard());
-            inpatient.setRoom(ipTransferRequest1.getToBed().getRoomId());
-            inpatient.setBed(ipTransferRequest1.getToBed());
-
-            // Update the inpatient's internal status.
-            inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusNrwId).orElseThrow(() -> new RuntimeException(
-                                    "IPD internal status not found with ID: " + ipInternalStatusNrwId)));
-            inpatient.setLastUpdatedBy(updatedBy);
-            inpatient.setLastUpdateDate(currentDateTime);
-
-            // Update the bed-allocation details with the destination ward and bed.
-            bedAllocation.setInpatient(inpatient);
-            bedAllocation.setPatient(inpatient.getPatient());
-            bedAllocation.setWard(ipTransferRequest1.getToWard());
-            bedAllocation.setBed(destinationBed);
-            bedAllocation.setRoom(destinationBed.getRoomId());
-            bedAllocation.setAllocationStartDate(currentDateTime);
-            bedAllocation.setCreatedBy(updatedBy);
-            bedAllocation.setLastUpdatedBy(updatedBy);
-            bedAllocation.setLastUpdateDate(currentDateTime);
-
-            ipBedAllocation.setAllocationEndDate(LocalDateTime.now());
-
-            ipBedAllocationRepository.save(bedAllocation);
-            log.info("Transfer request completed successfully for inpatientId: {}", inpatientId);
-
-        } else {
             /*
-             * Reject the transfer request.
+             * Fetch the transfer request.
+             */
+            Optional<IpTransferRequest> ipTransferRequest = ipTransferRequestRepository.findByInpatient_InpatientIdAndTransferStatusIgnoreCase(inpatientId,
+                    AppConstants.IPD_BED_TRANSFER_REQUEST);
+
+            if (ipTransferRequest.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("Inpatient transfer request is not available",
+                        HttpStatus.NOT_FOUND.value()
+                );
+            }
+            IpTransferRequest ipTransferRequest1 = ipTransferRequest.get();
+
+            // Fetch inpatient details.
+            Inpatient inpatient = inpatientRepository.findById(inpatientId).orElseThrow(() -> new RuntimeException("Inpatient not found with ID: " + inpatientId));
+
+            /*
+             * Fetch the patient's current bed allocation
+             *
              */
 
-            // Update the transfer-request status as rejected.
-            ipTransferRequest1.setTransferStatus(AppConstants.IPD_BED_TRANSFER_STATUS_REJECT);
-            ipTransferRequest1.setLastUpdatedBy(updatedBy);
-            ipTransferRequest1.setLastUpdateDate(currentDateTime);
+            // Get the destination bed selected in the transfer request.
+            MasBed destinationBed = ipTransferRequest1.getToBed();
 
-            // Release the destination bed because the transfer was rejected.
-            destinationBed.setBedStatusId(availableBedStatus);
+            MasBed fromBed = ipTransferRequest1.getFromBed();
 
-            log.info("Transfer request rejected successfully for inpatientId: {}", inpatientId);
+            // new entry Ipd Bed Allocation
+            IpBedAllocation bedAllocation = new IpBedAllocation();
+
+            // Fetch the vacant/available bed status.
+            MasBedStatus availableBedStatus = masBedStatusRepo.findById(bedStatusId)
+                    .orElseThrow(() -> new RuntimeException("Available bed status not found with ID: " + bedStatusId));
+
+            Optional<IpBedAllocation> previousAllocation = ipBedAllocationRepository.findFirstByInpatient_InpatientIdAndAllocationEndDateIsNullOrderByAllocationStartDateDesc(inpatientId);
+            IpBedAllocation ipBedAllocation = previousAllocation.get();
+
+            /*
+             * Complete the transfer request.
+             */
+            if (AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE.equals(normalizedTransferStatus)) {
+
+                // Fetch the occupied bed status.
+                MasBedStatus occupiedBedStatus = masBedStatusRepo.findById(bedStatusOccupiedId)
+                        .orElseThrow(() -> new RuntimeException("Occupied bed status not found with ID: " + bedStatusOccupiedId));
+
+                // Mark the destination bed as occupied.
+                destinationBed.setBedStatusId(occupiedBedStatus);
+                // Mark the destination bed as
+                fromBed.setBedStatusId(availableBedStatus);
+
+                // Update the transfer-request details.
+                ipTransferRequest1.setTransferStatus(AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE);
+                ipTransferRequest1.setTransferDatetime(currentDateTime);
+                ipTransferRequest1.setAcceptanceDatetime(currentDateTime);
+                ipTransferRequest1.setAcceptedBy(updatedBy);
+                ipTransferRequest1.setLastUpdatedBy(updatedBy);
+                ipTransferRequest1.setLastUpdateDate(currentDateTime);
+
+                // Update the inpatient's current ward.
+                inpatient.setAdmittingWardId(ipTransferRequest1.getToWard());
+                inpatient.setRoom(ipTransferRequest1.getToBed().getRoomId());
+                inpatient.setBed(ipTransferRequest1.getToBed());
+
+                // Update the inpatient's internal status.
+                inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(ipInternalStatusNrwId).orElseThrow(() -> new RuntimeException(
+                        "IPD internal status not found with ID: " + ipInternalStatusNrwId)));
+                inpatient.setLastUpdatedBy(updatedBy);
+                inpatient.setLastUpdateDate(currentDateTime);
+
+                // Update the bed-allocation details with the destination ward and bed.
+                bedAllocation.setInpatient(inpatient);
+                bedAllocation.setPatient(inpatient.getPatient());
+                bedAllocation.setWard(ipTransferRequest1.getToWard());
+                bedAllocation.setBed(destinationBed);
+                bedAllocation.setRoom(destinationBed.getRoomId());
+                bedAllocation.setAllocationStartDate(currentDateTime);
+                bedAllocation.setCreatedBy(updatedBy);
+                bedAllocation.setLastUpdatedBy(updatedBy);
+                bedAllocation.setLastUpdateDate(currentDateTime);
+
+                ipBedAllocation.setAllocationEndDate(LocalDateTime.now());
+
+                ipBedAllocationRepository.save(bedAllocation);
+                log.info("Transfer request completed successfully for inpatientId: {}", inpatientId);
+
+            } else {
+                /*
+                 * Reject the transfer request.
+                 */
+
+                // Update the transfer-request status as rejected.
+                ipTransferRequest1.setTransferStatus(AppConstants.IPD_BED_TRANSFER_STATUS_REJECT);
+                ipTransferRequest1.setLastUpdatedBy(updatedBy);
+                ipTransferRequest1.setLastUpdateDate(currentDateTime);
+
+                // Release the destination bed because the transfer was rejected.
+                destinationBed.setBedStatusId(availableBedStatus);
+
+                log.info("Transfer request rejected successfully for inpatientId: {}", inpatientId);
+            }
+
+            masBedRepository.save(destinationBed);
+            ipTransferRequestRepository.save(ipTransferRequest1);
+            inpatientRepository.save(inpatient);
+            ipBedAllocationRepository.save(ipBedAllocation);
+
+            String message = AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE.equals(normalizedTransferStatus) ? "Transfer completed successfully" : "Transfer rejected successfully";
+
+            return ResponseUtils.createSuccessResponse(message, new TypeReference<>() {
+            });
+
+
+        } catch (Exception e) {
+            log.error("Error while updating transfer status for inpatientId: {}", inpatientId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
         }
-
-        masBedRepository.save(destinationBed);
-        ipTransferRequestRepository.save(ipTransferRequest1);
-        inpatientRepository.save(inpatient);
-        ipBedAllocationRepository.save(ipBedAllocation);
-
-        String message = AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE.equals(normalizedTransferStatus) ? "Transfer completed successfully" : "Transfer rejected successfully";
-
-        return ResponseUtils.createSuccessResponse(message, new TypeReference<>() {});
-
-
-    } catch (Exception e) {
-        log.error("Error while updating transfer status for inpatientId: {}", inpatientId, e);
-        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
-        );
     }
-}
 
     private DailyCaseSheetEntryResponse mapToDailyCaseSheetResponse(
             DailyCaseSheetEntryProjectionResponse projection
@@ -1251,7 +1306,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         entity.setInpatient(inpatient);
         entity.setPatient(patient);
         entity.setQuantity(request.getQuantity());
-        entity.setObservationDatetime( currentDateTime);
+        entity.setObservationDatetime(currentDateTime);
         entity.setIoType(ioType);
         entity.setLastUpdateDate(currentDateTime);
         entity.setCreatedBy(userName.getFullName());
@@ -1284,7 +1339,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         User user = authUtil.getCurrentUser();
 
-        IpDiagnosisEntry ipDiagnosisEntry=new IpDiagnosisEntry();
+        IpDiagnosisEntry ipDiagnosisEntry = new IpDiagnosisEntry();
         ipDiagnosisEntry.setDiagnosisDatetime(LocalDateTime.now());
         ipDiagnosisEntry.setInpatient(inpatient);
         ipDiagnosisEntry.setPatient(patient);
@@ -1300,6 +1355,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         ipDiagnosisEntryRepository.save(ipDiagnosisEntry);
         log.info("IpDiagnosisEntry saved successfully for inpatientId: {}", inpatient.getInpatientId());
     }
+
     private void saveIpdBillingAndPaymentDetails(IpdPatientRequest request, Inpatient inpatient) {
 
         User user = authUtil.getCurrentUser();
@@ -1376,7 +1432,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         receiptHd.setBill(savedBillingHeader);
 
         receiptHd.setReceiptType(masReceiptTypeRepository.findById(masReceiptTypeAdvanceCollection)
-                        .orElseThrow(() -> new RuntimeException("Invalid Receipt Type")));
+                .orElseThrow(() -> new RuntimeException("Invalid Receipt Type")));
 
         receiptHd.setTotalAmount(totalAdvance);
         receiptHd.setReceiptStatus(AppConstants.IP_RECEIPT_STATUS.toLowerCase());
@@ -1441,6 +1497,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 savedBillingHeader.getBillId(),
                 savedReceiptHd.getReceiptId());
     }
+
     private Inpatient saveInpatientDetails(IpdPatientRequest request, Patient patient, Visit visit) {
         User user = authUtil.getCurrentUser();
 
@@ -1578,7 +1635,6 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         }
 
 
-
         String uploadDir = "uploads/ipd/documents/";
 
         try {
@@ -1683,7 +1739,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         response.setAdmissionSource(null);
         return response;
     }
-    private synchronized  String generateAdmissionNo() {
+
+    private synchronized String generateAdmissionNo() {
 
         LocalDate currentDate = LocalDate.now();
         int currentYear = currentDate.getYear();
@@ -1723,6 +1780,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         return prefix + "/" + nextNumber;
     }
+
     private IpVitalsResponse mapVitalsProjectionToResponse(IpVitalsProjection projection) {
         return IpVitalsResponse.builder()
                 .vitalId(projection.getVitalId())
@@ -1737,6 +1795,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 .painScore(projection.getPainScore())
                 .build();
     }
+
     private PendingToTransferResponse mapToPendingTransferResponse(
             PendingToTransferProjectionResponse projection) {
 
@@ -1773,15 +1832,18 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
     public ApiResponse<String> saveInpatientBookingInvestigation(@Valid InpatientBookingInvestigationRequest request) {
         try {
             if (request == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Request body is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Request body is required", HttpStatus.BAD_REQUEST.value());
             }
 
             if (request.getPatientId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "patientId is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "patientId is required", HttpStatus.BAD_REQUEST.value());
             }
 
             if (request.getInpatientId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "inpatientId is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "inpatientId is required", HttpStatus.BAD_REQUEST.value());
             }
 
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId())
@@ -1789,21 +1851,25 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             Patient patient = inpatient.getPatient();
             if (patient == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient is not linked to a patient", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Inpatient is not linked to a patient", HttpStatus.BAD_REQUEST.value());
             }
 
             if (request.getPatientId() != null && !Objects.equals(request.getPatientId(), patient.getId())) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "patientId does not match the inpatient record", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "patientId does not match the inpatient record", HttpStatus.BAD_REQUEST.value());
             }
 
             User currentUser = authUtil.getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found", HttpStatus.UNAUTHORIZED.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
 
             List<LabRadioInvestigationRequest> investigations = resolveInvestigations(request);
             if (investigations.isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "At least one investigation is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "At least one investigation is required", HttpStatus.BAD_REQUEST.value());
             }
 
             Map<Long, DgMasInvestigation> masterMap = dgMasInvestigationRepository.findAllById(
@@ -1817,7 +1883,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     .collect(Collectors.toMap(DgMasInvestigation::getInvestigationId, investigation -> investigation));
 
             if (masterMap.size() != investigations.stream().map(LabRadioInvestigationRequest::getId).filter(Objects::nonNull).distinct().count()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "One or more investigation IDs are invalid", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "One or more investigation IDs are invalid", HttpStatus.BAD_REQUEST.value());
             }
 
             Map<Long, Map<LocalDate, List<LabRadioInvestigationRequest>>> grouped =
@@ -1842,7 +1909,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 DgOrderHd orderHd = buildLabOrderHeader(inpatient, currentUser, appointmentDate, now);
                 DgOrderHd savedHd = labHdRepository.save(orderHd);
                 LabOrderTrackingStatus orderedStatus = labOrderTrackingStatusRepository.findById(labOrderedStatusId)
-                        .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),"Lab ordered status not found with id: " + labOrderedStatusId));
+                        .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(), "Lab ordered status not found with id: " + labOrderedStatusId));
 
                 for (LabRadioInvestigationRequest item : entry.getValue()) {
                     DgMasInvestigation master = masterMap.get(item.getId());
@@ -1890,7 +1957,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             return ResponseUtils.createSuccessResponse(
                     "Investigations saved successfully. Lab orders: " + createdLabOrderIds.size() + ", Radiology orders: " + createdRadOrderIds.size(),
-                    new TypeReference<>() {}
+                    new TypeReference<>() {
+                    }
             );
 
         } catch (Exception e) {
@@ -1905,7 +1973,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             return ResponseUtils.createFailureResponse(
                     null,
-                    new TypeReference<>() {},
+                    new TypeReference<>() {
+                    },
                     "Failed to save investigations: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
@@ -1913,14 +1982,14 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
     }
 
     @Override
-    public ApiResponse<List<PendingToTransferResponse>> wardTransferList( List<Long> wardIds) {
+    public ApiResponse<List<PendingToTransferResponse>> wardTransferList(List<Long> wardIds) {
 
         log.info(
                 "Fetching pending transfer requests for wardId: {}", wardIds);
 
         try {
             List<PendingToTransferProjectionResponse> projectionList = ipTransferRequestRepository
-                    .findTransferCompleteByWardId(wardIds,AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE);
+                    .findTransferCompleteByWardId(wardIds, AppConstants.IPD_BED_TRANSFER_STATUS_COMPLETE);
 
             List<PendingToTransferResponse> responseList = projectionList.stream()
                     .map(this::mapToPendingTransferResponse)
@@ -1928,12 +1997,14 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             log.info("Found {} pending transfer requests for destination wardIds: {}", responseList.size(), wardIds);
 
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while fetching pending transfer requests for wardId: {}", wardIds, e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
         }
     }
@@ -1958,7 +2029,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
              * I = ICD diagnosis
              */
             if (!AppConstants.WORKING_DIAGNOSIS_TYPE.equals(diagnosisType) && !AppConstants.ICD_DIAGNOSIS_TYPE.equals(diagnosisType)) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
                         "Invalid diagnosis type. Allowed values are W and I",
                         HttpStatus.BAD_REQUEST.value()
                 );
@@ -2015,7 +2087,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             }
 
             diagnosisEntry.setStatus(request.getStatus().toUpperCase());
-            diagnosisEntry.setDiagnosisDatetime(  request.getDateTime());
+            diagnosisEntry.setDiagnosisDatetime(request.getDateTime());
             diagnosisEntry.setRecordedBy(currentUser);
             diagnosisEntry.setCreatedBy(currentUser.getFullName());
             diagnosisEntry.setLastUpdatedBy(currentUser.getFullName());
@@ -2032,7 +2104,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     icd != null ? icd.getIcdId() : null
             );
 
-            return ResponseUtils.createSuccessResponse("IP diagnosis entry saved successfully", new TypeReference<>() {}
+            return ResponseUtils.createSuccessResponse("IP diagnosis entry saved successfully", new TypeReference<>() {
+                    }
             );
 
         } catch (Exception e) {
@@ -2043,10 +2116,12 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     e
             );
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
     }
+
     @Override
     public ApiResponse<List<IpDiagnosisEntryResponse>> getIpDiagnosisEntry(Long inpatientId) {
 
@@ -2073,16 +2148,19 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             log.info("Successfully fetched {} diagnosis entries for inpatientId: {}",
                     response.size(), inpatientId);
 
-            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
 
             log.error("Error while fetching diagnosis entries for inpatientId: {}",
                     inpatientId, e);
 
-            return ResponseUtils.createFailureResponse(null,new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
     @Override
     public ApiResponse<List<IntakeOutputResponse>> getIntakeOutputDetails(Long inpatientId) {
 
@@ -2135,8 +2213,10 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         return ResponseUtils.createSuccessResponse(
                 responses,
-                new TypeReference<List<IntakeOutputResponse>>() {});
+                new TypeReference<List<IntakeOutputResponse>>() {
+                });
     }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<String> saveDischargeSummary(IpDischargeSummarySaveRequest request) {
@@ -2151,9 +2231,10 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             Optional<IpDischargeSummary> existingSummary = ipDischargeSummaryRepository.findByInpatient_InpatientId(request.getInpatientId());
 
             if (existingSummary.map(summary -> AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT
-                            .equalsIgnoreCase(summary.getStatus())).orElse(false)) {
+                    .equalsIgnoreCase(summary.getStatus())).orElse(false)) {
 
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Discharge summary already submitted",
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        }, "Discharge summary already submitted",
                         HttpStatus.BAD_REQUEST.value());
             }
 
@@ -2165,8 +2246,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             Inpatient inpatient = inpatientOptional.get();
 
-            Optional<IpdBillingHeader> ipdBillingHeader= ipdBillingHeaderRepository.findByInpatientId_InpatientId(request.getInpatientId());
-             IpdBillingHeader ipdBillingHeader1=ipdBillingHeader.get();
+            Optional<IpdBillingHeader> ipdBillingHeader = ipdBillingHeaderRepository.findByInpatientId_InpatientId(request.getInpatientId());
+            IpdBillingHeader ipdBillingHeader1 = ipdBillingHeader.get();
             //=========================
             // SUBMIT VALIDATION
             //=========================
@@ -2183,7 +2264,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
                     return ResponseUtils.createFailureResponse(
                             null,
-                            new TypeReference<>() {},
+                            new TypeReference<>() {
+                            },
                             "Bill must be FINAL, Payment must be PAID and Outstanding Amount must be 0 before submitting discharge summary.",
                             HttpStatus.BAD_REQUEST.value());
                 }
@@ -2194,10 +2276,10 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 inpatient.setDischargeDate(LocalDate.now());
                 inpatient.setDischargeTime(LocalTime.now());
                 Optional<IpBedAllocation> bedAllocation = ipBedAllocationRepository.findTopByInpatient_InpatientIdOrderByAllocationStartDateDesc(inpatient.getInpatientId());
-                IpBedAllocation ipBedAllocation=bedAllocation.get();
+                IpBedAllocation ipBedAllocation = bedAllocation.get();
                 ipBedAllocation.setAllocationEndDate(LocalDateTime.now());
-                Optional<MasBed> masBed=masBedRepository.findById(bedAllocation.get().getBed().getBedId());
-                MasBed masBed1=masBed.get();
+                Optional<MasBed> masBed = masBedRepository.findById(bedAllocation.get().getBed().getBedId());
+                MasBed masBed1 = masBed.get();
                 masBed1.setBedStatusId(masBedStatusRepo.findById(bedStatusId).orElseThrow());
                 ipdBillingHeader1.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipBillStatusClose).orElseThrow());
                 ipdBillingHeaderRepository.save(ipdBillingHeader1);
@@ -2301,15 +2383,18 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 message = existingSummary.isPresent() ? "Discharge summary draft updated successfully." : "Discharge summary draft saved successfully.";
             }
 
-            return ResponseUtils.createSuccessResponse(message, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(message, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
 
             log.error("Error while saving discharge summary.", e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
     @Override
     public ApiResponse<PaymentStatusResponse> getPaymentStatus(Long inpatientId) {
 
@@ -2319,8 +2404,10 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         log.info("Payment status fetched successfully for inpatientId: {}", inpatientId);
 
-        return ResponseUtils.createSuccessResponse(response, new TypeReference<PaymentStatusResponse>() {});
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<PaymentStatusResponse>() {
+        });
     }
+
     private PaymentStatusResponse fetchPaymentStatus(Long inpatientId) {
 
         return ipdBillingHeaderRepository.getPaymentStatus(inpatientId);
@@ -2389,9 +2476,11 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         return ResponseUtils.createSuccessResponse(
                 response,
-                new TypeReference<>() {},
+                new TypeReference<>() {
+                },
                 "Discharge summary fetched successfully");
     }
+
     @Override
     public ApiResponse<Page<InpatientAdvanceCollectionResponse>> getIpdAdvanceCollection(
             int page,
@@ -2407,24 +2496,27 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             Pageable pageable = PageRequest.of(page, size);
 
             Page<InpatientAdvanceCollectionProjection> projectionPage = inpatientRepository.getIpdAdvanceCollection(admitAdmissionStatusId,
-                            patientName,
-                            mobileNo,
-                            admissionNo,
-                            pageable);
+                    patientName,
+                    mobileNo,
+                    admissionNo,
+                    pageable);
 
             Page<InpatientAdvanceCollectionResponse> responsePage = projectionPage.map(this::mapResponse);
 
             log.info("Successfully fetched {} admitted patient(s).", responsePage.getTotalElements());
 
-            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
+            });
 
         } catch (Exception ex) {
 
             log.error("Error while fetching IPD advance collection.", ex);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, ex.getMessage(),HttpStatus.BAD_REQUEST.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, ex.getMessage(), HttpStatus.BAD_REQUEST.value());
         }
     }
+
     @Override
     public ApiResponse<Page<PendingTrackingIPDBillResponse>> getPendingTrackingIPDBillList(
             int page,
@@ -2450,13 +2542,15 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             Page<PendingTrackingIPDBillResponse> responsePage = projectionPage.map(this::convertToResponse);
 
             log.info("Successfully fetched {} Pending Tracking IPD Bill records.", responsePage.getTotalElements());
-            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
 
             log.error("Error while fetching Pending Tracking IPD Bill List.", e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),HttpStatus.BAD_REQUEST.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, e.getMessage(), HttpStatus.BAD_REQUEST.value());
 
         }
     }
@@ -2465,112 +2559,114 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<String> saveAdvanceCollection(AdvanceCollectionRequest request) {
         log.info("Saving advance collection for inpatientId : {}", request.getInpatientId());
-        try{
+        try {
 
-        User user = authUtil.getCurrentUser();
+            User user = authUtil.getCurrentUser();
 
-        Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
-        if (inpatient.isEmpty()) {
-            return ResponseUtils.createNotFoundResponse("Inpatient  not found", HttpStatus.NOT_FOUND.value());
-        }
-        Inpatient inpatient1=inpatient.get();
+            Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
+            if (inpatient.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("Inpatient  not found", HttpStatus.NOT_FOUND.value());
+            }
+            Inpatient inpatient1 = inpatient.get();
 
-        Optional<IpdBillingHeader> billingHeader = ipdBillingHeaderRepository.findByInpatientId_InpatientId(request.getInpatientId());
-        if (billingHeader.isEmpty()) {
-            return ResponseUtils.createNotFoundResponse("IpdBillingHeader not found", HttpStatus.NOT_FOUND.value());
-        }
-        IpdBillingHeader ipdBillingHeader=billingHeader.get();
+            Optional<IpdBillingHeader> billingHeader = ipdBillingHeaderRepository.findByInpatientId_InpatientId(request.getInpatientId());
+            if (billingHeader.isEmpty()) {
+                return ResponseUtils.createNotFoundResponse("IpdBillingHeader not found", HttpStatus.NOT_FOUND.value());
+            }
+            IpdBillingHeader ipdBillingHeader = billingHeader.get();
 
-        BigDecimal totalAmount = request.getRequests().stream()
-                .map(AdvanceCollectionRequest.AdvanceCollectionDetailsRequest::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalAmount = request.getRequests().stream()
+                    .map(AdvanceCollectionRequest.AdvanceCollectionDetailsRequest::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Receipt Header
-        IpdBlReceiptHd receiptHd = new IpdBlReceiptHd();
-        receiptHd.setReceiptNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RECEIPT_NO, inpatient.get().getPatient().getPatientHospital().getId()));
-        receiptHd.setReceiptDate(request.getCollectionDateTime());
-        receiptHd.setInpatient(inpatient.get());
-        receiptHd.setBill(billingHeader.get());
-        receiptHd.setTotalAmount(totalAmount);
-        receiptHd.setCreatedBy(user.getUsername());
-        receiptHd.setCreatedDate(LocalDateTime.now());
-        receiptHd.setReceiptStatus(AppConstants.IP_RECEIPT_STATUS.toLowerCase());
-        receiptHd.setCreatedBy(user.getFullName());
-        receiptHd.setLastChgBy(user.getFullName());
-        receiptHd.setLastChgDate(LocalDateTime.now());
-        receiptHd.setReceiptType(masReceiptTypeRepository.findById(request.getCollectionTypeId()).orElseThrow());
-        receiptHd = ipdBlReceiptHdRepository.save(receiptHd);
+            // Receipt Header
+            IpdBlReceiptHd receiptHd = new IpdBlReceiptHd();
+            receiptHd.setReceiptNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RECEIPT_NO, inpatient.get().getPatient().getPatientHospital().getId()));
+            receiptHd.setReceiptDate(request.getCollectionDateTime());
+            receiptHd.setInpatient(inpatient.get());
+            receiptHd.setBill(billingHeader.get());
+            receiptHd.setTotalAmount(totalAmount);
+            receiptHd.setCreatedBy(user.getUsername());
+            receiptHd.setCreatedDate(LocalDateTime.now());
+            receiptHd.setReceiptStatus(AppConstants.IP_RECEIPT_STATUS.toLowerCase());
+            receiptHd.setCreatedBy(user.getFullName());
+            receiptHd.setLastChgBy(user.getFullName());
+            receiptHd.setLastChgDate(LocalDateTime.now());
+            receiptHd.setReceiptType(masReceiptTypeRepository.findById(request.getCollectionTypeId()).orElseThrow());
+            receiptHd = ipdBlReceiptHdRepository.save(receiptHd);
 
-        // Receipt Details + Payment Details
-        for (AdvanceCollectionRequest.AdvanceCollectionDetailsRequest dto : request.getRequests()) {
+            // Receipt Details + Payment Details
+            for (AdvanceCollectionRequest.AdvanceCollectionDetailsRequest dto : request.getRequests()) {
 
-            MasPaymentMode paymentMode = masPaymentModeRepository.findById(dto.getModeType())
-                    .orElseThrow(() -> new RuntimeException("Payment mode not found"));
+                MasPaymentMode paymentMode = masPaymentModeRepository.findById(dto.getModeType())
+                        .orElseThrow(() -> new RuntimeException("Payment mode not found"));
 
-            // Receipt Detail
-            IpdBlReceiptDt receiptDt = new IpdBlReceiptDt();
-            receiptDt.setReceipt(receiptHd);
-            receiptDt.setPaymentMode(paymentMode);
-            receiptDt.setAmount(dto.getAmount());
-            receiptDt.setCreatedBy(user.getUsername());
-            receiptDt.setCreatedDate(LocalDateTime.now());
-            receiptDt.setCreatedBy(user.getFullName());
-            receiptDt.setLastChgBy(user.getFullName());
-            receiptDt.setLastChgDate(LocalDateTime.now());
-            ipdBlReceiptDtRepository .save(receiptDt);
+                // Receipt Detail
+                IpdBlReceiptDt receiptDt = new IpdBlReceiptDt();
+                receiptDt.setReceipt(receiptHd);
+                receiptDt.setPaymentMode(paymentMode);
+                receiptDt.setAmount(dto.getAmount());
+                receiptDt.setCreatedBy(user.getUsername());
+                receiptDt.setCreatedDate(LocalDateTime.now());
+                receiptDt.setCreatedBy(user.getFullName());
+                receiptDt.setLastChgBy(user.getFullName());
+                receiptDt.setLastChgDate(LocalDateTime.now());
+                ipdBlReceiptDtRepository.save(receiptDt);
 
-            // Payment Detail
-            IpPaymentDetail payment = new IpPaymentDetail();
-            payment.setInpatient(inpatient.get());
-            payment.setBill(billingHeader.get());
-            payment.setReceipt(receiptHd);
-            payment.setAmount(dto.getAmount());
-            payment.setReceiptAmount(dto.getAmount());
-            payment.setPaymentDate(request.getCollectionDateTime());
-            payment.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid).orElseThrow());
-            payment.setLastChgBy(user.getUsername());
-            payment.setLastChgDate(LocalDateTime.now());
-            ipPaymentDetailRepository.save(payment);
-        }
-        BigDecimal netAmount = billingHeader.get().getNetAmount() != null
-                ? billingHeader.get().getNetAmount()
-                : BigDecimal.ZERO;
+                // Payment Detail
+                IpPaymentDetail payment = new IpPaymentDetail();
+                payment.setInpatient(inpatient.get());
+                payment.setBill(billingHeader.get());
+                payment.setReceipt(receiptHd);
+                payment.setAmount(dto.getAmount());
+                payment.setReceiptAmount(dto.getAmount());
+                payment.setPaymentDate(request.getCollectionDateTime());
+                payment.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid).orElseThrow());
+                payment.setLastChgBy(user.getUsername());
+                payment.setLastChgDate(LocalDateTime.now());
+                ipPaymentDetailRepository.save(payment);
+            }
+            BigDecimal netAmount = billingHeader.get().getNetAmount() != null
+                    ? billingHeader.get().getNetAmount()
+                    : BigDecimal.ZERO;
 
-        BigDecimal existingPaidAmount = billingHeader.get().getPatientPaidAmount() != null
-                ? billingHeader.get().getPatientPaidAmount()
-                : BigDecimal.ZERO;
+            BigDecimal existingPaidAmount = billingHeader.get().getPatientPaidAmount() != null
+                    ? billingHeader.get().getPatientPaidAmount()
+                    : BigDecimal.ZERO;
 
-        // Add current advance to already paid amount
-        BigDecimal patientPaidAmount = existingPaidAmount.add(totalAmount);
+            // Add current advance to already paid amount
+            BigDecimal patientPaidAmount = existingPaidAmount.add(totalAmount);
 
-        // Calculate Outstanding Amount
-        BigDecimal outstandingAmount = netAmount.subtract(patientPaidAmount);
-        // Update Billing Header
-        ipdBillingHeader.setPatientPaidAmount(patientPaidAmount);
-        ipdBillingHeader.setOutstandingAmount(outstandingAmount);
-        ipdBillingHeader.setUpdatedBy(user.getUsername());
-        ipdBillingHeader.setUpdatedAt(LocalDateTime.now());
+            // Calculate Outstanding Amount
+            BigDecimal outstandingAmount = netAmount.subtract(patientPaidAmount);
+            // Update Billing Header
+            ipdBillingHeader.setPatientPaidAmount(patientPaidAmount);
+            ipdBillingHeader.setOutstandingAmount(outstandingAmount);
+            ipdBillingHeader.setUpdatedBy(user.getUsername());
+            ipdBillingHeader.setUpdatedAt(LocalDateTime.now());
 
-        // If Bill Final and Outstanding = 0 then Payment Status = Paid
+            // If Bill Final and Outstanding = 0 then Payment Status = Paid
 
-        if (outstandingAmount.compareTo(BigDecimal.ZERO) == 0
+            if (outstandingAmount.compareTo(BigDecimal.ZERO) == 0
                     && ipdBillingHeader.getBillStatus() != null
                     && ipdBillingHeader.getBillStatus().getBillStatusId().equals(ipBillStatusFinal)) {
 
                 ipdBillingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid)
-                                .orElseThrow(() -> new RuntimeException("Paid status not found")));
+                        .orElseThrow(() -> new RuntimeException("Paid status not found")));
             }
-        ipdBillingHeaderRepository.save(ipdBillingHeader);
+            ipdBillingHeaderRepository.save(ipdBillingHeader);
 
-        return ResponseUtils.createSuccessResponse("Saving advance collection", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("Saving advance collection", new TypeReference<>() {
+            });
 
-    } catch (Exception e) {
+        } catch (Exception e) {
             log.error("Error while fetching Pending Tracking IPD Bill List.", e);
 
             throw new RuntimeException("Failed to save advance collection.", e);
-    }
+        }
 
     }
+
     @Override
     public ApiResponse<List<PreviousPaymentHistoryResponse>> previousPaymentHistory(Long billingHeaderId) {
 
@@ -2578,7 +2674,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         return ResponseUtils.createSuccessResponse(
                 response,
-                new TypeReference<>() {},
+                new TypeReference<>() {
+                },
                 "Previous payment history fetched successfully");
     }
 
@@ -2591,19 +2688,23 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         try {
             if (request.getInpatientId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
             }
 
             if (request.getItemId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Item ID is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Item ID is required", HttpStatus.BAD_REQUEST.value());
             }
 
             if (request.getRouteId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Route ID is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Route ID is required", HttpStatus.BAD_REQUEST.value());
             }
 
             if (request.getFrequencyId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Frequency ID is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Frequency ID is required", HttpStatus.BAD_REQUEST.value());
             }
 
             LocalDateTime currentDateTime = LocalDateTime.now();
@@ -2615,7 +2716,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             }
 
             if (inpatient.getAdmittingWardId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Ward is not associated with this inpatient", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Ward is not associated with this inpatient", HttpStatus.BAD_REQUEST.value());
             }
 
             MasStoreItem item = masStoreItemRepository.findById(request.getItemId()).orElse(null);
@@ -2627,7 +2729,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             if (ipMedicinePrescriptionRepository.existsByInpatient_InpatientIdAndItem_ItemIdAndStopDateIsNull(
                     request.getInpatientId(), request.getItemId())) {
 
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
                         "Item already added for this inpatient",
                         HttpStatus.BAD_REQUEST.value()
                 );
@@ -2668,11 +2771,13 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     savedPrescription.getPrescriptionId(),
                     request.getInpatientId());
 
-            return ResponseUtils.createSuccessResponse("Medication treatment saved successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("Medication treatment saved successfully", new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Error while saving medication treatment. inpatientId: {}, itemId: {}", request.getInpatientId(), request.getItemId(), e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
@@ -2682,7 +2787,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         try {
             if (inpatientId == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
             }
 
             List<IpMedicinePrescriptionProjection> projections = ipMedicinePrescriptionRepository.getMedicationTreatmentByInpatientId(inpatientId);
@@ -2698,11 +2804,13 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             log.info("Successfully fetched {} medication treatment records for inpatientId: {}", responseList.size(), inpatientId);
 
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Error while fetching medication treatment for inpatientId: {}", inpatientId, e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
@@ -2713,7 +2821,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         try {
             if (request.getPrescriptionId() == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Prescription ID is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Prescription ID is required", HttpStatus.BAD_REQUEST.value());
             }
 
             IpMedicinePrescription prescription = ipMedicinePrescriptionRepository.findById(request.getPrescriptionId()).orElse(null);
@@ -2723,7 +2832,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             }
 
             if (prescription.getStopDate() != null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Medication treatment is already stopped", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Medication treatment is already stopped", HttpStatus.BAD_REQUEST.value());
             }
 
             LocalDateTime currentDateTime = LocalDateTime.now();
@@ -2739,13 +2849,16 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             log.info("Medication treatment stopped successfully. prescriptionId: {}", request.getPrescriptionId());
 
-            return ResponseUtils.createSuccessResponse("Medication treatment stopped successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("Medication treatment stopped successfully", new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Error while stopping medication treatment. prescriptionId: {}", request.getPrescriptionId(), e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<String> saveMarDetails(List<MarDetailsRequest> requests) {
@@ -2761,7 +2874,9 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
                 // 1. Fetch Prescription
                 IpMedicinePrescription prescription = ipMedicinePrescriptionRepository.findById(request.getPrescriptionId())
-                        .orElseThrow(() -> {return new RuntimeException("Prescription not found");});
+                        .orElseThrow(() -> {
+                            return new RuntimeException("Prescription not found");
+                        });
 
                 // 2. Fetch Inpatient
                 Inpatient inpatient = prescription.getInpatient();
@@ -2785,8 +2900,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
                 log.info("MAR entry saved with id={} for inpatientId={}", mar.getMarId(), inpatient.getInpatientId());
 
-               // 3. Find Batch Stock (locked)
-                StoreItemBatchStock stock = storeItemBatchStockRepository.findByItemIdAndBatchNoForUpdate(request.getItemId(), request.getBatchNo(),request.getDepartmentId())
+                // 3. Find Batch Stock (locked)
+                StoreItemBatchStock stock = storeItemBatchStockRepository.findByItemIdAndBatchNoForUpdate(request.getItemId(), request.getBatchNo(), request.getDepartmentId())
                         .orElseThrow(() -> new RuntimeException("Batch not found"));
 
                 BigDecimal currentQty = BigDecimal.valueOf(stock.getClosingStock());
@@ -2876,7 +2991,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                 BigDecimal amount = calculateAmount(stock.getMrpPerUnit(), request.getRequestQty());
                 BigDecimal gstAmount = calculateGST(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
                 BigDecimal netAmount = calculateNetAmount(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
-                Optional<MasIpdServiceCategory> masIpdServiceCategory=masIpdServiceCategoryRepository.findById(IPDServiceCategoryDrug);
+                Optional<MasIpdServiceCategory> masIpdServiceCategory = masIpdServiceCategoryRepository.findById(IPDServiceCategoryDrug);
 
                 saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,
                         stock.getMrpPerUnit(),
@@ -2895,13 +3010,15 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             }
 
             log.info("saveMarDetails completed successfully for {} record(s)", requests.size());
-            return ResponseUtils.createSuccessResponse("mar details save successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("mar details save successfully", new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("saveMarDetails failed, rolling back transaction. Reason: {}", e.getMessage(), e);
             throw e;
         }
     }
+
     private BigDecimal calculateGST(BigDecimal rate,
                                     BigDecimal qty,
                                     BigDecimal gstPercent) {
@@ -2915,6 +3032,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         return amount.multiply(gstPercent)
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     }
+
     private BigDecimal calculateAmount(BigDecimal rate, BigDecimal qty) {
 
         if (rate == null || qty == null) {
@@ -2923,9 +3041,10 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         return rate.multiply(qty).setScale(2, RoundingMode.HALF_UP);
     }
+
     private BigDecimal calculateNetAmount(BigDecimal rate,
-                                           BigDecimal qty,
-                                           BigDecimal gstPercent) {
+                                          BigDecimal qty,
+                                          BigDecimal gstPercent) {
 
         BigDecimal amount = calculateAmount(rate, qty);
 
@@ -2986,6 +3105,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
         return response;
     }
+
     private InpatientAdvanceCollectionResponse mapResponse(
             InpatientAdvanceCollectionProjection p) {
 
@@ -3086,7 +3206,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         hd.setPatient(inpatient.getPatient());
         hd.setHospital(currentUser.getHospital());
         hd.setDepartment(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId())
-                .orElseThrow(() -> new SDDException(404,"Department not found with id: " + authUtil.getCurrentDepartmentId())));
+                .orElseThrow(() -> new SDDException(404, "Department not found with id: " + authUtil.getCurrentDepartmentId())));
         hd.setPrescribedBy(currentUser.getFullName());
         hd.setCreatedby(currentUser.getFullName());
         hd.setCreatedon(Instant.now());
@@ -3136,11 +3256,11 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         BigDecimal netAmount = amount.add(gstAmount).subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
         MasMainChargeCode chargeCode = masMainChargeCodeRepository
                 .findById(investigation.getMainChargeCodeId().getChargecodeId())
-                .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),"Charge Code not found"));
+                .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(), "Charge Code not found"));
 
         MasIpdServiceSubcategory subcategory = masIpdServiceSubcategoryRepository
-                        .findBySubcategoryCode(chargeCode.getChargecodeCode())
-                        .orElseThrow(() -> new RuntimeException("Subcategory not found"));
+                .findBySubcategoryCode(chargeCode.getChargecodeCode())
+                .orElseThrow(() -> new RuntimeException("Subcategory not found"));
         saveIpdBillingDetails.saveInpatientBillingDetails(
                 inpatient,
                 rate,
@@ -3206,7 +3326,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         return billingCategory.getGstPercentage().setScale(2, RoundingMode.HALF_UP);
     }
 
-    private synchronized  String generateTransferNumber() {
+    private synchronized String generateTransferNumber() {
 
         LocalDate currentDate = LocalDate.now();
         int currentYear = currentDate.getYear();
@@ -3266,7 +3386,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         log.info("Request to fetch MAR Administration Log for inpatientId: {}, itemId: {}, page: {}, size: {}", inpatientId, itemId, page, size);
         try {
             if (inpatientId == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
             }
 
             Pageable pageable;
@@ -3280,10 +3401,12 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
             Page<IpMarDetailsResponse> responsePage = projections.map(ipMarDetailsMapper::mapToMarDetailsResponse);
 
             log.info("Successfully fetched {} MAR Administration Log records for inpatientId: {}", responsePage.getTotalElements(), inpatientId);
-            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Error while fetching MAR Administration Log for inpatientId: {}", inpatientId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
@@ -3292,7 +3415,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         log.info("Request to fetch unique medicines in MAR log for inpatientId: {}", inpatientId);
         try {
             if (inpatientId == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
             }
 
             List<MarMedicineProjection> projections = ipMarDetailsRepository.getUniqueMedicinesInMar(inpatientId);
@@ -3301,10 +3425,12 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     .toList();
 
             log.info("Successfully fetched {} unique medicines for inpatientId: {}", responseList.size(), inpatientId);
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Error while fetching unique medicines in MAR log for inpatientId: {}", inpatientId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
@@ -3316,7 +3442,7 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         try {
             // 2. Fetch inpatient
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException(
-                                    "Inpatient not found with id: " + request.getInpatientId()));
+                    "Inpatient not found with id: " + request.getInpatientId()));
 
             MasProcedure masProcedure = masProcedureRepository.findById(request.getProcedureId()).orElseThrow(() -> new RuntimeException(
                     "Procedure not found with id: " + request.getInpatientId()));
@@ -3340,13 +3466,15 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
 
             log.info("Inpatient procedure saved successfully. procedureTxnId={}", procedureTxn.getProcedureTxnId());
 
-            return ResponseUtils.createSuccessResponse("Inpatient procedure saved successfully", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("Inpatient procedure saved successfully", new TypeReference<>() {
+            });
 
         } catch (Exception e) {
 
             log.error("Error while saving inpatient procedure. inpatientId={}, procedureId={}", request.getInpatientId(), request.getProcedureId(), e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, e.getMessage(),HttpStatus.BAD_REQUEST.value()
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, e.getMessage(), HttpStatus.BAD_REQUEST.value()
             );
         }
     }
@@ -3356,7 +3484,8 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
         log.info("Request to fetch IpProcedureTxn for inpatientId: {}", inpatientId);
         try {
             if (inpatientId == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Inpatient ID is required", HttpStatus.BAD_REQUEST.value());
             }
 
             List<IpProcedureTxn> entities = ipProcedureTxnRepository.findByInpatientInpatientId(inpatientId);
@@ -3365,11 +3494,274 @@ public ApiResponse<String> wardPendingToTransferRequestStatusCompleteAndReject(L
                     .toList();
 
             log.info("Successfully fetched {} IpProcedureTxn records for inpatientId: {}", dtoList.size(), inpatientId);
-            return ResponseUtils.createSuccessResponse(dtoList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(dtoList, new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Error while fetching IpProcedureTxn for inpatientId: {}", inpatientId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
-}
 
+
+    @Transactional
+    public ApiResponse<String> saveProcedureConsumableTemplate(ProcedureConsumableTemplateSaveRequest request) {
+        try {
+            // 1. Validate procedure
+            MasProcedure procedure = masProcedureRepository.findById(request.getProcedureId())
+                    .orElseThrow(() -> new RuntimeException("Procedure not found with id: " + request.getProcedureId()));
+
+            // 2. Check duplicate template code
+            if (masProcedureConsumableTemplateRepository.existsByTemplateCode(request.getTemplateCode())) {
+                throw new RuntimeException("Template code already exists: " + request.getTemplateCode());
+            }
+
+            // 3. Check duplicate template name for same procedure
+            if (masProcedureConsumableTemplateRepository.existsByProcedure_ProcedureIdAndTemplateName(
+                    request.getProcedureId(),
+                    request.getTemplateName())) {
+
+                throw new RuntimeException("Template name already exists for this procedure: " + request.getTemplateName());
+            }
+
+            // 4. Create parent template
+            MasProcedureConsumableTemplate template = new MasProcedureConsumableTemplate();
+
+            template.setProcedure(procedure);
+            template.setTemplateCode(request.getTemplateCode());
+            template.setTemplateName(request.getTemplateName());
+            template.setLastChgDate(LocalDateTime.now());
+            User user = authUtil.getCurrentUser();
+            template.setLastChgBy(user.getFullName());
+
+            // 5. Save parent
+            MasProcedureConsumableTemplate savedTemplate = masProcedureConsumableTemplateRepository.save(template);
+
+            for (TemplateDetailRequest detailRequest : request.getDetails()) {
+
+                MasStoreItem item = masStoreItemRepository.findById(detailRequest.getItemId()).orElseThrow(() ->
+                        new RuntimeException("Item not found with id: " + detailRequest.getItemId()));
+
+                MasProcedureConsumableTemplateDetail detail = new MasProcedureConsumableTemplateDetail();
+
+                detail.setTemplate(savedTemplate);
+                detail.setItem(item);
+                detail.setDefaultQty(detailRequest.getDefaultQty());
+
+                masProcedureConsumableTemplateDetailRepository.save(detail);
+            }
+
+            return ResponseUtils.createSuccessResponse("Template saved successfully", new TypeReference<>() {
+            });
+
+        } catch (Exception e) {
+
+            log.error("Error while saving procedure consumable template. procedureId={}, templateCode={}",
+                    request != null ? request.getProcedureId() : null, request != null ? request.getTemplateCode() : null, e);
+            throw e;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<ProcedureConsumableTemplateHeaderResponse>> getTemplates(
+            String search,
+            int page,
+            int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "templateName"));
+
+        String searchParam = (search == null || search.isBlank()) ? "" : search;
+
+        Page<ProcedureConsumableTemplateHeaderResponse> result = masProcedureConsumableTemplateRepository.getTemplates(searchParam, pageable);
+
+        return ResponseUtils.createSuccessResponse(result, new TypeReference<Page<ProcedureConsumableTemplateHeaderResponse>>() {
+        }
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<List<ProcedureConsumableTemplateDetailsResponse>>
+    getProcedureConsumableTemplateDetails(Long templateId) {
+
+            List<ProcedureConsumableTemplateDetailsResponse> result = masProcedureConsumableTemplateDetailRepository.getTemplateDetails(templateId);
+
+            return ResponseUtils.createSuccessResponse(
+                    result,
+                    new TypeReference<List<ProcedureConsumableTemplateDetailsResponse>>() {
+                    }
+            );
+
+    }
+
+
+    @Override
+    @Transactional
+    public ApiResponse<String> saveNursingCareProcedure(List<ConsumableEntryRequest> requests) {
+
+        log.info("saveNursingCareProcedure started for {} record(s)", requests != null ? requests.size() : 0);
+
+        User user = authUtil.getCurrentUser();try {
+
+            for (ConsumableEntryRequest request : requests) {
+                // Validate Request
+
+                if (request.getInpatientId() == null) {
+                    throw new RuntimeException("Inpatient ID is required");
+                }
+                if (request.getItemId() == null) {
+                    throw new RuntimeException("Item ID is required");
+                }
+                if (request.getRequestQty() == null || request.getRequestQty().compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new RuntimeException("Request quantity must be greater than zero");
+                }
+
+                Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException("Inpatient not found: " + request.getInpatientId()));
+
+                // Find Batch Stock
+
+                StoreItemBatchStock stock = storeItemBatchStockRepository.findByItemIdAndBatchNoForUpdate(request.getItemId(), request.getBatchNo(), request.getDepartmentId())
+                                .orElseThrow(() -> new RuntimeException("Batch not found for itemId=" + request.getItemId() + ", batchNo=" + request.getBatchNo()));
+
+                BigDecimal currentQty = stock.getClosingStock() != null ? BigDecimal.valueOf(stock.getClosingStock()) : BigDecimal.ZERO;
+
+                // Runtime Stock Check
+                if (currentQty.compareTo(request.getRequestQty()) < 0) {
+                    throw new RuntimeException("Insufficient Stock");
+                }
+
+                // Calculate Updated Stock
+                BigDecimal currentIpdIssueQty = stock.getIpdIssueQty() != null ? stock.getIpdIssueQty() : BigDecimal.ZERO;
+                BigDecimal updatedIpdIssueQty = currentIpdIssueQty.add(request.getRequestQty());
+                BigDecimal updatedQty = currentQty.subtract(request.getRequestQty());
+                // Update Batch Stock
+                stock.setClosingStock(updatedQty.longValue());
+                stock.setIpdIssueQty(updatedIpdIssueQty);
+                storeItemBatchStockRepository.save(stock);
+
+                log.info("Stock updated for batchNo={}, before={}, after={}", request.getBatchNo(), currentQty, updatedQty);
+
+                // Store IpMedicineIssue
+
+                IpMedicineIssue ipMedicineIssue = new IpMedicineIssue();
+
+                ipMedicineIssue.setInpatient(inpatient);
+                ipMedicineIssue.setItem(stock.getItemId());
+                ipMedicineIssue.setBatch(stock);
+                ipMedicineIssue.setBatchNo(request.getBatchNo());
+                ipMedicineIssue.setExpiryDate(request.getExpiryDate());
+                ipMedicineIssue.setIssueQty(request.getRequestQty());
+                ipMedicineIssue.setIssueDatetime(LocalDateTime.now());
+                ipMedicineIssue.setIssuedBy(user.getUserId());
+                ipMedicineIssue.setCreatedBy(user.getUserId());
+                ipMedicineIssue.setCreatedOn(LocalDateTime.now());
+                ipMedicineIssue.setLastChgBy(user.getUserId());
+                ipMedicineIssue.setLastChgOn(LocalDateTime.now());
+                ipMedicineIssue.setRemarks(request.getRemark());
+
+                ipMedicineIssueRepository.save(ipMedicineIssue);
+
+                // Save IP Consumable Transaction
+                IpConsumableTxn ipConsumableTxn = new IpConsumableTxn();
+
+                ipConsumableTxn.setInpatientId(inpatient);
+                ipConsumableTxn.setItemId(masStoreItemRepository.findById(request.getItemId()).orElseThrow());
+                ipConsumableTxn.setItemName(stock.getItemId().getNomenclature());
+                ipConsumableTxn.setQuantity(request.getRequestQty());
+                ipConsumableTxn.setUom(stock.getItemId().getUnitAU().getUnitName());
+                ipConsumableTxn.setBatchNo(request.getBatchNo());
+                ipConsumableTxn.setExpiryDate(request.getExpiryDate());
+                ipConsumableTxn.setUsageDatetime(request.getDateTime());
+                ipConsumableTxn.setUsedBy(request.getGivenBy());
+                if (request.getProcedureId() != null) {
+                    IpProcedureTxn procedureTxn = ipProcedureTxnRepository.findById(request.getProcedureId()).orElseThrow(() ->
+                                    new RuntimeException("Procedure transaction not found: " +request.getProcedureId()));
+                    ipConsumableTxn.setProcedureTxnId(procedureTxn);
+                } else {
+                    ipConsumableTxn.setProcedureTxnId(null);
+                }
+                ipConsumableTxn.setRemarks(request.getRemark());
+                ipConsumableTxn.setCreatedBy(user.getFullName());
+                ipConsumableTxn.setCreatedAt(LocalDateTime.now());
+
+                ipConsumableTxnRepository.save(ipConsumableTxn);
+
+                log.info("IpConsumableTxn saved successfully. consumableTxnId={}, inpatientId={}, itemId={}, qty={}",
+                        ipConsumableTxn.getConsumableTxnId(),
+                        request.getInpatientId(),
+                        request.getItemId(),
+                        request.getRequestQty()
+                );
+
+                // Stock Ledger
+
+                StoreStockLedger ledger = new StoreStockLedger();
+                ledger.setStockId(stock);
+                ledger.setTxnType(AppConstants.INPATIENT_ISSUE);
+                ledger.setTxnDate(LocalDate.now());
+                ledger.setTxnReferenceId(ipConsumableTxn.getConsumableTxnId());
+                ledger.setQtyBefore(currentQty);
+                ledger.setQtyOut(request.getRequestQty());
+                ledger.setQtyAfter(updatedQty);
+                ledger.setTxnSource(AppConstants.INPATIENT_ISSUE);
+                ledger.setCreatedBy(user.getUsername());
+                ledger.setCreatedDt(LocalDateTime.now());
+                ledger.setHospital(stock.getHospitalId());
+                ledger.setDept(stock.getDepartmentId());
+                storeStockLedgerRepository.save(ledger);
+
+                log.info("Stock ledger entry created for stockId={}, txnRefId={}", stock.getStockId(), ledger.getTxnReferenceId());
+
+                // Billing
+                BigDecimal amount = calculateAmount(stock.getMrpPerUnit(), request.getRequestQty());
+
+                BigDecimal gstAmount = calculateGST(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
+
+                BigDecimal netAmount = calculateNetAmount(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
+
+                Optional<MasIpdServiceCategory> masIpdServiceCategory = masIpdServiceCategoryRepository.findById(IPDServiceCategoryMedicalConsumables);
+
+                if (masIpdServiceCategory.isEmpty()) {
+                    throw new RuntimeException("IPD Service Category not found: " + IPDServiceCategoryDrug);
+                }
+
+                saveIpdBillingDetails.saveInpatientBillingDetails(
+                        inpatient,
+                        stock.getMrpPerUnit(),
+                        request.getRequestQty(),
+                        stock.getGstPercent(),
+                        BigDecimal.ZERO,
+                        amount,
+                        gstAmount,
+                        netAmount,
+                        masIpdServiceCategory.get(),
+                        null,
+                        stock.getItemId().getNomenclature()
+                );
+
+                // Mark consumable transaction as billed
+                ipConsumableTxn.setIsBilled(true);
+                ipConsumableTxn.setUpdatedBy(user.getUsername());
+                ipConsumableTxn.setUpdatedAt(LocalDateTime.now());
+
+                ipConsumableTxnRepository.save(ipConsumableTxn);
+
+                log.info("Billing entry saved for inpatientId={}, amount={}, netAmount={}", inpatient.getInpatientId(), amount, netAmount);
+            }
+
+            log.info("saveNursingCareProcedure completed successfully for {} record(s)", requests.size());
+
+            return ResponseUtils.createSuccessResponse("Nursing care consumable details saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("saveNursingCareProcedure failed, rolling back transaction. Reason: {}", e.getMessage(), e);
+
+            throw e;
+        }
+    }
+
+
+
+
+
+}

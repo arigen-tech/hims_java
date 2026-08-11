@@ -473,4 +473,49 @@ public class IPDPatientController {
         ApiResponse<List<IpProcedureTxnResponse>> response = ipdPatientService.getIpProcedureTxnByInpatientId(inpatientId);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("saveProcedureConsumableTemplate")
+    public ApiResponse<String> saveProcedureConsumableTemplate(@Valid @RequestBody ProcedureConsumableTemplateSaveRequest request) {
+
+        log.info("saveProcedureConsumableTemplate API called. procedureId={}, templateCode={}, templateName={}",
+               request.getProcedureId(), request.getTemplateCode(), request.getTemplateName());
+
+        return ipdPatientService.saveProcedureConsumableTemplate(request);
+    }
+    @GetMapping("getProcedureConsumableTemplate")
+    public ResponseEntity<ApiResponse<Page<ProcedureConsumableTemplateHeaderResponse>>> getTemplate(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        log.info("Request received to fetch ProcedureConsumableTemplateHeader. " + "search={}, page={}, size={}", search, page, size);
+
+        ApiResponse<Page<ProcedureConsumableTemplateHeaderResponse>> response = ipdPatientService.getTemplates(search, page, size);
+
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("getProcedureConsumableTemplateDetails/{templateId}")
+    public ResponseEntity<ApiResponse<List<ProcedureConsumableTemplateDetailsResponse>>>
+    getProcedureConsumableTemplateDetails(@PathVariable Long templateId) {
+
+        log.info("Request received to fetch Procedure Consumable Template Details for templateId: {}", templateId);
+
+        ApiResponse<List<ProcedureConsumableTemplateDetailsResponse>> response =
+                ipdPatientService.getProcedureConsumableTemplateDetails(templateId);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PostMapping("saveNursingCareProcedure")
+    public ApiResponse<String> saveNursingCareProcedure(@Valid @RequestBody List<ConsumableEntryRequest> request) {
+
+        log.info("saveNursingCareProcedure API called with {} record(s)", request != null ? request.size() : 0);
+
+        return ipdPatientService.saveNursingCareProcedure(request);
+    }
+
+
+
+
 }
