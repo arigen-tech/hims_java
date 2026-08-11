@@ -98,5 +98,7 @@ public interface IPDPatientService {
     ApiResponse<Page<ProcedureConsumableTemplateHeaderResponse>> getTemplates(String search, int page, int size);
 
     ApiResponse<List<ProcedureConsumableTemplateDetailsResponse>> getProcedureConsumableTemplateDetails(Long templateId);
+
+    ApiResponse<String> saveNursingCareProcedure(@Valid List<ConsumableEntryRequest> request);
 }
 

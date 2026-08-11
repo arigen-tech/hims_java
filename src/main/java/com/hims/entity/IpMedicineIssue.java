@@ -29,11 +29,11 @@ public class IpMedicineIssue {
     private Inpatient inpatient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prescription_id", nullable = false)
+    @JoinColumn(name = "prescription_id")
     private IpMedicinePrescription prescription;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mar_id", nullable = false)
+    @JoinColumn(name = "mar_id")
     private IpMarDetails marDetails;
 
     @ManyToOne(fetch = FetchType.LAZY)

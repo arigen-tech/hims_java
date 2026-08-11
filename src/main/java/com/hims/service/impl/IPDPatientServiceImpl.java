@@ -203,6 +203,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasProcedureConsumableTemplateRepository masProcedureConsumableTemplateRepository;
     @Autowired
     MasProcedureConsumableTemplateDetailRepository masProcedureConsumableTemplateDetailRepository;
+    @Autowired
+    IpConsumableTxnRepository ipConsumableTxnRepository;
 
 
     @Value("${ipd.admission.status.admitted}")
@@ -262,6 +264,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Value("${ipd.service.category.drug}")
     Long IPDServiceCategoryDrug;
+    @Value("${IPD.Service.Category.Medical.Consumables}")
+    Long IPDServiceCategoryMedicalConsumables;
+
 
 
     @Override
@@ -3587,5 +3592,176 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             );
 
     }
+
+
+    @Override
+    @Transactional
+    public ApiResponse<String> saveNursingCareProcedure(List<ConsumableEntryRequest> requests) {
+
+        log.info("saveNursingCareProcedure started for {} record(s)", requests != null ? requests.size() : 0);
+
+        User user = authUtil.getCurrentUser();try {
+
+            for (ConsumableEntryRequest request : requests) {
+                // Validate Request
+
+                if (request.getInpatientId() == null) {
+                    throw new RuntimeException("Inpatient ID is required");
+                }
+                if (request.getItemId() == null) {
+                    throw new RuntimeException("Item ID is required");
+                }
+                if (request.getRequestQty() == null || request.getRequestQty().compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new RuntimeException("Request quantity must be greater than zero");
+                }
+
+                Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException("Inpatient not found: " + request.getInpatientId()));
+
+                // Find Batch Stock
+
+                StoreItemBatchStock stock = storeItemBatchStockRepository.findByItemIdAndBatchNoForUpdate(request.getItemId(), request.getBatchNo(), request.getDepartmentId())
+                                .orElseThrow(() -> new RuntimeException("Batch not found for itemId=" + request.getItemId() + ", batchNo=" + request.getBatchNo()));
+
+                BigDecimal currentQty = stock.getClosingStock() != null ? BigDecimal.valueOf(stock.getClosingStock()) : BigDecimal.ZERO;
+
+                // Runtime Stock Check
+                if (currentQty.compareTo(request.getRequestQty()) < 0) {
+                    throw new RuntimeException("Insufficient Stock");
+                }
+
+                // Calculate Updated Stock
+                BigDecimal currentIpdIssueQty = stock.getIpdIssueQty() != null ? stock.getIpdIssueQty() : BigDecimal.ZERO;
+                BigDecimal updatedIpdIssueQty = currentIpdIssueQty.add(request.getRequestQty());
+                BigDecimal updatedQty = currentQty.subtract(request.getRequestQty());
+                // Update Batch Stock
+                stock.setClosingStock(updatedQty.longValue());
+                stock.setIpdIssueQty(updatedIpdIssueQty);
+                storeItemBatchStockRepository.save(stock);
+
+                log.info("Stock updated for batchNo={}, before={}, after={}", request.getBatchNo(), currentQty, updatedQty);
+
+                // Store IpMedicineIssue
+
+                IpMedicineIssue ipMedicineIssue = new IpMedicineIssue();
+
+                ipMedicineIssue.setInpatient(inpatient);
+                ipMedicineIssue.setItem(stock.getItemId());
+                ipMedicineIssue.setBatch(stock);
+                ipMedicineIssue.setBatchNo(request.getBatchNo());
+                ipMedicineIssue.setExpiryDate(request.getExpiryDate());
+                ipMedicineIssue.setIssueQty(request.getRequestQty());
+                ipMedicineIssue.setIssueDatetime(LocalDateTime.now());
+                ipMedicineIssue.setIssuedBy(user.getUserId());
+                ipMedicineIssue.setCreatedBy(user.getUserId());
+                ipMedicineIssue.setCreatedOn(LocalDateTime.now());
+                ipMedicineIssue.setLastChgBy(user.getUserId());
+                ipMedicineIssue.setLastChgOn(LocalDateTime.now());
+                ipMedicineIssue.setRemarks(request.getRemark());
+
+                ipMedicineIssueRepository.save(ipMedicineIssue);
+
+                // Save IP Consumable Transaction
+                IpConsumableTxn ipConsumableTxn = new IpConsumableTxn();
+
+                ipConsumableTxn.setInpatientId(inpatient);
+                ipConsumableTxn.setItemId(masStoreItemRepository.findById(request.getItemId()).orElseThrow());
+                ipConsumableTxn.setItemName(stock.getItemId().getNomenclature());
+                ipConsumableTxn.setQuantity(request.getRequestQty());
+                ipConsumableTxn.setUom(stock.getItemId().getUnitAU().getUnitName());
+                ipConsumableTxn.setBatchNo(request.getBatchNo());
+                ipConsumableTxn.setExpiryDate(request.getExpiryDate());
+                ipConsumableTxn.setUsageDatetime(request.getDateTime());
+                ipConsumableTxn.setUsedBy(request.getGivenBy());
+                if (request.getProcedureId() != null) {
+                    IpProcedureTxn procedureTxn = ipProcedureTxnRepository.findById(request.getProcedureId()).orElseThrow(() ->
+                                    new RuntimeException("Procedure transaction not found: " +request.getProcedureId()));
+                    ipConsumableTxn.setProcedureTxnId(procedureTxn);
+                } else {
+                    ipConsumableTxn.setProcedureTxnId(null);
+                }
+                ipConsumableTxn.setRemarks(request.getRemark());
+                ipConsumableTxn.setCreatedBy(user.getFullName());
+                ipConsumableTxn.setCreatedAt(LocalDateTime.now());
+
+                ipConsumableTxnRepository.save(ipConsumableTxn);
+
+                log.info("IpConsumableTxn saved successfully. consumableTxnId={}, inpatientId={}, itemId={}, qty={}",
+                        ipConsumableTxn.getConsumableTxnId(),
+                        request.getInpatientId(),
+                        request.getItemId(),
+                        request.getRequestQty()
+                );
+
+                // Stock Ledger
+
+                StoreStockLedger ledger = new StoreStockLedger();
+                ledger.setStockId(stock);
+                ledger.setTxnType(AppConstants.INPATIENT_ISSUE);
+                ledger.setTxnDate(LocalDate.now());
+                ledger.setTxnReferenceId(ipConsumableTxn.getConsumableTxnId());
+                ledger.setQtyBefore(currentQty);
+                ledger.setQtyOut(request.getRequestQty());
+                ledger.setQtyAfter(updatedQty);
+                ledger.setTxnSource(AppConstants.INPATIENT_ISSUE);
+                ledger.setCreatedBy(user.getUsername());
+                ledger.setCreatedDt(LocalDateTime.now());
+                ledger.setHospital(stock.getHospitalId());
+                ledger.setDept(stock.getDepartmentId());
+                storeStockLedgerRepository.save(ledger);
+
+                log.info("Stock ledger entry created for stockId={}, txnRefId={}", stock.getStockId(), ledger.getTxnReferenceId());
+
+                // Billing
+                BigDecimal amount = calculateAmount(stock.getMrpPerUnit(), request.getRequestQty());
+
+                BigDecimal gstAmount = calculateGST(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
+
+                BigDecimal netAmount = calculateNetAmount(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
+
+                Optional<MasIpdServiceCategory> masIpdServiceCategory = masIpdServiceCategoryRepository.findById(IPDServiceCategoryMedicalConsumables);
+
+                if (masIpdServiceCategory.isEmpty()) {
+                    throw new RuntimeException("IPD Service Category not found: " + IPDServiceCategoryDrug);
+                }
+
+                saveIpdBillingDetails.saveInpatientBillingDetails(
+                        inpatient,
+                        stock.getMrpPerUnit(),
+                        request.getRequestQty(),
+                        stock.getGstPercent(),
+                        BigDecimal.ZERO,
+                        amount,
+                        gstAmount,
+                        netAmount,
+                        masIpdServiceCategory.get(),
+                        null,
+                        stock.getItemId().getNomenclature()
+                );
+
+                // Mark consumable transaction as billed
+                ipConsumableTxn.setIsBilled(true);
+                ipConsumableTxn.setUpdatedBy(user.getUsername());
+                ipConsumableTxn.setUpdatedAt(LocalDateTime.now());
+
+                ipConsumableTxnRepository.save(ipConsumableTxn);
+
+                log.info("Billing entry saved for inpatientId={}, amount={}, netAmount={}", inpatient.getInpatientId(), amount, netAmount);
+            }
+
+            log.info("saveNursingCareProcedure completed successfully for {} record(s)", requests.size());
+
+            return ResponseUtils.createSuccessResponse("Nursing care consumable details saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+
+            log.error("saveNursingCareProcedure failed, rolling back transaction. Reason: {}", e.getMessage(), e);
+
+            throw e;
+        }
+    }
+
+
+
+
 
 }
