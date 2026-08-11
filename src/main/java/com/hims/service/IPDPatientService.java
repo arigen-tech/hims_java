@@ -92,13 +92,5 @@ public interface IPDPatientService {
     ApiResponse<String> saveInpatientProcedure(@Valid InpatientProcedureRequest request);
 
     ApiResponse<List<IpProcedureTxnResponse>> getIpProcedureTxnByInpatientId(Long inpatientId);
-
-    ApiResponse<String> saveProcedureConsumableTemplate(@Valid ProcedureConsumableTemplateSaveRequest request);
-
-    ApiResponse<Page<ProcedureConsumableTemplateHeaderResponse>> getTemplates(String search, int page, int size);
-
-    ApiResponse<List<ProcedureConsumableTemplateDetailsResponse>> getProcedureConsumableTemplateDetails(Long templateId);
-
-    ApiResponse<String> saveNursingCareProcedure(@Valid List<ConsumableEntryRequest> request);
 }
 
