@@ -7,6 +7,7 @@ import com.hims.entity.projection.PrescriptionDetailProjection;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
+import com.hims.mapper.TreatmentData;
 import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
@@ -93,6 +94,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final OpdQuestionMasterRepository opdQuestionMasterRepository;
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
     private final TransactionSequenceService transactionSequenceService;
+    private final MasFrequencyRepository masFrequencyRepository;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -160,17 +162,15 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         Patient patient = getPatient(request.getPatientId());
         Visit visit = getVisit(request.getVisitId());
         Long deptId = authUtil.getCurrentDepartmentId();
-        OpdPatientDetail opd = opdPatientDetailRepository
-                .findByVisit_Id(request.getVisitId())
-                .orElseGet(() -> {
+        OpdPatientDetail opd = opdPatientDetailRepository.findByVisit_Id(request.getVisitId()).orElseGet(() -> {
                     log.info("Creating new OPD Patient Detail for visit ID: {}", request.getVisitId());
                     return new OpdPatientDetail();
                 });
+
         if ((request.getWorkingDiagnosis() == null || request.getWorkingDiagnosis().isBlank()) && (request.getIcdDiagnosis() == null || request.getIcdDiagnosis().isEmpty())) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-            }, "One is mandatory: Working Diagnosis or ICD Diagnosis", 400);
+            }, AppConstants.MANDATORY_DIAGNOSIS_MESSAGE, 400);
         }
-
         mapBasicVitalDetails(opd, request);
         mapClinicalDetails(opd, request);
         mapGeneralDetails(opd, patient, visit, user, deptId);
@@ -181,7 +181,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         opd.setRadioFlag(AppConstants.STATUS_N.toLowerCase());
         OpdPatientDetail saved = opdPatientDetailRepository.save(opd);
         log.info("Saved OPD detail with ID: {}", saved.getOpdPatientDetailsId());
-        saveIcdDiagnosis(request.getIcdDiagnosis(), saved.getOpdPatientDetailsId(), request.getVisitId(), user.getUserId());
+
+        //saving diagnosis data for opd - Start
+        List<Long> diagIdList = Optional.ofNullable(request.getIcdDiagnosis())
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(OpdPatientDetailCreateRequest.IcdDiagnosis::getIcdId)
+                .collect(Collectors.toList());
+        saveOrUpdateIcdDiagnosis(diagIdList, saved.getOpdPatientDetailsId(), request.getVisitId(), user.getUserId());
+        //diagnosis - End
+
         boolean hasLabInvestigations = false;
         boolean hasRadioInvestigations = false;
         if (request.getInvestigation() != null && !request.getInvestigation().isEmpty()) {
@@ -212,15 +221,28 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (hasRadioInvestigations) {
             saved.setRadioFlag(AppConstants.STATUS_Y.toLowerCase());
         }
+
         if (request.getTreatment() != null && !request.getTreatment().isEmpty()) {
-            saveTreatments(request.getTreatment(), patient, visit, user, deptId);
+            List<TreatmentData> treatments = request.getTreatment()
+                    .stream()
+                    .map(t -> new TreatmentData(
+                            null,
+                            t.getItemId(),
+                            t.getDosage(),
+                            t.getFrequency(),
+                            t.getDays(),
+                            t.getTotal(),
+                            t.getInstraction()
+                    ))
+                    .toList();
+            saveOrUpdateTreatments(treatments,patient,visit,user,deptId);
         }
 
         if (request.getOphthalmologyExaminationDetails() != null) {
             OpdOpthDetailsRequest opthRequest = request.getOphthalmologyExaminationDetails();
             opthRequest.setPatientId(patient.getId());
             opthRequest.setVisitId(visit.getId());
-            ApiResponse<String> response = opdOpthDetailsService.opdVisionExaminationDetailsSave(opthRequest);
+            ApiResponse<String> response = opdOpthDetailsService.opdVisionExaminationDetailsSaveOrUpdate(opthRequest);
             if (response == null || response.getStatus() != HttpStatus.OK.value()) {
                 throw new SDDException("ophthalmology", 500, response != null ? response.getMessage() : "Failed to save ophthalmology details");
             }
@@ -242,10 +264,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (request.getPregnancyDetails() != null) {
             handlePregnancyDetails(saved, request.getPregnancyDetails(), user);
         }
-        // ================= Psychiatric Assessment Save =================
-        if (request.getDetails() != null && !request.getDetails().isEmpty()) {
+        if (request.getPsychiatricDetailsRequests() != null && !request.getPsychiatricDetailsRequests().isEmpty()) {
             log.info("Saving Psychiatric Assessment Header and Details for OPD ID: {}", saved.getOpdPatientDetailsId());
-            saveOrUpdatePsychiatricAssessment(request.getDetails(),request.getTopicId(), visit, saved, authUtil.getCurrentUser());
+            saveOrUpdatePsychiatricAssessment(request.getPsychiatricDetailsRequests(),request.getTopicId(), visit, saved, authUtil.getCurrentUser());
         }
         opdPatientDetailRepository.save(saved);
         closeVisit(visit);
@@ -434,24 +455,98 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         handleRecallReferral(opd, request);
         opdPatientDetailRepository.save(opd);
         handleRecallPregnancyDetails(opd, request.getPregnancyDetails(), user);
-        replaceIcdDiagnosis(request, opd, user);
+
+        //ICD diagnosis details{
+        List<Long> icdIds = Optional.ofNullable(request.getIcdDiagnosisList())
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(RecallOpdPatientDetailRequest.IcdDiagnosis::getIcdId)
+                .collect(Collectors.toList());
+        saveOrUpdateIcdDiagnosis(icdIds, opd.getOpdPatientDetailsId(), visit.getId(), user.getUserId());
+        //}
+
+        //investigation details{
         replaceInvestigations(request, patient, visit, user);
-        replaceTreatments(request, patient, visit, user);
+        //    }
+        //Treatment data {
+        List<TreatmentData> treatments = request.getTreatments()
+                .stream()
+                .map(t -> new TreatmentData(
+                        t.getPrescriptionDtId(),
+                        t.getItemId(),
+                        t.getDosage(),
+                        t.getFrequencyName() != null
+                                ? t.getFrequencyName()
+                                : null,
+                        t.getDays(),
+                        t.getTotal() != null
+                                ? BigDecimal.valueOf(t.getTotal())
+                                : null,
+                        t.getInstruction()
+                ))
+                .toList();
+
+        saveOrUpdateTreatments(treatments,patient,visit,user,authUtil.getCurrentDepartmentId());
+        //}
+
+        //removing facing issue because of store calculate the stock
+        //removeTreatments(request.getRemovedTreatmentIds());
+
         replacePsychiatryAssessment(request, patient, visit, user);
 
+        //OBG details
         if (request.getOpdObgDetailsRequest() != null) {
             handleRecallObgDetails(request, patient, visit, user);
         }
-
+        //
+        //EarExamination details save and update
         if (request.getEntExaminationDetails() != null) {
             ApiResponse<String> response = opdEntDetailsService.createOrUpdateEntDetails(request.getVisitId(), request.getEntExaminationDetails());
             if (response == null || response.getStatus() != HttpStatus.OK.value()) {
                 throw new SDDException("ent", 500, response != null ? response.getMessage() : "Failed to save ENT details");
             }
         }
-
+        // opthal details Save and update
+        if (request.getOphthalmologyExaminationDetails() != null) {
+            OpdOpthDetailsRequest opthRequest = request.getOphthalmologyExaminationDetails();
+            opthRequest.setPatientId(patient.getId());
+            opthRequest.setVisitId(visit.getId());
+            ApiResponse<String> response = opdOpthDetailsService.opdVisionExaminationDetailsSaveOrUpdate(opthRequest);
+            if (response == null || response.getStatus() != HttpStatus.OK.value()) {
+                throw new SDDException("ophthalmology", 500, response != null ? response.getMessage() : "Failed to save ophthalmology details");
+            }
+        }
         return ResponseUtils.createSuccessResponse("Patient updated successfully", new TypeReference<>() {
         });
+    }
+
+    private void saveOrUpdateIcdDiagnosis(
+            List<Long> icdIds,
+            Long opdId,
+            Long visitId,
+            Long userId) {
+
+        dischargeIcdCodeRepository.deleteByOpdPatientDetailsId(opdId);
+        if (icdIds == null || icdIds.isEmpty()) {
+            return;
+        }
+        List<DischargeIcdCode> entities = new ArrayList<>();
+        for (Long icdId : icdIds) {
+            if (icdId == null) {
+                continue;
+            }
+            DischargeIcdCode entity = new DischargeIcdCode();
+            entity.setIcdId(icdId);
+            entity.setVisitId(visitId);
+            entity.setOpdPatientDetailsId(opdId);
+            entity.setAddEditById(userId);
+            entity.setAddEditDate(LocalDate.now());
+            entity.setAddEditTime(LocalTime.now().toString());
+            entities.add(entity);
+        }
+        if (!entities.isEmpty()) {
+            dischargeIcdCodeRepository.saveAll(entities);
+        }
     }
 
     private void replaceIcdDiagnosis(RecallOpdPatientDetailRequest request, OpdPatientDetail opd, User user) {
@@ -473,6 +568,56 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 dischargeIcdCodeRepository.saveAll(entities);
             }
         }
+    }
+
+
+    private void saveOrUpdateTreatments(
+            List<TreatmentData> treatments,
+            Patient patient,
+            Visit visit,
+            User user,
+            Long deptId) {
+
+        if (treatments == null || treatments.isEmpty()) {
+            return;
+        }
+        PatientPrescriptionHd hd = patientPrescriptionHdRepository.findByVisit_Id(visit.getId());
+        if (hd == null) {
+            hd = createPrescriptionHeader(patient, visit, user, deptId);
+        }
+        for (TreatmentData treatment : treatments) {
+            if (treatment == null || treatment.itemId() == null) {
+                continue;
+            }
+            PatientPrescriptionDt dt;
+            if (treatment.prescriptionDtId() != null) {
+                dt = patientPrescriptionDtRepository
+                        .findById(treatment.prescriptionDtId())
+                        .orElseThrow(() ->
+                                new SDDException("prescriptionDtId",404,"Prescription treatment not found: "
+                                                + treatment.prescriptionDtId()));
+            } else {
+                dt = new PatientPrescriptionDt();
+                dt.setPrescriptionHdId(hd.getPrescriptionHdId());
+                dt.setStatus(AppConstants.STATUS_N.toLowerCase());
+            }
+            dt.setItemId(treatment.itemId());
+            dt.setDosage(treatment.dosage());
+            dt.setFrequency(treatment.frequency());
+            dt.setDays(treatment.days());
+            dt.setTotal(treatment.total());
+            dt.setInstruction(treatment.instruction());
+
+            patientPrescriptionDtRepository.save(dt);
+        }
+    }
+
+    private void removeTreatments(List<Long> removedTreatmentIds) {
+        if (removedTreatmentIds == null || removedTreatmentIds.isEmpty()) {
+            return;
+        }
+        patientPrescriptionDtRepository.deleteAllById(removedTreatmentIds);
+        log.info("Removed prescription treatment IDs: {}",removedTreatmentIds);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -674,7 +819,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     private void replacePsychiatryAssessment(RecallOpdPatientDetailRequest request, Patient patient, Visit visit, User user) {
-        if (request.getDetails() != null && !request.getDetails().isEmpty()) {
+        if (request.getPsychiatricDetailsRequests() != null && !request.getPsychiatricDetailsRequests().isEmpty()) {
             // Get or create OpdPatientDetail (needed for header)
             OpdPatientDetail opdPatientDetail = opdPatientDetailRepository
                     .findByVisit_Id(visit.getId())
@@ -683,7 +828,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             // Save or update using the improved method
             saveOrUpdatePsychiatricAssessment(
-                    request.getDetails(),
+                    request.getPsychiatricDetailsRequests(),
                     request.getTopicId(),
                     visit,
                     opdPatientDetail,
@@ -704,22 +849,20 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }
         }
     }
+
     private void handleRecallObgDetails(RecallOpdPatientDetailRequest request, Patient patient, Visit visit, User user) {
         try {
             OpdObgDetailsRequest obgRequest = request.getOpdObgDetailsRequest();
             obgRequest.setPatientId(patient.getId());
             obgRequest.setVisitId(visit.getId());
-
             ApiResponse<String> response = opdObgDetailsService.createOrUpdateObgDetails(
                     request.getVisitId(),
                     obgRequest
             );
-
             if (response == null || response.getStatus() != HttpStatus.OK.value()) {
                 throw new SDDException("obg", 500,
                         response != null ? response.getMessage() : "Failed to update OBG details");
             }
-
             log.info("OBG details updated successfully for visit ID: {}", visit.getId());
         } catch (Exception e) {
             log.error("Error updating OBG details for visit ID: {}", visit.getId(), e);
@@ -743,6 +886,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         hd.setTotalDiscount(BigDecimal.ZERO);
         hd.setNetAmount(BigDecimal.ZERO);
         hd.setVisit(visit);
+        hd.setPrescriptionNumber(transactionSequenceService.generateTransactionNumber(HMISTransaction.PRESCRIPTION_NO, user.getHospital().getId()));
 
         PatientPrescriptionHd savedHd = patientPrescriptionHdRepository.save(hd);
 
@@ -769,7 +913,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     private void mapRecallBasicDetails(OpdPatientDetail opd, RecallOpdPatientDetailRequest request) {
-
         opd.setHeight(request.getHeight());
         opd.setWeight(request.getWeight());
         opd.setTemperature(request.getTemperature());
@@ -782,7 +925,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     private void mapRecallClinicalDetails(OpdPatientDetail opd, RecallOpdPatientDetailRequest request) {
-
         opd.setPatientSignsSymptoms(request.getPatientSignsSymptoms());
         opd.setClinicalExamination(request.getClinicalExamination());
         opd.setPastMedicalHistory(request.getPastMedicalHistory());
@@ -790,6 +932,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         opd.setWorkingDiag(request.getWorkingDiagnosis());
         opd.setFinalMedicalAdvice(request.getDoctorRemarks());
         opd.setTreatmentAdvice(request.getTreatmentAdvice());
+
+        if (request.getIcdDiagnosisList() != null && !request.getIcdDiagnosisList().isEmpty()) {
+            String joinedNames = request.getIcdDiagnosisList().stream().filter(Objects::nonNull).map(RecallOpdPatientDetailRequest.IcdDiagnosis::getIcdDiagnosisName).filter(Objects::nonNull).collect(Collectors.joining(","));
+            opd.setIcdDiag(joinedNames);
+        } else {
+            opd.setIcdDiag(null);
+        }
     }
 
     private void handleAdmission(OpdPatientDetail opd, OpdPatientDetailCreateRequest request) {
@@ -813,7 +962,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     private void handleFollowUp(OpdPatientDetail opd, OpdPatientDetailCreateRequest request) {
-
         if (isYes(request.getFollowUpFlag())) {
             opd.setFollowUpFlag(AppConstants.STATUS_Y.toLowerCase());
             opd.setFollowUpDays(request.getFollowUpDays());
@@ -1037,31 +1185,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                 DgOrderDt savedOrderDt = dgOrderDtRepo.save(dgOrderDt);
                 log.debug("LAB Order Detail saved - Detail ID: {}", savedOrderDt.getId());
-
-//              Billing Details save if need some more change
-//                BillingDetail billingDetail = new BillingDetail();
-//                billingDetail.setBillingHd(savedBillingHeader);
-//                billingDetail.setBillHd(savedBillingHeader);
-//                billingDetail.setItemName(invEntity.getInvestigationName());
-//                billingDetail.setQuantity(1);
-//                billingDetail.setCreatedDt(OffsetDateTime.now());
-//                billingDetail.setUpdatedDt(OffsetDateTime.now());
-//                billingDetail.setCreatedAt(Instant.now());
-//
-//                BigDecimal amount = getInvestigationPrice(invEntity);
-//                BigDecimal chargeAmount = amount != null ? amount : BigDecimal.ZERO;
-//                billingDetail.setBasePrice(chargeAmount);
-//                billingDetail.setTariff(chargeAmount);
-//                billingDetail.setDiscount(BigDecimal.ZERO);
-//                billingDetail.setAmountAfterDiscount(chargeAmount);
-//                billingDetail.setTaxAmount(BigDecimal.ZERO);
-//                billingDetail.setTaxPercent(BigDecimal.ZERO);
-//                billingDetail.setNetAmount(chargeAmount);
-//                billingDetail.setTotal(chargeAmount);
-//                billingDetail.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
-//
-//                BillingDetail savedBillingDetail = billingDetailRepository.save(billingDetail);
-//                log.info("Billing Detail created - Detail ID: {}", savedBillingDetail.getId());
             }
         }
         log.info("LAB investigations processing completed");
@@ -1386,250 +1509,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
 
-    //    Recall Api
-//
-//    @Override
-//    public ApiResponse<OpdPatientRecallResponce> getRecallVisit(Long visitId) {
-//
-//        Visit visitObj = visitRepository.searchRecallVisits(visitId);
-//        Patient patientObj = visitObj.getPatient();
-//        User docObj = visitObj.getDoctor();
-//        MasDepartment deptObj = visitObj.getDepartment();
-//        MasGender genderObj = patientObj.getPatientGender();
-//        MasRelation relationObj = patientObj.getPatientRelation();
-//
-//        OpdPatientDetail opdPatientObj = opdPatientDetailRepository.findByVisitId(visitObj.getId());
-//
-//        List<DgOrderHd> dgOrderHdList = safeList(dgOrderHdRepo.findAllByVisitId(visitObj));
-//
-//        PatientPrescriptionHd prescHdObj = patientPrescriptionHdRepository.findByPatientIdAndVisitId(patientObj.getId(),visitId);
-//
-//        List<PatientPrescriptionDt> prescDtList = prescHdObj != null ? safeList(patientPrescriptionDtRepository
-//                        .findByPrescriptionHdId(prescHdObj.getPrescriptionHdId()))
-//                        : Collections.emptyList();
-//
-//        OpdPatientRecallResponce response = new OpdPatientRecallResponce();
-//
-//        // ---------------- BASIC INFO ----------------
-//        response.setPatientId(patientObj.getId());
-//        response.setVisitId(visitObj.getId());
-//
-//        response.setPatientName(
-//                buildFullName(
-//                        patientObj.getPatientFn(),
-//                        patientObj.getPatientMn(),
-//                        patientObj.getPatientLn()
-//                )
-//        );
-//
-//        response.setMobileNo(patientObj.getPatientMobileNumber());
-//
-//        response.setGender(
-//                genderObj != null ? genderObj.getGenderName() : null
-//        );
-//
-//        response.setRelation(
-//                relationObj != null ? relationObj.getRelationName() : null
-//        );
-//
-//        response.setDob(patientObj.getPatientDob());
-//        response.setAge(patientObj.getPatientAge());
-//
-//        response.setDeptId(
-//                deptObj != null ? deptObj.getId() : null
-//        );
-//
-//        response.setDeptName(
-//                deptObj != null ? deptObj.getDepartmentName() : null
-//        );
-//
-//        response.setDocterId(
-//                docObj != null ? docObj.getUserId() : null
-//        );
-//
-//        if (docObj != null) {
-//            response.setDocterName(
-//                    buildFullName(
-//                            docObj.getFirstName(),
-//                            docObj.getMiddleName(),
-//                            docObj.getLastName()
-//                    )
-//            );
-//        }
-//
-//        response.setHospitalId(
-//                patientObj.getPatientHospital() != null
-//                        ? patientObj.getPatientHospital().getId()
-//                        : null
-//        );
-//
-//        // ---------------- OPD DETAILS ----------------
-//        if (opdPatientObj != null) {
-//            mapOpdDetails(response, opdPatientObj);
-//            response.setTreatmentAdvice(opdPatientObj.getTreatmentAdvice());
-//        }
-//
-//        // ---------------- DG ORDER ----------------
-//        response.setDgOrderHdList(buildDgOrderHdList(dgOrderHdList));
-//
-//        // ---------------- PRESCRIPTION HD ----------------
-//        if (prescHdObj != null) {
-//
-//            OpdPatientRecallResponce.NewDPatientPrescriptionHd hd =
-//                    new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
-//
-//            hd.setPrescriptionHdId(prescHdObj.getPrescriptionHdId());
-//            hd.setStatus(prescHdObj.getStatus());
-//            hd.setPrescriptionDate(prescHdObj.getPrescriptionDate());
-//
-//            response.setPatientPrescriptionHd(hd);
-//        }
-//
-//        // ---------------- PRESCRIPTION DT ----------------
-//        List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newDtList =
-//                new ArrayList<>();
-//
-//        Long hospitalId =
-//                authUtil.getCurrentUser() != null
-//                        && authUtil.getCurrentUser().getHospital() != null
-//                        ? authUtil.getCurrentUser().getHospital().getId()
-//                        : null;
-//
-//        for (PatientPrescriptionDt dt : prescDtList) {
-//
-//            if (dt == null) continue;
-//
-//            OpdPatientRecallResponce.NewDPatientPrescriptionDt newDt =
-//                    new OpdPatientRecallResponce.NewDPatientPrescriptionDt();
-//
-//            newDt.setPrescriptionDtId(dt.getPrescriptionDtId());
-//            newDt.setPrescriptionHdId(dt.getPrescriptionHdId());
-//            newDt.setStatus(dt.getStatus());
-//            newDt.setDosage(dt.getDosage());
-//            newDt.setFrequency(dt.getFrequency());
-//            newDt.setDays(dt.getDays());
-//            newDt.setTotal(dt.getTotal());
-//            newDt.setInstraction(dt.getInstruction());
-//            newDt.setItemId(dt.getItemId());
-//            newDt.setFrequencyId(dt.getFrequency());
-//
-//            Optional<MasStoreItem> itemOpt =
-//                    masStoreItemRepository.findById(dt.getItemId());
-//
-//            itemOpt.ifPresent(item -> {
-//
-//                newDt.setItemName(item.getNomenclature());
-//                newDt.setAdispQty(item.getAdispQty());
-//
-//                if (item.getDispUnit() != null) {
-//                    newDt.setDispUnit(item.getDispUnit().getUnitName());
-//                    newDt.setDepUnit(item.getDispUnit().getUnitName());
-//                }
-//
-//                if (item.getItemClassId() != null) {
-//                    newDt.setItemClassId(
-//                            item.getItemClassId().getItemClassId()
-//                    );
-//                }
-//            });
-//
-//            Long stocks = 0L;
-//
-//            if (hospitalId != null && dt.getItemId() != null) {
-//
-//                Long stockVal = stockFound.getAvailableStocks(
-//                        hospitalId,
-//                        deptIdStore,
-//                        dt.getItemId(),
-//                        hospDefinedDays
-//                );
-//
-//                stocks = stockVal != null ? stockVal : 0L;
-//            }
-//
-//            newDt.setStocks(stocks);
-//
-//            newDtList.add(newDt);
-//        }
-//
-//        response.setPatientPrescriptionDts(newDtList);
-//
-//        // ---------------- FOLLOW UP / REFERRAL / ADMISSION ----------------
-//        if (opdPatientObj != null) {
-//
-//            response.setFollowUpFlag(opdPatientObj.getFollowUpFlag());
-//
-//            if (isYes(opdPatientObj.getFollowUpFlag())) {
-//                response.setFollowUpDays(opdPatientObj.getFollowUpDays());
-//                response.setFollowUpDate(opdPatientObj.getFollowUpDate());
-//            }
-//
-//            response.setReferralFlag(opdPatientObj.getReferralFlag());
-//
-//            if (isYes(opdPatientObj.getReferralFlag())) {
-//                response.setReferralRemarks(opdPatientObj.getReferralRemarks());
-//                response.setReferralDate(opdPatientObj.getReferralDate());
-//            }
-//
-//            response.setAdmissionFlag(opdPatientObj.getAdmissionFlag());
-//
-//            if (isYes(opdPatientObj.getAdmissionFlag())) {
-//
-//                response.setAdmissionRemarks(
-//                        opdPatientObj.getAdmissionRemarks()
-//                );
-//
-//                response.setAdmissionAdvisedDate(
-//                        opdPatientObj.getAdmissionAdvisedDate()
-//                );
-//
-//                response.setAdmissionPriority(
-//                        opdPatientObj.getAdmissionPriority()
-//                );
-//
-//                if (opdPatientObj.getAdmissionCareLevel() != null) {
-//
-//                    response.setAdmissionCareLevel(
-//                            opdPatientObj.getAdmissionCareLevel().getCareId()
-//                    );
-//
-//                    response.setAdmissionCareLevelName(
-//                            opdPatientObj.getAdmissionCareLevel()
-//                                    .getCareLevelName()
-//                    );
-//                }
-//
-//                if (opdPatientObj.getAdmissionWardCategory() != null) {
-//
-//                    response.setAdmissionWardCategory(
-//                            opdPatientObj.getAdmissionWardCategory().getId()
-//                    );
-//
-//                    response.setAdmissionWardCategoryName(
-//                            opdPatientObj.getAdmissionWardCategory()
-//                                    .getCategoryName()
-//                    );
-//                }
-//
-//                if (opdPatientObj.getAdmissionWard() != null) {
-//
-//                    response.setAdmissionWard(
-//                            opdPatientObj.getAdmissionWard().getId()
-//                    );
-//
-//                    response.setAdmissionWardName(
-//                            opdPatientObj.getAdmissionWard()
-//                                    .getDepartmentName()
-//                    );
-//                }
-//
-//                response.setVacantBed(0);
-//                response.setOccupiedBed(0);
-//            }
-//        }
-//
-//        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
-//    }
     @Override
     @Transactional(readOnly = true)
     public ApiResponse<OpdPatientRecallResponce> getRecallVisit(Long visitId) {
@@ -2652,8 +2531,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
 
         detail.setScore(score);
-//        detail.setLastUpdatedBy(user.getFullName());
-//        detail.setLastUpdateDate(LocalDateTime.now());
     }
 
     private void deleteAllPsychiatricDetails(OpdPsychiatryAssessmentHeader header) {
@@ -2764,6 +2641,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 response.setSpecialty(projection.getSpecialty());
                 response.setDoctorName(projection.getDoctorName());
                 response.setVisitDateTime(projection.getVisitDateTime());
+                response.setPrescriptionHdId(projection.getPrescriptionHdId());
+                response.setPrescriptionStatus(projection.getPrescriptionStatus());
 
                 return response;
             });

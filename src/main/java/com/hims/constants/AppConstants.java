@@ -216,6 +216,8 @@ public class AppConstants {
     public static final String SOURCE_LAB = "lab source";
     public static final String INPATIENT_ISSUE = "IPD_ISSUE";
 
+    public static final String MANDATORY_DIAGNOSIS_MESSAGE = "One is mandatory: Working Diagnosis or ICD Diagnosis";
+
 
 
 

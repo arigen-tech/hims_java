@@ -1271,6 +1271,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
         g.genderName AS gender,
         p.patientAge AS age,
         d.departmentName AS specialty,
+        ph.prescriptionHdId AS prescriptionHdId,
+        ph.status AS prescriptionStatus,
         TRIM(CONCAT(
             COALESCE(u.firstName, ''), ' ',
             COALESCE(u.middleName, ''), ' ',
@@ -1284,6 +1286,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     LEFT JOIN p.patientRelation pr
     LEFT JOIN p.patientGender g
     LEFT JOIN d.departmentType dt
+    LEFT JOIN PatientPrescriptionHd ph ON ph.visit.id = v.id
     WHERE v.visitStatus = :visitStatus
       AND dt.departmentTypeCode = :departmentTypeCode
       AND (

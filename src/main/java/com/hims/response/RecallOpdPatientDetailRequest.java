@@ -2,6 +2,7 @@ package com.hims.response;
 
 import com.hims.request.OpdEntDetailsRequest;
 import com.hims.request.OpdObgDetailsRequest;
+import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OpdPsychiatricDetailsRequest;
 import lombok.Data;
 import lombok.Getter;
@@ -65,9 +66,10 @@ public class RecallOpdPatientDetailRequest {
     private Long hospitalId;
     private Long doctorId;
     private Long topicId;
-    private List<OpdPsychiatricDetailsRequest> details;
+    private List<OpdPsychiatricDetailsRequest> psychiatricDetailsRequests;
     private OpdObgDetailsRequest opdObgDetailsRequest;
     private OpdEntDetailsRequest entExaminationDetails;
+    private OpdOpthDetailsRequest ophthalmologyExaminationDetails;
 
     @Data
     public static class TreatmentRequest {
@@ -77,6 +79,7 @@ public class RecallOpdPatientDetailRequest {
         private String dispUnit;
         private String dosage;
         private Long frequencyId;
+        private String frequencyName;
         private Integer days;
         private Integer total;
         private String instruction;
@@ -99,7 +102,7 @@ public class RecallOpdPatientDetailRequest {
     public static class IcdDiagnosis {
         private Long id;
         private Long icdId;
-        private String icdDiagName;
+        private String icdDiagnosisName;
         private Boolean communicableDisease;
         private Boolean infectiousDisease;
     }
