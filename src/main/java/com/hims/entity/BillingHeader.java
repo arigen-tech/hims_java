@@ -152,4 +152,12 @@ public class BillingHeader {
     @JoinColumn(name = "RadOrderHd_id")
     private RadOrderHd radOrderHd;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "prescription_hd_id")
+    private PatientPrescriptionHd prescriptionHeader;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_issue_m_id")
+    private StoreIssueM storeIssueM;
+
 }

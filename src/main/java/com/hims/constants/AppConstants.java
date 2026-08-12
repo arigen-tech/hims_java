@@ -216,11 +216,14 @@ public class AppConstants {
     public static final String SOURCE_LAB = "lab source";
     public static final String INPATIENT_ISSUE = "IPD_ISSUE";
 
+    public static final String MANDATORY_DIAGNOSIS_MESSAGE = "One is mandatory: Working Diagnosis or ICD Diagnosis";
+
 
 
 
 
     public static final String ORDER_HD_NOT_FOUND_MSG = "Invalid order Id , Order Hd Id not found";
+    public static final String PRESCRIPTION_STATUS_CLOSED = "C";
 
     public static final String DUPLICATE_APPOINTMENT_MSG = "Patient already has an appointment with the same doctor on this day.";
     public static final String MSG_INVALID_FLAG = "Invalid flag";
