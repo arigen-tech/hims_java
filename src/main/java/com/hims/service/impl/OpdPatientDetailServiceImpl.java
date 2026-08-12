@@ -95,6 +95,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
     private final TransactionSequenceService transactionSequenceService;
     private final MasFrequencyRepository masFrequencyRepository;
+    private final BillingService billingService;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -114,6 +115,11 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     @Value("${app.laboratoryDepartment}")
     private Integer laboratoryDepartment;
 
+    @Value("${serviceCategoryLab}")
+    private String serviceCategoryLab;
+
+    @Value("${serviceCategoryRad}")
+    private String serviceCategoryRad;
 
     @Autowired
     HelperUtils helperUtils;
@@ -201,7 +207,11 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     .orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
 
             // Group investigations by department
-            Map<Long, Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>>> grouped = request.getInvestigation().stream().filter(Objects::nonNull).collect(Collectors.groupingBy(inv -> helperUtils.getDepartmentFromInvestigation(inv.getId()), Collectors.groupingBy(OpdPatientDetailCreateRequest.Investigation::getInvestigationDate)));
+            Map<Long, Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>>> grouped = request.getInvestigation()
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors
+                            .groupingBy(inv -> helperUtils.getDepartmentFromInvestigation(inv.getId()), Collectors.groupingBy(OpdPatientDetailCreateRequest.Investigation::getInvestigationDate)));
 
             if (grouped.containsKey(Long.valueOf(laboratoryDepartment))) {
                 log.info("Processing LAB investigations");
@@ -1097,62 +1107,26 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             dgOrderHd.setDepartmentId(deptId);
             dgOrderHd.setHospitalId(currentUser.getHospital().getId());
             dgOrderHd.setVisitId(visit);
-            dgOrderHd.setCreatedBy(currentUser.getFirstName());
-            dgOrderHd.setLastChgBy(currentUser.getFirstName());
+            dgOrderHd.setCreatedBy(currentUser.getFullName());
+            dgOrderHd.setLastChgBy(currentUser.getFullName());
             dgOrderHd.setCreatedOn(LocalDate.now());
             dgOrderHd.setLastChgDate(LocalDate.now());
             dgOrderHd.setLastChgTime(LocalTime.now().toString());
-
             DgOrderHd savedOrderHd = dgOrderHdRepo.save(dgOrderHd);
-            log.info("LAB Order Header saved - Order ID: {}", savedOrderHd.getId());
-//          For Billing if need some change in this billing process
-//
-//            log.info("Creating Billing Header...");
-//            BigDecimal totalAmount = BigDecimal.ZERO;
-//            BigDecimal discountAmount = BigDecimal.ZERO;
-//            BigDecimal taxAmount = BigDecimal.ZERO;
-//
-//            if (!investigations.isEmpty()) {
-//                for (OpdPatientDetailCreateRequest.Investigation inv : investigations) {
-//                    DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(inv.getId()).orElseThrow(() -> new RuntimeException("Investigation not found with ID: " + inv.getId()));
-//
-//                    BigDecimal amount = getInvestigationPrice(invEntity);
-//                    totalAmount = totalAmount.add(amount);
-//                }
-//            }
-//
-//            BillingHeader billingHeader = new BillingHeader();
-//            String billNo = randomNumGenerator.generateOrderNumber("OPD", true, true);
-//            billingHeader.setBillNo(billNo);
-//            billingHeader.setPatient(patient);
-//            billingHeader.setVisit(visit);
-//            billingHeader.setPatientDisplayName(patient.getPatientFn());
-//            billingHeader.setPatientAge(ageCalculator(patient.getPatientDob()));
-//            billingHeader.setPatientGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : "");
-//            billingHeader.setPatientAddress(patient.getPatientAddress1());
-//            billingHeader.setHospital(currentUser.getHospital());
-//            billingHeader.setHospitalName(currentUser.getHospital().getHospitalName());
-//            billingHeader.setHospitalAddress(currentUser.getHospital().getAddress());
-//            billingHeader.setHospitalMobileNo(currentUser.getHospital().getContactNumber());
-//            billingHeader.setHospitalGstin(currentUser.getHospital().getGstnNo());
-//            billingHeader.setReferredBy(visit.getDoctorName());
-//            billingHeader.setBillingDate(Instant.now());
-//            billingHeader.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
-//            billingHeader.setVisit(visit);
-//            billingHeader.setHdorder(savedOrderHd);
-//            billingHeader.setTotalAmount(totalAmount);
-//            billingHeader.setDiscountAmount(discountAmount);
-//            billingHeader.setNetAmount(totalAmount.subtract(discountAmount).add(taxAmount));
-//            billingHeader.setTaxTotal(taxAmount);
-//            billingHeader.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-//            billingHeader.setCreatedDt(Instant.now());
-//            billingHeader.setUpdatedDt(Instant.now());
-//            billingHeader.setBillDate(OffsetDateTime.now());
-//            billingHeader.setUpdatedAt(OffsetDateTime.now());
-//
-//            BillingHeader savedBillingHeader = billingHeaderRepository.save(billingHeader);
-//            log.info("Billing Header created successfully - Bill ID: {}", savedBillingHeader.getId());
 
+            MasServiceCategory masServiceCategory= masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
+            BigDecimal[] amounts = calculateLabBillingHdAmount(investigations, masServiceCategory);
+            BillingHeader billingHeader = billingService.saveBillingHeader(
+                    savedOrderHd, visit, currentUser,
+                    amounts[0], amounts[1], amounts[2],
+                    serviceCategoryLab, false
+            );
+            if (billingHeader == null) {
+                throw new SDDException("billing", 500, "Failed to create billing");
+            }
+            visit.setBillingHd(billingHeader);
+            visitRepository.save(visit);
+            log.info("LAB Order Header saved - Order ID: {}", savedOrderHd.getId());
 
             // Create lab order details
             for (OpdPatientDetailCreateRequest.Investigation invObj : investigations) {
@@ -1160,13 +1134,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     log.warn("Skipping null investigation object");
                     continue;
                 }
-
                 DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(invObj.getId()).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found with ID: " + invObj.getId()));
+                BigDecimal investigationPrice = helperUtils.getInvestigationPrice(invEntity);
+                BigDecimal discountAmount = BigDecimal.ZERO;
 
                 if (invEntity.getMainChargeCodeId() == null || invEntity.getSubChargeCodeId() == null) {
                     throw new SDDException("chargeCode", 400, "Charge codes not configured for investigation ID: " + invObj.getId());
                 }
-
                 DgOrderDt dgOrderDt = new DgOrderDt();
                 dgOrderDt.setInvestigationId(invEntity);
                 dgOrderDt.setOrderhdId(savedOrderHd);
@@ -1174,20 +1148,45 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 dgOrderDt.setOrderQty(1);
                 dgOrderDt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
                 dgOrderDt.setBillingStatus(savedOrderHd.getPaymentStatus());
-                dgOrderDt.setCreatedBy(currentUser.getFirstName());
-                dgOrderDt.setLastChgBy(currentUser.getFirstName());
+                dgOrderDt.setCreatedBy(currentUser.getFullName());
+                dgOrderDt.setLastChgBy(currentUser.getFullName());
                 dgOrderDt.setCreatedon(Instant.now());
                 dgOrderDt.setLastChgDate(LocalDate.now());
                 dgOrderDt.setMainChargecodeId(invEntity.getMainChargeCodeId().getChargecodeId());
                 dgOrderDt.setSubChargeid(invEntity.getSubChargeCodeId().getSubId());
                 dgOrderDt.setOrderTrackingStatus(labOrderedStatus);
                 dgOrderDt.setLastChgTime(LocalTime.now().toString());
-
                 DgOrderDt savedOrderDt = dgOrderDtRepo.save(dgOrderDt);
+                savedOrderDt.setBillingHd(billingHeader);
+                dgOrderDtRepo.save(dgOrderDt);
+                billingService.saveBillingDetail(billingHeader, savedOrderDt, investigationPrice , discountAmount, serviceCategoryLab, false);
                 log.debug("LAB Order Detail saved - Detail ID: {}", savedOrderDt.getId());
             }
         }
         log.info("LAB investigations processing completed");
+    }
+
+
+    private BigDecimal[] calculateLabBillingHdAmount(List<OpdPatientDetailCreateRequest.Investigation> investigations, MasServiceCategory serviceCategoryLab) {
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal totalDiscount = BigDecimal.ZERO;
+        BigDecimal totalTax = BigDecimal.ZERO;
+
+        for (OpdPatientDetailCreateRequest.Investigation inv : investigations) {
+            if (inv.getId() != null) {
+                DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(inv.getId()).orElse(null);
+                if (invEntity != null) {
+                    BigDecimal price = helperUtils.getInvestigationPrice(invEntity);
+                    totalAmount = totalAmount.add(price);
+
+                    if (serviceCategoryLab.getGstApplicable()) {
+                        totalTax = totalTax.add(price.multiply(BigDecimal.valueOf(serviceCategoryLab.getGstPercent())).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+                    }
+                }
+            }
+        }
+
+        return new BigDecimal[]{totalAmount, totalDiscount, totalTax};
     }
 
     /**
@@ -1208,27 +1207,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             log.debug("Processing {} RADIOLOGY investigations for date: {}", investigations.size(), appointmentDate);
 
-            // Calculate totals for radiology investigations
-            BigDecimal totalAmount = BigDecimal.ZERO;
-            BigDecimal discountAmount = BigDecimal.ZERO;
-            BigDecimal taxAmount = BigDecimal.ZERO;
-
-            for (OpdPatientDetailCreateRequest.Investigation inv : investigations) {
-                if (inv.getId() != null) {
-                    DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(inv.getId()).orElse(null);
-                    if (invEntity != null) {
-                        BigDecimal price = getInvestigationPrice(invEntity);
-                        totalAmount = totalAmount.add(price);
-
-                        // Calculate tax if applicable
-                        if (radiologyServiceCategory.getGstApplicable()) {
-                            taxAmount = taxAmount.add(price.multiply(BigDecimal.valueOf(radiologyServiceCategory.getGstPercent())).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
-                        }
-                    }
-                }
-            }
-
-            log.debug("Radiology totals - Amount: {}, Discount: {}, Tax: {}", totalAmount, discountAmount, taxAmount);
 
             // Create radiology order header
             RadOrderHd radOrderHd = new RadOrderHd();
@@ -1247,40 +1225,24 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             RadOrderHd savedRadOrderHd = radOrderHdRepository.save(radOrderHd);
             log.info("RADIOLOGY Order Header saved - Order ID: {}", savedRadOrderHd.getId());
+            if (savedRadOrderHd == null) {
+                throw new SDDException("RadOrderHeader",500,"Failed to create order header");
+            }
 
-//            // Create radiology billing header
-//            BillingHeader billingHeader = new BillingHeader();
-//            String billNo = randomNumGenerator.generateOrderNumber("RAD", true, true);
-//            billingHeader.setBillNo(billNo);
-//            billingHeader.setPatient(patient);
-//            billingHeader.setVisit(visit);
-//            billingHeader.setPatientDisplayName(patient.getFullName());
-//            billingHeader.setPatientAge(ageCalculator(patient.getPatientDob()));
-//            billingHeader.setPatientGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : "");
-//            billingHeader.setPatientAddress(patient.getPatientAddress1());
-//            billingHeader.setHospital(currentUser.getHospital());
-//            billingHeader.setHospitalName(currentUser.getHospital().getHospitalName());
-//            billingHeader.setHospitalAddress(currentUser.getHospital().getAddress());
-//            billingHeader.setHospitalMobileNo(currentUser.getHospital().getContactNumber());
-//            billingHeader.setHospitalGstin(currentUser.getHospital().getGstnNo());
-//            billingHeader.setServiceCategory(radiologyServiceCategory);
-//            billingHeader.setReferredBy(visit.getDoctorName());
-//            billingHeader.setBillingDate(Instant.now());
-//            billingHeader.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
-//            billingHeader.setVisit(visit);
-//            billingHeader.setRadOrderHd(savedRadOrderHd);
-//            billingHeader.setTotalAmount(totalAmount);
-//            billingHeader.setDiscountAmount(discountAmount);
-//            billingHeader.setNetAmount(totalAmount.subtract(discountAmount).add(taxAmount));
-//            billingHeader.setTaxTotal(taxAmount);
-//            billingHeader.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-//            billingHeader.setCreatedDt(Instant.now());
-//            billingHeader.setUpdatedDt(Instant.now());
-//            billingHeader.setBillDate(OffsetDateTime.now());
-//            billingHeader.setUpdatedAt(OffsetDateTime.now());
-//
-//            BillingHeader savedBillingHeader = billingHeaderRepository.save(billingHeader);
-//            log.info("RADIOLOGY Billing Header created - Bill ID: {}", savedBillingHeader.getId());
+            MasServiceCategory masServiceCategory= masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
+
+            BigDecimal[] amounts = calculateLabBillingHdAmount(investigations, masServiceCategory);
+
+            BillingHeader billingHeader = billingService.saveBillingHeader(
+                    savedRadOrderHd, visit, currentUser,
+                    amounts[0], amounts[1], amounts[2],
+                    serviceCategoryRad, true
+            );
+            if (billingHeader == null) {
+                throw new SDDException("billing",500,"Failed to create billing");
+            }
+            visit.setBillingHd(billingHeader);
+            visitRepository.save(visit);
 
             // Create radiology order and billing details
             for (OpdPatientDetailCreateRequest.Investigation invObj : investigations) {
@@ -1290,9 +1252,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 }
 
                 DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(invObj.getId()).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found with ID: " + invObj.getId()));
-
-                // Get investigation price
-                BigDecimal chargeAmount = getInvestigationPrice(invEntity);
+                BigDecimal investigationPrice = helperUtils.getInvestigationPrice(invEntity);
+                BigDecimal discountAmount = BigDecimal.ZERO;
 
                 // Create radiology order detail
                 RadOrderDt radOrderDt = new RadOrderDt();
@@ -1306,7 +1267,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 radOrderDt.setBillingStatus(savedRadOrderHd.getPaymentStatus());
                 radOrderDt.setCreatedon(Instant.now());
                 radOrderDt.setLastChgDate(Instant.now());
-                radOrderDt.setBillingHd(null); // Set billing header if needed
+                radOrderDt.setBillingHd(billingHeader);
                 radOrderDt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
                 radOrderDt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
                 radOrderDt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
@@ -1315,6 +1276,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                 RadOrderDt savedRadOrderDt = radOrderDtRepository.save(radOrderDt);
                 log.debug("RADIOLOGY Order Detail saved - Detail ID: {}", savedRadOrderDt.getId());
+
+                billingService.saveBillingDetail(billingHeader, savedRadOrderDt, investigationPrice, discountAmount, serviceCategoryRad, true);
+
+
 
 //                // Create radiology billing detail
 //                BillingDetail billingDetail = new BillingDetail();
@@ -1360,39 +1325,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         log.info("RADIOLOGY investigations processing completed");
     }
 
-    /**
-     * Gets the current investigation price from investigation_price_details table by investigation ID
-     * Tries multiple strategies:
-     * 1. Get active price for current date
-     * 2. Get latest price if no active price found
-     * 3. Fallback to investigation's direct price field
-     *
-     * @param investigation DgMasInvestigation entity
-     * @return BigDecimal price, or BigDecimal.ZERO if not found
-     */
-    private BigDecimal getInvestigationPrice(DgMasInvestigation investigation) {
-        if (investigation == null) {
-            return BigDecimal.ZERO;
-        }
-        LocalDate today = LocalDate.now();
-        Optional<MasInvestigationPriceDetails> priceDetail = masInvestigationPriceDetailsRepository.findActivePriceByInvestigationAndDate(investigation, today);
-
-        if (priceDetail.isPresent() && priceDetail.get().getPrice() != null) {
-            log.debug("Found active investigation price for investigation ID: {} - Price: {}", investigation.getInvestigationId(), priceDetail.get().getPrice());
-            return priceDetail.get().getPrice();
-        }
-        Optional<MasInvestigationPriceDetails> latestPrice = masInvestigationPriceDetailsRepository.findTopByInvestigationOrderByFromDateDesc(investigation);
-        if (latestPrice.isPresent() && latestPrice.get().getPrice() != null) {
-            log.debug("Found latest investigation price for investigation ID: {} - Price: {}", investigation.getInvestigationId(), latestPrice.get().getPrice());
-            return latestPrice.get().getPrice();
-        }
-        if (investigation.getPrice() != null) {
-            log.debug("Using fallback investigation direct price for investigation ID: {} - Price: {}", investigation.getInvestigationId(), investigation.getPrice());
-            return BigDecimal.valueOf(investigation.getPrice());
-        }
-        log.warn("No price found for investigation ID: {}", investigation.getInvestigationId());
-        return BigDecimal.ZERO;
-    }
 
 
     @Override

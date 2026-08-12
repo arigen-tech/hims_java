@@ -292,12 +292,12 @@ public class RadiologyServiceImpl implements RadiologyService {
         BigDecimal tax = BigDecimal.ZERO;
 
         for (LabRadioInvestigationRequest i : list) {
-            total = total.add(BigDecimal.valueOf(i.getActualAmount()));
-            discount = discount.add(BigDecimal.valueOf(i.getDiscountedAmount()));
+            total = total.add(i.getActualAmount());
+            discount = discount.add(i.getDiscountedAmount());
 
             if (cat != null && cat.getGstApplicable()) {
-                BigDecimal net = BigDecimal.valueOf(i.getActualAmount())
-                        .subtract(BigDecimal.valueOf(i.getDiscountedAmount()));
+                BigDecimal net = i.getActualAmount()
+                        .subtract(i.getDiscountedAmount());
 
                 tax = tax.add(
                         net.multiply(BigDecimal.valueOf(cat.getGstPercent()))
@@ -595,7 +595,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     /**
      * Optimized order details save with batch operations and pre-fetched data
      */
-    private void saveOrderDetailsOptimized(RadOrderHd hd, BillingHeader billing,
+    private void saveOrderDetailsOptimized(RadOrderHd hd, BillingHeader billingHd,
             List<LabRadioInvestigationRequest> investigations, String userName, User user,
             Map<Long, DgMasInvestigation> investigationsMap,
             Map<Long, DgInvestigationPackage> packagesMap,
@@ -605,16 +605,16 @@ public class RadiologyServiceImpl implements RadiologyService {
         
         for (LabRadioInvestigationRequest inv : investigations) {
             if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(inv.getType())) {
-                DgMasInvestigation entity = investigationsMap.get(inv.getId());
-                if (entity == null) {
+                DgMasInvestigation investigation = investigationsMap.get(inv.getId());
+                if (investigation == null) {
                     log.warn("Investigation not found with ID: {}", inv.getId());
                     continue;
                 }
                 
-                RadOrderDt dt = buildRadOrderDt(hd, billing, inv, entity.getSubChargeCodeId());
-                dt.setInvestigation(entity);
+                RadOrderDt dt = buildRadOrderDt(hd, billingHd, inv, investigation.getSubChargeCodeId());
+                dt.setInvestigation(investigation);
                 orderDetailsToSave.add(dt);
-                billingService.saveBillingDetail(billing, dt, inv, serviceCategoryRad, true);
+                billingService.saveBillingDetail(billingHd, dt, inv.getActualAmount(),inv.getDiscountedAmount(), serviceCategoryRad, true);
 
 
             } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(inv.getType())) {
@@ -629,11 +629,11 @@ public class RadiologyServiceImpl implements RadiologyService {
                 
                 for (PackageInvestigationMapping map : mappings) {
                     DgMasInvestigation invest = map.getInvestId();
-                    RadOrderDt dt = buildRadOrderDt(hd, billing, inv, invest.getSubChargeCodeId());
+                    RadOrderDt dt = buildRadOrderDt(hd, billingHd, inv, invest.getSubChargeCodeId());
                     dt.setInvestigation(invest);
                     dt.setPackageId(pkg);
                     orderDetailsToSave.add(dt);
-                    billingService.saveBillingDetailPackage(billing, pkg, inv, serviceCategoryRad);
+                    billingService.saveBillingDetailPackage(billingHd, pkg, inv, serviceCategoryRad);
                 }
             }
         }

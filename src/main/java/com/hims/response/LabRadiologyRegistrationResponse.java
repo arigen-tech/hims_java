@@ -3,6 +3,7 @@ package com.hims.response;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,6 @@ public class LabRadiologyRegistrationResponse {
     public static class BillingDto {
         String billingHdId;
         String investigationId;
-        Integer InvestigationAmount;
+        BigDecimal InvestigationAmount;
     }
 }

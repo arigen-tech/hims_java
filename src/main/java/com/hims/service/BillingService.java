@@ -65,7 +65,8 @@ public interface BillingService {
     BillingDetail saveBillingDetail(
             BillingHeader bhdId,
             Object dtId,
-            LabRadioInvestigationRequest investigation,
+            BigDecimal actualAmount,
+            BigDecimal discountedAmount,
             String serviceCategoryCode,
             boolean isRadiology);
 

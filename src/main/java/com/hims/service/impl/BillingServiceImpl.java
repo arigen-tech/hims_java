@@ -1358,7 +1358,13 @@ public class BillingServiceImpl implements BillingService {
 
         billingHeader.setReferredBy(vId.getDoctorName());
         billingHeader.setBillingDate(Instant.now());
-        billingHeader.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        //Lab Billing Condition for Hospital
+        if(vId.getHospital().getLabBilling().equalsIgnoreCase(AppConstants.STATUS_N)) {
+            billingHeader.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+        } else {
+            billingHeader.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        }
+
         if (isRadiology) {
             billingHeader.setRadOrderHd((RadOrderHd) orderHd);
         } else {
@@ -1379,7 +1385,8 @@ public class BillingServiceImpl implements BillingService {
     public BillingDetail saveBillingDetail(
             BillingHeader bhdId,
             Object dtId,
-            LabRadioInvestigationRequest investigation,
+            BigDecimal actualAmount,
+            BigDecimal discountedAmount,
             String serviceCategoryCode,
             boolean isRadiology) {
 
@@ -1411,8 +1418,8 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setCreatedAt(Instant.now());
         billingDetail.setQuantity(1);
 
-        BigDecimal actual = BigDecimal.valueOf(investigation.getActualAmount());
-        BigDecimal discount = BigDecimal.valueOf(investigation.getDiscountedAmount());
+        BigDecimal actual = actualAmount;
+        BigDecimal discount = discountedAmount;
 
         billingDetail.setBasePrice(actual);
         billingDetail.setDiscount(discount);
@@ -1436,7 +1443,11 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setNetAmount(net);
         billingDetail.setTotal(net);
 
-        billingDetail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        if(bhdId.getPaymentStatus().equalsIgnoreCase(AppConstants.PAYMENT_PAID)) {
+            billingDetail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+        } else {
+            billingDetail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        }
 
         return billingDetailRepository.save(billingDetail);
     }
@@ -1467,8 +1478,8 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setServiceId(0L);
         billingDetail.setChargeCost(BigDecimal.ZERO);
 
-        BigDecimal actual = BigDecimal.valueOf(req.getActualAmount());
-        BigDecimal discount = BigDecimal.valueOf(req.getDiscountedAmount());
+        BigDecimal actual = req.getActualAmount();
+        BigDecimal discount = req.getDiscountedAmount();
 
         billingDetail.setBasePrice(actual);
         billingDetail.setDiscount(discount);
