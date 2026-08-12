@@ -87,7 +87,7 @@ public class OPDPatientController {
     )
     public ApiResponse<String> opdVisionExaminationDetailsSave(@Valid @RequestBody OpdOpthDetailsRequest request) {
         log.info("Saving OPD vision examination details");
-        return opdOpthDetailsService.opdVisionExaminationDetailsSave(request);
+        return opdOpthDetailsService.opdVisionExaminationDetailsSaveOrUpdate(request);
     }
 
     @PostMapping("/createOpdPatientDetails")

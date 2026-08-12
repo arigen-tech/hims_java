@@ -36,9 +36,7 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
 
     @Override
     public ApiResponse<String> createOrUpdateObgDetails(Long visitId, OpdObgDetailsRequest request) {
-
             log.info("Creating or updating OBG details for visit ID: {}", visitId);
-            // Validate visitId
             if (visitId == null || visitId <= 0) {
                 log.warn("Invalid visit ID provided: {}", visitId);
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
@@ -50,19 +48,15 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
             Visit visit = visitRepository.findById(visitId)
                     .orElseThrow(() -> new RuntimeException("Visit not found"));
 
-            // Check if OBG details already exist for this visit
             OpdObgDetails entity = opdObgDetailsRepository.findByVisitId(visitId)
                     .orElse(new OpdObgDetails());
 
             boolean isNew = entity.getObgId() == null;
             String operation = isNew ? "Created" : "Updated";
-
-            // Basic info
             entity.setPatient(patient);
             entity.setVisit(visit);
             entity.setOpdDate(request.getOpdDate());
 
-            // GynaecologyHistory section
             if (request.getGynaecologyHistory() != null) {
                 var gh = request.getGynaecologyHistory();
                 entity.setGynFlow(gh.getGynFlow());
@@ -81,14 +75,10 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                 entity.setPerSpeculum(gh.getPerSpeculum());
                 entity.setBimanualExamination(gh.getBimanualExamination());
             }
-
-            // OBGDetails section
             if (request.getObgDetails() != null) {
                 var obg = request.getObgDetails();
-
                 // Obstetric History
                 entity.setObstetricHistoryNotes(obg.getObstetricHistory());
-
                 // Obstetric Score
                 if (obg.getObstetricScore() != null) {
                     var score = obg.getObstetricScore();
@@ -97,7 +87,6 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                     entity.setAbortions(score.getAbortion());
                     entity.setLivingChildren(score.getLivingChildren());
                 }
-
                 // Basic OBG fields
                 entity.setConceptionType(obg.getConception());
                 entity.setMarriedLifeYears(obg.getMarriedLife());
@@ -117,7 +106,6 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                 if (obg.getPv() != null) {
                     entity.setPvDone(obg.getPv());
                 }
-
                 // Uterus height
                 entity.setUterusHeight(obg.getInspectionHeightOfUterus());
                 entity.setUterusHeightSpecify(obg.getSpecify());
@@ -141,7 +129,6 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                     entity.setRespiratorySystem(se.getRespiratorySystem());
                     entity.setBreathSounds(se.getBreathSounds());
                 }
-
                 // CardiovascularSystem from OBGDetails
                 if (obg.getCardiovascularSystem() != null) {
                     var cv = obg.getCardiovascularSystem();
@@ -149,7 +136,6 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                     entity.setCardiovascularS2(cv.getS2());
                     entity.setCardiovascularMurmurs(cv.getMurmurs());
                 }
-
                 // PerVaginalExamination from OBGDetails
                 if (obg.getPerVaginalExamination() != null) {
                     var pv = obg.getPerVaginalExamination();

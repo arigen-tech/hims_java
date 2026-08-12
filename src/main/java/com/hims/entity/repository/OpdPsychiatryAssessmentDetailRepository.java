@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface OpdPsychiatryAssessmentDetailRepository extends JpaRepository<OpdPsychiatryAssessmentDetail,Long> {
     List<OpdPsychiatryAssessmentDetail> findByAssessmentHeaderId_AssessmentHeaderIdIn(Collection<Long> assessmentHeaderIds);
+
+    List<OpdPsychiatryAssessmentDetail> findByAssessmentHeaderId_AssessmentHeaderId(Long assessmentHeaderId);
 }

@@ -20,6 +20,8 @@ public class OpdOpthDetailsRequest {
     private String leDistanceUnaided;
     private String leDistancePinhole;
     private String leDistanceBestCorrected;
+    private String reRetinoscopyHValue;
+
 
     // -------- Near Vision --------
     private String reNearUnaided;
@@ -28,6 +30,8 @@ public class OpdOpthDetailsRequest {
     private String leNearUnaided;
     private String leNearPinhole;
     private String leNearBestCorrected;
+    private String leRetinoscopyHValue;
+
 
     // -------- Fundus --------
     private String fundusGlow;

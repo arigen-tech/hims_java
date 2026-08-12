@@ -38,229 +38,150 @@ public class OpdOpthDetailsImpl implements OpdOpthDetailsService {
 
     @Override
     @Transactional
-    public ApiResponse<String> opdVisionExaminationDetailsSave(OpdOpthDetailsRequest req) {
+    public ApiResponse<String> opdVisionExaminationDetailsSaveOrUpdate(OpdOpthDetailsRequest req) {
         try {
             User user = authUtil.getCurrentUser();
+
             if (user == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                        },
-                        "Current user not found", HttpStatus.NOT_FOUND.value());
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Current user not found",
+                        HttpStatus.NOT_FOUND.value()
+                );
             }
             Optional<OpdOpthDetails> optional = repository.findByVisit_Id(req.getVisitId());
+            OpdOpthDetails entity = optional.orElseGet(OpdOpthDetails::new);
+            entity.setPatient(patientRepository.getReferenceById(req.getPatientId()));
+            entity.setVisit(visitRepository.getReferenceById(req.getVisitId()));
+            entity.setOpdDate(req.getOpdDate());
 
-            OpdOpthDetails entity;
-            if (optional.isPresent()) {
-                // UPDATE CASE
-                entity = optional.get();
-                entity.setPatient(patientRepository.getReferenceById(req.getPatientId()));
-                entity.setVisit(visitRepository.getReferenceById(req.getVisitId()));
-                entity.setOpdDate(req.getOpdDate());
+            // Distance Vision
+            entity.setReDistanceUnaided(req.getReDistanceUnaided());
+            entity.setReDistancePinhole(req.getReDistancePinhole());
+            entity.setReDistanceBestCorrected(req.getReDistanceBestCorrected());
+            entity.setLeDistanceUnaided(req.getLeDistanceUnaided());
+            entity.setLeDistancePinhole(req.getLeDistancePinhole());
+            entity.setLeDistanceBestCorrected(req.getLeDistanceBestCorrected());
 
-                entity.setReDistanceUnaided(req.getReDistanceUnaided());
-                entity.setReDistancePinhole(req.getReDistancePinhole());
-                entity.setReDistanceBestCorrected(req.getReDistanceBestCorrected());
-                entity.setLeDistanceUnaided(req.getLeDistanceUnaided());
-                entity.setLeDistancePinhole(req.getLeDistancePinhole());
-                entity.setLeDistanceBestCorrected(req.getLeDistanceBestCorrected());
+            // Near Vision
+            entity.setReNearUnaided(req.getReNearUnaided());
+            entity.setReNearPinhole(req.getReNearPinhole());
+            entity.setReNearBestCorrected(req.getReNearBestCorrected());
+            entity.setLeNearUnaided(req.getLeNearUnaided());
+            entity.setLeNearPinhole(req.getLeNearPinhole());
+            entity.setLeNearBestCorrected(req.getLeNearBestCorrected());
 
-                entity.setReNearUnaided(req.getReNearUnaided());
-                entity.setReNearPinhole(req.getReNearPinhole());
-                entity.setReNearBestCorrected(req.getReNearBestCorrected());
-                entity.setLeNearUnaided(req.getLeNearUnaided());
-                entity.setLeNearPinhole(req.getLeNearPinhole());
-                entity.setLeNearBestCorrected(req.getLeNearBestCorrected());
+            // Retinoscopy
+            entity.setFundusGlow(req.getFundusGlow());
+            entity.setReRetinoscopyAxis(req.getReRetinoscopyAxis());
+            entity.setReRetinoscopyV(req.getReRetinoscopyV());
+            entity.setReRetinoscopyH(req.getReRetinoscopyH());
+            entity.setLeRetinoscopyAxis(req.getLeRetinoscopyAxis());
+            entity.setLeRetinoscopyV(req.getLeRetinoscopyV());
+            entity.setLeRetinoscopyH(req.getLeRetinoscopyH());
 
-                entity.setFundusGlow(req.getFundusGlow());
-                entity.setReRetinoscopyAxis(req.getReRetinoscopyAxis());
-                entity.setReRetinoscopyV(req.getReRetinoscopyV());
-                entity.setReRetinoscopyH(req.getReRetinoscopyH());
-                entity.setLeRetinoscopyAxis(req.getLeRetinoscopyAxis());
-                entity.setLeRetinoscopyV(req.getLeRetinoscopyV());
-                entity.setLeRetinoscopyH(req.getLeRetinoscopyH());
+            // Right Eye
+            entity.setReKeratometry(req.getReKeratometry());
+            entity.setRePachymetry(req.getRePachymetry());
+            entity.setReTonometry(req.getReTonometry());
+            entity.setReFieldOfVision(req.getReFieldOfVision());
+            entity.setReIolPower(req.getReIolPower());
 
-                entity.setReKeratometry(req.getReKeratometry());
-                entity.setRePachymetry(req.getRePachymetry());
-                entity.setReTonometry(req.getReTonometry());
-                entity.setReFieldOfVision(req.getReFieldOfVision());
-                entity.setReIolPower(req.getReIolPower());
+            // Left Eye
+            entity.setLeKeratometry(req.getLeKeratometry());
+            entity.setLePachymetry(req.getLePachymetry());
+            entity.setLeTonometry(req.getLeTonometry());
+            entity.setLeFieldOfVision(req.getLeFieldOfVision());
+            entity.setLeIolPower(req.getLeIolPower());
 
-                entity.setLeKeratometry(req.getLeKeratometry());
-                entity.setLePachymetry(req.getLePachymetry());
-                entity.setLeTonometry(req.getLeTonometry());
-                entity.setLeFieldOfVision(req.getLeFieldOfVision());
-                entity.setLeIolPower(req.getLeIolPower());
+            // Distance Prescription
+            entity.setReSphDist(req.getReSphDist());
+            entity.setReCylDist(req.getReCylDist());
+            entity.setReAxisDist(req.getReAxisDist());
+            entity.setLeSphDist(req.getLeSphDist());
+            entity.setLeCylDist(req.getLeCylDist());
+            entity.setLeAxisDist(req.getLeAxisDist());
 
-                entity.setReSphDist(req.getReSphDist());
-                entity.setReCylDist(req.getReCylDist());
-                entity.setReAxisDist(req.getReAxisDist());
-                entity.setLeSphDist(req.getLeSphDist());
-                entity.setLeCylDist(req.getLeCylDist());
-                entity.setLeAxisDist(req.getLeAxisDist());
+            // Near Prescription
+            entity.setReSphNear(req.getReSphNear());
+            entity.setReCylNear(req.getReCylNear());
+            entity.setReAxisNear(req.getReAxisNear());
+            entity.setLeSphNear(req.getLeSphNear());
+            entity.setLeCylNear(req.getLeCylNear());
+            entity.setLeAxisNear(req.getLeAxisNear());
 
-                entity.setReSphNear(req.getReSphNear());
-                entity.setReCylNear(req.getReCylNear());
-                entity.setReAxisNear(req.getReAxisNear());
-                entity.setLeSphNear(req.getLeSphNear());
-                entity.setLeCylNear(req.getLeCylNear());
-                entity.setLeAxisNear(req.getLeAxisNear());
+            // Spectacle
+            entity.setIpdValue(req.getIpdValue());
+            entity.setSpectacleUse(req.getSpectacleUse());
+            entity.setLensType(req.getLensType());
 
-                entity.setIpdValue(req.getIpdValue());
-                entity.setSpectacleUse(req.getSpectacleUse());
-                entity.setLensType(req.getLensType());
+            // Right Eye Examination
+            entity.setReEyebrow(req.getReEyebrow());
+            entity.setReEyelid(req.getReEyelid());
+            entity.setReCornea(req.getReCornea());
+            entity.setReConjunctiva(req.getReConjunctiva());
+            entity.setReFornix(req.getReFornix());
+            entity.setReLimbus(req.getReLimbus());
+            entity.setReSclera(req.getReSclera());
+            entity.setReAnteriorChamber(req.getReAnteriorChamber());
+            entity.setReIris(req.getReIris());
+            entity.setRePupil(req.getRePupil());
 
-                entity.setReEyebrow(req.getReEyebrow());
-                entity.setReEyelid(req.getReEyelid());
-                entity.setReCornea(req.getReCornea());
-                entity.setReConjunctiva(req.getReConjunctiva());
-                entity.setReFornix(req.getReFornix());
-                entity.setReLimbus(req.getReLimbus());
-                entity.setReSclera(req.getReSclera());
-                entity.setReAnteriorChamber(req.getReAnteriorChamber());
-                entity.setReIris(req.getReIris());
-                entity.setRePupil(req.getRePupil());
+            // Left Eye Examination
+            entity.setLeEyebrow(req.getLeEyebrow());
+            entity.setLeEyelid(req.getLeEyelid());
+            entity.setLeCornea(req.getLeCornea());
+            entity.setLeConjunctiva(req.getLeConjunctiva());
+            entity.setLeFornix(req.getLeFornix());
+            entity.setLeLimbus(req.getLeLimbus());
+            entity.setLeSclera(req.getLeSclera());
+            entity.setLeAnteriorChamber(req.getLeAnteriorChamber());
+            entity.setLeIris(req.getLeIris());
+            entity.setLePupil(req.getLePupil());
 
-                entity.setLeEyebrow(req.getLeEyebrow());
-                entity.setLeEyelid(req.getLeEyelid());
-                entity.setLeCornea(req.getLeCornea());
-                entity.setLeConjunctiva(req.getLeConjunctiva());
-                entity.setLeFornix(req.getLeFornix());
-                entity.setLeLimbus(req.getLeLimbus());
-                entity.setLeSclera(req.getLeSclera());
-                entity.setLeAnteriorChamber(req.getLeAnteriorChamber());
-                entity.setLeIris(req.getLeIris());
-                entity.setLePupil(req.getLePupil());
+            // Right Eye Fundus
+            entity.setReOpticDisc(req.getReOpticDisc());
+            entity.setReFoveaMacula(req.getReFoveaMacula());
+            entity.setReVitreousPosterior(req.getReVitreousPosterior());
+            entity.setReBloodVessels(req.getReBloodVessels());
+            entity.setReRetina(req.getReRetina());
 
+            // Left Eye Fundus
+            entity.setLeOpticDisc(req.getLeOpticDisc());
+            entity.setLeFoveaMacula(req.getLeFoveaMacula());
+            entity.setLeVitreousPosterior(req.getLeVitreousPosterior());
+            entity.setLeBloodVessels(req.getLeBloodVessels());
+            entity.setLeRetina(req.getLeRetina());
 
-                entity.setReOpticDisc(req.getReOpticDisc());
-                entity.setReFoveaMacula(req.getReFoveaMacula());
-                entity.setReVitreousPosterior(req.getReVitreousPosterior());
-                entity.setReBloodVessels(req.getReBloodVessels());
-                entity.setReRetina(req.getReRetina());
+            // Common audit fields
+            entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            entity.setLastUpdateDate(LocalDateTime.now());
+            entity.setLastUpdatedBy(user.getFullName());
+            entity.setReColourVision(req.getReColourVision());
+            entity.setLeColourVision(req.getLeColourVision());
 
-                entity.setLeOpticDisc(req.getLeOpticDisc());
-                entity.setLeFoveaMacula(req.getLeFoveaMacula());
-                entity.setLeVitreousPosterior(req.getLeVitreousPosterior());
-                entity.setLeBloodVessels(req.getLeBloodVessels());
-                entity.setLeRetina(req.getLeRetina());
-
-                entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-                entity.setLastUpdateDate(LocalDateTime.now());
+            // Set createdBy only for new record
+            if (optional.isEmpty()) {
                 entity.setCreatedBy(user.getFullName());
-                entity.setLastUpdatedBy(user.getFullName());
-                entity.setReColourVision(req.getReColourVision());
-                entity.setLeColourVision(req.getLeColourVision());
-            }else{
-                entity = new OpdOpthDetails();
-                entity.setPatient(patientRepository.getReferenceById(req.getPatientId()));
-                entity.setVisit(visitRepository.getReferenceById(req.getVisitId()));
-                entity.setOpdDate(req.getOpdDate());
-
-                entity.setReDistanceUnaided(req.getReDistanceUnaided());
-                entity.setReDistancePinhole(req.getReDistancePinhole());
-                entity.setReDistanceBestCorrected(req.getReDistanceBestCorrected());
-                entity.setLeDistanceUnaided(req.getLeDistanceUnaided());
-                entity.setLeDistancePinhole(req.getLeDistancePinhole());
-                entity.setLeDistanceBestCorrected(req.getLeDistanceBestCorrected());
-
-                entity.setReNearUnaided(req.getReNearUnaided());
-                entity.setReNearPinhole(req.getReNearPinhole());
-                entity.setReNearBestCorrected(req.getReNearBestCorrected());
-                entity.setLeNearUnaided(req.getLeNearUnaided());
-                entity.setLeNearPinhole(req.getLeNearPinhole());
-                entity.setLeNearBestCorrected(req.getLeNearBestCorrected());
-
-                entity.setFundusGlow(req.getFundusGlow());
-                entity.setReRetinoscopyAxis(req.getReRetinoscopyAxis());
-                entity.setReRetinoscopyV(req.getReRetinoscopyV());
-                entity.setReRetinoscopyH(req.getReRetinoscopyH());
-                entity.setLeRetinoscopyAxis(req.getLeRetinoscopyAxis());
-                entity.setLeRetinoscopyV(req.getLeRetinoscopyV());
-                entity.setLeRetinoscopyH(req.getLeRetinoscopyH());
-
-                entity.setReKeratometry(req.getReKeratometry());
-                entity.setRePachymetry(req.getRePachymetry());
-                entity.setReTonometry(req.getReTonometry());
-                entity.setReFieldOfVision(req.getReFieldOfVision());
-                entity.setReIolPower(req.getReIolPower());
-
-                entity.setLeKeratometry(req.getLeKeratometry());
-                entity.setLePachymetry(req.getLePachymetry());
-                entity.setLeTonometry(req.getLeTonometry());
-                entity.setLeFieldOfVision(req.getLeFieldOfVision());
-                entity.setLeIolPower(req.getLeIolPower());
-
-                entity.setReSphDist(req.getReSphDist());
-                entity.setReCylDist(req.getReCylDist());
-                entity.setReAxisDist(req.getReAxisDist());
-                entity.setLeSphDist(req.getLeSphDist());
-                entity.setLeCylDist(req.getLeCylDist());
-                entity.setLeAxisDist(req.getLeAxisDist());
-
-                entity.setReSphNear(req.getReSphNear());
-                entity.setReCylNear(req.getReCylNear());
-                entity.setReAxisNear(req.getReAxisNear());
-                entity.setLeSphNear(req.getLeSphNear());
-                entity.setLeCylNear(req.getLeCylNear());
-                entity.setLeAxisNear(req.getLeAxisNear());
-
-                entity.setIpdValue(req.getIpdValue());
-                entity.setSpectacleUse(req.getSpectacleUse());
-                entity.setLensType(req.getLensType());
-
-                entity.setReEyebrow(req.getReEyebrow());
-                entity.setReEyelid(req.getReEyelid());
-                entity.setReCornea(req.getReCornea());
-                entity.setReConjunctiva(req.getReConjunctiva());
-                entity.setReFornix(req.getReFornix());
-                entity.setReLimbus(req.getReLimbus());
-                entity.setReSclera(req.getReSclera());
-                entity.setReAnteriorChamber(req.getReAnteriorChamber());
-                entity.setReIris(req.getReIris());
-                entity.setRePupil(req.getRePupil());
-
-                entity.setLeEyebrow(req.getLeEyebrow());
-                entity.setLeEyelid(req.getLeEyelid());
-                entity.setLeCornea(req.getLeCornea());
-                entity.setLeConjunctiva(req.getLeConjunctiva());
-                entity.setLeFornix(req.getLeFornix());
-                entity.setLeLimbus(req.getLeLimbus());
-                entity.setLeSclera(req.getLeSclera());
-                entity.setLeAnteriorChamber(req.getLeAnteriorChamber());
-                entity.setLeIris(req.getLeIris());
-                entity.setLePupil(req.getLePupil());
-
-
-                entity.setReOpticDisc(req.getReOpticDisc());
-                entity.setReFoveaMacula(req.getReFoveaMacula());
-                entity.setReVitreousPosterior(req.getReVitreousPosterior());
-                entity.setReBloodVessels(req.getReBloodVessels());
-                entity.setReRetina(req.getReRetina());
-
-                entity.setLeOpticDisc(req.getLeOpticDisc());
-                entity.setLeFoveaMacula(req.getLeFoveaMacula());
-                entity.setLeVitreousPosterior(req.getLeVitreousPosterior());
-                entity.setLeBloodVessels(req.getLeBloodVessels());
-                entity.setLeRetina(req.getLeRetina());
-
-                entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-                entity.setLastUpdateDate(LocalDateTime.now());
-                entity.setCreatedBy(user.getFullName());
-                entity.setLastUpdatedBy(user.getFullName());
-                entity.setReColourVision(req.getReColourVision());
-                entity.setLeColourVision(req.getLeColourVision());
-
             }
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(
-                    "OPD Vision Examination details update and save successfully", new TypeReference<>() {
-                    });
+                    "OPD Vision Examination details saved/updated successfully",
+                    new TypeReference<>() {}
+            );
         } catch (Exception e) {
-            log.error("OPD Vision Examination details field: ", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                    AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+            log.error("OPD Vision Examination details error: ", e);
 
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
         }
     }
+
     public ApiResponse<OphthalmologyExaminationDetailResponse> getOphthalmologyExaminationDetail(Long visitId) {
 
         try {

@@ -42,23 +42,19 @@ public class OpdEntDetailsServiceImpl implements OpdEntDetailsService {
     public ApiResponse<String> createOrUpdateEntDetails(Long visitId, OpdEntDetailsRequest request) {
             log.info("Creating or updating ENT details for visit ID: {}", visitId);
 
-            // Validate visitId
             if (visitId == null || visitId <= 0) {
                 log.warn("Invalid visit ID provided: {}", visitId);
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid visit ID", HttpStatus.BAD_REQUEST.value());
             }
-
             User user = authUtil.getCurrentUser();
             Patient patient = patientRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new RuntimeException("Patient not found"));
             Visit visit = visitRepository.findById(visitId)
                     .orElseThrow(() -> new RuntimeException("Visit not found"));
 
-            // Check if ENT details already exist for this visit
             OpdEntDetails entity = opdEntDetailsRepository.findByVisitId(visitId)
                     .orElse(new OpdEntDetails());
-
             boolean isNew = entity.getEntId() == null;
             String operation = isNew ? "Created" : "Updated";
 
