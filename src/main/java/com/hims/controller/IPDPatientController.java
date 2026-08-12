@@ -515,6 +515,17 @@ public class IPDPatientController {
         return ipdPatientService.saveNursingCareProcedure(request);
     }
 
+    @GetMapping("getNursingCareProcedure/{inpatientId}")
+    public ResponseEntity<ApiResponse<List<NursingCareProcedure>>> getNursingCareProcedure(@PathVariable Long inpatientId) {
+
+        log.info("Request received to fetch Nursing Care Procedure details for inpatientId: {}", inpatientId);
+
+        ApiResponse<List<NursingCareProcedure>> response = ipdPatientService.getNursingCareProcedure(inpatientId);
+
+        return ResponseEntity.ok(response);
+    }
+
+
 
 
 

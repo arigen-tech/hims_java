@@ -13,10 +13,7 @@ import com.hims.service.IPDPatientService;
 import com.hims.mapper.IpMarDetailsMapper;
 import com.hims.mapper.IpProcedureTxnMapper;
 import com.hims.service.TransactionSequenceService;
-import com.hims.utils.AuthUtil;
-import com.hims.utils.HMISTransaction;
-import com.hims.utils.ResponseUtils;
-import com.hims.utils.SaveIpdBillingDetails;
+import com.hims.utils.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -205,6 +202,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasProcedureConsumableTemplateDetailRepository masProcedureConsumableTemplateDetailRepository;
     @Autowired
     IpConsumableTxnRepository ipConsumableTxnRepository;
+    @Autowired
+    InventoryUtils inventoryUtils;
 
 
     @Value("${ipd.admission.status.admitted}")
@@ -2962,27 +2961,21 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         request.getRequestQty()
                 );
 
-
                 //---------------------------------------------------
                 // Stock Ledger
                 //---------------------------------------------------
-
-                StoreStockLedger ledger = new StoreStockLedger();
-                ledger.setStockId(stock);
-                ledger.setTxnType(AppConstants.INPATIENT_ISSUE);
-                ledger.setTxnDate(LocalDate.now());
-                ledger.setTxnReferenceId(ipMedicineIssue.getIpMedicineIssueId());
-                ledger.setQtyBefore(currentQty);
-                ledger.setQtyOut(request.getRequestQty());
-                ledger.setQtyAfter(updatedQty);
-                ledger.setTxnSource(AppConstants.INPATIENT_ISSUE);
-                ledger.setCreatedBy(user.getUsername());
-                ledger.setCreatedDt(LocalDateTime.now());
-                ledger.setHospital(stock.getHospitalId());
-                ledger.setDept(stock.getDepartmentId());
-                storeStockLedgerRepository.save(ledger);
-
-                log.info("Stock ledger entry created for stockId={}, txnRefId={}", stock.getStockId(), ledger.getTxnReferenceId());
+                StoreStockLedgerRequest  storeStockLedgerRequest=new StoreStockLedgerRequest();
+                storeStockLedgerRequest.setStockId(stock.getStockId());
+                storeStockLedgerRequest.setTxnType(AppConstants.INPATIENT_ISSUE);
+                storeStockLedgerRequest.setTxnReferenceId(ipMedicineIssue.getIpMedicineIssueId());
+                storeStockLedgerRequest.setQtyBefore(currentQty);
+                storeStockLedgerRequest.setQtyOut(request.getRequestQty());
+                storeStockLedgerRequest.setQtyAfter(updatedQty);
+                storeStockLedgerRequest.setTxnSource(AppConstants.INPATIENT_ISSUE);
+                storeStockLedgerRequest.setCreatedBy(user.getUsername());
+                storeStockLedgerRequest.setHospitalId(stock.getHospitalId().getId());
+                storeStockLedgerRequest.setDepartmentId(stock.getDepartmentId().getId());
+                inventoryUtils.updateStoreStockLedger(storeStockLedgerRequest);
 
                 //---------------------------------------------------
                 // Billing
@@ -3593,6 +3586,31 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<NursingCareProcedure>> getNursingCareProcedure(Long inpatientId) {
+
+        List<NursingCareProcedureProjection> projections =
+                ipConsumableTxnRepository.getNursingCareProcedureByInpatientId(inpatientId);
+
+        List<NursingCareProcedure> result = projections.stream().map(projection -> {
+            NursingCareProcedure response = new NursingCareProcedure();
+            response.setItemId(projection.getItemId());
+            response.setItemName(projection.getItemName());
+            response.setQty(projection.getQty());
+            response.setProcedureTxnId(projection.getProcedureTxnId());
+            response.setProcedureName(projection.getProcedureName());
+            response.setDateTime(projection.getDateTime());
+            response.setUsedBy(projection.getUsedBy());
+            response.setBatchNo(projection.getBatchNo());
+            response.setExpiryDate(projection.getExpiryDate());
+            response.setRemark(projection.getRemark());
+            return response;
+        }).collect(Collectors.toList());
+
+        return ResponseUtils.createSuccessResponse(result, new TypeReference<List<NursingCareProcedure>>() {});
+    }
+
 
     @Override
     @Transactional
@@ -3600,7 +3618,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         log.info("saveNursingCareProcedure started for {} record(s)", requests != null ? requests.size() : 0);
 
-        User user = authUtil.getCurrentUser();try {
+        User user = authUtil.getCurrentUser();
+        Long departmentId=authUtil.getCurrentDepartmentId();
+        try {
 
             for (ConsumableEntryRequest request : requests) {
                 // Validate Request
@@ -3619,7 +3639,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
                 // Find Batch Stock
 
-                StoreItemBatchStock stock = storeItemBatchStockRepository.findByItemIdAndBatchNoForUpdate(request.getItemId(), request.getBatchNo(), request.getDepartmentId())
+                StoreItemBatchStock stock = storeItemBatchStockRepository.findByItemIdAndBatchNoForUpdate(request.getItemId(), request.getBatchNo(),departmentId)
                                 .orElseThrow(() -> new RuntimeException("Batch not found for itemId=" + request.getItemId() + ", batchNo=" + request.getBatchNo()));
 
                 BigDecimal currentQty = stock.getClosingStock() != null ? BigDecimal.valueOf(stock.getClosingStock()) : BigDecimal.ZERO;
@@ -3693,23 +3713,19 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 );
 
                 // Stock Ledger
+                StoreStockLedgerRequest storeStockLedgerRequest=new StoreStockLedgerRequest();
 
-                StoreStockLedger ledger = new StoreStockLedger();
-                ledger.setStockId(stock);
-                ledger.setTxnType(AppConstants.INPATIENT_ISSUE);
-                ledger.setTxnDate(LocalDate.now());
-                ledger.setTxnReferenceId(ipConsumableTxn.getConsumableTxnId());
-                ledger.setQtyBefore(currentQty);
-                ledger.setQtyOut(request.getRequestQty());
-                ledger.setQtyAfter(updatedQty);
-                ledger.setTxnSource(AppConstants.INPATIENT_ISSUE);
-                ledger.setCreatedBy(user.getUsername());
-                ledger.setCreatedDt(LocalDateTime.now());
-                ledger.setHospital(stock.getHospitalId());
-                ledger.setDept(stock.getDepartmentId());
-                storeStockLedgerRepository.save(ledger);
-
-                log.info("Stock ledger entry created for stockId={}, txnRefId={}", stock.getStockId(), ledger.getTxnReferenceId());
+                storeStockLedgerRequest.setStockId(stock.getStockId());
+                storeStockLedgerRequest.setTxnType(AppConstants.INPATIENT_ISSUE);
+                storeStockLedgerRequest.setTxnReferenceId(ipConsumableTxn.getConsumableTxnId());
+                storeStockLedgerRequest.setQtyBefore(currentQty);
+                storeStockLedgerRequest.setQtyOut(request.getRequestQty());
+                storeStockLedgerRequest.setQtyAfter(updatedQty);
+                storeStockLedgerRequest.setTxnSource(AppConstants.INPATIENT_ISSUE);
+                storeStockLedgerRequest.setCreatedBy(user.getUsername());
+                storeStockLedgerRequest.setHospitalId(stock.getHospitalId().getId());
+                storeStockLedgerRequest.setDepartmentId(stock.getDepartmentId().getId());
+                inventoryUtils.updateStoreStockLedger(storeStockLedgerRequest);
 
                 // Billing
                 BigDecimal amount = calculateAmount(stock.getMrpPerUnit(), request.getRequestQty());
