@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.PatientPrescriptionDt;
 import com.hims.entity.projection.PrescriptionDetailProjection;
+import com.hims.response.PatientPrescriptionDetailsResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -61,5 +62,26 @@ public interface PatientPrescriptionDtRepository extends JpaRepository<PatientPr
     List<PrescriptionDetailProjection> findPrescriptionDetailsByPatientIdWithinLimitedDays(
             @Param("patientId") Long patientId,
             @Param("prescriptionHistoryDays") Integer prescriptionHistoryDays);
+
+    @Query(value = """
+    SELECT new com.hims.response.PatientPrescriptionDetailsResponse(
+        ppdt.prescriptionHdId,
+        ppdt.prescriptionDtId,
+        ppdt.itemId,
+        msi.nomenclature,
+        ppdt.dosage,
+        ppdt.frequency,
+        ppdt.days,
+        ppdt.total,
+        ppdt.total,
+        ppdt.status
+        )
+        FROM PatientPrescriptionDt ppdt
+        LEFT JOIN ppdt.prescriptionHeader pph
+        LEFT JOIN MasStoreItem msi ON ppdt.itemId = msi.itemId
+    WHERE pph.prescriptionHdId = :prescriptionHeaderId
+    AND ppdt.status = :pendingStatus
+    """)
+    List<PatientPrescriptionDetailsResponse> findPendingPrescriptionsDetailsWrtHeader(Long prescriptionHeaderId, String pendingStatus);
 
 }

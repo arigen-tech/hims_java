@@ -109,4 +109,11 @@ public class BillingDetail {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collected_by", referencedColumnName = "user_id")
     private User collectedBy;
+
+    @Column(name = "hsn_code",length = 100)
+    private String hsnCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_id")
+    private MasStoreItem item;
 }
