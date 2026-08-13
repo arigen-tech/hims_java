@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -30,6 +31,16 @@ public interface InpatientRepository extends JpaRepository<Inpatient,Long> {
     );
 
     Optional<Inpatient> findTopByPatient_IdOrderByInpatientIdDesc(Long patientId);
+
+    @Query("""
+            SELECT i
+            FROM Inpatient i
+            JOIN IpdBillingHeader bh ON bh.inpatientId = i
+            LEFT JOIN FETCH i.admittingWardId
+            LEFT JOIN FETCH i.room
+            WHERE i.admissionStatus.admissionStatusId = :admissionStatus
+            """)
+    List<Inpatient> findAdmittedInpatientsWithBillingHeader(@Param("admissionStatus") Long admissionStatus);
 
     @Query(value = """
 SELECT
