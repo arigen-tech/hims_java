@@ -129,6 +129,13 @@ public class IPDPatientController {
         return ipdPatientService.saveNursingMedicalAssessment(request);
     }
 
+    @GetMapping("getNursingMedicalAssessment/{inpatientId}")
+    public ResponseEntity<ApiResponse<IpNursingMedicalAssessmentResponse>> getNursingMedicalAssessment(@PathVariable Long inpatientId) {
+        log.info("Request received to fetch IP nursing medical assessment for inpatientId: {}", inpatientId);
+        ApiResponse<IpNursingMedicalAssessmentResponse> response = ipdPatientService.getNursingMedicalAssessment(inpatientId);
+        return ResponseEntity.ok(response);
+    }
+
     @PutMapping("updateAdmissionInternalStatus/{inpatientId}/{internalStatusId}")
     public ApiResponse<String> updateAdmissionInternalStatus(@PathVariable Long inpatientId,@PathVariable Long internalStatusId) {
 

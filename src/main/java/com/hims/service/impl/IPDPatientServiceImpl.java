@@ -11,6 +11,7 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
 import com.hims.mapper.IpMarDetailsMapper;
+import com.hims.mapper.IpNursingMedicalAssessmentMapper;
 import com.hims.mapper.IpProcedureTxnMapper;
 import com.hims.service.TransactionSequenceService;
 import com.hims.utils.*;
@@ -105,6 +106,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasBedStatusRepo masBedStatusRepo;
     @Autowired
     IpNursingMedicalAssessmentRepository ipNursingMedicalAssessmentRepository;
+    @Autowired
+    private IpNursingMedicalAssessmentMapper ipNursingMedicalAssessmentMapper;
     @Autowired
     MasIpdInternalStatusRepository masIpdInternalStatusRepository;
     @Autowired
@@ -598,6 +601,27 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             log.error("Error while saving IP nursing medical assessment. inpatientId: {}, hospitalId: {}", request.getInpatientId(), request.getHospitalId(), exception);
 
             throw new RuntimeException("Unable to save IP nursing medical assessment: " + exception.getMessage(), exception);
+        }
+    }
+
+    @Override
+    public ApiResponse<IpNursingMedicalAssessmentResponse> getNursingMedicalAssessment(Long inpatientId) {
+        log.info("Fetching IP nursing medical assessment for inpatientId: {}", inpatientId);
+        try {
+            Optional<IpNursingMedicalAssessment> assessment = ipNursingMedicalAssessmentRepository.findByInpatient_InpatientId(inpatientId);
+            
+            if (assessment.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Nursing medical assessment not found for inpatient", HttpStatus.NOT_FOUND.value());
+            }
+
+            IpNursingMedicalAssessmentResponse response = ipNursingMedicalAssessmentMapper.mapToResponse(assessment.get());
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching IP nursing medical assessment for inpatientId: {}", inpatientId, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 

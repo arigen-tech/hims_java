@@ -33,11 +33,13 @@ public interface IPDPatientService {
 
     ApiResponse<String> saveNursingMedicalAssessment(IpNursingMedicalAssessmentRequest request);
 
+    ApiResponse<IpNursingMedicalAssessmentResponse> getNursingMedicalAssessment(Long inpatientId);
+
     ApiResponse<String> updateAdmissionInternalStatus(Long inpatientId,Long internalStatusId);
 
     ApiResponse<List<IpVitalsResponse>> getVitalsDetails(Long inpatientId);
 
-    ApiResponse<String> saveVitalsDetails(IpVitalsRequest request);
+    ApiResponse<String> saveVitalsDetails(IpVitalsRequest request);;
 
     ApiResponse<String> saveIntakeOutputDetails(@Valid IpIntakeOutputSaveRequest request);
 
