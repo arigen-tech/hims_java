@@ -158,6 +158,14 @@ public class Inpatient {
     @Column(name = "icd",columnDefinition = "text")
     private String icd;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "doctor_id")
+    private User doctor;
+
+    @Column(name = "doctor_name")
+    private String  doctorName;
+
+
 
 
 
