@@ -3054,6 +3054,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         request.getRequestQty()
                 );
 
+
                 //---------------------------------------------------
                 // Stock Ledger
                 //---------------------------------------------------

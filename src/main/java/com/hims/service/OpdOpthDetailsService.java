@@ -7,7 +7,7 @@ import com.hims.response.OpdTemplateResponse;
 import com.hims.response.OphthalmologyExaminationDetailResponse;
 
 public interface OpdOpthDetailsService {
-    ApiResponse<String> opdVisionExaminationDetailsSave(OpdOpthDetailsRequest request);
+    ApiResponse<String> opdVisionExaminationDetailsSaveOrUpdate(OpdOpthDetailsRequest request);
 
     ApiResponse<OphthalmologyExaminationDetailResponse> getOphthalmologyExaminationDetail(Long visitId);
 }

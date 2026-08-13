@@ -21,4 +21,6 @@ public class OpdReportListResponse {
     private String specialty;
     private String doctorName;
     private String visitDateTime;
+    private Long prescriptionHdId;
+    private String prescriptionStatus;
 }

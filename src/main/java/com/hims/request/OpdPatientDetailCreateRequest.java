@@ -24,7 +24,7 @@ public class OpdPatientDetailCreateRequest {
     private Long doctorId;
     private Long opdPatientDetailId;
     private Long topicId;
-    private List<OpdPsychiatricDetailsRequest> details;
+    private List<OpdPsychiatricDetailsRequest> psychiatricDetailsRequests;
 
 
     @Size(max = 40)
