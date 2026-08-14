@@ -9,6 +9,7 @@ public record TreatmentData(
         String frequency,
         Integer days,
         BigDecimal total,
-        String instruction
+        String instruction,
+        Integer flag
 ) {
 }

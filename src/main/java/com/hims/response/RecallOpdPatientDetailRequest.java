@@ -85,16 +85,16 @@ public class RecallOpdPatientDetailRequest {
         private String instruction;
         private Long itemClassId;
         private Integer adispQty;
+        private Long flag;
     }
 
     @Data
     public static class InvestigationRequest {
         private Long id;
-        private String name;
+        private String investigationName;
         private LocalDate investigationDate;
         private Long investigationId;
-        private String templateSource;
-        private List<Long> templateIds;
+        private Long flag;
     }
 
     @Getter

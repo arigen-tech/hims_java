@@ -122,7 +122,7 @@ public class OpdPatientDetailCreateRequest {
     @Getter
     @Setter
     public static class Investigation {
-        private Long id;
+        private Long investigationId;
         private String investigationName;
         private LocalDate investigationDate;
         private String CategoryCode;
