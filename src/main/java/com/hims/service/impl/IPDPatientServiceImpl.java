@@ -220,7 +220,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Value("${ip.internal.status.rw.id}")
     Long ipInternalStatusRwId;
 
-    @Value("${ipd.service.category.id}")
+    @Value("${ipd.service.category.ipd.consultation.id}")
     Long ipdServiceCategoryId;
 
     @Value("${ipd.investigation.service.category.id}")
@@ -511,7 +511,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         "Hospital not found", HttpStatus.NOT_FOUND.value());
 
             }
-            IpNursingMedicalAssessment assessment = new IpNursingMedicalAssessment();
+            Optional<IpNursingMedicalAssessment> existingAssessment = ipNursingMedicalAssessmentRepository
+                    .findTopByInpatientInpatientIdOrderByAssessmentIdDesc(request.getInpatientId());
+            IpNursingMedicalAssessment assessment = existingAssessment.orElseGet(IpNursingMedicalAssessment::new);
+            boolean isNewAssessment = existingAssessment.isEmpty();
 
             assessment.setInpatient(inpatient.get());
             assessment.setHospital(hospital.get());
@@ -577,8 +580,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             assessment.setSystemPaExamination(request.getPaExamination());
             assessment.setSystemCnsExamination(request.getCnsExamination());
             assessment.setProvisionalDiagnosis(request.getProvisionalDiagnosis());
-            assessment.setCreatedBy(user.getFullName());
-            assessment.setCreatedDate(LocalDateTime.now());
+            if (isNewAssessment) {
+                assessment.setCreatedBy(user.getFullName());
+                assessment.setCreatedDate(LocalDateTime.now());
+            }
             assessment.setUpdatedBy(user.getFullName());
             assessment.setUpdatedDate(LocalDateTime.now());
 
