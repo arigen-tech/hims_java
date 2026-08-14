@@ -524,6 +524,15 @@ public class IPDPatientController {
 
         return ResponseEntity.ok(response);
     }
+    @GetMapping("getNursingMedicalAssessment/{inpatientId}")
+    public ResponseEntity<ApiResponse<IpNursingMedicalAssessmentResponse>> getNursingMedicalAssessment(@PathVariable Long inpatientId ){
+
+        log.info("Request received to fetch nursing medical assessment details for inpatientId: {}", inpatientId);
+
+        ApiResponse<IpNursingMedicalAssessmentResponse> response = ipdPatientService.getNursingMedicalAssessment(inpatientId);
+
+        return ResponseEntity.ok(response);
+    }
 
 
 

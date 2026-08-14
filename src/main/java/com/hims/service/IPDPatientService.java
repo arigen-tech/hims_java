@@ -33,6 +33,8 @@ public interface IPDPatientService {
 
     ApiResponse<String> saveNursingMedicalAssessment(IpNursingMedicalAssessmentRequest request);
 
+    ApiResponse<IpNursingMedicalAssessmentResponse> getNursingMedicalAssessment(Long inpatientId);
+
     ApiResponse<String> updateAdmissionInternalStatus(Long inpatientId,Long internalStatusId);
 
     ApiResponse<List<IpVitalsResponse>> getVitalsDetails(Long inpatientId);

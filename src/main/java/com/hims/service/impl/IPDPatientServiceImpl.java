@@ -204,6 +204,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     IpConsumableTxnRepository ipConsumableTxnRepository;
     @Autowired
     InventoryUtils inventoryUtils;
+    @Autowired
+    ItemClassBillSubcategoryMappingRepository itemClassBillSubcategoryMappingRepository;
 
 
     @Value("${ipd.admission.status.admitted}")
@@ -633,6 +635,93 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             throw new RuntimeException("Unable to save IP vitals for inpatient ID: " + inpatient.getInpatientId() + ". Error: " + exception.getMessage(), exception);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<IpNursingMedicalAssessmentResponse> getNursingMedicalAssessment(Long inpatientId) {
+
+        log.info("Fetching nursing medical assessment details for inpatientId: {}", inpatientId);
+
+        try {
+            if (!inpatientRepository.existsById(inpatientId)) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Inpatient not found", HttpStatus.NOT_FOUND.value());
+            }
+
+            Optional<IpNursingMedicalAssessmentProjection> assessment = ipNursingMedicalAssessmentRepository
+                    .getNursingMedicalAssessmentByInpatientId(inpatientId);
+
+            if (assessment.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "No nursing medical assessment details found for inpatient ID: " + inpatientId, HttpStatus.NOT_FOUND.value());
+            }
+
+            IpNursingMedicalAssessmentResponse response = mapNursingMedicalAssessmentToResponse(assessment.get());
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
+            });
+
+        } catch (Exception exception) {
+            log.error("Error while fetching nursing medical assessment details for inpatientId: {}", inpatientId, exception);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    private IpNursingMedicalAssessmentResponse mapNursingMedicalAssessmentToResponse(IpNursingMedicalAssessmentProjection assessment) {
+        IpNursingMedicalAssessmentResponse response = new IpNursingMedicalAssessmentResponse();
+
+        response.setAssessmentId(assessment.getAssessmentId());
+        response.setInpatientId(assessment.getInpatientId());
+        response.setHospitalId(assessment.getHospitalId());
+        response.setHospitalName(assessment.getHospitalName());
+        response.setConsciousness(assessment.getConsciousness());
+        response.setGcsScore(assessment.getGcsScore());
+        response.setPainScore(assessment.getPainScore());
+        response.setMobilityStatus(assessment.getMobilityStatus());
+        response.setFallRisk(assessment.getFallRisk());
+        response.setPressureSoreRisk(assessment.getPressureSoreRisk());
+        response.setSkinCondition(assessment.getSkinCondition());
+        response.setSkinRemarks(assessment.getSkinRemarks());
+        response.setIvLinePresent(assessment.getIvLinePresent());
+        response.setIvSite(assessment.getIvSite());
+        response.setCatheterPresent(assessment.getCatheterPresent());
+        response.setCatheterType(assessment.getCatheterType());
+        response.setDrainPresent(assessment.getDrainPresent());
+        response.setDrainType(assessment.getDrainType());
+        response.setNutritionRisk(assessment.getNutritionRisk());
+        response.setNutritionRemarks(assessment.getNutritionRemarks());
+        response.setInfectionRisk(assessment.getInfectionRisk());
+        response.setInfectionRemarks(assessment.getInfectionRemarks());
+        response.setPatientOrientationDone(assessment.getPatientOrientationDone());
+        response.setRelativeOrientationDone(assessment.getRelativeOrientationDone());
+        response.setNursingCarePlan(assessment.getNursingCarePlan());
+        response.setChiefComplaint(assessment.getChiefComplaint());
+        response.setHistoryPresentIllness(assessment.getHistoryPresentIllness());
+        response.setFamilyHistory(assessment.getFamilyHistory());
+        response.setMedicationHistory(assessment.getMedicationHistory());
+        response.setAllergies(assessment.getAllergies());
+        response.setPulse(assessment.getPulse());
+        response.setSystolicBp(assessment.getSystolicBp());
+        response.setDiastolicBp(assessment.getDiastolicBp());
+        response.setTemperature(assessment.getTemperature());
+        response.setTemperatureUnit(assessment.getTemperatureUnit());
+        response.setRespiratoryRate(assessment.getRespiratoryRate());
+        response.setSpo2(assessment.getSpo2());
+        response.setGeneralExaminationNotes(assessment.getGeneralExaminationNotes());
+        response.setRsExamination(assessment.getRsExamination());
+        response.setCvsExamination(assessment.getCvsExamination());
+        response.setPaExamination(assessment.getPaExamination());
+        response.setCnsExamination(assessment.getCnsExamination());
+        response.setProvisionalDiagnosis(assessment.getProvisionalDiagnosis());
+        response.setStatus(assessment.getStatus());
+        response.setCreatedBy(assessment.getCreatedBy());
+        response.setCreatedDate(assessment.getCreatedDate());
+        response.setUpdatedBy(assessment.getUpdatedBy());
+        response.setUpdatedDate(assessment.getUpdatedDate());
+
+        return response;
     }
 
     @Override
@@ -1499,7 +1588,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     private Inpatient saveInpatientDetails(IpdPatientRequest request, Patient patient, Visit visit) {
         User user = authUtil.getCurrentUser();
-
+        // find doctor
+        User user1= userRepo.findById(request.getTreatingDoctor()).orElseThrow();
         Inpatient inpatient = new Inpatient();
 
         inpatient.setPatient(patient);
@@ -1518,6 +1608,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         inpatient.setRoom(masRoomRepository.findById(request.getRoomId()).orElseThrow());
         inpatient.setBed(masBedRepository.findById(request.getBedId()).orElseThrow());
         inpatient.setInitialDiagnosis(request.getWorkingDiagnosis());
+        inpatient.setDoctor(user1);
+        inpatient.setDoctorName(user1.getFullName());
+
 
         if (request.getAdmissionTypeId() != null) {
             inpatient.setAdmissionType(masAdmissionTypeRepository.getReferenceById(request.getAdmissionTypeId()));
@@ -2961,6 +3054,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         request.getRequestQty()
                 );
 
+
                 //---------------------------------------------------
                 // Stock Ledger
                 //---------------------------------------------------
@@ -2985,7 +3079,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 BigDecimal gstAmount = calculateGST(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
                 BigDecimal netAmount = calculateNetAmount(stock.getMrpPerUnit(), request.getRequestQty(), stock.getGstPercent());
                 Optional<MasIpdServiceCategory> masIpdServiceCategory = masIpdServiceCategoryRepository.findById(IPDServiceCategoryDrug);
-
+                ItemClassBillSubcategoryMapping mapping = itemClassBillSubcategoryMappingRepository.findByItemClass_ItemClassId(stock.getItemId().getItemClassId().getItemClassId());
+                MasIpdServiceSubcategory subcategory = null;
+                if (mapping != null && mapping.getIpdBillSubcategoryId() != null) {
+                    subcategory = masIpdServiceSubcategoryRepository.findById(mapping.getIpdBillSubcategoryId().getSubcategoryId()).orElse(null);
+                }
                 saveIpdBillingDetails.saveInpatientBillingDetails(inpatient,
                         stock.getMrpPerUnit(),
                         request.getRequestQty(),
@@ -2995,7 +3093,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         gstAmount,
                         netAmount,
                         masIpdServiceCategory.get(),
-                        null,
+                        subcategory,
                         stock.getItemId().getNomenclature()
                 );
 
@@ -3717,7 +3815,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
                 storeStockLedgerRequest.setStockId(stock.getStockId());
                 storeStockLedgerRequest.setTxnType(AppConstants.INPATIENT_ISSUE);
-                storeStockLedgerRequest.setTxnReferenceId(ipConsumableTxn.getConsumableTxnId());
+                storeStockLedgerRequest.setTxnReferenceId(ipMedicineIssue.getIpMedicineIssueId());
                 storeStockLedgerRequest.setQtyBefore(currentQty);
                 storeStockLedgerRequest.setQtyOut(request.getRequestQty());
                 storeStockLedgerRequest.setQtyAfter(updatedQty);
@@ -3739,6 +3837,12 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 if (masIpdServiceCategory.isEmpty()) {
                     throw new RuntimeException("IPD Service Category not found: " + IPDServiceCategoryDrug);
                 }
+                ItemClassBillSubcategoryMapping mapping = itemClassBillSubcategoryMappingRepository.findByItemClass_ItemClassId(stock.getItemId().getItemClassId().getItemClassId());
+
+                MasIpdServiceSubcategory subcategory = null;
+                if (mapping != null && mapping.getIpdBillSubcategoryId() != null) {
+                    subcategory = masIpdServiceSubcategoryRepository.findById(mapping.getIpdBillSubcategoryId().getSubcategoryId()).orElse(null);
+                }
 
                 saveIpdBillingDetails.saveInpatientBillingDetails(
                         inpatient,
@@ -3750,7 +3854,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         gstAmount,
                         netAmount,
                         masIpdServiceCategory.get(),
-                        null,
+                        subcategory,
                         stock.getItemId().getNomenclature()
                 );
 
