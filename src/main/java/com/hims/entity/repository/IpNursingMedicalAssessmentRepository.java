@@ -12,6 +12,8 @@ import java.util.Optional;
 @Repository
 public interface IpNursingMedicalAssessmentRepository extends JpaRepository<IpNursingMedicalAssessment,Long> {
 
+    Optional<IpNursingMedicalAssessment> findTopByInpatientInpatientIdOrderByAssessmentIdDesc(Long inpatientId);
+
     @Query(value = """
             SELECT
                 a.assessment_id AS assessmentId,

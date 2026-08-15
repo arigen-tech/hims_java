@@ -1508,7 +1508,27 @@ public class MasterController {
 
         return masStoreItemService.getMasStoreItemDynamic(flag, search, page, size);
     }
+    @GetMapping("/masStoreItemWithotStock/getAllPaginated/{flag}")
+    public ResponseEntity<ApiResponse<Page<MasStoreItemResponse>>> getAllMasStoreItemWithOutStockPaginated(
+            @PathVariable int flag,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String nomenclature,
+            @RequestParam(required = false) Integer itemClassId,
+            @RequestParam(required = false) Integer masItemCategoryid) {
 
+        ApiResponse<Page<MasStoreItemResponse>> response =
+                masStoreItemService.getAllMasStoreItemWithOutStockPaginated(
+                        flag,
+                        page,
+                        size,
+                        nomenclature,
+                        itemClassId,
+                        masItemCategoryid
+                );
+
+        return ResponseEntity.ok(response);
+    }
 
 
     //    ================================Mas HSN  Controller================================//
