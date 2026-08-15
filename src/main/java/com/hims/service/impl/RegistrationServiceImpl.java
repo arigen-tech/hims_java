@@ -869,7 +869,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
         newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
         assert setup != null;
-        if (setup.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+        if (patient.getPatientHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
             newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
         } else {
             newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
@@ -905,10 +905,13 @@ public class RegistrationServiceImpl implements RegistrationService {
         //create billing header and detail
         MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
         MasDiscount discount=new MasDiscount();
-        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
-        Visit v = visitRepository.getReferenceById(newVisit.getId());
-        newVisit.setBillingHd(resp.getResponse().getHeader());
-        visitRepository.save(newVisit);
+
+        if(AppConstants.STATUS_Y.equalsIgnoreCase(savedVisit.getHospital().getAppCostApplicable())) {
+            ApiResponse<OpdBillingPaymentResponse> resp = billingService.saveBillingForOpd(savedVisit, serviceCategory, null);
+            Visit v = visitRepository.getReferenceById(newVisit.getId());
+            newVisit.setBillingHd(resp.getResponse().getHeader());
+            visitRepository.save(newVisit);
+        }
         return savedVisit;
     }
     private OpdPatientDetail addOpdDetails(Visit savedVisit, OpdPatientDetailRequest opdPatientDetailRequest, Patient patient) {

@@ -213,12 +213,11 @@ public class BillingServiceImpl implements BillingService {
             } else {
                 header.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
             }
-            header.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+            header.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
             header.setCreatedBy(currentUser.getFullName());
             header.setUpdatedDt(Instant.now());
             header.setCreatedDt(Instant.now());
             header.setInvoiceNo("");
-            header.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
             header.setUpdatedAt(OffsetDateTime.now());
             header.setBillingDate(Instant.now());
             header.setDiscount(discount);

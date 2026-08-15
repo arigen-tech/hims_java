@@ -66,6 +66,7 @@ public class OpdPatientRecallResponce {
 
     //======================== Treatment ====================
     private NewDPatientPrescriptionHd patientPrescriptionHd;
+    private List<NewDPatientPrescriptionHd> patientPrescriptionHds;
     private List<NewDPatientPrescriptionDt> patientPrescriptionDts;
 
 

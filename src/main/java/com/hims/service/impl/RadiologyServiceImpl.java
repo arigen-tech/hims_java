@@ -134,8 +134,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         try {
             Visit visit = new Visit();
             visit.setPatient(savedPatient);
-            visit.setVisitStatus("n");
-            visit.setBillingStatus("n");
+            visit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase());
+            visit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
             visit.setHospital(masHospital);
             visit.setTokenNo(existingTokens + 1);
              Instant visitDate = Instant.now();
@@ -182,7 +182,7 @@ public class RadiologyServiceImpl implements RadiologyService {
 
                 RadOrderHd hd = new RadOrderHd();
                 hd.setAppointmentDate(date);
-                hd.setPaymentStatus("n");
+                hd.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
                 hd.setOrderDate(LocalDate.now());
                 hd.setOrderTime(Instant.now());
                 hd.setPatient(savedPatient);
@@ -220,22 +220,22 @@ public class RadiologyServiceImpl implements RadiologyService {
                                                     "Invalid Investigation ID: " + inv.getId());
                                         });
                         RadOrderDt dt = new RadOrderDt();
-                        dt.setOrderAccessionNo(randomNumGenerator.generateOrderNumber("RAD",true,true));
+                        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, patient.getPatientHospitalId()));
                         dt.setRadOrderhd(savedHd);
                         dt.setInvestigation(invEntity);
                         dt.setSubChargecode(invEntity.getSubChargeCodeId());
                         dt.setAppointmentDate(inv.getAppointmentDate());
                         dt.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                         dt.setCreatedby(currentUser.getFirstName()+" "+currentUser.getLastName());
-                        dt.setBillingStatus("n");
+                        dt.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
                         dt.setCreatedon(Instant.now());
                         dt.setLastChgDate(Instant.now());
                         dt.setBillingHd(headerId);
-                        dt.setStudyStatus("n");
-                        dt.setReportStatus("n");
-                        dt.setHl7MwlStatus("n");
-                        dt.setPacsCompletionStatus("n");
-                        dt.setOrderStatus("y");
+                        dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
+                        dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
                         RadOrderDt savedDt = radOrderDtRepository.save(dt);
                         BillingDetaiDataSave(headerId, savedDt, inv);
 //                        savedDt.setBillingHd();
@@ -250,16 +250,16 @@ public class RadiologyServiceImpl implements RadiologyService {
                             RadOrderDt dt = new RadOrderDt();
                             dt.setRadOrderhd(savedHd);
                             dt.setInvestigation(investId);
-                            dt.setOrderAccessionNo(randomNumGenerator.generateOrderNumber("RAD",true,true));
+                            dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, patient.getPatientHospitalId()));
                             dt.setSubChargecode(investId.getSubChargeCodeId());
                             dt.setPackageId(pkgObj);
                             dt.setAppointmentDate(inv.getAppointmentDate());
                             dt.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                             dt.setCreatedby(currentUser.getFirstName()+" "+currentUser.getLastName());
                             dt.setLastChgDate(Instant.now());
-                            dt.setBillingStatus("n");
+                            dt.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
                             dt.setCreatedon(Instant.now());
-                            dt.setOrderStatus("y");
+                            dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
                             dt.setBillingHd(headerId);
                             RadOrderDt savedDt = radOrderDtRepository.save(dt);
                         }
@@ -311,8 +311,7 @@ public class RadiologyServiceImpl implements RadiologyService {
 
     private BillingHeader BillingHeaderDataSave(RadOrderHd hdId, Visit vId, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
         BillingHeader billingHeader = new BillingHeader();
-        String orderNum = labRegistrationServices.createInvoices();
-        billingHeader.setBillNo(orderNum);// Auto generated
+        billingHeader.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, vId.getHospital().getId()));
         billingHeader.setPatient(vId.getPatient());
         billingHeader.setVisit(vId);
         billingHeader.setPatientDisplayName(vId.getPatient().getFullName());
@@ -376,7 +375,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
         billingDetail.setNetAmount(billingDetail.getAmountAfterDiscount().add(billingDetail.getTaxAmount()));
         billingDetail.setTotal(billingDetail.getNetAmount());
-        billingDetail.setPaymentStatus("n");
+        billingDetail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
 
         //not null column
         // billingDetail.setDetailId();
@@ -393,7 +392,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         billingDetail.setBillHd(bhdId);
         billingDetail.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad));//pass from property file.
 
-        billingDetail.setItemName(dtId.getPackName()) ;  // investigation or packeg  name to be store
+        billingDetail.setItemName(dtId.getPackName());
         billingDetail.setQuantity(1);//default
         billingDetail.setInvestigation(null);
         billingDetail.setPackageField(dtId);
@@ -417,7 +416,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
         billingDetail.setNetAmount(billingDetail.getAmountAfterDiscount().add(billingDetail.getTaxAmount()));
         billingDetail.setTotal(billingDetail.getNetAmount());
-        billingDetail.setPaymentStatus("n");
+        billingDetail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
 
         //not null column
         // billingDetail.setDetailId();

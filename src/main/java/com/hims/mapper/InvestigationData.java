@@ -7,6 +7,6 @@ public record InvestigationData(
         String investigationName,
         LocalDate investigationDate,
         Long investigationId,
-        Long flag
+        Integer flag
 ) {
 }
