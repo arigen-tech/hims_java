@@ -206,20 +206,20 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                                     )));
 
             //if hospital flag
-            if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getLabBilling())) {
+           // if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getLabBilling())) {
                 if (grouped.containsKey(Long.valueOf(laboratoryDepartment))) {
                     log.info("Processing LAB investigations");
                     processLabInvestigations(grouped.get(Long.valueOf(laboratoryDepartment)), patient, visit, user, labOrderedStatus);
                     saved.setLabFlag(AppConstants.STATUS_Y.toLowerCase());
                 }
-            }
-            if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling())){
+           // }
+//            if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling())){
                 if (grouped.containsKey(Long.valueOf(radiologyDepartment))) {
                     log.info("Processing RADIOLOGY investigations");
                     processRadiologyInvestigations(grouped.get(Long.valueOf(radiologyDepartment)), patient, visit, user);
                     saved.setRadioFlag(AppConstants.STATUS_Y.toLowerCase());
                 }
-            }
+//            }
         }
 
         if (request.getTreatment() != null && !request.getTreatment().isEmpty()) {
@@ -1389,18 +1389,18 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 //             IN both case we dont need to generate the billing
 //            --------------------------------------------------------
             BillingHeader billingHeader = null;
-            if(AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getLabBilling())){
-                BigDecimal[] amounts = calculateBillingHdAmount(investigations, masServiceCategory);
-                billingHeader = billingService.saveBillingHeader(
-                        savedOrderHd, visit, currentUser,
-                        amounts[0], amounts[1], amounts[2],
-                        serviceCategoryLab, false
-                );
-                if (billingHeader == null) {
-                    throw new SDDException("billing", 500, "Failed to create billing");
-                }
-                visit.setBillingHd(billingHeader);
-            }
+//            if(AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getLabBilling())){
+//                BigDecimal[] amounts = calculateBillingHdAmount(investigations, masServiceCategory);
+//                billingHeader = billingService.saveBillingHeader(
+//                        savedOrderHd, visit, currentUser,
+//                        amounts[0], amounts[1], amounts[2],
+//                        serviceCategoryLab, false
+//                );
+//                if (billingHeader == null) {
+//                    throw new SDDException("billing", 500, "Failed to create billing");
+//                }
+//                visit.setBillingHd(billingHeader);
+//            }
             visitRepository.save(visit);
             log.info("LAB Order Header saved - Order ID: {}", savedOrderHd.getId());
             createLabOrderDetails(investigations,savedOrderHd, labOrderedStatus, billingHeader);
@@ -1591,20 +1591,19 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 throw new SDDException("RadOrderHeader",500,"Failed to create order header");
             }
             BillingHeader billingHeader = null;
-
-            if(AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling())) {
-                MasServiceCategory masServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
-                BigDecimal[] amounts = calculateBillingHdAmount(investigations, masServiceCategory);
-                billingHeader = billingService.saveBillingHeader(
-                        savedRadOrderHd, visit, currentUser,
-                        amounts[0], amounts[1], amounts[2],
-                        serviceCategoryRad, true
-                );
-                if (billingHeader == null) {
-                    throw new SDDException("billing", 500, "Failed to create billing");
-                }
-                visit.setBillingHd(billingHeader);
-            }
+//            if(AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling())) {
+//                MasServiceCategory masServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
+//                BigDecimal[] amounts = calculateBillingHdAmount(investigations, masServiceCategory);
+//                billingHeader = billingService.saveBillingHeader(
+//                        savedRadOrderHd, visit, currentUser,
+//                        amounts[0], amounts[1], amounts[2],
+//                        serviceCategoryRad, true
+//                );
+//                if (billingHeader == null) {
+//                    throw new SDDException("billing", 500, "Failed to create billing");
+//                }
+//                visit.setBillingHd(billingHeader);
+//            }
             visitRepository.save(visit);
 
             // Create radiology order and billing details
