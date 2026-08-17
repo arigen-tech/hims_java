@@ -534,6 +534,14 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("getAdmissionDetailsByInpatient/{inpatientId}")
+    public ResponseEntity<ApiResponse<InpatientAdmissionDetailsResponse>> getAdmissionDetailsByInpatient(@PathVariable Long inpatientId ){
+
+        ApiResponse<InpatientAdmissionDetailsResponse> response = ipdPatientService.getAdmissionDetailsByInpatient(inpatientId);
+
+        return ResponseEntity.ok(response);
+    }
+
 
 
 

@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.Inpatient;
+import com.hims.projection.InpatientAdmissionProjection;
 import com.hims.projection.InpatientAdvanceCollectionProjection;
 import lombok.Locked;
 import org.springframework.data.domain.Page;
@@ -40,7 +41,7 @@ public interface InpatientRepository extends JpaRepository<Inpatient,Long> {
             LEFT JOIN FETCH i.room
             WHERE i.admissionStatus.admissionStatusId = :admissionStatus
             """)
-    List<Inpatient> findAdmittedInpatientsWithBillingHeader(@Param("admissionStatus") Long admissionStatus);
+    List<Inpatient> findAdmittedInpatients(@Param("admissionStatus") Long admissionStatus);
 
     @Query(value = """
 SELECT
@@ -130,4 +131,58 @@ AND (
             @Param("mobileNo") String mobileNo,
             @Param("admissionNo") String admissionNo,
             Pageable pageable);
+
+
+
+        @Query("""
+        SELECT
+            p.id AS patientId,
+            p.patientFn AS patientFn,
+            p.patientMn AS patientMn,
+            p.patientLn AS patientLn,
+            p.uhidNo AS uhidNo,
+            p.patientAge AS patientAge,
+            g.id AS genderId,
+            g.genderName AS genderName,
+            p.patientMobileNumber AS patientMobileNumber,
+             p.emerMobile AS emergencyContactNo,
+
+            i.admissionNo AS admissionNo,
+            i.admissionDate AS admissionDate,
+            i.admissionTime AS admissionTime,
+            ac.admissionCategoryName AS admissionCategoryName,
+            at.admissionTypeName AS admissionTypeName,
+            asrc.admissionSourceName AS admissionSourceName,
+            ast.statusCode AS admissionStatusName,
+            i.dischargeDate AS dischargeDate,
+
+            i.doctorName AS doctorName,
+            w.wardName AS wardName,
+            r.roomName AS roomName,
+            b.bedNumber AS bedName,
+            cl.careLevelName AS careLevelName,
+
+            i.conditionNotes AS conditionNotes,
+            i.initialDiagnosis AS initialDiagnosis,
+            i.icd AS icdName,
+            pc.patientConditionName AS patientConditionName,
+            i.admissionPriority AS admissionPriority
+
+        FROM Inpatient i
+        JOIN i.patient p
+        LEFT JOIN p.patientGender g
+        LEFT JOIN i.admissionCategory ac
+        LEFT JOIN i.admissionType at
+        LEFT JOIN i.admissionSource asrc
+        LEFT JOIN i.admissionStatus ast
+        LEFT JOIN i.admittingWardId w
+        LEFT JOIN i.room r
+        LEFT JOIN i.bed b
+        LEFT JOIN i.careLevel cl
+        LEFT JOIN i.icdDiagnosis icd
+        LEFT JOIN i.patientCondition pc
+        WHERE i.inpatientId = :inpatientId
+        """)
+        Optional<InpatientAdmissionProjection> findAdmissionDetailsByInpatientId(@Param("inpatientId") Long inpatientId);
+
 }

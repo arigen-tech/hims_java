@@ -104,5 +104,7 @@ public interface IPDPatientService {
     ApiResponse<String> saveNursingCareProcedure(@Valid List<ConsumableEntryRequest> request);
 
     ApiResponse<List<NursingCareProcedure>> getNursingCareProcedure(Long inpatientId);
+
+    ApiResponse<InpatientAdmissionDetailsResponse> getAdmissionDetailsByInpatient(Long inpatientId);
 }
 
