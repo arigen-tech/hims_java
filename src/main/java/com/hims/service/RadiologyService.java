@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 public interface RadiologyService {
 
@@ -34,5 +35,7 @@ public interface RadiologyService {
     ApiResponse<RadiologyReportResponse> getDetailsReportForRadiology(Long radOrderDtId);
 
     ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size);
+
+    ApiResponse<List<Map<String, Object>>> orderTrackingByInpatientIdOrAccesionNo(Long inpatientId, String accesionNo);
 
 }
