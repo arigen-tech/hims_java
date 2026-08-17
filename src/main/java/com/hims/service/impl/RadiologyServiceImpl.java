@@ -1122,6 +1122,17 @@ public class RadiologyServiceImpl implements RadiologyService {
             );
         }
     }
+    @Override
+    public ApiResponse<List<Map<String, Object>>> orderTrackingByInpatientIdOrAccesionNo(Long inpatientId, String accesionNo) {
+        try {
+            List<Map<String, Object>> result = radOrderDtRepository.orderTrackingByInpatientIdOrAccesionNo(inpatientId, accesionNo);
+            return ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error fetching order tracking", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Internal Server Error", 500);
+        }
+    }
+
     private RadiologyRequisitionResponse toResponse(RadiologyProjection p) {
         RadiologyRequisitionResponse r = new RadiologyRequisitionResponse();
         r.setAccessionNo(p.getOrderAccessionNo());
