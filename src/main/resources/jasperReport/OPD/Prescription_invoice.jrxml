@@ -1,0 +1,803 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Prescription_invoice" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="9dc8aef2-a407-46f5-a6e5-8dbed0a3d192">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<parameter name="prescriptionId" class="java.lang.Integer"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+    bh.bill_hd_id,
+    pph.prescription_hd_id ,
+    bh.hospital_name,
+    bh.invoice_no,
+    TO_CHAR(bh.billing_date, 'DD/MM/YYYY HH12:MI AM') AS invoice_date,
+    CONCAT_WS(' ', p.p_fn, NULLIF(p.p_mn, ''), NULLIF(p.p_ln, '')) AS patient_name,
+    p.uhid_no,
+    CASE
+        WHEN p.p_age IS NOT NULL AND bh.patient_gender IS NOT NULL THEN SPLIT_PART(p.p_age, 'Y', 1) || ' / ' || bh.patient_gender
+        WHEN p.p_age IS NOT NULL THEN SPLIT_PART(p.p_age, 'Y', 1)
+        ELSE bh.patient_gender
+    END AS age_gender,
+    p.p_mobile_number,
+    pph.prescription_number,
+    pph.doctor_name,
+    md.department_name,
+    bd.item_name AS medicine_name,
+    msi.drug_schedule ,
+    msi.hsn_code,
+    ppd.batch_no,
+    TO_CHAR(ppd.expiry_date, 'Mon-YYYY') AS expiry_date,
+    bd.quantity AS qty,
+    bd.base_price AS rate,
+    bd.discount AS discount,
+    bd.tax_amount AS gst,
+    bd.net_amount AS amount,
+    bh.total_amount AS gross_amount,
+    bh.discount_amount AS total_discount,
+    (bh.net_amount - bh.tax_total) AS taxable_amount,
+    bh.tax_total AS gst_amount,
+    bh.net_amount AS net_amount,
+    num_to_words(COALESCE(bh.net_amount, 0)) AS amount_in_words
+FROM billing_header bh
+INNER JOIN billing_details bd ON bd.bill_hd_id = bh.bill_hd_id
+LEFT JOIN patient p ON p.patient_id = bh.patient_id
+LEFT JOIN patient_prescription_hd pph ON pph.prescription_hd_id = bh.prescription_hd_id and pph.patient_id = bh.patient_id 
+left join patient_prescription_dt ppd on ppd.prescription_hd_id = pph.prescription_hd_id and ppd.item_id = bd.item_id
+LEFT JOIN mas_department md ON md.department_id = pph.department_id
+left join mas_store_item msi on msi.item_id = bd.item_id 
+where bd.service_category_id  = 3
+and pph.prescription_hd_id = $P{prescriptionId}]]>
+	</queryString>
+	<field name="bill_hd_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="bill_hd_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="bill_hd_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="prescription_hd_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="prescription_hd_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="prescription_hd_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient_prescription_hd"/>
+	</field>
+	<field name="hospital_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="hospital_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="invoice_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="invoice_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="invoice_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="invoice_date" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="invoice_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="invoice_date"/>
+	</field>
+	<field name="patient_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_name"/>
+	</field>
+	<field name="uhid_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="uhid_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="uhid_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="age_gender" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="age_gender"/>
+		<property name="com.jaspersoft.studio.field.label" value="age_gender"/>
+	</field>
+	<field name="p_mobile_number" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="p_mobile_number"/>
+		<property name="com.jaspersoft.studio.field.label" value="p_mobile_number"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="prescription_number" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="prescription_number"/>
+		<property name="com.jaspersoft.studio.field.label" value="prescription_number"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient_prescription_hd"/>
+	</field>
+	<field name="doctor_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="doctor_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="doctor_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient_prescription_hd"/>
+	</field>
+	<field name="department_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="department_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="department_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_department"/>
+	</field>
+	<field name="medicine_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="medicine_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="medicine_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_details"/>
+	</field>
+	<field name="drug_schedule" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="drug_schedule"/>
+		<property name="com.jaspersoft.studio.field.label" value="drug_schedule"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="hsn_code" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="hsn_code"/>
+		<property name="com.jaspersoft.studio.field.label" value="hsn_code"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_store_item"/>
+	</field>
+	<field name="batch_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="batch_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="batch_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient_prescription_dt"/>
+	</field>
+	<field name="expiry_date" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="expiry_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="expiry_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient_prescription_dt"/>
+	</field>
+	<field name="qty" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="qty"/>
+		<property name="com.jaspersoft.studio.field.label" value="qty"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_details"/>
+	</field>
+	<field name="rate" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="rate"/>
+		<property name="com.jaspersoft.studio.field.label" value="rate"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_details"/>
+	</field>
+	<field name="discount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="discount"/>
+		<property name="com.jaspersoft.studio.field.label" value="discount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_details"/>
+	</field>
+	<field name="gst" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="gst"/>
+		<property name="com.jaspersoft.studio.field.label" value="gst"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_details"/>
+	</field>
+	<field name="amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_details"/>
+	</field>
+	<field name="gross_amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="gross_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="gross_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="total_discount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="total_discount"/>
+		<property name="com.jaspersoft.studio.field.label" value="total_discount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="taxable_amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="taxable_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="taxable_amount"/>
+	</field>
+	<field name="gst_amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="gst_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="gst_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="net_amount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="net_amount"/>
+		<property name="com.jaspersoft.studio.field.label" value="net_amount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="amount_in_words" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="amount_in_words"/>
+		<property name="com.jaspersoft.studio.field.label" value="amount_in_words"/>
+	</field>
+	<variable name="S.No." class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
+	</variable>
+	<variable name="grossAmount" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{rate}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="74" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="2" width="555" height="14" uuid="c9e4f420-5732-419e-9bf6-ae8f79da0026"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="20" width="555" height="14" uuid="958b21f2-d8d4-4ae9-b4a5-f68273fc88f7"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Prescription Invoice]]></text>
+			</staticText>
+			<image>
+				<reportElement x="8" y="7" width="142" height="58" uuid="c8710957-b52e-4d60-82d0-c8086461d70f"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="128" splitType="Stretch">
+			<staticText>
+				<reportElement x="8" y="7" width="73" height="14" uuid="fea0abf6-5c4d-4361-87eb-0dc069cf1233"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Invoice No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="85" y="7" width="3" height="14" uuid="17e7f2ba-a7a5-450f-9715-6b763592692c"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="91" y="7" width="110" height="14" uuid="e9c6a5f6-4000-4dfe-91b5-00986ce6d984"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{invoice_no}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="326" y="7" width="73" height="14" uuid="ead9ae6d-8909-47f5-9a47-06db0c3c35c4"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Invoice Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="402" y="7" width="3" height="14" uuid="b8a83bf4-c6ef-4b69-8e5b-df52c11c78a9"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="409" y="7" width="131" height="14" uuid="237db0ce-302c-4c92-a660-f2577d31fc14"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{invoice_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="74" y="36" width="129" height="14" uuid="4866f6e2-80ee-4c2a-b287-8e78a90bd0c6"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient Information]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="350" y="36" width="129" height="14" uuid="265c2c52-419e-4a11-8b89-eb3a462adebe"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Prescription Information]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="33" width="1" height="94" uuid="8a403c0f-f38c-4a84-8c58-6ec615f191fc">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="555" y="33" width="1" height="95" uuid="8bde8b2d-0615-440b-9ee2-7fe069f4912d"/>
+			</line>
+			<line>
+				<reportElement x="278" y="33" width="1" height="94" uuid="6b2828ce-1b47-4d48-8c84-8995841fc301"/>
+			</line>
+			<line>
+				<reportElement x="0" y="33" width="555" height="1" uuid="285f26b8-9acc-4f66-94ad-07333bb1b7ef"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Solid"/>
+				</graphicElement>
+			</line>
+			<line>
+				<reportElement x="0" y="53" width="555" height="1" uuid="fb056eab-a557-4a32-830e-258e264628e8"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Solid"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="58" width="72" height="14" uuid="d0f93b2e-6f63-4aa9-9f75-31cacd27a620"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="84" y="58" width="3" height="14" uuid="5931b509-59c4-4c77-a7a0-bb3d6d97f2fb"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="91" y="58" width="147" height="14" uuid="25b081bd-25db-497f-83da-81d0185475ca"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="75" width="72" height="14" uuid="a5674624-aa8c-4ae0-a19e-a27fd16bf8e9"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[UHID No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="84" y="75" width="3" height="14" uuid="b90ec16b-c6ac-4221-aaea-ade177c9f016"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="91" y="75" width="147" height="14" uuid="68161f39-580a-43f9-982f-0f9e59f3caec"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{uhid_no}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="92" width="72" height="14" uuid="88c76ef6-29da-4a02-ab2c-d0b785be1a2a"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Age/Gender]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="84" y="92" width="3" height="14" uuid="021e8a99-5fab-4db8-a696-c52513d73f9e"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="91" y="92" width="147" height="14" uuid="eff3dcb0-adbc-4575-9ed6-569bdfcea137"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{age_gender}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="8" y="109" width="72" height="14" uuid="84b0ebfe-77cc-4e98-b31e-d2ecc7c7f98d"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Mobile No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="84" y="109" width="3" height="14" uuid="713c19bf-0439-454a-a8f7-ff90ebcf1bd3"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="91" y="109" width="147" height="14" uuid="f330c40e-d76d-4bf2-9e5f-408a5e1d42b9"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{p_mobile_number}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="286" y="75" width="84" height="14" uuid="b6dd09ed-23ae-49c1-a29d-d1be5661b836"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Doctor Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="374" y="75" width="3" height="14" uuid="737590df-ad2c-4dfe-9f64-6102df59b789"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="381" y="75" width="147" height="14" uuid="41122bb6-bb77-4b03-b5db-aebd07a5a0cb"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{doctor_name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="286" y="92" width="84" height="14" uuid="60ffea7b-d93b-44bc-83df-842163e69b72"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Department]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="374" y="92" width="3" height="14" uuid="f4e3d55f-ca5b-4f14-8790-a18a0208af27"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="381" y="92" width="147" height="14" uuid="dddfb403-ef82-402b-878c-5344e98110a7"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="127" width="555" height="1" uuid="f8855ff1-5586-49e2-ba6e-82ec0530db5c"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Solid"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement positionType="Float" x="286" y="58" width="84" height="14" uuid="6c627b5e-5dcf-49f9-8d09-940c42b07697"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Prescription No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="374" y="58" width="3" height="14" uuid="a671526a-93a0-4e18-8423-bce475349010"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement positionType="Float" x="381" y="58" width="147" height="14" uuid="98682b96-9199-4bf0-8180-18870f2a2edd"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{prescription_number}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="52" splitType="Stretch">
+			<staticText>
+				<reportElement positionType="Float" x="8" y="8" width="102" height="14" uuid="80a1b036-f44f-42ef-bf41-61986cc99ab8"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Medicine Details]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="29" width="555" height="1" uuid="f3fca632-ae01-4ba0-850d-89924e6d0ef6"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Solid"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="3" y="32" width="32" height="14" uuid="3fa89452-c0db-4142-8f54-ea3e05e72aab"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[S No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="40" y="32" width="91" height="14" uuid="bbde5ed8-9735-4d99-b22d-4dce9bdb61a0"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Medicine]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="136" y="32" width="26" height="14" uuid="db68138b-90b0-40f5-bc61-e9c79a067d4c"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Sch]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="167" y="32" width="57" height="14" uuid="db27e177-f0a5-4aee-be70-83242547bd69"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[HSN Code]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="32" width="57" height="14" uuid="6876b07b-e033-4575-b2de-16a31e716723"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Batch No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="291" y="32" width="39" height="14" uuid="bbf4f3d5-a116-45fd-bd30-9543d9e4a342"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Expiry]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="335" y="32" width="25" height="14" uuid="b47d65ee-f8be-4f38-b48c-95594b8ac869"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="413" y="32" width="28" height="14" uuid="f9fde564-dd84-4952-ba41-e0fddc580b59"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Disc.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="481" y="32" width="71" height="14" uuid="8a25d63e-3e66-4592-9425-1d3d2214ded3"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Net Amount]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="51" width="555" height="1" uuid="a32ec764-958a-424f-933b-e588e3f735ae"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Solid"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="365" y="32" width="43" height="14" uuid="49926f5d-c1e5-4bf7-b214-7e41e0b6bd3d"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="446" y="32" width="24" height="14" uuid="6b01d280-6b82-4398-9d1f-ef0fe4536278"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[GST]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="18" splitType="Stretch">
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="3" y="4" width="32" height="14" uuid="cf8c2069-1b45-4d94-9946-e5e6c29ece06">
+					<property name="com.jaspersoft.studio.unit.leftIndent" value="pixel"/>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="40" y="4" width="91" height="14" uuid="c83762ce-f773-449d-9f9d-abcac12799f2"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{medicine_name}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="136" y="4" width="26" height="14" uuid="9e83a091-4554-4192-8155-3b95bfa21c47"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{drug_schedule}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="167" y="4" width="57" height="14" uuid="6ff30e32-e513-4bad-9260-fd0e946f51db"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{hsn_code}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="229" y="4" width="57" height="14" uuid="1ffab067-77a2-405a-aa88-05a7528efefa"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{batch_no}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="291" y="4" width="39" height="14" uuid="c9b12d48-c564-4fc5-be01-b445c81fef94"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{expiry_date}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="335" y="4" width="24" height="14" uuid="3297028d-9b8a-4252-bd1a-72c2bd0cec76"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{qty}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="413" y="4" width="28" height="14" uuid="4c8b0d1f-b9c1-44bd-a419-e2eb89c8fe3c"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{discount}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="481" y="4" width="70" height="14" uuid="d9c4332c-a1b2-4f04-a9de-3ee695f0d79a"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{amount}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="365" y="4" width="43" height="14" uuid="7a85d589-2736-435f-a010-3ae851506c52"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{rate}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="446" y="4" width="24" height="14" uuid="ead07ffd-c71d-4d55-ae12-27a32d209b95"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gst}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="109" splitType="Stretch">
+			<staticText>
+				<reportElement x="8" y="19" width="82" height="14" uuid="43b2d901-c7bb-4ecd-b80a-9b9299b68121"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Gross Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="92" y="19" width="3" height="14" uuid="2a919875-f598-4722-9bb5-3d3908003c3c"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="240" y="19" width="3" height="14" uuid="61b4b97c-c3c7-40ac-acbb-7145259331ae"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="182" y="19" width="56" height="14" uuid="3b778b1d-c2c7-43aa-aae6-cdde5667dc10"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Discount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="330" y="19" width="94" height="14" uuid="954c7634-b624-4a99-a040-62185959d07d"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Taxable Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="427" y="19" width="3" height="14" uuid="2151f3d2-25c9-46ef-90d3-1952566c685a"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="92" y="48" width="3" height="14" uuid="08213a41-599e-44cd-98ad-f31572546163"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="48" width="82" height="14" uuid="6e265e1a-96cc-4f6c-b916-722d7ea8c60b"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[GST Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="254" y="48" width="3" height="14" uuid="cba72ab7-6ba0-4ef2-bd1a-4b27c919c678"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="182" y="48" width="68" height="14" uuid="7132cb04-1de4-460d-8466-b328796532cc"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Net Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="78" width="101" height="14" uuid="e3fce7b4-e59f-40fe-b222-f33c28dab044"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<text><![CDATA[Amount In Words]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="111" y="78" width="3" height="14" uuid="b46166aa-7683-4531-a829-3bf15b918321"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="96" y="19" width="82" height="14" uuid="fa19c06c-4e0d-48de-85d3-399761cee007"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{grossAmount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="97" y="48" width="82" height="14" uuid="12c8063f-98ea-4f4d-bf66-99c6ee8c2106"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gst_amount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="246" y="19" width="56" height="14" uuid="3c15124c-aa09-43a4-9d35-c51068327ec1"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{total_discount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="259" y="48" width="82" height="14" uuid="b54e5746-5a2a-484c-830b-833e0e7f1749"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{net_amount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="432" y="19" width="94" height="14" uuid="b1a9c3ab-faeb-4e4a-ab88-b62878d75169"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{taxable_amount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="116" y="78" width="409" height="14" uuid="1095194e-45a4-4e36-8d19-b1a62fd40751"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+					<paragraph leftIndent="3"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{amount_in_words}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

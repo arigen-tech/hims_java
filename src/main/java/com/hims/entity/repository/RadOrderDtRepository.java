@@ -17,6 +17,7 @@ import org.springframework.security.core.parameters.P;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 public interface RadOrderDtRepository extends JpaRepository<RadOrderDt, Long> {
     @Modifying
@@ -201,6 +202,20 @@ where hd.hospital.id = :hospitalId
             @Param("phoneNumber") String phoneNumber,
             Pageable pageable
     );
+
+    @Query(value = """
+select i.inpatient_id as inpatientId, concat(coalesce(p.p_fn,''), coalesce(p.p_ln,'')) as patientName, rd.rad_orderhd_id as radOrderhdId, rd.rad_orderdt_id as radOrderdtId, rd.order_accession_no as orderAccessionNo, rh.order_date as orderDate, 
+dmi.investigation_id as investigationId, dmi.investigation_name as investigationName, rd.study_status as studyStatus, rd.report_status as reportStatus, rd.remarks as remarks, rd.pacs_completion_status as pacsCompletionStatus, i.admission_no as admissionNo, i.admission_date as admissionDate
+from rad_orderdt rd 
+inner join rad_orderhd rh on rd.rad_orderhd_id = rh.rad_orderhd_id
+left join inpatient i on rh.inpatient_id = i.inpatient_id
+left join patient p on i.patient = p.patient_id
+left join dg_mas_investigation dmi on rd.investigation_id = dmi.investigation_id 
+where 
+(:inpatientId is null or i.inpatient_id = :inpatientId) and
+(:accesionNo is null or rd.order_accession_no = :accesionNo)
+""", nativeQuery = true)
+    List<Map<String, Object>> orderTrackingByInpatientIdOrAccesionNo(@Param("inpatientId") Long inpatientId, @Param("accesionNo") String accesionNo);
 
     List<RadOrderDt> findByRadOrderhd(RadOrderHd hdObj);
 }

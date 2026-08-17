@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface MasWardRoomTariffRepo extends JpaRepository<MasWardRoomTariff, Long> {
 
@@ -30,4 +31,32 @@ public interface MasWardRoomTariffRepo extends JpaRepository<MasWardRoomTariff, 
     // Find active tariffs for a specific ward and room
     List<MasWardRoomTariff> findByWard_WardIdAndRoom_RoomIdAndStatusIgnoreCaseOrderByEffectiveFromDesc(
             Long wardId, Long roomId, String status);
+
+    @Query("""
+            SELECT t
+            FROM MasWardRoomTariff t
+            WHERE t.ward.wardId = :wardId
+            AND t.room.roomId = :roomId
+            AND LOWER(t.status) = 'y'
+            AND t.effectiveFrom <= :billingDate
+            AND (t.effectiveTo IS NULL OR t.effectiveTo >= :billingDate)
+            ORDER BY t.effectiveFrom DESC
+            LIMIT 1
+            """)
+    Optional<MasWardRoomTariff> findCurrentTariff(@Param("wardId") Long wardId,
+                                                 @Param("roomId") Long roomId,
+                                                 @Param("billingDate") LocalDate billingDate);
+
+    @Query("""
+        SELECT t
+        FROM MasWardRoomTariff t
+        WHERE t.room.roomId IN :roomIds
+        AND LOWER(t.status) =:status
+        AND t.effectiveFrom <= :billingDate
+        AND (t.effectiveTo IS NULL OR t.effectiveTo >= :billingDate)
+        ORDER BY t.room.roomId, t.effectiveFrom DESC
+        """)
+    List<MasWardRoomTariff> findCurrentTariffsForRooms(@Param("roomIds") List<Long> roomIds,
+                                                       @Param("billingDate") LocalDate billingDate,
+                                                       @Param("status") String status);
 }

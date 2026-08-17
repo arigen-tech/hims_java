@@ -25,65 +25,87 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
             "AND (p.patientDob = :dob OR p.patientAge = :age) AND p.patientMobileNumber = :mobileNumber AND p.patientRelation = :relation")
     Optional<Patient> findByUniqueCombination(String firstName, String lastName, MasGender gender,
                                               LocalDate dob, String age, String mobileNumber, MasRelation relation);
-
     @Query(value = """
-            SELECT 
-                CONCAT(
-                    COALESCE(CAST(p.p_fn AS TEXT), ''), ' ',
-                    COALESCE(CAST(p.p_mn AS TEXT), ''), ' ',
-                    COALESCE(CAST(p.p_ln AS TEXT), '')
-                ) AS fullName,
-            
-                p.patient_id AS id,
-            
-                CONCAT(
-                    COALESCE(CAST(p.p_address1 AS TEXT), ''), ' ',
-                    COALESCE(CAST(p.p_address2 AS TEXT), ''), ' ',
-                    COALESCE(CAST(p.p_city AS TEXT), ''), ' ',
-                    COALESCE(CAST(p.p_pincode AS TEXT), '')
-                ) AS address,
-            
-                p.p_mobile_number AS patientMobileNumber,
-                p.uhid_no AS uhidNo,
-                p.p_age AS patientAge,
-                g.gender_name AS gender,
-                p.p_email_id AS patientEmailId,
-                p.abha_number AS patientAbhaId,
-                m.relation_name AS relation
-                        
-            
-            FROM patient p
-            LEFT JOIN mas_gender g ON g.id = p.p_gender_id
-            LEFT JOIN mas_relation m ON m.relation_id = p.p_relation_id
-            
-            WHERE (:mobileNo IS NULL OR CAST(p.p_mobile_number AS TEXT) = :mobileNo)
-            AND (:patientName IS NULL OR 
-                LOWER(CONCAT(
-                    COALESCE(CAST(p.p_fn AS TEXT), ''), ' ',
-                    COALESCE(CAST(p.p_mn AS TEXT), ''), ' ',
-                    COALESCE(CAST(p.p_ln AS TEXT), '')
-                )) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        SELECT
+            CONCAT(
+                COALESCE(CAST(p.p_fn AS TEXT), ''), ' ',
+                COALESCE(CAST(p.p_mn AS TEXT), ''), ' ',
+                COALESCE(CAST(p.p_ln AS TEXT), '')
+            ) AS fullName,
+
+            p.patient_id AS id,
+
+            CONCAT(
+                COALESCE(CAST(p.p_address1 AS TEXT), ''), ' ',
+                COALESCE(CAST(p.p_address2 AS TEXT), ''), ' ',
+                COALESCE(CAST(p.p_city AS TEXT), ''), ' ',
+                COALESCE(CAST(p.p_pincode AS TEXT), '')
+            ) AS address,
+
+            p.p_mobile_number AS patientMobileNumber,
+            p.uhid_no AS uhidNo,
+            p.p_age AS patientAge,
+            g.gender_name AS gender,
+            p.p_email_id AS patientEmailId,
+            p.abha_number AS patientAbhaId,
+            m.relation_name AS relation
+
+        FROM patient p
+        LEFT JOIN mas_gender g
+            ON g.id = p.p_gender_id
+        LEFT JOIN mas_relation m
+            ON m.relation_id = p.p_relation_id
+
+        WHERE
+            -- If both search parameters are empty, return nothing
+            (:mobileNo IS NOT NULL OR :patientName IS NOT NULL)
+
+            AND (
+                :mobileNo IS NULL
+                OR CAST(p.p_mobile_number AS TEXT) = :mobileNo
             )
-            """,
+
+            AND (
+                :patientName IS NULL
+                OR LOWER(
+                    CONCAT(
+                        COALESCE(CAST(p.p_fn AS TEXT), ''), ' ',
+                        COALESCE(CAST(p.p_mn AS TEXT), ''), ' ',
+                        COALESCE(CAST(p.p_ln AS TEXT), '')
+                    )
+                ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+            )
+        """,
             nativeQuery = true,
 
             countQuery = """
-                    SELECT COUNT(*) 
-                    FROM patient p
-                    WHERE (:mobileNo IS NULL OR CAST(p.p_mobile_number AS TEXT) = :mobileNo)
-                    AND (:patientName IS NULL OR 
-                        LOWER(CONCAT(
-                            COALESCE(CAST(p.p_fn AS TEXT), ''), ' ',
-                            COALESCE(CAST(p.p_mn AS TEXT), ''), ' ',
-                            COALESCE(CAST(p.p_ln AS TEXT), '')
-                        )) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        SELECT COUNT(*)
+        FROM patient p
+
+        WHERE
+            (:mobileNo IS NOT NULL OR :patientName IS NOT NULL)
+
+            AND (
+                :mobileNo IS NULL
+                OR CAST(p.p_mobile_number AS TEXT) = :mobileNo
+            )
+
+            AND (
+                :patientName IS NULL
+                OR LOWER(
+                    CONCAT(
+                        COALESCE(CAST(p.p_fn AS TEXT), ''), ' ',
+                        COALESCE(CAST(p.p_mn AS TEXT), ''), ' ',
+                        COALESCE(CAST(p.p_ln AS TEXT), '')
                     )
-                    """)
+                ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+            )
+        """)
     Page<PatientProjection> searchPatients(
             @Param("mobileNo") String mobileNo,
             @Param("patientName") String patientName,
-            Pageable pageable);
-
+            Pageable pageable
+    );
 
     @Query(value = """
             SELECT DISTINCT p.* FROM patient p 

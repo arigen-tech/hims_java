@@ -15,10 +15,7 @@ import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
 import com.hims.service.TransactionSequenceService;
-import com.hims.utils.AuthUtil;
-import com.hims.utils.HMISTransaction;
-import com.hims.utils.RandomNumGenerator;
-import com.hims.utils.ResponseUtils;
+import com.hims.utils.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.implementation.bytecode.Throw;
@@ -33,10 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -89,6 +83,12 @@ public class BillingServiceImpl implements BillingService {
 
     @Autowired
     OpdRefundDetailsRepository opdRefundDetailsRepository;
+
+    @Autowired
+    private LabOrderTrackingStatusRepository orderTrackingStatusRepository;
+
+    @Value("${lab.track-order-status-reg.ordered}")
+    private Long orderedStatusId;
 
     @Autowired
     HelperUtils helperUtils;
@@ -1142,11 +1142,10 @@ public class BillingServiceImpl implements BillingService {
     // ✅ METHOD: Get current investigation price from price details table
     private BigDecimal getCurrentInvestigationPrice(DgMasInvestigation investigation) {
         try {
-            LocalDate today = LocalDate.now();
 
             // First try to get active price for current date
             Optional<MasInvestigationPriceDetails> priceDetail = masInvestigationPriceDetailsRepository
-                    .findActivePriceByInvestigationAndDate(investigation, today);
+                    .findActivePriceByInvestigationAndDate(investigation, HMISUtil.getCurrentLocalDate());
 
             if (priceDetail.isPresent() && priceDetail.get().getPrice() != null) {
                 return priceDetail.get().getPrice();
@@ -1386,7 +1385,6 @@ public class BillingServiceImpl implements BillingService {
             boolean isRadiology) {
 
         BillingDetail billingDetail = new BillingDetail();
-        User currentUser = authUtil.getCurrentUser();
         MasServiceCategory sevcat =
                 masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
 
@@ -1454,7 +1452,6 @@ public class BillingServiceImpl implements BillingService {
             String serviceCategoryCode) {
 
         BillingDetail billingDetail = new BillingDetail();
-        String currentUsername = authUtil.getCurrentUser().getFullName();
         MasServiceCategory sevcat =
                 masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
 
@@ -1667,6 +1664,224 @@ public class BillingServiceImpl implements BillingService {
                 .refundDate(projection.getRefundDate())
                 .processedBy(projection.getProcessedBy())
                 .build();
+    }
+
+
+    @Override
+    public RadOrderHd saveRadOrderHeader(Patient patient, Visit visit, LocalDate date, String userName, boolean billingEnabled) {
+        RadOrderHd hd = new RadOrderHd();
+        hd.setAppointmentDate(date);
+        hd.setPaymentStatus(billingEnabled
+                ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                : AppConstants.PAYMENT_PAID.toLowerCase());
+        hd.setOrderDate(LocalDate.now());
+        hd.setOrderTime(Instant.now());
+        hd.setPatient(patient);
+        hd.setVisit(visit);
+        hd.setDepartment(visit.getDepartment());
+        hd.setHospital(visit.getHospital());
+        hd.setCreatedby(userName);
+        hd.setCreatedon(Instant.now());
+        hd.setLastChgBy(userName);
+        hd.setLastChgDate(Instant.now());
+        return radOrderHdRepository.save(hd);
+    }
+
+    @Override
+    public DgOrderHd saveLabOrderHeader(Patient patient, Visit visit, User currentUser, LocalDate appointmentDate, boolean billingEnabled) {
+        if (patient == null || visit == null || currentUser == null) {
+            throw new SDDException("order", 400, "Invalid data for creating order header");
+        }
+        try {
+            DgOrderHd hd = new DgOrderHd();
+            hd.setAppointmentDate(appointmentDate);
+            hd.setOrderDate(LocalDate.now());
+            hd.setOrderTime(Instant.now());
+            hd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
+            hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+            hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
+            hd.setPaymentStatus(billingEnabled
+                    ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                    : AppConstants.PAYMENT_PAID.toLowerCase());
+            hd.setHospitalId(currentUser.getHospital().getId());
+            hd.setDepartmentId(visit.getDepartment().getId());
+            hd.setPatientId(patient);
+            hd.setVisitId(visit);
+            hd.setSource(AppConstants.SOURCE_LAB.toLowerCase());
+            hd.setDiscountId(1);
+            hd.setCreatedBy(currentUser.getFullName());
+            hd.setLastChgBy(currentUser.getFullName());
+            hd.setCreatedOn(LocalDate.now());
+            hd.setLastChgDate(LocalDate.now());
+            hd.setLastChgTime(HMISUtil.getCurrentLocalTime().toString());
+            return labHdRepository.save(hd);
+        } catch (Exception e) {
+            throw new SDDException("order", 500, "Error while building order header");
+        }
+    }
+
+    @Override
+    public RadOrderDt saveRadOrderDetail(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                         DgMasInvestigation entity, String serviceCategoryCode) {
+
+        RadOrderDt dt = new RadOrderDt();
+        dt.setRadOrderhd(hd);
+        dt.setSubChargecode(entity.getSubChargeCodeId());
+        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, hd.getHospital().getId()));
+        dt.setAppointmentDate(inv.getAppointmentDate());
+        dt.setBillingHd(billing);
+        dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
+        dt.setBillingStatus(billing != null
+                ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                : AppConstants.PAYMENT_PAID.toLowerCase());
+        dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setCreatedby(authUtil.getCurrentUserFullName());
+        dt.setCreatedon(Instant.now());
+        dt.setLastChgBy(authUtil.getCurrentUserFullName());
+        dt.setLastChgDate(Instant.now());
+        dt.setInvestigation(entity);
+
+        RadOrderDt saved = radOrderDtRepository.save(dt);
+
+        if (billing != null) {
+            saveBillingDetail(billing, saved, inv, serviceCategoryCode, true);
+        }
+
+        return saved;
+    }
+
+    @Override
+    public RadOrderDt saveRadOrderDetailForPackage(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                                   DgMasInvestigation investEntity, DgInvestigationPackage pkg,
+                                                   String serviceCategoryCode) {
+
+        RadOrderDt dt = new RadOrderDt();
+        dt.setRadOrderhd(hd);
+        dt.setSubChargecode(investEntity.getSubChargeCodeId());
+        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, hd.getHospital().getId()));
+        dt.setAppointmentDate(inv.getAppointmentDate());
+        dt.setBillingHd(billing);
+        dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
+        dt.setBillingStatus(billing != null
+                ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                : AppConstants.PAYMENT_PAID.toLowerCase());
+        dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setCreatedby(authUtil.getCurrentUserFullName());
+        dt.setCreatedon(Instant.now());
+        dt.setLastChgBy(authUtil.getCurrentUserFullName());
+        dt.setLastChgDate(Instant.now());
+        dt.setInvestigation(investEntity);
+        dt.setPackageId(pkg);
+
+        RadOrderDt saved = radOrderDtRepository.save(dt);
+
+        if (billing != null) {
+            saveBillingDetailPackage(billing, pkg, inv, serviceCategoryCode);
+        }
+
+        return saved;
+    }
+
+    @Override
+    public DgOrderDt saveLabOrderDetail(DgOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                        DgMasInvestigation entity, User currentUser, String serviceCategoryCode) {
+
+        DgOrderDt dt = new DgOrderDt();
+        dt.setInvestigationId(entity);
+        dt.setOrderhdId(hd);
+        dt.setAppointmentDate(inv.getAppointmentDate());
+        dt.setOrderQty(1);
+        dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setBillingStatus(billing != null
+                ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                : AppConstants.PAYMENT_PAID.toLowerCase());
+        dt.setBillingHd(billing);
+        dt.setCreatedBy(currentUser.getFullName());
+        dt.setLastChgBy(currentUser.getFullName());
+        dt.setLastChgDate(LocalDate.now());
+        dt.setMainChargecodeId(entity.getMainChargeCodeId().getChargecodeId());
+        dt.setSubChargeid(entity.getSubChargeCodeId().getSubId());
+        dt.setOrderTrackingStatus(getOrderedStatus());
+        dt.setCreatedon(Instant.now());
+        dt.setLastChgTime(HMISUtil.getCurrentLocalTime().toString());
+
+        DgOrderDt saved = labDtRepository.save(dt);
+
+        if (billing != null) {
+            saveBillingDetail(billing, saved, inv, serviceCategoryCode, false);
+        }
+
+        return saved;
+    }
+
+    @Override
+    public DgOrderDt saveLabOrderDetailForPackage(DgOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                                  DgMasInvestigation investEntity, DgInvestigationPackage pkg,
+                                                  User currentUser) {
+        if (hd == null || investEntity == null || pkg == null) {
+            throw new SDDException("orderDetail", 400, "Invalid data for package order detail");
+        }
+        try {
+            DgOrderDt dt = new DgOrderDt();
+            dt.setOrderhdId(hd);
+            dt.setInvestigationId(investEntity);
+            dt.setMainChargecodeId(investEntity.getMainChargeCodeId().getChargecodeId());
+            dt.setSubChargeid(investEntity.getSubChargeCodeId().getSubId());
+            dt.setPackageId(pkg);
+            dt.setAppointmentDate(inv.getAppointmentDate());
+            dt.setOrderQty(1);
+            dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+            dt.setBillingStatus(billing != null
+                    ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                    : AppConstants.PAYMENT_PAID.toLowerCase());
+            dt.setBillingHd(billing);
+            dt.setOrderTrackingStatus(getOrderedStatus());
+            dt.setCreatedBy(currentUser.getFullName());
+            dt.setLastChgBy(currentUser.getFullName());
+            dt.setCreatedon(Instant.now());
+            dt.setLastChgDate(LocalDate.now());
+            dt.setLastChgTime(HMISUtil.getCurrentLocalTime().toString());
+
+            // billingDetailPackage is invoked ONCE by the caller after its mapping loop, not here
+            return labDtRepository.save(dt);
+        } catch (Exception e) {
+            throw new SDDException("orderDetail", 500, "Error while creating package order detail");
+        }
+
+
+    }
+
+    @Override
+    public BillingHeader saveBillingHeaderIfEnabled(
+            boolean billingEnabled, Object orderHd, Visit visit, User currentUser,
+            BigDecimal total, BigDecimal tax, BigDecimal discount,
+            String serviceCategoryCode, boolean isRadiology) {
+
+        if (!billingEnabled) {
+            return null;
+        }
+
+        BillingHeader billing = saveBillingHeader(orderHd, visit, currentUser, total, tax, discount, serviceCategoryCode, isRadiology);
+
+        if (billing == null) {
+            throw new SDDException("billing", 500, "Failed to create billing");
+        }
+
+        Visit v = visitRepository.getReferenceById(visit.getId());
+        v.setBillingHd(billing);
+        visitRepository.save(v);
+
+        return billing;
+    }
+
+    private LabOrderTrackingStatus getOrderedStatus(){
+        return orderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(()-> new RuntimeException("Order status not found")) ;
     }
 
 }

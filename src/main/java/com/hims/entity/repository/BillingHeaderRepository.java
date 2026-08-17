@@ -83,7 +83,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
               AND (:registrationNo IS NULL OR 
                    LOWER(p.uhid_no) LIKE LOWER(CONCAT('%',:registrationNo,'%')))
             
-            ORDER BY bh.created_dt DESC
+            ORDER BY bh.updated_at DESC
             """, nativeQuery = true)
     List<OpdBillingProjection> findPendingBillingByServiceCategories(
             @Param("serviceCategoryId") Long serviceCategoryId,
