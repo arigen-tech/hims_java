@@ -437,22 +437,21 @@ public class RadiologyServiceImpl implements RadiologyService {
         if (patient == null || investigationReq == null || investigationReq.isEmpty()) {
             throw new IllegalArgumentException("Patient and investigations are required");
         }
+
         log.info("Starting radiology registration for patient: {}", patient.getPatientFn());
 
         Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(
-                patient.getPatientFn(),
-                patient.getPatientLn(),
-                null,
-                patient.getPatientDob(),
-                patient.getPatientAge(),
-                patient.getPatientMobileNumber(),
-                null
+                patient.getPatientFn(), patient.getPatientLn(), null,
+                patient.getPatientDob(), patient.getPatientAge(),
+                patient.getPatientMobileNumber(), null
         );
+
         if (existingPatient.isPresent()) {
-            throw new SDDException("patient",409,"Patient already registered");
+            throw new SDDException("patient", 409, "Patient already registered");
         }
 
         MasServiceCategory serviceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
+
         if (serviceCategory == null) {
             throw new IllegalArgumentException("Invalid service category");
         }
@@ -473,32 +472,41 @@ public class RadiologyServiceImpl implements RadiologyService {
             }
         }
 
-        Map<Long, DgMasInvestigation> investigationsMap = investigationIds.isEmpty()
-                ? new HashMap<>()
-                : dgMasInvestigationRepository.findAllById(investigationIds)
-                .stream()
-                .collect(Collectors.toMap(DgMasInvestigation::getInvestigationId, Function.identity()));
+        Map<Long, DgMasInvestigation> investigationsMap =
+                investigationIds.isEmpty()
+                        ? new HashMap<>()
+                        : dgMasInvestigationRepository.findAllById(investigationIds)
+                        .stream()
+                        .collect(Collectors.toMap(DgMasInvestigation::getInvestigationId, Function.identity()));
 
-        Map<Long, DgInvestigationPackage> packagesMap = packageIds.isEmpty()
-                ? new HashMap<>()
-                : dgInvestigationPackageRepository.findAllById(packageIds)
-                .stream()
-                .collect(Collectors.toMap(DgInvestigationPackage::getPackId, Function.identity()));
+        Map<Long, DgInvestigationPackage> packagesMap =
+                packageIds.isEmpty()
+                        ? new HashMap<>()
+                        : dgInvestigationPackageRepository.findAllById(packageIds)
+                        .stream()
+                        .collect(Collectors.toMap(DgInvestigationPackage::getPackId, Function.identity()));
 
         Map<Long, List<PackageInvestigationMapping>> packageMappingsMap =
                 packageIds.isEmpty()
                         ? new HashMap<>()
-                        : packageInvestigationMappingRepository.findByPackageIdIn(new ArrayList<>(packagesMap.values()))
+                        : packageInvestigationMappingRepository
+                        .findByPackageIdIn(new ArrayList<>(packagesMap.values()))
                         .stream()
                         .collect(Collectors.groupingBy(m -> m.getPackageId().getPackId()));
 
-
         try {
+
             LabRadiologyRegistrationResponse response = new LabRadiologyRegistrationResponse();
+
             Patient savedPatient = patientService.savePatient(patient, false);
+
             if (savedPatient == null) {
-                throw new SDDException("patient",500,"Failed to save patient");
+                throw new SDDException("patient", 500, "Failed to save patient");
             }
+
+            boolean radBillingEnabled =
+                    savedPatient.getPatientHospital() != null
+                            && AppConstants.STATUS_Y.equalsIgnoreCase(savedPatient.getPatientHospital().getRadioBilling());
 
             Visit visit = createVisitForLabRadio(savedPatient, radiologyDepartment);
 
@@ -509,46 +517,71 @@ public class RadiologyServiceImpl implements RadiologyService {
 
             List<LabRadiologyRegistrationResponse.BillingDto> billingDtoList = new ArrayList<>();
 
-
             for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : groupedByDate.entrySet()) {
 
                 LocalDate date = entry.getKey();
                 List<LabRadioInvestigationRequest> investigations = entry.getValue();
+
                 LabRadioCalculateAmountDTO amount = calculateAmount(investigations, serviceCategory);
-                RadOrderHd orderHd = saveOrderHeader(savedPatient, visit, date, userName, currentUser);
+
+                RadOrderHd orderHd = billingService.saveRadOrderHeader(savedPatient, visit, date, userName, radBillingEnabled);
+
                 if (orderHd == null) {
-                    throw new SDDException("RadOrderHeader",500,"Failed to create order header");
+                    throw new SDDException("RadOrderHeader", 500, "Failed to create order header");
                 }
-                BillingHeader billing = billingService.saveBillingHeader(
-                        orderHd, visit, currentUser,
-                        amount.getTotal(), amount.getTax(),
-                        amount.getDiscount(), serviceCategoryRad, true
+
+                BillingHeader billing = billingService.saveBillingHeaderIfEnabled(
+                        radBillingEnabled, orderHd, visit, currentUser,
+                        amount.getTotal(), amount.getTax(), amount.getDiscount(),
+                        serviceCategoryRad, true
                 );
-                if (billing == null) {
-                    throw new SDDException("billing",500,"Failed to create billing");
+
+                if (radBillingEnabled) {
+                    response.setBillinghdId(billing.getId());
+                    collectBillingDtos(investigations, billing, billingDtoList);
                 }
-                Visit v = visitRepository.getReferenceById(visit.getId());
-                visit.setBillingHd(billing);
-                visitRepository.save(visit);
 
-                response.setBillinghdId(billing.getId());
+                for (LabRadioInvestigationRequest inv : investigations) {
 
-                collectBillingDtos(investigations, billing, billingDtoList);
+                    if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(inv.getType())) {
 
-                saveOrderDetailsOptimized(
-                        orderHd, billing, investigations,
-                        userName, currentUser,
-                        investigationsMap, packagesMap, packageMappingsMap
-                );
+                        DgMasInvestigation entity = investigationsMap.get(inv.getId());
+                        if (entity == null) {
+                            log.warn("Investigation not found with ID: {}", inv.getId());
+                            continue;
+                        }
+
+                        billingService.saveRadOrderDetail(orderHd, billing, inv, entity, serviceCategoryRad);
+
+                    } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(inv.getType())) {
+
+                        DgInvestigationPackage pkg = packagesMap.get(inv.getId());
+                        if (pkg == null) {
+                            log.warn("Package not found with ID: {}", inv.getId());
+                            continue;
+                        }
+
+                        List<PackageInvestigationMapping> mappings =
+                                packageMappingsMap.getOrDefault(inv.getId(), new ArrayList<>());
+
+                        for (PackageInvestigationMapping map : mappings) {
+                            billingService.saveRadOrderDetailForPackage(
+                                    orderHd, billing, inv, map.getInvestId(), pkg, serviceCategoryRad
+                            );
+                        }
+                    }
+                }
             }
+
             response.setPatientId(savedPatient.getId());
             response.setBillingHdIds(billingDtoList);
             response.setMsg("Success");
+
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
 
         } catch (Exception e) {
             log.error("Unexpected error in radiology registration", e);
-            throw new SDDException(500,"Error while processing radiology booking");
+            throw new SDDException(500, "Error while processing radiology booking");
         }
     }
 
@@ -595,53 +628,105 @@ public class RadiologyServiceImpl implements RadiologyService {
     /**
      * Optimized order details save with batch operations and pre-fetched data
      */
-    private void saveOrderDetailsOptimized(RadOrderHd hd, BillingHeader billing,
-            List<LabRadioInvestigationRequest> investigations, String userName, User user,
+    private void saveOrderDetailsOptimized(
+            RadOrderHd hd,
+            BillingHeader billing,
+            List<LabRadioInvestigationRequest> investigations,
+            String userName,
+            User user,
             Map<Long, DgMasInvestigation> investigationsMap,
             Map<Long, DgInvestigationPackage> packagesMap,
             Map<Long, List<PackageInvestigationMapping>> packageMappingsMap) {
-        
+
         List<RadOrderDt> orderDetailsToSave = new ArrayList<>();
-        
+
         for (LabRadioInvestigationRequest inv : investigations) {
-            if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(inv.getType())) {
+
+            if (AppConstants.INVESTIGATION.toLowerCase()
+                    .equalsIgnoreCase(inv.getType())) {
+
                 DgMasInvestigation entity = investigationsMap.get(inv.getId());
+
                 if (entity == null) {
                     log.warn("Investigation not found with ID: {}", inv.getId());
                     continue;
                 }
-                
-                RadOrderDt dt = buildRadOrderDt(hd, billing, inv, entity.getSubChargeCodeId());
+
+                RadOrderDt dt = buildRadOrderDt(
+                        hd,
+                        billing,
+                        inv,
+                        entity.getSubChargeCodeId()
+                );
+
                 dt.setInvestigation(entity);
+
                 orderDetailsToSave.add(dt);
-                billingService.saveBillingDetail(billing, dt, inv, serviceCategoryRad, true);
 
+                // Generate BillingDetail only when BillingHeader exists
+                if (billing != null) {
+                    billingService.saveBillingDetail(
+                            billing,
+                            dt,
+                            inv,
+                            serviceCategoryRad,
+                            true
+                    );
+                }
 
-            } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(inv.getType())) {
+            } else if (AppConstants.PACKAGE.toLowerCase()
+                    .equalsIgnoreCase(inv.getType())) {
+
                 DgInvestigationPackage pkg = packagesMap.get(inv.getId());
+
                 if (pkg == null) {
                     log.warn("Package not found with ID: {}", inv.getId());
                     continue;
                 }
-                
-                List<PackageInvestigationMapping> mappings = 
-                        packageMappingsMap.getOrDefault(inv.getId(), new ArrayList<>());
-                
+
+                List<PackageInvestigationMapping> mappings =
+                        packageMappingsMap.getOrDefault(
+                                inv.getId(),
+                                new ArrayList<>()
+                        );
+
                 for (PackageInvestigationMapping map : mappings) {
+
                     DgMasInvestigation invest = map.getInvestId();
-                    RadOrderDt dt = buildRadOrderDt(hd, billing, inv, invest.getSubChargeCodeId());
+
+                    RadOrderDt dt = buildRadOrderDt(
+                            hd,
+                            billing,
+                            inv,
+                            invest.getSubChargeCodeId()
+                    );
+
                     dt.setInvestigation(invest);
                     dt.setPackageId(pkg);
+
                     orderDetailsToSave.add(dt);
-                    billingService.saveBillingDetailPackage(billing, pkg, inv, serviceCategoryRad);
+
+                    // Generate BillingDetail only when BillingHeader exists
+                    if (billing != null) {
+                        billingService.saveBillingDetailPackage(
+                                billing,
+                                pkg,
+                                inv,
+                                serviceCategoryRad
+                        );
+                    }
                 }
             }
         }
-        
+
         // Batch save all order details
         if (!orderDetailsToSave.isEmpty()) {
             radOrderDtRepository.saveAll(orderDetailsToSave);
-            log.debug("Batch saved {} order details", orderDetailsToSave.size());
+
+            log.debug(
+                    "Batch saved {} order details",
+                    orderDetailsToSave.size()
+            );
         }
     }
     
@@ -658,7 +743,11 @@ public class RadiologyServiceImpl implements RadiologyService {
         dt.setAppointmentDate(inv.getAppointmentDate());
         dt.setBillingHd(billing);
         dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
-        dt.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        if(billing!=null){
+            dt.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        }else{
+            dt.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+        }
         dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
@@ -680,10 +769,14 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
 
     
-    private RadOrderHd saveOrderHeader(Patient patient, Visit visit, LocalDate date, String userName, User user) {
+    private RadOrderHd saveOrderHeader(Patient patient, Visit visit, LocalDate date, String userName,boolean radBillingEnabled) {
         RadOrderHd hd = new RadOrderHd();
         hd.setAppointmentDate(date);
-        hd.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
+        if(radBillingEnabled){
+            hd.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        }else{
+            hd.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+        }
         hd.setOrderDate(LocalDate.now());
         hd.setOrderTime(Instant.now());
         hd.setPatient(patient);
@@ -705,10 +798,10 @@ public class RadiologyServiceImpl implements RadiologyService {
             throw new SDDException("patient", 400, "Patient data is required");
         }
 
-        log.info("Starting patient update and radiology booking for patient ID: {}",
-                request.getPatient().getId());
+        log.info("Starting patient update and radiology booking for patient ID: {}", request.getPatient().getId());
 
         Patient patient = patientService.updatePatientDetails(request.getPatient(), true);
+
         if (patient == null) {
             throw new SDDException("patient", 500, "Failed to update patient");
         }
@@ -719,10 +812,13 @@ public class RadiologyServiceImpl implements RadiologyService {
             return new LabRadioUpdateResponse(null, null, "Patient updated successfully");
         }
 
+        boolean radBillingEnabled =
+                patient.getPatientHospital() != null
+                        && AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling());
+
         Visit visit = createVisitForLabRadio(patient, radiologyDepartment);
 
-        MasServiceCategory serviceCategory = masServiceCategoryRepository
-                .findByServiceCateCode(serviceCategoryRad);
+        MasServiceCategory serviceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
 
         if (serviceCategory == null) {
             throw new SDDException("serviceCategory", 400, "Invalid service category");
@@ -744,22 +840,25 @@ public class RadiologyServiceImpl implements RadiologyService {
             }
         }
 
-        Map<Long, DgMasInvestigation> investigationsMap = investigationIds.isEmpty()
-                ? new HashMap<>()
-                : dgMasInvestigationRepository.findAllById(investigationIds)
-                .stream()
-                .collect(Collectors.toMap(DgMasInvestigation::getInvestigationId, Function.identity()));
+        Map<Long, DgMasInvestigation> investigationsMap =
+                investigationIds.isEmpty()
+                        ? new HashMap<>()
+                        : dgMasInvestigationRepository.findAllById(investigationIds)
+                        .stream()
+                        .collect(Collectors.toMap(DgMasInvestigation::getInvestigationId, Function.identity()));
 
-        Map<Long, DgInvestigationPackage> packagesMap = packageIds.isEmpty()
-                ? new HashMap<>()
-                : dgInvestigationPackageRepository.findAllById(packageIds)
-                .stream()
-                .collect(Collectors.toMap(DgInvestigationPackage::getPackId, Function.identity()));
+        Map<Long, DgInvestigationPackage> packagesMap =
+                packageIds.isEmpty()
+                        ? new HashMap<>()
+                        : dgInvestigationPackageRepository.findAllById(packageIds)
+                        .stream()
+                        .collect(Collectors.toMap(DgInvestigationPackage::getPackId, Function.identity()));
 
         Map<Long, List<PackageInvestigationMapping>> packageMappingsMap =
                 packageIds.isEmpty()
                         ? new HashMap<>()
-                        : packageInvestigationMappingRepository.findByPackageIdIn(new ArrayList<>(packagesMap.values()))
+                        : packageInvestigationMappingRepository
+                        .findByPackageIdIn(new ArrayList<>(packagesMap.values()))
                         .stream()
                         .collect(Collectors.groupingBy(m -> m.getPackageId().getPackId()));
 
@@ -772,6 +871,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         List<Long> billingHdIds = new ArrayList<>();
 
         try {
+
             for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : groupedByDate.entrySet()) {
 
                 LocalDate date = entry.getKey();
@@ -779,35 +879,58 @@ public class RadiologyServiceImpl implements RadiologyService {
 
                 LabRadioCalculateAmountDTO amount = calculateAmount(dateInvestigations, serviceCategory);
 
-                RadOrderHd orderHd = saveOrderHeader(patient, visit, date, userName, currentUser);
+                RadOrderHd orderHd = billingService.saveRadOrderHeader(patient, visit, date, userName, radBillingEnabled);
+
                 if (orderHd == null) {
                     throw new SDDException("order", 500, "Failed to create order");
                 }
 
-                BillingHeader billing = billingService.saveBillingHeader(
-                        orderHd, visit, currentUser,
-                        amount.getTotal(), amount.getTax(),
-                        amount.getDiscount(), serviceCategoryRad, true
+                BillingHeader billing = billingService.saveBillingHeaderIfEnabled(
+                        radBillingEnabled, orderHd, visit, currentUser,
+                        amount.getTotal(), amount.getTax(), amount.getDiscount(),
+                        serviceCategoryRad, true
                 );
 
-                if (billing == null) {
-                    throw new SDDException("billing", 500, "Failed to create billing");
+                if (radBillingEnabled) {
+                    billingId = billing.getId();
+                    billingHdIds.add(billingId);
                 }
-                Visit v = visitRepository.getReferenceById(visit.getId());
-                v.setBillingHd(billing);
-                visitRepository.save(v);
 
-                billingId = billing.getId();
-                billingHdIds.add(billingId);
+                for (LabRadioInvestigationRequest inv : dateInvestigations) {
 
-                saveOrderDetailsOptimized(orderHd, billing, dateInvestigations,
-                        userName, currentUser, investigationsMap, packagesMap, packageMappingsMap);
+                    if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(inv.getType())) {
+
+                        DgMasInvestigation entity = investigationsMap.get(inv.getId());
+                        if (entity == null) {
+                            log.warn("Investigation not found with ID: {}", inv.getId());
+                            continue;
+                        }
+
+                        billingService.saveRadOrderDetail(orderHd, billing, inv, entity, serviceCategoryRad);
+
+                    } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(inv.getType())) {
+
+                        DgInvestigationPackage pkg = packagesMap.get(inv.getId());
+                        if (pkg == null) {
+                            log.warn("Package not found with ID: {}", inv.getId());
+                            continue;
+                        }
+
+                        List<PackageInvestigationMapping> mappings =
+                                packageMappingsMap.getOrDefault(inv.getId(), new ArrayList<>());
+
+                        for (PackageInvestigationMapping map : mappings) {
+                            billingService.saveRadOrderDetailForPackage(
+                                    orderHd, billing, inv, map.getInvestId(), pkg, serviceCategoryRad
+                            );
+                        }
+                    }
+                }
             }
 
         } catch (SDDException e) {
             log.error("Business error: {}", e.getMessage());
             throw e;
-
         } catch (Exception e) {
             log.error("Unexpected error", e);
             throw new SDDException("system", 500, "Error while processing booking");
@@ -815,11 +938,7 @@ public class RadiologyServiceImpl implements RadiologyService {
 
         log.info("Completed successfully, total billings={}", billingHdIds.size());
 
-        return new LabRadioUpdateResponse(
-                billingId,
-                billingHdIds,
-                AppConstants.PATIENT_UPDATED_BOOKING_SUCCESS
-        );
+        return new LabRadioUpdateResponse(billingId, billingHdIds, AppConstants.PATIENT_UPDATED_BOOKING_SUCCESS);
     }
 
 
@@ -1174,5 +1293,15 @@ public class RadiologyServiceImpl implements RadiologyService {
         dto.setDepartment(hd.getDepartment() != null ? hd.getDepartment().getDepartmentName() : null);
 
         return dto;
+    }
+    @Override
+    public ApiResponse<List<Map<String, Object>>> orderTrackingByInpatientIdOrAccesionNo(Long inpatientId, String accesionNo) {
+        try {
+            List<Map<String, Object>> result = radOrderDtRepository.orderTrackingByInpatientIdOrAccesionNo(inpatientId, accesionNo);
+            return ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error fetching order tracking", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Internal Server Error", 500);
+        }
     }
 }

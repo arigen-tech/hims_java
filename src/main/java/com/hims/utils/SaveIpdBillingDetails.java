@@ -77,14 +77,24 @@ IpdBillingDetailsRepository ipdBillingDetailsRepository;
 
         BigDecimal currentNetAmount = billingHeader.getNetAmount() != null ? billingHeader.getNetAmount() : BigDecimal.ZERO;
 
-        billingHeader.setTotalAmount(currentTotalAmount.add(amount != null ? amount : BigDecimal.ZERO));
+        BigDecimal currentPatientPaidAmount = billingHeader.getPatientPaidAmount() != null ? billingHeader.getPatientPaidAmount() : BigDecimal.ZERO;
 
-        billingHeader.setGstAmount(currentGstAmount.add(gstAmount != null ? gstAmount : BigDecimal.ZERO));
+        BigDecimal updatedTotalAmount = currentTotalAmount.add(amount != null ? amount : BigDecimal.ZERO);
 
-        billingHeader.setDiscountAmount(currentDiscountAmount.add(discountAmount != null ? discountAmount : BigDecimal.ZERO));
+        BigDecimal updatedGstAmount = currentGstAmount.add(gstAmount != null ? gstAmount : BigDecimal.ZERO);
 
-        billingHeader.setNetAmount(currentNetAmount.add(netAmount != null ? netAmount : BigDecimal.ZERO));
+        BigDecimal updatedDiscountAmount = currentDiscountAmount.add(discountAmount != null ? discountAmount : BigDecimal.ZERO);
 
+        BigDecimal updatedNetAmount = currentNetAmount.add(netAmount != null ? netAmount : BigDecimal.ZERO);
+
+        // Outstanding = Net Amount - Patient Paid Amount
+        BigDecimal outstandingAmount = updatedNetAmount.subtract(currentPatientPaidAmount);
+
+        billingHeader.setTotalAmount(updatedTotalAmount);
+        billingHeader.setGstAmount(updatedGstAmount);
+        billingHeader.setDiscountAmount(updatedDiscountAmount);
+        billingHeader.setNetAmount(updatedNetAmount);
+        billingHeader.setOutstandingAmount(outstandingAmount);
         billingHeader.setUpdatedAt(LocalDateTime.now());
 
         ipdBillingHeaderRepository.save(billingHeader);

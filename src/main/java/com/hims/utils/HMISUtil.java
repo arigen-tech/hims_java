@@ -1,6 +1,8 @@
 package com.hims.utils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 public final class HMISUtil {
 
@@ -21,5 +23,16 @@ public final class HMISUtil {
             Long sequence) {
 
         return transaction.getPrefix() + "/" + financialYear + "/" + sequence;
+    }
+
+    public static LocalTime getCurrentLocalTime(){
+        return  LocalTime.now();
+    }
+    public  static LocalDateTime getCurrentLocalDateTime(){
+        return  LocalDateTime.now();
+    }
+
+    public  static LocalDate getCurrentLocalDate(){
+        return  LocalDate.now();
     }
 }

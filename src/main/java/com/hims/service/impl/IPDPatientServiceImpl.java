@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
+import java.time.temporal.ChronoUnit;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
@@ -3712,6 +3713,92 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         }).collect(Collectors.toList());
 
         return ResponseUtils.createSuccessResponse(result, new TypeReference<List<NursingCareProcedure>>() {});
+    }
+
+
+    @Override
+    public ApiResponse<InpatientAdmissionDetailsResponse> getAdmissionDetailsByInpatient(Long inpatientId) {
+
+        log.info("Fetching admission details for inpatientId={}", inpatientId);
+
+        InpatientAdmissionProjection projection = inpatientRepository.findAdmissionDetailsByInpatientId(inpatientId)
+                .orElseThrow(() -> new RuntimeException("Inpatient not found with ID: " + inpatientId));
+
+        InpatientAdmissionDetailsResponse response = new InpatientAdmissionDetailsResponse();
+
+        // Patient Information
+        response.setPatientId(projection.getPatientId());
+        response.setPatientName(String.join(" ",
+                nullToEmpty(projection.getPatientFn()),
+                nullToEmpty(projection.getPatientMn()),
+                nullToEmpty(projection.getPatientLn())).trim());
+        response.setUhid(projection.getUhidNo());
+        response.setAge(projection.getPatientAge());
+        response.setGenderId(projection.getGenderId());
+        response.setGender(projection.getGenderName());
+        response.setContactNo(projection.getPatientMobileNumber());
+        response.setEmergencyContactNo(projection.getEmergencyContactNo());
+
+        // Admission Information
+        response.setAdmissionNo(projection.getAdmissionNo());
+       response.setAdmissionTime(projection.getAdmissionTime());
+       response.setAdmissionDate(projection.getAdmissionDate());
+        response.setAdmissionCategory(projection.getAdmissionCategoryName());
+        response.setAdmissionType(projection.getAdmissionTypeName());
+        response.setAdmissionSource(projection.getAdmissionSourceName());
+        response.setCurrentStatus(projection.getAdmissionStatusName());
+        if (projection.getAdmissionDate() != null) {
+            LocalDate endDate = projection.getDischargeDate() != null
+                    ? projection.getDischargeDate()
+                    : LocalDate.now();
+            long days = ChronoUnit.DAYS.between(projection.getAdmissionDate(), endDate);
+            response.setLos(days + " day(s)");
+        }
+
+        // Doctor & Location
+        response.setAdmittingDoctor(projection.getDoctorName());
+        response.setAdmittingWard(projection.getWardName());
+        response.setCurrentWard(projection.getWardName());
+        response.setRoom(projection.getRoomName());
+        response.setBed(projection.getBedName());
+        response.setCareLevel(projection.getCareLevelName());
+
+        // Clinical Info
+        response.setReasonForAdmission(projection.getConditionNotes());
+        response.setInitialDiagnosis(projection.getInitialDiagnosis());
+        response.setIcdDiagnosis(projection.getIcdName());
+        response.setPatientCondition(projection.getPatientConditionName());
+        response.setAdmissionPriority(projection.getAdmissionPriority());
+        response.setRemark(projection.getConditionNotes());
+
+
+        // NOK Details
+        ipNokDetailsRepository.findNokDetailsByInpatientId(inpatientId)
+                .ifPresent(nok -> {
+                    response.setNokName(nok.getNokName());
+                    response.setRelationship(nok.getRelationName());
+                    response.setContact(nok.getContactNo());
+                    response.setAddress(nok.getAddressLine());
+                });
+
+        // Document Details
+        List<DocumentProjection> documents = ipDocumentRepository.findDocumentsByInpatientId(inpatientId);
+        List<InpatientAdmissionDetailsResponse.DocumentList> documentList = documents.stream()
+                .map(doc -> InpatientAdmissionDetailsResponse.DocumentList.builder()
+                        .documentName(doc.getDocumentType())
+                        .documentRemarks(doc.getDocumentNotes())
+                        .fileName(doc.getFileName())
+                        .build())
+                .collect(Collectors.toList());
+        response.setDocumentListList(documentList);
+
+        log.info("Admission details fetched successfully for inpatientId={}", inpatientId);
+
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    }
+
+    private String nullToEmpty(String s) {
+        return s == null ? "" : s;
     }
 
 

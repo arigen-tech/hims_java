@@ -190,4 +190,7 @@ public final class ReportConstants {
 
     public static final String PRESCRIPTION_ISSUE_SLIP_JASPER = "Prescription_issue_slip";
     public static final String PRESCRIPTION_ISSUE_SLIP_REPORT = "PrescriptionIssueSlip";
+
+    public static final String PRESCRIPTION_INVOICE_JASPER = "Prescription_invoice";
+    public static final String PRESCRIPTION_INVOICE_REPORT = "PrescriptionInvoice";
 }
