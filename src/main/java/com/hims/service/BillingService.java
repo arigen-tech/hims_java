@@ -14,6 +14,9 @@ import java.util.List;
 public interface BillingService {
     ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount);
 
+    //for registration Service add Billing Details
+    BillingDetail saveRegistrationServiceBillingDetails(Visit visit, BillingHeader savedHeader);
+
     /**
      * Process OPD consultation payment
      */

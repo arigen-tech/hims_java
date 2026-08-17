@@ -900,11 +900,12 @@ public class PatientServiceImpl implements PatientService {
 
         Visit savedVisit=visitRepository.save(newVisit);
         //create billing header and detail
-        MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
-        MasDiscount discount=new MasDiscount();
-        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
-        newVisit.setBillingHd(resp.getResponse().getHeader());
-        visitRepository.save(newVisit);
+        if(AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getRegCostApplicable())){
+            MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
+            ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
+            newVisit.setBillingHd(resp.getResponse().getHeader());
+            visitRepository.save(newVisit);
+        }
         return savedVisit;
     }
 
@@ -1318,7 +1319,7 @@ public class PatientServiceImpl implements PatientService {
         Set<Long> occupiedTokens = new HashSet<>();
         try {
             occupiedTokens = visitRepository.findOccupiedTokens(
-                            deptId, doctorId, sessionId, startOfDay, endOfDay)
+                            deptId, doctorId, sessionId, startOfDay, endOfDay,AppConstants.VISIT_STATUS_PENDING,AppConstants.VISIT_STATUS_COMPLETED)
                     .stream().collect(Collectors.toSet());
         } catch (Exception e) {
             log.error("Error fetching occupied tokens", e);

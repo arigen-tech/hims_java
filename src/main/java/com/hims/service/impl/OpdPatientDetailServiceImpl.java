@@ -173,8 +173,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         saveOrUpdateIcdDiagnosis(diagIdList, saved.getOpdPatientDetailsId(), request.getVisitId(), user.getUserId());
         //diagnosis - End
 
-        boolean hasLabInvestigations = false;
-        boolean hasRadioInvestigations = false;
+
         if (request.getInvestigation() != null && !request.getInvestigation().isEmpty()) {
             if (request.getInvestigation().stream().anyMatch(i -> i == null || i.getInvestigationDate() == null)) {
                 throw new SDDException("investigation", 400, "Investigation date cannot be null");
@@ -205,18 +204,41 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                                             InvestigationData::investigationDate
                                     )));
 
+
             //if hospital flag
            // if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getLabBilling())) {
                 if (grouped.containsKey(Long.valueOf(laboratoryDepartment))) {
                     log.info("Processing LAB investigations");
-                    processLabInvestigations(grouped.get(Long.valueOf(laboratoryDepartment)), patient, visit, user, labOrderedStatus);
+                    Map<LocalDate, List<InvestigationData>> labInvestigations = grouped.get(Long.valueOf(laboratoryDepartment));
+
+                    processLabInvestigations(labInvestigations, patient, visit, user, labOrderedStatus);
+
+                    String labAdvised = labInvestigations.values().stream()
+                            .flatMap(List::stream)
+                            .map(InvestigationData::investigationName)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .collect(Collectors.joining(", "));
+
+                    saved.setLabAdvised(labAdvised);
                     saved.setLabFlag(AppConstants.STATUS_Y.toLowerCase());
+
                 }
            // }
 //            if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling())){
                 if (grouped.containsKey(Long.valueOf(radiologyDepartment))) {
                     log.info("Processing RADIOLOGY investigations");
-                    processRadiologyInvestigations(grouped.get(Long.valueOf(radiologyDepartment)), patient, visit, user);
+                    Map<LocalDate, List<InvestigationData>> radioInvestigations = grouped.get(Long.valueOf(radiologyDepartment));
+                    String radioAdvised = radioInvestigations.values().stream()
+                            .flatMap(List::stream)
+                            .map(InvestigationData::investigationName)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .collect(Collectors.joining(", "));
+
+                    processRadiologyInvestigations(radioInvestigations, patient, visit, user);
+
+                    saved.setRadioAdvised(radioAdvised);
                     saved.setRadioFlag(AppConstants.STATUS_Y.toLowerCase());
                 }
 //            }
@@ -366,7 +388,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         handleRecallAdmission(opd, request);
         handleRecallFollowUp(opd, request);
         handleRecallReferral(opd, request);
-        opdPatientDetailRepository.save(opd);
+        OpdPatientDetail opdPatientDetail = opdPatientDetailRepository.save(opd);
         handleRecallPregnancyDetails(opd, request.getPregnancyDetails(), user);
 
         //ICD diagnosis details{
@@ -391,7 +413,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                                 item.getFlag()
                         ));
 
-        createOrDeleteInvestigation(investigations, patient, visit, user);
+        createOrDeleteInvestigation(investigations, patient, visit, user, opdPatientDetail);
+
+        updateInvestigationAdvisedNames(
+                investigations,
+                opdPatientDetail
+        );
 
         //    }
         //Treatment data {
@@ -629,7 +656,59 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
     }
 
-    private void createOrDeleteInvestigation(List<InvestigationData> investigations, Patient patient, Visit visit, User user) {
+    private void updateInvestigationAdvisedNames(
+            List<InvestigationData> investigations,
+            OpdPatientDetail opdPatientDetail) {
+
+        if (investigations == null || investigations.isEmpty()) {
+            opdPatientDetail.setLabAdvised(null);
+            opdPatientDetail.setRadioAdvised(null);
+            return;
+        }
+
+        Long labDepartmentId = Long.valueOf(laboratoryDepartment);
+        Long radDepartmentId = Long.valueOf(radiologyDepartment);
+
+        // LAB
+        String labAdvised = investigations.stream()
+                .filter(Objects::nonNull)
+                .filter(inv -> inv.flag() != null && inv.flag() != -1)
+                .filter(inv -> inv.investigationId() != null)
+                .filter(inv -> labDepartmentId.equals(
+                        helperUtils.getDepartmentFromInvestigation(
+                                inv.investigationId()
+                        )
+                ))
+                .map(InvestigationData::investigationName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.joining(", "));
+
+        // RADIOLOGY
+        String radioAdvised = investigations.stream()
+                .filter(Objects::nonNull)
+                .filter(inv -> inv.flag() != null && inv.flag() != -1)
+                .filter(inv -> inv.investigationId() != null)
+                .filter(inv -> radDepartmentId.equals(
+                        helperUtils.getDepartmentFromInvestigation(
+                                inv.investigationId()
+                        )
+                ))
+                .map(InvestigationData::investigationName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.joining(", "));
+
+        opdPatientDetail.setLabAdvised(
+                labAdvised.isBlank() ? null : labAdvised
+        );
+
+        opdPatientDetail.setRadioAdvised(
+                radioAdvised.isBlank() ? null : radioAdvised
+        );
+    }
+
+    private void createOrDeleteInvestigation(List<InvestigationData> investigations, Patient patient, Visit visit, User user,OpdPatientDetail opdPatientDetail) {
         if (investigations == null || investigations.isEmpty()) {
             return;
         }
@@ -638,7 +717,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         Long labDepartmentId = Long.valueOf(laboratoryDepartment);
         Long radDepartmentId = Long.valueOf(radiologyDepartment);
 
-        // 1. EXISTING LAB ORDERS
         List<DgOrderHd> labHeaders = dgOrderHdRepo.findAllByVisitId(visit);
         List<DgOrderDt> labDetails = new ArrayList<>();
 
@@ -851,25 +929,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             deleteRadiologyInvestigation(deleteRadList,deleteRadHeader);
         }
         // 10. LAB ORDERED STATUS
-        LabOrderTrackingStatus labOrderedStatus =
-                labOrderTrackingStatusRepository
-                        .findById(orderedStatusId)
-                        .orElseThrow(() ->
-                                new SDDException(
-                                        "status",
-                                        500,
-                                        "Ordered status not found with id: "
-                                                + orderedStatusId
-                                )
-                        );
+        LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId)
+                        .orElseThrow(() -> new SDDException( "status", 500, "Ordered status not found with id: " + orderedStatusId));
 
 
         // 11. ADD LAB INVESTIGATIONS
-
         if (!addLabList.isEmpty()) {
-            Map<LocalDate, List<InvestigationData>> labGrouped =
-                    addLabList.stream()
-                            .collect(Collectors.groupingBy(
+            Map<LocalDate, List<InvestigationData>> labGrouped = addLabList.stream().collect(Collectors.groupingBy(
                                     InvestigationData::investigationDate
                             ));
 
@@ -889,26 +955,22 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                                 .orElse(null);
 
                 if (existingLabHeader != null) {
-                    // EXISTING LAB HEADER
-                    BillingHeader billingHeader = findBillingHeaderFromLabDetails(existingLabHeader);
-//                    if (billingHeader == null) {
-//                        throw new SDDException(
-//                                "billing",
-//                                500,
-//                                "Billing header not found for LAB order: "
-//                                        + existingLabHeader.getId()
-//                        );
-//                    }
-                    createLabOrderDetails(dateInvestigations,existingLabHeader,labOrderedStatus,billingHeader);
-                    if(billingHeader!=null){
-                        updateBillingHeaderById(billingHeader.getId(),false,user);
-                    }
-
+                    createLabOrderDetails(dateInvestigations,existingLabHeader,labOrderedStatus,null);
                 } else {
                     // NEW LAB HEADER
                     Map<LocalDate, List<InvestigationData>> grouped = new HashMap<>();
                     grouped.put(appointmentDate, dateInvestigations);
+
+                    String radioAdvised = grouped.values().stream()
+                            .flatMap(List::stream)
+                            .map(InvestigationData::investigationName)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .collect(Collectors.joining(", "));
+
                     processLabInvestigations(grouped,patient,visit,user,labOrderedStatus);
+
+
 
                 }
             }

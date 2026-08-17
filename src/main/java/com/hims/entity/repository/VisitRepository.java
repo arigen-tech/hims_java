@@ -446,16 +446,18 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
     @Query("SELECT v.tokenNo FROM Visit v WHERE " +
             "v.department.id = :departmentId AND " +
-            "v.doctor.userId = :doctorId AND " +
+            "v.iniDoctor.userId = :doctorId AND " +
             "v.session.id = :sessionId AND " +
             "v.visitDate >= :startOfDay AND v.visitDate < :endOfDay AND " +
-            "v.visitStatus NOT IN ('c')")
+            "v.visitStatus NOT IN (:completedVisit,:pendingVisit)")
     List<Long> findOccupiedTokens(
             @Param("departmentId") Long departmentId,
             @Param("doctorId") Long doctorId,
             @Param("sessionId") Long sessionId,
             @Param("startOfDay") Instant startOfDay,
-            @Param("endOfDay") Instant endOfDay
+            @Param("endOfDay") Instant endOfDay,
+            @Param("pendingVisit") String pendingVisit,
+            @Param("completedVisit") String completedVisit
     );
 
     @Query(value = "SELECT v.* FROM visit v WHERE v.patient_id = :patientId " +
