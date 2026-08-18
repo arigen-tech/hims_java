@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -14,7 +15,7 @@ public class DgOrderHd {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "orderhd_id", nullable = false)
-    private int id;
+    private Long id;
 
     @Column(name = "order_date")
     private LocalDate orderDate;
@@ -85,7 +86,7 @@ public class DgOrderHd {
     private String lastChgBy;
 
     @Column(name = "order_time")
-    private Instant orderTime;
+    private LocalDateTime orderTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inpatient_id")

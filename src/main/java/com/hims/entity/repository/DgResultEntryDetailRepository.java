@@ -223,4 +223,79 @@ AND ( :patientName IS NULL OR LOWER(CONCAT(
             @Param("resultValidationStatus") String resultValidationStatus,
             Pageable pageable
     );
+       @Query("""
+        SELECT new com.hims.response.LabInvestigationsReportResponse(
+            h.resultEntryId,
+            d.resultEntryDetailId,
+            h.orderHd.id,
+            i.investigationName,
+
+             CONCAT(
+        COALESCE(p.patientFn, ''), ' ',
+        COALESCE(p.patientMn, ''), ' ',
+        COALESCE(p.patientLn, '')
+    ),
+
+            p.patientMobileNumber,
+            g.genderName,
+            p.patientAge,
+            u.name,
+            d.result,
+            d.normalRange,
+            h.resultEnteredBy,
+            CAST(h.resultVerifiedBy AS string),
+            h.resultDate
+        )
+        FROM DgResultEntryDetail d
+
+        JOIN d.resultEntryId h
+        
+        LEFT JOIN h.orderHd oh
+
+        LEFT JOIN d.investigationId i
+
+        LEFT JOIN d.uomId u
+
+        LEFT JOIN h.hinId p
+
+        LEFT JOIN p.patientGender g
+
+        WHERE h.hospitalId.id = :hospitalId
+
+          AND (
+                :departmentId IS NULL
+                OR oh.departmentId = :departmentId
+          )
+
+          AND ( :patientName IS NULL OR LOWER(CONCAT(
+        COALESCE(p.patientFn, ''), ' ',
+        COALESCE(p.patientMn, ''), ' ',
+        COALESCE(p.patientLn, '')
+    )) LIKE :patientName )
+
+          AND ( :patientMobileNo IS NULL OR p.patientMobileNumber LIKE :patientMobileNo )
+
+          AND (
+                :fromDate IS NULL
+                OR h.resultDate >= :fromDate
+          )
+
+          AND (
+                :toDate IS NULL
+                OR h.resultDate <= :toDate
+          )
+
+          AND d.result IS NOT NULL
+
+        """)
+        Page<LabInvestigationsReportResponse> getOutOfRangeInvestigationResults(
+                @Param("hospitalId") Long hospitalId,
+                @Param("departmentId") Long departmentId,
+                @Param("patientName") String patientName,
+                @Param("patientMobileNo") String patientMobileNo,
+                @Param("fromDate") LocalDate fromDate,
+                @Param("toDate") LocalDate toDate,
+                Pageable pageable
+        );
+
 }

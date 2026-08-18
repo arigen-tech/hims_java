@@ -8,6 +8,7 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.LabService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -376,7 +377,7 @@ public class LabServiceImpl implements LabService {
 
             // UPDATE ORDER DETAILS STATUS
             List<DgOrderDt> orderDetails =
-                    labOrderDtRepository.findByOrderhdIdId(sampleReq.getOrderHdId());
+                    labOrderDtRepository.findByOrderHd_Id(sampleReq.getOrderHdId());
 
             Set<Long> requestedInvestigationIds =
                     sampleReq.getSampleCollectionReq()
@@ -385,9 +386,9 @@ public class LabServiceImpl implements LabService {
                             .collect(Collectors.toSet());
 
             for (DgOrderDt orderDetail : orderDetails) {
-                if (orderDetail.getInvestigationId() != null &&
+                if (orderDetail.getInvestigation() != null &&
                         requestedInvestigationIds.contains(
-                                orderDetail.getInvestigationId().getInvestigationId()) &&
+                                orderDetail.getInvestigation().getInvestigationId()) &&
                        AppConstants.STATUS_Y.equalsIgnoreCase(orderDetail.getBillingStatus())) {
 
                     orderDetail.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
@@ -567,7 +568,7 @@ public class LabServiceImpl implements LabService {
 
                     DgOrderDt orderDt =
                             labOrderDtRepository
-                                    .findByOrderhdId_IdAndInvestigationId_InvestigationId(
+                                    .findByOrderHd_IdAndInvestigation_InvestigationId(
                                             orderHd.getId(),
                                             investigationId
                                     );
@@ -607,7 +608,7 @@ public class LabServiceImpl implements LabService {
 
             header.setValidated(finalHeaderStatus);
             header.setValidation_date(LocalDate.now());
-            header.setValidationTime(Instant.now());
+            header.setValidationTime(HMISUtil.getCurrentLocalDateTime());
             header.setValidatedBy(validatedBy);
             dgSampleCollectionHeaderRepository.save(header);
 
@@ -900,7 +901,7 @@ public class LabServiceImpl implements LabService {
                                 investigation.getInvestigationId());
                     }
 
-                    DgOrderDt dgOrderDt = labOrderDtRepository.findByOrderhdId_IdAndInvestigationId_InvestigationId(dgOrderH.getId(), investigation.getInvestigationId());
+                    DgOrderDt dgOrderDt = labOrderDtRepository.findByOrderHd_IdAndInvestigation_InvestigationId(dgOrderH.getId(), investigation.getInvestigationId());
                     DgOrderDt byId = labOrderDtRepository.findById(dgOrderDt.getId()).orElseThrow(() -> new RuntimeException("Invalid Dg Order Dt Id"));
                     byId.setOrderTrackingStatus(labOrderTrackingStatusRepository.findById(resultEnteredStatusId).orElseThrow());
                     labOrderDtRepository.save(byId);
@@ -1077,7 +1078,7 @@ public class LabServiceImpl implements LabService {
                 }
 
                 //save order status in dgOrderDt
-                DgOrderDt dgOrderDt = labOrderDtRepository.findByOrderhdId_IdAndInvestigationId_InvestigationId(header.getOrderHd().getId(), detail.getInvestigationId().getInvestigationId());
+                DgOrderDt dgOrderDt = labOrderDtRepository.findByOrderHd_IdAndInvestigation_InvestigationId(header.getOrderHd().getId(), detail.getInvestigationId().getInvestigationId());
                 DgOrderDt byId = labOrderDtRepository.findById(dgOrderDt.getId()).orElseThrow(() -> new RuntimeException(AppConstants.LAB_ORDER_DETAIL_NOT_FOUND_ERR_MSG));
                 byId.setOrderTrackingStatus(labOrderTrackingStatusRepository.findById(resultValidatedStatusId).orElseThrow());
                 labOrderDtRepository.save(byId);
@@ -1614,6 +1615,26 @@ public class LabServiceImpl implements LabService {
 
         } catch (Exception e) {
             log.error("Error in getOrderTrackingDetailsByPatientId", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Internal Server Error",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<Page<LabInvestigationsReportResponse>> getOutOfRangeInvestigationResults(Long hospitalId, Long departmentId, String patientName, String patientMobileNo, LocalDate fromDate, LocalDate toDate, int page, int size) {
+        try {
+            log.info("getOrderTrackingReports method started with hospitalId={}, departmentId={}, patientName={}, patientMobileNo={}, fromDate{}, , toDate={}", hospitalId, departmentId,patientName,patientMobileNo,fromDate,toDate);
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "resultEntryId.lastChgdTime"));
+            Page<LabInvestigationsReportResponse> result = dgResultEntryDetailRepository.getOutOfRangeInvestigationResults(hospitalId, departmentId, patientName, patientMobileNo, fromDate, toDate, pageable);
+            log.info("getOrderTrackingReports method ended with hospitalId={}, departmentId={}, patientName={}, patientMobileNo={}, fromDate{}, , toDate={}", hospitalId, departmentId,patientName,patientMobileNo,fromDate,toDate);
+            return  ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
+        }catch (Exception e) {
+            log.error("Error in getOutOfRangeInvestigationResults", e);
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},

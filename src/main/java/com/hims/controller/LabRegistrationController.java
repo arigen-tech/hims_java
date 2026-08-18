@@ -28,22 +28,7 @@ import java.util.List;
 public class LabRegistrationController {
 
     @Autowired
-    LabRegistrationServices labRegistrationServices;
-
-    @Autowired
-    RadiologyService radiologyService;
-
-    @Autowired
-    SampleValidationService validationService;
-    @Autowired
-    ResultService resultService;
-
-      // or your service interface
-    @Autowired
-    BillingService billingService;
-
-    @Autowired
-    private LabOrderTrackingStatusService labOrderTrackingStatusService;
+    private LabRegistrationServices labRegistrationServices;
 
 
     /**
@@ -91,41 +76,4 @@ public class LabRegistrationController {
         return labRegistrationServices.labRegForExistingOrder(labReq);
     }
 
-
-    /**
-     * Creates a new lab order tracking status record.
-     * Tracks the status and progression of laboratory orders through the system.
-     *
-     * @param request The lab order tracking status request containing tracking details
-     * @return ResponseEntity with HTTP status CREATED containing the created tracking status response
-     */
-    @PostMapping("/track-order-status/create")
-    public ResponseEntity<?> create(@Valid @RequestBody LabOrderTrackingStatusRequest request) {
-        log.info("track-order-status/create api called");
-        return ResponseEntity.status(HttpStatus.CREATED).body(labOrderTrackingStatusService.create(request));
-    }
-
-    /**
-     * Retrieves all investigation results for a specific patient.
-     * Fetches the investigation results history for a patient within a specific hospital.
-     * 
-     * @param patientId The unique identifier of the patient
-     * @param hospitalId The unique identifier of the hospital
-     * @return ApiResponse containing a list of ResultForInvestigationResponse objects with patient's investigation results
-     */
-    @GetMapping("/investigationResultByPatient")
-    public ApiResponse<List<ResultForInvestigationResponse>> getResultForInvestigation(@RequestParam Long patientId,@RequestParam Long hospitalId) {
-        log.info("investigationResultForMobile");
-        return  resultService.getResultForInvestigation(patientId,hospitalId);
-    }
-
-//    @PostMapping("/saveResultEntry")
-//    public ResponseEntity<ApiResponse<String>> saveOrUpdate(@RequestBody ResultEntryMainRequest request) {
-//        log.info("Received saveOrUpdateResultEntry request for sampleCollectionHeaderId={}, subChargeCodeId={}",
-//                request.getSampleCollectionHeaderId(), request.getSubChargeCodeId());
-//        ApiResponse<String> response = resultService.saveOrUpdateResultEntry(request);
-//        log.info("saveOrUpdateResultEntry response status={}", response.getStatus());
-//        return ResponseEntity.ok(response);
-//    }
-    
 }

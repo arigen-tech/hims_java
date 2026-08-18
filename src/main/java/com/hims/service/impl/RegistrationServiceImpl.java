@@ -582,7 +582,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             for (DgOrderHd header : labHeaders) {
                 header.setOrderDate(updatedVisitDate);
                 header.setAppointmentDate(updatedVisitDate);
-                List<DgOrderDt> details = labDtRepository.findByOrderhdId(header);
+                List<DgOrderDt> details = labDtRepository.findByOrderHd(header);
                 for (DgOrderDt detail : details) {
                     detail.setAppointmentDate(updatedVisitDate);
                 }
@@ -613,7 +613,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         List<DgOrderHd> labHeaders = labHdRepository.findAllByVisitId(visit);
         for (DgOrderHd header : labHeaders) {
             header.setOrderStatus(cancelledStatus);
-            List<DgOrderDt> details = labDtRepository.findByOrderhdId(header);
+            List<DgOrderDt> details = labDtRepository.findByOrderHd(header);
             for (DgOrderDt detail : details) {
                 detail.setOrderStatus(cancelledStatus);
             }

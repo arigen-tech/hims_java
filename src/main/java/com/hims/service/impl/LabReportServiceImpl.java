@@ -717,7 +717,7 @@ public class LabReportServiceImpl implements LabReportService {
                 response.setOrderStatusName(entity.getOrderTrackingStatus().getOrderStatusName());
                 response.setGeneratedSampleId("N/A");
             }else {
-                List<DgSampleCollectionDetails> sampleCollectionDetails = dgSampleCollectionDetailsRepository.findByInvestigationId_InvestigationIdAndSampleCollectionHeader_visitId_Id(entity.getInvestigationId().getInvestigationId(), entity.getOrderhdId().getVisitId().getId());
+                List<DgSampleCollectionDetails> sampleCollectionDetails = dgSampleCollectionDetailsRepository.findByInvestigationId_InvestigationIdAndSampleCollectionHeader_visitId_Id(entity.getInvestigation().getInvestigationId(), entity.getOrderHd().getVisitId().getId());
                 DgSampleCollectionDetails sampleCollectionDetail =
                         sampleCollectionDetails.stream()
                                 .filter(d -> d.getSampleCollDatetime() != null)
@@ -728,23 +728,23 @@ public class LabReportServiceImpl implements LabReportService {
                 response.setGeneratedSampleId(sampleCollectionDetail.getSampleGeneratedId());
             }
         }
-        Patient patient = entity.getOrderhdId().getPatientId();
-        response.setDgOrderHdId(entity.getOrderhdId().getId());
-        response.setOrderNum(entity.getOrderhdId().getOrderNo());
+        Patient patient = entity.getOrderHd().getPatientId();
+        response.setDgOrderHdId(entity.getOrderHd().getId());
+        response.setOrderNum(entity.getOrderHd().getOrderNo());
         response.setAge(patient.getPatientAge());
         response.setGender(patient.getPatientGender().getGenderName());
         response.setMobileNum(patient.getPatientMobileNumber());
         response.setPatientName(patient.getPatientMn().trim().isBlank()?patient.getPatientFn()+" "+patient.getPatientLn():patient.getFullName());
-        response.setInvestigationName(entity.getInvestigationId().getInvestigationName());
-        response.setOrderDate(entity.getOrderhdId().getOrderDate());
+        response.setInvestigationName(entity.getInvestigation().getInvestigationName());
+        response.setOrderDate(entity.getOrderHd().getOrderDate());
 
         return  response;
     }
 
     private LabIncompleteInvestigationsReportResponse mapToIncompleteReportResponse(DgOrderDt entity){
         LabIncompleteInvestigationsReportResponse response= new LabIncompleteInvestigationsReportResponse();
-        Patient patient = entity.getOrderhdId().getPatientId();
-        List<DgSampleCollectionDetails> sampleCollectionDetails = dgSampleCollectionDetailsRepository.findByInvestigationId_InvestigationIdAndSampleCollectionHeader_visitId_Id(entity.getInvestigationId().getInvestigationId(), entity.getOrderhdId().getVisitId().getId());
+        Patient patient = entity.getOrderHd().getPatientId();
+        List<DgSampleCollectionDetails> sampleCollectionDetails = dgSampleCollectionDetailsRepository.findByInvestigationId_InvestigationIdAndSampleCollectionHeader_visitId_Id(entity.getInvestigation().getInvestigationId(), entity.getOrderHd().getVisitId().getId());
 
         DgSampleCollectionDetails sampleCollectionDetail =
                 sampleCollectionDetails.stream()
@@ -752,13 +752,13 @@ public class LabReportServiceImpl implements LabReportService {
                         .max(Comparator.comparing(DgSampleCollectionDetails::getSampleCollDatetime))
                         .orElseThrow();
         response.setSampleId(sampleCollectionDetail.getSampleGeneratedId());
-        response.setOrderNo(entity.getOrderhdId().getOrderNo());
-        response.setOrderDate(entity.getOrderhdId().getOrderDate());
+        response.setOrderNo(entity.getOrderHd().getOrderNo());
+        response.setOrderDate(entity.getOrderHd().getOrderDate());
         response.setAge(patient.getPatientAge());
         response.setGender(patient.getPatientGender().getGenderName());
         response.setMobileNum(patient.getPatientMobileNumber());
         response.setPatientName(patient.getPatientMn().trim().isBlank()?patient.getPatientFn()+" "+patient.getPatientLn():patient.getFullName());
-        response.setInvestigationName(entity.getInvestigationId().getInvestigationName());
+        response.setInvestigationName(entity.getInvestigation().getInvestigationName());
         if(entity.getOrderTrackingStatus()!=null){
             response.setCurrentStatus(entity.getOrderTrackingStatus().getOrderStatusName());
         }
@@ -768,7 +768,7 @@ public class LabReportServiceImpl implements LabReportService {
     private SampleRejectionInvestigationReportResponse mapToSampleRejectReport(DgSampleCollectionDetails entity){
         SampleRejectionInvestigationReportResponse response=new SampleRejectionInvestigationReportResponse();
         DgOrderHd dgOrderHd = entity.getSampleCollectionHeader().getVisitId().getBillingHd().getHdorder();
-//        DgOrderDt dgOrderDt = dgOrderDtRepository.findByOrderhdId_IdAndInvestigationId_InvestigationId(dgOrderHd.getId(), entity.getInvestigationId().getInvestigationId());
+//        DgOrderDt dgOrderDt = dgOrderDtRepository.findByOrderHd_IdAndInvestigation_InvestigationId(dgOrderHd.getId(), entity.getInvestigationId().getInvestigationId());
         Patient patient = entity.getSampleCollectionHeader().getPatientId();
         response.setOrderNo(dgOrderHd.getOrderNo());
         response.setOrderDate(dgOrderHd.getOrderDate());

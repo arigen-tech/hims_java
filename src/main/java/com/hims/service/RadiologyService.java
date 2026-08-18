@@ -1,5 +1,6 @@
 package com.hims.service;
 
+import com.hims.entity.*;
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.LabRadioUpdateResponse;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -37,5 +39,15 @@ public interface RadiologyService {
     ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size);
 
     ApiResponse<List<Map<String, Object>>> orderTrackingByInpatientIdOrAccesionNo(Long inpatientId, String accesionNo);
+
+
+    RadOrderHd saveRadOrderHeader(Patient patient, Visit visit, LocalDate date, String userName, boolean billingEnabled);
+
+    RadOrderDt saveRadOrderDetail(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                  DgMasInvestigation entity, String serviceCategoryCode);
+
+    RadOrderDt saveRadOrderDetailForPackage(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                            DgMasInvestigation investEntity, DgInvestigationPackage pkg,
+                                            String serviceCategoryCode);
 
 }
