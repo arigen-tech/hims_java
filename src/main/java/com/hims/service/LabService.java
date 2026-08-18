@@ -112,4 +112,15 @@ public interface LabService {
             int page,
             int size
     );
+
+    ApiResponse<Page<LabInvestigationsReportResponse>> getOutOfRangeInvestigationResults(
+            Long hospitalId,
+            Long departmentId,
+            String patientName,
+            String patientMobileNo,
+            LocalDate fromDate,
+            LocalDate toDate,
+            int page,
+            int size
+    );
 }

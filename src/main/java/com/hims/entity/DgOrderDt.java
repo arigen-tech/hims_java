@@ -4,9 +4,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -49,27 +49,27 @@ public class DgOrderDt {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "investigation_id")
-    private DgMasInvestigation investigationId;
+    private DgMasInvestigation investigation;
 
     @Column(name = "sub_chargeid")
-    private long subChargeid;
+    private long subChargeCodeId;
 
     @Column(name = "main_chargecode_id")
-    private long mainChargecodeId;
+    private long mainChargeCodeId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orderhd_id")
-    private DgOrderHd orderhdId;
+    private DgOrderHd orderHd;
 
     @Column(name = "billing_status", length = 1)
     private String billingStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "package_id")
-    private DgInvestigationPackage packageId;
+    private DgInvestigationPackage investigationPackage;
 
     @Column(name = "createdon")
-    private Instant createdon;
+    private LocalDateTime createdOn;
 
     @Size(max = 1)
     @Column(name = "msg_sent", length = 1)

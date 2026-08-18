@@ -5,6 +5,7 @@ import com.hims.request.PaidCancelledAppointmentResponse;
 import com.hims.request.PaymentUpdateRequest;
 import com.hims.response.*;
 import com.hims.service.BillingService;
+import com.hims.service.MasHospitalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +29,11 @@ public class BillingController {
     @Value("${serviceCategoryRad}")
     private String radioServiceCategoryCode;
 
-    @Autowired
     private final BillingService billingService;
+
+    private final MasHospitalService hospitalService;
+
+
 
 
     /**
@@ -141,5 +145,10 @@ public class BillingController {
     getPatientBillingRefundDetails(@PathVariable Long billingId) {
         log.info("Fetching refund details for billingId={}", billingId);
         return ResponseEntity.ok(billingService.getPatientBillingRefundDetails(billingId));
+    }
+
+    @GetMapping("/billingConfig/{hospitalId}")
+    public  ResponseEntity<?> getBillingConfigForHospital(@PathVariable Long hospitalId){
+        return  ResponseEntity.ok(hospitalService.getBillingConfig(hospitalId));
     }
 }

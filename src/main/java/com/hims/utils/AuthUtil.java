@@ -63,4 +63,8 @@ public class AuthUtil {
             return null;
         }
     }
+
+    public String getCurrentUserFullName(){
+        return getCurrentUser().getFullName();
+    }
 }

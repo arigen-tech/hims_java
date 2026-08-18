@@ -88,7 +88,11 @@ public interface BillingService {
             LocalDate toDate
     );
 
-    ApiResponse<List<PatientBillingRefundDetailsResponse>> getPatientBillingRefundDetails(Long billingHdId);
+    ApiResponse<List<PatientBillingRefundDetailsResponse>> getPatientBillingRefundDetails(Long billingId);
+
+    BillingHeader saveBillingHeaderIfEnabled(boolean billingEnabled, Object orderHd, Visit visit, User currentUser,
+                                             BigDecimal total, BigDecimal tax, BigDecimal discount,
+                                             String serviceCategoryCode, boolean isRadiology);
 
 
 }

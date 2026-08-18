@@ -4,10 +4,8 @@ package com.hims.controller;
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.service.LabService;
-import com.hims.service.ResultService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -1113,6 +1111,29 @@ public class LabController {
                         hospitalId,subChargeCodeId, fromDate, toDate, page, size
                 )
         );
+    }
+
+
+    @GetMapping("/getOutOfRangeResults/{hospitalId}")
+    public  ResponseEntity<?> getOutOfRangeInvestigationResults(@PathVariable Long hospitalId,
+                                                                @RequestParam(required = false) Long departmentId,
+                                                                @RequestParam(required = false) String patientName,
+                                                                @RequestParam(required = false) String patientMobileNo,
+                                                                @RequestParam(required = false) LocalDate fromDate,
+                                                                @RequestParam(required = false) LocalDate toDate,
+                                                                @RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = "5") int size
+                                                                ){
+        return ResponseEntity.ok(labService.getOutOfRangeInvestigationResults(
+                                                                                hospitalId,
+                                                                                departmentId,
+                                                                                patientName,
+                                                                                patientMobileNo,
+                                                                                fromDate,
+                                                                                toDate,
+                                                                                page,
+                                                                                size
+                                                                                ));
     }
 
 }

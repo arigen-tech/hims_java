@@ -5,7 +5,6 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.BillingException;
-import com.hims.exception.GlobalExceptionHandler;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.PaidCancelledAppointmentMapper;
@@ -13,15 +12,10 @@ import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
-import com.hims.service.LabRegistrationServices;
 import com.hims.service.TransactionSequenceService;
-import com.hims.utils.AuthUtil;
-import com.hims.utils.HMISTransaction;
-import com.hims.utils.RandomNumGenerator;
-import com.hims.utils.ResponseUtils;
+import com.hims.utils.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -33,10 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -89,6 +80,12 @@ public class BillingServiceImpl implements BillingService {
 
     @Autowired
     OpdRefundDetailsRepository opdRefundDetailsRepository;
+
+    @Autowired
+    private LabOrderTrackingStatusRepository orderTrackingStatusRepository;
+
+    @Value("${lab.track-order-status-reg.ordered}")
+    private Long orderedStatusId;
 
     @Autowired
     HelperUtils helperUtils;
@@ -801,7 +798,7 @@ public class BillingServiceImpl implements BillingService {
                     billingDetailRepository.updatePaymentStatusPackage(
                             AppConstants.PAYMENT_PAID.toLowerCase(),currentUser, item.getId(), billHdId);
 
-                    labDtRepository.updatePaymentStatusPackegDt(
+                    labDtRepository.updatePaymentStatusPackageDt(
                             AppConstants.PAYMENT_PAID.toLowerCase(), item.getId(), billHdId);
                 }
             }
@@ -980,8 +977,8 @@ public class BillingServiceImpl implements BillingService {
         BigDecimal tariff = BigDecimal.ZERO;
 
         // ✅ CASE 1: Investigation - Get price from InvestigationPriceDetails table
-        if (orderDetail.getInvestigationId() != null) {
-            DgMasInvestigation investigation = orderDetail.getInvestigationId();
+        if (orderDetail.getInvestigation() != null) {
+            DgMasInvestigation investigation = orderDetail.getInvestigation();
 
             response.setInvestigationId(investigation.getInvestigationId());
             response.setInvestigationName(safe(investigation.getInvestigationName()));
@@ -993,14 +990,14 @@ public class BillingServiceImpl implements BillingService {
         }
 
         // ✅ CASE 2: Package - Get price directly from Package entity
-        if (orderDetail.getPackageId() != null) {
-            DgInvestigationPackage package_obj = orderDetail.getPackageId();
+        if (orderDetail.getInvestigationPackage() != null) {
+            DgInvestigationPackage package_obj = orderDetail.getInvestigationPackage();
 
             response.setPackageId(package_obj.getPackId());
             response.setPackageName(safe(package_obj.getPackName()));
 
             // If package exists but investigation doesn't, use package pricing
-            if (orderDetail.getInvestigationId() == null) {
+            if (orderDetail.getInvestigation() == null) {
                 response.setItemName(safe(package_obj.getPackName()));
             }
 
@@ -1147,11 +1144,10 @@ public class BillingServiceImpl implements BillingService {
     // ✅ METHOD: Get current investigation price from price details table
     private BigDecimal getCurrentInvestigationPrice(DgMasInvestigation investigation) {
         try {
-            LocalDate today = LocalDate.now();
 
             // First try to get active price for current date
             Optional<MasInvestigationPriceDetails> priceDetail = masInvestigationPriceDetailsRepository
-                    .findActivePriceByInvestigationAndDate(investigation, today);
+                    .findActivePriceByInvestigationAndDate(investigation, HMISUtil.getCurrentLocalDate());
 
             if (priceDetail.isPresent() && priceDetail.get().getPrice() != null) {
                 return priceDetail.get().getPrice();
@@ -1384,7 +1380,6 @@ public class BillingServiceImpl implements BillingService {
             boolean isRadiology) {
 
         BillingDetail billingDetail = new BillingDetail();
-        User currentUser = authUtil.getCurrentUser();
         MasServiceCategory sevcat =
                 masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
 
@@ -1401,9 +1396,9 @@ public class BillingServiceImpl implements BillingService {
             billingDetail.setPackageField(rad.getPackageId());
         } else {
             DgOrderDt dg = (DgOrderDt) dtId;
-            billingDetail.setItemName(dg.getInvestigationId().getInvestigationName());
-            billingDetail.setInvestigation(dg.getInvestigationId());
-            billingDetail.setPackageField(dg.getPackageId());
+            billingDetail.setItemName(dg.getInvestigation().getInvestigationName());
+            billingDetail.setInvestigation(dg.getInvestigation());
+            billingDetail.setPackageField(dg.getInvestigationPackage());
         }
 
         billingDetail.setCreatedDt(OffsetDateTime.now());
@@ -1448,7 +1443,6 @@ public class BillingServiceImpl implements BillingService {
             String serviceCategoryCode) {
 
         BillingDetail billingDetail = new BillingDetail();
-        String currentUsername = authUtil.getCurrentUser().getFullName();
         MasServiceCategory sevcat =
                 masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
 
@@ -1661,6 +1655,33 @@ public class BillingServiceImpl implements BillingService {
                 .refundDate(projection.getRefundDate())
                 .processedBy(projection.getProcessedBy())
                 .build();
+    }
+
+    @Override
+    public BillingHeader saveBillingHeaderIfEnabled(
+            boolean billingEnabled, Object orderHd, Visit visit, User currentUser,
+            BigDecimal total, BigDecimal tax, BigDecimal discount,
+            String serviceCategoryCode, boolean isRadiology) {
+
+        if (!billingEnabled) {
+            return null;
+        }
+
+        BillingHeader billing = saveBillingHeader(orderHd, visit, currentUser, total, tax, discount, serviceCategoryCode, isRadiology);
+
+        if (billing == null) {
+            throw new SDDException("billing", 500, "Failed to create billing");
+        }
+
+        Visit v = visitRepository.getReferenceById(visit.getId());
+        v.setBillingHd(billing);
+        visitRepository.save(v);
+
+        return billing;
+    }
+
+    private LabOrderTrackingStatus getOrderedStatus(){
+        return orderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(()-> new RuntimeException("Order status not found")) ;
     }
 
 }

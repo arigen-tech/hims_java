@@ -8,7 +8,7 @@ import java.time.LocalDate;
 @Setter
 @Getter
 public class InvestigationForTemplateResponse {
-    private int dgOrderHdId;
+    private Long dgOrderHdId;
     private Long investigationId;
     private String investigationName;
     private LocalDate DateOfOrder;
