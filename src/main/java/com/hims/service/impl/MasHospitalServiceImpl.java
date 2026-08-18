@@ -1,12 +1,12 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.request.MasHospitalRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.MasHospitalResponse;
-import com.hims.response.MasHospitalResponseDto;
+import com.hims.response.*;
 import com.hims.response.MasHospitalResponseDto;
 import com.hims.service.MasHospitalService;
 import com.hims.utils.ResponseUtils;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -347,5 +346,41 @@ public class MasHospitalServiceImpl implements MasHospitalService {
         response.setExecutive2Contact(hospital.getExecutive2Contact());
 
         return response;
+    }
+
+    @Override
+    public ApiResponse<HospitalBillingConfigResponse> getBillingConfig(Long hospitalId) {
+
+        try {
+            MasHospital hospital = masHospitalRepository.findById(hospitalId)
+                    .orElseThrow(() -> new SDDException(
+                            "hospitalId",
+                            404,
+                            "Hospital not found"
+                    ));
+
+            boolean radioBillingEnabled =
+                    AppConstants.STATUS_Y.equalsIgnoreCase(hospital.getRadioBilling());
+
+            boolean labBillingEnabled =
+                    AppConstants.STATUS_Y.equalsIgnoreCase(hospital.getLabBilling());
+
+            boolean medicineBillingEnabled =
+                    AppConstants.STATUS_Y.equalsIgnoreCase(hospital.getMedicineBilling());
+
+            return ResponseUtils.createSuccessResponse(new HospitalBillingConfigResponse(
+                    radioBillingEnabled,
+                    labBillingEnabled,
+                    medicineBillingEnabled
+            ), new TypeReference<>() {});
+        }catch (SDDException e){
+            return  ResponseUtils.createNotFoundResponse(e.getMessage(),e.getStatus());
+        }catch (Exception e){
+            log.error("getBillingConfig method error for hospital id {}  :: ",hospitalId,e);
+            return  ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
     }
 }
