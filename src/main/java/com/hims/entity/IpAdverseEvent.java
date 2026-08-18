@@ -27,9 +27,6 @@ public class IpAdverseEvent {
     @JoinColumn(name = "inpatient_id", nullable = false)
     private Inpatient  inpatientId;
 
-    @Column(name = "admission_id")
-    private Long admissionId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "medication_id")
     private MasStoreItem medicationId;
@@ -58,9 +55,6 @@ public class IpAdverseEvent {
 
     @Column(name = "patient_condition_after", columnDefinition = "TEXT")
     private String patientConditionAfter;
-
-    @Column(name = "remarks", columnDefinition = "TEXT")
-    private String remarks;
 
     @Column(name = "recorded_by", nullable = false)
     private Long recordedBy;
