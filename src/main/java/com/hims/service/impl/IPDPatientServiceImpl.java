@@ -3250,7 +3250,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private DgOrderHd buildLabOrderHeader(Inpatient inpatient, User currentUser, LocalDate appointmentDate, LocalTime now) {
         DgOrderHd hd = new DgOrderHd();
         hd.setOrderDate(LocalDate.now());
-        hd.setOrderTime(Instant.now());
+        hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
         hd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
         hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
         hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
@@ -3276,8 +3276,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     private DgOrderDt buildLabOrderDetail(DgOrderHd orderHd, DgMasInvestigation investigation, User currentUser, LocalDate appointmentDate, LocalTime now, LabOrderTrackingStatus orderedStatus, String remarks) {
         DgOrderDt dt = new DgOrderDt();
-        dt.setOrderhdId(orderHd);
-        dt.setInvestigationId(investigation);
+        dt.setOrderHd(orderHd);
+        dt.setInvestigation(investigation);
         dt.setAppointmentDate(appointmentDate);
         dt.setOrderQty(1);
         dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
@@ -3286,9 +3286,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         dt.setLastChgBy(currentUser.getFullName());
         dt.setLastChgDate(LocalDate.now());
         dt.setLastChgTime(now.toString());
-        dt.setMainChargecodeId(investigation.getMainChargeCodeId() != null ? investigation.getMainChargeCodeId().getChargecodeId() : 0L);
-        dt.setSubChargeid(investigation.getSubChargeCodeId() != null ? investigation.getSubChargeCodeId().getSubId() : 0L);
-        dt.setCreatedon(Instant.now());
+        dt.setMainChargeCodeId(investigation.getMainChargeCodeId() != null ? investigation.getMainChargeCodeId().getChargecodeId() : 0L);
+        dt.setSubChargeCodeId(investigation.getSubChargeCodeId() != null ? investigation.getSubChargeCodeId().getSubId() : 0L);
+        dt.setCreatedOn(HMISUtil.getCurrentLocalDateTime());
         dt.setMsgSent(AppConstants.STATUS_N.toLowerCase());
         dt.setOrderTrackingStatus(orderedStatus);
         dt.setRemarks(remarks);
@@ -3298,17 +3298,15 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private RadOrderHd buildRadiologyOrderHeader(Inpatient inpatient, User currentUser, LocalDate appointmentDate) {
         RadOrderHd hd = new RadOrderHd();
         hd.setOrderDate(LocalDate.now());
-        hd.setOrderTime(Instant.now());
+        hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
         hd.setAppointmentDate(appointmentDate);
         hd.setPatient(inpatient.getPatient());
         hd.setHospital(currentUser.getHospital());
         hd.setDepartment(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId())
                 .orElseThrow(() -> new SDDException(404, "Department not found with id: " + authUtil.getCurrentDepartmentId())));
         hd.setPrescribedBy(currentUser.getFullName());
-        hd.setCreatedby(currentUser.getFullName());
-        hd.setCreatedon(Instant.now());
+        hd.setCreatedBy(currentUser.getFullName());
         hd.setLastChgBy(currentUser.getFullName());
-        hd.setLastChgDate(Instant.now());
         hd.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
         hd.setInpatient(inpatient);
         return hd;
@@ -3328,9 +3326,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         dt.setBillingStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setCreatedby(currentUser.getFullName());
-        dt.setCreatedon(Instant.now());
         dt.setLastChgBy(currentUser.getFullName());
-        dt.setLastChgDate(Instant.now());
         dt.setRemarks(remarks);
         return dt;
     }

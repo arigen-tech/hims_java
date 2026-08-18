@@ -90,24 +90,6 @@ public interface BillingService {
 
     ApiResponse<List<PatientBillingRefundDetailsResponse>> getPatientBillingRefundDetails(Long billingId);
 
-    RadOrderHd saveRadOrderHeader(Patient patient, Visit visit, LocalDate date, String userName, boolean billingEnabled);
-
-    DgOrderHd saveLabOrderHeader(Patient patient, Visit visit, User currentUser, LocalDate appointmentDate, boolean billingEnabled);
-
-    RadOrderDt saveRadOrderDetail(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
-                                  DgMasInvestigation entity, String serviceCategoryCode);
-
-    RadOrderDt saveRadOrderDetailForPackage(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
-                                            DgMasInvestigation investEntity, DgInvestigationPackage pkg,
-                                            String serviceCategoryCode);
-
-    DgOrderDt saveLabOrderDetail(DgOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
-                                 DgMasInvestigation entity, User currentUser, String serviceCategoryCode);
-
-    DgOrderDt saveLabOrderDetailForPackage(DgOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
-                                           DgMasInvestigation investEntity, DgInvestigationPackage pkg,
-                                           User currentUser);
-
     BillingHeader saveBillingHeaderIfEnabled(boolean billingEnabled, Object orderHd, Visit visit, User currentUser,
                                              BigDecimal total, BigDecimal tax, BigDecimal discount,
                                              String serviceCategoryCode, boolean isRadiology);

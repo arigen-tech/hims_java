@@ -5,9 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -29,7 +31,7 @@ public class RadOrderHd {
     private LocalDate appointmentDate ;
 
     @Column(name = "order_time")
-    private Instant orderTime;
+    private LocalDateTime orderTime;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -55,17 +57,20 @@ public class RadOrderHd {
 
     @Size(max = 200)
     @Column(name = "createdby", length = 200)
-    private String createdby;
+    private String createdBy;
 
-    @Column(name = "createdon")
-    private Instant createdon;
+    @Column(name = "createdon",updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdOn;
 
     @Size(max = 200)
     @Column(name = "last_chg_by", length = 200)
     private String lastChgBy;
 
+
     @Column(name = "last_chg_date")
-    private Instant lastChgDate;
+    @UpdateTimestamp
+    private LocalDateTime lastChgDate;
 
     @OneToMany(mappedBy = "radOrderhd")
     private Set<RadOrderDt> radOrderDts = new LinkedHashSet<>();

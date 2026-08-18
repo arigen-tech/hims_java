@@ -8,6 +8,7 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.OpdTemplateService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -201,7 +202,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
                         newObj.setOpdTemplateId(opd1obj.get());
                         opdTempInvestRepo.save(newObj);
                     }else {
-                        OpdTemplateInvestigation opdDtObj = opdTempInvestRepo.getById(opdDetail.getTemplateInvestigationId());
+                        OpdTemplateInvestigation opdDtObj = opdTempInvestRepo.findById(opdDetail.getTemplateInvestigationId()).orElseThrow(()-> new RuntimeException("Template not found"));
                         Optional<DgMasInvestigation> dg = dgMasInvestigationRepo.findById(opdDetail.getInvestigationId());
                         opdDtObj.setInvestigationId(dg.get());
                         opdTempInvestRepo.save(opdDtObj);
@@ -279,10 +280,10 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
                             .orElseThrow(() -> new IllegalArgumentException("Invalid Investigation ID: " + investId));
 
                     DgOrderDt dt = new DgOrderDt();
-                    dt.setInvestigationId(invEntity);
-                    dt.setOrderhdId(savedHd);
-                    dt.setMainChargecodeId(invEntity.getMainChargeCodeId().getChargecodeId());
-                    dt.setSubChargeid(invEntity.getSubChargeCodeId().getSubId());
+                    dt.setInvestigation(invEntity);
+                    dt.setOrderHd(savedHd);
+                    dt.setMainChargeCodeId(invEntity.getMainChargeCodeId().getChargecodeId());
+                    dt.setSubChargeCodeId(invEntity.getSubChargeCodeId().getSubId());
                     dt.setAppointmentDate(investTempReq.getDateOfOrder());
                     dt.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
                     dt.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
@@ -290,7 +291,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
                     dt.setBillingStatus("n");
                     dt.setOrderStatus("n");
                     dt.setOrderQty(1);
-                    dt.setCreatedon(Instant.now());
+                    dt.setCreatedOn(HMISUtil.getCurrentLocalDateTime());
                     dt.setLastChgTime(LocalTime.now().toString());
 
                     DgOrderDt savedDt = labDtRepository.save(dt);

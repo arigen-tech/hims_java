@@ -5,10 +5,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -81,15 +83,17 @@ public class RadOrderDt {
     @Column(name = "createdby", length = 200)
     private String createdby;
 
-    @Column(name = "createdon")
-    private Instant createdon;
+    @Column(name = "createdon",updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdOn;
 
     @Size(max = 200)
     @Column(name = "last_chg_by", length = 200)
     private String lastChgBy;
 
     @Column(name = "last_chg_date")
-    private Instant lastChgDate;
+    @UpdateTimestamp
+    private LocalDateTime lastChgDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "package_id",nullable = true)

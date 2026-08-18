@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderTrackingReportResponse {
-    private Integer dgOrderHdId;
+    private Long dgOrderHdId;
     private  String orderNum;
     private String patientName;
     private String mobileNum;

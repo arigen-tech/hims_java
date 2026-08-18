@@ -89,7 +89,7 @@ public class DgSampleCollectionHeader {
     private String validated;
 
     @Column(name = "validation_time")
-    private Instant validationTime;
+    private LocalDateTime validationTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_hd_id")

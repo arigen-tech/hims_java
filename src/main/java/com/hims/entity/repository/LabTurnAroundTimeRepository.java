@@ -17,9 +17,9 @@ import java.time.LocalDate;
 @Repository
 public interface LabTurnAroundTimeRepository  extends JpaRepository<LabTurnAroundTime,Long>, JpaSpecificationExecutor<LabTurnAroundTime> {
 
-    LabTurnAroundTime findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(int id, Long investigationId, Long id1, Boolean s );
+    LabTurnAroundTime findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(Long orderHdId, Long investigationId, Long patientId, Boolean s );
 
-    LabTurnAroundTime findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndGeneratedSampleId(int orderHdId, Long investigationId, Long id, String sampleGeneratedId);
+    LabTurnAroundTime findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndGeneratedSampleId(Long orderHdId, Long investigationId, Long id, String sampleGeneratedId);
 
     @Query("""
 SELECT new com.hims.response.LabDetailedTATReportResponse(

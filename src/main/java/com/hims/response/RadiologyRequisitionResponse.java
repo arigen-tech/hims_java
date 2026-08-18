@@ -18,7 +18,7 @@ public class RadiologyRequisitionResponse {
     private Long modalityId;
     private String investigationName;
     private LocalDate orderDate;
-    private Instant orderTime;
+    private LocalDateTime orderTime;
     private String Department;
     private Long radOrderDtId;
     private String reportStatus;
