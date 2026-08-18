@@ -611,49 +611,72 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
        It retrieves details such as visit ID, patient name, doctor name, department name, appointment date and time, visit status, reason for cancellation (if any), payment status, billed amount, and billing header ID.
      */
     @Query(value = """
-                SELECT 
-                    v.visit_id AS visitId,
-                    v.patient_id AS patientId,
+        SELECT 
+            v.visit_id AS visitId,
+            v.patient_id AS patientId,
+            CONCAT(
+                COALESCE(p.p_fn, ''), ' ',
+                COALESCE(p.p_mn, ''), ' ',
+                COALESCE(p.p_ln, '')
+            ) AS patientName,
+            p.p_mobile_number AS mobileNumber,
+            p.p_age AS patientAge,
+            v.doctor_id AS doctorId,
+            v.doctor_name AS doctorName,
+            v.department_id AS departmentId,
+            d.department_name AS departmentName,
+            v.visit_date AS appointmentDate,
+            v.start_time AS appointmentStartTime,
+            v.end_time AS appointmentEndTime,
+            v.visit_status AS visitStatus,
+            r.reason_name AS reason,
+            v.billing_status AS paymentStatus,
+            bh.net_amount AS billedAmount,
+            v.billing_hd_id AS billingHeaderId
+        FROM visit v
+        LEFT JOIN patient p ON p.patient_id = v.patient_id
+        LEFT JOIN mas_department d ON d.department_id = v.department_id
+        LEFT JOIN mas_appointment_change_reason r 
+            ON r.reason_id = v.cancelled_reason_id
+        LEFT JOIN billing_header bh 
+            ON bh.bill_hd_id = v.billing_hd_id
+        WHERE v.hospital_id = :hospitalId
+
+        AND (
+              (:patientId IS NOT NULL AND v.patient_id = :patientId)
+
+              OR
+
+              (:mobileNo IS NOT NULL 
+               AND :mobileNo <> '' 
+               AND p.p_mobile_number = :mobileNo)
+
+              OR
+
+                :patientName IS NULL
+                OR LOWER(
                     CONCAT(
-                        COALESCE(p.p_fn, ''), ' ',
-                        COALESCE(p.p_mn, ''), ' ',
-                        COALESCE(p.p_ln, '')
-                    ) AS patientName,
-                    p.p_mobile_number AS mobileNumber,
-                    p.p_age AS patientAge,
-                    v.doctor_id AS doctorId,
-                    v.doctor_name AS doctorName,
-                    v.department_id AS departmentId,
-                    d.department_name AS departmentName,
-                    v.visit_date AS appointmentDate,
-                    v.start_time AS appointmentStartTime,
-                    v.end_time AS appointmentEndTime,
-                    v.visit_status AS visitStatus,
-                    r.reason_name AS reason,
-                    v.billing_status AS paymentStatus,
-                    bh.net_amount AS billedAmount,
-                    v.billing_hd_id AS billingHeaderId
-                FROM visit v
-                LEFT JOIN patient p ON p.patient_id = v.patient_id
-                LEFT JOIN mas_department d ON d.department_id = v.department_id
-                LEFT JOIN mas_appointment_change_reason r ON r.reason_id = v.cancelled_reason_id
-                LEFT JOIN billing_header bh ON bh.bill_hd_id = v.billing_hd_id
-                WHERE v.hospital_id = :hospitalId
-            
-                AND (
-                          (:patientId IS NOT NULL AND v.patient_id = :patientId)
-                OR
-                        (:mobileNo IS NOT NULL AND :mobileNo <> '' AND p.p_mobile_number = :mobileNo)
+                        COALESCE(CAST(p.p_fn AS TEXT), ''), ' ',
+                        COALESCE(CAST(p.p_mn AS TEXT), ''), ' ',
+                        COALESCE(CAST(p.p_ln AS TEXT), '')
                     )
-                AND (:includeAllHistory = true OR v.visit_date >= CURRENT_DATE)  -- Include all history if flag is true, otherwise only future appointments
-                AND LOWER(v.visit_status) IN (:visitStatus)
-                AND v.department_id IN (:departmentIds)
-                ORDER BY v.visit_date ASC
-            """, nativeQuery = true)
+                ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+            )
+
+        AND (:includeAllHistory = true 
+             OR v.visit_date >= CURRENT_DATE)
+
+        AND LOWER(v.visit_status) IN (:visitStatus)
+
+        AND v.department_id IN (:departmentIds)
+
+        ORDER BY v.visit_date ASC
+        """, nativeQuery = true)
     List<AppointmentHistoryProjection> findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
             @Param("hospitalId") Long hospitalId,
             @Param("patientId") Long patientId,
             @Param("mobileNo") String mobileNo,
+            @Param("patientName") String patientName,
             @Param("departmentIds") List<Long> departmentIds,
             @Param("includeAllHistory") Boolean includeAllHistory,
             @Param("visitStatus") String visitStatus

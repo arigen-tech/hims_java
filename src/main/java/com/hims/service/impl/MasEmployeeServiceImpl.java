@@ -1907,10 +1907,13 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
     @Override
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>>  appointmentHistoryList(
-            Long hospitalId, Long patientId, String mobileNo, String deptTypeCode, Boolean includeHistory) {
+            Long hospitalId, Long patientId, String mobileNo,String patientName, String deptTypeCode, Boolean includeHistory) {
 
-        log.info("Fetching appointment history list: hospitalId={}, patientId={}, mobileNo={}, deptTypeCode={}, includeHistory={}",
-                 hospitalId, patientId, mobileNo != null ? "***" : null, deptTypeCode, includeHistory);
+        String normalizedMobileNo = cleanStringParameter(mobileNo);
+        String normalizedPatientName = cleanStringParameter(patientName);
+
+        log.info("Fetching appointment history list: hospitalId={}, patientId={}, mobileNo={}, patientName={}, deptTypeCode={}, includeHistory={}",
+                 hospitalId, patientId, normalizedMobileNo != null ? "***" : null, normalizedPatientName, deptTypeCode, includeHistory);
 
         try {
             if (hospitalId == null || hospitalId <= 0) {
@@ -1923,15 +1926,15 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 );
             }
 
-            if (patientId == null && (mobileNo == null || mobileNo.trim().isEmpty())) {
-                log.warn("Either patientId or mobileNo is required");
-                return ResponseUtils.createFailureResponse(
-                        null,
-                        new TypeReference<>() {},
-                        "Either patient ID or mobile number is required",
-                        HttpStatus.BAD_REQUEST.value()
-                );
-            }
+//            if ( mobileNo == null || mobileNo.trim().isEmpty()) {
+//                log.warn("Either patientId or mobileNo is required");
+//                return ResponseUtils.createFailureResponse(
+//                        null,
+//                        new TypeReference<>() {},
+//                        "Mobile number is required",
+//                        HttpStatus.BAD_REQUEST.value()
+//                );
+//            }
 
             if (deptTypeCode == null || deptTypeCode.trim().isEmpty()) {
                 log.warn("Department Type Code is required");
@@ -1943,9 +1946,18 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 );
             }
 
+            if (normalizedMobileNo == null && normalizedPatientName == null && patientId == null) {
+                log.warn("Either patientId, mobileNo or patientName is required");
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Either mobile number or patient name is required",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
             // Default to true (all history) if not provided
             boolean includeHistoryFlag = includeHistory != null ? includeHistory : true;
-            String normalizedMobileNo = (mobileNo == null) ? null : mobileNo.trim();
             String normalizedDeptTypeCode = deptTypeCode.trim();
 
             List<AppointmentBookingHistoryResponseDetails> response;
@@ -1968,14 +1980,14 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 log.debug("Fetching appointment history by patient Id and  using native query");
 
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId, patientId,null,departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase()
+                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase()
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
             } else {
                 log.debug("Fetching upcoming appointments by mobile and department ");
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId,null,normalizedMobileNo,departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase()
+                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase()
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
@@ -2009,6 +2021,13 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 .flatMap(code -> masDepartmentRepository.findDepartmentIdsByDepartmentTypeCode(code).stream())
                 .distinct()
                 .toList();
+    }
+
+    private String cleanStringParameter(String param) {
+        if (param == null || param.trim().isEmpty()) {
+            return null;
+        }
+        return param.trim();
     }
 
     @Override
