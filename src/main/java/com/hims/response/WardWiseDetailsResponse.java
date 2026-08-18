@@ -24,6 +24,7 @@ public class WardWiseDetailsResponse {
     private String age;
     private String gender;
     private String doctorName;
+    private Long doctorId;
     private Long diagnosisId;
     private String diagnosisType;
     private String diagnosis;

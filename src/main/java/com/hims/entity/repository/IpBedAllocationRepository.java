@@ -50,6 +50,7 @@ public interface IpBedAllocationRepository extends JpaRepository<IpBedAllocation
                 NULLIF(u.last_name, '')
             )
         ) AS doctor,
+                u.user_id AS doctorId,
 
         ide.diagnosis_id AS diagnosisId,
         ide.diagnosis_type AS diagnosisType,

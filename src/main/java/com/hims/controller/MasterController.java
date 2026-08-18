@@ -342,6 +342,8 @@ public class MasterController {
     private MasReceiptTypeService masReceiptTypeService;
     @Autowired
     private MasPaymentModeService masPaymentModeService;
+    @Autowired
+    MasOperationTheatreService masOperationTheatreService;
 
 
 
@@ -5517,5 +5519,49 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
             @PathVariable Long id,
             @RequestParam String status) {
         return ResponseEntity.ok(masSurgeryTypeService.changeStatusMasSurgeryType(id, status));
+    }
+
+    //======================================= Mas operation Theatre ====================================================
+
+    @PostMapping("/operationTheatre/create")
+    public ResponseEntity<ApiResponse<String>> saveOperationTheatre(
+            @RequestBody OperationTheatreRequest request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(masOperationTheatreService.saveOperationTheatre(request));
+    }
+
+    // Get All Operation Theatres
+    // flag = 1 -> Active records only
+    // flag = 0 -> All records
+    @GetMapping("/operationTheatre/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<OperationTheatreResponse>>> getAllOperationTheatres(
+            @PathVariable int flag) {
+
+        return ResponseEntity.ok(masOperationTheatreService.getAllOperationTheatres(flag));
+    }
+
+    @GetMapping("/operationTheatre/getById/{id}")
+    public ResponseEntity<ApiResponse<OperationTheatreResponse>> getOperationTheatreById(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(masOperationTheatreService.getById(id));
+    }
+
+    // Change Status
+    @PutMapping("/operationTheatre/status/{id}")
+    public ResponseEntity<ApiResponse<OperationTheatreResponse>> changeStatusOperationTheatre(
+            @PathVariable Long id,
+            @RequestParam String status) {
+
+        return ResponseEntity.ok(masOperationTheatreService.changeStatus(id, status));
+    }
+
+    // Update Operation Theatre
+    @PutMapping("/operationTheatre/update/{id}")
+    public ResponseEntity<ApiResponse<String>> updateOperationTheatre(
+            @PathVariable Long id,
+            @RequestBody OperationTheatreRequest request) {
+
+        return ResponseEntity.ok(masOperationTheatreService.updateOperationTheatre(id, request));
     }
 }
