@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
+public interface LabHdRepository extends JpaRepository<DgOrderHd,Long> {
     @Query(value = "SELECT MAX(CAST(SUBSTRING(order_no FROM '[0-9]+$') AS INTEGER)) FROM dg_orderhd WHERE order_no ~ '^ord-[0-9]+$'", nativeQuery = true)
     Integer findMaxOrderNo();
     Optional<DgOrderHd> findTopByOrderByIdDesc();
@@ -61,7 +61,6 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Integer> {
 
     Optional<DgOrderHd> findByPatientId_Id(Long patientId);
 
-    DgOrderHd findById(Long orderHdId);
 
     List<DgOrderHd> findByPaymentStatusInAndSource(List<String> paymentStatuses, String source);
 

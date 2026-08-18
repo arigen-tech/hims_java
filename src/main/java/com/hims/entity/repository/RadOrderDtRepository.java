@@ -204,13 +204,33 @@ where hd.hospital.id = :hospitalId
     );
 
     @Query(value = """
-select i.inpatient_id as inpatientId, concat(coalesce(p.p_fn,''), coalesce(p.p_ln,'')) as patientName, rd.rad_orderhd_id as radOrderhdId, rd.rad_orderdt_id as radOrderdtId, rd.order_accession_no as orderAccessionNo, rh.order_date as orderDate, 
-dmi.investigation_id as investigationId, dmi.investigation_name as investigationName, rd.study_status as studyStatus, rd.report_status as reportStatus, rd.remarks as remarks, rd.pacs_completion_status as pacsCompletionStatus, i.admission_no as admissionNo, i.admission_date as admissionDate
-from rad_orderdt rd 
-inner join rad_orderhd rh on rd.rad_orderhd_id = rh.rad_orderhd_id
-left join inpatient i on rh.inpatient_id = i.inpatient_id
-left join patient p on i.patient = p.patient_id
-left join dg_mas_investigation dmi on rd.investigation_id = dmi.investigation_id 
+SELECT
+    i.inpatient_id AS inpatientId, i.admission_no AS admissionNo, i.admission_date AS admissionDate,
+    concat(coalesce(p.p_fn,''), coalesce(p.p_ln,'')) as patientName,
+    p.uhid_no AS uhid, p.p_age AS age, p.p_mobile_number AS mobileNo, rd.rad_orderhd_id AS radOrderhdId,
+    rd.rad_orderdt_id AS radOrderdtId, rd.order_accession_no AS orderAccessionNo, rh.order_date AS orderDate,
+    rh.order_time AS orderTime, dmi.investigation_id AS investigationId, dmi.investigation_name AS investigationName,
+    phs.study_datetime AS studyDatetime, rd.study_status AS studyStatus, rd.report_status AS reportStatus,
+    rd.remarks AS remarks, rd.pacs_completion_status AS pacsCompletionStatus, msc.sub_chargecode_id AS modalityId,
+    msc.sub_chargecode_name AS modalityName, md.department_name AS department
+
+FROM rad_orderdt rd
+
+INNER JOIN rad_orderhd rh
+    ON rd.rad_orderhd_id = rh.rad_orderhd_id
+LEFT JOIN inpatient i
+    ON rh.inpatient_id = i.inpatient_id
+LEFT JOIN patient p
+    ON i.patient = p.patient_id
+LEFT JOIN pacs_hmis_study phs
+    ON rd.order_accession_no = phs.order_no
+    AND phs.uhid = p.uhid_no
+LEFT JOIN mas_sub_chargecode msc
+    ON rd.sub_chargecode_id = msc.sub_chargecode_id
+LEFT JOIN dg_mas_investigation dmi
+    ON rd.investigation_id = dmi.investigation_id
+LEFT JOIN mas_department md
+    ON rh.department_id = md.department_id 
 where 
 (:inpatientId is null or i.inpatient_id = :inpatientId) and
 (:accesionNo is null or rd.order_accession_no = :accesionNo)

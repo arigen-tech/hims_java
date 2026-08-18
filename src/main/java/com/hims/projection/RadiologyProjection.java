@@ -17,7 +17,7 @@ public interface RadiologyProjection {
     String getModalityName();
     Long getInvestigationId();
     String getInvestigationName();
-    Instant getOrderTime();
+    LocalDateTime getOrderTime();
     LocalDate getOrderDate();
     String getDepartment();
     String getReportStatus();

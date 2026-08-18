@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class LabDetailedTATReportResponse {
 
     private  Long tatId;
-    private Integer orderId;
+    private Long orderId;
     private String investigationName;
     private  String generatedSampleId;
     private LocalDateTime sampleReceivedDate;

@@ -12,10 +12,7 @@ import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.RadiologyService;
 import com.hims.service.TransactionSequenceService;
-import com.hims.utils.AuthUtil;
-import com.hims.utils.HMISTransaction;
-import com.hims.utils.RandomNumGenerator;
-import com.hims.utils.ResponseUtils;
+import com.hims.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +56,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     RadOrderDtRepository radOrderDtRepository;
 
     @Autowired
-    BillingService billingService;
+    private BillingService billingService;
 
     @Value("${serviceCategoryRad}")
     private String serviceCategoryRad;
@@ -184,15 +181,13 @@ public class RadiologyServiceImpl implements RadiologyService {
                 hd.setAppointmentDate(date);
                 hd.setPaymentStatus("n");
                 hd.setOrderDate(LocalDate.now());
-                hd.setOrderTime(Instant.now());
+                hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
                 hd.setPatient(savedPatient);
                 hd.setVisit(savedVisit);
                 hd.setDepartment(department);
                 hd.setHospital(masHospital);
                 hd.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
-                hd.setLastChgDate(Instant.now());
-                hd.setCreatedon(Instant.now());
-                hd.setCreatedby(currentUser.getFirstName()+ " "+currentUser.getLastName());
+                hd.setCreatedBy(currentUser.getFirstName()+ " "+currentUser.getLastName());
                 RadOrderHd savedHd = radOrderHdRepository.save(hd);
                 log.info("Order Header saved, OrderHdId={}", savedHd.getId());
                 BillingHeader headerId=new BillingHeader();
@@ -228,8 +223,6 @@ public class RadiologyServiceImpl implements RadiologyService {
                         dt.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                         dt.setCreatedby(currentUser.getFirstName()+" "+currentUser.getLastName());
                         dt.setBillingStatus("n");
-                        dt.setCreatedon(Instant.now());
-                        dt.setLastChgDate(Instant.now());
                         dt.setBillingHd(headerId);
                         dt.setStudyStatus("n");
                         dt.setReportStatus("n");
@@ -256,9 +249,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                             dt.setAppointmentDate(inv.getAppointmentDate());
                             dt.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getLastName());
                             dt.setCreatedby(currentUser.getFirstName()+" "+currentUser.getLastName());
-                            dt.setLastChgDate(Instant.now());
                             dt.setBillingStatus("n");
-                            dt.setCreatedon(Instant.now());
                             dt.setOrderStatus("y");
                             dt.setBillingHd(headerId);
                             RadOrderDt savedDt = radOrderDtRepository.save(dt);
@@ -524,7 +515,7 @@ public class RadiologyServiceImpl implements RadiologyService {
 
                 LabRadioCalculateAmountDTO amount = calculateAmount(investigations, serviceCategory);
 
-                RadOrderHd orderHd = billingService.saveRadOrderHeader(savedPatient, visit, date, userName, radBillingEnabled);
+                RadOrderHd orderHd =saveRadOrderHeader(savedPatient, visit, date, userName, radBillingEnabled);
 
                 if (orderHd == null) {
                     throw new SDDException("RadOrderHeader", 500, "Failed to create order header");
@@ -551,7 +542,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                             continue;
                         }
 
-                        billingService.saveRadOrderDetail(orderHd, billing, inv, entity, serviceCategoryRad);
+                        saveRadOrderDetail(orderHd, billing, inv, entity, serviceCategoryRad);
 
                     } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(inv.getType())) {
 
@@ -565,7 +556,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                                 packageMappingsMap.getOrDefault(inv.getId(), new ArrayList<>());
 
                         for (PackageInvestigationMapping map : mappings) {
-                            billingService.saveRadOrderDetailForPackage(
+                            saveRadOrderDetailForPackage(
                                     orderHd, billing, inv, map.getInvestId(), pkg, serviceCategoryRad
                             );
                         }
@@ -753,10 +744,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setCreatedby(getCurrentUserName());
-        dt.setCreatedon(Instant.now());
         dt.setLastChgBy(getCurrentUserName());
-        dt.setLastChgDate(Instant.now());
-        
         return dt;
     }
     
@@ -778,15 +766,13 @@ public class RadiologyServiceImpl implements RadiologyService {
             hd.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
         }
         hd.setOrderDate(LocalDate.now());
-        hd.setOrderTime(Instant.now());
+        hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
         hd.setPatient(patient);
         hd.setVisit(visit);
         hd.setDepartment(visit.getDepartment());
         hd.setHospital(visit.getHospital());
-        hd.setCreatedby(userName);
-        hd.setCreatedon(Instant.now());
+        hd.setCreatedBy(userName);
         hd.setLastChgBy(userName);
-        hd.setLastChgDate(Instant.now());
         return radOrderHdRepository.save(hd);
     }
 
@@ -879,7 +865,7 @@ public class RadiologyServiceImpl implements RadiologyService {
 
                 LabRadioCalculateAmountDTO amount = calculateAmount(dateInvestigations, serviceCategory);
 
-                RadOrderHd orderHd = billingService.saveRadOrderHeader(patient, visit, date, userName, radBillingEnabled);
+                RadOrderHd orderHd = saveRadOrderHeader(patient, visit, date, userName, radBillingEnabled);
 
                 if (orderHd == null) {
                     throw new SDDException("order", 500, "Failed to create order");
@@ -906,7 +892,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                             continue;
                         }
 
-                        billingService.saveRadOrderDetail(orderHd, billing, inv, entity, serviceCategoryRad);
+                       saveRadOrderDetail(orderHd, billing, inv, entity, serviceCategoryRad);
 
                     } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(inv.getType())) {
 
@@ -920,7 +906,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                                 packageMappingsMap.getOrDefault(inv.getId(), new ArrayList<>());
 
                         for (PackageInvestigationMapping map : mappings) {
-                            billingService.saveRadOrderDetailForPackage(
+                            saveRadOrderDetailForPackage(
                                     orderHd, billing, inv, map.getInvestId(), pkg, serviceCategoryRad
                             );
                         }
@@ -1172,7 +1158,6 @@ public class RadiologyServiceImpl implements RadiologyService {
             // radStudyReport.setReportImagePath();
             radStudyReportRepository.save(radStudyReport);
             orderDt.setReportStatus(status.toLowerCase().trim());
-            orderDt.setLastChgDate(Instant.now());
             orderDt.setLastChgBy(currentUser.getFullName());
             orderDt.setReportDate(LocalDate.now());
             return ResponseUtils.createSuccessResponse(
@@ -1241,6 +1226,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             );
         }
     }
+
     private RadiologyRequisitionResponse toResponse(RadiologyProjection p) {
         RadiologyRequisitionResponse r = new RadiologyRequisitionResponse();
         r.setAccessionNo(p.getOrderAccessionNo());
@@ -1292,5 +1278,89 @@ public class RadiologyServiceImpl implements RadiologyService {
             log.error("Error fetching order tracking", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Internal Server Error", 500);
         }
+    }
+
+    @Override
+    public RadOrderHd saveRadOrderHeader(Patient patient, Visit visit, LocalDate date, String userName, boolean billingEnabled) {
+        RadOrderHd hd = new RadOrderHd();
+        hd.setAppointmentDate(date);
+        hd.setPaymentStatus(billingEnabled
+                ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                : AppConstants.PAYMENT_PAID.toLowerCase());
+        hd.setOrderDate(LocalDate.now());
+        hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
+        hd.setPatient(patient);
+        hd.setVisit(visit);
+        hd.setDepartment(visit.getDepartment());
+        hd.setHospital(visit.getHospital());
+        hd.setCreatedBy(authUtil.getCurrentUserFullName());
+        hd.setLastChgBy(authUtil.getCurrentUserFullName());
+        return radOrderHdRepository.save(hd);
+    }
+
+
+
+    @Override
+    public RadOrderDt saveRadOrderDetail(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                         DgMasInvestigation entity, String serviceCategoryCode) {
+
+        RadOrderDt dt = new RadOrderDt();
+        dt.setRadOrderhd(hd);
+        dt.setSubChargecode(entity.getSubChargeCodeId());
+        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, hd.getHospital().getId()));
+        dt.setAppointmentDate(inv.getAppointmentDate());
+        dt.setBillingHd(billing);
+        dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
+        dt.setBillingStatus(billing != null
+                ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                : AppConstants.PAYMENT_PAID.toLowerCase());
+        dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setCreatedby(authUtil.getCurrentUserFullName());
+        dt.setLastChgBy(authUtil.getCurrentUserFullName());
+        dt.setInvestigation(entity);
+
+        RadOrderDt saved = radOrderDtRepository.save(dt);
+
+        if (billing != null) {
+            billingService.saveBillingDetail(billing, saved, inv, serviceCategoryCode, true);
+        }
+
+        return saved;
+    }
+
+    @Override
+    public RadOrderDt saveRadOrderDetailForPackage(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                                   DgMasInvestigation investEntity, DgInvestigationPackage pkg,
+                                                   String serviceCategoryCode) {
+
+        RadOrderDt dt = new RadOrderDt();
+        dt.setRadOrderhd(hd);
+        dt.setSubChargecode(investEntity.getSubChargeCodeId());
+        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, hd.getHospital().getId()));
+        dt.setAppointmentDate(inv.getAppointmentDate());
+        dt.setBillingHd(billing);
+        dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
+        dt.setBillingStatus(billing != null
+                ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                : AppConstants.PAYMENT_PAID.toLowerCase());
+        dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
+        dt.setCreatedby(authUtil.getCurrentUserFullName());
+        dt.setLastChgBy(authUtil.getCurrentUserFullName());
+        dt.setInvestigation(investEntity);
+        dt.setPackageId(pkg);
+
+        RadOrderDt saved = radOrderDtRepository.save(dt);
+
+        if (billing != null) {
+            billingService.saveBillingDetailPackage(billing, pkg, inv, serviceCategoryCode);
+        }
+
+        return saved;
     }
 }

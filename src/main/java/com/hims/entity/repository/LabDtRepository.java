@@ -21,42 +21,42 @@ import java.util.List;
 
 @Repository
 public interface LabDtRepository extends JpaRepository<DgOrderDt,Integer> , JpaSpecificationExecutor<DgOrderDt> {
- List<DgOrderDt> findByOrderhdId(DgOrderHd hdObj);
+ List<DgOrderDt> findByOrderHd(DgOrderHd hdObj);
 
     @Modifying
-    @Query("UPDATE DgOrderDt b SET b.billingStatus = :billing_status WHERE b.investigationId.id = :investigationId AND b.billingHd.id = :billHdId AND b.packageId IS NULL" )
+    @Query("UPDATE DgOrderDt b SET b.billingStatus = :billing_status WHERE b.investigation.id = :investigationId AND b.billingHd.id = :billHdId AND b.investigationPackage IS NULL" )
     void updatePaymentStatusInvestigationDt(@Param("billing_status") String billing_status,
                                           @Param("investigationId") int investigationId,
                                           @Param("billHdId") int billHdId);
 
 
     @Modifying
-    @Query("UPDATE DgOrderDt b SET b.billingStatus = :billing_status WHERE b.packageId.id = :pkgId AND b.billingHd.id = :billHdId")
-    void updatePaymentStatusPackegDt(@Param("billing_status") String billing_status,
-                                            @Param("pkgId") int pkgId,
-                                            @Param("billHdId") int billHdId);
+    @Query("UPDATE DgOrderDt b SET b.billingStatus = :billing_status WHERE b.investigationPackage.packId = :pkgId AND b.billingHd.id = :billHdId")
+    void updatePaymentStatusPackageDt(@Param("billing_status") String billing_status,
+                                      @Param("pkgId") int pkgId,
+                                      @Param("billHdId") int billHdId);
 
    @Modifying
    @Query("select b from DgOrderDt b  WHERE  b.billingHd.id = :billHdId AND  b.billingStatus = 'n'")
    List<DgOrderDt> findByStatus(@Param("billHdId") long billHdId);
 
-    List<DgOrderDt> findByOrderhdIdAndBillingStatusAndOrderStatus(DgOrderHd orderhdId, String billingStatus, String orderStatus);
+    List<DgOrderDt> findByOrderHdAndBillingStatusAndOrderStatus(DgOrderHd orderHd, String billingStatus, String orderStatus);
 
-    List<DgOrderDt> findByOrderhdIdId(int orderHdId);
+    List<DgOrderDt> findByOrderHd_Id(Long orderHdId);
 
-    List<DgOrderDt> findByOrderhdIdAndBillingStatus(DgOrderHd orderHd, String n);
+    List<DgOrderDt> findByOrderHdAndBillingStatus(DgOrderHd orderHd, String n);
 
     @Transactional
     @Modifying
     @Query("UPDATE DgOrderDt d SET d.orderStatus = :status WHERE d.id = :id")
     void updateOrderStatus(Long id, String status);
 
-    @Query("SELECT d.orderStatus FROM DgOrderDt d WHERE d.orderhdId.id = :orderHdId")
+    @Query("SELECT d.orderStatus FROM DgOrderDt d WHERE d.orderHd.id = :orderHdId")
     List<String> getOrderStatusesOfOrderHd(Long orderHdId);
 
 
 
-    DgOrderDt findByOrderhdId_IdAndInvestigationId_InvestigationId(long id, Long investigationId);
+    DgOrderDt findByOrderHd_IdAndInvestigation_InvestigationId(long id, Long investigationId);
 
     @Query("""
 SELECT new com.hims.response.PendingSampleDetailResponse(
@@ -71,15 +71,15 @@ SELECT new com.hims.response.PendingSampleDetailResponse(
     mm.chargecodeId
 )
 FROM DgOrderDt dt
-LEFT JOIN dt.investigationId inv
+LEFT JOIN dt.investigation inv
 LEFT JOIN inv.subChargeCodeId ms
 LEFT JOIN inv.mainChargeCodeId mm
 LEFT JOIN inv.sampleId s
 LEFT JOIN inv.collectionId c
-WHERE dt.orderhdId.id = :orderHdId
+WHERE dt.orderHd.id = :orderHdId
 AND LOWER(dt.billingStatus) = :billingStatus
 AND LOWER(dt.orderStatus) = :orderStatus
-ORDER BY dt.createdon
+ORDER BY dt.createdOn
 """)
     List<PendingSampleDetailResponse> findPendingDetailsForCollectionByOrderHdId(
             @Param("orderHdId") Long orderHdId,
@@ -119,10 +119,10 @@ SELECT new com.hims.response.OrderTrackingReportResponse(
     oh.orderDate
 )
 FROM DgOrderDt od
-JOIN od.orderhdId oh
+JOIN od.orderHd oh
 JOIN oh.patientId p
 LEFT JOIN p.patientGender g
-LEFT JOIN od.investigationId inv
+LEFT JOIN od.investigation inv
 LEFT JOIN od.orderTrackingStatus ots
 WHERE oh.hospitalId=:hospitalId
 AND (:mobileNo IS NULL OR p.patientMobileNumber LIKE :mobileNo)
@@ -175,10 +175,10 @@ SELECT new com.hims.response.OrderTrackingReportResponse(
     oh.orderDate
 )
 FROM DgOrderDt od
-JOIN od.orderhdId oh
+JOIN od.orderHd oh
 JOIN oh.patientId p
 LEFT JOIN p.patientGender g
-LEFT JOIN od.investigationId inv
+LEFT JOIN od.investigation inv
 LEFT JOIN od.orderTrackingStatus ots
 WHERE oh.hospitalId=:hospitalId
 AND p.id=:patientId
@@ -215,14 +215,14 @@ SELECT new com.hims.response.LabIncompleteInvestigationsReportResponse(
     ots.orderStatusName
 )
 FROM DgOrderDt od
-JOIN od.orderhdId oh
+JOIN od.orderHd oh
 JOIN oh.patientId p
 LEFT JOIN p.patientGender g
-LEFT JOIN od.investigationId inv
+LEFT JOIN od.investigation inv
 LEFT JOIN od.orderTrackingStatus ots
 WHERE oh.hospitalId=:hospitalId
 AND oh.orderDate BETWEEN :fromDate AND :toDate
-AND (:subChargeCodeId IS NULL OR od.subChargeid = :subChargeCodeId)
+AND (:subChargeCodeId IS NULL OR od.subChargeCodeId = :subChargeCodeId)
 AND ots.orderStatusId IN :statuses
 """)
     Page<LabIncompleteInvestigationsReportResponse> getIncompleteInvestigations(

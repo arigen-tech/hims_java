@@ -19,7 +19,7 @@ import java.util.Optional;
 @Repository
 public interface DgSampleCollectionHeaderRepository extends JpaRepository<DgSampleCollectionHeader,Long> {
     Optional<DgSampleCollectionHeader> findByDgOrderHd_IdAndSubChargeCode_SubIdAndValidatedIgnoreCase(
-            Integer orderHdId, Long subChargeCodeId,String status);
+            Long orderHdId, Long subChargeCodeId,String status);
 
     @Query("""
 SELECT new com.hims.response.SampleHeaderForValidationResponse(

@@ -9,7 +9,7 @@ import java.util.List;
 @Setter
 public class SampleCollectionRequest {
     int visitId;
-    int orderHdId;
+    Long orderHdId;
     Long inpatientId;
     List<SampleCollectionInvestigationReq> sampleCollectionReq;
 }

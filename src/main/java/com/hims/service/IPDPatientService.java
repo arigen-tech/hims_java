@@ -106,5 +106,9 @@ public interface IPDPatientService {
     ApiResponse<List<NursingCareProcedure>> getNursingCareProcedure(Long inpatientId);
 
     ApiResponse<InpatientAdmissionDetailsResponse> getAdmissionDetailsByInpatient(Long inpatientId);
+
+    ApiResponse<String> saveAdverseReaction(@Valid IpAdverseEventRequest request);
+
+    ApiResponse<List<IpAdverseEventResponse>> getAdverseReactionDetails(Long inpatientId);
 }
 

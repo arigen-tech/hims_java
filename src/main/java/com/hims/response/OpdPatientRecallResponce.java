@@ -105,7 +105,7 @@ public class OpdPatientRecallResponce {
     @Getter
     @Setter
     public static class LabOrderHd {
-        private Integer OrderHdId;
+        private Long OrderHdId;
         private LocalDate orderDate;
         private String orderNo;
         private String orderStatus;

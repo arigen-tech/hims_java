@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.observation.ObservationProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -207,6 +208,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     InventoryUtils inventoryUtils;
     @Autowired
     ItemClassBillSubcategoryMappingRepository itemClassBillSubcategoryMappingRepository;
+    @Autowired
+    IpAdverseEventRepository ipAdverseEventRepository;
 
 
     @Value("${ipd.admission.status.admitted}")
@@ -3250,7 +3253,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private DgOrderHd buildLabOrderHeader(Inpatient inpatient, User currentUser, LocalDate appointmentDate, LocalTime now) {
         DgOrderHd hd = new DgOrderHd();
         hd.setOrderDate(LocalDate.now());
-        hd.setOrderTime(Instant.now());
+        hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
         hd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
         hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
         hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
@@ -3276,8 +3279,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     private DgOrderDt buildLabOrderDetail(DgOrderHd orderHd, DgMasInvestigation investigation, User currentUser, LocalDate appointmentDate, LocalTime now, LabOrderTrackingStatus orderedStatus, String remarks) {
         DgOrderDt dt = new DgOrderDt();
-        dt.setOrderhdId(orderHd);
-        dt.setInvestigationId(investigation);
+        dt.setOrderHd(orderHd);
+        dt.setInvestigation(investigation);
         dt.setAppointmentDate(appointmentDate);
         dt.setOrderQty(1);
         dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
@@ -3286,9 +3289,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         dt.setLastChgBy(currentUser.getFullName());
         dt.setLastChgDate(LocalDate.now());
         dt.setLastChgTime(now.toString());
-        dt.setMainChargecodeId(investigation.getMainChargeCodeId() != null ? investigation.getMainChargeCodeId().getChargecodeId() : 0L);
-        dt.setSubChargeid(investigation.getSubChargeCodeId() != null ? investigation.getSubChargeCodeId().getSubId() : 0L);
-        dt.setCreatedon(Instant.now());
+        dt.setMainChargeCodeId(investigation.getMainChargeCodeId() != null ? investigation.getMainChargeCodeId().getChargecodeId() : 0L);
+        dt.setSubChargeCodeId(investigation.getSubChargeCodeId() != null ? investigation.getSubChargeCodeId().getSubId() : 0L);
+        dt.setCreatedOn(HMISUtil.getCurrentLocalDateTime());
         dt.setMsgSent(AppConstants.STATUS_N.toLowerCase());
         dt.setOrderTrackingStatus(orderedStatus);
         dt.setRemarks(remarks);
@@ -3298,17 +3301,15 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private RadOrderHd buildRadiologyOrderHeader(Inpatient inpatient, User currentUser, LocalDate appointmentDate) {
         RadOrderHd hd = new RadOrderHd();
         hd.setOrderDate(LocalDate.now());
-        hd.setOrderTime(Instant.now());
+        hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
         hd.setAppointmentDate(appointmentDate);
         hd.setPatient(inpatient.getPatient());
         hd.setHospital(currentUser.getHospital());
         hd.setDepartment(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId())
                 .orElseThrow(() -> new SDDException(404, "Department not found with id: " + authUtil.getCurrentDepartmentId())));
         hd.setPrescribedBy(currentUser.getFullName());
-        hd.setCreatedby(currentUser.getFullName());
-        hd.setCreatedon(Instant.now());
+        hd.setCreatedBy(currentUser.getFullName());
         hd.setLastChgBy(currentUser.getFullName());
-        hd.setLastChgDate(Instant.now());
         hd.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
         hd.setInpatient(inpatient);
         return hd;
@@ -3328,9 +3329,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         dt.setBillingStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setCreatedby(currentUser.getFullName());
-        dt.setCreatedon(Instant.now());
         dt.setLastChgBy(currentUser.getFullName());
-        dt.setLastChgDate(Instant.now());
         dt.setRemarks(remarks);
         return dt;
     }
@@ -3795,6 +3794,67 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Admission details fetched successfully for inpatientId={}", inpatientId);
 
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> saveAdverseReaction(IpAdverseEventRequest request) {
+
+        try {
+
+            User currentUser = authUtil.getCurrentUser();
+
+            // Validate Inpatient
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId())
+                    .orElseThrow(() -> new RuntimeException("Inpatient not found with ID: " + request.getInpatientId()));
+
+            // Validate Medication if provided
+            MasStoreItem  medication = masStoreItemRepository.findById(request.getMedicationId())
+                        .orElseThrow(() -> new RuntimeException("Medication not found with ID: " + request.getMedicationId()));
+
+            User informedDoctor = null;
+            if (AppConstants.STATUS_Y.equalsIgnoreCase(request.getDoctorInformed())) {
+                if (request.getInformedDoctorId() == null) {
+                    return new ApiResponse<>(null, "Informed doctor ID is required when doctor informed is 'Y'", 400);
+                }
+
+                informedDoctor = userRepo.findById(request.getInformedDoctorId())
+                        .orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + request.getInformedDoctorId()));
+            }
+
+            IpAdverseEvent adverseEvent = IpAdverseEvent.builder()
+                    .inpatientId(inpatient)
+                    .medicationId(medication)
+                    .reaction(request.getReaction())
+                    .severity(request.getSeverity())
+                    .actionTaken(request.getActionTaken())
+                    .reactionDatetime(request.getReactionDatetime())
+                    .medicationStopped(request.getMedicationStopped().toLowerCase())
+                    .doctorInformed(request.getDoctorInformed().toLowerCase())
+                    .informedDoctorId(informedDoctor)
+                    .patientConditionAfter(request.getPatientConditionAfter())
+                    .recordedBy(currentUser.getUserId())
+                    .recordedDatetime(LocalDateTime.now())
+                    .build();
+
+            ipAdverseEventRepository.save(adverseEvent);
+
+            log.info("Adverse event saved successfully. adverseEventId={}", adverseEvent.getAdverseEventId());
+            return ResponseUtils.createSuccessResponse("Adverse reaction saved successfully",new TypeReference<>(){});
+
+        } catch (Exception e) {
+
+            log.error("Error while saving adverse reaction", e);
+            return new ApiResponse<>(null, "Failed to save adverse reaction: " + e.getMessage(),400);
+        }
+    }
+
+    @Override
+    public ApiResponse<List<IpAdverseEventResponse>> getAdverseReactionDetails(Long inpatientId) {
+
+        List<IpAdverseEventResponse> result = ipAdverseEventRepository.findAdverseReactionDetailsByInpatientId(inpatientId);
+        return ResponseUtils.createSuccessResponse(result,new TypeReference<>(){});
+
     }
 
     private String nullToEmpty(String s) {

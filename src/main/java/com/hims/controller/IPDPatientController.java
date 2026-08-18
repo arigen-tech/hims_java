@@ -541,6 +541,27 @@ public class IPDPatientController {
 
         return ResponseEntity.ok(response);
     }
+    @PostMapping("/saveAdverseReaction")
+    public ApiResponse<String> saveAdverseReaction(@Valid @RequestBody IpAdverseEventRequest request) {
+
+        log.info("saveAdverseReaction API called. inpatientId={}, medicationId={}, doctorInformed={}, reactionDatetime={}",
+                request.getInpatientId(),
+                request.getMedicationId(),
+                request.getDoctorInformed(),
+                request.getReactionDatetime());
+
+        return ipdPatientService.saveAdverseReaction(request);
+    }
+
+    @GetMapping("getAdverseReactionDetails/{inpatientId}")
+    public ResponseEntity<ApiResponse<List<IpAdverseEventResponse>>> getAdverseReactionDetails(@PathVariable Long inpatientId) {
+
+        log.info("Request received to fetch adverse reaction details for inpatientId: {}", inpatientId);
+
+        ApiResponse<List<IpAdverseEventResponse>> response = ipdPatientService.getAdverseReactionDetails(inpatientId);
+
+        return ResponseEntity.ok(response);
+    }
 
 
 

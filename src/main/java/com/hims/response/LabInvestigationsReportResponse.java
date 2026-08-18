@@ -15,7 +15,7 @@ public class LabInvestigationsReportResponse {
 
     private Long resultEntryHeaderId;
     private Long resultEntryDetailsId;
-    private Integer orderHdId;
+    private Long orderHdId;
     private String investigationName;
     private String patientName;
     private String phnNum;
