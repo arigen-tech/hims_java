@@ -1503,8 +1503,16 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page,int size,String patientName,
-                String mobileNo,String billingServiceType,String refundStatus,LocalDate fromDate,LocalDate toDate
+    public ApiResponse<Page<PaidCancelledAppointmentResponse>>
+    getBillingRefundPatientList(
+            int page,
+            int size,
+            String patientName,
+            String mobileNo,
+            String billingServiceType,
+            String refundStatus,
+            LocalDate fromDate,
+            LocalDate toDate
     ) {
 
         try {
@@ -1739,7 +1747,7 @@ public class BillingServiceImpl implements BillingService {
         RadOrderDt saved = radOrderDtRepository.save(dt);
 
         if (billing != null) {
-            saveBillingDetail(billing, saved, inv.getActualAmount(), BigDecimal.ZERO, serviceCategoryCode, true);
+            saveBillingDetail(billing, saved, inv, serviceCategoryCode, true);
         }
 
         return saved;
@@ -1806,7 +1814,7 @@ public class BillingServiceImpl implements BillingService {
         DgOrderDt saved = labDtRepository.save(dt);
 
         if (billing != null) {
-            saveBillingDetail(billing, saved, inv.getActualAmount(),BigDecimal.ZERO, serviceCategoryCode, false);
+            saveBillingDetail(billing, saved, inv, serviceCategoryCode, false);
         }
 
         return saved;

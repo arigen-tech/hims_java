@@ -240,8 +240,8 @@ public class HelperUtils {
                 actualAmount = ((LabRadioInvestigationRequest) inv).getActualAmount();
                 discountedAmount = ((LabRadioInvestigationRequest) inv).getDiscountedAmount();
             } else if (inv instanceof LabInvestigationReq) {
-                actualAmount = ((LabInvestigationReq) inv).getActualAmount();
-                discountedAmount = ((LabInvestigationReq) inv).getDiscountedAmount();
+                actualAmount = BigDecimal.valueOf(((LabInvestigationReq) inv).getActualAmount());
+                discountedAmount = BigDecimal.valueOf(((LabInvestigationReq) inv).getDiscountedAmount());
             }
 
             sum = sum.add(actualAmount);

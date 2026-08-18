@@ -123,7 +123,16 @@ public class BillingController {
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
         log.info("Billing refund patient list request received");
         ApiResponse<Page<PaidCancelledAppointmentResponse>> response =
-                billingService.getBillingRefundPatientList(page, size, patientName, mobileNo, billingServiceType, refundStatus, fromDate, toDate);
+                billingService.getBillingRefundPatientList(
+                        page,
+                        size,
+                        patientName,
+                        mobileNo,
+                        billingServiceType,
+                        refundStatus,
+                        fromDate,
+                        toDate
+                );
         return ResponseEntity.ok(response);
     }
 

@@ -72,7 +72,9 @@ public class DoctorRosterController {
             @PathVariable Integer flag
     ) {
         ApiResponse<List<AvailableTokenSlotResponse>> response =
-                doctorRosterServices.getAvailableToken(deptId, doctorId, appointmentDate, sessionId,flag);
+                doctorRosterServices.getAvailableToken(
+                        deptId, doctorId, appointmentDate, sessionId,flag
+                );
         return ResponseEntity.ok(response);
     }
 
