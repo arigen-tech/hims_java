@@ -167,10 +167,10 @@ public class RadiologyServiceImpl implements RadiologyService {
                 MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
                 for(LabInvestigationReq inves:investigations){
                     // if(inves.isCheckStatus()){
-                    sum=sum.add(BigDecimal.valueOf(inves.getActualAmount()));
-                    disc=disc.add(BigDecimal.valueOf(inves.getDiscountedAmount()));
+                    sum=sum.add(inves.getActualAmount());
+                    disc=disc.add(inves.getDiscountedAmount());
                     if(servCat.getGstApplicable()){
-                        tax=tax.add(BigDecimal.valueOf(servCat.getGstPercent()).multiply(BigDecimal.valueOf(inves.getActualAmount()).subtract(BigDecimal.valueOf(inves.getDiscountedAmount()))).divide(BigDecimal.valueOf(100)));
+                        tax=tax.add(BigDecimal.valueOf(servCat.getGstPercent()).multiply(inves.getActualAmount()).subtract(inves.getDiscountedAmount()).divide(BigDecimal.valueOf(100)));
                     }
                     // }
                 }
@@ -283,12 +283,12 @@ public class RadiologyServiceImpl implements RadiologyService {
         BigDecimal tax = BigDecimal.ZERO;
 
         for (LabRadioInvestigationRequest i : list) {
-            total = total.add(BigDecimal.valueOf(i.getActualAmount()));
-            discount = discount.add(BigDecimal.valueOf(i.getDiscountedAmount()));
+            total = total.add(i.getActualAmount());
+            discount = discount.add(i.getDiscountedAmount());
 
             if (cat != null && cat.getGstApplicable()) {
-                BigDecimal net = BigDecimal.valueOf(i.getActualAmount())
-                        .subtract(BigDecimal.valueOf(i.getDiscountedAmount()));
+                BigDecimal net = i.getActualAmount()
+                        .subtract(i.getDiscountedAmount());
 
                 tax = tax.add(
                         net.multiply(BigDecimal.valueOf(cat.getGstPercent()))
@@ -351,17 +351,17 @@ public class RadiologyServiceImpl implements RadiologyService {
         billingDetail.setUpdatedDt(OffsetDateTime.now());
         billingDetail.setCreatedAt(Instant.now());
         billingDetail.setQuantity(1);
-        billingDetail.setBasePrice(BigDecimal.valueOf(investigation.getActualAmount()));
-        billingDetail.setDiscount(BigDecimal.valueOf(investigation.getDiscountedAmount()));
-        billingDetail.setTariff(BigDecimal.valueOf(investigation.getActualAmount()));
+        billingDetail.setBasePrice(investigation.getActualAmount());
+        billingDetail.setDiscount(investigation.getDiscountedAmount());
+        billingDetail.setTariff(investigation.getActualAmount());
         // billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()));
-        billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount())));
+        billingDetail.setAmountAfterDiscount(investigation.getActualAmount().subtract(investigation.getDiscountedAmount()));
 
         MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
         BigDecimal tax=BigDecimal.ZERO;
         if(sevcat.getGstApplicable()){
             /// tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount())).divide(BigDecimal.valueOf(100));
-            tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount()))).divide(BigDecimal.valueOf(100));
+            tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(investigation.getActualAmount()).subtract(investigation.getDiscountedAmount()).divide(BigDecimal.valueOf(100));
         }
         billingDetail.setTaxAmount(tax);
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
@@ -392,17 +392,17 @@ public class RadiologyServiceImpl implements RadiologyService {
         billingDetail.setUpdatedDt(OffsetDateTime.now());
         billingDetail.setCreatedAt(Instant.now());
         billingDetail.setQuantity(1);
-        billingDetail.setBasePrice(BigDecimal.valueOf(investigation.getActualAmount()));
-        billingDetail.setDiscount(BigDecimal.valueOf(investigation.getDiscountedAmount()));
-        billingDetail.setTariff(BigDecimal.valueOf(investigation.getActualAmount()));
+        billingDetail.setBasePrice(investigation.getActualAmount());
+        billingDetail.setDiscount(investigation.getDiscountedAmount());
+        billingDetail.setTariff(investigation.getActualAmount());
         // billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()));
-        billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount())));
+        billingDetail.setAmountAfterDiscount(investigation.getActualAmount().subtract(investigation.getDiscountedAmount()));
 
         MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
         BigDecimal tax=BigDecimal.ZERO;
         if(sevcat.getGstApplicable()){
             /// tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount())).divide(BigDecimal.valueOf(100));
-            tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount()))).divide(BigDecimal.valueOf(100));
+            tax=BigDecimal.valueOf(sevcat.getGstPercent()).multiply(investigation.getActualAmount()).subtract(investigation.getDiscountedAmount()).divide(BigDecimal.valueOf(100));
         }
         billingDetail.setTaxAmount(tax);
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
@@ -659,7 +659,8 @@ public class RadiologyServiceImpl implements RadiologyService {
                     billingService.saveBillingDetail(
                             billing,
                             dt,
-                            inv,
+                            inv.getActualAmount(),
+                            BigDecimal.ZERO,
                             serviceCategoryRad,
                             true
                     );

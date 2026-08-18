@@ -1500,16 +1500,8 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<PaidCancelledAppointmentResponse>>
-    getBillingRefundPatientList(
-            int page,
-            int size,
-            String patientName,
-            String mobileNo,
-            String billingServiceType,
-            String refundStatus,
-            LocalDate fromDate,
-            LocalDate toDate
+    public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page,int size,String patientName,
+                String mobileNo,String billingServiceType,String refundStatus,LocalDate fromDate,LocalDate toDate
     ) {
 
         try {

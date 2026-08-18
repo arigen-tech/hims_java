@@ -459,9 +459,11 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
         Visit visit = optionalVisit.get();
         //Check billing Entry
-        BillingHeader bill = billingHeaderRepository.findByVisit(visit);
-        if (bill == null) {
-            return new ApiResponse<>(HttpStatus.NOT_FOUND, "Billing not found for appointment ID: " + request.getVisitId());
+        if(visit.getBillingHd()!=null){
+            BillingHeader bill = billingHeaderRepository.findByVisit(visit);
+            if (bill == null) {
+                return new ApiResponse<>(HttpStatus.NOT_FOUND, "Billing not found for appointment ID: " + request.getVisitId());
+            }
         }
         // Get current user
         User currentUser = authUtil.getCurrentUser();
