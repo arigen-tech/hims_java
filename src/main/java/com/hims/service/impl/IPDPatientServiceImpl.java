@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.observation.ObservationProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -207,6 +208,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     InventoryUtils inventoryUtils;
     @Autowired
     ItemClassBillSubcategoryMappingRepository itemClassBillSubcategoryMappingRepository;
+    @Autowired
+    IpAdverseEventRepository ipAdverseEventRepository;
 
 
     @Value("${ipd.admission.status.admitted}")
@@ -3795,6 +3798,67 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Admission details fetched successfully for inpatientId={}", inpatientId);
 
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> saveAdverseReaction(IpAdverseEventRequest request) {
+
+        try {
+
+            User currentUser = authUtil.getCurrentUser();
+
+            // Validate Inpatient
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId())
+                    .orElseThrow(() -> new RuntimeException("Inpatient not found with ID: " + request.getInpatientId()));
+
+            // Validate Medication if provided
+            MasStoreItem  medication = masStoreItemRepository.findById(request.getMedicationId())
+                        .orElseThrow(() -> new RuntimeException("Medication not found with ID: " + request.getMedicationId()));
+
+            User informedDoctor = null;
+            if (AppConstants.STATUS_Y.equalsIgnoreCase(request.getDoctorInformed())) {
+                if (request.getInformedDoctorId() == null) {
+                    return new ApiResponse<>(null, "Informed doctor ID is required when doctor informed is 'Y'", 400);
+                }
+
+                informedDoctor = userRepo.findById(request.getInformedDoctorId())
+                        .orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + request.getInformedDoctorId()));
+            }
+
+            IpAdverseEvent adverseEvent = IpAdverseEvent.builder()
+                    .inpatientId(inpatient)
+                    .medicationId(medication)
+                    .reaction(request.getReaction())
+                    .severity(request.getSeverity())
+                    .actionTaken(request.getActionTaken())
+                    .reactionDatetime(request.getReactionDatetime())
+                    .medicationStopped(request.getMedicationStopped().toLowerCase())
+                    .doctorInformed(request.getDoctorInformed().toLowerCase())
+                    .informedDoctorId(informedDoctor)
+                    .patientConditionAfter(request.getPatientConditionAfter())
+                    .recordedBy(currentUser.getUserId())
+                    .recordedDatetime(LocalDateTime.now())
+                    .build();
+
+            ipAdverseEventRepository.save(adverseEvent);
+
+            log.info("Adverse event saved successfully. adverseEventId={}", adverseEvent.getAdverseEventId());
+            return ResponseUtils.createSuccessResponse("Adverse reaction saved successfully",new TypeReference<>(){});
+
+        } catch (Exception e) {
+
+            log.error("Error while saving adverse reaction", e);
+            return new ApiResponse<>(null, "Failed to save adverse reaction: " + e.getMessage(),400);
+        }
+    }
+
+    @Override
+    public ApiResponse<List<IpAdverseEventResponse>> getAdverseReactionDetails(Long inpatientId) {
+
+        List<IpAdverseEventResponse> result = ipAdverseEventRepository.findAdverseReactionDetailsByInpatientId(inpatientId);
+        return ResponseUtils.createSuccessResponse(result,new TypeReference<>(){});
+
     }
 
     private String nullToEmpty(String s) {
