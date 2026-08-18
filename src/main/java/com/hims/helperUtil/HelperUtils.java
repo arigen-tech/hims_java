@@ -2,26 +2,36 @@ package com.hims.helperUtil;
 
 import com.hims.constants.AppConstants;
 import com.hims.entity.DgMasInvestigation;
+import com.hims.entity.MasInvestigationPriceDetails;
+import com.hims.entity.MasServiceCategory;
 import com.hims.entity.MasSubChargeCode;
-import com.hims.entity.repository.DgMasInvestigationRepository;
-import com.hims.entity.repository.MasSubChargeCodeRepository;
-import com.hims.entity.repository.VisitRepository;
+import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.request.LabInvestigationReq;
+import com.hims.request.LabRadioInvestigationRequest;
 import com.hims.utils.RandomNumGenerator;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+@Slf4j
 @Service
 public class HelperUtils {
+
 
     @Autowired
     public RandomNumGenerator randomNumGenerator;
@@ -34,6 +44,17 @@ public class HelperUtils {
 
     @Autowired
     private VisitRepository visitRepository;
+    private MasServiceCategory masServiceCategory;
+
+    @Autowired
+    private MasServiceCategoryRepository masServiceCategoryRepository;
+
+    @Autowired
+    private MasInvestigationPriceDetailsRepository masInvestigationPriceDetailsRepository;
+
+    @Value("${serviceCategoryLab}")
+    private String serviceCategoryLab;
+
 
     // FOR dev  D:\BmsBackend\webapps\bmsreport
     public static String LASTFOLDERPATH = "D:/payroll/webapps/bmsreport";
@@ -69,11 +90,11 @@ public class HelperUtils {
             RestTemplate restTemplate = new RestTemplate();
             String responseObject = restTemplate.postForObject(uri, requestHeaders, String.class);
 
-            System.out.println(responseObject.toString());
-            System.out.println("SMS send succefully");
+            log.info("Response from SMS API: {}", responseObject);
+            log.info("SMS sent successfully");
             return responseObject;
         } catch (Exception e) {
-
+            log.error("Error occurred while sending SMS", e);
             return ResponseUtils.getReturnMsg("0", "We are unable to process your request");
         }
     }
@@ -199,6 +220,76 @@ public class HelperUtils {
     public String getVisitTypeForFollowUpOrNew(Long patientId) {
         int count = visitRepository.countByPatientIdAndVisitDate(patientId);
         return count > 0 ? AppConstants.STATUS_F : AppConstants.STATUS_N;
+    }
+
+
+    public  BigDecimal[] calculateBillingAmounts(List<? extends Object> investigations, String serviceCategory) {
+        BigDecimal sum = BigDecimal.ZERO;
+        BigDecimal tax = BigDecimal.ZERO;
+        BigDecimal disc = BigDecimal.ZERO;
+
+
+        masServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategory);
+
+
+        for (Object inv : investigations) {
+            BigDecimal actualAmount = BigDecimal.ZERO;
+            BigDecimal discountedAmount = BigDecimal.ZERO;
+
+            if (inv instanceof LabRadioInvestigationRequest) {
+                actualAmount = ((LabRadioInvestigationRequest) inv).getActualAmount();
+                discountedAmount = ((LabRadioInvestigationRequest) inv).getDiscountedAmount();
+            } else if (inv instanceof LabInvestigationReq) {
+                actualAmount = ((LabInvestigationReq) inv).getActualAmount();
+                discountedAmount = ((LabInvestigationReq) inv).getDiscountedAmount();
+            }
+
+            sum = sum.add(actualAmount);
+            disc = disc.add(discountedAmount);
+
+            if (masServiceCategory != null && masServiceCategory.getGstApplicable()) {
+                tax = tax.add(BigDecimal.valueOf(masServiceCategory.getGstPercent())
+                        .multiply(actualAmount)
+                                .subtract(discountedAmount)
+                        .divide(BigDecimal.valueOf(100)));
+            }
+        }
+
+        return new BigDecimal[]{sum, tax, disc};
+    }
+
+    /**
+     * Gets the current investigation price from investigation_price_details table by investigation ID
+     * Tries multiple strategies:
+     * 1. Get active price for current date
+     * 2. Get latest price if no active price found
+     * 3. Fallback to investigation's direct price field
+     *
+     * @param investigation DgMasInvestigation entity
+     * @return BigDecimal price, or BigDecimal.ZERO if not found
+     */
+    public BigDecimal getInvestigationPrice(DgMasInvestigation investigation) {
+        if (investigation == null) {
+            return BigDecimal.ZERO;
+        }
+        LocalDate today = LocalDate.now();
+        Optional<MasInvestigationPriceDetails> priceDetail = masInvestigationPriceDetailsRepository.findActivePriceByInvestigationAndDate(investigation, today);
+
+        if (priceDetail.isPresent() && priceDetail.get().getPrice() != null) {
+            log.debug("Found active investigation price for investigation ID: {} - Price: {}", investigation.getInvestigationId(), priceDetail.get().getPrice());
+            return priceDetail.get().getPrice();
+        }
+        Optional<MasInvestigationPriceDetails> latestPrice = masInvestigationPriceDetailsRepository.findTopByInvestigationOrderByFromDateDesc(investigation);
+        if (latestPrice.isPresent() && latestPrice.get().getPrice() != null) {
+            log.debug("Found latest investigation price for investigation ID: {} - Price: {}", investigation.getInvestigationId(), latestPrice.get().getPrice());
+            return latestPrice.get().getPrice();
+        }
+        if (investigation.getPrice() != null) {
+            log.debug("Using fallback investigation direct price for investigation ID: {} - Price: {}", investigation.getInvestigationId(), investigation.getPrice());
+            return BigDecimal.valueOf(investigation.getPrice());
+        }
+        log.warn("No price found for investigation ID: {}", investigation.getInvestigationId());
+        return BigDecimal.ZERO;
     }
 
 

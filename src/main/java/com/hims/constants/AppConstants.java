@@ -228,6 +228,8 @@ public class AppConstants {
     public static final String DUPLICATE_APPOINTMENT_MSG = "Patient already has an appointment with the same doctor on this day.";
     public static final String MSG_INVALID_FLAG = "Invalid flag";
 
+    public static final String CANNOT_ADD_SAME_INVESTIGATION = "You cannot add the same investigation on the same date.";
+
 
     private AppConstants() {
     }

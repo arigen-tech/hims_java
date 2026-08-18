@@ -395,7 +395,7 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
         Set<Long> occupiedTokens = new HashSet<>();
         try {
             occupiedTokens = visitRepository.findOccupiedTokens(
-                            deptId, doctorId, sessionId, startOfDay, endOfDay)
+                            deptId, doctorId, sessionId, startOfDay, endOfDay,AppConstants.VISIT_STATUS_PENDING,AppConstants.VISIT_STATUS_COMPLETED)
                     .stream().collect(Collectors.toSet());
         } catch (Exception e) {
             log.error("Error fetching occupied tokens", e);
