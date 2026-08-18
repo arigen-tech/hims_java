@@ -2,6 +2,7 @@ package com.hims.service;
 
 import com.hims.request.MasHospitalRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.HospitalBillingConfigResponse;
 import com.hims.response.MasHospitalResponse;
 import com.hims.response.MasHospitalResponseDto;
 
@@ -15,4 +16,6 @@ public interface MasHospitalService {
     ApiResponse<MasHospitalResponse> updateHospital(Long id, MasHospitalRequest hospitalRequest);
 
     ApiResponse<List<MasHospitalResponseDto>> getAllHospitalsResponse(int flag);
+
+    ApiResponse<HospitalBillingConfigResponse> getBillingConfig(Long hospitalId);
 }
