@@ -453,9 +453,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                             item.getAge(),
                             item.getGender(),
                             item.getDoctor(),
+                            item.getDoctorId(),
                             item.getDiagnosisId(),
                             item.getDiagnosisType(),
                             item.getDiagnosis()
+
                     ))
                     .toList();
 
