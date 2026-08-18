@@ -161,6 +161,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 patient.getPatientAge(),
                 patient.getPatientMobileNumber(),
                 (masRelationRepository.findById(patient.getPatientRelationId())).get());
+
         if (existingPatient.isPresent()) {
             resp.setPatient(PatientMapper.mapToDTO(existingPatient.get()));
             return ResponseUtils.createFailureResponse(resp, new TypeReference<>() {
@@ -181,13 +182,12 @@ public class RegistrationServiceImpl implements RegistrationService {
                     v.setVisitType(visitType);
                     Visit saved = createSingleAppointment(v, patientObj);
                     savedVisits.add(saved);
-
-                    if (saved.getHospital().getPreConsultationAvailable().equalsIgnoreCase("n")) {
+                    if (saved.getHospital().getPreConsultationAvailable().equalsIgnoreCase(AppConstants.STATUS_N)) {
                         newOpd = addOpdDetails(saved, opdPatientDetail, patientObj);
                     }
                 }
             }
-            if(savedVisits.get(0).getBillingStatus().equalsIgnoreCase("n")){
+            if(savedVisits.get(0).getBillingStatus().equalsIgnoreCase(AppConstants.STATUS_N)){
                 List<OpdVisitResponseDTO> visitResponses = savedVisits.stream()
                         .map(visitMapper::mapToDTO)
                         .toList();
@@ -460,9 +460,11 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
         Visit visit = optionalVisit.get();
         //Check billing Entry
-        BillingHeader bill = billingHeaderRepository.findByVisit(visit);
-        if (bill == null) {
-            return new ApiResponse<>(HttpStatus.NOT_FOUND, "Billing not found for appointment ID: " + request.getVisitId());
+        if(visit.getBillingHd()!=null){
+            BillingHeader bill = billingHeaderRepository.findByVisit(visit);
+            if (bill == null) {
+                return new ApiResponse<>(HttpStatus.NOT_FOUND, "Billing not found for appointment ID: " + request.getVisitId());
+            }
         }
         // Get current user
         User currentUser = authUtil.getCurrentUser();
@@ -811,19 +813,15 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
-
         validateDuplicateAppointment(visit, patient.getId(), null);
         User currentLoggedInUser = authUtil.getCurrentUser();
         LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate tokenStartTime = visit.getTokenStartTime().atZone(ZoneOffset.UTC).toLocalDate();
         LocalDate tokenEndTime = visit.getTokenEndTime().atZone(ZoneOffset.UTC).toLocalDate();
-
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
-
         if (visitDate.isBefore(today)||visitDate.isBefore(tokenStartTime)||visitDate.isBefore(tokenEndTime)) {
             throw new InvalidDateException("Past dates are not allowed. Please select today or a future date.");
         }
-
         Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
         boolean alreadyExists =
@@ -844,7 +842,6 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
         Visit newVisit = new Visit();
         String todayDayName = visit.getVisitDate().atZone(ZoneId.systemDefault()).getDayOfWeek().name();
-
         List<AppSetup> optionalSetup = appSetupRepository.findByDoctorHospitalSessionAndDayName(
                 visit.getDoctorId(), visit.getDepartmentId(), visit.getSessionId(), todayDayName.toLowerCase());
         if (optionalSetup.isEmpty()) {
@@ -869,7 +866,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         newVisit.setDepartment(masDepartmentRepository.getReferenceById(visit.getDepartmentId()));
         newVisit.setDoctorName(userRepository.getReferenceById(visit.getDoctorId()).getFullName());
         assert setup != null;
-        if (setup.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+        if (patient.getPatientHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
             newVisit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
         } else {
             newVisit.setBillingStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
@@ -904,11 +901,12 @@ public class RegistrationServiceImpl implements RegistrationService {
         Visit savedVisit=visitRepository.save(newVisit);
         //create billing header and detail
         MasServiceCategory serviceCategory=masServiceCategoryRepository.findByServiceCateCode(serviceCategoryOPD);
-        MasDiscount discount=new MasDiscount();
-        ApiResponse<OpdBillingPaymentResponse> resp=billingService.saveBillingForOpd(savedVisit,serviceCategory,null);
-        Visit v = visitRepository.getReferenceById(newVisit.getId());
-        newVisit.setBillingHd(resp.getResponse().getHeader());
-        visitRepository.save(newVisit);
+        if(AppConstants.STATUS_Y.equalsIgnoreCase(savedVisit.getHospital().getAppCostApplicable())) {
+            ApiResponse<OpdBillingPaymentResponse> resp = billingService.saveBillingForOpd(savedVisit, serviceCategory, null);
+            Visit v = visitRepository.getReferenceById(newVisit.getId());
+            newVisit.setBillingHd(resp.getResponse().getHeader());
+            visitRepository.save(newVisit);
+        }
         return savedVisit;
     }
     private OpdPatientDetail addOpdDetails(Visit savedVisit, OpdPatientDetailRequest opdPatientDetailRequest, Patient patient) {
@@ -1039,7 +1037,6 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         }
 
-
         AppSetup appSetup = optionalSetup.get(0);
         if (appSetup == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"App setup not defined for this day",400);
@@ -1065,7 +1062,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
         Set<Long> occupiedTokens = new HashSet<>();
         try {
-            occupiedTokens = new HashSet<>(visitRepository.findOccupiedTokens(deptId, doctorId, sessionId, startOfDay, endOfDay));
+            occupiedTokens = new HashSet<>(visitRepository.findOccupiedTokens(deptId, doctorId, sessionId, startOfDay, endOfDay,AppConstants.VISIT_STATUS_PENDING,AppConstants.VISIT_STATUS_COMPLETED));
         } catch (Exception e) {
             log.error("Error fetching occupied tokens", e);
         }
@@ -1371,20 +1368,14 @@ public class RegistrationServiceImpl implements RegistrationService {
         if (visitList == null || visitList.isEmpty() || patientId == null) {
             return;
         }
-
-
         Map<String, Long> seenAppointments = new HashMap<>();
         for (VisitRequest visit : visitList) {
             if (visit == null) {
                 continue;
             }
-
-
-
             if (visit.getDoctorId() == null || visit.getVisitDate() == null) {
                 continue;
             }
-
             LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
             String appointmentKey = visit.getDoctorId() + "|" + visitDate +"|" + visit.getDepartmentId() + "|" + visit.getPatientId();
             Long currentVisitId = visit.getId();
@@ -1400,32 +1391,15 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
     }
 
-    private void validateDuplicateAppointment(
-            VisitRequest visit,
-            Long patientId,
-            Long excludeVisitId) {
-
-        if (visit == null
-                || patientId == null
-                || visit.getDoctorId() == null
-                || visit.getDepartmentId() == null
+    private void validateDuplicateAppointment(VisitRequest visit, Long patientId, Long excludeVisitId) {
+        if (visit == null|| patientId == null
+                || visit.getDoctorId() == null|| visit.getDepartmentId() == null
                 || visit.getVisitDate() == null) {
             return;
         }
-
-        LocalDate visitDate =
-                visit.getVisitDate()
-                        .atZone(ZoneOffset.UTC)
-                        .toLocalDate();
-
-        Instant startOfDay =
-                visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-
-        Instant endOfDay =
-                visitDate.plusDays(1)
-                        .atStartOfDay(ZoneOffset.UTC)
-                        .minusNanos(1)
-                        .toInstant();
+        LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
+        Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
 
         boolean duplicateExists =
                 visitRepository.existsDuplicatePatientAppointment(
@@ -1445,6 +1419,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             );
         }
     }
+
     private String cleanStringParameter(String param) {
         if (param == null || param.trim().isEmpty()) {
             return null;

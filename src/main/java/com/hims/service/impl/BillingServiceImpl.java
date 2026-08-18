@@ -132,12 +132,10 @@ public class BillingServiceImpl implements BillingService {
 
         BillingPolicyMaster policy;
         Patient patient = visit.getPatient();
-
-        try {
             BigDecimal totalDiscount = BigDecimal.valueOf(0);
             header.setBillDate(OffsetDateTime.now());
             header.setPatient(visit.getPatient());
-            header.setPatientDisplayName(visit.getPatient().getPatientFn() + " " + visit.getPatient().getPatientMn() + " " + visit.getPatient().getPatientLn());
+            header.setPatientDisplayName(visit.getPatient().getFullName());
             header.setPatientAge(visit.getPatient().getPatientAge());
             header.setPatientGender(visit.getPatient().getPatientGender().getGenderName());
             header.setPatientAddress(visit.getPatient().getPatientAddress1() + " " + visit.getPatient().getPatientAddress2());
@@ -146,12 +144,10 @@ public class BillingServiceImpl implements BillingService {
             header.setHospitalAddress(visit.getHospital().getAddress());
             header.setHospitalMobileNo(visit.getHospital().getContactNumber());
             header.setHospitalGstin(visit.getHospital().getGstnNo());
-            header.setReferredBy(visit.getIniDoctor().getFirstName() + " " + visit.getIniDoctor().getMiddleName() + " " + visit.getIniDoctor().getLastName());
+            header.setReferredBy(visit.getIniDoctor().getFullName());
             header.setGstnBillNo("");
             header.setBillDate(OffsetDateTime.now());
             Instant currentDate = Instant.now();
-
-
             Optional<Visit> lastVisitOpt = visitRepository.findPreviousVisit(
                     patient.getId(),
                     visit.getDoctor().getUserId(),
@@ -210,107 +206,106 @@ public class BillingServiceImpl implements BillingService {
             } else {
                 header.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
             }
-            header.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+            header.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
             header.setCreatedBy(currentUser.getFullName());
             header.setUpdatedDt(Instant.now());
             header.setCreatedDt(Instant.now());
             header.setInvoiceNo("");
-            header.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
             header.setUpdatedAt(OffsetDateTime.now());
             header.setBillingDate(Instant.now());
             header.setDiscount(discount);
             header.setVisit(visit);
             header.setServiceCategory(serviceCategory);
             header.setBillingHdId(0);
-
             BillingHeader savedHeader = billingHeaderRepository.save(header);
             response.setHeader(savedHeader);
             //only for new patient we add new details with same header
-            if (visit.getVisitType().equalsIgnoreCase(AppConstants.VISIT_TYPE_NEW)) {
-                MasServiceCategory masServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRegistration);
-                if (savedHeader != null) {
-                    BillingDetail detail = new BillingDetail();
-                    detail.setBillingHd(savedHeader);
-                    detail.setServiceCategory(masServiceCategory);
-                    detail.setServiceId(0L);
-                    detail.setItemName("");
-                    if (visit.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
-                        detail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-                    } else {
-                        detail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
-                    }
-                    detail.setInvestigation(null);
-                    detail.setChargeCost(masServiceCategory.getRegistrationCost());
-                    detail.setBasePrice(masServiceCategory.getRegistrationCost());
-                    detail.setDiscount(BigDecimal.ZERO);
-                    BigDecimal total = masServiceCategory.getRegistrationCost();
-                    detail.setAmountAfterDiscount(total);
-                    detail.setTaxPercent(BigDecimal.ZERO);
-                    detail.setTaxAmount(BigDecimal.ZERO);
-                    detail.setNetAmount(total);
-                    detail.setCreatedAt(Instant.now());
-                    detail.setRegistrationCost(BigDecimal.ZERO);
-                    detail.setCreatedDt(OffsetDateTime.now());
-                    detail.setUpdatedDt(OffsetDateTime.now());
-                    detail.setBillHd(savedHeader);
-                    billingDetailRepository.save(detail);
-                    boolean paymentFlag = false;
-                    response.setPaymentFlag(paymentFlag);
-                }
-            }
+            saveRegistrationServiceBillingDetails(visit, savedHeader);
 
             if (savedHeader != null) {
-                BillingDetail detail = new BillingDetail();
+                saveOpdBillingDetails(visit, serviceCategory, discount, savedHeader, serviceOpd, totalDiscount, tax);
+            }
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
+        });
+    }
+
+    private void saveOpdBillingDetails(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount, BillingHeader savedHeader, Optional<MasServiceOpd> serviceOpd, BigDecimal totalDiscount, BigDecimal tax) {
+        BillingDetail detail = new BillingDetail();
+        detail.setBillingHd(savedHeader);
+        detail.setServiceCategory(serviceCategory);
+        detail.setServiceId(0L);
+        detail.setItemName("");
+        if (visit.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+            detail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+        } else {
+            detail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        }
+
+        if (serviceOpd.isPresent()) {
+            detail.setOpdService(serviceOpd.get());
+
+            detail.setBasePrice(serviceOpd.get().getBaseTariff());
+            detail.setTariff(serviceOpd.get().getBaseTariff());
+
+
+            if (discount != null) {
+                if (discount.getDisPercentage() != null && discount.getMaxDiscount() != null) {
+                    totalDiscount = serviceOpd.get().getBaseTariff().multiply(discount.getDisPercentage().divide(BigDecimal.valueOf(100)));
+                    if (totalDiscount.compareTo(discount.getMaxDiscount()) > 0) {
+                        totalDiscount = discount.getMaxDiscount();
+                    }
+                }
+            }
+            detail.setDiscount(totalDiscount);
+            BigDecimal discountedAmount = serviceOpd.get().getBaseTariff().subtract(totalDiscount);
+            BigDecimal totalAmount = discountedAmount.add(tax);
+            detail.setChargeCost(serviceOpd.get().getBaseTariff().add(tax));
+            detail.setAmountAfterDiscount(discountedAmount);
+            detail.setTaxPercent(BigDecimal.valueOf(serviceCategory.getGstPercent()));
+            detail.setTaxAmount(tax);
+            detail.setNetAmount(totalAmount);
+            detail.setCreatedAt(Instant.now());
+        }
+        detail.setInvestigation(null);
+        detail.setCreatedDt(OffsetDateTime.now());
+        detail.setUpdatedDt(OffsetDateTime.now());
+        detail.setBillHd(savedHeader);
+        billingDetailRepository.save(detail);
+    }
+
+    public BillingDetail saveRegistrationServiceBillingDetails(Visit visit, BillingHeader savedHeader) {
+        BillingDetail detail = new BillingDetail();
+        if (visit.getVisitType().equalsIgnoreCase(AppConstants.VISIT_TYPE_NEW)) {
+            MasServiceCategory masServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRegistration);
+            if (savedHeader != null) {
+                detail = new BillingDetail();
                 detail.setBillingHd(savedHeader);
-                detail.setServiceCategory(serviceCategory);
+                detail.setServiceCategory(masServiceCategory);
                 detail.setServiceId(0L);
                 detail.setItemName("");
-                if (visit.getHospital().getAppCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+                if (visit.getHospital().getRegCostApplicable().equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
                     detail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
                 } else {
                     detail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
                 }
-
-                if (serviceOpd.isPresent()) {
-                    detail.setOpdService(serviceOpd.get());
-
-                    detail.setBasePrice(serviceOpd.get().getBaseTariff());
-                    detail.setTariff(serviceOpd.get().getBaseTariff());
-
-
-                    if (discount != null) {
-                        if (discount.getDisPercentage() != null && discount.getMaxDiscount() != null) {
-                            totalDiscount = serviceOpd.get().getBaseTariff().multiply(discount.getDisPercentage().divide(BigDecimal.valueOf(100)));
-                            if (totalDiscount.compareTo(discount.getMaxDiscount()) > 0) {
-                                totalDiscount = discount.getMaxDiscount();
-                            }
-                        }
-                    }
-
-                    detail.setDiscount(totalDiscount);
-                    BigDecimal discountedAmount = serviceOpd.get().getBaseTariff().subtract(totalDiscount);
-                    BigDecimal totalAmount = discountedAmount.add(tax);
-                    detail.setChargeCost(serviceOpd.get().getBaseTariff().add(tax));
-                    detail.setAmountAfterDiscount(discountedAmount);
-                    detail.setTaxPercent(BigDecimal.valueOf(serviceCategory.getGstPercent()));
-                    detail.setTaxAmount(tax);
-                    detail.setNetAmount(totalAmount);
-                    detail.setCreatedAt(Instant.now());
-                }
                 detail.setInvestigation(null);
+                detail.setChargeCost(masServiceCategory.getRegistrationCost());
+                detail.setBasePrice(masServiceCategory.getRegistrationCost());
+                detail.setDiscount(BigDecimal.ZERO);
+                BigDecimal total = masServiceCategory.getRegistrationCost();
+                detail.setAmountAfterDiscount(total);
+                detail.setTaxPercent(BigDecimal.ZERO);
+                detail.setTaxAmount(BigDecimal.ZERO);
+                detail.setNetAmount(total);
+                detail.setCreatedAt(Instant.now());
+                detail.setRegistrationCost(BigDecimal.ZERO);
                 detail.setCreatedDt(OffsetDateTime.now());
                 detail.setUpdatedDt(OffsetDateTime.now());
                 detail.setBillHd(savedHeader);
                 billingDetailRepository.save(detail);
-
-                boolean paymentFlag = false;
-                response.setPaymentFlag(paymentFlag);
             }
-        } catch (Exception ex) {
-            throw new SDDException(500, "Billing failed: " + ex.getMessage());
         }
-        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
-        });
+        return detail;
     }
 
 
@@ -357,8 +352,7 @@ public class BillingServiceImpl implements BillingService {
         try {
 
 
-            MasServiceCategory serviceCategory =
-                    masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
+            MasServiceCategory serviceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
 
             Pageable pageable = PageRequest.of(page, size);
 
@@ -1354,7 +1348,13 @@ public class BillingServiceImpl implements BillingService {
 
         billingHeader.setReferredBy(vId.getDoctorName());
         billingHeader.setBillingDate(Instant.now());
-        billingHeader.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        //Lab Billing Condition for Hospital
+        if(vId.getHospital().getLabBilling().equalsIgnoreCase(AppConstants.STATUS_N)) {
+            billingHeader.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+        } else {
+            billingHeader.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        }
+
         if (isRadiology) {
             billingHeader.setRadOrderHd((RadOrderHd) orderHd);
         } else {
@@ -1375,7 +1375,8 @@ public class BillingServiceImpl implements BillingService {
     public BillingDetail saveBillingDetail(
             BillingHeader bhdId,
             Object dtId,
-            LabRadioInvestigationRequest investigation,
+            BigDecimal actualAmount,
+            BigDecimal discountedAmount,
             String serviceCategoryCode,
             boolean isRadiology) {
 
@@ -1406,8 +1407,8 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setCreatedAt(Instant.now());
         billingDetail.setQuantity(1);
 
-        BigDecimal actual = BigDecimal.valueOf(investigation.getActualAmount());
-        BigDecimal discount = BigDecimal.valueOf(investigation.getDiscountedAmount());
+        BigDecimal actual = actualAmount;
+        BigDecimal discount = discountedAmount;
 
         billingDetail.setBasePrice(actual);
         billingDetail.setDiscount(discount);
@@ -1431,7 +1432,11 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setNetAmount(net);
         billingDetail.setTotal(net);
 
-        billingDetail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        if(bhdId.getPaymentStatus().equalsIgnoreCase(AppConstants.PAYMENT_PAID)) {
+            billingDetail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+        } else {
+            billingDetail.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
+        }
 
         return billingDetailRepository.save(billingDetail);
     }
@@ -1461,8 +1466,8 @@ public class BillingServiceImpl implements BillingService {
         billingDetail.setServiceId(0L);
         billingDetail.setChargeCost(BigDecimal.ZERO);
 
-        BigDecimal actual = BigDecimal.valueOf(req.getActualAmount());
-        BigDecimal discount = BigDecimal.valueOf(req.getDiscountedAmount());
+        BigDecimal actual = req.getActualAmount();
+        BigDecimal discount = req.getDiscountedAmount();
 
         billingDetail.setBasePrice(actual);
         billingDetail.setDiscount(discount);
@@ -1494,16 +1499,8 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<PaidCancelledAppointmentResponse>>
-    getBillingRefundPatientList(
-            int page,
-            int size,
-            String patientName,
-            String mobileNo,
-            String billingServiceType,
-            String refundStatus,
-            LocalDate fromDate,
-            LocalDate toDate
+    public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page,int size,String patientName,
+                String mobileNo,String billingServiceType,String refundStatus,LocalDate fromDate,LocalDate toDate
     ) {
 
         try {

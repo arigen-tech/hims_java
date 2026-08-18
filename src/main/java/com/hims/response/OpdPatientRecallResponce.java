@@ -66,6 +66,7 @@ public class OpdPatientRecallResponce {
 
     //======================== Treatment ====================
     private NewDPatientPrescriptionHd patientPrescriptionHd;
+    private List<NewDPatientPrescriptionHd> patientPrescriptionHds;
     private List<NewDPatientPrescriptionDt> patientPrescriptionDts;
 
 
@@ -143,7 +144,7 @@ public class OpdPatientRecallResponce {
     @Setter
     public static class RadOrderDt {
         private Integer OrderDtId;
-        private String orderStatus;
+        private String studyStatus;
         private LocalDate appointmentDate;
         private Long investigationId;
         private String billingStatus;

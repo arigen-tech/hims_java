@@ -208,4 +208,12 @@ public class OpdPatientDetail {
     @Column(name = "refer_to")
     private String referTo;
 
+    @Size(max = 500)
+    @Column(name = "lab_advised")
+    private String labAdvised;
+
+    @Size(max = 500)
+    @Column(name = "radio_Advised")
+    private String radioAdvised;
+
 }

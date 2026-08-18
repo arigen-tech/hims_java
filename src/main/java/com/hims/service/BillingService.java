@@ -14,6 +14,9 @@ import java.util.List;
 public interface BillingService {
     ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount);
 
+    //for registration Service add Billing Details
+    BillingDetail saveRegistrationServiceBillingDetails(Visit visit, BillingHeader savedHeader);
+
     /**
      * Process OPD consultation payment
      */
@@ -65,7 +68,8 @@ public interface BillingService {
     BillingDetail saveBillingDetail(
             BillingHeader bhdId,
             Object dtId,
-            LabRadioInvestigationRequest investigation,
+            BigDecimal actualAmount,
+            BigDecimal discountedAmount,
             String serviceCategoryCode,
             boolean isRadiology);
 
@@ -76,17 +80,8 @@ public interface BillingService {
             String serviceCategoryCode);
 
 
-    ApiResponse<Page<PaidCancelledAppointmentResponse>>
-    getBillingRefundPatientList(
-            int page,
-            int size,
-            String patientName,
-            String mobileNo,
-            String billingServiceType,
-            String refundStatus,
-            LocalDate fromDate,
-            LocalDate toDate
-    );
+    ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page, int size,String patientName,
+                                String mobileNo,String billingServiceType, String refundStatus,LocalDate fromDate,LocalDate toDate);
 
     ApiResponse<List<PatientBillingRefundDetailsResponse>> getPatientBillingRefundDetails(Long billingId);
 

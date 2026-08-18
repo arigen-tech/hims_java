@@ -7,6 +7,8 @@ import com.hims.entity.projection.PrescriptionDetailProjection;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
+import com.hims.mapper.InvestigationData;
+import com.hims.mapper.OpdPatientDetailMapper;
 import com.hims.mapper.TreatmentData;
 import com.hims.projection.*;
 import com.hims.request.*;
@@ -49,41 +51,24 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasDepartmentRepository departmentRepository;
     private final MasHospitalRepository hospitalRepository;
     private final UserRepo userRepository;
-
     private final MasIcdRepository masIcdRepository;
     private final StockFound stockFound;
-
     private final DgMasInvestigationRepository dgMasInvestigationRepository;
     private final LabHdRepository dgOrderHdRepo;
-
     private final MasInvestigationPriceDetailsRepository masInvestigationPriceDetailsRepository;
-
     private final LabDtRepository dgOrderDtRepo;
-
     private final PatientPrescriptionHdRepository patientPrescriptionHdRepository;
-
     private final PatientPrescriptionDtRepository patientPrescriptionDtRepository;
-
     private final AuthUtil authUtil;
-
     private final MasStoreItemRepository masStoreItemRepository;
-
     private final MasCareLevelRepo masCareLevelRepository;
-
     private final MasWardCategoryRepository masWardCategoryRepository;
-
     private final MasDepartmentRepository masDepartmentRepository;
-
     private final LabOrderTrackingStatusRepository labOrderTrackingStatusRepository;
-
     private final RadOrderHdRepository radOrderHdRepository;
-
     private final RadOrderDtRepository radOrderDtRepository;
-
     private final MasServiceCategoryRepository masServiceCategoryRepository;
-
     private final PatientPrescriptionDtRepository prescriptionDtRepository;
-
     private final OpdOpthDetailsService opdOpthDetailsService;
     private final OpdObgDetailsService opdObgDetailsService;
     private final OpdEntDetailsService opdEntDetailsService;
@@ -95,6 +80,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
     private final TransactionSequenceService transactionSequenceService;
     private final MasFrequencyRepository masFrequencyRepository;
+    private final BillingService billingService;
+    private final OpdPatientDetailMapper opdPatientDetailMapper;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -114,9 +101,20 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     @Value("${app.laboratoryDepartment}")
     private Integer laboratoryDepartment;
 
+    @Value("${serviceCategoryLab}")
+    private String serviceCategoryLab;
+
+    @Value("${serviceCategoryRad}")
+    private String serviceCategoryRad;
 
     @Autowired
     HelperUtils helperUtils;
+
+    @Autowired
+    BillingHeaderRepository  billingHeaderRepository;
+
+    @Autowired
+    BillingDetailRepository billingDetailRepository;
 
 
 
@@ -129,27 +127,11 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (opdPObj == null) {
             return ResponseUtils.createNotFoundResponse("OPD details not found for visitId: " + visitId, 404);
         }
-        OpdPatientVitalResponse responseDto = mapToVitalResponse(opdPObj);
+        OpdPatientVitalResponse responseDto = opdPatientDetailMapper.mapToVitalResponse(opdPObj);
         return ResponseUtils.createSuccessResponse(responseDto, new TypeReference<>() {
         });
     }
 
-    private OpdPatientVitalResponse mapToVitalResponse(OpdPatientDetail opd) {
-        OpdPatientVitalResponse res = new OpdPatientVitalResponse();
-        res.setOpdPatientDetailsId(opd.getOpdPatientDetailsId());
-        res.setHeight(opd.getHeight());
-        res.setWeight(opd.getWeight());
-        res.setPulse(opd.getPulse());
-        res.setTemperature(opd.getTemperature());
-        res.setRr(opd.getRr());
-        res.setBmi(opd.getBmi());
-        res.setSpo2(opd.getSpo2());
-        res.setBpSystolic(opd.getBpSystolic());
-        res.setBpDiastolic(opd.getBpDiastolic());
-        res.setMlcFlag(opd.getMlcFlag());
-
-        return res;
-    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -171,9 +153,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
             }, AppConstants.MANDATORY_DIAGNOSIS_MESSAGE, 400);
         }
-        mapBasicVitalDetails(opd, request);
-        mapClinicalDetails(opd, request);
-        mapGeneralDetails(opd, patient, visit, user, deptId);
+        opdPatientDetailMapper.mapBasicVitalDetails(opd, request);
+        opdPatientDetailMapper.mapClinicalDetails(opd, request);
+        opdPatientDetailMapper.mapGeneralDetails(opd, patient, visit, user, deptId);
         handleAdmission(opd, request);
         handleFollowUp(opd, request);
         handleReferral(opd, request);
@@ -191,8 +173,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         saveOrUpdateIcdDiagnosis(diagIdList, saved.getOpdPatientDetailsId(), request.getVisitId(), user.getUserId());
         //diagnosis - End
 
-        boolean hasLabInvestigations = false;
-        boolean hasRadioInvestigations = false;
+
         if (request.getInvestigation() != null && !request.getInvestigation().isEmpty()) {
             if (request.getInvestigation().stream().anyMatch(i -> i == null || i.getInvestigationDate() == null)) {
                 throw new SDDException("investigation", 400, "Investigation date cannot be null");
@@ -200,26 +181,67 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId)
                     .orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
 
-            // Group investigations by department
-            Map<Long, Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>>> grouped = request.getInvestigation().stream().filter(Objects::nonNull).collect(Collectors.groupingBy(inv -> helperUtils.getDepartmentFromInvestigation(inv.getId()), Collectors.groupingBy(OpdPatientDetailCreateRequest.Investigation::getInvestigationDate)));
+            List<InvestigationData> investigations =
+                    opdPatientDetailMapper.mapInvestigations(
+                            request.getInvestigation(),
+                            item -> new InvestigationData(
+                                    item.getInvestigationId(),
+                                    item.getInvestigationName(),
+                                    item.getInvestigationDate(),
+                                    item.getInvestigationId(),
+                                    null
+                            ));
 
-            if (grouped.containsKey(Long.valueOf(laboratoryDepartment))) {
-                log.info("Processing LAB investigations");
-                processLabInvestigations(grouped.get(Long.valueOf(laboratoryDepartment)), patient, visit, user, deptId,
-                        transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, user.getHospital().getId()), labOrderedStatus);
-                hasLabInvestigations = true;
-            }
-            if (grouped.containsKey(Long.valueOf(radiologyDepartment))) {
-                log.info("Processing RADIOLOGY investigations");
-                processRadiologyInvestigations(grouped.get(Long.valueOf(radiologyDepartment)), patient, visit, user);
-                hasRadioInvestigations = true;
-            }
-        }
-        if (hasLabInvestigations) {
-            saved.setLabFlag(AppConstants.STATUS_Y.toLowerCase());
-        }
-        if (hasRadioInvestigations) {
-            saved.setRadioFlag(AppConstants.STATUS_Y.toLowerCase());
+            // Group investigations by department
+            Map<Long, Map<LocalDate, List<InvestigationData>>> grouped =
+                    investigations.stream()
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.groupingBy(
+                                    inv -> helperUtils.getDepartmentFromInvestigation(
+                                            inv.investigationId()
+                                    ),
+                                    Collectors.groupingBy(
+                                            InvestigationData::investigationDate
+                                    )));
+
+
+            //if hospital flag
+           // if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getLabBilling())) {
+                if (grouped.containsKey(Long.valueOf(laboratoryDepartment))) {
+                    log.info("Processing LAB investigations");
+                    Map<LocalDate, List<InvestigationData>> labInvestigations = grouped.get(Long.valueOf(laboratoryDepartment));
+
+                    processLabInvestigations(labInvestigations, patient, visit, user, labOrderedStatus);
+
+                    String labAdvised = labInvestigations.values().stream()
+                            .flatMap(List::stream)
+                            .map(InvestigationData::investigationName)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .collect(Collectors.joining(", "));
+
+                    saved.setLabAdvised(labAdvised);
+                    saved.setLabFlag(AppConstants.STATUS_Y.toLowerCase());
+
+                }
+           // }
+//            if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling())){
+                if (grouped.containsKey(Long.valueOf(radiologyDepartment))) {
+                    log.info("Processing RADIOLOGY investigations");
+                    Map<LocalDate, List<InvestigationData>> radioInvestigations = grouped.get(Long.valueOf(radiologyDepartment));
+                    String radioAdvised = radioInvestigations.values().stream()
+                            .flatMap(List::stream)
+                            .map(InvestigationData::investigationName)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .collect(Collectors.joining(", "));
+
+                    processRadiologyInvestigations(radioInvestigations, patient, visit, user);
+
+                    saved.setRadioAdvised(radioAdvised);
+                    saved.setRadioFlag(AppConstants.STATUS_Y.toLowerCase());
+                }
+//            }
         }
 
         if (request.getTreatment() != null && !request.getTreatment().isEmpty()) {
@@ -227,12 +249,14 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     .stream()
                     .map(t -> new TreatmentData(
                             null,
+                            null,
                             t.getItemId(),
                             t.getDosage(),
                             t.getFrequency(),
                             t.getDays(),
                             t.getTotal(),
-                            t.getInstraction()
+                            t.getInstraction(),
+                            null
                     ))
                     .toList();
             saveOrUpdateTreatments(treatments,patient,visit,user,deptId);
@@ -288,26 +312,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
     }
 
-    private void mapBasicVitalDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest request) {
-        opd.setHeight(request.getHeight());
-        opd.setIdealWeight(request.getIdealWeight());
-        opd.setWeight(request.getWeight());
-        opd.setPulse(request.getPulse());
-        opd.setTemperature(request.getTemperature());
-        opd.setRr(request.getRr());
-        opd.setBmi(request.getBmi());
-        opd.setSpo2(request.getSpo2());
-        opd.setBpSystolic(request.getBpSystolic());
-        opd.setBpDiastolic(request.getBpDiastolic());
-        opd.setMlcFlag(request.getMlcFlag());
-        opd.setPatient(request.getPatientId() != null ? patientRepository.findById(request.getPatientId()).orElseThrow(() -> new SDDException("patient", 404, "Patient not found")) : null);
-        opd.setVisit(request.getVisitId() != null ? visitRepository.findById(request.getVisitId()).orElseThrow(() -> new SDDException("visit", 404, "Visit not found")) : null);
-        opd.setDepartment(request.getDepartmentId() != null ? departmentRepository.findById(request.getDepartmentId()).orElseThrow(() -> new SDDException("department", 404, "Department not found")) : null);
-        opd.setHospital(request.getHospitalId() != null ? hospitalRepository.findById(request.getHospitalId()).orElseThrow(() -> new SDDException("hospital", 404, "Hospital not found")) : null);
-        opd.setDoctor(request.getDoctorId() != null ? userRepository.findById(request.getDoctorId()).orElseThrow(() -> new SDDException("doctor", 404, "Doctor not found")) : null);
-        opd.setLastChgDate(Instant.now());
-        opd.setLastChgBy(Objects.requireNonNull(getCurrentUser()).getFullName());
-    }
 
     private void validateUpdateRequest(RecallOpdPatientDetailRequest request) {
         if (request == null) {
@@ -328,76 +332,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return opdPatientDetailRepository.findById(opdId).orElseThrow(() -> new SDDException("opd", 404, "OPD detail not found"));
     }
 
-    private void mapClinicalDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest request) {
-        opd.setPastMedicalHistory(request.getPastMedicalHistory());
-        opd.setFamilyHistory(request.getFamilyHistory());
-        opd.setClinicalExamination(request.getClinicalExamination());
-        opd.setPatientSignsSymptoms(request.getPatientSignsSymptoms());
-        opd.setWorkingDiag(request.getWorkingDiagnosis());
-        opd.setFinalMedicalAdvice(request.getDoctorRemarks());
-        opd.setTreatmentAdvice(request.getTreatmentAdvice());
 
-        if (request.getIcdDiagnosis() != null && !request.getIcdDiagnosis().isEmpty()) {
-            String joinedNames = request.getIcdDiagnosis().stream().filter(Objects::nonNull).map(OpdPatientDetailCreateRequest.IcdDiagnosis::getIcdDiagnosisName).filter(Objects::nonNull).collect(Collectors.joining(","));
-            opd.setIcdDiag(joinedNames);
-        } else {
-            opd.setIcdDiag(null);
-        }
-    }
-
-    private void saveIcdDiagnosis(List<OpdPatientDetailCreateRequest.IcdDiagnosis> list, Long opdId, Long visitId, Long userId) {
-        if (list == null || list.isEmpty()) {
-            return;
-        }
-        List<DischargeIcdCode> entities = new ArrayList<>();
-        for (OpdPatientDetailCreateRequest.IcdDiagnosis icd : list) {
-            if (icd == null) continue;
-            DischargeIcdCode entity = new DischargeIcdCode();
-            entity.setIcdId(icd.getIcdId());
-            entity.setVisitId(visitId);
-            entity.setOpdPatientDetailsId(opdId);
-            entity.setAddEditById(userId);
-            entity.setAddEditDate(LocalDate.now());
-            entity.setAddEditTime(LocalTime.now().toString());
-            entities.add(entity);
-        }
-        dischargeIcdCodeRepository.saveAll(entities);
-    }
-
-    private void saveTreatments(List<OpdPatientDetailCreateRequest.Treatment> list, Patient patient, Visit visit, User user, Long deptId) {
-        if (list == null || list.isEmpty()) {
-            return;
-        }
-        PatientPrescriptionHd hd = createPrescriptionHeader(patient, visit, user, deptId);
-        List<PatientPrescriptionDt> details = new ArrayList<>();
-        for (OpdPatientDetailCreateRequest.Treatment trt : list) {
-            if (trt == null) continue;
-            PatientPrescriptionDt dt = new PatientPrescriptionDt();
-            dt.setPrescriptionHdId(hd.getPrescriptionHdId());
-            dt.setItemId(trt.getItemId());
-            dt.setDosage(trt.getDosage());
-            dt.setFrequency(trt.getFrequency());
-            dt.setDays(trt.getDays());
-            dt.setTotal(trt.getTotal());
-            dt.setInstruction(trt.getInstraction());
-            dt.setStatus(AppConstants.STATUS_N.toLowerCase());
-            details.add(dt);
-        }
-        patientPrescriptionDtRepository.saveAll(details);
-    }
-
-    private void mapGeneralDetails(OpdPatientDetail opd, Patient patient, Visit visit, User user, Long deptId) {
-        opd.setPatient(patient);
-        opd.setVisit(visit);
-        opd.setOpdDate(Instant.now());
-        opd.setHospital(user.getHospital());
-        opd.setDoctor(user);
-        opd.setDepartment(departmentRepository.findById(deptId).orElseThrow(() -> new SDDException("department", 404, "Department not found")));
-        opd.setLastChgBy(user.getUsername());
-        opd.setLastChgDate(Instant.now());
-
-
-    }
 
     private PatientPrescriptionHd createPrescriptionHeader(Patient patient, Visit visit, User user, Long deptId) {
         PatientPrescriptionHd hd = new PatientPrescriptionHd();
@@ -453,7 +388,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         handleRecallAdmission(opd, request);
         handleRecallFollowUp(opd, request);
         handleRecallReferral(opd, request);
-        opdPatientDetailRepository.save(opd);
+        OpdPatientDetail opdPatientDetail = opdPatientDetailRepository.save(opd);
         handleRecallPregnancyDetails(opd, request.getPregnancyDetails(), user);
 
         //ICD diagnosis details{
@@ -466,12 +401,31 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         //}
 
         //investigation details{
-        replaceInvestigations(request, patient, visit, user);
+
+        List<InvestigationData> investigations =
+                opdPatientDetailMapper.mapInvestigations(
+                        request.getInvestigations(),
+                        item -> new InvestigationData(
+                                item.getInvestigationId(),
+                                item.getInvestigationName(),
+                                item.getInvestigationDate(),
+                                item.getInvestigationId(),
+                                item.getFlag()
+                        ));
+
+        createOrDeleteInvestigation(investigations, patient, visit, user, opdPatientDetail);
+
+        updateInvestigationAdvisedNames(
+                investigations,
+                opdPatientDetail
+        );
+
         //    }
         //Treatment data {
         List<TreatmentData> treatments = request.getTreatments()
                 .stream()
                 .map(t -> new TreatmentData(
+                        t.getPrescriptionHdId(),
                         t.getPrescriptionDtId(),
                         t.getItemId(),
                         t.getDosage(),
@@ -482,15 +436,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                         t.getTotal() != null
                                 ? BigDecimal.valueOf(t.getTotal())
                                 : null,
-                        t.getInstruction()
+                        t.getInstruction(),
+                        t.getFlag()
                 ))
                 .toList();
 
         saveOrUpdateTreatments(treatments,patient,visit,user,authUtil.getCurrentDepartmentId());
         //}
-
-        //removing facing issue because of store calculate the stock
-        //removeTreatments(request.getRemovedTreatmentIds());
 
         replacePsychiatryAssessment(request, patient, visit, user);
 
@@ -520,11 +472,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         });
     }
 
-    private void saveOrUpdateIcdDiagnosis(
-            List<Long> icdIds,
-            Long opdId,
-            Long visitId,
-            Long userId) {
+    private void saveOrUpdateIcdDiagnosis(List<Long> icdIds, Long opdId,Long visitId,Long userId) {
 
         dischargeIcdCodeRepository.deleteByOpdPatientDetailsId(opdId);
         if (icdIds == null || icdIds.isEmpty()) {
@@ -549,24 +497,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
     }
 
-    private void replaceIcdDiagnosis(RecallOpdPatientDetailRequest request, OpdPatientDetail opd, User user) {
-        dischargeIcdCodeRepository.deleteByOpdPatientDetailsId(opd.getOpdPatientDetailsId());
-        if (request.getIcdDiagnosisList() != null && !request.getIcdDiagnosisList().isEmpty()) {
-            List<DischargeIcdCode> entities = new ArrayList<>();
-            for (RecallOpdPatientDetailRequest.IcdDiagnosis icd : request.getIcdDiagnosisList()) {
-                if (icd == null) continue;
-                DischargeIcdCode entity = new DischargeIcdCode();
-                entity.setIcdId(icd.getIcdId());
-                entity.setVisitId(request.getVisitId());
-                entity.setOpdPatientDetailsId(opd.getOpdPatientDetailsId());
-                entity.setAddEditById(user.getUserId());
-                entity.setAddEditDate(LocalDate.now());
-                entity.setAddEditTime(LocalTime.now().toString());
-                entities.add(entity);
-            }
-            if (!entities.isEmpty()) {
-                dischargeIcdCodeRepository.saveAll(entities);
-            }
+    private void deleteTreatmentsByIds(List<Long> removedTreatmentIds) {
+        if (removedTreatmentIds == null || removedTreatmentIds.isEmpty()) {
+            return;
+        }
+
+        for (Long id : removedTreatmentIds) {
+            patientPrescriptionDtRepository.findById(id).ifPresent(dt -> {
+                patientPrescriptionDtRepository.delete(dt);
+                log.info("Deleted treatment with ID: {}", id);
+            });
         }
     }
 
@@ -581,25 +521,76 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (treatments == null || treatments.isEmpty()) {
             return;
         }
-        PatientPrescriptionHd hd = patientPrescriptionHdRepository.findByVisit_Id(visit.getId());
-        if (hd == null) {
-            hd = createPrescriptionHeader(patient, visit, user, deptId);
+        List<PatientPrescriptionHd> existingHeaders = patientPrescriptionHdRepository.findAllByVisit_Id(visit.getId());
+
+        Map<Long, PatientPrescriptionHd> headerMap =
+                existingHeaders.stream()
+                        .filter(Objects::nonNull)
+                        .filter(h -> h.getPrescriptionHdId() != null)
+                        .collect(Collectors.toMap(
+                                PatientPrescriptionHd::getPrescriptionHdId,
+                                Function.identity()
+                        ));
+
+        Map<Long, PatientPrescriptionDt> existingMap = new HashMap<>();
+        for (PatientPrescriptionHd header : existingHeaders) {
+            List<PatientPrescriptionDt> details = patientPrescriptionDtRepository.findByPrescriptionHdId(header.getPrescriptionHdId());
+            for (PatientPrescriptionDt dt : details) {
+                if (dt.getPrescriptionDtId() != null) {
+                    existingMap.put(dt.getPrescriptionDtId(),dt);
+                }
+            }
         }
-        for (TreatmentData treatment : treatments) {
-            if (treatment == null || treatment.itemId() == null) {
+        List<TreatmentData> deleteList = treatments.stream()
+                .filter(Objects::nonNull)
+                .filter(t -> t.itemId() != null)
+                .filter(t -> t.flag() != null && t.flag() == -1)
+                .toList();
+
+        List<TreatmentData> updateList = treatments.stream()
+                .filter(Objects::nonNull)
+                .filter(t -> t.itemId() != null)
+                .filter(t -> t.flag() != null && t.flag() == 0)
+                .toList();
+
+        List<TreatmentData> createList = treatments.stream()
+                .filter(Objects::nonNull)
+                .filter(t -> t.itemId() != null)
+                .filter(t -> t.flag() != null && t.flag() == 1)
+                .toList();
+
+        Set<Long> headersToCheckForDelete = new HashSet<>();
+
+        for (TreatmentData treatment : deleteList) {
+            if (treatment.prescriptionDtId() == null) {
+                log.warn("Cannot delete treatment. prescriptionDtId is null. itemId={}",treatment.itemId());
                 continue;
             }
-            PatientPrescriptionDt dt;
-            if (treatment.prescriptionDtId() != null) {
-                dt = patientPrescriptionDtRepository
-                        .findById(treatment.prescriptionDtId())
-                        .orElseThrow(() ->
-                                new SDDException("prescriptionDtId",404,"Prescription treatment not found: "
-                                                + treatment.prescriptionDtId()));
-            } else {
-                dt = new PatientPrescriptionDt();
-                dt.setPrescriptionHdId(hd.getPrescriptionHdId());
-                dt.setStatus(AppConstants.STATUS_N.toLowerCase());
+            PatientPrescriptionDt dt = existingMap.get(treatment.prescriptionDtId());
+
+            if (dt == null) {
+                log.warn("Treatment detail ID {} not found for deletion", treatment.prescriptionDtId());
+                continue;
+            }
+
+            Long headerId = dt.getPrescriptionHdId();
+            patientPrescriptionDtRepository.delete(dt);
+            existingMap.remove(treatment.prescriptionDtId());
+            if (headerId != null) {
+                headersToCheckForDelete.add(headerId);
+            }
+            log.info("Deleted treatment detail ID: {} from header ID: {}",treatment.prescriptionDtId(),headerId);
+        }
+
+        for (TreatmentData treatment : updateList) {
+            if (treatment.prescriptionDtId() == null) {
+                log.warn("Cannot update treatment. prescriptionDtId is null. itemId={}",treatment.itemId());
+                continue;
+            }
+            PatientPrescriptionDt dt =existingMap.get(treatment.prescriptionDtId());
+            if (dt == null) {
+                log.warn("Treatment detail ID {} not found for update",treatment.prescriptionDtId());
+                continue;
             }
             dt.setItemId(treatment.itemId());
             dt.setDosage(treatment.dosage());
@@ -607,212 +598,613 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             dt.setDays(treatment.days());
             dt.setTotal(treatment.total());
             dt.setInstruction(treatment.instruction());
-
             patientPrescriptionDtRepository.save(dt);
+            log.info("Updated treatment detail ID: {} under header ID: {}",dt.getPrescriptionDtId(),dt.getPrescriptionHdId());
+        }
+        Map<Long, PatientPrescriptionHd> newHeaderMap = new HashMap<>();
+
+        for (TreatmentData treatment : createList) {
+            Long requestedHeaderId = treatment.prescrptionHdId();
+            PatientPrescriptionHd headerToUse = null;
+            if (requestedHeaderId != null) {
+                headerToUse =  newHeaderMap.get(requestedHeaderId);
+                if (headerToUse == null) {
+                    PatientPrescriptionHd existingHeader = headerMap.get(requestedHeaderId);
+                    if (existingHeader != null && AppConstants.STATUS_Y.equalsIgnoreCase(existingHeader.getStatus())) {
+                        headerToUse = createPrescriptionHeader(patient, visit,user,deptId);
+                        newHeaderMap.put(requestedHeaderId,headerToUse);
+                        log.info("Existing header {} has status Y. " +"Created new header {}.",requestedHeaderId,headerToUse.getPrescriptionHdId());
+                    }
+                    else if (existingHeader != null&& AppConstants.STATUS_N.equalsIgnoreCase(existingHeader.getStatus())) {
+                        headerToUse = existingHeader;
+                        log.info("Using existing unbilled header {}.",requestedHeaderId);
+                    }
+                    else {
+                        headerToUse = createPrescriptionHeader(patient,visit,user,deptId);
+                        log.info("Header {} not found. Created new header {}.",requestedHeaderId,headerToUse.getPrescriptionHdId());
+                    }
+                }
+            }
+
+            if (headerToUse == null) {
+                headerToUse = createPrescriptionHeader(patient,visit,user,deptId);
+                log.info("No prescription header supplied. " +"Created new header {}.",headerToUse.getPrescriptionHdId());
+            }
+
+            PatientPrescriptionDt dt = new PatientPrescriptionDt();
+            dt.setPrescriptionHdId(headerToUse.getPrescriptionHdId());
+            dt.setItemId(treatment.itemId());
+            dt.setDosage(treatment.dosage());
+            dt.setFrequency(treatment.frequency());
+            dt.setDays(treatment.days());
+            dt.setTotal(treatment.total());
+            dt.setInstruction(treatment.instruction());
+            dt.setStatus(AppConstants.STATUS_N.toLowerCase());
+            patientPrescriptionDtRepository.save(dt);
+            log.info("Created treatment detail ID: {} under header ID: {}", dt.getPrescriptionDtId(),headerToUse.getPrescriptionHdId()
+            );
+        }
+        for (Long headerId : headersToCheckForDelete) {
+            List<PatientPrescriptionDt> remainingDetails = patientPrescriptionDtRepository.findByPrescriptionHdId(headerId);
+            if (remainingDetails.isEmpty()) {
+                patientPrescriptionHdRepository.deleteById(headerId);
+                log.info(
+                        "Deleted empty prescription header ID: {}",
+                        headerId
+                );
+            }
         }
     }
 
-    private void removeTreatments(List<Long> removedTreatmentIds) {
-        if (removedTreatmentIds == null || removedTreatmentIds.isEmpty()) {
+    private void updateInvestigationAdvisedNames(
+            List<InvestigationData> investigations,
+            OpdPatientDetail opdPatientDetail) {
+
+        if (investigations == null || investigations.isEmpty()) {
+            opdPatientDetail.setLabAdvised(null);
+            opdPatientDetail.setRadioAdvised(null);
             return;
         }
-        patientPrescriptionDtRepository.deleteAllById(removedTreatmentIds);
-        log.info("Removed prescription treatment IDs: {}",removedTreatmentIds);
+
+        Long labDepartmentId = Long.valueOf(laboratoryDepartment);
+        Long radDepartmentId = Long.valueOf(radiologyDepartment);
+
+        // LAB
+        String labAdvised = investigations.stream()
+                .filter(Objects::nonNull)
+                .filter(inv -> inv.flag() != null && inv.flag() != -1)
+                .filter(inv -> inv.investigationId() != null)
+                .filter(inv -> labDepartmentId.equals(
+                        helperUtils.getDepartmentFromInvestigation(
+                                inv.investigationId()
+                        )
+                ))
+                .map(InvestigationData::investigationName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.joining(", "));
+
+        // RADIOLOGY
+        String radioAdvised = investigations.stream()
+                .filter(Objects::nonNull)
+                .filter(inv -> inv.flag() != null && inv.flag() != -1)
+                .filter(inv -> inv.investigationId() != null)
+                .filter(inv -> radDepartmentId.equals(
+                        helperUtils.getDepartmentFromInvestigation(
+                                inv.investigationId()
+                        )
+                ))
+                .map(InvestigationData::investigationName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.joining(", "));
+
+        opdPatientDetail.setLabAdvised(
+                labAdvised.isBlank() ? null : labAdvised
+        );
+
+        opdPatientDetail.setRadioAdvised(
+                radioAdvised.isBlank() ? null : radioAdvised
+        );
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    private void replaceInvestigations(RecallOpdPatientDetailRequest request, Patient patient, Visit visit, User user) {
-        if (request.getInvestigations() == null || request.getInvestigations().isEmpty()) {
-            log.info("No investigations provided in recall update - keeping existing investigations");
+    private void createOrDeleteInvestigation(List<InvestigationData> investigations, Patient patient, Visit visit, User user,OpdPatientDetail opdPatientDetail) {
+        if (investigations == null || investigations.isEmpty()) {
             return;
         }
-        log.info("Replacing investigations for visit ID: {}", visit.getId());
-        deleteAllLabOrders(visit);
-        deleteAllRadiologyOrders(visit);
-        if (!request.getInvestigations().isEmpty()) {
-            createInvestigationsFromRequest(request, patient, visit, user);
+        record InvestigationKey(Long investigationId, LocalDate investigationDate) {
         }
-    }
+        Long labDepartmentId = Long.valueOf(laboratoryDepartment);
+        Long radDepartmentId = Long.valueOf(radiologyDepartment);
 
-    private void deleteAllLabOrders(Visit visit) {
-        List<DgOrderHd> existingLabOrders = dgOrderHdRepo.findAllByVisitId(visit);
-        if (existingLabOrders != null && !existingLabOrders.isEmpty()) {
-            for (DgOrderHd order : existingLabOrders) {
-                List<DgOrderDt> details = dgOrderDtRepo.findByOrderHd(order);
-                if (details != null && !details.isEmpty()) {
-                    dgOrderDtRepo.deleteAll(details);
+        List<DgOrderHd> labHeaders = dgOrderHdRepo.findAllByVisitId(visit);
+        List<DgOrderDt> labDetails = new ArrayList<>();
+
+        for (DgOrderHd header : labHeaders) {
+            List<DgOrderDt> details = dgOrderDtRepo.findByOrderHd(header);
+            if (details != null) {
+                labDetails.addAll(details);
+            }
+        }
+
+        Set<InvestigationKey> existingLabKeys = labDetails.stream()
+                .filter(dt -> dt.getInvestigation() != null)
+                .filter(dt -> dt.getAppointmentDate() != null)
+                .map(dt -> new InvestigationKey(
+                        dt.getInvestigation().getInvestigationId(),
+                        dt.getAppointmentDate()
+                ))
+                .collect(Collectors.toSet());
+
+        // 2. EXISTING RADIOLOGY ORDERS
+
+        List<RadOrderHd> radHeaders = radOrderHdRepository.findAllByVisit_Id(visit.getId());
+        List<RadOrderDt> radDetails = new ArrayList<>();
+        for (RadOrderHd header : radHeaders) {
+            List<RadOrderDt> details = radOrderDtRepository.findByRadOrderhd(header);
+
+            if (details != null) {
+                radDetails.addAll(details);
+            }
+        }
+        Set<InvestigationKey> existingRadKeys = radDetails.stream()
+                .filter(dt -> dt.getInvestigation() != null)
+                .filter(dt -> dt.getAppointmentDate() != null)
+                .map(dt -> new InvestigationKey(
+                        dt.getInvestigation().getInvestigationId(),
+                        dt.getAppointmentDate()
+                ))
+                .collect(Collectors.toSet());
+
+        // 3. REQUESTED INVESTIGATIONS
+        Set<InvestigationKey> requestedKeys = investigations.stream()
+                .filter(Objects::nonNull)
+                .filter(inv -> inv.investigationId() != null)
+                .filter(inv -> inv.investigationDate() != null)
+                .map(inv -> new InvestigationKey(
+                        inv.investigationId(),
+                        inv.investigationDate()
+                ))
+                .collect(Collectors.toSet());
+
+        
+        //validate the same date same investigation
+        investigations.stream()
+                .filter(Objects::nonNull)
+                .filter(inv -> inv.flag() == 1)
+                .filter(inv -> inv.investigationId() != null)
+                .filter(inv -> inv.investigationDate() != null)
+                .filter(inv -> labDepartmentId.equals(
+                        helperUtils.getDepartmentFromInvestigation(
+                                inv.investigationId()
+                        )
+                ))
+                .filter(inv -> existingLabKeys.contains(
+                        new InvestigationKey(
+                                inv.investigationId(),
+                                inv.investigationDate()
+                        )
+                ))
+                .findFirst()
+                .ifPresent(inv -> {
+                    throw new SDDException("investigation",400,AppConstants.CANNOT_ADD_SAME_INVESTIGATION );
+                });
+
+        investigations.stream()
+                .filter(Objects::nonNull)
+                .filter(inv -> inv.flag() == 1)
+                .filter(inv -> inv.investigationId() != null)
+                .filter(inv -> inv.investigationDate() != null)
+                .filter(inv -> radDepartmentId.equals(
+                        helperUtils.getDepartmentFromInvestigation(
+                                inv.investigationId()
+                        )
+                ))
+                .filter(inv -> existingRadKeys.contains(
+                        new InvestigationKey(
+                                inv.investigationId(),
+                                inv.investigationDate()
+                        )
+                ))
+                .findFirst()
+                .ifPresent(inv -> {
+                    throw new SDDException(
+                            "investigation",
+                            400,
+                            AppConstants.CANNOT_ADD_SAME_INVESTIGATION
+                    );
+                });
+
+
+        // 4. LAB ADD LIST
+        List<InvestigationData> addLabList = investigations.stream()
+                .filter(Objects::nonNull)
+                .filter(inv -> inv.flag() == 1)
+                .filter(inv -> inv.investigationId() != null)
+                .filter(inv -> inv.investigationDate() != null)
+                .filter(inv ->
+                        labDepartmentId.equals(
+                                helperUtils.getDepartmentFromInvestigation(
+                                        inv.investigationId()
+                                )
+                        )
+                )
+                .filter(inv ->
+                        !existingLabKeys.contains(
+                                new InvestigationKey(
+                                        inv.investigationId(),
+                                        inv.investigationDate()
+                                )
+                        )
+                )
+                .toList();
+
+        // 5. RADIOLOGY ADD LIST
+        List<InvestigationData> addRadList = investigations.stream()
+                .filter(Objects::nonNull)
+                .filter(inv -> inv.flag() == 1)
+                .filter(inv -> inv.investigationId() != null)
+                .filter(inv -> inv.investigationDate() != null)
+                .filter(inv ->
+                        radDepartmentId.equals(
+                                helperUtils.getDepartmentFromInvestigation(
+                                        inv.investigationId()
+                                )
+                        )
+                )
+                .filter(inv ->
+                        !existingRadKeys.contains(
+                                new InvestigationKey(
+                                        inv.investigationId(),
+                                        inv.investigationDate()
+                                )
+                        )
+                )
+                .toList();
+
+
+        List<DgOrderDt> deleteLabList = labDetails.stream()
+                .filter(dt -> dt.getInvestigation() != null)
+                .filter(dt -> dt.getAppointmentDate() != null)
+                .filter(dt -> investigations.stream()
+                        .filter(Objects::nonNull)
+                        .filter(inv -> inv.investigationId() != null)
+                        .filter(inv -> inv.investigationDate() != null)
+                        .anyMatch(inv ->
+                                inv.investigationId().equals(
+                                        dt.getInvestigation()
+                                                .getInvestigationId()
+                                )
+                                        && inv.investigationDate().equals(
+                                        dt.getAppointmentDate()
+                                )
+                                        && inv.flag() == -1
+                        )
+                        ||
+                        !requestedKeys.contains(
+                                new InvestigationKey(
+                                        dt.getInvestigation()
+                                                .getInvestigationId(),
+                                        dt.getAppointmentDate()
+                                )
+                        )
+                )
+                .toList();
+        // 7. RADIOLOGY DELETE LIST
+        List<RadOrderDt> deleteRadList = radDetails.stream()
+                .filter(dt -> dt.getInvestigation() != null)
+                .filter(dt -> dt.getAppointmentDate() != null)
+                .filter(dt -> investigations.stream()
+                        .filter(Objects::nonNull)
+                        .filter(inv -> inv.investigationId() != null)
+                        .filter(inv -> inv.investigationDate() != null)
+                        .anyMatch(inv ->
+                                inv.investigationId().equals(
+                                        dt.getInvestigation()
+                                                .getInvestigationId()
+                                )
+                                        && inv.investigationDate().equals(
+                                        dt.getAppointmentDate()
+                                )
+                                        && inv.flag() == -1
+                        )
+                        ||
+                        !requestedKeys.contains(
+                                new InvestigationKey(
+                                        dt.getInvestigation()
+                                                .getInvestigationId(),
+                                        dt.getAppointmentDate()
+                                )
+                        )
+                )
+                .toList();
+
+        if (!deleteLabList.isEmpty()) {
+            boolean deleteLabHeader = deleteLabList.size() == labDetails.size();
+            deleteInvestigation(deleteLabList,deleteLabHeader);
+        }
+        // 9. DELETE RADIOLOGY
+        if (!deleteRadList.isEmpty()) {
+            boolean deleteRadHeader = deleteRadList.size() == radDetails.size();
+            deleteRadiologyInvestigation(deleteRadList,deleteRadHeader);
+        }
+        // 10. LAB ORDERED STATUS
+        LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId)
+                        .orElseThrow(() -> new SDDException( "status", 500, "Ordered status not found with id: " + orderedStatusId));
+
+
+        // 11. ADD LAB INVESTIGATIONS
+        if (!addLabList.isEmpty()) {
+            Map<LocalDate, List<InvestigationData>> labGrouped = addLabList.stream().collect(Collectors.groupingBy(
+                                    InvestigationData::investigationDate
+                            ));
+
+            for (Map.Entry<LocalDate, List<InvestigationData>> entry: labGrouped.entrySet()) {
+                LocalDate appointmentDate = entry.getKey();
+                List<InvestigationData> dateInvestigations = entry.getValue();
+
+                // Refresh after deletion
+                labHeaders = dgOrderHdRepo.findAllByVisitId(visit);
+
+                // Compare appointmentDate, NOT orderDate.
+                DgOrderHd existingLabHeader = labHeaders.stream()
+                                .filter(hd -> appointmentDate.equals(hd.getAppointmentDate()))
+                                .filter(hd -> AppConstants.STATUS_N.equalsIgnoreCase(hd.getOrderStatus())
+                                                ||AppConstants.STATUS_P.equalsIgnoreCase(hd.getOrderStatus()))
+                                .findFirst()
+                                .orElse(null);
+
+                if (existingLabHeader != null) {
+                    createLabOrderDetails(dateInvestigations,existingLabHeader,labOrderedStatus,null);
+                } else {
+                    // NEW LAB HEADER
+                    Map<LocalDate, List<InvestigationData>> grouped = new HashMap<>();
+                    grouped.put(appointmentDate, dateInvestigations);
+
+                    String radioAdvised = grouped.values().stream()
+                            .flatMap(List::stream)
+                            .map(InvestigationData::investigationName)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .collect(Collectors.joining(", "));
+
+                    processLabInvestigations(grouped,patient,visit,user,labOrderedStatus);
+
+
+
                 }
-                dgOrderHdRepo.delete(order);
             }
-            log.info("Deleted {} existing lab orders for visit ID: {}", existingLabOrders.size(), visit.getId());
         }
-    }
 
-    private void deleteAllRadiologyOrders(Visit visit) {
-        List<RadOrderHd> existingRadOrders = radOrderHdRepository.findAllByVisit_Id(visit.getId());
-        if (existingRadOrders != null && !existingRadOrders.isEmpty()) {
-            for (RadOrderHd order : existingRadOrders) {
-                List<RadOrderDt> details = radOrderDtRepository.findByRadOrderhd(order);
-                if (details != null && !details.isEmpty()) {
-                    radOrderDtRepository.deleteAll(details);
+        // 12. ADD RADIOLOGY INVESTIGATIONS
+        if (!addRadList.isEmpty()) {
+            Map<LocalDate, List<InvestigationData>> radGrouped = addRadList.stream().collect(Collectors.groupingBy(InvestigationData::investigationDate));
+
+            for (Map.Entry<LocalDate, List<InvestigationData>> entry : radGrouped.entrySet()) {
+                LocalDate appointmentDate = entry.getKey();
+                List<InvestigationData> dateInvestigations = entry.getValue();
+                // Refresh after deletion
+                radHeaders = radOrderHdRepository.findAllByVisit_Id(visit.getId());
+                // Find existing RAD header
+                RadOrderHd existingRadHeader =
+                        radHeaders.stream()
+                                .filter(hd ->
+                                        appointmentDate.equals(
+                                                hd.getAppointmentDate()
+                                        )
+                                )
+                                .findFirst()
+                                .orElse(null);
+
+                if (existingRadHeader != null) {
+                    // EXISTING RADIOLOGY HEADER
+                    BillingHeader billingHeader = findBillingHeaderFromRadDetails(existingRadHeader);
+
+//                    if (billingHeader == null) {
+//                        throw new SDDException(
+//                                "billing",
+//                                500,
+//                                "Billing header not found for RADIOLOGY order: "
+//                                        + existingRadHeader.getId()
+//                        );
+//                    }
+
+                    createRadiologyOrderDetails(dateInvestigations,existingRadHeader,billingHeader);
+                    if(billingHeader!=null){
+                        updateBillingHeaderById(billingHeader.getId(),true,user);
+
+                    }
+
+                } else {
+                    // NEW RADIOLOGY HEADER
+                    Map<LocalDate, List<InvestigationData>> grouped = new HashMap<>();
+                    grouped.put(appointmentDate,dateInvestigations);
+                    processRadiologyInvestigations(grouped,patient,visit,user);
                 }
-                radOrderHdRepository.delete(order);
             }
-            log.info("Deleted {} existing radiology orders for visit ID: {}", existingRadOrders.size(), visit.getId());
         }
     }
 
-    private void createInvestigationsFromRequest(RecallOpdPatientDetailRequest request, Patient patient, Visit visit, User user) {
-        List<RecallOpdPatientDetailRequest.InvestigationRequest> labInvestigations = new ArrayList<>();
-        List<RecallOpdPatientDetailRequest.InvestigationRequest> radiologyInvestigations = new ArrayList<>();
-
-        for (RecallOpdPatientDetailRequest.InvestigationRequest inv : request.getInvestigations()) {
-            if (inv == null || inv.getInvestigationId() == null || inv.getInvestigationDate() == null) continue;
-
-            Long departmentId = helperUtils.getDepartmentFromInvestigation(inv.getInvestigationId());
-            if (departmentId.equals(Long.valueOf(laboratoryDepartment))) {
-                labInvestigations.add(inv);
-            } else if (departmentId.equals(Long.valueOf(radiologyDepartment))) {
-                radiologyInvestigations.add(inv);
-            }
+    private BillingHeader findBillingHeaderFromLabDetails(DgOrderHd orderHd) {
+        List<DgOrderDt> details = dgOrderDtRepo.findByOrderHd(orderHd);
+        if (details == null || details.isEmpty()) {
+            return null;
         }
 
-        if (!labInvestigations.isEmpty()) {
-            createLabInvestigations(labInvestigations, patient, visit, user);
-        }
-
-        if (!radiologyInvestigations.isEmpty()) {
-            createRadiologyInvestigations(radiologyInvestigations, patient, visit, user);
-        }
+        return details.stream()
+                .filter(dt -> dt.getBillingHd() != null)
+                .map(DgOrderDt::getBillingHd)
+                .findFirst()
+                .orElse(null);
     }
 
-    private void createLabInvestigations(List<RecallOpdPatientDetailRequest.InvestigationRequest> investigations, Patient patient, Visit visit, User user) {
-        LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found"));
 
-        Map<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> groupedByDate = investigations.stream().filter(inv -> inv.getInvestigationDate() != null).collect(Collectors.groupingBy(RecallOpdPatientDetailRequest.InvestigationRequest::getInvestigationDate));
+    private BillingHeader findBillingHeaderFromRadDetails(RadOrderHd orderHd) {
+        List<RadOrderDt> details = radOrderDtRepository.findByRadOrderhd(orderHd);
+        if (details == null || details.isEmpty()) {
+            return null;
+        }
 
-        for (Map.Entry<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> entry : groupedByDate.entrySet()) {
-            LocalDate appointmentDate = entry.getKey();
+        return details.stream()
+                .filter(dt -> dt.getBillingHd() != null)
+                .map(RadOrderDt::getBillingHd)
+                .findFirst()
+                .map(billingHd ->
+                        billingHeaderRepository
+                                .findById(
+                                        Math.toIntExact(
+                                                billingHd.getId()
+                                        )
+                                )
+                                .orElse(null)
+                )
+                .orElse(null);
+    }
 
-            // Create order header
-            DgOrderHd dgOrderHd = new DgOrderHd();
-            dgOrderHd.setAppointmentDate(appointmentDate);
-            dgOrderHd.setOrderDate(LocalDate.now());
-            dgOrderHd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
-            dgOrderHd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, user.getHospital().getId()));
-            dgOrderHd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
-            dgOrderHd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
-            dgOrderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.equalsIgnoreCase(user.getHospital().getLabBilling()) ? AppConstants.PAYMENT_NOT_PAID.toLowerCase() : AppConstants.PAYMENT_PAID.toLowerCase());
-            dgOrderHd.setSource("OPD PATIENT");
-            dgOrderHd.setDiscountId(1);
-            dgOrderHd.setPatientId(patient);
-            dgOrderHd.setDepartmentId(authUtil.getCurrentDepartmentId());
-            dgOrderHd.setHospitalId(user.getHospital().getId());
-            dgOrderHd.setVisitId(visit);
-            dgOrderHd.setCreatedBy(user.getFirstName());
-            dgOrderHd.setLastChgBy(user.getFirstName());
-            dgOrderHd.setCreatedOn(LocalDate.now());
-            dgOrderHd.setLastChgDate(LocalDate.now());
-            dgOrderHd.setLastChgTime(LocalTime.now().toString());
+    private void deleteRadiologyInvestigation(List<RadOrderDt> deleteList, boolean deleteHeader) {
+        if (deleteList == null || deleteList.isEmpty()) {
+            return;
+        }
+        for (RadOrderDt dt : deleteList) {
+            if (dt.getBillingHd() != null && dt.getInvestigation() != null) {
 
-            DgOrderHd savedOrderHd = dgOrderHdRepo.save(dgOrderHd);
+                BillingHeader billingHeader = billingHeaderRepository.findById(Math.toIntExact(dt.getBillingHd().getId())).orElse(null);
+                if (billingHeader != null) {
+                    Long investigationId = dt.getInvestigation().getInvestigationId();
 
-            // Create order details
-            for (RecallOpdPatientDetailRequest.InvestigationRequest inv : entry.getValue()) {
-                DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(inv.getInvestigationId()).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found"));
+                    List<BillingDetail> billingDetails = billingDetailRepository.findByBillingHd(billingHeader);
+                    List<BillingDetail> billingDetailsToDelete = billingDetails.stream()
+                                    .filter(detail -> detail.getInvestigation() != null)
+                                    .filter(detail -> investigationId.equals(detail.getInvestigation().getInvestigationId()))
+                                    .toList();
 
-                DgOrderDt dt = new DgOrderDt();
-                dt.setOrderHd(savedOrderHd);
-                dt.setInvestigation(invEntity);
-                dt.setAppointmentDate(inv.getInvestigationDate());
-                dt.setOrderQty(1);
-                dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
-                dt.setBillingStatus(savedOrderHd.getPaymentStatus());
-                dt.setCreatedBy(user.getFirstName());
-                dt.setLastChgBy(user.getFirstName());
-                dt.setCreatedOn(HMISUtil.getCurrentLocalDateTime());
-                dt.setLastChgDate(LocalDate.now());
-                dt.setLastChgTime(LocalTime.now().toString());
-                dt.setOrderTrackingStatus(labOrderedStatus);
+                    if (!billingDetailsToDelete.isEmpty()) {
 
-                if (invEntity.getMainChargeCodeId() != null) {
-                    dt.setMainChargeCodeId(invEntity.getMainChargeCodeId().getChargecodeId());
+                        BigDecimal totalAmount =
+                                billingDetailsToDelete.stream()
+                                        .map(BillingDetail::getBasePrice)
+                                        .filter(Objects::nonNull)
+                                        .reduce(
+                                                BigDecimal.ZERO,
+                                                BigDecimal::add
+                                        );
+
+                        BigDecimal discountAmount =
+                                billingDetailsToDelete.stream()
+                                        .map(BillingDetail::getDiscount)
+                                        .filter(Objects::nonNull)
+                                        .reduce(
+                                                BigDecimal.ZERO,
+                                                BigDecimal::add
+                                        );
+
+                        BigDecimal netAmount =
+                                billingDetailsToDelete.stream()
+                                        .map(BillingDetail::getNetAmount)
+                                        .filter(Objects::nonNull)
+                                        .reduce(
+                                                BigDecimal.ZERO,
+                                                BigDecimal::add
+                                        );
+
+                        billingDetailRepository.deleteAll(billingDetailsToDelete);
+                        billingDetailRepository.flush();
+                        List<BillingDetail> remainingDetails = billingDetailRepository.findByBillingHd(billingHeader);
+
+                        if (remainingDetails.isEmpty()) {
+                            billingHeaderRepository.delete(billingHeader);
+                        } else {
+                            billingHeader.setTotalAmount(billingHeader.getTotalAmount().subtract(totalAmount));
+                            billingHeader.setDiscountAmount(billingHeader.getDiscountAmount().subtract(discountAmount));
+                            billingHeader.setNetAmount(billingHeader.getNetAmount().subtract(netAmount));
+                            billingHeaderRepository.save(billingHeader);
+                        }
+                    }
                 }
-                if (invEntity.getSubChargeCodeId() != null) {
-                    dt.setSubChargeCodeId(invEntity.getSubChargeCodeId().getSubId());
+            }
+            RadOrderHd radOrderHd = dt.getRadOrderhd();
+            radOrderDtRepository.delete(dt);
+            radOrderDtRepository.flush();
+
+            if (deleteHeader && radOrderHd != null) {
+                List<RadOrderDt> remainingDetails = radOrderDtRepository.findByRadOrderhd(radOrderHd);
+                if (remainingDetails == null || remainingDetails.isEmpty()) {
+                    radOrderHdRepository.delete(radOrderHd);
                 }
-
-                dgOrderDtRepo.save(dt);
             }
         }
-        log.info("Created {} lab investigations for visit ID: {}", investigations.size(), visit.getId());
     }
 
-    private void createRadiologyInvestigations(List<RecallOpdPatientDetailRequest.InvestigationRequest> investigations, Patient patient, Visit visit, User user) {
-        // Group by date
-        Map<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> groupedByDate = investigations.stream().filter(inv -> inv.getInvestigationDate() != null).collect(Collectors.groupingBy(RecallOpdPatientDetailRequest.InvestigationRequest::getInvestigationDate));
+    private void deleteInvestigation(List<DgOrderDt> deleteList, boolean deleteHeader) {
+        if (deleteList == null || deleteList.isEmpty()) {
+            return;
+        }
+        for (DgOrderDt dt : deleteList) {
+            if (dt.getBillingHd() != null && dt.getInvestigation() != null) {
+                BillingHeader billingHeader = billingHeaderRepository.findById(Math.toIntExact(dt.getBillingHd().getId())).orElse(null);
+                if (billingHeader != null) {
+                    Long investigationId = dt.getInvestigation().getInvestigationId();
+                    List<BillingDetail> billingDetails = billingDetailRepository.findByBillingHd(billingHeader);
+                    List<BillingDetail> billingDetailsToDelete =
+                            billingDetails.stream()
+                                    .filter(detail -> detail.getInvestigation() != null)
+                                    .filter(detail ->
+                                            investigationId.equals(
+                                                    detail.getInvestigation()
+                                                            .getInvestigationId()
+                                            )
+                                    )
+                                    .toList();
 
-        for (Map.Entry<LocalDate, List<RecallOpdPatientDetailRequest.InvestigationRequest>> entry : groupedByDate.entrySet()) {
-            LocalDate appointmentDate = entry.getKey();
+                    if (!billingDetailsToDelete.isEmpty()) {
+                        BigDecimal totalAmount = billingDetailsToDelete.stream()
+                                .map(BillingDetail::getBasePrice)
+                                .filter(Objects::nonNull)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // Create radiology order header
-            RadOrderHd radOrderHd = new RadOrderHd();
-            radOrderHd.setAppointmentDate(appointmentDate);
-            radOrderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.equalsIgnoreCase(user.getHospital().getRadioBilling()) ? AppConstants.PAYMENT_NOT_PAID.toLowerCase() : AppConstants.PAYMENT_PAID.toLowerCase());
-            radOrderHd.setOrderDate(LocalDate.now());
-            radOrderHd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
-            radOrderHd.setPatient(patient);
-            radOrderHd.setVisit(visit);
-            radOrderHd.setDepartment(visit.getDepartment());
-            radOrderHd.setHospital(visit.getHospital());
-            radOrderHd.setLastChgBy(authUtil.getCurrentUserFullName());
-            radOrderHd.setCreatedBy(authUtil.getCurrentUserFullName());
+                        BigDecimal discountAmount = billingDetailsToDelete.stream()
+                                .map(BillingDetail::getDiscount)
+                                .filter(Objects::nonNull)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            RadOrderHd savedRadOrderHd = radOrderHdRepository.save(radOrderHd);
+                        BigDecimal netAmount = billingDetailsToDelete.stream()
+                                .map(BillingDetail::getNetAmount)
+                                .filter(Objects::nonNull)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // Create radiology order details
-            for (RecallOpdPatientDetailRequest.InvestigationRequest inv : entry.getValue()) {
-                DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(inv.getInvestigationId()).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found"));
+                        // Delete details FIRST
+                        billingDetailRepository.deleteAll(billingDetailsToDelete);
+                        billingDetailRepository.flush();
 
-                RadOrderDt radOrderDt = new RadOrderDt();
-                radOrderDt.setRadOrderhd(savedRadOrderHd);
-                radOrderDt.setInvestigation(invEntity);
-                radOrderDt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, user.getHospital().getId()));
-                radOrderDt.setSubChargecode(invEntity.getSubChargeCodeId());
-                radOrderDt.setAppointmentDate(inv.getInvestigationDate());
-                radOrderDt.setLastChgBy(user.getFirstName() + " " + user.getLastName());
-                radOrderDt.setCreatedby(user.getFirstName() + " " + user.getLastName());
-                radOrderDt.setBillingStatus(savedRadOrderHd.getPaymentStatus());
-                radOrderDt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
-                radOrderDt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
-                radOrderDt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
-                radOrderDt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
-                radOrderDt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
-
-                radOrderDtRepository.save(radOrderDt);
+                        // Check whether other billing details still exist
+                        List<BillingDetail> remainingDetails = billingDetailRepository.findByBillingHd(billingHeader);
+                        if (remainingDetails.isEmpty()) {
+                            billingHeaderRepository.delete(billingHeader);
+                        } else {
+                            // Other investigations still exist → update amount
+                            billingHeader.setTotalAmount(billingHeader.getTotalAmount().subtract(totalAmount));
+                            billingHeader.setDiscountAmount(billingHeader.getDiscountAmount().subtract(discountAmount));
+                            billingHeader.setNetAmount(billingHeader.getNetAmount().subtract(netAmount));
+                            billingHeaderRepository.save(billingHeader);
+                        }
+                    }
+                }
+            }
+            // Delete investigation order detail
+            if (dt.getOrderHd() != null) {
+                dgOrderDtRepo.delete(dt);
+            }
+            // Delete order header only when requested
+            if (deleteHeader && dt.getOrderHd() != null) {
+                List<DgOrderDt> remaining = dgOrderDtRepo.findByOrderHd(dt.getOrderHd());
+                if (remaining == null || remaining.isEmpty()) {
+                    dgOrderHdRepo.delete(dt.getOrderHd());
+                }
             }
         }
-        log.info("Created {} radiology investigations for visit ID: {}", investigations.size(), visit.getId());
     }
 
-// ===================== TREATMENTS METHODS =====================
 
-    private void replaceTreatments(RecallOpdPatientDetailRequest request, Patient patient, Visit visit, User user) {
-        PatientPrescriptionHd existingHd = patientPrescriptionHdRepository.findByVisit_Id(visit.getId());
-        if (existingHd != null) {
-            List<PatientPrescriptionDt> existingDetails = patientPrescriptionDtRepository.findByPrescriptionHdId(existingHd.getPrescriptionHdId());
-            if (existingDetails != null && !existingDetails.isEmpty()) {
-                patientPrescriptionDtRepository.deleteAll(existingDetails);
-            }
-            patientPrescriptionHdRepository.delete(existingHd);
-            log.info("Deleted existing prescription header and details for visit ID: {}", visit.getId());
-        }
-
-        // Step 2: Create new treatments from request
-        if (request.getTreatments() != null && !request.getTreatments().isEmpty()) {
-            createNewTreatments(request.getTreatments(), patient, visit, user);
-        }
-    }
 
     private void replacePsychiatryAssessment(RecallOpdPatientDetailRequest request, Patient patient, Visit visit, User user) {
         if (request.getPsychiatricDetailsRequests() != null && !request.getPsychiatricDetailsRequests().isEmpty()) {
@@ -867,47 +1259,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
 
-
-    private void createNewTreatments(List<RecallOpdPatientDetailRequest.TreatmentRequest> treatments, Patient patient, Visit visit, User user) {
-        PatientPrescriptionHd hd = new PatientPrescriptionHd();
-        hd.setHospitalId(user.getHospital().getId());
-        hd.setPatientId(patient.getId());
-        hd.setDepartmentId(authUtil.getCurrentDepartmentId());
-        hd.setDoctorName(user.getFirstName());
-        hd.setPrescriptionDate(LocalDateTime.now());
-        hd.setStatus(AppConstants.STATUS_N.toLowerCase());
-        hd.setCreatedBy(user.getFirstName());
-        hd.setTotalCost(BigDecimal.ZERO);
-        hd.setTotalGst(BigDecimal.ZERO);
-        hd.setTotalDiscount(BigDecimal.ZERO);
-        hd.setNetAmount(BigDecimal.ZERO);
-        hd.setVisit(visit);
-        hd.setPrescriptionNumber(transactionSequenceService.generateTransactionNumber(HMISTransaction.PRESCRIPTION_NO, user.getHospital().getId()));
-
-        PatientPrescriptionHd savedHd = patientPrescriptionHdRepository.save(hd);
-
-        List<PatientPrescriptionDt> details = new ArrayList<>();
-        for (RecallOpdPatientDetailRequest.TreatmentRequest trt : treatments) {
-            if (trt == null) continue;
-
-            PatientPrescriptionDt dt = new PatientPrescriptionDt();
-            dt.setPrescriptionHdId(savedHd.getPrescriptionHdId());
-            dt.setItemId(trt.getItemId());
-            dt.setDosage(trt.getDosage());
-            dt.setFrequency(String.valueOf(trt.getFrequencyId()));
-            dt.setDays(trt.getDays());
-            dt.setTotal(trt.getTotal() == null ? BigDecimal.ZERO : BigDecimal.valueOf(trt.getTotal()));
-            dt.setInstruction(trt.getInstruction());
-            dt.setStatus(AppConstants.STATUS_N.toLowerCase());
-            details.add(dt);
-        }
-
-        if (!details.isEmpty()) {
-            patientPrescriptionDtRepository.saveAll(details);
-        }
-        log.info("Created {} new treatments for visit ID: {}", treatments.size(), visit.getId());
-    }
-
     private void mapRecallBasicDetails(OpdPatientDetail opd, RecallOpdPatientDetailRequest request) {
         opd.setHeight(request.getHeight());
         opd.setWeight(request.getWeight());
@@ -928,8 +1279,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         opd.setWorkingDiag(request.getWorkingDiagnosis());
         opd.setFinalMedicalAdvice(request.getDoctorRemarks());
         opd.setTreatmentAdvice(request.getTreatmentAdvice());
-
-        if (request.getIcdDiagnosisList() != null && !request.getIcdDiagnosisList().isEmpty()) {
+        if(request.getIcdDiagnosisList() != null && !request.getIcdDiagnosisList().isEmpty()) {
             String joinedNames = request.getIcdDiagnosisList().stream().filter(Objects::nonNull).map(RecallOpdPatientDetailRequest.IcdDiagnosis::getIcdDiagnosisName).filter(Objects::nonNull).collect(Collectors.joining(","));
             opd.setIcdDiag(joinedNames);
         } else {
@@ -1008,17 +1358,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             opd.setFollowUpDate(request.getFollowUpDate());
         } else {
             opd.setFollowUpFlag(AppConstants.STATUS_N.toLowerCase());
-            opd.setFollowUpDays(null);
-            opd.setFollowUpDate(null);
+
         }
     }
 
     private void handleRecallReferral(OpdPatientDetail opd, RecallOpdPatientDetailRequest request) {
-
         boolean isReferral = isYes(request.getReferralFlag());
-
         opd.setReferralFlag(isReferral ? AppConstants.STATUS_Y.toLowerCase() : AppConstants.STATUS_N.toLowerCase());
-
         if (isYes(request.getReferralFlag())) {
             opd.setReferralFlag(AppConstants.STATUS_Y.toLowerCase());
             opd.setReferralRemarks(request.getReferralRemarks());
@@ -1069,128 +1415,210 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
      * Process LAB investigations for OPD patient
      * Creates DgOrderHd and DgOrderDt records
      */
-    private void processLabInvestigations(Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>> groupedByDate, Patient patient, Visit visit, User currentUser, Long deptId, String orderNum, LabOrderTrackingStatus labOrderedStatus) {
+    private void processLabInvestigations(Map<LocalDate, List<InvestigationData>> groupedByDate, Patient patient, Visit visit, User currentUser, LabOrderTrackingStatus labOrderedStatus) {
         log.info("Starting LAB investigation processing for patient ID: {}", patient.getId());
 
-        for (Map.Entry<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>> entry : groupedByDate.entrySet()) {
+        for (Map.Entry<LocalDate, List<InvestigationData>> entry : groupedByDate.entrySet()) {
             LocalDate appointmentDate = entry.getKey();
-            List<OpdPatientDetailCreateRequest.Investigation> investigations = entry.getValue();
+            List<InvestigationData> investigations = entry.getValue();
 
             log.debug("Processing {} LAB investigations for date: {}", investigations.size(), appointmentDate);
-
             // Create lab order header
             DgOrderHd dgOrderHd = new DgOrderHd();
             dgOrderHd.setAppointmentDate(appointmentDate);
             dgOrderHd.setOrderDate(LocalDate.now());
-            dgOrderHd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
-            dgOrderHd.setOrderNo(orderNum);
+            dgOrderHd.setOrderTime(LocalDateTime.now());
+            dgOrderHd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
             dgOrderHd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             dgOrderHd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
-            dgOrderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.equalsIgnoreCase(currentUser.getHospital().getLabBilling()) ? AppConstants.PAYMENT_NOT_PAID.toLowerCase() : AppConstants.PAYMENT_PAID.toLowerCase());
+            dgOrderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.equalsIgnoreCase(patient.getPatientHospital().getLabBilling()) ? AppConstants.PAYMENT_NOT_PAID.toLowerCase() : AppConstants.PAYMENT_PAID.toLowerCase());
             dgOrderHd.setSource("OPD PATIENT");
             dgOrderHd.setDiscountId(1);
             dgOrderHd.setPatientId(patient);
-            dgOrderHd.setDepartmentId(deptId);
+            dgOrderHd.setDepartmentId(authUtil.getCurrentDepartmentId());
             dgOrderHd.setHospitalId(currentUser.getHospital().getId());
             dgOrderHd.setVisitId(visit);
-            dgOrderHd.setCreatedBy(currentUser.getFirstName());
-            dgOrderHd.setLastChgBy(currentUser.getFirstName());
+            dgOrderHd.setCreatedBy(currentUser.getFullName());
+            dgOrderHd.setLastChgBy(currentUser.getFullName());
             dgOrderHd.setCreatedOn(LocalDate.now());
             dgOrderHd.setLastChgDate(LocalDate.now());
             dgOrderHd.setLastChgTime(LocalTime.now().toString());
-
             DgOrderHd savedOrderHd = dgOrderHdRepo.save(dgOrderHd);
-            log.info("LAB Order Header saved - Order ID: {}", savedOrderHd.getId());
-//          For Billing if need some change in this billing process
-//
-//            log.info("Creating Billing Header...");
-//            BigDecimal totalAmount = BigDecimal.ZERO;
-//            BigDecimal discountAmount = BigDecimal.ZERO;
-//            BigDecimal taxAmount = BigDecimal.ZERO;
-//
-//            if (!investigations.isEmpty()) {
-//                for (OpdPatientDetailCreateRequest.Investigation inv : investigations) {
-//                    DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(inv.getId()).orElseThrow(() -> new RuntimeException("Investigation not found with ID: " + inv.getId()));
-//
-//                    BigDecimal amount = getInvestigationPrice(invEntity);
-//                    totalAmount = totalAmount.add(amount);
+
+            MasServiceCategory masServiceCategory= masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
+//            Lab Billing N -> means free then create OrderHd and OrderDt and billing Should be null
+//                        Y -> means we dont need to create OrderHd and orderDt and Not the billing
+//             IN both case we dont need to generate the billing
+//            --------------------------------------------------------
+            BillingHeader billingHeader = null;
+//            if(AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getLabBilling())){
+//                BigDecimal[] amounts = calculateBillingHdAmount(investigations, masServiceCategory);
+//                billingHeader = billingService.saveBillingHeader(
+//                        savedOrderHd, visit, currentUser,
+//                        amounts[0], amounts[1], amounts[2],
+//                        serviceCategoryLab, false
+//                );
+//                if (billingHeader == null) {
+//                    throw new SDDException("billing", 500, "Failed to create billing");
 //                }
+//                visit.setBillingHd(billingHeader);
 //            }
-//
-//            BillingHeader billingHeader = new BillingHeader();
-//            String billNo = randomNumGenerator.generateOrderNumber("OPD", true, true);
-//            billingHeader.setBillNo(billNo);
-//            billingHeader.setPatient(patient);
-//            billingHeader.setVisit(visit);
-//            billingHeader.setPatientDisplayName(patient.getPatientFn());
-//            billingHeader.setPatientAge(ageCalculator(patient.getPatientDob()));
-//            billingHeader.setPatientGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : "");
-//            billingHeader.setPatientAddress(patient.getPatientAddress1());
-//            billingHeader.setHospital(currentUser.getHospital());
-//            billingHeader.setHospitalName(currentUser.getHospital().getHospitalName());
-//            billingHeader.setHospitalAddress(currentUser.getHospital().getAddress());
-//            billingHeader.setHospitalMobileNo(currentUser.getHospital().getContactNumber());
-//            billingHeader.setHospitalGstin(currentUser.getHospital().getGstnNo());
-//            billingHeader.setReferredBy(visit.getDoctorName());
-//            billingHeader.setBillingDate(Instant.now());
-//            billingHeader.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
-//            billingHeader.setVisit(visit);
-//            billingHeader.setHdorder(savedOrderHd);
-//            billingHeader.setTotalAmount(totalAmount);
-//            billingHeader.setDiscountAmount(discountAmount);
-//            billingHeader.setNetAmount(totalAmount.subtract(discountAmount).add(taxAmount));
-//            billingHeader.setTaxTotal(taxAmount);
-//            billingHeader.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-//            billingHeader.setCreatedDt(Instant.now());
-//            billingHeader.setUpdatedDt(Instant.now());
-//            billingHeader.setBillDate(OffsetDateTime.now());
-//            billingHeader.setUpdatedAt(OffsetDateTime.now());
-//
-//            BillingHeader savedBillingHeader = billingHeaderRepository.save(billingHeader);
-//            log.info("Billing Header created successfully - Bill ID: {}", savedBillingHeader.getId());
-
-
-            // Create lab order details
-            for (OpdPatientDetailCreateRequest.Investigation invObj : investigations) {
-                if (invObj == null || invObj.getId() == null) {
-                    log.warn("Skipping null investigation object");
-                    continue;
-                }
-
-                DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(invObj.getId()).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found with ID: " + invObj.getId()));
-
-                if (invEntity.getMainChargeCodeId() == null || invEntity.getSubChargeCodeId() == null) {
-                    throw new SDDException("chargeCode", 400, "Charge codes not configured for investigation ID: " + invObj.getId());
-                }
-
-                DgOrderDt dgOrderDt = new DgOrderDt();
-                dgOrderDt.setInvestigation(invEntity);
-                dgOrderDt.setOrderHd(savedOrderHd);
-                dgOrderDt.setAppointmentDate(invObj.getInvestigationDate());
-                dgOrderDt.setOrderQty(1);
-                dgOrderDt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
-                dgOrderDt.setBillingStatus(savedOrderHd.getPaymentStatus());
-                dgOrderDt.setCreatedBy(currentUser.getFirstName());
-                dgOrderDt.setLastChgBy(currentUser.getFirstName());
-                dgOrderDt.setCreatedOn(HMISUtil.getCurrentLocalDateTime());
-                dgOrderDt.setLastChgDate(LocalDate.now());
-                dgOrderDt.setMainChargeCodeId(invEntity.getMainChargeCodeId().getChargecodeId());
-                dgOrderDt.setSubChargeCodeId(invEntity.getSubChargeCodeId().getSubId());
-                dgOrderDt.setOrderTrackingStatus(labOrderedStatus);
-                dgOrderDt.setLastChgTime(LocalTime.now().toString());
-
-                DgOrderDt savedOrderDt = dgOrderDtRepo.save(dgOrderDt);
-                log.debug("LAB Order Detail saved - Detail ID: {}", savedOrderDt.getId());
-            }
+            visitRepository.save(visit);
+            log.info("LAB Order Header saved - Order ID: {}", savedOrderHd.getId());
+            createLabOrderDetails(investigations,savedOrderHd, labOrderedStatus, billingHeader);
         }
         log.info("LAB investigations processing completed");
+    }
+
+    //creating Lab order details
+    private void createLabOrderDetails(List<InvestigationData> investigations, DgOrderHd savedOrderHd,
+                                       LabOrderTrackingStatus labOrderedStatus, BillingHeader billingHeader){
+        User currentUser = getCurrentUser();
+        for (InvestigationData invObj : investigations) {
+            if (invObj == null || invObj.investigationId() == null) {
+                log.warn("Skipping null investigation object");
+                continue;
+            }
+            DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(invObj.investigationId()).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found with ID: " + invObj.investigationId()));
+            BigDecimal investigationPrice = helperUtils.getInvestigationPrice(invEntity);
+            BigDecimal discountAmount = BigDecimal.ZERO;
+
+            if (invEntity.getMainChargeCodeId() == null || invEntity.getSubChargeCodeId() == null) {
+                throw new SDDException("chargeCode", 400, "Charge codes not configured for investigation ID: " + invObj.investigationId());
+            }
+            DgOrderDt dgOrderDt = new DgOrderDt();
+            dgOrderDt.setInvestigation(invEntity);
+            dgOrderDt.setOrderHd(savedOrderHd);
+            dgOrderDt.setAppointmentDate(invObj.investigationDate());
+            dgOrderDt.setOrderQty(1);
+            dgOrderDt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
+            dgOrderDt.setBillingStatus(savedOrderHd.getPaymentStatus());
+            dgOrderDt.setCreatedBy(currentUser.getFullName());
+            dgOrderDt.setLastChgBy(currentUser.getFullName());
+            dgOrderDt.setCreatedOn(LocalDateTime.now());
+            dgOrderDt.setLastChgDate(LocalDate.now());
+            dgOrderDt.setMainChargeCodeId(invEntity.getMainChargeCodeId().getChargecodeId());
+            dgOrderDt.setSubChargeCodeId(invEntity.getSubChargeCodeId().getSubId());
+            dgOrderDt.setOrderTrackingStatus(labOrderedStatus);
+            dgOrderDt.setLastChgTime(LocalTime.now().toString());
+            DgOrderDt savedOrderDt = dgOrderDtRepo.save(dgOrderDt);
+            if(billingHeader!=null){
+                savedOrderDt.setBillingHd(billingHeader);
+            }
+            dgOrderDtRepo.save(dgOrderDt);
+
+            if (billingHeader != null) {
+                billingService.saveBillingDetail(billingHeader, savedOrderDt, investigationPrice, discountAmount, serviceCategoryLab, false);
+            }
+
+            log.debug("LAB Order Detail saved - Detail ID: {}", savedOrderDt.getId());
+        }
+    }
+
+    public void updateBillingHeaderById(Long billingHeaderId, boolean isRadiology, User currentUser) {
+        if (billingHeaderId == null) {
+            return;
+        }
+
+        try {
+            // Find the billing header
+            BillingHeader billingHeader = billingHeaderRepository.findById(Math.toIntExact(billingHeaderId))
+                    .orElseThrow(() -> new SDDException("billing", 404, "Billing header not found with ID: " + billingHeaderId));
+
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            BigDecimal totalDiscount = BigDecimal.ZERO;
+            BigDecimal totalTax = BigDecimal.ZERO;
+            MasServiceCategory serviceCategory = billingHeader.getServiceCategory();
+
+            if (isRadiology) {
+                // Update from radiology details
+                RadOrderHd radOrderHd = billingHeader.getRadOrderHd();
+                if (radOrderHd == null) {
+                    throw new SDDException("billing", 500, "No radiology order found for this billing header");
+                }
+
+                List<RadOrderDt> radDetails = radOrderDtRepository.findByRadOrderhd(radOrderHd);
+                for (RadOrderDt detail : radDetails) {
+                    if (detail.getInvestigation() != null) {
+                        BigDecimal price = helperUtils.getInvestigationPrice(detail.getInvestigation());
+                        totalAmount = totalAmount.add(price);
+                    }
+                }
+
+                if (serviceCategory != null && serviceCategory.getGstApplicable()) {
+                    totalTax = totalAmount.multiply(BigDecimal.valueOf(serviceCategory.getGstPercent()))
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                }
+
+            } else {
+                // Update from lab details
+                DgOrderHd dgOrderHd = billingHeader.getHdorder();
+                if (dgOrderHd == null) {
+                    throw new SDDException("billing", 500, "No lab order found for this billing header");
+                }
+
+                List<DgOrderDt> labDetails = dgOrderDtRepo.findByOrderHd(dgOrderHd);
+                for (DgOrderDt detail : labDetails) {
+                    if (detail.getInvestigation() != null) {
+                        BigDecimal price = helperUtils.getInvestigationPrice(detail.getInvestigation());
+                        totalAmount = totalAmount.add(price);
+                    }
+                }
+
+                if (serviceCategory != null && serviceCategory.getGstApplicable()) {
+                    totalTax = totalAmount.multiply(BigDecimal.valueOf(serviceCategory.getGstPercent()))
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                }
+            }
+
+            // Update billing header
+            billingHeader.setTotalAmount(totalAmount);
+            billingHeader.setDiscountAmount(totalDiscount);
+            BigDecimal netAmount = totalAmount.subtract(totalDiscount).add(totalTax);
+            billingHeader.setNetAmount(netAmount);
+            billingHeader.setTaxTotal(totalTax);
+            billingHeader.setUpdatedDt(Instant.now());
+            billingHeader.setUpdatedAt(OffsetDateTime.now());
+
+            billingHeaderRepository.save(billingHeader);
+
+            log.info("Updated billing header ID: {} with total: {}, tax: {}",
+                    billingHeaderId, totalAmount, totalTax);
+
+        } catch (Exception e) {
+            log.error("Error updating billing header by ID: {}", e.getMessage(), e);
+            throw new SDDException("billing", 500, "Failed to update billing header: " + e.getMessage());
+        }
+    }
+
+    //dont remove this method as it is used in the processLabInvestigations method to calculate the billing header amount
+    private BigDecimal[] calculateBillingHdAmount(List<InvestigationData> investigations, MasServiceCategory serviceCategoryLab) {
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal totalDiscount = BigDecimal.ZERO;
+        BigDecimal totalTax = BigDecimal.ZERO;
+
+        for (InvestigationData inv : investigations) {
+            if (inv.investigationId() != null) {
+                DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(inv.investigationId()).orElse(null);
+                if (invEntity != null) {
+                    BigDecimal price = helperUtils.getInvestigationPrice(invEntity);
+                    totalAmount = totalAmount.add(price);
+
+                    if (serviceCategoryLab.getGstApplicable()) {
+                        totalTax = totalTax.add(price.multiply(BigDecimal.valueOf(serviceCategoryLab.getGstPercent())).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+                    }
+                }
+            }
+        }
+
+        return new BigDecimal[]{totalAmount, totalDiscount, totalTax};
     }
 
     /**
      * Process RADIOLOGY investigations for OPD patient
      * Creates RadOrderHd and RadOrderDt records with billing
      */
-    private void processRadiologyInvestigations(Map<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>> groupedByDate, Patient patient, Visit visit, User currentUser) {
+    private void processRadiologyInvestigations(Map<LocalDate, List<InvestigationData>> groupedByDate, Patient patient, Visit visit, User currentUser) {
         log.info("Starting RADIOLOGY investigation processing for patient ID: {}", patient.getId());
         MasServiceCategory radiologyServiceCategory = masServiceCategoryRepository.findByServiceCateCode("SC004");
         if (radiologyServiceCategory == null) {
@@ -1198,193 +1626,90 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             throw new SDDException("serviceCategory", 400, "Radiology service category not configured");
         }
 
-        for (Map.Entry<LocalDate, List<OpdPatientDetailCreateRequest.Investigation>> entry : groupedByDate.entrySet()) {
+        for (Map.Entry<LocalDate, List<InvestigationData>> entry : groupedByDate.entrySet()) {
             LocalDate appointmentDate = entry.getKey();
-            List<OpdPatientDetailCreateRequest.Investigation> investigations = entry.getValue();
+            List<InvestigationData> investigations = entry.getValue();
 
             log.debug("Processing {} RADIOLOGY investigations for date: {}", investigations.size(), appointmentDate);
-
-            // Calculate totals for radiology investigations
-            BigDecimal totalAmount = BigDecimal.ZERO;
-            BigDecimal discountAmount = BigDecimal.ZERO;
-            BigDecimal taxAmount = BigDecimal.ZERO;
-
-            for (OpdPatientDetailCreateRequest.Investigation inv : investigations) {
-                if (inv.getId() != null) {
-                    DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(inv.getId()).orElse(null);
-                    if (invEntity != null) {
-                        BigDecimal price = getInvestigationPrice(invEntity);
-                        totalAmount = totalAmount.add(price);
-
-                        // Calculate tax if applicable
-                        if (radiologyServiceCategory.getGstApplicable()) {
-                            taxAmount = taxAmount.add(price.multiply(BigDecimal.valueOf(radiologyServiceCategory.getGstPercent())).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
-                        }
-                    }
-                }
-            }
-
-            log.debug("Radiology totals - Amount: {}, Discount: {}, Tax: {}", totalAmount, discountAmount, taxAmount);
 
             // Create radiology order header
             RadOrderHd radOrderHd = new RadOrderHd();
             radOrderHd.setAppointmentDate(appointmentDate);
-            radOrderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.equalsIgnoreCase(currentUser.getHospital().getRadioBilling()) ? AppConstants.PAYMENT_NOT_PAID.toLowerCase() : AppConstants.PAYMENT_PAID.toLowerCase());
+            radOrderHd.setPaymentStatus(AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling()) ? AppConstants.STATUS_N.toLowerCase() : AppConstants.STATUS_Y.toLowerCase());
             radOrderHd.setOrderDate(LocalDate.now());
-            radOrderHd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
+            radOrderHd.setOrderTime(LocalDateTime.now());
             radOrderHd.setPatient(patient);
             radOrderHd.setVisit(visit);
             radOrderHd.setDepartment(visit.getDepartment());
             radOrderHd.setHospital(visit.getHospital());
-            radOrderHd.setLastChgBy(authUtil.getCurrentUserFullName());
-            radOrderHd.setCreatedBy(authUtil.getCurrentUserFullName());
+            radOrderHd.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            radOrderHd.setLastChgDate(LocalDateTime.now());
 
             RadOrderHd savedRadOrderHd = radOrderHdRepository.save(radOrderHd);
             log.info("RADIOLOGY Order Header saved - Order ID: {}", savedRadOrderHd.getId());
-
-//            // Create radiology billing header
-//            BillingHeader billingHeader = new BillingHeader();
-//            String billNo = randomNumGenerator.generateOrderNumber("RAD", true, true);
-//            billingHeader.setBillNo(billNo);
-//            billingHeader.setPatient(patient);
-//            billingHeader.setVisit(visit);
-//            billingHeader.setPatientDisplayName(patient.getFullName());
-//            billingHeader.setPatientAge(ageCalculator(patient.getPatientDob()));
-//            billingHeader.setPatientGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : "");
-//            billingHeader.setPatientAddress(patient.getPatientAddress1());
-//            billingHeader.setHospital(currentUser.getHospital());
-//            billingHeader.setHospitalName(currentUser.getHospital().getHospitalName());
-//            billingHeader.setHospitalAddress(currentUser.getHospital().getAddress());
-//            billingHeader.setHospitalMobileNo(currentUser.getHospital().getContactNumber());
-//            billingHeader.setHospitalGstin(currentUser.getHospital().getGstnNo());
-//            billingHeader.setServiceCategory(radiologyServiceCategory);
-//            billingHeader.setReferredBy(visit.getDoctorName());
-//            billingHeader.setBillingDate(Instant.now());
-//            billingHeader.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
-//            billingHeader.setVisit(visit);
-//            billingHeader.setRadOrderHd(savedRadOrderHd);
-//            billingHeader.setTotalAmount(totalAmount);
-//            billingHeader.setDiscountAmount(discountAmount);
-//            billingHeader.setNetAmount(totalAmount.subtract(discountAmount).add(taxAmount));
-//            billingHeader.setTaxTotal(taxAmount);
-//            billingHeader.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-//            billingHeader.setCreatedDt(Instant.now());
-//            billingHeader.setUpdatedDt(Instant.now());
-//            billingHeader.setBillDate(OffsetDateTime.now());
-//            billingHeader.setUpdatedAt(OffsetDateTime.now());
-//
-//            BillingHeader savedBillingHeader = billingHeaderRepository.save(billingHeader);
-//            log.info("RADIOLOGY Billing Header created - Bill ID: {}", savedBillingHeader.getId());
+            if (savedRadOrderHd == null) {
+                throw new SDDException("RadOrderHeader",500,"Failed to create order header");
+            }
+            BillingHeader billingHeader = null;
+//            if(AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling())) {
+//                MasServiceCategory masServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
+//                BigDecimal[] amounts = calculateBillingHdAmount(investigations, masServiceCategory);
+//                billingHeader = billingService.saveBillingHeader(
+//                        savedRadOrderHd, visit, currentUser,
+//                        amounts[0], amounts[1], amounts[2],
+//                        serviceCategoryRad, true
+//                );
+//                if (billingHeader == null) {
+//                    throw new SDDException("billing", 500, "Failed to create billing");
+//                }
+//                visit.setBillingHd(billingHeader);
+//            }
+            visitRepository.save(visit);
 
             // Create radiology order and billing details
-            for (OpdPatientDetailCreateRequest.Investigation invObj : investigations) {
-                if (invObj == null || invObj.getId() == null) {
-                    log.warn("Skipping null radiology investigation object");
-                    continue;
-                }
-
-                DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(invObj.getId()).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found with ID: " + invObj.getId()));
-
-                // Get investigation price
-                BigDecimal chargeAmount = getInvestigationPrice(invEntity);
-
-                // Create radiology order detail
-                RadOrderDt radOrderDt = new RadOrderDt();
-                radOrderDt.setRadOrderhd(savedRadOrderHd);
-                radOrderDt.setInvestigation(invEntity);
-                radOrderDt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, currentUser.getHospital().getId()));
-                radOrderDt.setSubChargecode(invEntity.getSubChargeCodeId());
-                radOrderDt.setAppointmentDate(invObj.getInvestigationDate());
-                radOrderDt.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-                radOrderDt.setCreatedby(currentUser.getFirstName() + " " + currentUser.getLastName());
-                radOrderDt.setBillingStatus(savedRadOrderHd.getPaymentStatus());
-                radOrderDt.setBillingHd(null); // Set billing header if needed
-                radOrderDt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
-                radOrderDt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
-                radOrderDt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
-                radOrderDt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
-                radOrderDt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
-
-                RadOrderDt savedRadOrderDt = radOrderDtRepository.save(radOrderDt);
-                log.debug("RADIOLOGY Order Detail saved - Detail ID: {}", savedRadOrderDt.getId());
-
-//                // Create radiology billing detail
-//                BillingDetail billingDetail = new BillingDetail();
-//                billingDetail.setBillingHd(savedBillingHeader);
-//                billingDetail.setBillHd(savedBillingHeader);
-//                billingDetail.setServiceCategory(radiologyServiceCategory);
-//                billingDetail.setItemName(invEntity.getInvestigationName());
-//                billingDetail.setQuantity(1);
-//                billingDetail.setInvestigation(invEntity);
-//                billingDetail.setCreatedDt(OffsetDateTime.now());
-//                billingDetail.setUpdatedDt(OffsetDateTime.now());
-//                billingDetail.setCreatedAt(Instant.now());
-//                billingDetail.setBasePrice(chargeAmount);
-//                billingDetail.setDiscount(BigDecimal.ZERO);
-//                billingDetail.setTariff(chargeAmount);
-//                billingDetail.setAmountAfterDiscount(chargeAmount);
-//
-//                // Calculate tax if applicable
-//                BigDecimal detailTaxAmount = BigDecimal.ZERO;
-//                if (radiologyServiceCategory.getGstApplicable()) {
-//                    detailTaxAmount = chargeAmount.multiply(BigDecimal.valueOf(radiologyServiceCategory.getGstPercent())).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-//                }
-//
-//                billingDetail.setTaxAmount(detailTaxAmount);
-//                billingDetail.setTaxPercent(BigDecimal.valueOf(radiologyServiceCategory.getGstPercent()));
-//                billingDetail.setNetAmount(chargeAmount.add(detailTaxAmount));
-//                billingDetail.setTotal(chargeAmount.add(detailTaxAmount));
-//                billingDetail.setServiceId(radiologyServiceCategory.getId());
-//                billingDetail.setPaymentStatus(AppConstants.STATUS_N.toLowerCase());
-//                billingDetail.setChargeCost(chargeAmount);
-//
-//                BillingDetail savedBillingDetail = billingDetailRepository.save(billingDetail);
-//                log.debug("RADIOLOGY Billing Detail saved - Detail ID: {}", savedBillingDetail.getId());
-
-
-            }
-
-            // Update visit with billing header
-//            visit.setBillingHd(savedBillingHeader);
-            visitRepository.save(visit);
+            createRadiologyOrderDetails(investigations, savedRadOrderHd, billingHeader);
         }
-
+        visitRepository.save(visit);
         log.info("RADIOLOGY investigations processing completed");
     }
 
-    /**
-     * Gets the current investigation price from investigation_price_details table by investigation ID
-     * Tries multiple strategies:
-     * 1. Get active price for current date
-     * 2. Get latest price if no active price found
-     * 3. Fallback to investigation's direct price field
-     *
-     * @param investigation DgMasInvestigation entity
-     * @return BigDecimal price, or BigDecimal.ZERO if not found
-     */
-    private BigDecimal getInvestigationPrice(DgMasInvestigation investigation) {
-        if (investigation == null) {
-            return BigDecimal.ZERO;
-        }
-        LocalDate today = LocalDate.now();
-        Optional<MasInvestigationPriceDetails> priceDetail = masInvestigationPriceDetailsRepository.findActivePriceByInvestigationAndDate(investigation, today);
+    private void createRadiologyOrderDetails(List<InvestigationData> investigations, RadOrderHd savedRadOrderHd,BillingHeader billingHeader) {
+        for (InvestigationData invObj : investigations) {
+            if (invObj == null || invObj.investigationId() == null) {
+                log.warn("Skipping null radiology investigation object");
+                continue;
+            }
 
-        if (priceDetail.isPresent() && priceDetail.get().getPrice() != null) {
-            log.debug("Found active investigation price for investigation ID: {} - Price: {}", investigation.getInvestigationId(), priceDetail.get().getPrice());
-            return priceDetail.get().getPrice();
+            DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(invObj.investigationId()).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found with ID: " + invObj.investigationId()));
+            BigDecimal investigationPrice = helperUtils.getInvestigationPrice(invEntity);
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            User currentUser = getCurrentUser();
+
+            // Create radiology order detail
+            RadOrderDt radOrderDt = new RadOrderDt();
+            radOrderDt.setRadOrderhd(savedRadOrderHd);
+            radOrderDt.setInvestigation(invEntity);
+            radOrderDt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, currentUser.getHospital().getId()));
+            radOrderDt.setSubChargecode(invEntity.getSubChargeCodeId());
+            radOrderDt.setAppointmentDate(invObj.investigationDate());
+            radOrderDt.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            radOrderDt.setCreatedby(currentUser.getFirstName() + " " + currentUser.getLastName());
+            radOrderDt.setBillingStatus(savedRadOrderHd.getPaymentStatus());
+            radOrderDt.setBillingHd(billingHeader);
+            radOrderDt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
+            radOrderDt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
+            radOrderDt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
+            radOrderDt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
+            radOrderDt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
+
+            RadOrderDt savedRadOrderDt = radOrderDtRepository.save(radOrderDt);
+            log.debug("RADIOLOGY Order Detail saved - Detail ID: {}", savedRadOrderDt.getId());
+            if (billingHeader != null) {
+                billingService.saveBillingDetail(billingHeader, savedRadOrderDt, investigationPrice, discountAmount, serviceCategoryRad, true);
+            }
         }
-        Optional<MasInvestigationPriceDetails> latestPrice = masInvestigationPriceDetailsRepository.findTopByInvestigationOrderByFromDateDesc(investigation);
-        if (latestPrice.isPresent() && latestPrice.get().getPrice() != null) {
-            log.debug("Found latest investigation price for investigation ID: {} - Price: {}", investigation.getInvestigationId(), latestPrice.get().getPrice());
-            return latestPrice.get().getPrice();
-        }
-        if (investigation.getPrice() != null) {
-            log.debug("Using fallback investigation direct price for investigation ID: {} - Price: {}", investigation.getInvestigationId(), investigation.getPrice());
-            return BigDecimal.valueOf(investigation.getPrice());
-        }
-        log.warn("No price found for investigation ID: {}", investigation.getInvestigationId());
-        return BigDecimal.ZERO;
     }
+
 
 
     @Override
@@ -1512,9 +1837,26 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             OpdPatientDetail opdPatientObj = opdPatientDetailRepository.findTopByVisit_IdOrderByOpdPatientDetailsIdDesc(visitId);
             List<DgOrderHd> dgOrderHdList = safeList(dgOrderHdRepo.findAllByVisitId_Id(visitId));
             List<RadOrderHd> orderHdList = safeList(radOrderHdRepository.findAllByVisit_Id(visitId));
-            PatientPrescriptionHd prescriptionHdObj = patientPrescriptionHdRepository.findByPatientIdAndVisitId(visitId);
-            List<PatientPrescriptionDt> prescDtList = prescriptionHdObj != null ? safeList(patientPrescriptionDtRepository.findByPrescriptionHdId(prescriptionHdObj.getPrescriptionHdId())) : Collections.emptyList();
-            // ================= ITEM IDS =================
+            List<PatientPrescriptionHd> prescriptionHdList =
+                    safeList(
+                            patientPrescriptionHdRepository
+                                    .findAllByVisit_Id(visitId)
+                    );
+
+            List<PatientPrescriptionDt> prescDtList = new ArrayList<>();
+
+            for (PatientPrescriptionHd hd : prescriptionHdList) {
+
+                List<PatientPrescriptionDt> details =
+                        patientPrescriptionDtRepository
+                                .findByPrescriptionHdId(
+                                        hd.getPrescriptionHdId()
+                                );
+
+                if (details != null) {
+                    prescDtList.addAll(details);
+                }
+            }            // ================= ITEM IDS =================
             List<Long> itemIds = prescDtList.stream().filter(Objects::nonNull).map(PatientPrescriptionDt::getItemId).filter(Objects::nonNull).distinct().toList();
             // ================= BULK FETCH ITEMS =================
             Map<Long, MasStoreItem> itemMap = itemIds.isEmpty() ? Collections.emptyMap() : masStoreItemRepository.findAllByItemIds(itemIds).stream().collect(Collectors.toMap(MasStoreItem::getItemId, Function.identity()));
@@ -1541,19 +1883,34 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             response.setRadOrderHds(buildRadOrderHdList(orderHdList));
 
             // ================= PRESCRIPTION HD =================
-            if (prescriptionHdObj != null) {
+            List<OpdPatientRecallResponce.NewDPatientPrescriptionHd> hdList =
+                    new ArrayList<>();
 
-                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd = new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
+            for (PatientPrescriptionHd prescriptionHd : prescriptionHdList) {
 
-                hd.setPrescriptionHdId(prescriptionHdObj.getPrescriptionHdId());
+                if (prescriptionHd == null) {
+                    continue;
+                }
 
-                hd.setStatus(prescriptionHdObj.getStatus());
+                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd =
+                        new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
 
-                hd.setPrescriptionDate(prescriptionHdObj.getPrescriptionDate());
+                hd.setPrescriptionHdId(
+                        prescriptionHd.getPrescriptionHdId()
+                );
 
-                response.setPatientPrescriptionHd(hd);
+                hd.setStatus(
+                        prescriptionHd.getStatus()
+                );
+
+                hd.setPrescriptionDate(
+                        prescriptionHd.getPrescriptionDate()
+                );
+
+                hdList.add(hd);
             }
 
+            response.setPatientPrescriptionHds(hdList);
             // ================= PRESCRIPTION DT =================
             List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newDtList = new ArrayList<>();
 
@@ -1671,13 +2028,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         response.setHospitalId(data.getHospitalId());
     }
 
-    private boolean isEmpty(String v) {
-        return v == null || v.trim().isEmpty();
-    }
-
-    private String safeString(String v) {
-        return (v == null || v.trim().isEmpty()) ? "" : v.trim();
-    }
 
     private <T> List<T> safeList(List<T> list) {
         return list != null ? list : Collections.emptyList();
@@ -1879,7 +2229,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 OpdPatientRecallResponce.RadOrderDt nd = new OpdPatientRecallResponce.RadOrderDt();
                 nd.setOrderDtId(Math.toIntExact(dt.getId()));
 
-                nd.setOrderStatus(dt.getOrderStatus());
+                nd.setStudyStatus(dt.getStudyStatus());
                 nd.setAppointmentDate(dt.getAppointmentDate());
                 nd.setBillingStatus(dt.getBillingStatus());
 

@@ -73,6 +73,7 @@ public class RecallOpdPatientDetailRequest {
 
     @Data
     public static class TreatmentRequest {
+        private Long prescriptionHdId;
         private Long prescriptionDtId;
         private Long itemId;
         private String itemName;
@@ -85,16 +86,16 @@ public class RecallOpdPatientDetailRequest {
         private String instruction;
         private Long itemClassId;
         private Integer adispQty;
+        private Integer flag;
     }
 
     @Data
     public static class InvestigationRequest {
         private Long id;
-        private String name;
+        private String investigationName;
         private LocalDate investigationDate;
         private Long investigationId;
-        private String templateSource;
-        private List<Long> templateIds;
+        private Integer flag;
     }
 
     @Getter

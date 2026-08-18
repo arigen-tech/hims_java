@@ -55,8 +55,7 @@ public interface LabHdRepository extends JpaRepository<DgOrderHd,Long> {
             LocalDate endDate
     );
 
-
-
+    List<DgOrderHd> findById(DgOrderHd dgOrderHd);
 
     DgOrderHd findByVisitId(Visit visitId);
 

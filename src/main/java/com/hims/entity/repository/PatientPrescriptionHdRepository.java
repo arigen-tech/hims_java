@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface PatientPrescriptionHdRepository extends JpaRepository<PatientPrescriptionHd, Long> {
@@ -23,6 +24,8 @@ public interface PatientPrescriptionHdRepository extends JpaRepository<PatientPr
             @Param("visitId") Long visitId);
 
     PatientPrescriptionHd findByVisit_Id(Long visitId);
+
+    List<PatientPrescriptionHd> findAllByVisit_Id(Long visitId);
 
     Optional<PatientPrescriptionHd> findLatestByPatientId(Long patientId);
 
