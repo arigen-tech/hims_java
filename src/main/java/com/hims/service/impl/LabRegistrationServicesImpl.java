@@ -885,7 +885,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         DgOrderDt saved = labDtRepository.save(dt);
 
         if (billing != null) {
-            billingService.saveBillingDetail(billing, saved, inv, serviceCategoryCode, false);
+            billingService.saveBillingDetail(billing, saved, inv.getActualAmount(),BigDecimal.ZERO, serviceCategoryCode, false);
         }
 
         return saved;

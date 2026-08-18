@@ -1326,7 +1326,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         RadOrderDt saved = radOrderDtRepository.save(dt);
 
         if (billing != null) {
-            billingService.saveBillingDetail(billing, saved, inv, serviceCategoryCode, true);
+            billingService.saveBillingDetail(billing, saved, inv.getActualAmount(), BigDecimal.ZERO, serviceCategoryCode, true);
         }
 
         return saved;

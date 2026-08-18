@@ -721,17 +721,17 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         List<DgOrderDt> labDetails = new ArrayList<>();
 
         for (DgOrderHd header : labHeaders) {
-            List<DgOrderDt> details = dgOrderDtRepo.findByOrderhdId(header);
+            List<DgOrderDt> details = dgOrderDtRepo.findByOrderHd(header);
             if (details != null) {
                 labDetails.addAll(details);
             }
         }
 
         Set<InvestigationKey> existingLabKeys = labDetails.stream()
-                .filter(dt -> dt.getInvestigationId() != null)
+                .filter(dt -> dt.getInvestigation() != null)
                 .filter(dt -> dt.getAppointmentDate() != null)
                 .map(dt -> new InvestigationKey(
-                        dt.getInvestigationId().getInvestigationId(),
+                        dt.getInvestigation().getInvestigationId(),
                         dt.getAppointmentDate()
                 ))
                 .collect(Collectors.toSet());
@@ -864,7 +864,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
 
         List<DgOrderDt> deleteLabList = labDetails.stream()
-                .filter(dt -> dt.getInvestigationId() != null)
+                .filter(dt -> dt.getInvestigation() != null)
                 .filter(dt -> dt.getAppointmentDate() != null)
                 .filter(dt -> investigations.stream()
                         .filter(Objects::nonNull)
@@ -872,7 +872,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                         .filter(inv -> inv.investigationDate() != null)
                         .anyMatch(inv ->
                                 inv.investigationId().equals(
-                                        dt.getInvestigationId()
+                                        dt.getInvestigation()
                                                 .getInvestigationId()
                                 )
                                         && inv.investigationDate().equals(
@@ -883,7 +883,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                         ||
                         !requestedKeys.contains(
                                 new InvestigationKey(
-                                        dt.getInvestigationId()
+                                        dt.getInvestigation()
                                                 .getInvestigationId(),
                                         dt.getAppointmentDate()
                                 )
@@ -1026,7 +1026,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     private BillingHeader findBillingHeaderFromLabDetails(DgOrderHd orderHd) {
-        List<DgOrderDt> details = dgOrderDtRepo.findByOrderhdId(orderHd);
+        List<DgOrderDt> details = dgOrderDtRepo.findByOrderHd(orderHd);
         if (details == null || details.isEmpty()) {
             return null;
         }
@@ -1140,10 +1140,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             return;
         }
         for (DgOrderDt dt : deleteList) {
-            if (dt.getBillingHd() != null && dt.getInvestigationId() != null) {
+            if (dt.getBillingHd() != null && dt.getInvestigation() != null) {
                 BillingHeader billingHeader = billingHeaderRepository.findById(Math.toIntExact(dt.getBillingHd().getId())).orElse(null);
                 if (billingHeader != null) {
-                    Long investigationId = dt.getInvestigationId().getInvestigationId();
+                    Long investigationId = dt.getInvestigation().getInvestigationId();
                     List<BillingDetail> billingDetails = billingDetailRepository.findByBillingHd(billingHeader);
                     List<BillingDetail> billingDetailsToDelete =
                             billingDetails.stream()
@@ -1191,14 +1191,14 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 }
             }
             // Delete investigation order detail
-            if (dt.getOrderhdId() != null) {
+            if (dt.getOrderHd() != null) {
                 dgOrderDtRepo.delete(dt);
             }
             // Delete order header only when requested
-            if (deleteHeader && dt.getOrderhdId() != null) {
-                List<DgOrderDt> remaining = dgOrderDtRepo.findByOrderhdId(dt.getOrderhdId());
+            if (deleteHeader && dt.getOrderHd() != null) {
+                List<DgOrderDt> remaining = dgOrderDtRepo.findByOrderHd(dt.getOrderHd());
                 if (remaining == null || remaining.isEmpty()) {
-                    dgOrderHdRepo.delete(dt.getOrderhdId());
+                    dgOrderHdRepo.delete(dt.getOrderHd());
                 }
             }
         }
@@ -1427,7 +1427,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             DgOrderHd dgOrderHd = new DgOrderHd();
             dgOrderHd.setAppointmentDate(appointmentDate);
             dgOrderHd.setOrderDate(LocalDate.now());
-            dgOrderHd.setOrderTime(Instant.now());
+            dgOrderHd.setOrderTime(LocalDateTime.now());
             dgOrderHd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
             dgOrderHd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             dgOrderHd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
@@ -1487,18 +1487,18 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 throw new SDDException("chargeCode", 400, "Charge codes not configured for investigation ID: " + invObj.investigationId());
             }
             DgOrderDt dgOrderDt = new DgOrderDt();
-            dgOrderDt.setInvestigationId(invEntity);
-            dgOrderDt.setOrderhdId(savedOrderHd);
+            dgOrderDt.setInvestigation(invEntity);
+            dgOrderDt.setOrderHd(savedOrderHd);
             dgOrderDt.setAppointmentDate(invObj.investigationDate());
             dgOrderDt.setOrderQty(1);
             dgOrderDt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             dgOrderDt.setBillingStatus(savedOrderHd.getPaymentStatus());
             dgOrderDt.setCreatedBy(currentUser.getFullName());
             dgOrderDt.setLastChgBy(currentUser.getFullName());
-            dgOrderDt.setCreatedon(Instant.now());
+            dgOrderDt.setCreatedOn(LocalDateTime.now());
             dgOrderDt.setLastChgDate(LocalDate.now());
-            dgOrderDt.setMainChargecodeId(invEntity.getMainChargeCodeId().getChargecodeId());
-            dgOrderDt.setSubChargeid(invEntity.getSubChargeCodeId().getSubId());
+            dgOrderDt.setMainChargeCodeId(invEntity.getMainChargeCodeId().getChargecodeId());
+            dgOrderDt.setSubChargeCodeId(invEntity.getSubChargeCodeId().getSubId());
             dgOrderDt.setOrderTrackingStatus(labOrderedStatus);
             dgOrderDt.setLastChgTime(LocalTime.now().toString());
             DgOrderDt savedOrderDt = dgOrderDtRepo.save(dgOrderDt);
@@ -1557,10 +1557,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     throw new SDDException("billing", 500, "No lab order found for this billing header");
                 }
 
-                List<DgOrderDt> labDetails = dgOrderDtRepo.findByOrderhdId(dgOrderHd);
+                List<DgOrderDt> labDetails = dgOrderDtRepo.findByOrderHd(dgOrderHd);
                 for (DgOrderDt detail : labDetails) {
-                    if (detail.getInvestigationId() != null) {
-                        BigDecimal price = helperUtils.getInvestigationPrice(detail.getInvestigationId());
+                    if (detail.getInvestigation() != null) {
+                        BigDecimal price = helperUtils.getInvestigationPrice(detail.getInvestigation());
                         totalAmount = totalAmount.add(price);
                     }
                 }
@@ -1637,15 +1637,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             radOrderHd.setAppointmentDate(appointmentDate);
             radOrderHd.setPaymentStatus(AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling()) ? AppConstants.STATUS_N.toLowerCase() : AppConstants.STATUS_Y.toLowerCase());
             radOrderHd.setOrderDate(LocalDate.now());
-            radOrderHd.setOrderTime(Instant.now());
+            radOrderHd.setOrderTime(LocalDateTime.now());
             radOrderHd.setPatient(patient);
             radOrderHd.setVisit(visit);
             radOrderHd.setDepartment(visit.getDepartment());
             radOrderHd.setHospital(visit.getHospital());
             radOrderHd.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-            radOrderHd.setLastChgDate(Instant.now());
-            radOrderHd.setCreatedon(Instant.now());
-            radOrderHd.setCreatedby(currentUser.getFirstName() + " " + currentUser.getLastName());
+            radOrderHd.setLastChgDate(LocalDateTime.now());
 
             RadOrderHd savedRadOrderHd = radOrderHdRepository.save(radOrderHd);
             log.info("RADIOLOGY Order Header saved - Order ID: {}", savedRadOrderHd.getId());
@@ -1697,8 +1695,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             radOrderDt.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
             radOrderDt.setCreatedby(currentUser.getFirstName() + " " + currentUser.getLastName());
             radOrderDt.setBillingStatus(savedRadOrderHd.getPaymentStatus());
-            radOrderDt.setCreatedon(Instant.now());
-            radOrderDt.setLastChgDate(Instant.now());
             radOrderDt.setBillingHd(billingHeader);
             radOrderDt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
             radOrderDt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
@@ -2170,7 +2166,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             hd.setPaymentStatus(hdObj.getPaymentStatus());
             hd.setAppointmentDate(hdObj.getAppointmentDate());
 
-            List<DgOrderDt> dtList = safeList(dgOrderDtRepo.findByOrderhdId(hdObj));
+            List<DgOrderDt> dtList = safeList(dgOrderDtRepo.findByOrderHd(hdObj));
 
             List<OpdPatientRecallResponce.LabOrderDt> newDtList = new ArrayList<>();
 
@@ -2187,13 +2183,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 nd.setBillingStatus(dt.getBillingStatus());
 
                 // Investigation
-                if (dt.getInvestigationId() != null) {
-                    nd.setInvestigationId(dt.getInvestigationId().getInvestigationId());
-                    nd.setInvestigationName(dt.getInvestigationId().getInvestigationName());
+                if (dt.getInvestigation() != null) {
+                    nd.setInvestigationId(dt.getInvestigation().getInvestigationId());
+                    nd.setInvestigationName(dt.getInvestigation().getInvestigationName());
                 }
 
                 // Package
-                nd.setPackageId(dt.getPackageId() != null ? dt.getPackageId().getPackId() : null);
+                nd.setPackageId(dt.getInvestigationPackage() != null ? dt.getInvestigationPackage().getPackId() : null);
 
                 // Billing
                 nd.setBillingHd(dt.getBillingHd() != null ? dt.getBillingHd().getBillingHdId() : null);

@@ -161,6 +161,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 patient.getPatientAge(),
                 patient.getPatientMobileNumber(),
                 (masRelationRepository.findById(patient.getPatientRelationId())).get());
+
         if (existingPatient.isPresent()) {
             resp.setPatient(PatientMapper.mapToDTO(existingPatient.get()));
             return ResponseUtils.createFailureResponse(resp, new TypeReference<>() {

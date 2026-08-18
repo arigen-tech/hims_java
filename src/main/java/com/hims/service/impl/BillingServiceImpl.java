@@ -352,8 +352,7 @@ public class BillingServiceImpl implements BillingService {
         try {
 
 
-            MasServiceCategory serviceCategory =
-                    masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
+            MasServiceCategory serviceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
 
             Pageable pageable = PageRequest.of(page, size);
 
