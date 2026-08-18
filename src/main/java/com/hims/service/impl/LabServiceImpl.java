@@ -201,6 +201,8 @@ public class LabServiceImpl implements LabService {
             Inpatient inpatient=null;
             if(visitOpt.isPresent()){
                  visit= visitOpt.get();
+                 visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
+                 visitRepository.save(visit);
             }else{
                  inpatient=inpatientOpt.get();
             }
@@ -232,18 +234,6 @@ public class LabServiceImpl implements LabService {
                         subChargeCodeId, detailsList.size());
 
                 Optional<DgSampleCollectionHeader> existingHeaderOpt=Optional.empty();
-//                if(visit!=null){
-//                   existingHeaderOpt= dgSampleCollectionHeaderRepository
-//                            .findByVisitIdAndSubChargeCodeAndValidateStatusN(
-//                                    visit.getId(),
-//                                    subChargeCodeId.longValue()
-//                            );
-//                }else if (inpatient!=null) {
-//                    existingHeaderOpt=dgSampleCollectionHeaderRepository
-//                            .findByInpatientAndSubChargeCodeAndValidateStatusN(
-//                                    inpatient.getInpatientId(),
-//                                    subChargeCodeId.longValue());
-//                }
 
                 Optional<DgOrderHd> dgOrderHdOpt = labOrderHdRepository.findById(sampleReq.getOrderHdId());
                 if(dgOrderHdOpt.isEmpty()){
