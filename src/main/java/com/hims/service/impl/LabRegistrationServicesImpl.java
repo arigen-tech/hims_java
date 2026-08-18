@@ -190,8 +190,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         }
 
         for (Object inv : investigations) {
-            double actualAmount = 0;
-            double discountedAmount = 0;
+            BigDecimal actualAmount = BigDecimal.ZERO;
+            BigDecimal discountedAmount = BigDecimal.ZERO;
 
             // Handle both LabInvestigationReq and LabRadioInvestigationRequest
             if (inv instanceof LabRadioInvestigationRequest) {
@@ -202,14 +202,14 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 discountedAmount = ((LabInvestigationReq) inv).getDiscountedAmount();
             }
 
-            sum = sum.add(BigDecimal.valueOf(actualAmount));
-            disc = disc.add(BigDecimal.valueOf(discountedAmount));
+            sum = sum.add(actualAmount);
+            disc = disc.add(discountedAmount);
 
             if (cachedServiceCategory != null && cachedServiceCategory.getGstApplicable()) {
                 tax = tax.add(BigDecimal.valueOf(cachedServiceCategory.getGstPercent())
-                        .multiply(BigDecimal.valueOf(actualAmount)
-                                .subtract(BigDecimal.valueOf(discountedAmount)))
-                        .divide(BigDecimal.valueOf(100)));
+                        .multiply(actualAmount)
+                                .subtract(discountedAmount))
+                        .divide(BigDecimal.valueOf(100));
             }
         }
 
@@ -507,12 +507,12 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 BigDecimal disc = BigDecimal.ZERO;
 
                 for (LabRadioInvestigationRequest inv : investigations) {
-                    sum = sum.add(BigDecimal.valueOf(inv.getActualAmount()));
-                    disc = disc.add(BigDecimal.valueOf(inv.getDiscountedAmount()));
+                    sum = sum.add(inv.getActualAmount());
+                    disc = disc.add(inv.getDiscountedAmount());
 
                     if (servCat.getGstApplicable()) {
-                        BigDecimal net = BigDecimal.valueOf(inv.getActualAmount())
-                                .subtract(BigDecimal.valueOf(inv.getDiscountedAmount()));
+                        BigDecimal net = inv.getActualAmount()
+                                .subtract(inv.getDiscountedAmount());
                         tax = tax.add(net.multiply(BigDecimal.valueOf(servCat.getGstPercent())).divide(BigDecimal.valueOf(100)));
                     }
                 }
@@ -626,15 +626,15 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setUpdatedDt(OffsetDateTime.now());
         billingDetail.setCreatedAt(Instant.now());
         billingDetail.setQuantity(1);
-        billingDetail.setBasePrice(BigDecimal.valueOf(investigation.getActualAmount()));
-        billingDetail.setDiscount(BigDecimal.valueOf(investigation.getDiscountedAmount()));
-        billingDetail.setTariff(BigDecimal.valueOf(investigation.getActualAmount()));
-        billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount())));
+        billingDetail.setBasePrice(investigation.getActualAmount());
+        billingDetail.setDiscount(investigation.getDiscountedAmount());
+        billingDetail.setTariff(investigation.getActualAmount());
+        billingDetail.setAmountAfterDiscount(investigation.getActualAmount().subtract(investigation.getDiscountedAmount()));
 
         MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
         BigDecimal tax = BigDecimal.ZERO;
         if (sevcat.getGstApplicable()) {
-            tax = BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(investigation.getActualAmount()).subtract(BigDecimal.valueOf(investigation.getDiscountedAmount()))).divide(BigDecimal.valueOf(100));
+            tax = BigDecimal.valueOf(sevcat.getGstPercent()).multiply(investigation.getActualAmount()).subtract(investigation.getDiscountedAmount()).divide(BigDecimal.valueOf(100));
         }
         billingDetail.setTaxAmount(tax);
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
@@ -660,14 +660,14 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingDetail.setUpdatedDt(OffsetDateTime.now());
         billingDetail.setCreatedAt(Instant.now());
         billingDetail.setQuantity(1);
-        billingDetail.setBasePrice(BigDecimal.valueOf(req.getActualAmount()));
-        billingDetail.setDiscount(BigDecimal.valueOf(req.getDiscountedAmount()));
-        billingDetail.setTariff(BigDecimal.valueOf(req.getActualAmount()));
-        billingDetail.setAmountAfterDiscount(BigDecimal.valueOf(req.getActualAmount()).subtract(BigDecimal.valueOf(req.getDiscountedAmount())));
+        billingDetail.setBasePrice(req.getActualAmount());
+        billingDetail.setDiscount(req.getDiscountedAmount());
+        billingDetail.setTariff(req.getActualAmount());
+        billingDetail.setAmountAfterDiscount(req.getActualAmount().subtract(req.getDiscountedAmount()));
         MasServiceCategory sevcat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
         BigDecimal tax = BigDecimal.ZERO;
         if (sevcat.getGstApplicable()) {
-            tax = BigDecimal.valueOf(sevcat.getGstPercent()).multiply(BigDecimal.valueOf(req.getActualAmount()).subtract(BigDecimal.valueOf(req.getDiscountedAmount()))).divide(BigDecimal.valueOf(100));
+            tax = BigDecimal.valueOf(sevcat.getGstPercent()).multiply(req.getActualAmount()).subtract(req.getDiscountedAmount()).divide(BigDecimal.valueOf(100));
         }
         billingDetail.setTaxAmount(tax);
         billingDetail.setTaxPercent(BigDecimal.valueOf(sevcat.getGstPercent()));
@@ -729,13 +729,13 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             MasServiceCategory servCat = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
 
             for (LabInvestigationReq inv : labReq.getLabInvestigationReq()) {
-                sum = sum.add(BigDecimal.valueOf(inv.getActualAmount()));
-                disc = disc.add(BigDecimal.valueOf(inv.getDiscountedAmount()));
+                sum = sum.add(inv.getActualAmount());
+                disc = disc.add(inv.getDiscountedAmount());
                 if (servCat.getGstApplicable()) {
                     tax = tax.add(
                             BigDecimal.valueOf(servCat.getGstPercent())
-                                    .multiply(BigDecimal.valueOf(inv.getActualAmount())
-                                            .subtract(BigDecimal.valueOf(inv.getDiscountedAmount())))
+                                    .multiply(inv.getActualAmount())
+                                            .subtract(inv.getDiscountedAmount())
                                     .divide(BigDecimal.valueOf(100))
                     );
                 }

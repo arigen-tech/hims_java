@@ -80,17 +80,8 @@ public interface BillingService {
             String serviceCategoryCode);
 
 
-    ApiResponse<Page<PaidCancelledAppointmentResponse>>
-    getBillingRefundPatientList(
-            int page,
-            int size,
-            String patientName,
-            String mobileNo,
-            String billingServiceType,
-            String refundStatus,
-            LocalDate fromDate,
-            LocalDate toDate
-    );
+    ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page, int size,String patientName,
+                                String mobileNo,String billingServiceType, String refundStatus,LocalDate fromDate,LocalDate toDate);
 
     ApiResponse<List<PatientBillingRefundDetailsResponse>> getPatientBillingRefundDetails(Long billingId);
 
