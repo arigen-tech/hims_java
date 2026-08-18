@@ -1226,6 +1226,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             );
         }
     }
+
     private RadiologyRequisitionResponse toResponse(RadiologyProjection p) {
         RadiologyRequisitionResponse r = new RadiologyRequisitionResponse();
         r.setAccessionNo(p.getOrderAccessionNo());
