@@ -34,6 +34,8 @@ public class IpAdverseEventRequest {
     private String doctorInformed;
     private Long informedDoctorId;
     private String patientConditionAfter;
+    private Long routeId;
+    private String dose;
 
 
 }
