@@ -150,12 +150,15 @@ public class MobileController {
     @GetMapping("/getAppointmentHistoryList")
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistoryList(
             @RequestParam(required = true) Long hospitalId,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) Long patientId,
             @RequestParam(required = false) String mobileNo,
             @RequestParam(required = false) String deptTypeCode,
             @RequestParam(required = false, defaultValue = "true") Boolean includeAllHistory
     ) {
-        return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, deptTypeCode, includeAllHistory);
+        String resolvedPatientName = patientName != null ? patientName : name;
+        return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, resolvedPatientName, deptTypeCode, includeAllHistory);
     }
 
 }

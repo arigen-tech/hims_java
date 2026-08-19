@@ -177,7 +177,6 @@ public class RegistrationServiceImpl implements RegistrationService {
             if (!visit.isEmpty()) {
                 validateDuplicateAppointments(visit, patientObj.getId());
                 for (VisitRequest v : visit) {
-                    Instant today = v.getVisitDate();
                     String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patientObj.getId());
                     v.setVisitType(visitType);
                     Visit saved = createSingleAppointment(v, patientObj);
@@ -187,12 +186,12 @@ public class RegistrationServiceImpl implements RegistrationService {
                     }
                 }
             }
-            if(savedVisits.get(0).getBillingStatus().equalsIgnoreCase(AppConstants.STATUS_N)){
+//            if(savedVisits.get(0).getBillingStatus().equalsIgnoreCase(AppConstants.STATUS_N)){
                 List<OpdVisitResponseDTO> visitResponses = savedVisits.stream()
                         .map(visitMapper::mapToDTO)
                         .toList();
                 resp.setVisits(visitResponses);
-            }
+//            }
             OPDBillingPatientResponse finalResponse =  buildFinalResponse(patientObj,savedVisits);
             resp.setOpdBillingPatientResponse(finalResponse);
         }
