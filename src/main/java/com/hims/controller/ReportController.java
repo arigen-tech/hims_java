@@ -33,9 +33,7 @@ public class ReportController {
     @Value("${labInvestigation.mainChargecodeId}")
     private Long mainChargecodeId;
 
-    private Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
-    }
+
 
     @GetMapping(value = "/labInvoice", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintLabReportPdf(
@@ -46,10 +44,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.LAB_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -73,10 +71,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.OPD_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -110,10 +108,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_SUMMARY_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_SUMMARY_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.STOCK_SUMMARY_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_SUMMARY_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_SUMMARY_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -147,10 +145,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_STATUS_DETAILED_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_STATUS_DETAILED_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.STOCK_STATUS_DETAILED_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_STATUS_DETAILED_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_STATUS_DETAILED_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -183,11 +181,11 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_REGISTRY_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_REGISTRY_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.OPENING_BALANCE_REGISTRY_REPORT);
             }
             else if(ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_REGISTRY_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_REGISTRY_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -212,10 +210,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.OPENING_BALANCE_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.OPENING_BALANCE_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -245,10 +243,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_REGISTER_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_REGISTER_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.STOCK_TAKING_REGISTER_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_REGISTER_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_REGISTER_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -272,10 +270,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.STOCK_TAKING_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_TAKING_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -308,10 +306,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DRUG_EXPIRY_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DRUG_EXPIRY_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.DRUG_EXPIRY_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DRUG_EXPIRY_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DRUG_EXPIRY_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -335,10 +333,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.INDENT_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -361,10 +359,10 @@ public class ReportController {
         params.put("visit_id",visit);
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_TOKEN_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_TOKEN_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.OPD_TOKEN_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_TOKEN_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_TOKEN_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -389,10 +387,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB,ReportConstants.LAB_INVESTIGATION_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB,ReportConstants.LAB_INVESTIGATION_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.LAB_INVESTIGATION_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB,ReportConstants.LAB_INVESTIGATION_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB,ReportConstants.LAB_INVESTIGATION_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -418,10 +416,10 @@ public class ReportController {
 
         try {
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_CASESHEET_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_CASESHEET_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.OPD_CASESHEET_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_CASESHEET_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_CASESHEET_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -461,10 +459,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_MEDICINE_ISSUE_REGISTER_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -473,10 +471,10 @@ public class ReportController {
                                 ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
             }
         } catch (Exception e) {
-                e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Failed to generate : " + e.getMessage());
-            }
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to generate : " + e.getMessage());
+        }
     }
 
     @GetMapping(value = "/indentIssue", produces = MediaType.APPLICATION_PDF_VALUE)
@@ -488,10 +486,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_ISSUE_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_ISSUE_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.INDENT_ISSUE_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_ISSUE_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_ISSUE_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -516,10 +514,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_RECEIVING_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_RECEIVING_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.INDENT_RECEIVING_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_RECEIVING_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.INDENT_RECEIVING_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -563,10 +561,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_REGISTER_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_REGISTER_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.LAB_REGISTER_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_REGISTER_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.LAB_REGISTER_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -603,10 +601,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RECEIVING_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RECEIVING_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.ITEM_WISE_RECEIVING_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RECEIVING_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RECEIVING_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -639,10 +637,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RECEIVING_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RECEIVING_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.DATE_WISE_RECEIVING_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RECEIVING_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RECEIVING_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -667,10 +665,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.INDENT_RETURN_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.INDENT_RETURN_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.INDENT_RETURN_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.INDENT_RETURN_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.INDENT_RETURN_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -707,10 +705,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RETURN_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RETURN_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.ITEM_WISE_RETURN_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RETURN_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.ITEM_WISE_RETURN_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -743,10 +741,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RETURN_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RETURN_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.DATE_WISE_RETURN_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RETURN_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY, ReportConstants.DATE_WISE_RETURN_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -779,10 +777,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.DETAILED_TAT_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.DETAILED_TAT_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.DETAILED_TAT_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.DETAILED_TAT_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.DETAILED_TAT_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -815,10 +813,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SUMMARY_TAT_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SUMMARY_TAT_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.SUMMARY_TAT_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SUMMARY_TAT_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SUMMARY_TAT_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -860,10 +858,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.RESULT_AMENDMENT_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.RESULT_AMENDMENT_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.RESULT_AMENDMENT_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.RESULT_AMENDMENT_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.RESULT_AMENDMENT_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -894,10 +892,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_MOVEMENT_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_MOVEMENT_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.STOCK_MOVEMENT_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_MOVEMENT_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_STORE, ReportConstants.STOCK_MOVEMENT_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -922,10 +920,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.RADIOLOGY_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -962,10 +960,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1002,10 +1000,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER_DASHED, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER_DASHED, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_REPORT_DASHED);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER_DASHED, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DEPARTMENT_JASPER_DASHED, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1042,10 +1040,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1082,10 +1080,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER_DASHED, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER_DASHED, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_REPORT_DASHED);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER_DASHED, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.APPOINTMENT_SUMMARY_DOCTOR_JASPER_DASHED, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1128,10 +1126,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_REGISTER_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_REGISTER_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.OPD_REGISTER_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_REGISTER_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD, ReportConstants.OPD_REGISTER_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1171,10 +1169,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.DAILY_CANCELLATION_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.DAILY_CANCELLATION_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.DAILY_CANCELLATION_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.DAILY_CANCELLATION_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_REGISTRATION, ReportConstants.DAILY_CANCELLATION_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1198,10 +1196,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_INVOICE_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_INVOICE_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.RADIOLOGY_INVOICE_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_INVOICE_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_RADIOLOGY, ReportConstants.RADIOLOGY_INVOICE_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -1234,10 +1232,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SAMPLE_REJECTION_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SAMPLE_REJECTION_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.SAMPLE_REJECTION_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SAMPLE_REJECTION_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.SAMPLE_REJECTION_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -1270,10 +1268,10 @@ public class ReportController {
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.PENDING_INVESTIGATION_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.PENDING_INVESTIGATION_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.PENDING_INVESTIGATION_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.PENDING_INVESTIGATION_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_LAB, ReportConstants.PENDING_INVESTIGATION_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -1310,10 +1308,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.OPD_BILLING_REGISTER_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.OPD_BILLING_REGISTER_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.OPD_BILLING_REGISTER_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.OPD_BILLING_REGISTER_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.OPD_BILLING_REGISTER_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -1347,10 +1345,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.LAB_BILLING_REGISTER_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.LAB_BILLING_REGISTER_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.LAB_BILLING_REGISTER_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.LAB_BILLING_REGISTER_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.LAB_BILLING_REGISTER_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -1384,10 +1382,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.RADIOLOGY_BILLING_REGISTER_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.RADIOLOGY_BILLING_REGISTER_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.RADIOLOGY_BILLING_REGISTER_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.RADIOLOGY_BILLING_REGISTER_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.RADIOLOGY_BILLING_REGISTER_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -1417,10 +1415,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.DAILY_CASH_COLLECTION_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.DAILY_CASH_COLLECTION_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.DAILY_CASH_COLLECTION_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.DAILY_CASH_COLLECTION_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.DAILY_CASH_COLLECTION_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -1454,10 +1452,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.CASHIER_WISE_COLLECTION_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.CASHIER_WISE_COLLECTION_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.CASHIER_WISE_COLLECTION_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.CASHIER_WISE_COLLECTION_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING, ReportConstants.CASHIER_WISE_COLLECTION_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -1505,10 +1503,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.BLOOD_INVENTORY_STOCK_SUMMARY_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.BLOOD_INVENTORY_STOCK_SUMMARY_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.BLOOD_INVENTORY_STOCK_SUMMARY_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.BLOOD_INVENTORY_STOCK_SUMMARY_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.BLOOD_INVENTORY_STOCK_SUMMARY_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -1556,10 +1554,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.BLOOD_INVENTORY_STOCK_DETAIL_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.BLOOD_INVENTORY_STOCK_DETAIL_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf, ReportConstants.BLOOD_INVENTORY_STOCK_DETAIL_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.BLOOD_INVENTORY_STOCK_DETAIL_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.BLOOD_INVENTORY_STOCK_DETAIL_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
@@ -1585,10 +1583,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_DAILY_CASE_SHEET_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_DAILY_CASE_SHEET_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.IP_DAILY_CASE_SHEET_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_DAILY_CASE_SHEET_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_DAILY_CASE_SHEET_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1614,10 +1612,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_VITALS_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_VITALS_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.IP_VITALS_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_VITALS_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_VITALS_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1643,10 +1641,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_INVESTIGATION_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_INVESTIGATION_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.IP_INVESTIGATION_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_INVESTIGATION_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_INVESTIGATION_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1672,10 +1670,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.DISCHARGE_SUMMARY_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.DISCHARGE_SUMMARY_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.DISCHARGE_SUMMARY_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.DISCHARGE_SUMMARY_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.DISCHARGE_SUMMARY_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1700,10 +1698,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.ADVANCE_RECEIPT_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.ADVANCE_RECEIPT_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.ADVANCE_RECEIPT_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.ADVANCE_RECEIPT_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.ADVANCE_RECEIPT_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1729,10 +1727,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY,ReportConstants.DRUG_MASTER_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY,ReportConstants.DRUG_MASTER_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.DRUG_MASTER_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY,ReportConstants.DRUG_MASTER_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_DISPENSARY,ReportConstants.DRUG_MASTER_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1760,10 +1758,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.MEDICAL_CONSUMABLE_NON_CONSUMABLE_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.MEDICAL_CONSUMABLE_NON_CONSUMABLE_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.MEDICAL_CONSUMABLE_NON_CONSUMABLE_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.MEDICAL_CONSUMABLE_NON_CONSUMABLE_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.MEDICAL_CONSUMABLE_NON_CONSUMABLE_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1789,10 +1787,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_INITIAL_ASSESSMENT_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_INITIAL_ASSESSMENT_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.IP_INITIAL_ASSESSMENT_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_INITIAL_ASSESSMENT_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IP_INITIAL_ASSESSMENT_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1817,10 +1815,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_ISSUE_SLIP_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_ISSUE_SLIP_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.PRESCRIPTION_ISSUE_SLIP_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_ISSUE_SLIP_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_ISSUE_SLIP_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1845,10 +1843,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_INVOICE_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_INVOICE_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.PRESCRIPTION_INVOICE_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_INVOICE_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_INVOICE_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1873,10 +1871,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_SUMMARY_BILL_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_SUMMARY_BILL_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.IPD_SUMMARY_BILL_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_SUMMARY_BILL_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_SUMMARY_BILL_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1901,10 +1899,10 @@ public class ReportController {
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
-                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_DETAILED_BILL_JASPER, params, getConnection());
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_DETAILED_BILL_JASPER, params, dataSource);
                 return buildPdfResponse(viewPdf,ReportConstants.IPD_DETAILED_BILL_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_DETAILED_BILL_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_DETAILED_BILL_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1929,5 +1927,3 @@ public class ReportController {
                 .body(pdfData);
     }
 }
-
-
