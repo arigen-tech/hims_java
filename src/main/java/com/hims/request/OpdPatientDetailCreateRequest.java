@@ -137,6 +137,7 @@ public class OpdPatientDetailCreateRequest {
         private Integer days;
         private BigDecimal total;
         private String instraction;
+        private Integer flag;
     }
 
     @Getter
