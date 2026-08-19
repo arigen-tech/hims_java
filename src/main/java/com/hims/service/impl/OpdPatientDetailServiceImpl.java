@@ -1911,34 +1911,19 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     continue;
                 }
 
-                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd =
-                        new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
-
-                hd.setPrescriptionHdId(
-                        prescriptionHd.getPrescriptionHdId()
-                );
-
-                hd.setStatus(
-                        prescriptionHd.getStatus()
-                );
-
-                hd.setPrescriptionDate(
-                        prescriptionHd.getPrescriptionDate()
-                );
-
+                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd =new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
+                hd.setPrescriptionHdId(prescriptionHd.getPrescriptionHdId());
+                hd.setStatus(prescriptionHd.getStatus());
+                hd.setPrescriptionDate(prescriptionHd.getPrescriptionDate());
                 hdList.add(hd);
             }
 
             response.setPatientPrescriptionHds(hdList);
             // ================= PRESCRIPTION DT =================
             List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newDtList = new ArrayList<>();
-
             Long hospitalId = authUtil.getCurrentUser() != null && authUtil.getCurrentUser().getHospital() != null ? authUtil.getCurrentUser().getHospital().getId() : null;
-
             for (PatientPrescriptionDt dt : prescDtList) {
-
                 if (dt == null) continue;
-
                 OpdPatientRecallResponce.NewDPatientPrescriptionDt newDt = new OpdPatientRecallResponce.NewDPatientPrescriptionDt();
                 newDt.setPrescriptionDtId(dt.getPrescriptionDtId());
                 newDt.setPrescriptionHdId(dt.getPrescriptionHdId());
