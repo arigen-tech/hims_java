@@ -256,7 +256,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                             t.getDays(),
                             t.getTotal(),
                             t.getInstraction(),
-                            null
+                            t.getFlag()
                     ))
                     .toList();
             saveOrUpdateTreatments(treatments,patient,visit,user,deptId);
@@ -509,17 +509,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             return;
         }
 
-        List<PatientPrescriptionHd> existingHeaders =
-                patientPrescriptionHdRepository.findAllByVisit_Id(visit.getId());
-
+        List<PatientPrescriptionHd> existingHeaders = patientPrescriptionHdRepository.findAllByVisit_Id(visit.getId());
         Map<Long, PatientPrescriptionDt> existingDetails = new HashMap<>();
-
         for (PatientPrescriptionHd header : existingHeaders) {
-
             if (header == null || header.getPrescriptionHdId() == null) {
                 continue;
             }
-
             List<PatientPrescriptionDt> details =
                     patientPrescriptionDtRepository.findByPrescriptionHdId(
                             header.getPrescriptionHdId()
@@ -562,9 +557,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
          * DELETE
          */
         for (TreatmentData treatment : deleteList) {
-
             Long prescriptionDtId = treatment.prescriptionDtId();
-
             if (prescriptionDtId == null) {
                 log.warn(
                         "Cannot delete treatment. prescriptionDtId is null. itemId={}",
@@ -573,9 +566,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 continue;
             }
 
-            PatientPrescriptionDt detail =
-                    existingDetails.get(prescriptionDtId);
-
+            PatientPrescriptionDt detail = existingDetails.get(prescriptionDtId);
             if (detail == null) {
                 log.warn(
                         "Treatment detail ID {} not found for deletion",
@@ -593,36 +584,19 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 headersToCheckForDelete.add(headerId);
             }
 
-            log.info(
-                    "Deleted treatment detail ID {} from header ID {}",
-                    prescriptionDtId,
-                    headerId
-            );
+            log.info("Deleted treatment detail ID {} from header ID {}",prescriptionDtId,headerId);
         }
 
-        /*
-         * UPDATE
-         */
         for (TreatmentData treatment : updateList) {
-
             Long prescriptionDtId = treatment.prescriptionDtId();
-
             if (prescriptionDtId == null) {
-                log.warn(
-                        "Cannot update treatment. prescriptionDtId is null. itemId={}",
-                        treatment.itemId()
-                );
+                log.warn("Cannot update treatment. prescriptionDtId is null. itemId={}",treatment.itemId());
                 continue;
             }
 
-            PatientPrescriptionDt detail =
-                    existingDetails.get(prescriptionDtId);
-
+            PatientPrescriptionDt detail = existingDetails.get(prescriptionDtId);
             if (detail == null) {
-                log.warn(
-                        "Treatment detail ID {} not found for update",
-                        prescriptionDtId
-                );
+                log.warn("Treatment detail ID {} not found for update",prescriptionDtId);
                 continue;
             }
 
@@ -632,9 +606,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             detail.setDays(treatment.days());
             detail.setTotal(treatment.total());
             detail.setInstruction(treatment.instruction());
-
             patientPrescriptionDtRepository.save(detail);
-
             log.info(
                     "Updated treatment detail ID {} under header ID {}",
                     detail.getPrescriptionDtId(),
@@ -642,109 +614,60 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             );
         }
 
-        /*
-         * CREATE
-         *
-         * New treatments do not have prescriptionHdId/prescriptionDtId.
-         * Find the correct existing header for this visit.
-         */
         if (!createList.isEmpty()) {
-
-            PatientPrescriptionHd currentHeader = existingHeaders.stream()
+            PatientPrescriptionHd headerToUse = existingHeaders.stream()
                     .filter(Objects::nonNull)
                     .filter(h -> h.getPrescriptionHdId() != null)
                     .findFirst()
                     .orElse(null);
 
-            if (currentHeader == null) {
-                log.warn(
-                        "Cannot create treatments. No prescription header found for visit ID {}",
-                        visit.getId()
+            // No existing header -> create new header
+            if (headerToUse == null) {
+                headerToUse = createPrescriptionHeader(patient,visit,user,deptId);
+                log.info(
+                        "No existing prescription header found. Created new header {}",
+                        headerToUse.getPrescriptionHdId()
                 );
-            } else {
+            } else if (AppConstants.STATUS_Y.equalsIgnoreCase(headerToUse.getStatus())) {
+                // Existing header already completed -> create new header
+                PatientPrescriptionHd oldHeader = headerToUse;
+                headerToUse = createPrescriptionHeader(patient,visit,user,deptId);
+                log.info("Existing prescription header {} has status Y. Created new header {}",oldHeader.getPrescriptionHdId(),headerToUse.getPrescriptionHdId());
+            } else if (AppConstants.STATUS_N.equalsIgnoreCase(headerToUse.getStatus())) {
+                // Existing active header -> reuse it
+                log.info("Using existing prescription header {} with status N", headerToUse.getPrescriptionHdId());
+            }
+            // Create treatment details
+            if (headerToUse != null) {
+                for (TreatmentData treatment : createList) {
 
-                PatientPrescriptionHd headerToUse = currentHeader;
-                if (AppConstants.STATUS_Y.equalsIgnoreCase(currentHeader.getStatus())) {
+                    PatientPrescriptionDt detail = new PatientPrescriptionDt();
+                    detail.setPrescriptionHdId(headerToUse.getPrescriptionHdId());
+                    detail.setItemId(treatment.itemId());
+                    detail.setDosage(treatment.dosage());
+                    detail.setFrequency(treatment.frequency());
+                    detail.setDays(treatment.days());
+                    detail.setTotal(treatment.total());
+                    detail.setInstruction(treatment.instruction());
+                    detail.setStatus(AppConstants.STATUS_N.toLowerCase());
 
-                    headerToUse = createPrescriptionHeader(
-                            patient,
-                            visit,
-                            user,
-                            deptId
-                    );
+                    patientPrescriptionDtRepository.save(detail);
 
                     log.info(
-                            "Existing prescription header {} has status Y. Created new header {}",
-                            currentHeader.getPrescriptionHdId(),
+                            "Created treatment detail ID {} under header ID {}",
+                            detail.getPrescriptionDtId(),
                             headerToUse.getPrescriptionHdId()
                     );
-
-                } else if (AppConstants.STATUS_N.equalsIgnoreCase(
-                        currentHeader.getStatus())) {
-
-                    log.info(
-                            "Using existing prescription header {} with status N",
-                            currentHeader.getPrescriptionHdId()
-                    );
-
-                } else {
-
-                    log.warn(
-                            "Prescription header {} has unsupported status {}. "
-                                    + "New treatments will not be created",
-                            currentHeader.getPrescriptionHdId(),
-                            currentHeader.getStatus()
-                    );
-
-                    headerToUse = null;
-                }
-
-                if (headerToUse != null) {
-
-                    for (TreatmentData treatment : createList) {
-
-                        PatientPrescriptionDt detail =
-                                new PatientPrescriptionDt();
-
-                        detail.setPrescriptionHdId(
-                                headerToUse.getPrescriptionHdId()
-                        );
-                        detail.setItemId(treatment.itemId());
-                        detail.setDosage(treatment.dosage());
-                        detail.setFrequency(treatment.frequency());
-                        detail.setDays(treatment.days());
-                        detail.setTotal(treatment.total());
-                        detail.setInstruction(treatment.instruction());
-                        detail.setStatus(
-                                AppConstants.STATUS_N.toLowerCase()
-                        );
-
-                        patientPrescriptionDtRepository.save(detail);
-
-                        log.info(
-                                "Created treatment detail ID {} under header ID {}",
-                                detail.getPrescriptionDtId(),
-                                headerToUse.getPrescriptionHdId()
-                        );
-                    }
                 }
             }
         }
-
         /*
          * DELETE EMPTY HEADERS
          */
         for (Long headerId : headersToCheckForDelete) {
-
-            List<PatientPrescriptionDt> remainingDetails =
-                    patientPrescriptionDtRepository.findByPrescriptionHdId(
-                            headerId
-                    );
-
+            List<PatientPrescriptionDt> remainingDetails = patientPrescriptionDtRepository.findByPrescriptionHdId(headerId);
             if (remainingDetails.isEmpty()) {
-
                 patientPrescriptionHdRepository.deleteById(headerId);
-
                 log.info(
                         "Deleted empty prescription header ID {}",
                         headerId
@@ -1988,34 +1911,19 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     continue;
                 }
 
-                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd =
-                        new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
-
-                hd.setPrescriptionHdId(
-                        prescriptionHd.getPrescriptionHdId()
-                );
-
-                hd.setStatus(
-                        prescriptionHd.getStatus()
-                );
-
-                hd.setPrescriptionDate(
-                        prescriptionHd.getPrescriptionDate()
-                );
-
+                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd =new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
+                hd.setPrescriptionHdId(prescriptionHd.getPrescriptionHdId());
+                hd.setStatus(prescriptionHd.getStatus());
+                hd.setPrescriptionDate(prescriptionHd.getPrescriptionDate());
                 hdList.add(hd);
             }
 
             response.setPatientPrescriptionHds(hdList);
             // ================= PRESCRIPTION DT =================
             List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newDtList = new ArrayList<>();
-
             Long hospitalId = authUtil.getCurrentUser() != null && authUtil.getCurrentUser().getHospital() != null ? authUtil.getCurrentUser().getHospital().getId() : null;
-
             for (PatientPrescriptionDt dt : prescDtList) {
-
                 if (dt == null) continue;
-
                 OpdPatientRecallResponce.NewDPatientPrescriptionDt newDt = new OpdPatientRecallResponce.NewDPatientPrescriptionDt();
                 newDt.setPrescriptionDtId(dt.getPrescriptionDtId());
                 newDt.setPrescriptionHdId(dt.getPrescriptionHdId());
