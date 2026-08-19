@@ -3836,6 +3836,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     .informedDoctorId(informedDoctor)
                     .patientConditionAfter(request.getPatientConditionAfter())
                     .recordedBy(currentUser.getUserId())
+                    .routeId(request.getRouteId() != null ? masRouteRepository.findById(request.getRouteId()).orElse(null) : null)
+                    .dose(request.getDose())
                     .recordedDatetime(LocalDateTime.now())
                     .build();
 

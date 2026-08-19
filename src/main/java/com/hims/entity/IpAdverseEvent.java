@@ -56,6 +56,13 @@ public class IpAdverseEvent {
     @Column(name = "patient_condition_after", columnDefinition = "TEXT")
     private String patientConditionAfter;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "route_id")
+    private MasRoute routeId;
+
+    @Column(name = "dose", length = 50)
+    private String dose;
+
     @Column(name = "recorded_by", nullable = false)
     private Long recordedBy;
 

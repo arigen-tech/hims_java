@@ -22,10 +22,14 @@ public interface IpAdverseEventRepository extends JpaRepository<IpAdverseEvent, 
             "ae.doctorInformed, " +
             "ae.informedDoctorId.userId, " +
             "CONCAT(u.firstName, ' ', COALESCE(u.middleName, ''), ' ', u.lastName), " +
-            "ae.patientConditionAfter) " +
+            "ae.patientConditionAfter, " +
+            "ae.routeId.routeId, " +
+            "ae.routeId.routeName, " +
+            "ae.dose) " +
             "FROM IpAdverseEvent ae " +
             "LEFT JOIN ae.medicationId msi " +
             "LEFT JOIN ae.informedDoctorId u " +
+            "LEFT JOIN ae.routeId r " +
             "WHERE ae.inpatientId.inpatientId = :inpatientId " +
             "ORDER BY ae.reactionDatetime DESC")
     List<IpAdverseEventResponse> findAdverseReactionDetailsByInpatientId(@Param("inpatientId") Long inpatientId);
