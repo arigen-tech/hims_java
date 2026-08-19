@@ -1820,7 +1820,7 @@ public class ReportController {
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_ISSUE_SLIP_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf,ReportConstants.PRESCRIPTION_ISSUE_SLIP_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.PRESCRIPTION_ISSUE_SLIP_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_ISSUE_SLIP_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {
@@ -1848,7 +1848,63 @@ public class ReportController {
                 byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_INVOICE_JASPER, params, getConnection());
                 return buildPdfResponse(viewPdf,ReportConstants.PRESCRIPTION_INVOICE_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
-                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.PRESCRIPTION_INVOICE_JASPER, params, getConnection());
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_OPD,ReportConstants.PRESCRIPTION_INVOICE_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/ipSummaryBill", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintIpSummaryBill(
+            @RequestParam Integer inpatientId,
+            @RequestParam String flag){
+        Map<String , Object> params = new HashMap<>();
+        params.put("inpatientId", inpatientId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_SUMMARY_BILL_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf,ReportConstants.IPD_SUMMARY_BILL_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_SUMMARY_BILL_JASPER, params, getConnection());
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/ipDetailedBill", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintIpDetailedBill(
+            @RequestParam Integer inpatientId,
+            @RequestParam String flag){
+        Map<String , Object> params = new HashMap<>();
+        params.put("inpatientId", inpatientId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_DETAILED_BILL_JASPER, params, getConnection());
+                return buildPdfResponse(viewPdf,ReportConstants.IPD_DETAILED_BILL_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.IPD_DETAILED_BILL_JASPER, params, getConnection());
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             } else {

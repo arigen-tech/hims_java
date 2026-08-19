@@ -193,4 +193,10 @@ public final class ReportConstants {
 
     public static final String PRESCRIPTION_INVOICE_JASPER = "Prescription_invoice";
     public static final String PRESCRIPTION_INVOICE_REPORT = "PrescriptionInvoice";
+
+    public static final String IPD_SUMMARY_BILL_JASPER = "IPD_summary_bill";
+    public static final String IPD_SUMMARY_BILL_REPORT = "IPSummaryBill";
+
+    public static final String IPD_DETAILED_BILL_JASPER = "IPD_detailed_bill";
+    public static final String IPD_DETAILED_BILL_REPORT = "IPDetailedBill";
 }
