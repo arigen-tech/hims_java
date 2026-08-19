@@ -23,4 +23,7 @@ public class IpAdverseEventResponse {
     private Long informedDoctorId;
     private String informedDoctorName;
     private String patientConditionAfter;
+    private Long routeId;
+    private String routeName;
+    private String dose;
 }
