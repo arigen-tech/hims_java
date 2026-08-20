@@ -541,6 +541,15 @@ public class IPDPatientController {
 
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/viewAdmissionDocument")
+    public ResponseEntity<ApiResponse<byte[]>> viewAdmissionDocument(
+            @RequestParam("filePath") String filePath) {
+
+        ApiResponse<byte[]> response = ipdPatientService.viewAdmissionDocument(filePath);
+        HttpStatus status = HttpStatus.resolve(response.getStatus());
+        return ResponseEntity.status(status != null ? status : HttpStatus.OK).body(response);
+    }
+
     @PostMapping("/saveAdverseReaction")
     public ApiResponse<String> saveAdverseReaction(@Valid @RequestBody IpAdverseEventRequest request) {
 

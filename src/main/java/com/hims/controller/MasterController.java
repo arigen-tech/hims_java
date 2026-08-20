@@ -344,10 +344,18 @@ public class MasterController {
     private MasPaymentModeService masPaymentModeService;
     @Autowired
     MasOperationTheatreService masOperationTheatreService;
-
-
-
-
+    @Autowired
+    private MasAnaesthesiaTypeService masAnaesthesiaTypeService;
+    @Autowired
+    private MasAnaesthesiaInstructionService masAnaesthesiaInstructionService;
+    @Autowired
+    private MasOtScheduleChangeReasonService masOtScheduleChangeReasonService;
+    @Autowired
+    private OtDayAllocationService otDayAllocationService;
+    @Autowired
+    private MasOtBookingStatusService masOtBookingStatusService;
+    @Autowired
+    private MasOtTeamRoleService masOtTeamRoleService;
     @Autowired
     private MasSurgeryTypeService masSurgeryTypeService;
 
@@ -5521,6 +5529,102 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
         return ResponseEntity.ok(masSurgeryTypeService.changeStatusMasSurgeryType(id, status));
     }
 
+    //======================================= Mas Anaesthesia Type ====================================================
+
+    @GetMapping("masAnaesthesiaType/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasAnaesthesiaTypeResponse>>> getAllMasAnaesthesiaType(@PathVariable int flag) {
+        return ResponseEntity.ok(masAnaesthesiaTypeService.getAll(flag));
+    }
+
+    @GetMapping("masAnaesthesiaType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasAnaesthesiaTypeResponse>> getByIdMasAnaesthesiaType(@PathVariable Long id) {
+        return ResponseEntity.ok(masAnaesthesiaTypeService.getById(id));
+    }
+
+    @PostMapping("masAnaesthesiaType/create")
+    public ResponseEntity<ApiResponse<MasAnaesthesiaTypeResponse>> createMasAnaesthesiaType(
+            @RequestBody @Valid MasAnaesthesiaTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masAnaesthesiaTypeService.create(request));
+    }
+
+    @PutMapping("masAnaesthesiaType/update/{id}")
+    public ResponseEntity<ApiResponse<MasAnaesthesiaTypeResponse>> updateMasAnaesthesiaType(
+            @PathVariable Long id,
+            @RequestBody @Valid MasAnaesthesiaTypeRequest request) {
+        return ResponseEntity.ok(masAnaesthesiaTypeService.update(id, request));
+    }
+
+    @PutMapping("masAnaesthesiaType/status/{id}")
+    public ResponseEntity<ApiResponse<MasAnaesthesiaTypeResponse>> changeStatusMasAnaesthesiaType(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masAnaesthesiaTypeService.changeStatus(id, status));
+    }
+
+    //======================================= Mas Anaesthesia Instruction ====================================================
+
+    @GetMapping("masAnaesthesiaInstruction/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasAnaesthesiaInstructionResponse>>> getAllMasAnaesthesiaInstruction(@PathVariable int flag) {
+        return ResponseEntity.ok(masAnaesthesiaInstructionService.getAll(flag));
+    }
+
+    @GetMapping("masAnaesthesiaInstruction/getById/{id}")
+    public ResponseEntity<ApiResponse<MasAnaesthesiaInstructionResponse>> getByIdMasAnaesthesiaInstruction(@PathVariable Long id) {
+        return ResponseEntity.ok(masAnaesthesiaInstructionService.getById(id));
+    }
+
+    @PostMapping("masAnaesthesiaInstruction/create")
+    public ResponseEntity<ApiResponse<MasAnaesthesiaInstructionResponse>> createMasAnaesthesiaInstruction(
+            @RequestBody @Valid MasAnaesthesiaInstructionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masAnaesthesiaInstructionService.create(request));
+    }
+
+    @PutMapping("masAnaesthesiaInstruction/update/{id}")
+    public ResponseEntity<ApiResponse<MasAnaesthesiaInstructionResponse>> updateMasAnaesthesiaInstruction(
+            @PathVariable Long id,
+            @RequestBody @Valid MasAnaesthesiaInstructionRequest request) {
+        return ResponseEntity.ok(masAnaesthesiaInstructionService.update(id, request));
+    }
+
+    @PutMapping("masAnaesthesiaInstruction/status/{id}")
+    public ResponseEntity<ApiResponse<MasAnaesthesiaInstructionResponse>> changeStatusMasAnaesthesiaInstruction(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masAnaesthesiaInstructionService.changeStatus(id, status));
+    }
+
+    //======================================= Mas OT Schedule Change Reason ====================================================
+
+    @GetMapping("masOtScheduleChangeReason/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasOtScheduleChangeReasonResponse>>> getAllMasOtScheduleChangeReason(@PathVariable int flag) {
+        return ResponseEntity.ok(masOtScheduleChangeReasonService.getAll(flag));
+    }
+
+    @GetMapping("masOtScheduleChangeReason/getById/{id}")
+    public ResponseEntity<ApiResponse<MasOtScheduleChangeReasonResponse>> getByIdMasOtScheduleChangeReason(@PathVariable Long id) {
+        return ResponseEntity.ok(masOtScheduleChangeReasonService.getById(id));
+    }
+
+    @PostMapping("masOtScheduleChangeReason/create")
+    public ResponseEntity<ApiResponse<MasOtScheduleChangeReasonResponse>> createMasOtScheduleChangeReason(
+            @RequestBody @Valid MasOtScheduleChangeReasonRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masOtScheduleChangeReasonService.create(request));
+    }
+
+    @PutMapping("masOtScheduleChangeReason/update/{id}")
+    public ResponseEntity<ApiResponse<MasOtScheduleChangeReasonResponse>> updateMasOtScheduleChangeReason(
+            @PathVariable Long id,
+            @RequestBody @Valid MasOtScheduleChangeReasonRequest request) {
+        return ResponseEntity.ok(masOtScheduleChangeReasonService.update(id, request));
+    }
+
+    @PutMapping("masOtScheduleChangeReason/status/{id}")
+    public ResponseEntity<ApiResponse<MasOtScheduleChangeReasonResponse>> changeStatusMasOtScheduleChangeReason(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(masOtScheduleChangeReasonService.changeStatus(id, status));
+    }
+
     //======================================= Mas operation Theatre ====================================================
 
     @PostMapping("/operationTheatre/create")
@@ -5564,4 +5668,118 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
 
         return ResponseEntity.ok(masOperationTheatreService.updateOperationTheatre(id, request));
     }
+
+    //=======================================Ot Day Allocation ====================================================
+
+        @PostMapping("/otDayAllocation/create")
+        public ResponseEntity<ApiResponse<String>> saveOtDayAllocation(@RequestBody OtDayAllocationRequest request) {
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(otDayAllocationService.saveOtDayAllocation(request));
+        }
+
+        // Get All OT Day Allocations
+        // flag = 1 -> Active records only
+        // flag = 0 -> All records
+        @GetMapping("/otDayAllocation/getAll/{flag}")
+        public ResponseEntity<ApiResponse<List<OtDayAllocationResponse>>> getAllOtDayAllocations(@PathVariable int flag) {
+
+            return ResponseEntity.ok(otDayAllocationService.getAllOtDayAllocations(flag));
+        }
+
+        // Get By ID
+        @GetMapping("/otDayAllocation/getById/{id}")
+        public ResponseEntity<ApiResponse<OtDayAllocationResponse>> getOtDayAllocationById(@PathVariable Long id) {
+
+            return ResponseEntity.ok(otDayAllocationService.getById(id));
+        }
+
+        // Change Status
+        @PutMapping("/otDayAllocation/status/{id}")
+        public ResponseEntity<ApiResponse<OtDayAllocationResponse>>
+        changeStatusOtDayAllocation(@PathVariable Long id, @RequestParam String status) {
+
+            return ResponseEntity.ok(otDayAllocationService.changeStatus(id, status));
+        }
+
+        // Update
+        @PutMapping("/otDayAllocation/update/{id}")
+        public ResponseEntity<ApiResponse<String>>
+        updateOtDayAllocation(@PathVariable Long id, @RequestBody OtDayAllocationRequest request) {
+
+            return ResponseEntity.ok(otDayAllocationService.updateOtDayAllocation(id, request)
+            );
+        }
+
+    //=======================================Ot Booking Status ====================================================
+
+
+    // Create
+    @PostMapping("/otBookingStatus/create")
+    public ResponseEntity<ApiResponse<String>> saveOtBookingStatus(@RequestBody MasOtBookingStatusRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masOtBookingStatusService.saveOtBookingStatus(request));
+    }
+
+    // Get All OT Booking Statuses
+    // flag = 1 -> Active records only
+    // flag = 0 -> All records
+    @GetMapping("/otBookingStatus/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasOtBookingStatusResponse>>> getAllOtBookingStatus(@PathVariable int flag) {
+        return ResponseEntity.ok(masOtBookingStatusService.getAllOtBookingStatus(flag));
+    }
+
+    // Get By ID
+    @GetMapping("/otBookingStatus/getById/{id}")
+    public ResponseEntity<ApiResponse<MasOtBookingStatusResponse>> getOtBookingStatusById(@PathVariable Long id) {
+        return ResponseEntity.ok(masOtBookingStatusService.getById(id));
+    }
+
+    // Change Status
+    @PutMapping("/otBookingStatus/status/{id}")
+    public ResponseEntity<ApiResponse<MasOtBookingStatusResponse>> changeStatusOtBookingStatus(
+            @PathVariable Long id, @RequestParam String status) {
+        return ResponseEntity.ok(masOtBookingStatusService.changeStatus(id, status));
+    }
+
+    // Update
+    @PutMapping("/otBookingStatus/update/{id}")
+    public ResponseEntity<ApiResponse<String>> updateOtBookingStatus(
+            @PathVariable Long id, @RequestBody MasOtBookingStatusRequest request) {
+        return ResponseEntity.ok(masOtBookingStatusService.updateOtBookingStatus(id, request));
+    }
+    //=======================================Ot Team Role ======================
+
+    // Create
+    @PostMapping("/otTeamRole/create")
+    public ResponseEntity<ApiResponse<String>> saveOtTeamRole(@RequestBody MasOtTeamRoleRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masOtTeamRoleService.saveOtTeamRole(request));
+    }
+
+    // Get All OT Team Roles
+    // flag = 1 -> Active records only
+    // flag = 0 -> All records
+    @GetMapping("/otTeamRole/getAll/{flag}")
+    public ResponseEntity<ApiResponse<List<MasOtTeamRoleResponse>>> getAllOtTeamRole(@PathVariable int flag) {
+        return ResponseEntity.ok(masOtTeamRoleService.getAllOtTeamRole(flag));
+    }
+
+    // Get By ID
+    @GetMapping("/otTeamRole/getById/{id}")
+    public ResponseEntity<ApiResponse<MasOtTeamRoleResponse>> getOtTeamRoleById(@PathVariable Long id) {
+        return ResponseEntity.ok(masOtTeamRoleService.getById(id));
+    }
+
+    // Change Status
+    @PutMapping("/otTeamRole/status/{id}")
+    public ResponseEntity<ApiResponse<MasOtTeamRoleResponse>> changeStatusOtTeamRole(
+            @PathVariable Long id, @RequestParam String status) {
+        return ResponseEntity.ok(masOtTeamRoleService.changeStatus(id, status));
+    }
+
+    // Update
+    @PutMapping("/otTeamRole/update/{id}")
+    public ResponseEntity<ApiResponse<String>> updateOtTeamRole(
+            @PathVariable Long id, @RequestBody MasOtTeamRoleRequest request) {
+        return ResponseEntity.ok(masOtTeamRoleService.updateOtTeamRole(id, request));
+    }
+
 }

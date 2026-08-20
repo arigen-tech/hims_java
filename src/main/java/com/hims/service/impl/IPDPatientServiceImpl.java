@@ -18,10 +18,8 @@ import com.hims.utils.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.autoconfigure.observation.ObservationProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,10 +34,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -271,6 +269,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     Long IPDServiceCategoryDrug;
     @Value("${IPD.Service.Category.Medical.Consumables}")
     Long IPDServiceCategoryMedicalConsumables;
+
+    @Value("${upload.image.path}")
+    String filePath;
 
 
 
@@ -1727,7 +1728,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Bed allocation details saved successfully for inpatientId: {}", inpatient.getInpatientId());
     }
 
-
     private void saveIpDocumentDetails(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
 
         List<IpdPatientRequest.IpDocumentRequest> documents = request.getDocuments();
@@ -1738,7 +1738,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         }
 
 
-        String uploadDir = "uploads/ipd/documents/";
+        String uploadDir = filePath;
 
         try {
             Path uploadPath = Paths.get(uploadDir);
@@ -1782,6 +1782,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         StandardCopyOption.REPLACE_EXISTING
                 );
 
+                // Normalize path separators to forward slashes for consistent storage
+                String normalizedFilePath = finalFilePath.toString().replace("\\", "/");
+
                 IpDocument document = new IpDocument();
 
                 document.setInpatient(inpatient);
@@ -1789,7 +1792,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 document.setDocumentDatetime(LocalDateTime.now());
                 document.setDocumentType(docReq.getDocumentType());
                 document.setFileName(originalFileName);
-                document.setFilePath(finalFilePath.toString());
+                document.setFilePath(normalizedFilePath);
                 document.setFileType(fileType);
                 document.setFileSizeKb(fileSizeKb);
                 document.setLastUpdateDate(LocalDateTime.now());
@@ -1804,7 +1807,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             throw new RuntimeException("Error while saving IPD document: " + e.getMessage(), e);
         }
     }
-
 
     private String getFileExtension(String fileName) {
 
@@ -3789,6 +3791,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         .documentName(doc.getDocumentType())
                         .documentRemarks(doc.getDocumentNotes())
                         .fileName(doc.getFileName())
+                        .filePath(doc.getFilePath())
                         .build())
                 .collect(Collectors.toList());
         response.setDocumentListList(documentList);
@@ -3796,6 +3799,44 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Admission details fetched successfully for inpatientId={}", inpatientId);
 
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    }
+
+    @Override
+    public ApiResponse<byte[]> viewAdmissionDocument(String filePath) {
+        try {
+            String normalizedPath = filePath == null ? "" : filePath.trim();
+            if (normalizedPath.startsWith("\"") && normalizedPath.endsWith("\"")) {
+                normalizedPath = normalizedPath.substring(1, normalizedPath.length() - 1);
+            }
+            normalizedPath = normalizedPath.replace("\\\\", "\\");
+
+            if (normalizedPath.isBlank()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "File path is required", HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            Path path = Paths.get(normalizedPath);
+
+            if (!Files.exists(path) || !Files.isRegularFile(path)) {
+                return ResponseUtils.createNotFoundResponse("File not found", HttpStatus.NOT_FOUND.value()
+                );
+            }
+
+            byte[] data = Files.readAllBytes(path);
+            return ResponseUtils.createSuccessResponse(data, new TypeReference<>() {}, "Document viewed successfully"
+            );
+
+        } catch (InvalidPathException e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid file path: " + filePath, HttpStatus.BAD_REQUEST.value()
+            );
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Failed to read file: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
     }
 
     @Override
