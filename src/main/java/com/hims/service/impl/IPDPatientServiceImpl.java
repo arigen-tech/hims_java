@@ -3,6 +3,8 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
+
+import java.io.IOException;
 import java.time.temporal.ChronoUnit;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -346,10 +348,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         } catch (Exception e) {
             log.error("Error while saving IPD patient details for patientId: {}. Error: {}", request != null ? request.getPatientId() : null, e.getMessage(),
                     e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    }, e.getMessage(),
-                    400
-            );
+           throw  e;
         }
     }
 
@@ -1727,7 +1726,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         ipBedAllocationRepository.save(bedAllocation);
         log.info("Bed allocation details saved successfully for inpatientId: {}", inpatient.getInpatientId());
     }
-
     private void saveIpDocumentDetails(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
 
         List<IpdPatientRequest.IpDocumentRequest> documents = request.getDocuments();
@@ -1737,8 +1735,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             return;
         }
 
-
         String uploadDir = filePath;
+        List<Path> copiedFiles = new ArrayList<>(); // track for rollback cleanup
 
         try {
             Path uploadPath = Paths.get(uploadDir);
@@ -1767,13 +1765,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 }
 
                 String safeOriginalFileName = originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_");
-
                 String fileType = getFileExtension(safeOriginalFileName);
-
                 Long fileSizeKb = file.getSize() / 1024;
-
                 String newFileName = UUID.randomUUID() + "_" + safeOriginalFileName;
-
                 Path finalFilePath = uploadPath.resolve(newFileName);
 
                 Files.copy(
@@ -1782,11 +1776,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         StandardCopyOption.REPLACE_EXISTING
                 );
 
-                // Normalize path separators to forward slashes for consistent storage
+                copiedFiles.add(finalFilePath); //track successfully copied file
+
                 String normalizedFilePath = finalFilePath.toString().replace("\\", "/");
 
                 IpDocument document = new IpDocument();
-
                 document.setInpatient(inpatient);
                 document.setPatient(patient);
                 document.setDocumentDatetime(LocalDateTime.now());
@@ -1804,9 +1798,20 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         } catch (Exception e) {
             log.error("Error while saving IPD document for inpatientId: {}", inpatient.getInpatientId(), e);
+
+            //  Clean up physical files since DB will rollback but disk won't
+            for (Path p : copiedFiles) {
+                try {
+                    Files.deleteIfExists(p);
+                } catch (IOException ioException) {
+                    log.warn("Failed to delete orphaned file: {}", p, ioException);
+                }
+            }
+
             throw new RuntimeException("Error while saving IPD document: " + e.getMessage(), e);
         }
     }
+
 
     private String getFileExtension(String fileName) {
 
