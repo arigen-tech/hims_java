@@ -1504,7 +1504,7 @@ public class LabServiceImpl implements LabService {
                     ? null
                     : "%" + patientName.trim().toLowerCase() + "%";
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by("orderhdId.orderDate").descending());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("orderHd.orderDate").descending());
 
             Page<OrderTrackingReportResponse> result =
                     labOrderDtRepository.getOrderTrackingReport(
@@ -1539,7 +1539,7 @@ public class LabServiceImpl implements LabService {
             int page,
             int size) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("orderhdId.orderDate").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderHd.orderDate").descending());
 
         List<Long> statuses = List.of(
                 sampleCollectStatusId,
@@ -1594,7 +1594,7 @@ public class LabServiceImpl implements LabService {
         try {
             log.info("getOrderTrackingReports method started with hospitalId={}, patientId={}", hospitalId, patientId);
             log.info("getOrderTrackingDetailsByPatientId() started...");
-            Pageable pageable = PageRequest.of(page, size, Sort.by("orderhdId.orderDate").descending());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("orderHd.orderDate").descending());
             Page<OrderTrackingReportResponse> result = labOrderDtRepository.getOrderTrackingDetailsByPatientId(
                     hospitalId,
                     patientId,
