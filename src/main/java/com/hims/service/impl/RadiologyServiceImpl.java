@@ -1043,7 +1043,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdon"));
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdOn"));
             Page<RadOrderDt> paged = radOrderDtRepository.findPendingRadiology(masHospital.getId(), "y", "n", modalityId, patientLike, phoneLike, pageable
             );
 
@@ -1113,7 +1113,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdon"));
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdOn"));
             List<String> reportStatues = Stream.of(AppConstants.STATUS_N, AppConstants.STATUS_S).map(String::toLowerCase).toList();
             Page<RadiologyProjection> paged = radOrderDtRepository.getPendingReportRadiologyProjection(masHospital.getId(), AppConstants.STATUS_Y,reportStatues , modality, patientLike, phoneLike, pageable);
             Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
@@ -1213,7 +1213,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdon"));
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdOn"));
             Page<RadiologyProjection> paged = radOrderDtRepository.getRadiologyPACSStudyList(masHospital.getId(),AppConstants.STATUS_Y, modality, patientLike, phoneLike, pageable);
             Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
             return ResponseUtils.createSuccessResponse(

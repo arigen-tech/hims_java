@@ -35,7 +35,7 @@ public interface InventoryService {
     ApiResponse<List<MasCommonStatusResponse>> getStatusMapForIndentTracking();
 
     ApiResponse<Page<ItemStockLedgerWithBatchResponse>> getStoreItems(String sectionCode,String keyword, int page, int size) ;
-    ApiResponse<List<BatchNameForStockResponse>> getBatchesFromItemId(Long itemId,Long hospitalId,Long departmentId);
+    ApiResponse<List<BatchNameForStockResponse>> getBatchesFromItemId(Long itemId,Long hospitalId,Long departmentId,Long minimumClosingStock);
     ApiResponse<Long> getIssueMIdFromIndentMId(Long indentMId);
     ApiResponse<Long> getReceiveMIdFromIndentMId(Long indentMId);
     ApiResponse<Long> getReturnMIdFromIndentMId(Long indentMId);
@@ -93,4 +93,23 @@ public interface InventoryService {
 
     ApiResponse<List<?>> getAllStock(String type,Long hospitalId, Long departmentId, Long sectionId, Long classId, Long itemId);
 
+    ApiResponse<Page<UnverifiedReturnHeaderResponse>> getUnverifiedReturnHeaders(Long hospitalId,
+                                                                           Long toDepartmentId,
+                                                                           LocalDate fromDate,
+                                                                           LocalDate toDate,
+                                                                           Long fromDepartmentId,
+                                                                           int page,
+                                                                           int size
+    );
+
+    ApiResponse<List<UnverifiedReturnDetailResponse>> getUnverifiedReturnDetails(Long returnMId);
+
+    ApiResponse<String> verifyReturnedIndentAtIssueDept(VerifyReturnIndentHeaderRequest request);
+
+    ApiResponse<BatchNameForStockResponse> getAllStockBatchesWrtItemExceptGivenStock(Long itemId,
+                                                                                     Long hospitalId,
+                                                                                     Long departmentId,
+                                                                                     Long minimumClosingStock,
+                                                                                     List<Long> excludeStockIds
+    );
 }

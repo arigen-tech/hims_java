@@ -1811,6 +1811,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             throw new RuntimeException("Error while saving IPD document: " + e.getMessage(), e);
         }
     }
+
+
     private String getFileExtension(String fileName) {
 
         if (fileName == null || !fileName.contains(".")) {
