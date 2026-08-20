@@ -4,6 +4,7 @@ import com.hims.request.PrescriptionHeaderApproveRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.PatientPrescriptionDetailsResponse;
 import com.hims.response.PatientPrescriptionHeaderResponse;
+import com.hims.response.PrescriptionApproveHeaderResponse;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -21,7 +22,7 @@ public interface DispensaryService {
 
     ApiResponse<List<PatientPrescriptionDetailsResponse>> getPendingPrescriptionsDetailsWrtHeader(Long prescriptionHeaderId);
 
-    ApiResponse<String> approvePrescription(PrescriptionHeaderApproveRequest request);
+    ApiResponse<PrescriptionApproveHeaderResponse> approvePrescription(PrescriptionHeaderApproveRequest request);
 
     ApiResponse<String> closePendingPrescription(Long prescriptionHeaderId);
 }

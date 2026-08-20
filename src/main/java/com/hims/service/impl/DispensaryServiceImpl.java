@@ -8,10 +8,7 @@ import com.hims.request.PrescriptionDetailsApproveRequest;
 import com.hims.request.PrescriptionHeaderApproveRequest;
 import com.hims.request.StoreStockLedgerRequest;
 import com.hims.request.UpdateStoreItemBatchStockRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.PatientPrescriptionDetailsResponse;
-import com.hims.response.PatientPrescriptionHeaderResponse;
-import com.hims.response.StockUpdateResponse;
+import com.hims.response.*;
 import com.hims.service.DispensaryService;
 import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
@@ -132,7 +129,7 @@ public class DispensaryServiceImpl implements DispensaryService {
 
     @Override
     @Transactional
-    public ApiResponse<String> approvePrescription(PrescriptionHeaderApproveRequest request) {
+    public ApiResponse<PrescriptionApproveHeaderResponse> approvePrescription(PrescriptionHeaderApproveRequest request) {
 
         try {
 
@@ -196,11 +193,22 @@ public class DispensaryServiceImpl implements DispensaryService {
             billingHeaderRepository.save(billingHeader);
 
 
+            boolean nisRequired = false;
             if (request.getPrescriptionDetails() != null
                     && !request.getPrescriptionDetails().isEmpty()) {
 
                 for (PrescriptionDetailsApproveRequest detailRequest
                         : request.getPrescriptionDetails()) {
+
+                    BigDecimal prescribedQty = detailRequest.getTotal();
+                    BigDecimal issuedQty = detailRequest.getIssuedQty();
+
+                    if (prescribedQty != null
+                            && issuedQty != null
+                            && issuedQty.compareTo(prescribedQty) < 0) {
+
+                        nisRequired = true;
+                    }
 
 
                     PatientPrescriptionDt detail;
@@ -231,6 +239,7 @@ public class DispensaryServiceImpl implements DispensaryService {
                                     "Prescription detail does not belong to prescription header"
                             );
                         }
+                        detail.setInstruction(detail.getInstruction());
 
                     } else {
 
@@ -304,12 +313,30 @@ public class DispensaryServiceImpl implements DispensaryService {
 
                 }
             }
+            if (nisRequired && header.getNisNo() == null) {
+
+                String nisNumber = transactionSequenceService.generateTransactionNumber(
+                        HMISTransaction.NIS_NO,
+                        authUtil.getCurrentUser().getHospital().getId()
+                );
+
+                header.setNisNo(nisNumber);
+                patientPrescriptionHdRepository.save(header);
+
+                log.info(
+                        "NIS generated for prescription header ID {}: {}",
+                        header.getPrescriptionHdId(),
+                        nisNumber
+                );
+            }
 
             log.info("Approving prescription ended with header ID: {}",
                     request.getPrescriptionHeaderId());
 
             return ResponseUtils.createSuccessResponse(
-                    "Prescription approved successfully",
+                    new PrescriptionApproveHeaderResponse(
+                            header.getPrescriptionHdId(), header.getNisNo()
+                    ),
                     new TypeReference<>() {}
             );
 
