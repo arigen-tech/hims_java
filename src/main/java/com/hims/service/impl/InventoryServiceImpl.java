@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
+import com.hims.projection.BatchNameForStockProjection;
 import com.hims.projection.IndentDetailsForIssueProjection;
 import com.hims.projection.MasStoreItemProjection;
 import com.hims.request.*;
@@ -313,13 +315,10 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public ApiResponse<List<BatchNameForStockResponse>> getBatchesFromItemId(Long itemId,Long hospitalId,Long departmentId) {
+    public ApiResponse<List<BatchNameForStockResponse>> getBatchesFromItemId(Long itemId,Long hospitalId,Long departmentId,Long minimumCLosingStock) {
         try {
             log.info("getBatchesFromItemId method started...");
-
-//            MasStoreItem masStoreItem = storeItemRepository.findById(itemId).orElseThrow(() -> new RuntimeException("Invalid Item ID , Item not found in MasStoreItem"));
-//            List<String> batches = storeItemBatchStockRepository.findByItemIdAndHospitalId_IdAndDepartmentId_Id(masStoreItem,hospitalId,departmentId).stream().map(StoreItemBatchStock::getBatchNo).toList();
-            List<BatchNameForStockResponse> batches = storeItemBatchStockRepository.findBatchNameForStockWithOptionalExpiry(itemId, hospitalId, departmentId, LocalDate.now().plusDays(drugExpDay));
+            List<BatchNameForStockResponse> batches = storeItemBatchStockRepository.findBatchNameForStockWithOptionalExpiry(itemId, hospitalId, departmentId, LocalDate.now().plusDays(drugExpDay),minimumCLosingStock);
             log.info("getBatchesFromItemId method ended...");
             return  ResponseUtils.createSuccessResponse(batches, new TypeReference<>() {});
         }catch (Exception e) {
@@ -2068,6 +2067,232 @@ public class InventoryServiceImpl implements InventoryService {
         }
     }
 
+    @Override
+    public ApiResponse<Page<UnverifiedReturnHeaderResponse>> getUnverifiedReturnHeaders(Long hospitalId,
+                                                                                  Long toDepartmentId,
+                                                                                  LocalDate fromDate,
+                                                                                  LocalDate toDate,
+                                                                                  Long fromDepartmentId,
+                                                                                  int page,
+                                                                                  int size
+    ) {
+        try {
+            log.info("getUnverifiedReturnHeaders method started...");
+            LocalDateTime returnFromDate=null;
+            LocalDateTime returnToDate=null;
+
+            if(fromDate!=null){
+               returnFromDate=fromDate.atStartOfDay();
+           }
+           if(toDate !=null){
+                returnToDate=toDate.atTime(23,59,59,999999999);
+           }
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "returnDate"));
+            Page<UnverifiedReturnHeaderResponse> unverifiedReturnHeaders = returnMRepository.getUnverifiedReturnHeaders(
+                    hospitalId,
+                    toDepartmentId,
+                    returnFromDate,
+                    returnToDate,
+                    fromDepartmentId,
+                    pageable
+            );
+
+            log.info("getUnverifiedReturnHeaders method ended...");
+            return  ResponseUtils.createSuccessResponse(unverifiedReturnHeaders, new TypeReference<>() {});
+        }catch (Exception e){
+            log.error("getUnverifiedReturnHeaders method error :: ",e);
+            return  ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<List<UnverifiedReturnDetailResponse>> getUnverifiedReturnDetails(
+            Long returnMId) {
+
+        try {
+            log.info(
+                    "getUnverifiedReturnDetails started for returnMId: {}",
+                    returnMId
+            );
+
+            List<UnverifiedReturnDetailResponse> details =
+                    storeReturnTRepository.getUnverifiedReturnDetails(returnMId);
+
+            log.info(
+                    "getUnverifiedReturnDetails completed for returnMId: {}",
+                    returnMId
+            );
+
+            return ResponseUtils.createSuccessResponse(
+                    details,
+                    new TypeReference<>() {}
+            );
+
+        } catch (Exception e) {
+
+            log.error(
+                    "getUnverifiedReturnDetails method error :: ",
+                    e
+            );
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<String> verifyReturnedIndentAtIssueDept(VerifyReturnIndentHeaderRequest request) {
+        try {
+
+            log.info("verifyReturnedIndentAtIssueDept method started ...");
+
+            Optional<StoreReturnM> byId = returnMRepository.findById(request.getReturnMId());
+            if(byId.isEmpty()){
+                return ResponseUtils.createNotFoundResponse(
+                        "Invalid Return Header ID",
+                        HttpStatus.NOT_FOUND.value()
+                );
+            }
+            StoreReturnM storeReturnM = byId.get();
+            Optional<MasDepartment> deptOpt = masDepartmentRepository.findById(request.getSourceDeptId());
+            if(deptOpt.isEmpty()){
+                return ResponseUtils.createNotFoundResponse(
+                        "Invalid Source Dept, Source Dept Not Found",
+                        HttpStatus.NOT_FOUND.value()
+                );
+            }
+            MasDepartment sourceDept = deptOpt.get();
+
+            for (VerifyReturnIndentDetailRequest detailRequest : request.getDetailRequests()){
+                Optional<StoreReturnT> returnTOpt = storeReturnTRepository.findById(detailRequest.getReturnTId());
+                if(returnTOpt.isEmpty()){
+                    return ResponseUtils.createNotFoundResponse(
+                            "Invalid Return Details ID",
+                            HttpStatus.NOT_FOUND.value()
+                    );
+                }
+                StoreReturnT storeReturnT = returnTOpt.get();
+                Optional<StoreItemBatchStock> stockOpt = storeItemBatchStockRepository.findById(detailRequest.getStockId());
+                if(stockOpt.isEmpty()){
+                    return ResponseUtils.createNotFoundResponse(
+                            "Batch stock details not found",
+                            HttpStatus.NOT_FOUND.value()
+                    );
+                }
+                StoreItemBatchStock storeItemBatchStock = stockOpt.get();
+                storeReturnT.setIsVerified(AppConstants.STATUS_Y.toLowerCase());
+                StoreReturnT savesReturnDetails = storeReturnTRepository.save(storeReturnT);
+
+                storeItemBatchStock.setClosingStock(storeItemBatchStock.getClosingStock()-detailRequest.getDamagedQty().longValue());
+                storeItemBatchStock.setLastChgBy(authUtil.getCurrentUser().getFullName());
+                storeItemBatchStock.setReturnQty(storeItemBatchStock.getReturnQty().add(detailRequest.getDamagedQty()));
+                storeItemBatchStockRepository.save(storeItemBatchStock);
+
+                updateDamagedStock(storeReturnM, sourceDept, detailRequest, storeReturnT, storeItemBatchStock);
+            }
+            List<String> allStatuses=storeReturnTRepository.getAllDetailsStatusByHeaderId(storeReturnM.getReturnMId());
+            boolean approved = allStatuses.stream().allMatch(status -> status.equalsIgnoreCase("y"));
+            if(approved){
+                storeReturnM.setStatus(AppConstants.STATUS_Y);
+                returnMRepository.save(storeReturnM);
+            }
+
+            log.info("verifyReturnedIndentAtIssueDept method ended ...");
+
+            return  ResponseUtils.createSuccessResponse("Return Indent Approved Successfully", new TypeReference<>() {});
+
+        }catch (Exception e) {
+
+            log.error(
+                    "verifyReturnedIndentAtIssueDept method error :: ",
+                    e
+            );
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<BatchNameForStockResponse> getAllStockBatchesWrtItemExceptGivenStock(Long itemId, Long hospitalId, Long departmentId, Long minimumClosingStock, List<Long> excludeStockIds) {
+
+            try {
+                log.info("getAllStockBatchesWrtItemExceptGivenStock method started...");
+
+
+                Optional<BatchNameForStockProjection> projection;
+
+                if (excludeStockIds == null || excludeStockIds.isEmpty()) {
+
+                    projection = storeItemBatchStockRepository.getNearlyExpiredBatchStockWrtItem(
+                            itemId,
+                            hospitalId,
+                            departmentId,
+                            LocalDate.now().plusDays(drugExpDay),
+                            minimumClosingStock
+                    );
+
+                } else {
+
+                    projection = storeItemBatchStockRepository.getAllStockBatchesWrtItemExceptGivenStock(
+                            itemId,
+                            hospitalId,
+                            departmentId,
+                            LocalDate.now().plusDays(drugExpDay),
+                            minimumClosingStock,
+                            excludeStockIds
+                    );
+                }
+
+
+                if (projection.isEmpty()){
+                    throw new SDDException("Batches",HttpStatus.NOT_FOUND.value(), "No Batches Available");
+                }
+                log.info("getAllStockBatchesWrtItemExceptGivenStock method ended...");
+                BatchNameForStockResponse batchNameForStockResponse = mapToBatchNameForStockResponse(projection.get());
+                return  ResponseUtils.createSuccessResponse(batchNameForStockResponse, new TypeReference<>() {});
+            }catch (SDDException e){
+                return  ResponseUtils.createNotFoundResponse(e.getMessage(),e.getStatus());
+            }catch (Exception e) {
+                log.error("getAllStockBatchesWrtItemExceptGivenStock method error :: ",e);
+                return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG,HttpStatus.INTERNAL_SERVER_ERROR.value());
+            }
+        }
+
+
+    private void updateDamagedStock(StoreReturnM storeReturnM,
+                                    MasDepartment sourceDept,
+                                    VerifyReturnIndentDetailRequest detailRequest,
+                                    StoreReturnT storeReturnT,
+                                    StoreItemBatchStock storeItemBatchStock) {
+        StoreItemDamagedStock damagedStock= new StoreItemDamagedStock();
+        damagedStock.setApprovedBy(authUtil.getCurrentUser().getFullName());
+        damagedStock.setApprovedDate(LocalDateTime.now());
+        damagedStock.setBrandName(storeItemBatchStock.getBrandId().getBrandName());
+        damagedStock.setCreatedBy(authUtil.getCurrentUser().getFullName());
+        damagedStock.setDamagedQty(detailRequest.getDamagedQty());
+        damagedStock.setLastUpdateDate(LocalDateTime.now());
+        damagedStock.setLastUpdatedBy(authUtil.getCurrentUser().getFullName());
+        damagedStock.setManufacturerName(storeItemBatchStock.getManufacturerId().getManufacturerName());
+        damagedStock.setMasStoreItem(storeItemBatchStock.getItemId());
+        damagedStock.setReason(detailRequest.getReason());
+        damagedStock.setStoreReturnM(storeReturnM);
+        damagedStock.setStoreReturnT(storeReturnT);
+        damagedStock.setSourceDepartment(sourceDept);
+    }
+
     public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
         for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {
             if (dtRequest.getBalanceId() == null) {
@@ -2848,6 +3073,24 @@ public class InventoryServiceImpl implements InventoryService {
         res.setRemark(m.getRemarks()); // Add remarks to response
 
         return res;
+    }
+
+    private BatchNameForStockResponse mapToBatchNameForStockResponse(
+            BatchNameForStockProjection projection) {
+
+        if (projection == null) {
+            return null;
+        }
+
+        return new BatchNameForStockResponse(
+                projection.getStockId(),
+                projection.getBatchName(),
+                projection.getDom(),
+                projection.getDoe(),
+                projection.getBatchStock(),
+                projection.getAvailableStock(),
+                projection.getManufacturerId()
+        );
     }
 
 

@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.*;
+import com.hims.projection.BatchNameForStockProjection;
 import com.hims.response.BatchNameForStockResponse;
 import com.hims.response.OpeningBalanceStockResponse;
 import com.hims.response.OpeningBalanceStockResponseDto;
@@ -184,7 +185,10 @@ FROM StoreItemBatchStock s
 WHERE s.itemId.itemId = :itemId
   AND s.hospitalId.id = :hospitalId
   AND s.departmentId.id = :departmentId
-  AND s.closingStock > 0
+  AND (
+        :minimumClosingStock IS NULL
+         OR s.closingStock > :minimumClosingStock
+      )
   AND COALESCE(:expDate, s.expiryDate) <= s.expiryDate
   ORDER BY s.expiryDate ASC
 """)
@@ -192,7 +196,75 @@ WHERE s.itemId.itemId = :itemId
             @Param("itemId") Long itemId,
             @Param("hospitalId") Long hospitalId,
             @Param("departmentId") Long departmentId,
-            @Param("expDate") LocalDate expDate
+            @Param("expDate") LocalDate expDate,
+            @Param("minimumClosingStock") Long minimumCLosingStock
+    );
+
+
+    @Query(value = """
+    SELECT
+        s.stock_id AS stockId,
+        s.batch_no AS batchName,
+        s.manufacture_date AS dom,
+        s.expiry_date AS doe,
+        s.closing_stock AS batchStock,
+        (
+            SELECT COALESCE(SUM(s2.closing_stock), 0)
+            FROM store_item_batch_stock s2
+            WHERE s2.item_id = :itemId
+              AND s2.hospital_id = :hospitalId
+              AND s2.department_id = :departmentId
+              AND COALESCE(:expDate, s2.expiry_date) <= s2.expiry_date
+        ) AS availableStock,
+        s.manufacturer_id AS manufacturerId
+    FROM store_item_batch_stock s
+    WHERE s.item_id = :itemId
+      AND s.hospital_id = :hospitalId
+      AND s.department_id = :departmentId
+      AND s.closing_stock > :minimumClosingStock
+    ORDER BY s.expiry_date ASC
+    LIMIT 1
+    """, nativeQuery = true)
+    Optional<BatchNameForStockProjection> getNearlyExpiredBatchStockWrtItem(
+            @Param("itemId") Long itemId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("expDate") LocalDate expDate,
+            @Param("minimumClosingStock") Long minimumClosingStock
+    );
+
+    @Query(value = """
+    SELECT
+        s.stock_id AS stockId,
+        s.batch_no AS batchName,
+        s.manufacture_date AS dom,
+        s.expiry_date AS doe,
+        s.closing_stock AS batchStock,
+        (
+            SELECT COALESCE(SUM(s2.closing_stock), 0)
+            FROM store_item_batch_stock s2
+            WHERE s2.item_id = :itemId
+              AND s2.hospital_id = :hospitalId
+              AND s2.department_id = :departmentId
+              AND COALESCE(:expDate, s2.expiry_date) <= s2.expiry_date
+        ) AS availableStock,
+        s.manufacturer_id AS manufacturerId
+    FROM store_item_batch_stock s
+    WHERE s.item_id = :itemId
+      AND s.hospital_id = :hospitalId
+      AND s.department_id = :departmentId
+      AND s.closing_stock > :minimumClosingStock
+      AND s.stock_id NOT IN (:excludeStockIds)
+    ORDER BY s.expiry_date ASC
+    LIMIT 1
+    """, nativeQuery = true)
+    Optional<BatchNameForStockProjection> getAllStockBatchesWrtItemExceptGivenStock(
+            @Param("itemId") Long itemId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("expDate") LocalDate expDate,
+            @Param("minimumClosingStock") Long minimumClosingStock,
+            @Param("excludeStockIds") List<Long> excludeStockIds
     );
 
     @Query("""
