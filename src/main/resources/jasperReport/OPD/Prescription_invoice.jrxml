@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Prescription_invoice" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="9dc8aef2-a407-46f5-a6e5-8dbed0a3d192">
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<parameter name="prescriptionId" class="java.lang.Integer"/>
-	<parameter name="path" class="java.lang.String">
-		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
-	</parameter>
+	<parameter name="path" class="java.lang.String"/>
 	<queryString language="SQL">
 		<![CDATA[SELECT
     bh.bill_hd_id,
-    pph.prescription_hd_id ,
+    pph.prescription_hd_id,
     bh.hospital_name,
     bh.invoice_no,
     TO_CHAR(bh.billing_date, 'DD/MM/YYYY HH12:MI AM') AS invoice_date,
@@ -26,7 +24,7 @@
     pph.doctor_name,
     md.department_name,
     bd.item_name AS medicine_name,
-    msi.drug_schedule ,
+    msi.drug_schedule,
     msi.hsn_code,
     ppd.batch_no,
     TO_CHAR(ppd.expiry_date, 'Mon-YYYY') AS expiry_date,
@@ -44,12 +42,20 @@
 FROM billing_header bh
 INNER JOIN billing_details bd ON bd.bill_hd_id = bh.bill_hd_id
 LEFT JOIN patient p ON p.patient_id = bh.patient_id
-LEFT JOIN patient_prescription_hd pph ON pph.prescription_hd_id = bh.prescription_hd_id and pph.patient_id = bh.patient_id 
-left join patient_prescription_dt ppd on ppd.prescription_hd_id = pph.prescription_hd_id and ppd.item_id = bd.item_id
+LEFT JOIN patient_prescription_hd pph ON pph.prescription_hd_id = bh.prescription_hd_id AND pph.patient_id = bh.patient_id
+LEFT JOIN (
+    SELECT DISTINCT ON (prescription_hd_id, item_id)
+        prescription_hd_id,
+        item_id,
+        batch_no,
+        expiry_date
+    FROM patient_prescription_dt
+    ORDER BY prescription_hd_id, item_id, prescription_dt_id
+) ppd ON ppd.prescription_hd_id = pph.prescription_hd_id AND ppd.item_id = bd.item_id
 LEFT JOIN mas_department md ON md.department_id = pph.department_id
-left join mas_store_item msi on msi.item_id = bd.item_id 
-where bd.service_category_id  = 3
-and pph.prescription_hd_id = $P{prescriptionId}]]>
+LEFT JOIN mas_store_item msi ON msi.item_id = bd.item_id
+WHERE bd.service_category_id = 3
+AND pph.prescription_hd_id = $P{prescriptionId}]]>
 	</queryString>
 	<field name="bill_hd_id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="bill_hd_id"/>
