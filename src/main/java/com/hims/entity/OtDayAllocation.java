@@ -37,7 +37,7 @@ public class OtDayAllocation {
     private LocalTime endTime;
 
     @Column(name = "status", nullable = false, length = 1)
-    private String status = "Y";
+    private String status;
 
     @Column(name = "last_chg_by")
     private Long lastChgBy;

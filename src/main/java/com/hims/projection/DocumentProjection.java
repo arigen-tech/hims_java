@@ -5,4 +5,5 @@ public interface DocumentProjection {
     String getDocumentType();
     String getDocumentNotes();
     String getFileName();
+    String getFilePath();
 }
