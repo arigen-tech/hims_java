@@ -232,7 +232,7 @@ public class LabReportServiceImpl implements LabReportService {
 
             Specification<DgOrderDt> spec = filterOrderTrackReport(patientName, phnNum, fromDate, toDate);
 
-            Sort sort = Sort.by(Sort.Direction.DESC, "orderhdId.orderDate");
+            Sort sort = Sort.by(Sort.Direction.DESC, "orderHd.orderDate");
 
             List<DgOrderDt> entities = dgOrderDtRepository.findAll(spec,sort);
 
@@ -258,7 +258,7 @@ public class LabReportServiceImpl implements LabReportService {
             log.info("getIncompleteInvestigationReports() Started...");
             List<Long> orderStatues = List.of(sampleCollectStatusId, sampleRejectStatusId, sampleValidateStatusId, resultEnteredStatusId);
             Specification<DgOrderDt> spec = filterIncompleteInvestigationReports(subChargeCodeId,fromDate, toDate,orderStatues);
-            Sort sort= Sort.by(Sort.Direction.DESC,"orderhdId.orderDate");
+            Sort sort= Sort.by(Sort.Direction.DESC,"orderHd.orderDate");
             List<DgOrderDt> all = dgOrderDtRepository.findAll(spec, sort);
             log.info("getIncompleteInvestigationReports() Ended...");
             return  ResponseUtils.createSuccessResponse(all.stream().map(this::mapToIncompleteReportResponse).toList(), new TypeReference<>() {});

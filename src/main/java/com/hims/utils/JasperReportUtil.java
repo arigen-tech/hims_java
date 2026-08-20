@@ -17,6 +17,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
+import javax.sql.DataSource;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -31,27 +32,32 @@ public class JasperReportUtil {
             String basePath,
             String jasperName,
             Map<String, Object> parameters,
-            Connection connection
+            DataSource dataSource
     ) throws Exception {
 
-        InputStream reportStream =
-                JasperReportUtil.class.getResourceAsStream(
-                        basePath + jasperName + ".jasper");
+        try (Connection connection = dataSource.getConnection();
+             InputStream reportStream =
+                     JasperReportUtil.class.getResourceAsStream(
+                             basePath + jasperName + ".jasper")) {
 
-        if (reportStream == null) {
-            throw new FileNotFoundException("Jasper file not found: " + jasperName);
+            if (reportStream == null) {
+                throw new FileNotFoundException(
+                        "Jasper file not found: " + jasperName
+                );
+            }
+
+            JasperReport jasperReport =
+                    (JasperReport) JRLoader.loadObject(reportStream);
+
+            JasperPrint jasperPrint =
+                    JasperFillManager.fillReport(
+                            jasperReport,
+                            parameters,
+                            connection
+                    );
+
+            return JasperExportManager.exportReportToPdf(jasperPrint);
         }
-
-        JasperReport jasperReport =
-                (JasperReport) JRLoader.loadObject(reportStream);
-
-        JasperPrint jasperPrint =
-                JasperFillManager.fillReport(jasperReport, parameters, connection);
-
-        byte[] pdfData =
-                JasperExportManager.exportReportToPdf(jasperPrint);
-
-        return pdfData;
     }
 
     public static void printJasperReport(JasperPrint jasperPrint) {
@@ -94,12 +100,31 @@ public class JasperReportUtil {
         }
     }
 
-    public static JasperPrint getJasperPrintObject(String basePath, String reportName, Map<String, Object> params, Connection conn) throws Exception {
-        InputStream report = JasperReportUtil.class.getResourceAsStream(basePath + reportName + ".jasper");
-        if (report == null) {
-            throw new RuntimeException("Jasper report not found: " + basePath + reportName);
+    public static JasperPrint getJasperPrintObject(
+            String basePath,
+            String reportName,
+            Map<String, Object> params,
+            DataSource dataSource
+    ) throws Exception {
+
+        try (Connection connection = dataSource.getConnection();
+             InputStream report =
+                     JasperReportUtil.class.getResourceAsStream(
+                             basePath + reportName + ".jasper")) {
+
+            if (report == null) {
+                throw new FileNotFoundException(
+                        "Jasper report not found: "
+                                + basePath + reportName
+                );
+            }
+
+            return JasperFillManager.fillReport(
+                    report,
+                    params,
+                    connection
+            );
         }
-        return JasperFillManager.fillReport(report, params, conn);
     }
 
     public static ResponseEntity<byte[]> generateExcelReport(

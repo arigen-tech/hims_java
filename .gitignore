@@ -1,5 +1,6 @@
 # IntelliJ IDEA specific files
 .idea/
+.vscode/
 .aiassistant/
 # Build output (Maven or Gradle)
 target/
