@@ -87,4 +87,7 @@ public class StoreReturnT {
     @ManyToOne
     @JoinColumn(name = "item_id", referencedColumnName = "item_id")
     private MasStoreItem masStoreItem;
+
+    @Column(name = "is_verified",length = 1)
+    private String isVerified;
 }
