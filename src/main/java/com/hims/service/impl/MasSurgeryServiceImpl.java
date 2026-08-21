@@ -61,6 +61,35 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
     }
 
     @Override
+    public ApiResponse<List<MasSurgeryResponse>> getMasSurgeryBySurgeryLevelAndFlag(String surgeryLevel, int flag) {
+        try {
+            String activeStatus = "";
+            if (flag != 0 && flag != 1) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Invalid flag value", HttpStatus.BAD_REQUEST.value());
+            }
+            if(flag == 1) {
+                activeStatus = AppConstants.STATUS_Y;
+            }else if(flag == 0) {
+                activeStatus = AppConstants.STATUS_N;
+            }
+
+            List<MasSurgery> list = repository.findBySurgeryLevelAndFlag(surgeryLevel, activeStatus);
+
+            return ResponseUtils.createSuccessResponse(list.stream().map(this::toResponse).toList(),
+                    new TypeReference<>() {}
+            );
+
+        } catch (Exception e) {
+            log.error("Error fetching surgery by code", e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
     public ApiResponse<MasSurgeryResponse> getByIdMasSurgery(Long id) {
         try {
             return repository.findById(id)

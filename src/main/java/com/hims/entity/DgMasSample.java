@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "dg_mas_sample")
 @Data
@@ -26,7 +28,7 @@ public class DgMasSample {
     private String lastChgBy;
 
     @Column(name = "last_chg_date", length = 8 )
-    private Instant lastChgDate;
+    private LocalDateTime lastChgDate;
 
 
 }

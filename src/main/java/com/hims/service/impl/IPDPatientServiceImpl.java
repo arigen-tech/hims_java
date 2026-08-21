@@ -3863,8 +3863,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             User informedDoctor = null;
             if (AppConstants.STATUS_Y.equalsIgnoreCase(request.getDoctorInformed())) {
                 if (request.getInformedDoctorId() == null) {
-                    return new ApiResponse<>(null, "Informed doctor ID is required when doctor informed is 'Y'", 400);
-                }
+                    return new ApiResponse<>(
+                            HttpStatus.OK.value(),
+                            "Adverse reaction saved successfully",
+                            null
+                    );                }
 
                 informedDoctor = userRepo.findById(request.getInformedDoctorId())
                         .orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + request.getInformedDoctorId()));
@@ -3895,7 +3898,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         } catch (Exception e) {
 
             log.error("Error while saving adverse reaction", e);
-            return new ApiResponse<>(null, "Failed to save adverse reaction: " + e.getMessage(),400);
+            return new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    "Failed to save adverse reaction: ",
+                    null
+            );
         }
     }
 

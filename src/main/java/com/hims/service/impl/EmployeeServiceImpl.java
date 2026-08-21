@@ -236,7 +236,7 @@ public ApiResponse<Page<MasEmployeeResponse>> getAllEmployees(String employeeNam
 
     } catch (Exception e) {
         log.error("Error while fetching employees: {}", e.getMessage(), e);
-        return new ApiResponse<>(null, AppConstants.INTERNAL_SERVER_ERR_MSG, 500);
+        return new ApiResponse<>(HttpStatus.BAD_GATEWAY.value(), AppConstants.INTERNAL_SERVER_ERR_MSG, null);
     }
 }
 

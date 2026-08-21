@@ -35,4 +35,13 @@ public interface MasSurgeryRepository extends JpaRepository<MasSurgery, Long> {
     Page<MasSurgery> searchMasSurgery(@Param("status") String status,
                                       @Param("search") String search,
                                       Pageable pageable);
+
+   @Query("""
+    SELECT s FROM MasSurgery s
+    WHERE LOWER(s.surgeryLevel) = LOWER(:surgeryLevel)
+    AND (LOWER(s.status) = LOWER(:activeStatus))
+    ORDER BY s.surgeryName ASC
+""")
+   List<MasSurgery> findBySurgeryLevelAndFlag(@Param("surgeryLevel") String surgeryLevel,
+                                              @Param("activeStatus") String activeStatus);
 }

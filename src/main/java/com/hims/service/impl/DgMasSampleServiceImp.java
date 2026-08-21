@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.DgMasSample;
 import com.hims.entity.User;
 import com.hims.entity.repository.DgMasSampleRepository;
@@ -10,6 +11,7 @@ import com.hims.response.ApiResponse;
 import com.hims.response.DgMasSampleResponse;
 import com.hims.service.DgMasSampleService;
 import com.hims.utils.ResponseUtils;
+import net.bytebuddy.asm.Advice;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -46,7 +49,7 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
             dgMasSample.setLastChgBy(currentUser.getUsername());
-            dgMasSample.setLastChgDate(Instant.now());
+            dgMasSample.setLastChgDate(LocalDateTime.now());
             log.info("Adding DgMasSample Process Ended...");
             return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save(dgMasSample)), new TypeReference<>() {
             });
@@ -82,7 +85,7 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
         try {
             List<DgMasSample> dpUom;
             if(flag==1){
-                dpUom=dgMasSampleRepository.findByStatusIgnoreCaseOrderBySampleDescriptionAsc("y");
+                dpUom=dgMasSampleRepository.findByStatusIgnoreCaseOrderBySampleDescriptionAsc(AppConstants.STATUS_Y.toLowerCase());
             }else if(flag==0){
                 dpUom=dgMasSampleRepository.findAllByOrderByStatusDescLastChgDateDesc();
             }else{
@@ -145,7 +148,7 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
                 newDgMas.setLastChgBy(currentUser.getUsername());
-                newDgMas.setLastChgDate(Instant.now());
+                newDgMas.setLastChgDate(LocalDateTime.now());
                 log.info("MasSample updating process ended...");
                 return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save( newDgMas)), new TypeReference<>() {
                 });
