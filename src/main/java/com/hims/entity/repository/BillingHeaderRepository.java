@@ -275,71 +275,78 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
 
 
     @Query(value = """
-            SELECT 
-                p.uhid_no AS registrationNo,
-                p.p_mobile_number AS mobileNumber,
-                TRIM(
-                    COALESCE(p.p_fn,'') || ' ' ||
-                    COALESCE(p.p_mn,'') || ' ' ||
-                    COALESCE(p.p_ln,'')
-                ) AS patientName,
-            
-                p.p_dob AS age,
-                g.gender_name AS genderName,
-                CAST(v.visit_date AS TEXT) AS appointmentDate,
-                bh.net_amount AS netAmount,
-                bh.bill_hd_id AS billingHeaderId,
-                bh.patient_id AS patientId,
-                bh.hdorder_id AS orderId,
-                COALESCE(rod.appointment_date,oh.appointment_date) AS appointmentDate,
-                COALESCE(oh.order_date, rod.order_date) AS orderDate
-            FROM billing_header bh
-            JOIN patient p ON p.patient_id = bh.patient_id
-            LEFT JOIN mas_gender g ON g.id = p.p_gender_id
-            LEFT JOIN visit v ON v.visit_id = bh.visit_id
-            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
-            LEFT JOIN dg_orderhd oh ON bh.hdorder_id = oh.orderhd_id
-            
-            WHERE LOWER(bh.payment_status) 
-                  IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
-            AND bh.service_category_id = :serviceCategoryId
-            
-            AND (:patientName IS NULL OR 
-                 LOWER(CONCAT(p.p_fn,' ',p.p_mn,' ',p.p_ln)) 
-                 LIKE LOWER(CONCAT('%',:patientName,'%')))
-            
-            AND (:mobileNo IS NULL OR 
-                 LOWER(p.p_mobile_number) 
-                 LIKE LOWER(CONCAT('%',:mobileNo,'%')))
-            
-            AND (:registrationNo IS NULL OR 
-                 LOWER(p.uhid_no) 
-                 LIKE LOWER(CONCAT('%',:registrationNo,'%')))
-            
-            ORDER BY v.visit_date DESC
-            """,
+        SELECT 
+            p.uhid_no AS registrationNo,
+            p.p_mobile_number AS mobileNumber,
+            TRIM(
+                COALESCE(p.p_fn,'') || ' ' ||
+                COALESCE(p.p_mn,'') || ' ' ||
+                COALESCE(p.p_ln,'')
+            ) AS patientName,
+        
+            p.p_dob AS age,
+            g.gender_name AS genderName,
+            CAST(v.visit_date AS TEXT) AS appointmentDate,
+            bh.net_amount AS netAmount,
+            bh.bill_hd_id AS billingHeaderId,
+            bh.patient_id AS patientId,
+            bh.hdorder_id AS orderId,
+            COALESCE(rod.appointment_date,oh.appointment_date) AS appointmentDate,
+            COALESCE(oh.order_date, rod.order_date) AS orderDate
+        FROM billing_header bh
+        JOIN patient p ON p.patient_id = bh.patient_id
+        LEFT JOIN mas_gender g ON g.id = p.p_gender_id
+        LEFT JOIN visit v ON v.visit_id = bh.visit_id
+        LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
+        LEFT JOIN dg_orderhd oh ON bh.hdorder_id = oh.orderhd_id
+        
+        WHERE LOWER(bh.payment_status) 
+              IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
+        AND bh.service_category_id = :serviceCategoryId
+        
+        AND (:patientName IS NULL OR 
+             LOWER(CONCAT(p.p_fn,' ',p.p_mn,' ',p.p_ln)) 
+             LIKE LOWER(CONCAT('%',:patientName,'%')))
+        
+        AND (:mobileNo IS NULL OR 
+             LOWER(p.p_mobile_number) 
+             LIKE LOWER(CONCAT('%',:mobileNo,'%')))
+        
+        AND (:registrationNo IS NULL OR 
+             LOWER(p.uhid_no) 
+             LIKE LOWER(CONCAT('%',:registrationNo,'%')))
+        
+        AND (:excludedVisitStatus IS NULL OR 
+             LOWER(v.visit_status) != LOWER(:excludedVisitStatus))
+        
+        ORDER BY v.visit_date DESC
+        """,
 
             countQuery = """
-                    SELECT COUNT(*)
-                    FROM billing_header bh
-                    JOIN patient p ON p.patient_id = bh.patient_id
-                    
-                    WHERE LOWER(bh.payment_status) 
-                          IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
-                    AND bh.service_category_id = :serviceCategoryId
-                    
-                    AND (:patientName IS NULL OR 
-                         LOWER(CONCAT(p.p_fn,' ',p.p_mn,' ',p.p_ln)) 
-                         LIKE LOWER(CONCAT('%',:patientName,'%')))
-                    
-                    AND (:mobileNo IS NULL OR 
-                         LOWER(p.p_mobile_number) 
-                         LIKE LOWER(CONCAT('%',:mobileNo,'%')))
-                    
-                    AND (:registrationNo IS NULL OR 
-                         LOWER(p.uhid_no) 
-                         LIKE LOWER(CONCAT('%',:registrationNo,'%')))
-                    """,
+        SELECT COUNT(*)
+        FROM billing_header bh
+        JOIN patient p ON p.patient_id = bh.patient_id
+        LEFT JOIN visit v ON v.visit_id = bh.visit_id
+        
+        WHERE LOWER(bh.payment_status) 
+              IN (LOWER(:notPaidStatus), LOWER(:partialStatus))
+        AND bh.service_category_id = :serviceCategoryId
+        
+        AND (:patientName IS NULL OR 
+             LOWER(CONCAT(p.p_fn,' ',p.p_mn,' ',p.p_ln)) 
+             LIKE LOWER(CONCAT('%',:patientName,'%')))
+        
+        AND (:mobileNo IS NULL OR 
+             LOWER(p.p_mobile_number) 
+             LIKE LOWER(CONCAT('%',:mobileNo,'%')))
+        
+        AND (:registrationNo IS NULL OR 
+             LOWER(p.uhid_no) 
+             LIKE LOWER(CONCAT('%',:registrationNo,'%')))
+        
+        AND (:excludedVisitStatus IS NULL OR 
+             LOWER(v.visit_status) != LOWER(:excludedVisitStatus))
+        """,
             nativeQuery = true)
     <T> Page<T> findPendingBillingByCategoryId(
             @Param("serviceCategoryId") Long serviceCategoryId,
@@ -348,6 +355,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             @Param("registrationNo") String registrationNo,
             @Param("notPaidStatus") String notPaidStatus,
             @Param("partialStatus") String partialStatus,
+            @Param("excludedVisitStatus") String excludedVisitStatus,
             Pageable pageable,
             Class<T> type);
 

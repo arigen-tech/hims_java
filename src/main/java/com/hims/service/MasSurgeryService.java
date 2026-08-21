@@ -11,6 +11,8 @@ public interface MasSurgeryService {
 
     ApiResponse<MasSurgeryResponse> getByIdMasSurgery(Long id);
 
+    ApiResponse<List<MasSurgeryResponse>> getMasSurgeryBySurgeryLevelAndFlag(String surgeryLevel, int flag);
+
     ApiResponse<MasSurgeryResponse> createMasSurgery(MasSurgeryRequest request);
 
     ApiResponse<MasSurgeryResponse> updateMasSurgery(Long id, MasSurgeryRequest request);

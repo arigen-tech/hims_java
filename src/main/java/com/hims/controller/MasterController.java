@@ -310,6 +310,8 @@ public class MasterController {
     @Autowired
     private MasSurgeryPricingService masSurgeryPricingService;
     @Autowired
+    private OtDayAllocationService otDayAllocationService;
+    @Autowired
     private MasAdmissionCategoryService masAdmissionCategoryService;
     @Autowired
     private BillingTemplateService billingTemplateService;
@@ -4905,6 +4907,13 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
     @GetMapping("masSurgery/getAll/{flag}")
     public ResponseEntity<ApiResponse<List<MasSurgeryResponse>>> getAllMasSurgery(@PathVariable int flag) {
         return ResponseEntity.ok(masSurgeryService.getAllMasSurgery(flag));
+    }
+
+    @GetMapping("masSurgery/getBySurgeryLevel/{surgeryLevel}/{flag}")
+    public ResponseEntity<ApiResponse<List<MasSurgeryResponse>>> getMasSurgeryBySurgeryLevel(
+            @PathVariable String surgeryLevel,
+            @PathVariable int flag) {
+        return ResponseEntity.ok(masSurgeryService.getMasSurgeryBySurgeryLevelAndFlag(surgeryLevel, flag));
     }
 
     @GetMapping("masSurgery/getById/{id}")

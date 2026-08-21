@@ -106,6 +106,7 @@ public class OpdPatientDetailCreateRequest {
     private OpdObgDetailsRequest opdObgDetailsRequest;
     private OpdEntDetailsRequest entExaminationDetails;
     private PregnancyDetails pregnancyDetails;
+    private SurgeryAdviceRequestDTO surgeryAdvice;
 
 
 

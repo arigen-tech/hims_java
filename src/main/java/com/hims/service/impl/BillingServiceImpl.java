@@ -443,6 +443,7 @@ public class BillingServiceImpl implements BillingService {
                                 registrationNo,
                                 notPaid,
                                 partialPaid,
+                                AppConstants.VISIT_STATUS_CANCELLED.toLowerCase(),
                                 pageable,
                                 LabBillingProjection.class
                         );
@@ -496,8 +497,10 @@ public class BillingServiceImpl implements BillingService {
                                 registrationNo,
                                 notPaid,
                                 partialPaid,
+                                AppConstants.VISIT_STATUS_CANCELLED.toLowerCase(),
                                 pageable,
                                 RadiologyBillingProjection.class
+
                         );
 
                 List<RadiologyBillingResponse> response = billingHeaders.getContent()
