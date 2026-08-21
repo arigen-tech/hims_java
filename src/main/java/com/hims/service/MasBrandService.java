@@ -17,4 +17,7 @@ public interface MasBrandService {
     ApiResponse<MasBrandResponse> findById(Long id);
 
     ApiResponse<MasBrandResponse> changeMasBrandStatus(Long id, String status);
+
+    ApiResponse<List<MasBrandResponse>> getBrandsWrtManufacturerAndItemTypeCode(Long manufacturerId,
+                                                                                String itemTypeCode);
 }
