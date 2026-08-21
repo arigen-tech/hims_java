@@ -114,17 +114,20 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
             var allocation = otDayAllocationRepository.findByOtAndDepartmentAndDayAndTimeRange(otId, departmentId, dayOfWeek, startTime, AppConstants.STATUS_Y.toLowerCase());
 
             if (allocation.isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                        },
                         "The OT is not configured for this day",
                         org.springframework.http.HttpStatus.NOT_FOUND.value());
             }
 
             return ResponseUtils.createSuccessResponse("OT is available and configured for the requested time slot",
-                    new TypeReference<>() {});
+                    new TypeReference<>() {
+                    });
 
         } catch (Exception e) {
             log.error("Error checking OT availability", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     AppConstants.INTERNAL_SERVER_ERR_MSG,
                     org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -136,12 +139,14 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
         try {
             OtDayAllocation entity = otDayAllocationRepository.findById(id).orElse(null);
             if (entity == null) {
-                return ResponseUtils.createNotFoundResponse("OT Day Allocation not found", HttpStatus.NOT_FOUND );
+                return ResponseUtils.createNotFoundResponse("OT Day Allocation not found", HttpStatus.NOT_FOUND);
             }
-            return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Error fetching OT Day Allocation id: {}", id, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -154,7 +159,8 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
                 return ResponseUtils.createNotFoundResponse("OT Day Allocation not found", HttpStatus.NOT_FOUND);
             }
             if (!status.equalsIgnoreCase(AppConstants.STATUS_Y.toLowerCase()) && !status.equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status value and value should be y and n", 400);
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                }, "Invalid status value and value should be y and n", 400);
             }
 
             User currentUser = authUtil.getCurrentUser();
@@ -163,13 +169,15 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
             entity.setLastChgDate(LocalDateTime.now());
             otDayAllocationRepository.save(entity);
 
-            return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {
+            });
 
         } catch (Exception e) {
 
             log.error("Error changing status for OT Day Allocation id: {}", id, e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -180,7 +188,7 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
             User currentUser = authUtil.getCurrentUser();
             OtDayAllocation entity = otDayAllocationRepository.findById(id).orElse(null);
             if (entity == null) {
-                return ResponseUtils.createNotFoundResponse("OT Day Allocation not found",HttpStatus.NOT_FOUND);
+                return ResponseUtils.createNotFoundResponse("OT Day Allocation not found", HttpStatus.NOT_FOUND);
             }
             MasOperationTheatre operationTheatre = masOperationTheatreRepository.findById(request.getOtId()).orElse(null);
             if (operationTheatre == null) {
