@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasDistrict;
 import com.hims.entity.MasHSN;
 import com.hims.entity.MasManufacturer;
@@ -8,15 +9,15 @@ import com.hims.entity.User;
 import com.hims.entity.repository.MasHsnRepository;
 import com.hims.entity.repository.MasManufacturerRepository;
 import com.hims.entity.repository.UserRepo;
+import com.hims.exception.SDDException;
 import com.hims.request.MasManufacturerRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.MasDistrictResponse;
-import com.hims.response.MasHsnResponse;
+import com.hims.response.*;
 import com.hims.service.MasManufacturerService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,18 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
     private static final Logger log = LoggerFactory.getLogger(MasGenderServiceImpl.class);
     @Autowired
     UserRepo userRepo;
+
+    @Value("${drugSectionCode}")
+    private String drugSectionCode;
+
+    @Value("${nonDrugSectionCode}")
+    private String nonDrugSectionCode;
+
+    @Value("${medicalConsumableItemTypeCode}")
+    private String medicalConsumableItemTypeCode;
+
+    @Value("${medicalNonConsumableItemTypeCode}")
+    private String medicalNonConsumableItemTypeCode;
 
 
     private User getCurrentUser() {
@@ -164,6 +177,41 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
         } catch (Exception e) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<List<MasManufacturerResponse>> getMasManufacturerWrtItemTypeCode(String itemTypeCode) {
+        try {
+            log.info("getBrandsWrtManufacturerAndItemTypeCode method started ...");
+
+            if(drugSectionCode.equalsIgnoreCase(itemTypeCode)){
+                itemTypeCode=medicalConsumableItemTypeCode;
+            }else if(nonDrugSectionCode.equalsIgnoreCase(itemTypeCode)){
+                itemTypeCode=medicalNonConsumableItemTypeCode;
+            }
+            Optional<List<MasManufacturerResponse>>  manufacturesOpt=masManufacturerRepository.getMasManufacturerWrtItemTypeCode(
+                    itemTypeCode,
+                    AppConstants.STATUS_Y.toLowerCase()
+            );
+            if(manufacturesOpt.isEmpty()){
+                throw  new SDDException("manufactures",
+                        HttpStatus.NOT_FOUND.value(),
+                        "No Manufacturer available for given item"
+                );
+            }
+
+            log.info("getBrandsWrtManufacturerAndItemTypeCode method ended ...");
+            return ResponseUtils.createSuccessResponse(manufacturesOpt.get(), new TypeReference<>() {});
+        }catch (SDDException e){
+            return  ResponseUtils.createNotFoundResponse(e.getMessage(),e.getStatus());
+        }catch (Exception e){
+            log.error("getBrandsWrtManufacturerAndItemTypeCode method error :: ",e);
+            return  ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
         }
     }
 

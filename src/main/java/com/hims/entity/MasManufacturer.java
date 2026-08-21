@@ -45,4 +45,9 @@ public class MasManufacturer {
 
     @Column(name = "last_updated_dt")
     private LocalDateTime lastUpdatedDt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_type_id")
+    private MasItemType itemType;
+
 }
