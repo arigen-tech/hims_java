@@ -113,4 +113,7 @@ public class StoreItemBatchStock {
 
     @Column(name = "ipd_issue_qty")
     private BigDecimal ipdIssueQty;
+
+    @Column(name = "return_qty")
+    private BigDecimal returnQty;
 }

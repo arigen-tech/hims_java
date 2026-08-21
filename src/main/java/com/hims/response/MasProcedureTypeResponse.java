@@ -19,4 +19,5 @@ public class MasProcedureTypeResponse {
     private LocalDateTime lastUpdateDate;
     private String createdBy;
     private String lastUpdatedBy;
+    private String procedureTypeCode;
 }
