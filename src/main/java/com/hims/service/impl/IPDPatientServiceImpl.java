@@ -3906,6 +3906,75 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         return ResponseUtils.createSuccessResponse(result,new TypeReference<>(){});
 
     }
+    @Override
+    public ApiResponse<Page<ActiveAdmissionResponse>> activeAdmissionAndDischargeAdmissionList(
+            int page,
+            int size,
+            String patientName,
+            String mobileNo,
+            String admissionNo,
+            Long wardId,
+            Integer admissionStatus) {
+
+        try {
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "inpatientId"));
+
+            Page<ActiveAdmissionProjectionResponse> projectionPage = inpatientRepository.findActiveAdmissions(
+                    admissionStatus,
+                            patientName,
+                            mobileNo,
+                            admissionNo,
+                            wardId,
+                            pageable
+            );
+
+            Page<ActiveAdmissionResponse> responsePage = projectionPage.map(this::mapToActiveAdmissionResponse);
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching active admission list. ");
+            throw new RuntimeException("Failed to fetch active admission list: " + e.getMessage(), e);
+        }
+    }
+    private ActiveAdmissionResponse mapToActiveAdmissionResponse(
+            ActiveAdmissionProjectionResponse p) {
+
+        ActiveAdmissionResponse response = new ActiveAdmissionResponse();
+
+        response.setInpatientId(p.getInpatientId());
+        response.setPatientName(p.getPatientName());
+        response.setUhid(p.getUhid());
+        response.setAge(p.getAge());
+        response.setGenderId(p.getGenderId());
+        response.setGender(p.getGender());
+        response.setMobileNo(p.getMobileNo());
+        response.setEmergencyMobileNo(p.getEmergencyMobileNo());
+        response.setAdmissionNo(p.getAdmissionNo());
+
+        response.setWardId(p.getWardId());
+        response.setWard(p.getWard());
+
+        response.setRooId(p.getRooId());
+        response.setRoom(p.getRoom());
+
+        response.setBedId(p.getBedId());
+        response.setBed(p.getBed());
+
+        response.setAdmissionDateTime(p.getAdmissionDateTime());
+        response.setDischargeDate(p.getDischargeDate());
+
+        response.setCategoryId(p.getCategoryId());
+        response.setCategoryName(p.getCategoryName());
+
+        response.setDoctorName(p.getDoctorName());
+        response.setLos(p.getLos());
+        response.setStatus(p.getStatus());
+        response.setBillingType(p.getBillingType());
+
+        return response;
+    }
 
     private String nullToEmpty(String s) {
         return s == null ? "" : s;
