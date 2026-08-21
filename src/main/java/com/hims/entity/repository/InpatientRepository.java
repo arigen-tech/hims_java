@@ -1,6 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.Inpatient;
+import com.hims.projection.ActiveAdmissionProjectionResponse;
 import com.hims.projection.InpatientAdmissionProjection;
 import com.hims.projection.InpatientAdvanceCollectionProjection;
 import lombok.Locked;
@@ -185,4 +186,129 @@ AND (
         """)
         Optional<InpatientAdmissionProjection> findAdmissionDetailsByInpatientId(@Param("inpatientId") Long inpatientId);
 
-}
+
+        @Query(value = """
+        SELECT
+            i.inpatient_id AS inpatientId,
+          CONCAT_WS(' ',   p.p_fn,  p.p_mn,p.p_ln) AS patientName,
+            p.uhid_no AS uhid,
+            p.p_age AS age,
+           g.id AS genderId,
+           g.gender_name AS gender,
+            p.p_mobile_number AS mobileNo,
+            p.emer_mobile AS emergencyMobileNo,
+            i.admission_no AS admissionNo,
+            w.ward_id AS wardId,
+            w.ward_name AS ward,
+            r.room_id AS rooId,
+            r.room_name AS room,
+            b.bed_id AS bedId,
+            b.bed_number AS bed,
+          CAST(i.admission_date AS timestamp) + i.admission_time AS admissionDateTime,
+           CASE
+       WHEN i.discharge_date IS NOT NULL
+           AND i.discharge_time IS NOT NULL
+        THEN CAST(i.discharge_date AS timestamp)
+           + i.discharge_time
+         ELSE NULL
+         END AS dischargeDate,
+            wc.ward_category_id AS categoryId,
+            wc.ward_category_name AS categoryName,
+            i.doctor_name AS doctorName,
+            CAST(
+                CURRENT_DATE - i.admission_date
+                AS varchar
+            ) AS los,
+            s.status_code AS status,
+            bt.billing_type_name AS billingType
+
+        FROM public.inpatient i
+
+        INNER JOIN public.patient p
+            ON p.patient_id = i.patient
+        LEFT JOIN public.mas_gender g
+            ON g.id = p.p_gender_id
+        LEFT JOIN public.mas_ward w
+            ON w.ward_id = i.admitting_ward_id
+        LEFT JOIN public.mas_room r
+            ON r.room_id = i.room_id
+        LEFT JOIN public.mas_bed b
+            ON b.bed_id = i.bed_id
+        LEFT JOIN public.mas_ward_category wc
+            ON wc.ward_category_id = i.ward_category_id
+        LEFT JOIN public.mas_admission_status s
+            ON s.admission_status_id = i.admission_status
+        LEFT JOIN public.ipd_billing_header ibh
+            ON ibh.inpatient_id = i.inpatient_id
+        LEFT JOIN public.mas_ipd_billing_type bt
+            ON bt.billing_type_id = ibh.billing_type_id
+
+        WHERE
+            i.admission_status = :admissionStatus
+            AND (
+                :patientName IS NULL
+                OR :patientName = ''
+                OR LOWER(
+                    CONCAT_WS(' ', p.p_fn, p.p_mn, p.p_ln)
+                ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+            )
+            AND (
+                :mobileNo IS NULL
+                OR :mobileNo = ''
+                OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+            )
+            AND (
+                :admissionNo IS NULL
+                OR :admissionNo = ''
+                OR LOWER(i.admission_no)
+                    LIKE LOWER(CONCAT('%', :admissionNo, '%'))
+            )
+            AND (
+                :wardId IS NULL
+                OR i.admitting_ward_id = :wardId
+            )
+        ORDER BY i.inpatient_id DESC
+
+        """,
+
+                countQuery = """
+        SELECT COUNT(i.inpatient_id)
+        FROM public.inpatient i
+        INNER JOIN public.patient p
+            ON p.patient_id = i.patient
+        WHERE
+            i.admission_status = :admissionStatus
+            AND (
+                :patientName IS NULL
+                OR :patientName = ''
+                OR LOWER(
+                    CONCAT_WS(' ', p.p_fn, p.p_mn, p.p_ln)
+                ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+            )
+            AND (
+                :mobileNo IS NULL
+                OR :mobileNo = ''
+                OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+            )
+            AND (
+                :admissionNo IS NULL
+                OR :admissionNo = ''
+                OR LOWER(i.admission_no)
+                    LIKE LOWER(CONCAT('%', :admissionNo, '%'))
+            )
+            AND (
+                :wardId IS NULL
+                OR i.admitting_ward_id = :wardId
+            )
+        """,
+                nativeQuery = true)
+        Page<ActiveAdmissionProjectionResponse> findActiveAdmissions(
+                @Param("admissionStatus") Integer admissionStatus,
+                @Param("patientName") String patientName,
+                @Param("mobileNo") String mobileNo,
+                @Param("admissionNo") String admissionNo,
+                @Param("wardId") Long wardId,
+                Pageable pageable
+        );
+    }
+

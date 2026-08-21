@@ -67,6 +67,7 @@ public class InpatientAdmissionDetailsResponse {
        private String documentName;
     private String documentRemarks;
     private String fileName;
+    private String filePath;
 
 }
 }

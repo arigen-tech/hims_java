@@ -157,7 +157,7 @@ public class DispensaryController {
 
 
     @GetMapping("/pendingPrescriptionDetails/{prescriptionHeaderId}")
-    public ResponseEntity<?> getPendingPrescriptionHeaders(@PathVariable Long prescriptionHeaderId) {
+    public ResponseEntity<?> getPendingPrescriptionDetails(@PathVariable Long prescriptionHeaderId) {
         return ResponseEntity.ok(dispensaryService.getPendingPrescriptionsDetailsWrtHeader(prescriptionHeaderId));
     }
 

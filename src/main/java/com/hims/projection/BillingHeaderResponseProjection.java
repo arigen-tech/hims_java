@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 public interface BillingHeaderResponseProjection {
     Long getHeaderId();
     Long getVisitId();
+
+    Long getPrescriptionHeaderId();
     String getBillNo();
     String getPatientName();
     String getPhoneNo();

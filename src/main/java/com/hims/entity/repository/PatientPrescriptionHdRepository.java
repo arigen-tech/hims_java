@@ -32,6 +32,7 @@ public interface PatientPrescriptionHdRepository extends JpaRepository<PatientPr
     @Query("""  
 SELECT new  com.hims.response.PatientPrescriptionHeaderResponse(
     p.prescriptionHdId, 
+    p.prescriptionNumber,
     p.prescriptionDate, 
     CONCAT(
         COALESCE(pt.patientFn, ''), ' ',

@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -37,7 +36,6 @@ public class MasOtBookingStatus {
     @Column(name = "last_chg_by", length = 200)
     private String lastChangedBy;
 
-    @CreationTimestamp
     @Column(name = "last_chg_date", nullable = false, updatable = false)
     private LocalDateTime lastChangedDate;
 

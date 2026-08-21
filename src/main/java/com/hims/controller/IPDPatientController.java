@@ -541,6 +541,15 @@ public class IPDPatientController {
 
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/viewAdmissionDocument")
+    public ResponseEntity<ApiResponse<byte[]>> viewAdmissionDocument(
+            @RequestParam("filePath") String filePath) {
+
+        ApiResponse<byte[]> response = ipdPatientService.viewAdmissionDocument(filePath);
+        HttpStatus status = HttpStatus.resolve(response.getStatus());
+        return ResponseEntity.status(status != null ? status : HttpStatus.OK).body(response);
+    }
+
     @PostMapping("/saveAdverseReaction")
     public ApiResponse<String> saveAdverseReaction(@Valid @RequestBody IpAdverseEventRequest request) {
 
@@ -560,6 +569,30 @@ public class IPDPatientController {
 
         ApiResponse<List<IpAdverseEventResponse>> response = ipdPatientService.getAdverseReactionDetails(inpatientId);
 
+        return ResponseEntity.ok(response);
+    }
+    // Filter admissions by admission status
+    // Example: 1 = admitted, 2 = Discharged (according to your master data)
+    @GetMapping("/activeAdmissionAndDischargeAdmissionList")
+    public ResponseEntity<ApiResponse<Page<ActiveAdmissionResponse>>> activeAdmissionList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) String admissionNo,
+            @RequestParam(required = false) Long wardId,
+            @RequestParam Integer admissionStatus) {
+
+        log.info("Fetching active admissions. page={}, size={}, patientName={}, mobileNo={}, admissionNo={}, wardId={}, admissionStatus={}", page, size, patientName, mobileNo,
+                admissionNo,
+                wardId,
+                admissionStatus);
+        ApiResponse<Page<ActiveAdmissionResponse>> response = ipdPatientService.activeAdmissionAndDischargeAdmissionList(page, size,
+                        patientName,
+                        mobileNo,
+                        admissionNo,
+                        wardId,
+                        admissionStatus);
         return ResponseEntity.ok(response);
     }
 

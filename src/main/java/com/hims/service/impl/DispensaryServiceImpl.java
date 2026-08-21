@@ -8,10 +8,7 @@ import com.hims.request.PrescriptionDetailsApproveRequest;
 import com.hims.request.PrescriptionHeaderApproveRequest;
 import com.hims.request.StoreStockLedgerRequest;
 import com.hims.request.UpdateStoreItemBatchStockRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.PatientPrescriptionDetailsResponse;
-import com.hims.response.PatientPrescriptionHeaderResponse;
-import com.hims.response.StockUpdateResponse;
+import com.hims.response.*;
 import com.hims.service.DispensaryService;
 import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
@@ -132,7 +129,7 @@ public class DispensaryServiceImpl implements DispensaryService {
 
     @Override
     @Transactional
-    public ApiResponse<String> approvePrescription(PrescriptionHeaderApproveRequest request) {
+    public ApiResponse<PrescriptionApproveHeaderResponse> approvePrescription(PrescriptionHeaderApproveRequest request) {
 
         try {
 
@@ -196,21 +193,38 @@ public class DispensaryServiceImpl implements DispensaryService {
             billingHeaderRepository.save(billingHeader);
 
 
+            boolean nisRequired = false;
             if (request.getPrescriptionDetails() != null
                     && !request.getPrescriptionDetails().isEmpty()) {
 
                 for (PrescriptionDetailsApproveRequest detailRequest
                         : request.getPrescriptionDetails()) {
 
+                    BigDecimal prescribedQty = detailRequest.getTotal();
+                    BigDecimal issuedQty = detailRequest.getIssuedQty();
+
+                    if (prescribedQty != null
+                            && issuedQty != null
+                            && issuedQty.compareTo(prescribedQty) < 0) {
+
+                        nisRequired = true;
+                    }
+
 
                     PatientPrescriptionDt detail;
 
-
-                    Optional<StoreItemBatchStock> byId = storeItemBatchStockRepository.findById(detailRequest.getStockId());
-                    if(byId.isEmpty()){
-                        throw new RuntimeException("Stock not found with ID: " + detailRequest.getStockId());
+                    boolean isStockPresent=false;
+                    if(detailRequest.getStockId()!=null){
+                        isStockPresent=true;
                     }
-                    StoreItemBatchStock storeItemBatchStock = byId.get();
+
+                    Optional<StoreItemBatchStock> byId =isStockPresent ?
+                            storeItemBatchStockRepository.findById(detailRequest.getStockId()) :
+                            null;
+
+                    StoreItemBatchStock storeItemBatchStock = isStockPresent ?
+                            byId.get():
+                            null;
 
                     // Existing detail -> update
                     if (detailRequest.getPrescriptionDetailsId() != null) {
@@ -231,6 +245,7 @@ public class DispensaryServiceImpl implements DispensaryService {
                                     "Prescription detail does not belong to prescription header"
                             );
                         }
+                        detail.setInstruction(detail.getInstruction());
 
                     } else {
 
@@ -251,65 +266,89 @@ public class DispensaryServiceImpl implements DispensaryService {
                     detail.setIssuedQty(detailRequest.getIssuedQty());
                     detail.setInstruction(detailRequest.getInstruction());
                     detail.setStatus(AppConstants.STATUS_Y.toLowerCase());
-                    detail.setExpiryDate(storeItemBatchStock.getExpiryDate());
-                    detail.setUnitPrice(storeItemBatchStock.getMrpPerUnit());
+                    detail.setExpiryDate(isStockPresent ?
+                            storeItemBatchStock.getExpiryDate() :
+                            null
+                    );
+                    detail.setUnitPrice(isStockPresent ?
+                            storeItemBatchStock.getMrpPerUnit() :
+                            null
+                    );
 
                     PatientPrescriptionDt savedDetail = patientPrescriptionDtRepository.save(detail);
 
 
+                    if (isStockPresent) {
 
-                    StoreIssueT issueT= new StoreIssueT();
-                    issueT.setStoreIssueMId(savedIssueM);
-                    issueT.setIssuedQty(detailRequest.getIssuedQty());
-                    issueT.setPrescriptionDtId(savedDetail.getPrescriptionDtId());
-                    issueT.setStockId(storeItemBatchStock);
-                    issueT.setUnitPrice(storeItemBatchStock.getMrpPerUnit());
-                    issueT.setBatchNo(storeItemBatchStock.getBatchNo());
-                    issueT.setExpiryDate(storeItemBatchStock.getExpiryDate());
-                    issueT.setStatus(AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT);
-                    issueT.setDom(storeItemBatchStock.getManufactureDate());
-                    issueT.setBrandname(storeItemBatchStock.getBrandId().getBrandName());
-                    issueT.setManufacturername(storeItemBatchStock.getManufacturerId().getManufacturerName());
-                    storeItemRepository.findById(detailRequest.getItemId()).ifPresent(issueT::setItemId);
+                        StoreIssueT issueT= new StoreIssueT();
+                        issueT.setStoreIssueMId(savedIssueM);
+                        issueT.setIssuedQty(detailRequest.getIssuedQty());
+                        issueT.setPrescriptionDtId(savedDetail.getPrescriptionDtId());
+                        issueT.setStockId(storeItemBatchStock);
+                        issueT.setUnitPrice(storeItemBatchStock.getMrpPerUnit());
+                        issueT.setBatchNo(storeItemBatchStock.getBatchNo());
+                        issueT.setExpiryDate(storeItemBatchStock.getExpiryDate());
+                        issueT.setStatus(AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT);
+                        issueT.setDom(storeItemBatchStock.getManufactureDate());
+                        issueT.setBrandname(storeItemBatchStock.getBrandId().getBrandName());
+                        issueT.setManufacturername(storeItemBatchStock.getManufacturerId().getManufacturerName());
+                        storeItemRepository.findById(detailRequest.getItemId()).ifPresent(issueT::setItemId);
 
-                    storeIssueTRepository.save(issueT);
-
-
-                    UpdateStoreItemBatchStockRequest updateStockRequest = new UpdateStoreItemBatchStockRequest();
-                    updateStockRequest.setStockId(detailRequest.getStockId());
-                    updateStockRequest.setOpdIssueQty(detailRequest.getIssuedQty());
-
-                    StockUpdateResponse stockUpdate =
-                            inventoryUtils.updateStoreItemBatchStock(updateStockRequest);
+                        storeIssueTRepository.save(issueT);
 
 
+                        UpdateStoreItemBatchStockRequest updateStockRequest = new UpdateStoreItemBatchStockRequest();
+                        updateStockRequest.setStockId(detailRequest.getStockId());
+                        updateStockRequest.setOpdIssueQty(detailRequest.getIssuedQty());
+
+                        StockUpdateResponse stockUpdate =
+                                inventoryUtils.updateStoreItemBatchStock(updateStockRequest);
 
 
-                    StoreStockLedgerRequest ledgerRequest = new StoreStockLedgerRequest();
-                    ledgerRequest.setStockId(detailRequest.getStockId());
-                    ledgerRequest.setQtyOut( BigDecimal.valueOf(stockUpdate.getQtyOut()) );
-                    ledgerRequest.setTxnType("OPD ISSUE");
-                    ledgerRequest.setQtyBefore( BigDecimal.valueOf(stockUpdate.getQtyBefore()) );
-                    ledgerRequest.setQtyAfter( BigDecimal.valueOf(stockUpdate.getQtyAfter()) );
-                    ledgerRequest.setDepartmentId(dispensaryDepartmentId);
-                    ledgerRequest.setRemarks( "ISSUE AGAINST PRESCRIPTION NO: " + header.getPrescriptionNumber() );
-                    ledgerRequest.setHospitalId(header.getHospitalId());
-                    ledgerRequest.setTxnSource("OPD ISSUE");
-                    ledgerRequest.setTxnReferenceId( savedDetail.getPrescriptionDtId() );
-                    ledgerRequest.setReferenceNo(issueM.getIssueNo());
-                    ledgerRequest.setCreatedBy(authUtil.getCurrentUser().getUsername());
-
-                    inventoryUtils.updateStoreStockLedger(ledgerRequest);
 
 
+                        StoreStockLedgerRequest ledgerRequest = new StoreStockLedgerRequest();
+                        ledgerRequest.setStockId(detailRequest.getStockId());
+                        ledgerRequest.setQtyOut( BigDecimal.valueOf(stockUpdate.getQtyOut()) );
+                        ledgerRequest.setTxnType("OPD ISSUE");
+                        ledgerRequest.setQtyBefore( BigDecimal.valueOf(stockUpdate.getQtyBefore()) );
+                        ledgerRequest.setQtyAfter( BigDecimal.valueOf(stockUpdate.getQtyAfter()) );
+                        ledgerRequest.setDepartmentId(dispensaryDepartmentId);
+                        ledgerRequest.setRemarks( "ISSUE AGAINST PRESCRIPTION NO: " + header.getPrescriptionNumber() );
+                        ledgerRequest.setHospitalId(header.getHospitalId());
+                        ledgerRequest.setTxnSource("OPD ISSUE");
+                        ledgerRequest.setTxnReferenceId( savedDetail.getPrescriptionDtId() );
+                        ledgerRequest.setReferenceNo(issueM.getIssueNo());
+                        ledgerRequest.setCreatedBy(authUtil.getCurrentUser().getUsername());
+
+                        inventoryUtils.updateStoreStockLedger(ledgerRequest);
+                    }
                 }
+            }
+            if (nisRequired && header.getNisNo() == null) {
+
+                String nisNumber = transactionSequenceService.generateTransactionNumber(
+                        HMISTransaction.NIS_NO,
+                        authUtil.getCurrentUser().getHospital().getId()
+                );
+
+                header.setNisNo(nisNumber);
+                patientPrescriptionHdRepository.save(header);
+
+                log.info(
+                        "NIS generated for prescription header ID {}: {}",
+                        header.getPrescriptionHdId(),
+                        nisNumber
+                );
             }
 
             log.info("Approving prescription ended with header ID: {}",
                     request.getPrescriptionHeaderId());
 
             return ResponseUtils.createSuccessResponse(
-                    "Prescription approved successfully",
+                    new PrescriptionApproveHeaderResponse(
+                            header.getPrescriptionHdId(), header.getNisNo()
+                    ),
                     new TypeReference<>() {}
             );
 
@@ -427,7 +466,6 @@ public class DispensaryServiceImpl implements DispensaryService {
         billingHeader.setBillingDate(Instant.now());
         billingHeader.setServiceCategory(serviceCategory);
         billingHeader.setPrescriptionHeader(prescriptionHeader);
-
         billingHeader.setInvoiceNo("");
 
         billingHeader.setBillNo(
@@ -446,7 +484,7 @@ public class DispensaryServiceImpl implements DispensaryService {
         billingHeader.setDiscountAmount(BigDecimal.ZERO);
 
         billingHeader.setPaymentStatus(
-                AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                AppConstants.PAYMENT_PAID.toLowerCase()
         );
 
         BillingHeader savedBillingHeader =
@@ -465,6 +503,15 @@ public class DispensaryServiceImpl implements DispensaryService {
 
         for (PrescriptionDetailsApproveRequest detailRequest
                 : prescriptionDetails) {
+
+            /*
+             * ======================================================
+             * NO STOCK -> NO PHARMACY BILLING
+             * ======================================================
+             */
+            if (detailRequest.getStockId() == null) {
+                continue;
+            }
 
             StoreItemBatchStock stock =
                     storeItemBatchStockRepository
@@ -485,16 +532,16 @@ public class DispensaryServiceImpl implements DispensaryService {
             /*
              * ======================================================
              * PRICE CALCULATION
-             *
-             * MRP PER UNIT IS GST EXCLUSIVE
              * ======================================================
              */
 
-            BigDecimal unitPrice = stock.getMrpPerUnit();
+            BigDecimal unitPrice = stock.getMrpPerUnit() != null
+                    ? stock.getMrpPerUnit()
+                    : BigDecimal.ZERO;
 
-            BigDecimal issuedQty = BigDecimal.valueOf(
-                    detailRequest.getIssuedQty().longValue()
-            );
+            BigDecimal issuedQty = detailRequest.getIssuedQty() != null
+                    ? detailRequest.getIssuedQty()
+                    : BigDecimal.ZERO;
 
             BigDecimal gstPercent = stock.getGstPercent() != null
                     ? stock.getGstPercent()
@@ -505,7 +552,7 @@ public class DispensaryServiceImpl implements DispensaryService {
                     .multiply(issuedQty)
                     .setScale(2, RoundingMode.HALF_UP);
 
-            // Calculate GST on taxable amount
+            // GST
             BigDecimal taxAmount = taxableAmount
                     .multiply(gstPercent)
                     .divide(
@@ -514,22 +561,20 @@ public class DispensaryServiceImpl implements DispensaryService {
                             RoundingMode.HALF_UP
                     );
 
-            // GST-inclusive total amount
+            // GST-inclusive total
             BigDecimal totalAmount = taxableAmount
                     .add(taxAmount)
                     .setScale(2, RoundingMode.HALF_UP);
 
-            BigDecimal registrationCost = BigDecimal.ZERO;
+            BigDecimal registrationCost =
+                    serviceCategory.getRegistrationCost() != null
+                            ? serviceCategory.getRegistrationCost()
+                            : BigDecimal.ZERO;
 
-            if(serviceCategory.getRegistrationCost()!=null){
-                registrationCost=serviceCategory.getRegistrationCost();
-            }
-
-            // Net amount = GST-inclusive total + registration cost
+            // Net amount
             BigDecimal netAmount = totalAmount
                     .add(registrationCost)
                     .setScale(2, RoundingMode.HALF_UP);
-
 
             /*
              * ======================================================
@@ -541,13 +586,13 @@ public class DispensaryServiceImpl implements DispensaryService {
 
             billingDetail.setBillingHd(savedBillingHeader);
             billingDetail.setBillHd(savedBillingHeader);
+
             billingDetail.setServiceId(detailRequest.getItemId());
             billingDetail.setItemName(item.getNomenclature());
             billingDetail.setServiceCategory(serviceCategory);
 
             billingDetail.setQuantity(issuedQty.intValue());
 
-            // GST-exclusive amount
             billingDetail.setBasePrice(taxableAmount);
             billingDetail.setTariff(taxableAmount);
 
@@ -560,29 +605,24 @@ public class DispensaryServiceImpl implements DispensaryService {
             billingDetail.setRegistrationCost(registrationCost);
             billingDetail.setNetAmount(netAmount);
 
-            // Taxable + GST
-            billingDetail.setNetAmount(netAmount);
-
             billingDetail.setCreatedAt(Instant.now());
             billingDetail.setCreatedDt(OffsetDateTime.now());
             billingDetail.setUpdatedDt(OffsetDateTime.now());
-            billingDetail.setRegistrationCost(BigDecimal.ZERO);
+
             billingDetail.setChargeCost(BigDecimal.ZERO);
 
             billingDetail.setPaymentStatus(
-                    AppConstants.PAYMENT_NOT_PAID.toLowerCase()
+                    savedBillingHeader.getPaymentStatus()
             );
-            billingDetail.setRegistrationCost(registrationCost);
+
             billingDetail.setItem(item);
             billingDetail.setCollectedBy(authUtil.getCurrentUser());
 
-
             billingDetailRepository.save(billingDetail);
-
 
             /*
              * ======================================================
-             * ADD DETAIL AMOUNTS TO HEADER TOTALS
+             * ADD TO HEADER TOTALS
              * ======================================================
              */
 

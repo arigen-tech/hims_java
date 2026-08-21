@@ -169,8 +169,20 @@ public class InventoryController {
     @GetMapping("/item/batches/{itemId}")
     public ResponseEntity<?> getAllBatchesWrtItem(@PathVariable Long itemId,
                                                   @RequestParam Long hospitalId,
-                                                  @RequestParam Long departmentId){
-        return  ResponseEntity.ok(inventoryService.getBatchesFromItemId(itemId,hospitalId,departmentId));
+                                                  @RequestParam Long departmentId,
+                                                  @RequestParam(required = false) Long minimumClosingStock
+                                                  ){
+        return  ResponseEntity.ok(inventoryService.getBatchesFromItemId(itemId,hospitalId,departmentId,minimumClosingStock));
+    }
+
+    @GetMapping("/item/batchesExceptGivenStock/{itemId}")
+    public ResponseEntity<?> getAllStockBatchesWrtItemExceptGivenStock(@PathVariable Long itemId,
+                                                  @RequestParam Long hospitalId,
+                                                  @RequestParam Long departmentId,
+                                                  @RequestParam(required = false) Long minimumClosingStock,
+                                                                       @RequestParam(required = false) List<Long> excludeStockIds
+    ){
+        return  ResponseEntity.ok(inventoryService.getAllStockBatchesWrtItemExceptGivenStock(itemId,hospitalId,departmentId,minimumClosingStock,excludeStockIds));
     }
 
     /**
@@ -681,6 +693,47 @@ public class InventoryController {
                                                             @RequestParam(required = false) Long itemId) {
         return ResponseEntity.ok(inventoryService.getAllStock(type, hospitalId, departmentId, sectionId, classId, itemId));
 
+    }
+
+    @GetMapping("/getUnverifiedReturns/{hospitalId}")
+    public ResponseEntity<?> getUnverifiedReturnHeaders(
+            @PathVariable Long hospitalId,
+            @RequestParam Long toDepartmentId,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate toDate,
+            @RequestParam(required = false) Long fromDepartmentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        return ResponseEntity.ok(
+                inventoryService.getUnverifiedReturnHeaders(
+                        hospitalId,
+                        toDepartmentId,
+                        fromDate,
+                        toDate,
+                        fromDepartmentId,
+                        page,
+                        size
+                )
+        );
+    }
+
+    @GetMapping("/getUnverifiedReturnDetails/{returnMId}")
+    public ResponseEntity<?> getUnverifiedReturnDetails(
+            @PathVariable Long returnMId) {
+
+        return ResponseEntity.ok(
+                inventoryService.getUnverifiedReturnDetails(returnMId)
+        );
+    }
+
+    @PostMapping("/verifyReturnIndent")
+    public  ResponseEntity<?> verifyReturnedIndentAtIssueDept(@RequestBody VerifyReturnIndentHeaderRequest request){
+        return  ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.verifyReturnedIndentAtIssueDept(request));
     }
 
 }

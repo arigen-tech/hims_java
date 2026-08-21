@@ -15,7 +15,8 @@ public interface IpDocumentRepository extends JpaRepository<IpDocument,Long> {
         SELECT
             d.documentType AS documentType,
             d.documentNotes AS documentNotes,
-            d.fileName AS fileName
+            d.fileName AS fileName,
+            d.filePath AS filePath
         FROM IpDocument d
         WHERE d.inpatient.inpatientId = :inpatientId
         """)

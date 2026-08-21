@@ -107,8 +107,12 @@ public interface IPDPatientService {
 
     ApiResponse<InpatientAdmissionDetailsResponse> getAdmissionDetailsByInpatient(Long inpatientId);
 
+    ApiResponse<byte[]> viewAdmissionDocument(String filePath);
+
     ApiResponse<String> saveAdverseReaction(@Valid IpAdverseEventRequest request);
 
     ApiResponse<List<IpAdverseEventResponse>> getAdverseReactionDetails(Long inpatientId);
+
+    ApiResponse<Page<ActiveAdmissionResponse>> activeAdmissionAndDischargeAdmissionList(int page, int size, String patientName, String mobileNo, String admissionNo, Long wardId, Integer admissionStatus);
 }
 

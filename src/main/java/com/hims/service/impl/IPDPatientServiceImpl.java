@@ -3,6 +3,8 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
+
+import java.io.IOException;
 import java.time.temporal.ChronoUnit;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -18,10 +20,8 @@ import com.hims.utils.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.autoconfigure.observation.ObservationProperties;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,10 +36,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -272,6 +272,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Value("${IPD.Service.Category.Medical.Consumables}")
     Long IPDServiceCategoryMedicalConsumables;
 
+    @Value("${upload.image.path}")
+    String filePath;
+
 
 
     @Override
@@ -345,10 +348,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         } catch (Exception e) {
             log.error("Error while saving IPD patient details for patientId: {}. Error: {}", request != null ? request.getPatientId() : null, e.getMessage(),
                     e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    }, e.getMessage(),
-                    400
-            );
+           throw  e;
         }
     }
 
@@ -1726,8 +1726,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         ipBedAllocationRepository.save(bedAllocation);
         log.info("Bed allocation details saved successfully for inpatientId: {}", inpatient.getInpatientId());
     }
-
-
     private void saveIpDocumentDetails(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
 
         List<IpdPatientRequest.IpDocumentRequest> documents = request.getDocuments();
@@ -1737,8 +1735,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             return;
         }
 
-
-        String uploadDir = "uploads/ipd/documents/";
+        String uploadDir = filePath;
+        List<Path> copiedFiles = new ArrayList<>(); // track for rollback cleanup
 
         try {
             Path uploadPath = Paths.get(uploadDir);
@@ -1767,13 +1765,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 }
 
                 String safeOriginalFileName = originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_");
-
                 String fileType = getFileExtension(safeOriginalFileName);
-
                 Long fileSizeKb = file.getSize() / 1024;
-
                 String newFileName = UUID.randomUUID() + "_" + safeOriginalFileName;
-
                 Path finalFilePath = uploadPath.resolve(newFileName);
 
                 Files.copy(
@@ -1782,14 +1776,17 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         StandardCopyOption.REPLACE_EXISTING
                 );
 
-                IpDocument document = new IpDocument();
+                copiedFiles.add(finalFilePath); //track successfully copied file
 
+                String normalizedFilePath = finalFilePath.toString().replace("\\", "/");
+
+                IpDocument document = new IpDocument();
                 document.setInpatient(inpatient);
                 document.setPatient(patient);
                 document.setDocumentDatetime(LocalDateTime.now());
                 document.setDocumentType(docReq.getDocumentType());
                 document.setFileName(originalFileName);
-                document.setFilePath(finalFilePath.toString());
+                document.setFilePath(normalizedFilePath);
                 document.setFileType(fileType);
                 document.setFileSizeKb(fileSizeKb);
                 document.setLastUpdateDate(LocalDateTime.now());
@@ -1801,6 +1798,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         } catch (Exception e) {
             log.error("Error while saving IPD document for inpatientId: {}", inpatient.getInpatientId(), e);
+
+            //  Clean up physical files since DB will rollback but disk won't
+            for (Path p : copiedFiles) {
+                try {
+                    Files.deleteIfExists(p);
+                } catch (IOException ioException) {
+                    log.warn("Failed to delete orphaned file: {}", p, ioException);
+                }
+            }
+
             throw new RuntimeException("Error while saving IPD document: " + e.getMessage(), e);
         }
     }
@@ -3789,6 +3796,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         .documentName(doc.getDocumentType())
                         .documentRemarks(doc.getDocumentNotes())
                         .fileName(doc.getFileName())
+                        .filePath(doc.getFilePath())
                         .build())
                 .collect(Collectors.toList());
         response.setDocumentListList(documentList);
@@ -3796,6 +3804,44 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Admission details fetched successfully for inpatientId={}", inpatientId);
 
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    }
+
+    @Override
+    public ApiResponse<byte[]> viewAdmissionDocument(String filePath) {
+        try {
+            String normalizedPath = filePath == null ? "" : filePath.trim();
+            if (normalizedPath.startsWith("\"") && normalizedPath.endsWith("\"")) {
+                normalizedPath = normalizedPath.substring(1, normalizedPath.length() - 1);
+            }
+            normalizedPath = normalizedPath.replace("\\\\", "\\");
+
+            if (normalizedPath.isBlank()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "File path is required", HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            Path path = Paths.get(normalizedPath);
+
+            if (!Files.exists(path) || !Files.isRegularFile(path)) {
+                return ResponseUtils.createNotFoundResponse("File not found", HttpStatus.NOT_FOUND.value()
+                );
+            }
+
+            byte[] data = Files.readAllBytes(path);
+            return ResponseUtils.createSuccessResponse(data, new TypeReference<>() {}, "Document viewed successfully"
+            );
+
+        } catch (InvalidPathException e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid file path: " + filePath, HttpStatus.BAD_REQUEST.value()
+            );
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Failed to read file: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
     }
 
     @Override
@@ -3866,6 +3912,75 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         List<IpAdverseEventResponse> result = ipAdverseEventRepository.findAdverseReactionDetailsByInpatientId(inpatientId);
         return ResponseUtils.createSuccessResponse(result,new TypeReference<>(){});
 
+    }
+    @Override
+    public ApiResponse<Page<ActiveAdmissionResponse>> activeAdmissionAndDischargeAdmissionList(
+            int page,
+            int size,
+            String patientName,
+            String mobileNo,
+            String admissionNo,
+            Long wardId,
+            Integer admissionStatus) {
+
+        try {
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "inpatientId"));
+
+            Page<ActiveAdmissionProjectionResponse> projectionPage = inpatientRepository.findActiveAdmissions(
+                    admissionStatus,
+                            patientName,
+                            mobileNo,
+                            admissionNo,
+                            wardId,
+                            pageable
+            );
+
+            Page<ActiveAdmissionResponse> responsePage = projectionPage.map(this::mapToActiveAdmissionResponse);
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching active admission list. ");
+            throw new RuntimeException("Failed to fetch active admission list: " + e.getMessage(), e);
+        }
+    }
+    private ActiveAdmissionResponse mapToActiveAdmissionResponse(
+            ActiveAdmissionProjectionResponse p) {
+
+        ActiveAdmissionResponse response = new ActiveAdmissionResponse();
+
+        response.setInpatientId(p.getInpatientId());
+        response.setPatientName(p.getPatientName());
+        response.setUhid(p.getUhid());
+        response.setAge(p.getAge());
+        response.setGenderId(p.getGenderId());
+        response.setGender(p.getGender());
+        response.setMobileNo(p.getMobileNo());
+        response.setEmergencyMobileNo(p.getEmergencyMobileNo());
+        response.setAdmissionNo(p.getAdmissionNo());
+
+        response.setWardId(p.getWardId());
+        response.setWard(p.getWard());
+
+        response.setRooId(p.getRooId());
+        response.setRoom(p.getRoom());
+
+        response.setBedId(p.getBedId());
+        response.setBed(p.getBed());
+
+        response.setAdmissionDateTime(p.getAdmissionDateTime());
+        response.setDischargeDate(p.getDischargeDate());
+
+        response.setCategoryId(p.getCategoryId());
+        response.setCategoryName(p.getCategoryName());
+
+        response.setDoctorName(p.getDoctorName());
+        response.setLos(p.getLos());
+        response.setStatus(p.getStatus());
+        response.setBillingType(p.getBillingType());
+
+        return response;
     }
 
     private String nullToEmpty(String s) {

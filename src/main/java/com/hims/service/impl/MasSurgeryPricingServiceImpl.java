@@ -51,19 +51,19 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             entity.setSurgery(surgeryRepository.findById(request.getSurgeryId()).orElseThrow());
             entity.setBillingType(billingTypeRepository.findById(request.getBillingTypeId()).orElseThrow());
             entity.setAmount(request.getAmount());
-            entity.setDiscountAllowed(request.getDiscountAllowed());
             entity.setEffectiveFrom(request.getEffectiveFrom());
             entity.setEffectiveTo(request.getEffectiveTo());
-            entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            entity.setRemarks(request.getRemarks());
+            entity.setStatus(AppConstants.STATUS_Y);
             entity.setLastUpdatedBy(user.getFullName());
-            entity.setLastUpdateDate(LocalDateTime.now());
+            entity.setLastUpdatedDate(LocalDateTime.now());
 
             repository.save(entity);
 
             return ResponseUtils.createSuccessResponse("Surgery pricing added successfully", new TypeReference<>() {});
 
         } catch (Exception e) {
-            log.error("Create Mas Surgery Pricing",e);
+            log.error("Create Mas Surgery Pricing", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -83,18 +83,18 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             entity.setSurgery(surgeryRepository.findById(request.getSurgeryId()).orElseThrow());
             entity.setBillingType(billingTypeRepository.findById(request.getBillingTypeId()).orElseThrow());
             entity.setAmount(request.getAmount());
-            entity.setDiscountAllowed(request.getDiscountAllowed());
             entity.setEffectiveFrom(request.getEffectiveFrom());
             entity.setEffectiveTo(request.getEffectiveTo());
+            entity.setRemarks(request.getRemarks());
             entity.setLastUpdatedBy(user.getFullName());
-            entity.setLastUpdateDate(LocalDateTime.now());
+            entity.setLastUpdatedDate(LocalDateTime.now());
 
             repository.save(entity);
 
             return ResponseUtils.createSuccessResponse("Updated successfully", new TypeReference<>() {});
 
         } catch (Exception e) {
-            log.error("Create Mas Surgery Pricing",e);
+            log.error("Update Mas Surgery Pricing", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -109,16 +109,16 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             MasSurgeryPricing entity = repository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Invalid Id"));
 
-            entity.setStatus(status.toLowerCase());
+            entity.setStatus(status.toUpperCase());
             entity.setLastUpdatedBy(user.getFullName());
-            entity.setLastUpdateDate(LocalDateTime.now());
+            entity.setLastUpdatedDate(LocalDateTime.now());
 
             repository.save(entity);
 
             return ResponseUtils.createSuccessResponse("Status updated", new TypeReference<>() {});
 
         } catch (Exception e) {
-            log.error("Create Mas Surgery Pricing",e);
+            log.error("Change Status Mas Surgery Pricing", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -134,7 +134,7 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             return ResponseUtils.createSuccessResponse(mapToResponse(entity), new TypeReference<>() {});
 
         } catch (Exception e) {
-            log.error("Create Mas Surgery Pricing",e);
+            log.error("Get Mas Surgery Pricing", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
@@ -147,36 +147,37 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
         try {
             String name = (surgeryName == null) ? null : "%" + surgeryName.toLowerCase() + "%";
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by("lastUpdateDate").descending());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("lastUpdatedDate").descending());
 
             Page<MasSurgeryPricingProjection> result = repository.getAllMasSurgeryPricing(billingTypeId, name, pageable);
 
             Page<MasSurgeryPricingResponse> response = result.map(this::toResponse);
 
-            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
-            });
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
 
         } catch (Exception e) {
-            log.error("Create Mas Surgery Pricing",e);
+            log.error("Get All Mas Surgery Pricing", e);
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
+
     private MasSurgeryPricingResponse mapToResponse(MasSurgeryPricing entity) {
         MasSurgeryPricingResponse res = new MasSurgeryPricingResponse();
 
         res.setSurgeryPricingId(entity.getSurgeryPricingId());
-        res.setSurgeryId(entity.getSurgery().getSurgeryId());
-        res.setSurgeryName(entity.getSurgery().getSurgeryName());
+        res.setSurgeryId(entity.getSurgery() != null ? entity.getSurgery().getSurgeryId() : null);
+        res.setSurgeryName(entity.getSurgery() != null ? entity.getSurgery().getSurgeryName() : null);
         res.setAmount(entity.getAmount());
-        res.setDiscountAllowed(entity.getDiscountAllowed());
         res.setEffectiveFrom(entity.getEffectiveFrom());
         res.setEffectiveTo(entity.getEffectiveTo());
+        res.setRemarks(entity.getRemarks());
         res.setStatus(entity.getStatus());
-        res.setBillingTypeId(entity.getBillingType()!=null?entity.getBillingType().getBillingTypeId():null);
-        res.setBillingTypeName(entity.getBillingType()!=null?entity.getBillingType().getBillingTypeName():null);
+        res.setBillingTypeId(entity.getBillingType() != null ? entity.getBillingType().getBillingTypeId() : null);
+        res.setBillingTypeName(entity.getBillingType() != null ? entity.getBillingType().getBillingTypeName() : null);
 
         return res;
     }
+
     private MasSurgeryPricingResponse toResponse(MasSurgeryPricingProjection p) {
 
         MasSurgeryPricingResponse res = new MasSurgeryPricingResponse();
@@ -185,9 +186,9 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
         res.setSurgeryId(p.getSurgeryId());
         res.setSurgeryName(p.getSurgeryName());
         res.setAmount(p.getAmount());
-        res.setDiscountAllowed(p.getDiscountAllowed());
         res.setEffectiveFrom(p.getEffectiveFrom());
         res.setEffectiveTo(p.getEffectiveTo());
+        res.setRemarks(p.getRemarks());
         res.setStatus(p.getStatus());
         res.setBillingTypeId(p.getBillingTypeId());
         res.setBillingTypeName(p.getBillingTypeName());

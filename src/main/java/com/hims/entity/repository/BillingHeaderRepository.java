@@ -194,6 +194,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
         SELECT
             bh.bill_hd_id AS headerId,
             v.visit_id AS visitId,
+            bh.prescription_hd_id as prescriptionHeaderId,
             bh.bill_no AS billNo,
             TRIM(
                 COALESCE(p.p_fn, '') || ' ' ||

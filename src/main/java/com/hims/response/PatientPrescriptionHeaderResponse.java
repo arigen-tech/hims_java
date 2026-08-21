@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class PatientPrescriptionHeaderResponse {
 
     private Long prescriptionHeaderId;
+    private String prescriptionNo;
     private LocalDateTime prescriptionDate;
     private String patientName;
     private String uhidNo;

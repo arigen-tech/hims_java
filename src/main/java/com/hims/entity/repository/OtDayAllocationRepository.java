@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalTime;
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface OtDayAllocationRepository extends JpaRepository<OtDayAllocation, Long> {
@@ -28,4 +29,10 @@ public interface OtDayAllocationRepository extends JpaRepository<OtDayAllocation
             @Param("dayOfWeek") String dayOfWeek,
             @Param("startTime") LocalTime startTime,
             @Param("status") String status);
+
+    List<OtDayAllocation> findByStatusIgnoreCaseOrderByDayOfWeekAsc(
+            String status
+    );
+
+    List<OtDayAllocation> findAllByOrderByStatusDescLastChgDateDesc();
 }

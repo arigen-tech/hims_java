@@ -3,7 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasIpdTransferReason;
-import com.hims.entity.MasIpdTransferReasonRepository;
+import com.hims.entity.repository.MasIpdTransferReasonRepository;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasIpdTransferReasonResponse;
 import com.hims.service.MasIpdTransferReasonService;
