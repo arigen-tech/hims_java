@@ -11,7 +11,7 @@ public class MasSurgeryPricingRequest {
     private Long surgeryId;
     private Long billingTypeId;
     private BigDecimal amount;
-    private String discountAllowed;
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
+    private String remarks;
 }

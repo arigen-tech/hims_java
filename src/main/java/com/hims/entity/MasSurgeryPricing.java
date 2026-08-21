@@ -28,21 +28,21 @@ public class MasSurgeryPricing {
     @Column(name = "amount", precision = 12, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "discount_allowed", length = 1)
-    private String discountAllowed;
-
     @Column(name = "effective_from")
     private LocalDate effectiveFrom;
 
     @Column(name = "effective_to")
     private LocalDate effectiveTo;
 
+    @Column(name = "remarks", length = 300)
+    private String remarks;
+
     @Column(name = "status", length = 1)
     private String status;
 
-    @Column(name = "last_updated_by", length = 300)
+    @Column(name = "last_updated_by", length = 100)
     private String lastUpdatedBy;
 
-    @Column(name = "last_update_date")
-    private LocalDateTime lastUpdateDate;
+    @Column(name = "last_updated_date")
+    private LocalDateTime lastUpdatedDate;
 }

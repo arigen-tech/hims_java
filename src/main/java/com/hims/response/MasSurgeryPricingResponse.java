@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -21,9 +20,8 @@ public class MasSurgeryPricingResponse {
     private Long billingTypeId;
     private String billingTypeName;
     private BigDecimal amount;
-    private String discountAllowed;
     private LocalDate effectiveFrom;
     private LocalDate effectiveTo;
+    private String remarks;
     private String status;
-
 }
