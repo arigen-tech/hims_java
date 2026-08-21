@@ -12,4 +12,5 @@ import lombok.Setter;
 public class MasProcedureTypeRequest {
     private String procedureTypeName;
     private String description;
+    private String procedureTypeCode;
 }

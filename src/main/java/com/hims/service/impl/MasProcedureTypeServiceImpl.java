@@ -97,6 +97,7 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
         MasProcedureType type = MasProcedureType.builder()
                 .procedureTypeName(request.getProcedureTypeName())
                 .description(request.getDescription())
+                .procedureTypeCode(request.getProcedureTypeCode())
                 .status("y")
                 .createdBy(user.getFirstName() + " " + user.getLastName())
                 .lastUpdatedBy(user.getFirstName() + " " + user.getLastName())
@@ -130,6 +131,7 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
         MasProcedureType procedure = procedureOpt.get();
         procedure.setProcedureTypeName(request.getProcedureTypeName());
         procedure.setDescription(request.getDescription());
+        procedure.setProcedureTypeCode(request.getProcedureTypeCode());
         procedure.setStatus("y");
         procedure.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
         procedure.setLastUpdateDate(LocalDateTime.now());
@@ -186,7 +188,8 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
                 type.getStatus(),
                 type.getLastUpdateDate(),
                 type.getCreatedBy(),
-                type.getLastUpdatedBy()
+                type.getLastUpdatedBy(),
+                type.getProcedureTypeCode()
         );
     }
 
