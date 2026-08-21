@@ -34,9 +34,9 @@ public class MasOtBookingStatus {
     private String status;
 
     @Column(name = "last_chg_by", length = 200)
-    private String lastChangedBy;
+    private String lastChgBy;
 
     @Column(name = "last_chg_date", nullable = false, updatable = false)
-    private LocalDateTime lastChangedDate;
+    private LocalDateTime lastChgDate;
 
 }

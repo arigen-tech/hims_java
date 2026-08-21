@@ -353,8 +353,6 @@ public class MasterController {
     @Autowired
     private MasOtScheduleChangeReasonService masOtScheduleChangeReasonService;
     @Autowired
-    private OtDayAllocationService otDayAllocationService;
-    @Autowired
     private MasOtBookingStatusService masOtBookingStatusService;
     @Autowired
     private MasOtTeamRoleService masOtTeamRoleService;
