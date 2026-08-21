@@ -1588,6 +1588,14 @@ public class MasterController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @GetMapping("/brands/{manufacturerId}")
+    public ResponseEntity<?> getBrandsWrtManufacturerAndItemTypeCode(@PathVariable Long manufacturerId,
+                                                                                                @RequestParam(required = false) String itemTypeCode)
+    {
+        ApiResponse<List<MasBrandResponse>> response = masBrandService.getBrandsWrtManufacturerAndItemTypeCode(manufacturerId,itemTypeCode);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
     @PostMapping("/masBrand/create")
     public ResponseEntity<ApiResponse<MasBrandResponse>> addMasBrand(@RequestBody MasBrandRequest masBrandRequest) {
         ApiResponse<MasBrandResponse> response = masBrandService.addMasBrand(masBrandRequest);
@@ -1617,6 +1625,11 @@ public class MasterController {
     @GetMapping("/masManufacturer/getById/{id}")
     public ResponseEntity<ApiResponse<MasManufacturer>> getMasManufacturer(@PathVariable Long id) {
         ApiResponse<MasManufacturer> response = masManufacturerService.findById(id);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/manufacturers")
+    public ResponseEntity<?> getMasManufacturerWrtItemTypeCode(@RequestParam(required = false) String itemTypeCode) {
+        ApiResponse<List<MasManufacturerResponse>> response = masManufacturerService.getMasManufacturerWrtItemTypeCode(itemTypeCode);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
