@@ -100,6 +100,7 @@ public class OpdPatientRecallResponce {
     private Long followUpDays;
 
     private PregnancyDetails pregnancyDetails;
+    private SurgeryAdviceResponseDTO surgeryDetails;
 
     //=========================== DgOrderHd =====================
     @Getter

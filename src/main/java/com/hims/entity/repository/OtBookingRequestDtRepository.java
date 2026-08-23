@@ -11,4 +11,5 @@ public interface OtBookingRequestDtRepository extends JpaRepository<OtBookingReq
     List<OtBookingRequestDt> findByOtBookingRequest(
             OtBookingRequestHd otBookingRequest
     );
+
 }

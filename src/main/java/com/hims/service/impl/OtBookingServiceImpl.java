@@ -63,7 +63,6 @@ public class OtBookingServiceImpl implements OtBookingService {
         OtBookingRequestHd hd;
 
         if (dto.getOtBookingRequestId() != null) {
-
             // UPDATE existing booking
             hd = hdRepository.findById(dto.getOtBookingRequestId())
                     .orElseThrow(() ->
@@ -74,12 +73,14 @@ public class OtBookingServiceImpl implements OtBookingService {
                                             + dto.getOtBookingRequestId()
                             )
                     );
-
         } else {
-
-            // CREATE or find booking by visit
-            hd = hdRepository.findByVisitId(dto.getVisitId())
-                    .orElseGet(OtBookingRequestHd::new);
+            Optional<OtBookingRequestHd> optionalHd = hdRepository.findByVisitId(dto.getVisitId());
+            if (optionalHd.isPresent()) {
+                hd = optionalHd.get();
+            } else {
+                hd = new OtBookingRequestHd();
+                hd.setRequestNo(dto.getRequestNo());
+            }
         }
 
         hd.setPatientId(dto.getPatientId());
@@ -97,32 +98,16 @@ public class OtBookingServiceImpl implements OtBookingService {
         hd.setPriority(dto.getPriority());
         hd.setRequestedBy(dto.getRequestedBy());
         hd.setRequestedDate(dto.getRequestedDate());
-        hd.setRequestNo(dto.getRequestNo());
-
         hd.setLastChgBy(dto.getLastChgBy());
         hd.setLastChgDate(LocalDateTime.now());
-
         OtBookingRequestHd savedHd = hdRepository.save(hd);
 
-        log.info(
-                "OT Booking Header saved successfully. ID: {}",
-                savedHd.getOtBookingRequestId()
-        );
-
+        log.info("OT Booking Header saved successfully. ID: {}",savedHd.getOtBookingRequestId());
         // ================= DETAILS =================
-
-        saveOrUpdateOtDetails(
-                savedHd,
-                dto.getSurgeryDetails()
-        );
-
-        log.info(
-                "OT Booking Details saved successfully. Header ID: {}",
-                savedHd.getOtBookingRequestId()
-        );
+        saveOrUpdateOtDetails(savedHd,dto.getSurgeryDetails());
+        log.info("OT Booking Details saved successfully. Header ID: {}", savedHd.getOtBookingRequestId());
 
         // ================= RESPONSE =================
-
         return ResponseUtils.createSuccessResponse(
                 "OT Booking saved successfully",
                 new TypeReference<>() {
@@ -131,14 +116,9 @@ public class OtBookingServiceImpl implements OtBookingService {
     }
 
 
-    private void saveOrUpdateOtDetails(
-            OtBookingRequestHd hd,
-            List<OtBookingRequestDtDto> requestDetails) {
+    private void saveOrUpdateOtDetails(OtBookingRequestHd hd, List<OtBookingRequestDtDto> requestDetails) {
 
-        log.info(
-                "Saving OT details for Header ID: {}",
-                hd.getOtBookingRequestId()
-        );
+        log.info("Saving OT details for Header ID: {}",hd.getOtBookingRequestId());
 
         // Frontend ne koi details nahi bheji
         if (requestDetails == null) {
@@ -146,8 +126,7 @@ public class OtBookingServiceImpl implements OtBookingService {
         }
 
         // Existing DB details
-        List<OtBookingRequestDt> existingDetails =
-                dtRepository.findByOtBookingRequest(hd);
+        List<OtBookingRequestDt> existingDetails = dtRepository.findByOtBookingRequest(hd);
 
         Map<Long, OtBookingRequestDt> existingMap =
                 existingDetails.stream()
@@ -160,28 +139,16 @@ public class OtBookingServiceImpl implements OtBookingService {
 
         // Frontend se jo existing IDs aaye hain
         Set<Long> requestDetailIds = new HashSet<>();
-
-        List<OtBookingRequestDt> detailsToSave =
-                new ArrayList<>();
-
+        List<OtBookingRequestDt> detailsToSave = new ArrayList<>();
         long sequence = 1;
-
         for (OtBookingRequestDtDto dto : requestDetails) {
-
             if (dto == null) {
                 continue;
             }
-
             OtBookingRequestDt dt;
-
             // ================= UPDATE =================
-
             if (dto.getOtBookingRequestDtId() != null) {
-
-                dt = existingMap.get(
-                        dto.getOtBookingRequestDtId()
-                );
-
+                dt = existingMap.get(dto.getOtBookingRequestDtId());
                 if (dt == null) {
                     throw new SDDException(
                             "otBookingDetail",
@@ -191,41 +158,27 @@ public class OtBookingServiceImpl implements OtBookingService {
                     );
                 }
 
-                requestDetailIds.add(
-                        dto.getOtBookingRequestDtId()
-                );
-
+                requestDetailIds.add(dto.getOtBookingRequestDtId());
             }
-
             // ================= CREATE =================
-
             else {
                 dt = new OtBookingRequestDt();
                 dt.setOtBookingRequest(hd);
             }
-
             // ================= MAP DATA =================
-
             dt.setOtBookingRequest(hd);
             dt.setSurgeryId(dto.getSurgeryId());
             dt.setSurgeryTypeId(dto.getSurgeryTypeId());
             dt.setSequenceNo(sequence++);
-            dt.setExpectedDurationMin(
-                    dto.getExpectedDurationMin()
-            );
+            dt.setExpectedDurationMin(dto.getExpectedDurationMin());
             dt.setStatus(AppConstants.STATUS_N);
             dt.setLastChgBy(dto.getLastChgBy());
             dt.setLastChgDate(LocalDateTime.now());
-
             detailsToSave.add(dt);
         }
-
         // ================= SAVE =================
-
         if (!detailsToSave.isEmpty()) {
-
             dtRepository.saveAll(detailsToSave);
-
             log.info(
                     "Saved {} OT booking details for Header ID: {}",
                     detailsToSave.size(),
@@ -246,9 +199,7 @@ public class OtBookingServiceImpl implements OtBookingService {
                         .toList();
 
         if (!detailsToDelete.isEmpty()) {
-
             dtRepository.deleteAll(detailsToDelete);
-
             log.info(
                     "Deleted {} removed OT booking details for Header ID: {}",
                     detailsToDelete.size(),

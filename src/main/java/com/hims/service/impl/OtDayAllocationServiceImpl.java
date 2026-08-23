@@ -102,16 +102,16 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
     }
 
     @Override
-    public ApiResponse<String> checkOtAvailability(Long departmentId, Long otId, LocalDate date, LocalTime startTime) {
+    public ApiResponse<String> checkOtAvailability(Long departmentId, Long otId, LocalDate date) {
         try {
-            if (departmentId == null || otId == null || date == null || startTime == null ) {
+            if (departmentId == null || otId == null ) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "All parameters (departmentId, otId, date, startTime, endTime) are required",
                         org.springframework.http.HttpStatus.BAD_REQUEST.value());
             }
 
             String dayOfWeek = date.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
-            var allocation = otDayAllocationRepository.findByOtAndDepartmentAndDayAndTimeRange(otId, departmentId, dayOfWeek, startTime, AppConstants.STATUS_Y.toLowerCase());
+            var allocation = otDayAllocationRepository.findByOtAndDepartmentAndDay(otId, departmentId, dayOfWeek, AppConstants.STATUS_Y.toLowerCase());
 
             if (allocation.isEmpty()) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {

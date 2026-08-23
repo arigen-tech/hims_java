@@ -84,6 +84,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final OpdPatientDetailMapper opdPatientDetailMapper;
     private final OtBookingService otBookingService;
     private final MasSurgeryRepository masSurgeryRepository;
+    private final OtBookingRequestHdRepository otBookingRequestHdRepository;
+    private final OtBookingRequestDtRepository otBookingRequestDtRepository;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -311,7 +313,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (request.getSurgeryAdvice() != null) {
             SurgeryAdviceRequestDTO surgeryRequest = request.getSurgeryAdvice();
             OtBookingRequestHdDto otRequest = new OtBookingRequestHdDto();
-            otRequest.setRequestNo("REQ/1/001");
+            otRequest.setRequestNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.SURGERY_NO, request.getHospitalId()));
             otRequest.setPatientId(patient.getId());
             otRequest.setVisitId(visit.getId());
             otRequest.setDepartmentId(deptId);
@@ -320,14 +322,15 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 otRequest.setPreferredOtId(Long.valueOf(surgeryRequest.getOtId()));
             }
             otRequest.setPreferredDate(surgeryRequest.getSurgeryDate());
-            otRequest.setPreferredStartTime(surgeryRequest.getSurgeryTime());
+            otRequest.setPreferredStartTime(surgeryRequest.getSurgeryStartTime());
+            otRequest.setPreferredEndTime(surgeryRequest.getSurgeryEndTime());
             otRequest.setDiagnosis(request.getWorkingDiagnosis());
-            otRequest.setRequestSource("OPD");
+            otRequest.setRequestSource(AppConstants.OPDTYPE);
             otRequest.setLastChgBy(user.getFullName());
             otRequest.setLastChgDate(LocalDateTime.now());
             otRequest.setPriority("URGENT");
             otRequest.setBookingStatusId(surgeryBookingStatusRequested);
-            otRequest.setRequestedBy(userRepository.findByEmployee_EmployeeId(request.getDoctorId()).getFullName());
+            otRequest.setRequestedBy(userRepository.getById(request.getDoctorId()).getFullName());
             otRequest.setRequestedDate(LocalDateTime.now());
             otRequest.setStatus(AppConstants.STATUS_N);
             otRequest.setLastChgDate(LocalDateTime.now());
@@ -345,14 +348,25 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     dt.setSequenceNo(sequence++);
                     dt.setStatus(AppConstants.STATUS_N);
                     dt.setLastChgBy(user.getFullName());
-                    dt.setExpectedDurationMin(23);
+                    if (surgeryRequest.getSurgeryStartTime() != null && surgeryRequest.getSurgeryEndTime() != null) {
+
+                        long duration = Duration.between(
+                                surgeryRequest.getSurgeryStartTime(),
+                                surgeryRequest.getSurgeryEndTime()
+                        ).toMinutes();
+
+                        if (duration < 0) {
+                            duration += 24 * 60;
+                        }
+
+                        dt.setExpectedDurationMin((int) duration);
+                    }
                     details.add(dt);
                 }
                 otRequest.setSurgeryDetails(details);
             }
 
-            ApiResponse<String> otResponse =
-                    otBookingService.createOrUpdateOtBookingHeader(otRequest);
+            ApiResponse<String> otResponse = otBookingService.createOrUpdateOtBookingHeader(otRequest);
 
             if (otResponse == null ||
                     otResponse.getStatus() != HttpStatus.OK.value()) {
@@ -517,73 +531,107 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         // ===================== OT BOOKING =====================
 
-        if (request.getSurgeryDetails() != null) {
+// ===================== OT BOOKING UPDATE/CREATE =====================
+        if (request.getSurgeryAdvice() != null) {
+            SurgeryAdviceRequestDTO surgery = request.getSurgeryAdvice();
 
-            SurgeryAdviceRequestDTO surgery = request.getSurgeryDetails();
+            // Check if this is an update or new creation
+            Long existingOtBookingId = surgery.getOtHdId();
+
             OtBookingRequestHdDto otRequest = new OtBookingRequestHdDto();
-
-            // Existing patient/visit information
             otRequest.setPatientId(patient.getId());
             otRequest.setVisitId(visit.getId());
+            otRequest.setDepartmentId(authUtil.getCurrentDepartmentId());
+            otRequest.setPrimarySurgeonId(request.getDoctorId());
+            otRequest.setRequestNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.SURGERY_NO, request.getHospitalId()));
 
-            otRequest.setDepartmentId(
-                    authUtil.getCurrentDepartmentId()
-            );
+            // Set the existing ID if updating, otherwise it will be null for new
+            if (existingOtBookingId != null) {
+                otRequest.setOtBookingRequestId(existingOtBookingId);
+            }
 
-            // Existing doctor information
-            otRequest.setPrimarySurgeonId(
-                    request.getDoctorId()
-            );
-
-            // Existing OT booking ID
-            otRequest.setOtBookingRequestId(surgery.getOtId());
-
-            // OT selected by frontend
+            // OT selection
             if (surgery.getOtId() != null) {
                 otRequest.setPreferredOtId(Long.valueOf(surgery.getOtId()));
             }
 
             // Surgery date/time
             otRequest.setPreferredDate(surgery.getSurgeryDate());
+            otRequest.setPreferredStartTime(surgery.getSurgeryStartTime());
+            otRequest.setPreferredEndTime(surgery.getSurgeryEndTime());
 
-            otRequest.setPreferredStartTime(surgery.getSurgeryTime());
-
-            // Diagnosis
+            // Diagnosis and other details
             otRequest.setDiagnosis(request.getWorkingDiagnosis());
             otRequest.setRequestSource("OPD");
-            otRequest.setStatus(AppConstants.STATUS_N.toLowerCase());
-
+            otRequest.setStatus(AppConstants.STATUS_N);
             otRequest.setLastChgBy(user.getFullName());
             otRequest.setLastChgDate(LocalDateTime.now());
+            otRequest.setRequestedBy(user.getFullName());
+            otRequest.setRequestedDate(LocalDateTime.now());
+            otRequest.setBookingStatusId(surgeryBookingStatusRequested);
+            otRequest.setPriority("URGENT");
 
-            // ================= DT =================
-
+            // ================= SURGERY DETAILS =================
             List<OtBookingRequestDtDto> details = new ArrayList<>();
-            if (surgery.getSurgeryDetails() != null) {
+
+            if (surgery.getSurgeryDetails() != null && !surgery.getSurgeryDetails().isEmpty()) {
                 long sequence = 1;
 
                 for (SurgeryAdviceRequestDTO.SurgeryDetailDTO surgeryDetail : surgery.getSurgeryDetails()) {
                     OtBookingRequestDtDto dt = new OtBookingRequestDtDto();
-                    dt.setSurgeryId(surgeryDetail.getSurgeryId());
-                    dt.setSequenceNo(sequence++);
-                    dt.setStatus(AppConstants.STATUS_N.toLowerCase());
-                    dt.setLastChgBy(user.getFullName());
 
+                    // Validate surgery exists
+                    MasSurgery masSurgery = masSurgeryRepository
+                            .findById(surgeryDetail.getSurgeryId())
+                            .orElseThrow(() -> new SDDException(
+                                    "surgery",
+                                    404,
+                                    "Surgery not found with ID: " + surgeryDetail.getSurgeryId()
+                            ));
+
+                    dt.setSurgeryId(masSurgery.getSurgeryId());
+                    if (masSurgery.getSurgeryType() != null) {
+                        dt.setSurgeryTypeId(masSurgery.getSurgeryType().getSurgeryTypeId());
+                    }
+
+                    dt.setSequenceNo(sequence++);
+                    dt.setStatus(AppConstants.STATUS_N);
+                    dt.setLastChgBy(user.getFullName());
+                    if (surgery.getSurgeryStartTime() != null
+                            && surgery.getSurgeryEndTime() != null) {
+
+                        long duration = Duration.between(
+                                surgery.getSurgeryStartTime(),
+                                surgery.getSurgeryEndTime()
+                        ).toMinutes();
+
+                        if (duration < 0) {
+                            duration += 24 * 60;
+                        }
+
+                        dt.setExpectedDurationMin((int) duration);
+                    }
+
+                    // If updating, preserve the detail ID
+                    if (surgeryDetail.getOtDtId() != null) {
+                        dt.setOtBookingRequestDtId(surgeryDetail.getOtDtId());
+                    }
                     details.add(dt);
                 }
             }
 
             otRequest.setSurgeryDetails(details);
-
             // ================= SAVE / UPDATE =================
-
             ApiResponse<String> response = otBookingService.createOrUpdateOtBookingHeader(otRequest);
 
-            if (response == null|| response.getStatus() != HttpStatus.OK.value()) {
-                throw new SDDException("otBooking", 500, response != null ? response.getMessage() : "Failed to save OT booking");
+            if (response == null || response.getStatus() != HttpStatus.OK.value()) {
+                throw new SDDException(
+                        "otBooking",
+                        500,
+                        response != null ? response.getMessage() : "Failed to save OT booking"
+                );
             }
         }
-
         replacePsychiatryAssessment(request, patient, visit, user);
 
         //OBG details
@@ -1763,11 +1811,11 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
      */
     private void processRadiologyInvestigations(Map<LocalDate, List<InvestigationData>> groupedByDate, Patient patient, Visit visit, User currentUser) {
         log.info("Starting RADIOLOGY investigation processing for patient ID: {}", patient.getId());
-        MasServiceCategory radiologyServiceCategory = masServiceCategoryRepository.findByServiceCateCode("SC004");
-        if (radiologyServiceCategory == null) {
-            log.error("Radiology service category (SC004) not found");
-            throw new SDDException("serviceCategory", 400, "Radiology service category not configured");
-        }
+//        MasServiceCategory radiologyServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
+//        if (radiologyServiceCategory == null) {
+//            log.error("Radiology service category (SC004) not found");
+//            throw new SDDException("serviceCategory", 400, "Radiology service category not configured");
+//        }
 
         for (Map.Entry<LocalDate, List<InvestigationData>> entry : groupedByDate.entrySet()) {
             LocalDate appointmentDate = entry.getKey();
@@ -2100,6 +2148,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     }
                 }
             }
+            response.setSurgeryDetails(getSurgeryDetails(visitId));
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
             });
         } catch (Exception ex) {
@@ -2352,6 +2401,49 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
 
         return newHdList;
+    }
+
+    private SurgeryAdviceResponseDTO getSurgeryDetails(Long visitId) {
+
+        Optional<OtBookingRequestHd> optionalHd = otBookingRequestHdRepository.findByVisitId(visitId);
+
+        if (optionalHd.isEmpty()) {
+            return null;
+        }
+
+        OtBookingRequestHd hd = optionalHd.get();
+
+        SurgeryAdviceResponseDTO response = new SurgeryAdviceResponseDTO();
+        // ================= HD =================
+        response.setOtBookingRequestHdId(hd.getOtBookingRequestId());
+        if (hd.getPreferredOtId() != null) {
+            response.setOtId(hd.getPreferredOtId().toString());
+        }
+        response.setSurgeryDate(hd.getPreferredDate());
+        response.setSurgeryStartTime(hd.getPreferredStartTime());
+        response.setSurgeryEndTime(hd.getPreferredEndTime());
+
+        // ================= DT =================
+
+        List<OtBookingRequestDt> dtList = otBookingRequestDtRepository.findByOtBookingRequest(hd);
+
+        List<SurgeryAdviceResponseDTO.SurgeryDetailResponseDTO>
+                surgeryDetails = new ArrayList<>();
+        for (OtBookingRequestDt dt : dtList) {
+            if (dt == null) {
+                continue;
+            }
+            SurgeryAdviceResponseDTO.SurgeryDetailResponseDTO
+                    detail = new SurgeryAdviceResponseDTO.SurgeryDetailResponseDTO();
+
+            detail.setOtBookingRequestDtId(dt.getOtBookingRequestDtId());
+            detail.setSurgeryId(dt.getSurgeryId());
+            surgeryDetails.add(detail);
+        }
+
+        response.setSurgeryDetails(surgeryDetails);
+
+        return response;
     }
 
 
