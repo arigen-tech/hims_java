@@ -1811,11 +1811,11 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
      */
     private void processRadiologyInvestigations(Map<LocalDate, List<InvestigationData>> groupedByDate, Patient patient, Visit visit, User currentUser) {
         log.info("Starting RADIOLOGY investigation processing for patient ID: {}", patient.getId());
-        MasServiceCategory radiologyServiceCategory = masServiceCategoryRepository.findByServiceCateCode("SC004");
-        if (radiologyServiceCategory == null) {
-            log.error("Radiology service category (SC004) not found");
-            throw new SDDException("serviceCategory", 400, "Radiology service category not configured");
-        }
+//        MasServiceCategory radiologyServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
+//        if (radiologyServiceCategory == null) {
+//            log.error("Radiology service category (SC004) not found");
+//            throw new SDDException("serviceCategory", 400, "Radiology service category not configured");
+//        }
 
         for (Map.Entry<LocalDate, List<InvestigationData>> entry : groupedByDate.entrySet()) {
             LocalDate appointmentDate = entry.getKey();
@@ -1833,7 +1833,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             radOrderHd.setVisit(visit);
             radOrderHd.setDepartment(visit.getDepartment());
             radOrderHd.setHospital(visit.getHospital());
-            radOrderHd.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            radOrderHd.setLastChgBy(currentUser.getFirstName() + " " + dcurrentUser.getLastName());
             radOrderHd.setLastChgDate(LocalDateTime.now());
 
             RadOrderHd savedRadOrderHd = radOrderHdRepository.save(radOrderHd);
