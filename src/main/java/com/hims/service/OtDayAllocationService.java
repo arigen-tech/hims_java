@@ -9,7 +9,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 public interface OtDayAllocationService {
-    ApiResponse<String> checkOtAvailability(Long departmentId, Long otId, LocalDate date, LocalTime startTime);
+    ApiResponse<String> checkOtAvailability(Long departmentId, Long otId, LocalDate date);
 
     ApiResponse<String> saveOtDayAllocation(OtDayAllocationRequest request);
 

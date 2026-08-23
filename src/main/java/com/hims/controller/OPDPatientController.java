@@ -309,9 +309,9 @@ public class OPDPatientController {
 
         try {
             java.time.LocalDate localDate = java.time.LocalDate.parse(date);
-            java.time.LocalTime startTimeObj = java.time.LocalTime.parse(startTime);
+//            java.time.LocalTime startTimeObj = java.time.LocalTime.parse(startTime);
 
-            return ResponseEntity.ok(otDayAllocationService.checkOtAvailability(departmentId, otId, localDate, startTimeObj));
+            return ResponseEntity.ok(otDayAllocationService.checkOtAvailability(departmentId, otId, localDate));
         } catch (Exception e) {
             ApiResponse<String> response = new ApiResponse<>();
             response.setStatus(400);

@@ -67,7 +67,7 @@ public class RecallOpdPatientDetailRequest {
     private OpdObgDetailsRequest opdObgDetailsRequest;
     private OpdEntDetailsRequest entExaminationDetails;
     private OpdOpthDetailsRequest ophthalmologyExaminationDetails;
-    private SurgeryAdviceRequestDTO surgeryDetails;
+    private SurgeryAdviceRequestDTO surgeryAdvice;
 
     @Data
     public static class TreatmentRequest {

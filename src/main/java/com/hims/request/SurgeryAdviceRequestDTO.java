@@ -12,15 +12,18 @@ import java.util.List;
 public class SurgeryAdviceRequestDTO {
 
     private Long otId;
+    private Long otHdId;
     private LocalDate surgeryDate;
     @JsonFormat(pattern = "HH:mm")
-    private LocalTime surgeryTime;
+    private LocalTime surgeryStartTime;
+    private LocalTime surgeryEndTime;
 
     private List<SurgeryDetailDTO> surgeryDetails;
 
     @Data
     @Builder
     public static class SurgeryDetailDTO {
+        private Long otDtId;
         private Long surgeryId;
         private String surgeryName;
     }

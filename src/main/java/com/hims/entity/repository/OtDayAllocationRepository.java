@@ -20,14 +20,11 @@ public interface OtDayAllocationRepository extends JpaRepository<OtDayAllocation
      AND o.department.id = :departmentId
      AND LOWER(o.dayOfWeek) = LOWER(:dayOfWeek)
      AND LOWER(o.status) = LOWER(:status)
-     AND o.startTime <= :startTime
-     AND o.endTime > :startTime
  """)
-    Optional<OtDayAllocation> findByOtAndDepartmentAndDayAndTimeRange(
+    Optional<OtDayAllocation> findByOtAndDepartmentAndDay(
             @Param("otId") Long otId,
             @Param("departmentId") Long departmentId,
             @Param("dayOfWeek") String dayOfWeek,
-            @Param("startTime") LocalTime startTime,
             @Param("status") String status);
 
     List<OtDayAllocation> findByStatusIgnoreCaseOrderByDayOfWeekAsc(
