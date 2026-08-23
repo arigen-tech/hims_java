@@ -304,8 +304,7 @@ public class OPDPatientController {
     public ResponseEntity<ApiResponse<String>> checkOtAvailability(
             @RequestParam Long departmentId,
             @RequestParam Long otId,
-            @RequestParam String date,
-            @RequestParam String startTime) {
+            @RequestParam String date) {
 
         try {
             java.time.LocalDate localDate = java.time.LocalDate.parse(date);
