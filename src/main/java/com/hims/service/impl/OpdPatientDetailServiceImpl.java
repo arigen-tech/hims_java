@@ -1833,7 +1833,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             radOrderHd.setVisit(visit);
             radOrderHd.setDepartment(visit.getDepartment());
             radOrderHd.setHospital(visit.getHospital());
-            radOrderHd.setLastChgBy(currentUser.getFirstName() + " " + dcurrentUser.getLastName());
+            radOrderHd.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
             radOrderHd.setLastChgDate(LocalDateTime.now());
 
             RadOrderHd savedRadOrderHd = radOrderHdRepository.save(radOrderHd);
