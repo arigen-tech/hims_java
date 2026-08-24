@@ -24,13 +24,13 @@ public class SampleHeaderForResultEntryResponse {
     private String patientGender;
     private String patientAge;
     private LocalDate orderDate;
-    private Instant orderTime;
+    private LocalDateTime orderTime;
     private LocalDateTime collectedDate;
     private String orderNo;
     private LocalDateTime collectedTime;
     private String collectedBy;
     private LocalDate validatedDate;
-    private Instant validatedTime;
+    private LocalDateTime validatedTime;
     private String validatedBy;
     private String department;
     private  String doctorName;

@@ -57,7 +57,7 @@ public interface BillingService {
     /**
      * Search invoice details by patient name, phone or registration number
      */
-    ApiResponse<Page<BillingHeaderResponseProjection>> searchInvoiceDetails(String patientName, String phoneNo, String registrationNo, Pageable pageable);
+    ApiResponse<Page<BillingHeaderResponseProjection>> searchInvoiceDetails(String patientName, String phoneNo, String registrationNo,Long serviceCategoryId, int page,int size);
 
 
     BillingHeader saveBillingHeader(

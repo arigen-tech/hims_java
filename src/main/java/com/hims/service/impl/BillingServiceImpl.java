@@ -636,7 +636,7 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     public ApiResponse<Page<BillingHeaderResponseProjection>> searchInvoiceDetails(
-            String patientName, String phoneNo, String registrationNo, Pageable pageable) {
+            String patientName, String phoneNo, String registrationNo,Long serviceCategoryId, int page,int size) {
         try {
             String patientNameLike = (patientName == null || patientName.trim().isEmpty())
                     ? null
@@ -650,10 +650,12 @@ public class BillingServiceImpl implements BillingService {
                     ? null
                     : "%" + registrationNo.trim().toLowerCase() + "%";
 
+            Pageable pageable = PageRequest.of(page, size);
+
             Page<BillingHeaderResponseProjection> response = billingHeaderRepository.searchBillingStatus(
                     patientNameLike,
                     phoneNoLike,
-                    registrationNoLike, AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_P.toLowerCase(), pageable
+                    registrationNoLike, AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_P.toLowerCase(),serviceCategoryId, pageable
             );
 
             return ResponseUtils.createSuccessResponse(
