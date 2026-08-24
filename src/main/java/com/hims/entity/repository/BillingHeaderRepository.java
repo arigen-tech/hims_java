@@ -236,6 +236,10 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 :registrationNo IS NULL OR
                 LOWER(p.uhid_no) LIKE LOWER(CONCAT('%', :registrationNo, '%'))
           )
+          AND(
+          :serviceCategoryId IS NULL OR
+          sc.id=:serviceCategoryId
+          )
         ORDER BY bh.bill_hd_id DESC
         """,
 
@@ -244,6 +248,8 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
         FROM billing_header bh
         LEFT JOIN visit v ON v.billing_hd_id = bh.bill_hd_id
         LEFT JOIN patient p ON p.patient_id = bh.patient_id
+        LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
+
         WHERE bh.payment_status IN (:complete, :partial)
           AND (
                 :patientName IS NULL OR
@@ -261,6 +267,10 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
                 :registrationNo IS NULL OR
                 LOWER(p.uhid_no) LIKE LOWER(CONCAT('%', :registrationNo, '%'))
           )
+          AND(
+          :serviceCategoryId IS NULL OR
+          sc.id=:serviceCategoryId
+          )
         """,
 
             nativeQuery = true
@@ -271,6 +281,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             @Param("registrationNo") String registrationNo,
             @Param("complete") String complete,
             @Param("partial") String partial,
+            Long serviceCategoryId,
             Pageable pageable
     );
 

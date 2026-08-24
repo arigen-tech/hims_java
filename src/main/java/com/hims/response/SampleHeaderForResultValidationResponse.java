@@ -25,6 +25,6 @@ public class SampleHeaderForResultValidationResponse {
     private Long subChargeCodeId;
     private String subChargeCodeName;
     private String resultEnteredBy;
-    private Integer orderHdId;
+    private Long orderHdId;
     private String orderNo;
 }

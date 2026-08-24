@@ -109,10 +109,12 @@ public class BillingController {
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) String phoneNo,
             @RequestParam(required = false) String registrationNo,
-            Pageable pageable) {
-        log.info("Search Invoice Details API called - patientName={}, phoneNo={}, registrationNo={}",
-                patientName, phoneNo, registrationNo);
-        return billingService.searchInvoiceDetails(patientName, phoneNo, registrationNo, pageable);
+            @RequestParam(required = false) Long serviceCategoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        log.info("Search Invoice Details API called - patientName={}, phoneNo={}, registrationNo={},serviceCategoryId = {}",
+                patientName, phoneNo, registrationNo,serviceCategoryId);
+        return billingService.searchInvoiceDetails(patientName, phoneNo, registrationNo,serviceCategoryId, page,size);
     }
 
     @GetMapping("/billingRefundPatientList")
