@@ -114,5 +114,13 @@ public interface IPDPatientService {
     ApiResponse<List<IpAdverseEventResponse>> getAdverseReactionDetails(Long inpatientId);
 
     ApiResponse<Page<ActiveAdmissionResponse>> activeAdmissionAndDischargeAdmissionList(int page, int size, String patientName, String mobileNo, String admissionNo, Long wardId, Integer admissionStatus);
+
+    ApiResponse<Page<InpatientDietResponse>> activeDietByInpatient(int page, int size, String patientName, String mobileNo, Long wardId);
+
+    ApiResponse<String> saveDietOrderByInpatient(@Valid DietOrderRequest request);
+
+    ApiResponse<List<PreviousDietHistoryResponse>> getPreviousDietHistory(Long inpatientId);
+
+    ApiResponse<String> saveCurrentActiveDietSchedule(@Valid CurrentActiveDietScheduleRequest request);
 }
 

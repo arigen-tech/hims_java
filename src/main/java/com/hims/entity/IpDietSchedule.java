@@ -41,6 +41,9 @@ public class IpDietSchedule {
     @Column(name = "serving_time")
     private LocalTime servingTime;
 
+    @Column(name = "actual_time")
+    private LocalTime actualTime;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "diet_schedule_status_id", nullable = false, foreignKey = @ForeignKey(name = "ip_diet_schedule_diet_schedule_status_id_fkey"))
     private MasDietScheduleStatus dietScheduleStatus;
