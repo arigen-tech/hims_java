@@ -76,6 +76,8 @@ public class InventoryServiceImpl implements InventoryService {
 
     private final MasManufacturerRepository masManufacturerRepository;
 
+    private final StoreItemDamagedStockRepository damagedStockRepository;
+
     @Value("${op_txn_type}")
     private String opTxnType;
 
@@ -2149,6 +2151,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<String> verifyReturnedIndentAtIssueDept(VerifyReturnIndentHeaderRequest request) {
         try {
 
@@ -2156,44 +2159,47 @@ public class InventoryServiceImpl implements InventoryService {
 
             Optional<StoreReturnM> byId = returnMRepository.findById(request.getReturnMId());
             if(byId.isEmpty()){
-                return ResponseUtils.createNotFoundResponse(
-                        "Invalid Return Header ID",
-                        HttpStatus.NOT_FOUND.value()
+                throw new SDDException("returnMId",
+                        HttpStatus.NOT_FOUND.value(),
+                        "Return header details not found"
                 );
             }
             StoreReturnM storeReturnM = byId.get();
             Optional<MasDepartment> deptOpt = masDepartmentRepository.findById(request.getSourceDeptId());
             if(deptOpt.isEmpty()){
-                return ResponseUtils.createNotFoundResponse(
-                        "Invalid Source Dept, Source Dept Not Found",
-                        HttpStatus.NOT_FOUND.value()
-                );
+               throw  new SDDException("SourceDeptId",
+                       HttpStatus.NOT_FOUND.value(),
+                       "Invalid Source Dept, Source Dept Not Found"
+               );
             }
             MasDepartment sourceDept = deptOpt.get();
 
             for (VerifyReturnIndentDetailRequest detailRequest : request.getDetailRequests()){
                 Optional<StoreReturnT> returnTOpt = storeReturnTRepository.findById(detailRequest.getReturnTId());
                 if(returnTOpt.isEmpty()){
-                    return ResponseUtils.createNotFoundResponse(
-                            "Invalid Return Details ID",
-                            HttpStatus.NOT_FOUND.value()
-                    );
+                   throw  new SDDException("ReturnTId",
+                           HttpStatus.NOT_FOUND.value(),
+                           "Return Details not found"
+                   );
                 }
                 StoreReturnT storeReturnT = returnTOpt.get();
                 Optional<StoreItemBatchStock> stockOpt = storeItemBatchStockRepository.findById(detailRequest.getStockId());
                 if(stockOpt.isEmpty()){
-                    return ResponseUtils.createNotFoundResponse(
-                            "Batch stock details not found",
-                            HttpStatus.NOT_FOUND.value()
+                    throw  new SDDException("StockId",
+                            HttpStatus.NOT_FOUND.value(),
+                            "Batch stock details not found"
                     );
                 }
                 StoreItemBatchStock storeItemBatchStock = stockOpt.get();
                 storeReturnT.setIsVerified(AppConstants.STATUS_Y.toLowerCase());
+                storeReturnT.setLastUpdatedBy(authUtil.getCurrentUserFullName());
                 StoreReturnT savesReturnDetails = storeReturnTRepository.save(storeReturnT);
 
-                storeItemBatchStock.setClosingStock(storeItemBatchStock.getClosingStock()-detailRequest.getDamagedQty().longValue());
+//                storeItemBatchStock.setClosingStock(storeItemBatchStock.getClosingStock()-detailRequest.getDamagedQty().longValue());
                 storeItemBatchStock.setLastChgBy(authUtil.getCurrentUser().getFullName());
-                storeItemBatchStock.setReturnQty(storeItemBatchStock.getReturnQty().add(detailRequest.getDamagedQty()));
+                storeItemBatchStock.setReturnQty(storeItemBatchStock.getReturnQty()!=null?
+                        storeItemBatchStock.getReturnQty().add(detailRequest.getDamagedQty()):
+                        detailRequest.getDamagedQty());
                 storeItemBatchStockRepository.save(storeItemBatchStock);
 
                 updateDamagedStock(storeReturnM, sourceDept, detailRequest, storeReturnT, storeItemBatchStock);
@@ -2216,12 +2222,7 @@ public class InventoryServiceImpl implements InventoryService {
                     e
             );
 
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<>() {},
-                    AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
+          throw  new RuntimeException(e);
         }
     }
 
@@ -2278,6 +2279,7 @@ public class InventoryServiceImpl implements InventoryService {
                                     StoreReturnT storeReturnT,
                                     StoreItemBatchStock storeItemBatchStock) {
         StoreItemDamagedStock damagedStock= new StoreItemDamagedStock();
+        damagedStock.setStoreItemBatchStock(storeItemBatchStock);
         damagedStock.setApprovedBy(authUtil.getCurrentUser().getFullName());
         damagedStock.setApprovedDate(LocalDateTime.now());
         damagedStock.setBrandName(storeItemBatchStock.getBrandId().getBrandName());
@@ -2291,6 +2293,11 @@ public class InventoryServiceImpl implements InventoryService {
         damagedStock.setStoreReturnM(storeReturnM);
         damagedStock.setStoreReturnT(storeReturnT);
         damagedStock.setSourceDepartment(sourceDept);
+        damagedStock.setBatchNo(storeItemBatchStock.getBatchNo());
+        damagedStock.setDom(storeItemBatchStock.getManufactureDate());
+        damagedStock.setExpiryDate(storeItemBatchStock.getExpiryDate());
+        damagedStockRepository.save(damagedStock);
+
     }
 
     public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
@@ -2584,6 +2591,10 @@ public class InventoryServiceImpl implements InventoryService {
             );
             returnT.setCreatedBy(userName);
             returnT.setLastUpdateDate(LocalDateTime.now());
+            returnT.setIsVerified(AppConstants.STATUS_N.toLowerCase());
+            returnT.setReturnReason("Damaged");
+            returnT.setDamagedQty(itemDetail.rejectedQty);
+            returnT.setUsableQty(itemDetail.receiveT.getIssuedQty().subtract(itemDetail.rejectedQty));
 
             storeReturnTRepository.save(returnT);
 

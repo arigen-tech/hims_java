@@ -29,7 +29,17 @@ public interface StoreReturnMRepository extends JpaRepository<StoreReturnM, Long
     SELECT new com.hims.response.UnverifiedReturnHeaderResponse(
         r.returnMId,
         r.returnNo,
+        sim.indentMId,
+        sim.indentNo,
+        sim.indentDate,
+        sim.createdBy,
+        siim.storeIssueMId,
+        siim.issueNo,
+        siim.issueDate,
+        siim.issuedBy,
         rem.receiveMId,
+        rem.receivedDate,
+        rem.receivedBy,
         recd.id,
         recd.departmentName,
         isd.id,
@@ -41,6 +51,8 @@ public interface StoreReturnMRepository extends JpaRepository<StoreReturnM, Long
     LEFT JOIN r.storeDepartment isd
     LEFT JOIN isd.hospital h
     LEFT JOIN  r.storeIndentReceiveM rem
+    LEFT JOIN rem.storeInternalIndent sim
+    INNER JOIN sim.storeIssueMId siim
     LEFT JOIN rem.receivedDepartment recd
     
     WHERE isd.id = :toDepartmentId
