@@ -16,4 +16,5 @@ public interface MasOtBookingStatusRepository extends JpaRepository<MasOtBooking
 
     // For uniqueness validation on statusCode (create / update)
     Optional<MasOtBookingStatus> findByStatusCodeIgnoreCase(String statusCode);
+    Optional<MasOtBookingStatus> findByStatusCode(String statusCode);
 }

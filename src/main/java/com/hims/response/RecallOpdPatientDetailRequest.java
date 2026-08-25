@@ -1,9 +1,6 @@
 package com.hims.response;
 
-import com.hims.request.OpdEntDetailsRequest;
-import com.hims.request.OpdObgDetailsRequest;
-import com.hims.request.OpdOpthDetailsRequest;
-import com.hims.request.OpdPsychiatricDetailsRequest;
+import com.hims.request.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -70,6 +67,7 @@ public class RecallOpdPatientDetailRequest {
     private OpdObgDetailsRequest opdObgDetailsRequest;
     private OpdEntDetailsRequest entExaminationDetails;
     private OpdOpthDetailsRequest ophthalmologyExaminationDetails;
+    private SurgeryAdviceRequestDTO surgeryAdvice;
 
     @Data
     public static class TreatmentRequest {

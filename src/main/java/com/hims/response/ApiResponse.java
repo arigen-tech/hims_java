@@ -32,6 +32,12 @@ public class ApiResponse<T> {
 
     }
 
+    public ApiResponse(Integer status, String message, T data) {
+        this.status = status;
+        this.message = message;
+        this.data = data;
+    }
+
     public ApiResponse(int status,String message){
         this.status = status;
         this.message = message;

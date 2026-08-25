@@ -4,9 +4,12 @@ import com.hims.request.OtDayAllocationRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OtDayAllocationResponse;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public interface OtDayAllocationService {
+    ApiResponse<String> checkOtAvailability(Long departmentId, Long otId, LocalDate date);
 
     ApiResponse<String> saveOtDayAllocation(OtDayAllocationRequest request);
 

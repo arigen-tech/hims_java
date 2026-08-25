@@ -35,4 +35,12 @@ public class MasBrand {
     @Column(name = "last_updated_dt")
     private LocalDateTime lastUpdatedDt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_type_id")
+    private MasItemType itemType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "manufacturer_id")
+    private MasManufacturer manufacturer;
+
 }

@@ -74,7 +74,6 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
             List<MasOperationTheatre> list;
 
             if (flag == 1) {
-
                 list = masOperationTheatreRepository.findByStatusIgnoreCaseOrderByOtNameAsc(AppConstants.STATUS_Y.toLowerCase());
 
             } else {

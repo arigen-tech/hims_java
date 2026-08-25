@@ -42,6 +42,9 @@ public class OPDPatientController {
     @Autowired
     private OpdQuestionMasterService opdQuestionMasterService;
 
+    @Autowired
+    private OtDayAllocationService  otDayAllocationService;
+
 
     @GetMapping("/getPendingPreConsultations")
     @Operation(
@@ -292,12 +295,29 @@ public class OPDPatientController {
             @RequestParam(required = false) Long hospitalId
     ) {
 
-        log.info("Received request to fetch OPD reports. Filters - mobileNo: {}, patientName: {}, hospitalId: {}, page: {}, size: {}",
-                mobileNo, patientName, hospitalId, page, size);
-
+        log.info("Received request to fetch OPD reports. Filters - mobileNo: {}, patientName: {}, hospitalId: {}, page: {}, size: {}", mobileNo, patientName, hospitalId, page, size);
         Pageable pageable = PageRequest.of(page, size);
-
         return opdPatientDetailService.getOpdReportsList(pageable, mobileNo, patientName, hospitalId);
     }
+
+    @GetMapping("otDayAllocation/checkAvailability")
+    public ResponseEntity<ApiResponse<String>> checkOtAvailability(
+            @RequestParam Long departmentId,
+            @RequestParam Long otId,
+            @RequestParam String date) {
+
+        try {
+            java.time.LocalDate localDate = java.time.LocalDate.parse(date);
+//            java.time.LocalTime startTimeObj = java.time.LocalTime.parse(startTime);
+
+            return ResponseEntity.ok(otDayAllocationService.checkOtAvailability(departmentId, otId, localDate));
+        } catch (Exception e) {
+            ApiResponse<String> response = new ApiResponse<>();
+            response.setStatus(400);
+            response.setMessage("Invalid date or time format");
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
 
 }

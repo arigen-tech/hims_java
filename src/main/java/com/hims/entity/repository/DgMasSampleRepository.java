@@ -11,7 +11,5 @@ public interface DgMasSampleRepository extends JpaRepository<DgMasSample,Long> {
 
     List<DgMasSample> findAllByOrderByStatusDescLastChgDateDesc();
 
-
-
     List<DgMasSample> findByStatusIgnoreCaseOrderBySampleDescriptionAsc(String y);
 }
