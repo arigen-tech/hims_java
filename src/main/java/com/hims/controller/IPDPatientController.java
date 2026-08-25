@@ -5,7 +5,6 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.IPDPatientService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -596,8 +595,52 @@ public class IPDPatientController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/activeDietByInpatient")
+    public ResponseEntity<ApiResponse<Page<InpatientDietResponse>>> activeDietByInpatient(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) Long wardId) {
+        log.info("Fetching active admissions. page={}, size={}, patientName={}, mobileNo={}, admissionNo={}, wardId={}, admissionStatus={}", page, size, patientName, mobileNo, wardId);
+        ApiResponse<Page<InpatientDietResponse>> response = ipdPatientService.activeDietByInpatient(page, size,
+                patientName,
+                mobileNo,
+                wardId);
+        return ResponseEntity.ok(response);
+    }
 
+    @PostMapping("/saveDietOrderByInpatient")
+    public ApiResponse<String> saveDietOrderByInpatient(@Valid @RequestBody DietOrderRequest request) {
+        log.info("Request received to save diet order. inpatientId={}, dietTypeId={}, orderedBy={}, effectiveFrom={}",
+                request.getInpatientId(),
+                request.getDietTypeId(),
+                request.getOrderedBy(),
+                request.getEffectiveFrom());
+        ApiResponse<String> response = ipdPatientService.saveDietOrderByInpatient(request);
+        log.info("Diet order saved successfully. inpatientId={}", request.getInpatientId());
+        return response;
+    }
 
+    @GetMapping("/getPerviousDietOrderHistory")
+    public ResponseEntity<ApiResponse<List<PreviousDietHistoryResponse>>> getPreviousDietHistory(@RequestParam Long inpatientId) {
+        log.info("Request received to fetch previous diet history. inpatientId={}", inpatientId);
+        ApiResponse<List<PreviousDietHistoryResponse>> response = ipdPatientService.getPreviousDietHistory(inpatientId);
+        log.info("Previous diet history fetched successfully. inpatientId={}",inpatientId   );
+        return ResponseEntity.ok(response);
+    }
 
-
+    @PostMapping("/saveCurrentActiveDietSchedule")
+    public ApiResponse<String> saveCurrentActiveDietSchedule(@Valid @RequestBody CurrentActiveDietScheduleRequest request) {
+        log.info("Request received to save diet schedule. inpatientId={}, dietOrderId={}, dietDate={}, dietMealId={}, scheduleStatusId={}",
+                request.getInpatientId(),
+                request.getDietOrderId(),
+                request.getDietDate(),
+                request.getDietMealId(),
+                request.getScheduleStatusId());
+        ApiResponse<String> response = ipdPatientService.saveCurrentActiveDietSchedule(request);
+        log.info("Diet schedule saved successfully. inpatientId={}, dietOrderId={}, dietDate={}", request.getInpatientId(), request.getDietOrderId(), request.getDietDate());
+        return response;
+    }
 }
+

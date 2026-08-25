@@ -20,6 +20,7 @@ import com.hims.utils.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -210,6 +211,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     ItemClassBillSubcategoryMappingRepository itemClassBillSubcategoryMappingRepository;
     @Autowired
     IpAdverseEventRepository ipAdverseEventRepository;
+    @Autowired
+    MasDietTypeRepository masDietTypeRepository;
+    @Autowired
+    IpDietOrderRepository ipDietOrderRepository;
+    @Autowired
+    MasMealTypeRepository masMealTypeRepository;
+    @Autowired
+    MasDietScheduleStatusRepository masDietScheduleStatusRepository;
+    @Autowired
+    IpDietScheduleRepository ipDietScheduleRepository;
 
 
     @Value("${ipd.admission.status.admitted}")
@@ -3938,6 +3949,178 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             throw new RuntimeException("Failed to fetch active admission list: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public ApiResponse<Page<InpatientDietResponse>> activeDietByInpatient(int page, int size, String patientName, String mobileNo, Long wardId) {
+        try {
+
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "inpatientId"));
+
+            Page<InpatientDietOrderProjection> projectionPage = inpatientRepository.activeDietByInpatient(AppConstants.IP_ACTIVE_DIET,admitAdmissionStatusId,patientName, mobileNo,
+                    wardId, pageable);
+
+            Page<InpatientDietResponse> responsePage = projectionPage.map(this::mapActiveDietByInpatientResponse);
+
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching active admission list. ",e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    public ApiResponse<String> saveDietOrderByInpatient(DietOrderRequest request) {
+        try {
+            User currentUser = authUtil.getCurrentUser();
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() ->
+                            new RuntimeException("Inpatient not found with ID: " + request.getInpatientId()));
+            /*
+             * Find existing active diet order
+             */
+            Optional<IpDietOrder> existingDietOrder = ipDietOrderRepository.findByInpatient_InpatientIdAndStatus(
+                            request.getInpatientId(),
+                            AppConstants.IP_ACTIVE_DIET);
+            /*
+             * Stop previous active diet
+             */
+            if (existingDietOrder.isPresent()) {
+                IpDietOrder previousDiet = existingDietOrder.get();
+                previousDiet.setStatus(AppConstants.IP_COMPLETE_DIET);
+                previousDiet.setToDate(LocalDate.now());
+                previousDiet.setLastUpdateDate(LocalDateTime.now());
+                previousDiet.setLastUpdatedBy(currentUser.getFullName());
+                ipDietOrderRepository.save(previousDiet);
+            }
+            IpDietOrder ipDietOrder = new IpDietOrder();
+            ipDietOrder.setInpatient(inpatient);
+            ipDietOrder.setDietPreference(inpatient.getDietPreference());
+
+            ipDietOrder.setOrderedBy(userRepo.findById(request.getOrderedBy()).orElseThrow(() ->
+                                    new RuntimeException("User not found with ID: " + request.getOrderedBy())));
+
+            ipDietOrder.setDietType(masDietTypeRepository.findById(request.getDietTypeId())
+                    .orElseThrow(() -> new RuntimeException("Diet type not found with ID: " + request.getDietTypeId())));
+
+            ipDietOrder.setSpecialInstruction(request.getSpecialInstruction());
+            ipDietOrder.setCreatedBy(currentUser.getFullName());
+            ipDietOrder.setFromDate(request.getEffectiveFrom());
+            ipDietOrder.setLastUpdateDate(LocalDateTime.now());
+            ipDietOrder.setLastUpdatedBy(currentUser.getFullName());
+            ipDietOrder.setStatus(AppConstants.IP_ACTIVE_DIET);
+            ipDietOrder.setRemark(request.getRemark());
+            ipDietOrderRepository.save(ipDietOrder);
+
+            return ResponseUtils.createSuccessResponse("Diet order saved successfully", new TypeReference<>() {});
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save diet order: " + e.getMessage(), e);
+        }
+    }
+    @Override
+    public ApiResponse<List<PreviousDietHistoryResponse>> getPreviousDietHistory(
+            Long inpatientId) {
+
+        try {
+            log.info("Fetching previous diet history for inpatientId={}", inpatientId);
+
+            List<PreviousDietHistoryResponse> response = ipDietOrderRepository.getPreviousDietHistory(inpatientId);
+
+            log.info("Previous diet history fetched successfully. inpatientId={}, recordCount={}", inpatientId, response.size());
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
+
+        }
+    }
+    @Override
+    @Transactional
+    public ApiResponse<String> saveCurrentActiveDietSchedule(CurrentActiveDietScheduleRequest request) {
+        try {
+            User currentUser = authUtil.getCurrentUser();
+
+            Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
+            if(inpatient.isEmpty()){
+                return ResponseUtils.createNotFoundResponse("Inpatient not found",HttpStatus.NOT_FOUND.value());
+            }
+            Optional<IpDietOrder> dietOrder = ipDietOrderRepository.findById(request.getDietOrderId());
+            if(dietOrder.isEmpty()){
+                return ResponseUtils.createNotFoundResponse("Ip diet order not found",HttpStatus.NOT_FOUND.value());
+            }
+            Optional<MasMealType> mealType = masMealTypeRepository.findById(request.getDietMealId());
+            if(mealType.isEmpty()){
+                return ResponseUtils.createNotFoundResponse("Mas meal Type not found",HttpStatus.NOT_FOUND.value());
+            }
+            Optional<MasDietScheduleStatus> scheduleStatus = masDietScheduleStatusRepository.findById(request.getScheduleStatusId());
+            if(scheduleStatus.isEmpty()){
+                return ResponseUtils.createNotFoundResponse("MasDiet Schedule not fount",HttpStatus.NOT_FOUND.value());
+            }
+            IpDietSchedule schedule = new IpDietSchedule();
+            schedule.setDietOrder(dietOrder.get());
+            schedule.setInpatient(inpatient.get());
+            schedule.setMealType(mealType.get());
+            schedule.setDietDate(request.getDietDate());
+            schedule.setServingTime(request.getPlanedTime());
+            schedule.setActualTime(request.getActualTime());
+            schedule.setDietScheduleStatus(scheduleStatus.get());
+            schedule.setRemarks(request.getRemark());
+            schedule.setConsumedPercentage(request.getConsumed());
+            schedule.setAdministeredBy(request.getGivenBy());
+            schedule.setCreatedBy(currentUser.getFullName());
+            schedule.setLastUpdatedBy(currentUser.getFullName());
+            schedule.setLastUpdateDate(LocalDateTime.now());
+            schedule.setAdministeredDatetime(LocalDateTime.now());
+            ipDietScheduleRepository.save(schedule);
+
+            log.info("Diet schedule saved successfully. inpatientId={}, dietOrderId={}, dietDate={}, mealTypeId={}",
+                    request.getInpatientId(),
+                    request.getDietOrderId(),
+                    request.getDietDate(),
+                    request.getDietMealId());
+            return ResponseUtils.createSuccessResponse("Diet schedule saved successfully", new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while saving diet schedule. inpatientId={}, dietOrderId={}", request.getInpatientId(),
+                    request.getDietOrderId(), e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Error while saving diet schedule" ,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+
+        }
+    }
+
+    private InpatientDietResponse mapActiveDietByInpatientResponse(
+            InpatientDietOrderProjection projection) {
+
+        InpatientDietResponse response = new InpatientDietResponse();
+
+        response.setInpatientId(projection.getInpatientId());
+        response.setPatientName(projection.getPatientName());
+        response.setUhid(projection.getUhid());
+        response.setAge(projection.getAge());
+        response.setGenderId(projection.getGenderId());
+        response.setGender(projection.getGender());
+        response.setMobileNo(projection.getMobileNo());
+        response.setAdmissionNo(projection.getAdmissionNo());
+        response.setWardId(projection.getWardId());
+        response.setWard(projection.getWard());
+        response.setRooId(projection.getRooId());
+        response.setRoom(projection.getRoom());
+        response.setBedId(projection.getBedId());
+        response.setBed(projection.getBed());
+        response.setDietStatus(projection.getDietStatus());
+        response.setDietTypeId(projection.getDietTypeId());
+        response.setDietTypeName(projection.getDietTypeName());
+        response.setSpecialInstruction(projection.getSpecialInstruction());
+        response.setAdmissionDateTime(projection.getAdmissionDateTime());
+        response.setDoctorName(projection.getDoctorName());
+
+        return response;
+    }
+
     private ActiveAdmissionResponse mapToActiveAdmissionResponse(
             ActiveAdmissionProjectionResponse p) {
 

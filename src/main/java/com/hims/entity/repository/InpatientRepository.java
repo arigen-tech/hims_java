@@ -4,6 +4,7 @@ import com.hims.entity.Inpatient;
 import com.hims.projection.ActiveAdmissionProjectionResponse;
 import com.hims.projection.InpatientAdmissionProjection;
 import com.hims.projection.InpatientAdvanceCollectionProjection;
+import com.hims.projection.InpatientDietOrderProjection;
 import lombok.Locked;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -310,5 +311,102 @@ AND (
                 @Param("wardId") Long wardId,
                 Pageable pageable
         );
-    }
+    @Query(value = """
+    SELECT
+        i.inpatient_id AS inpatientId,
+        CONCAT_WS(' ', p.p_fn, p.p_mn, p.p_ln) AS patientName,
+        p.uhid_no AS uhid,
+        p.p_age AS age,
+        g.id AS genderId,
+        g.gender_name AS gender,
+        p.p_mobile_number AS mobileNo,
+        i.admission_no AS admissionNo,
+        w.ward_id AS wardId,
+        w.ward_name AS ward,
+        r.room_id AS rooId,
+        r.room_name AS room,
+        b.bed_id AS bedId,
+        b.bed_number AS bed,
+        CAST(i.admission_date AS timestamp) + i.admission_time
+            AS admissionDateTime,
+        i.doctor_name AS doctorName,
+        CASE
+            WHEN ido.status =:status THEN ido.status
+            ELSE NULL
+        END AS dietStatus,
+        dt.diet_type_id AS dietTypeId,
+        dt.diet_type_name AS dietTypeName,
+        ido.special_instruction AS specialInstructio
+    FROM public.inpatient i
+    INNER JOIN public.patient p
+        ON p.patient_id = i.patient
+    LEFT JOIN public.mas_gender g
+        ON g.id = p.p_gender_id
+    LEFT JOIN public.mas_ward w
+        ON w.ward_id = i.admitting_ward_id
+    LEFT JOIN public.mas_room r
+        ON r.room_id = i.room_id
+    LEFT JOIN public.mas_bed b
+        ON b.bed_id = i.bed_id
+    LEFT JOIN public.mas_admission_status s
+        ON s.admission_status_id = i.admission_status
+    LEFT JOIN public.ip_diet_order ido
+        ON ido.inpatient_id = i.inpatient_id
+        AND ido.status =:status
+    LEFT JOIN public.mas_diet_type dt
+        ON dt.diet_type_id = ido.diet_type_id
+    WHERE
+        i.admission_status =:admitAdmissionStatusId
+        AND (
+            :patientName IS NULL
+            OR :patientName = ''
+            OR LOWER(
+                CONCAT_WS(' ', p.p_fn, p.p_mn, p.p_ln)
+            ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        )
+        AND (
+            :mobileNo IS NULL
+            OR :mobileNo = ''
+            OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+        )
+        AND (
+            :wardId IS NULL
+            OR i.admitting_ward_id = :wardId
+        )
+    ORDER BY i.inpatient_id DESC
+    """,
+            countQuery = """
+    SELECT COUNT(DISTINCT i.inpatient_id)
+    FROM public.inpatient i
+    INNER JOIN public.patient p
+        ON p.patient_id = i.patient
+    WHERE
+        i.admission_status =:admitAdmissionStatusId
+        AND (
+            :patientName IS NULL
+            OR :patientName = ''
+            OR LOWER(
+                CONCAT_WS(' ', p.p_fn, p.p_mn, p.p_ln)
+            ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+        )
+        AND (
+            :mobileNo IS NULL
+            OR :mobileNo = ''
+            OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+        )
+        AND (
+            :wardId IS NULL
+            OR i.admitting_ward_id = :wardId
+        )
+    """, nativeQuery = true)
+    Page<InpatientDietOrderProjection> activeDietByInpatient(
+            @Param("status") String status,
+            @Param("admitAdmissionStatusId") Long admitAdmissionStatusId,
+            @Param("patientName") String patientName,
+            @Param("mobileNo") String mobileNo,
+            @Param("wardId") Long wardId,
+            Pageable pageable);
+
+
+}
 
