@@ -7,15 +7,18 @@ import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasHospitalRepository;
 import com.hims.entity.repository.StoreItemBatchStockRepository;
 import com.hims.entity.repository.StoreStockLedgerRepository;
+import com.hims.exception.SDDException;
 import com.hims.request.StoreStockLedgerRequest;
 import com.hims.request.UpdateStoreItemBatchStockRequest;
 import com.hims.response.StockUpdateResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -29,6 +32,35 @@ public class InventoryUtils {
     private final MasHospitalRepository hospitalRepository;
 
     private final StoreStockLedgerRepository storeStockLedgerRepository;
+
+    public StoreItemBatchStock getUniqueStock(
+            Long deptId,
+            Long itemId,
+            String batchName,
+            LocalDate manufacturerDate,
+            LocalDate expiryDate,
+            Long manufacturer) {
+
+        List<StoreItemBatchStock> stocks =
+                storeItemBatchStockRepository.findStocksByUniqueCombination(
+                        deptId,
+                        itemId,
+                        batchName,
+                        manufacturerDate,
+                        expiryDate,
+                        manufacturer
+                );
+
+        if (stocks.size() > 1) {
+            throw new SDDException(
+                    "Stock",
+                    HttpStatus.CONFLICT.value(),
+                    "Multiple stock records found for the same stock combination"
+            );
+        }
+
+        return stocks.isEmpty() ? null : stocks.get(0);
+    }
 
     public StockUpdateResponse updateStoreItemBatchStock(
             UpdateStoreItemBatchStockRequest request) {
