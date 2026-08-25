@@ -3,6 +3,7 @@ package com.hims.entity.repository;
 import com.hims.entity.MasHSN;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,4 +15,9 @@ public interface MasHsnRepository extends JpaRepository<MasHSN,String> {
     Optional<MasHSN> findByHsnCode(MasHSN hsnCode);
 
     List<MasHSN> findAllByOrderByStatusDescLastUpdatedDtDesc();
+
+    Optional<MasHSN> findByGstRateAndIsMedicineAndStatusIgnoreCase(BigDecimal gstPercent,
+                                                                   Boolean isMedicine,
+                                                                   String activeStatus
+    );
 }

@@ -366,4 +366,30 @@ ORDER BY i.nomenclature ASC
             @Param("itemId") Long itemId,
             @Param("batchNo") String batchNo,
             @Param("departmentId") Long departmentId);
+
+    @Query("""
+    SELECT s
+    FROM StoreItemBatchStock s
+    LEFT JOIN s.departmentId d 
+    LEFT JOIN s.itemId i 
+    LEFT JOIN s.manufacturerId m 
+    WHERE d.id = :deptId
+      AND i.itemId = :itemId
+      AND s.batchNo = :batchName
+      AND s.manufactureDate = :manufacturerDate
+      AND m.manufacturerId = :manufacturer
+      AND (
+            (:expiryDate IS NULL AND s.expiryDate IS NULL)
+            OR
+            (:expiryDate IS NOT NULL AND s.expiryDate = :expiryDate)
+          )
+""")
+    List<StoreItemBatchStock> findStocksByUniqueCombination(
+            @Param("deptId") Long deptId,
+            @Param("itemId") Long itemId,
+            @Param("batchName") String batchName,
+            @Param("manufacturerDate") LocalDate manufacturerDate,
+            @Param("expiryDate") LocalDate expiryDate,
+            @Param("manufacturer") Long manufacturer
+    );
 }
