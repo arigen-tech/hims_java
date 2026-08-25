@@ -221,6 +221,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     MasDietScheduleStatusRepository masDietScheduleStatusRepository;
     @Autowired
     IpDietScheduleRepository ipDietScheduleRepository;
+    @Autowired
+    ShiftHandoverRepository shiftHandoverRepository;
 
 
     @Value("${ipd.admission.status.admitted}")
@@ -4097,6 +4099,39 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             );
 
         }
+    }
+
+    @Override
+    public ApiResponse<List<CurrentActiveDietScheduleResponse>> currentActiveDietSchedule(
+            Long inpatientId,
+            Long dietOrderId) {
+
+        log.info("Fetching current active diet schedule for inpatientId={}, dietOrderId={}", inpatientId, dietOrderId);
+        List<CurrentActiveDietScheduleResponse> data = ipDietScheduleRepository.findCurrentActiveDietSchedule(inpatientId, dietOrderId);
+        return ResponseUtils.createSuccessResponse(data, new TypeReference<>() {});
+    }
+
+    @Override
+    public ApiResponse<String> saveShiftHandover(ShiftHandoverRequest request) {
+        User currentUser = authUtil.getCurrentUser();
+        Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
+        if(inpatient.isEmpty()){
+            return ResponseUtils.createNotFoundResponse("Inpatient not found",HttpStatus.NOT_FOUND.value());
+        }
+        ShiftHandover shiftHandover=new ShiftHandover();
+        shiftHandover.setHandoverNotes(request.getNotes());
+        shiftHandover.setInpatient(inpatient.get());
+        shiftHandover.setCreatedBy(currentUser.getFullName());
+        shiftHandover.setLastUpdatedBy(currentUser.getFullName());
+        shiftHandover.setLastUpdateDate(LocalDateTime.now());
+        shiftHandoverRepository.save(shiftHandover);
+        return ResponseUtils.createSuccessResponse("ShiftHandover save successfully", new TypeReference<>() {});
+    }
+
+    @Override
+    public ApiResponse<List<ShiftHandoverResponse>> getShiftHandover(Long inpatientId) {
+        List<ShiftHandoverResponse> list=shiftHandoverRepository.getShiftHandover(inpatientId);
+        return ResponseUtils.createSuccessResponse(list, new TypeReference<>() {});
     }
 
     private InpatientDietResponse mapActiveDietByInpatientResponse(

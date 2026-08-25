@@ -122,5 +122,11 @@ public interface IPDPatientService {
     ApiResponse<List<PreviousDietHistoryResponse>> getPreviousDietHistory(Long inpatientId);
 
     ApiResponse<String> saveCurrentActiveDietSchedule(@Valid CurrentActiveDietScheduleRequest request);
+
+    ApiResponse<List<CurrentActiveDietScheduleResponse>> currentActiveDietSchedule(Long inpatientId, Long dietOrderId);
+
+    ApiResponse<String> saveShiftHandover(@Valid ShiftHandoverRequest request);
+
+    ApiResponse<List<ShiftHandoverResponse>> getShiftHandover(Long inpatientId);
 }
 

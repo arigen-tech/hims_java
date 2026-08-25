@@ -642,4 +642,31 @@ public class IPDPatientController {
         log.info("Diet schedule saved successfully. inpatientId={}, dietOrderId={}, dietDate={}", request.getInpatientId(), request.getDietOrderId(), request.getDietDate());
         return response;
     }
+
+    @GetMapping("/getCurrentActiveDietSchedule")
+    public ResponseEntity<ApiResponse<List<CurrentActiveDietScheduleResponse>>> getCurrentActiveDietSchedule(
+            @RequestParam Long inpatientId,
+            @RequestParam Long dietOrderId) {
+
+        log.info("Request received for currentActiveDietSchedule. inpatientId={}, dietOrderId={}", inpatientId, dietOrderId);
+        ApiResponse<List<CurrentActiveDietScheduleResponse>> response = ipdPatientService.currentActiveDietSchedule(inpatientId, dietOrderId);
+        log.info("currentActiveDietSchedule completed successfully. inpatientId={}, dietOrderId={}", inpatientId, dietOrderId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/saveShiftHandover")
+    public ApiResponse<String> saveShiftHandover(@Valid @RequestBody ShiftHandoverRequest request) {
+        log.info("Request received for saveShiftHandover. inpatientId={}", request.getInpatientId());
+        ApiResponse<String> response = ipdPatientService.saveShiftHandover(request);
+        log.info("saveShiftHandover completed successfully. inpatientId={}", request.getInpatientId());
+        return response;
+    }
+
+    @GetMapping("/getShiftHandover")
+    public ResponseEntity<ApiResponse<List<ShiftHandoverResponse>>> getShiftHandover(@RequestParam Long inpatientId) {
+        log.info("Request received for getShiftHandover. inpatientId={}", inpatientId);
+        ApiResponse<List<ShiftHandoverResponse>> response = ipdPatientService.getShiftHandover(inpatientId);
+        log.info("getShiftHandover completed successfully.inpatientId={}", inpatientId);
+        return ResponseEntity.ok(response);
+    }
 }
