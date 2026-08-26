@@ -453,9 +453,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             throw new SDDException("user", 401, "Current user not found");
         }
 
-        if (labReq == null || labReq.getPatientId() == null) {
-            throw new SDDException("patient", 400, "Patient ID must not be null");
-        }
+//        if (labReq == null && labReq.getPatientId() == null) {
+//            throw new SDDException("patient", 400, "Patient ID must not be null");
+//        }
 
         if (departmentId == null) {
             throw new SDDException("department", 400, "Department ID is required");
