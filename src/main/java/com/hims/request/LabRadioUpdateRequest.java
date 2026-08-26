@@ -7,5 +7,6 @@ import java.util.List;
 @Data
 public class LabRadioUpdateRequest {
     PatientRequest patient;
+    Long patientId;
     List<LabRadioInvestigationRequest> investigationReq;
 }
