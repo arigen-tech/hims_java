@@ -191,6 +191,8 @@ public class AppConstants {
     public static final String IP_DISCHARGE_SUMMARY_STATUS_DRAFT= "D";
     public static final String IP_DISCHARGE_SUMMARY_STATUS_SUMMIT= "S";
     public static final String IP_RECEIPT_STATUS= "A";
+    public static final String IP_ACTIVE_DIET= "A";
+    public static final String IP_COMPLETE_DIET= "C";
 
 
 

@@ -698,24 +698,24 @@ public class InventoryController {
     @GetMapping("/getUnverifiedReturns/{hospitalId}")
     public ResponseEntity<?> getUnverifiedReturnHeaders(
             @PathVariable Long hospitalId,
-            @RequestParam Long toDepartmentId,
+            @RequestParam Long issuedDeptId,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate fromDate,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate toDate,
-            @RequestParam(required = false) Long fromDepartmentId,
+            @RequestParam(required = false) Long receivedDeptId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
         return ResponseEntity.ok(
                 inventoryService.getUnverifiedReturnHeaders(
                         hospitalId,
-                        toDepartmentId,
+                        issuedDeptId,
                         fromDate,
                         toDate,
-                        fromDepartmentId,
+                        receivedDeptId,
                         page,
                         size
                 )
@@ -731,7 +731,7 @@ public class InventoryController {
         );
     }
 
-    @PostMapping("/verifyReturnIndent")
+    @PutMapping ("/verifyReturnIndent")
     public  ResponseEntity<?> verifyReturnedIndentAtIssueDept(@RequestBody VerifyReturnIndentHeaderRequest request){
         return  ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.verifyReturnedIndentAtIssueDept(request));
     }

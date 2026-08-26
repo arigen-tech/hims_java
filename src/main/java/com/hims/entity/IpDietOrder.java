@@ -41,9 +41,9 @@ public class IpDietOrder {
 
     @Column(name = "special_instruction", length = 500)
     private String specialInstruction;
-
-    @Column(name = "ordered_by")
-    private Long orderedBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ordered_by")
+    private User orderedBy;
 
     @Column(name = "status", columnDefinition = "char(1) default 'A'")
     private String status = "A";
@@ -57,4 +57,6 @@ public class IpDietOrder {
     @Column(name = "last_updated_by", length = 200)
     private String lastUpdatedBy;
 
+    @Column(name = "remark")
+    private String remark;
 }

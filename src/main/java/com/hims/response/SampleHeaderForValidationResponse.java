@@ -28,7 +28,7 @@ public class SampleHeaderForValidationResponse {
     private String patientRelation;
     private String collectedBy;
     private String departmentName;
-    private Integer dgOrderHdId;
+    private Long dgOrderHdId;
 
 
 

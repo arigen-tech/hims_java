@@ -23,21 +23,6 @@ public class StoreItemDamagedStock {
     @Column(name = "damaged_id")
     private Long damagedId;
 
-//    @Column(name = "stock_id", nullable = false)
-//    private Long stockId;
-//
-//    @Column(name = "item_id", nullable = false)
-//    private Long itemId;
-//
-//    @Column(name = "source_department_id", nullable = false)
-//    private Long sourceDepartmentId;
-//
-//    @Column(name = "return_m_id")
-//    private Long returnMId;
-//
-//    @Column(name = "return_t_id")
-//    private Long returnTId;
-
     @Column(name = "damaged_qty", precision = 10, scale = 2)
     private BigDecimal damagedQty;
 
@@ -55,6 +40,15 @@ public class StoreItemDamagedStock {
 
     @Column(name = "manufacturer_name", length = 200)
     private String manufacturerName;
+
+    @Column(name = "batch_no", length = 200)
+    private String batchNo;
+
+    @Column(name = "expiry_date")
+    private LocalDate expiryDate;
+
+    @Column(name = "dom")
+    private LocalDate dom;
 
     @Column(name = "disposal_status", length = 20)
     private String disposalStatus;
@@ -74,7 +68,7 @@ public class StoreItemDamagedStock {
     @Column(name = "disposal_witness", length = 200)
     private String disposalWitness;
 
-    @Column(name = "disposal_remark", length = 300)
+    @Column(name = "disposal_remarks", length = 300)
     private String disposalRemark;
 
     @Column(name = "committee_approval", length = 1000)

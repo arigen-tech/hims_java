@@ -76,6 +76,10 @@ public class InventoryServiceImpl implements InventoryService {
 
     private final MasManufacturerRepository masManufacturerRepository;
 
+    private final StoreItemDamagedStockRepository damagedStockRepository;
+
+    private final MasHsnRepository hsnRepository;
+
     @Value("${op_txn_type}")
     private String opTxnType;
 
@@ -1564,9 +1568,12 @@ public class InventoryServiceImpl implements InventoryService {
         hd.setLastUpdatedDt(LocalDateTime.now());
         String balanceType;
 
+        Boolean isDrug;
         if(openingBalanceEntryRequest.getBalanceType().equalsIgnoreCase(drugSectionCode)){
+            isDrug=true;
             balanceType= AppConstants.ITEM_TYPE_DRUG;
         }else{
+            isDrug=false;
             balanceType=AppConstants.ITEM_TYPE_NON_DRUG;
         }
 
@@ -1588,10 +1595,39 @@ public class InventoryServiceImpl implements InventoryService {
             }
             dt.setItemId(masStoreItem.get());
             MasHSN hsnObj = masStoreItem.get().getHsnCode();
+
+            if (hsnObj == null) {
+
+                Optional<MasHSN> hsnOpt =
+                        hsnRepository.findByGstRateAndIsMedicineAndStatusIgnoreCase(
+                                dtRequest.getGstPercent(),
+                                isDrug,
+                                AppConstants.STATUS_Y
+                        );
+
+                if (hsnOpt.isPresent()) {
+                    hsnObj = hsnOpt.get();
+                } else {
+                    throw new SDDException(
+                            "HSN Code",
+                            HttpStatus.NOT_FOUND.value(),
+                            "HSN code is not configured for the given GST percentage for selected item"
+                    );
+                }
+            }
+
             dt.setHsnCode(hsnObj);
             dt.setGstPercent(dtRequest.getGstPercent());
             dt.setBatchNo(dtRequest.getBatchNo());
             dt.setManufactureDate(dtRequest.getManufactureDate());
+            if(isDrug){
+                if(dtRequest.getExpiryDate()==null){
+                    throw  new SDDException("Expiry date",
+                            HttpStatus.NOT_FOUND.value(),
+                            "Expiry Date is Mandatory for Balance Type "+openingBalanceEntryRequest.getBalanceType()
+                    );
+                }
+            }
             dt.setExpiryDate(dtRequest.getExpiryDate());
             dt.setQty(dtRequest.getQty());
             dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
@@ -1755,9 +1791,12 @@ public class InventoryServiceImpl implements InventoryService {
         hd.setStatus(AppConstants.BALANCE_SUBMIT_STATUS.toLowerCase()); // status = saved
         hd.setLastUpdatedDt(LocalDateTime.now());
         String balanceType;
+        Boolean isDrug;
         if( request.getBalanceType().equalsIgnoreCase(drugSectionCode)){
+            isDrug=true;
             balanceType= AppConstants.ITEM_TYPE_DRUG;
         }else{
+            isDrug=false;
             balanceType=AppConstants.ITEM_TYPE_NON_DRUG;
         }
         hd.setBalanceType(balanceType);
@@ -1774,14 +1813,44 @@ public class InventoryServiceImpl implements InventoryService {
             dt.setBalanceMId(savedHd);
             Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(dtRequest.getItemId());
             if (masStoreItem.isEmpty()) {
-                return ResponseUtils.createNotFoundResponse(AppConstants.ITEM_NOT_FOUND_ERR_MSG, HttpStatus.NOT_FOUND.value());
+                throw  new SDDException("Item",
+                        HttpStatus.NOT_FOUND.value(),
+                        AppConstants.ITEM_NOT_FOUND_ERR_MSG
+                );
             }
             dt.setItemId(masStoreItem.get());
             MasHSN hsnObj = masStoreItem.get().getHsnCode();
+            if (hsnObj == null) {
+
+                Optional<MasHSN> hsnOpt =
+                        hsnRepository.findByGstRateAndIsMedicineAndStatusIgnoreCase(
+                                dtRequest.getGstPercent(),
+                                isDrug,
+                                AppConstants.STATUS_Y
+                        );
+
+                if (hsnOpt.isPresent()) {
+                    hsnObj = hsnOpt.get();
+                } else {
+                    throw new SDDException(
+                            "HSN Code",
+                            HttpStatus.NOT_FOUND.value(),
+                            "HSN code is not configured for the given GST percentage for selected item"
+                    );
+                }
+            }
             dt.setHsnCode(hsnObj);
             dt.setGstPercent(dtRequest.getGstPercent());
             dt.setBatchNo(dtRequest.getBatchNo());
             dt.setManufactureDate(dtRequest.getManufactureDate());
+            if(isDrug){
+                if(dtRequest.getExpiryDate()==null){
+                    throw  new SDDException("Expiry date",
+                            HttpStatus.NOT_FOUND.value(),
+                            "Expiry Date is Mandatory for Balance Type Drug"
+                    );
+                }
+            }
             dt.setExpiryDate(dtRequest.getExpiryDate());
             dt.setQty(dtRequest.getQty());
             dt.setUnitsPerPack(dtRequest.getUnitsPerPack());
@@ -1887,7 +1956,18 @@ public class InventoryServiceImpl implements InventoryService {
                 }
                 String key;
                 String batchNo = dt.getBatchNo().trim().toUpperCase();
+                if(dt.getHsnCode()==null){
+                    throw  new SDDException("HSN Code",
+                            HttpStatus.NOT_FOUND.value(),
+                            "HSN Code is not configure for this selected item"
+                    );
+                }
                 if(isDrug){
+                    if(dt.getExpiryDate()==null){
+                        throw  new SDDException("Expiry Date",
+                                HttpStatus.NOT_FOUND.value(),
+                                "Expiry Date mandatory for drugs");
+                    }
                     key = dt.getItemId().getItemId() + "_" +
                             currentDepartmentId + "_" +
                             hospitalId + "_" +
@@ -2149,6 +2229,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<String> verifyReturnedIndentAtIssueDept(VerifyReturnIndentHeaderRequest request) {
         try {
 
@@ -2156,44 +2237,47 @@ public class InventoryServiceImpl implements InventoryService {
 
             Optional<StoreReturnM> byId = returnMRepository.findById(request.getReturnMId());
             if(byId.isEmpty()){
-                return ResponseUtils.createNotFoundResponse(
-                        "Invalid Return Header ID",
-                        HttpStatus.NOT_FOUND.value()
+                throw new SDDException("returnMId",
+                        HttpStatus.NOT_FOUND.value(),
+                        "Return header details not found"
                 );
             }
             StoreReturnM storeReturnM = byId.get();
             Optional<MasDepartment> deptOpt = masDepartmentRepository.findById(request.getSourceDeptId());
             if(deptOpt.isEmpty()){
-                return ResponseUtils.createNotFoundResponse(
-                        "Invalid Source Dept, Source Dept Not Found",
-                        HttpStatus.NOT_FOUND.value()
-                );
+               throw  new SDDException("SourceDeptId",
+                       HttpStatus.NOT_FOUND.value(),
+                       "Invalid Source Dept, Source Dept Not Found"
+               );
             }
             MasDepartment sourceDept = deptOpt.get();
 
             for (VerifyReturnIndentDetailRequest detailRequest : request.getDetailRequests()){
                 Optional<StoreReturnT> returnTOpt = storeReturnTRepository.findById(detailRequest.getReturnTId());
                 if(returnTOpt.isEmpty()){
-                    return ResponseUtils.createNotFoundResponse(
-                            "Invalid Return Details ID",
-                            HttpStatus.NOT_FOUND.value()
-                    );
+                   throw  new SDDException("ReturnTId",
+                           HttpStatus.NOT_FOUND.value(),
+                           "Return Details not found"
+                   );
                 }
                 StoreReturnT storeReturnT = returnTOpt.get();
                 Optional<StoreItemBatchStock> stockOpt = storeItemBatchStockRepository.findById(detailRequest.getStockId());
                 if(stockOpt.isEmpty()){
-                    return ResponseUtils.createNotFoundResponse(
-                            "Batch stock details not found",
-                            HttpStatus.NOT_FOUND.value()
+                    throw  new SDDException("StockId",
+                            HttpStatus.NOT_FOUND.value(),
+                            "Batch stock details not found"
                     );
                 }
                 StoreItemBatchStock storeItemBatchStock = stockOpt.get();
                 storeReturnT.setIsVerified(AppConstants.STATUS_Y.toLowerCase());
+                storeReturnT.setLastUpdatedBy(authUtil.getCurrentUserFullName());
                 StoreReturnT savesReturnDetails = storeReturnTRepository.save(storeReturnT);
 
-                storeItemBatchStock.setClosingStock(storeItemBatchStock.getClosingStock()-detailRequest.getDamagedQty().longValue());
+//                storeItemBatchStock.setClosingStock(storeItemBatchStock.getClosingStock()-detailRequest.getDamagedQty().longValue());
                 storeItemBatchStock.setLastChgBy(authUtil.getCurrentUser().getFullName());
-                storeItemBatchStock.setReturnQty(storeItemBatchStock.getReturnQty().add(detailRequest.getDamagedQty()));
+                storeItemBatchStock.setReturnQty(storeItemBatchStock.getReturnQty()!=null?
+                        storeItemBatchStock.getReturnQty().add(detailRequest.getDamagedQty()):
+                        detailRequest.getDamagedQty());
                 storeItemBatchStockRepository.save(storeItemBatchStock);
 
                 updateDamagedStock(storeReturnM, sourceDept, detailRequest, storeReturnT, storeItemBatchStock);
@@ -2216,12 +2300,7 @@ public class InventoryServiceImpl implements InventoryService {
                     e
             );
 
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<>() {},
-                    AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
+          throw  new RuntimeException(e);
         }
     }
 
@@ -2278,6 +2357,7 @@ public class InventoryServiceImpl implements InventoryService {
                                     StoreReturnT storeReturnT,
                                     StoreItemBatchStock storeItemBatchStock) {
         StoreItemDamagedStock damagedStock= new StoreItemDamagedStock();
+        damagedStock.setStoreItemBatchStock(storeItemBatchStock);
         damagedStock.setApprovedBy(authUtil.getCurrentUser().getFullName());
         damagedStock.setApprovedDate(LocalDateTime.now());
         damagedStock.setBrandName(storeItemBatchStock.getBrandId().getBrandName());
@@ -2291,25 +2371,86 @@ public class InventoryServiceImpl implements InventoryService {
         damagedStock.setStoreReturnM(storeReturnM);
         damagedStock.setStoreReturnT(storeReturnT);
         damagedStock.setSourceDepartment(sourceDept);
+        damagedStock.setBatchNo(storeItemBatchStock.getBatchNo());
+        damagedStock.setDom(storeItemBatchStock.getManufactureDate());
+        damagedStock.setExpiryDate(storeItemBatchStock.getExpiryDate());
+        damagedStockRepository.save(damagedStock);
+
     }
 
     public String addDetails(List<OpeningBalanceDtRequest> openingBalanceDtRequest, long hdId) {
         for (OpeningBalanceDtRequest dtRequest :openingBalanceDtRequest) {
+            Optional<MasStoreItem> itemOpt = masStoreItemRepository.findById(dtRequest.getItemId());
+            if (itemOpt.isEmpty()) {
+                throw new SDDException("Item",
+                        HttpStatus.NOT_FOUND.value(),
+                        AppConstants.ITEM_NOT_FOUND_ERR_MSG
+                );
+            }
+            MasStoreItem masStoreItem = itemOpt.get();
+
+            Optional<StoreBalanceHd> optionalHd = storeBalanceHdRepository.findById(hdId);
+
+            if (optionalHd.isEmpty()) {
+                throw new SDDException("Opening Balance Header",
+                        HttpStatus.NOT_FOUND.value(),
+                        AppConstants.OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG
+                );
+            }
+            StoreBalanceHd storeBalanceHd = optionalHd.get();
+
+            Boolean isDrug=false;
+            if(storeBalanceHd.getBalanceType().equalsIgnoreCase(AppConstants.ITEM_TYPE_DRUG)){
+                isDrug=true;
+            }
+
+            MasHSN hsnObj = masStoreItem.getHsnCode();
+            if (hsnObj == null) {
+
+                Optional<MasHSN> hsnOpt =
+                        hsnRepository.findByGstRateAndIsMedicineAndStatusIgnoreCase(
+                                dtRequest.getGstPercent(),
+                                isDrug,
+                                AppConstants.STATUS_Y
+                        );
+
+                if (hsnOpt.isPresent()) {
+                    hsnObj = hsnOpt.get();
+                } else {
+                    throw new SDDException(
+                            "HSN Code",
+                            HttpStatus.NOT_FOUND.value(),
+                            "HSN code is not configured for the given GST percentage and balance type"
+                    );
+                }
+            }
+
+            if(isDrug){
+                if(dtRequest.getExpiryDate()==null){
+                    throw  new SDDException("Expiry date",
+                            HttpStatus.NOT_FOUND.value(),
+                            "Expiry Date is Mandatory for Balance Type Drug"
+                    );
+                }
+            }
+
+            Optional<MasManufacturer> manufacturerOpt =
+                    masManufacturerRepository.findById(dtRequest.getManufacturerId());
+            if (manufacturerOpt.isEmpty()) {
+                throw new SDDException("Manufacturer",
+                        HttpStatus.NOT_FOUND.value(),
+                        AppConstants.MANUFACTURER_NOT_FOUND_ERR_MSG
+                );
+            }
+            MasManufacturer masManufacturer = manufacturerOpt.get();
+
             if (dtRequest.getBalanceId() == null) {
 
                 StoreBalanceDt dt = new StoreBalanceDt();
-                Optional<StoreBalanceHd> optionalHd = storeBalanceHdRepository.findById(hdId);
-                if (optionalHd.isEmpty()) {
-                    return AppConstants.OPENING_BALANCE_HEADER_NOT_FOUND_ERR_MSG;
-                }
-                dt.setBalanceMId(optionalHd.get());
-                Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(dtRequest.getItemId());
-                if (masStoreItem.isEmpty()) {
-                    return AppConstants.ITEM_NOT_FOUND_ERR_MSG;
-                }
 
-                dt.setItemId(masStoreItem.get());
-                MasHSN hsnObj = masStoreItem.get().getHsnCode();
+
+                dt.setBalanceMId(storeBalanceHd);
+                dt.setItemId(masStoreItem);
                 dt.setHsnCode(hsnObj);
                 dt.setGstPercent(dtRequest.getGstPercent());
                 dt.setBatchNo(dtRequest.getBatchNo());
@@ -2337,24 +2478,21 @@ public class InventoryServiceImpl implements InventoryService {
                 dt.setTotalPurchaseCost(total);
 
                 dt.setBrandId(masBrandRepository.findById(dtRequest.getBrandId()).orElse(null));
-                Optional<MasManufacturer> masManufacturer = masManufacturerRepository.findById(dtRequest.getManufacturerId());
-                if (masManufacturer.isEmpty()) {
-                    return AppConstants.MANUFACTURER_NOT_FOUND_ERR_MSG;
-                }
-                dt.setManufacturerId(masManufacturer.get());
+
+                dt.setManufacturerId(masManufacturer);
                 storeBalanceDtRepository.save(dt);
             } else {
-                Optional<StoreBalanceDt> storeBalanceDt=storeBalanceDtRepository.findById(dtRequest.getBalanceId());
+                Optional<StoreBalanceDt> storeBalanceDt
+                        =storeBalanceDtRepository.findById(dtRequest.getBalanceId());
                 if(storeBalanceDt.isEmpty()){
-                    return AppConstants.OPENING_BALANCE_DETAILS_NOT_FOUND_ERR_MSG;
+                    throw new SDDException("Opening Balance Detail",
+                            HttpStatus.NOT_FOUND.value(),
+                            AppConstants.OPENING_BALANCE_DETAILS_NOT_FOUND_ERR_MSG
+                    );
                 }
                 StoreBalanceDt dt =storeBalanceDt.get();
-                Optional<MasStoreItem> masStoreItem = masStoreItemRepository.findById(dtRequest.getItemId());
-                if (masStoreItem.isEmpty()) {
-                    return AppConstants.ITEM_NOT_FOUND_ERR_MSG;
-                }
-                dt.setItemId(masStoreItem.get());
-                dt.setHsnCode(masStoreItem.get().getHsnCode());
+                dt.setItemId(masStoreItem);
+                dt.setHsnCode(hsnObj);
                 dt.setGstPercent(dtRequest.getGstPercent());
                 dt.setBatchNo(dtRequest.getBatchNo());
                 dt.setManufactureDate(dtRequest.getManufactureDate());
@@ -2377,11 +2515,7 @@ public class InventoryServiceImpl implements InventoryService {
                 dt.setTotalPurchaseCost(total);
 
                 dt.setBrandId(masBrandRepository.findById(dtRequest.getBrandId()).orElse(null));
-                Optional<MasManufacturer> masManufacturer = masManufacturerRepository.findById(dtRequest.getManufacturerId());
-                if (masManufacturer.isEmpty()) {
-                    return AppConstants.MANUFACTURER_NOT_FOUND_ERR_MSG;
-                }
-                dt.setManufacturerId(masManufacturer.get());
+                dt.setManufacturerId(masManufacturer);
 
                 storeBalanceDtRepository.save(dt);
             }
@@ -2584,6 +2718,10 @@ public class InventoryServiceImpl implements InventoryService {
             );
             returnT.setCreatedBy(userName);
             returnT.setLastUpdateDate(LocalDateTime.now());
+            returnT.setIsVerified(AppConstants.STATUS_N.toLowerCase());
+            returnT.setReturnReason("Damaged");
+            returnT.setDamagedQty(itemDetail.rejectedQty);
+            returnT.setUsableQty(itemDetail.receiveT.getIssuedQty().subtract(itemDetail.rejectedQty));
 
             storeReturnTRepository.save(returnT);
 
