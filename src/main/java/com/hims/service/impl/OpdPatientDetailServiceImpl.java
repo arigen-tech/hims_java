@@ -82,7 +82,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasFrequencyRepository masFrequencyRepository;
     private final BillingService billingService;
     private final OpdPatientDetailMapper opdPatientDetailMapper;
-    private final OtBookingService otBookingService;
+    private final OtService otBookingService;
     private final MasSurgeryRepository masSurgeryRepository;
     private final OtBookingRequestHdRepository otBookingRequestHdRepository;
     private final OtBookingRequestDtRepository otBookingRequestDtRepository;
