@@ -461,14 +461,14 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         try {
             Patient patient;
 
-         if(labReq.getPatient()!= null || labReq.getPatient().getId()!= null){
+         if(labReq.getPatient() != null){
               patient = patientService.updatePatientDetails(labReq.getPatient(), true);
              if (patient == null) {
                  throw new SDDException("patient", 500, "Failed to update patient");
              }
-         }else{
+         }else {
                patient = patientRepository.getReferenceById(labReq.getPatientId());
-            }
+         }
 
             boolean labBillingEnabled =
                     patient.getPatientHospital() != null
