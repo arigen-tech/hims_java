@@ -453,26 +453,29 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             throw new SDDException("user", 401, "Current user not found");
         }
 
-//        if (labReq == null && labReq.getPatientId() == null) {
-//            throw new SDDException("patient", 400, "Patient ID must not be null");
-//        }
 
         if (departmentId == null) {
             throw new SDDException("department", 400, "Department ID is required");
         }
 
         try {
+            Patient patient;
 
-            Patient patient = patientService.updatePatientDetails(labReq.getPatient(), true);
-
-            if (patient == null) {
-                throw new SDDException("patient", 500, "Failed to update patient");
+         if(labReq.getPatient()!= null || labReq.getPatient().getId()!= null){
+              patient = patientService.updatePatientDetails(labReq.getPatient(), true);
+             if (patient == null) {
+                 throw new SDDException("patient", 500, "Failed to update patient");
+             }
+         }else{
+               patient = patientRepository.getReferenceById(labReq.getPatientId());
             }
 
             boolean labBillingEnabled =
                     patient.getPatientHospital() != null
                             && AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getLabBilling());
+
             Visit savedVisit = createVisitForLabRadio(patient, laboratoryDepartment);
+
             List<LabRadioInvestigationRequest> invList = labReq.getInvestigationReq();
 
             if (invList == null || invList.isEmpty()) {
