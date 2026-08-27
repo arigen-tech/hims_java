@@ -23,11 +23,13 @@ public class OtBookingRequestDt {
     @JoinColumn(name = "ot_booking_request_id", referencedColumnName = "ot_booking_request_id")
     private OtBookingRequestHd otBookingRequest;
 
-    @Column(name = "surgery_type_id")
-    private Long surgeryTypeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "surgery_type_id")
+    private MasSurgeryType surgeryTypeId;
 
-    @Column(name = "surgery_id")
-    private Long surgeryId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "surgery_id")
+    private MasSurgery surgeryId;
 
     @Column(name = "sequence_no")
     private Long sequenceNo;

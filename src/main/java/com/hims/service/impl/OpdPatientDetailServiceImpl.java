@@ -2437,7 +2437,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     detail = new SurgeryAdviceResponseDTO.SurgeryDetailResponseDTO();
 
             detail.setOtBookingRequestDtId(dt.getOtBookingRequestDtId());
-            detail.setSurgeryId(dt.getSurgeryId());
+            detail.setSurgeryId(dt.getSurgeryId().getSurgeryId());
             surgeryDetails.add(detail);
         }
 

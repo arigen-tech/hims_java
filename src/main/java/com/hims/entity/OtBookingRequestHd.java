@@ -23,9 +23,9 @@ public class OtBookingRequestHd {
 
     @Column(name = "request_no", length = 50)
     private String requestNo;
-
-    @Column(name = "patient_id")
-    private Long patientId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patient_id")
+    private Patient patientId;
 
     @Column(name = "request_source", length = 10)
     private String requestSource;
@@ -33,11 +33,13 @@ public class OtBookingRequestHd {
     @Column(name = "visit_id")
     private Long visitId;
 
-    @Column(name = "department_id")
-    private Long departmentId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private MasDepartment departmentId;
 
-    @Column(name = "primary_surgeon_id")
-    private Long primarySurgeonId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "primary_surgeon_id")
+    private User primarySurgeonId;
 
     @Column(name = "icd_code_id")
     private Long icdCodeId;
@@ -47,9 +49,9 @@ public class OtBookingRequestHd {
 
     @Column(name = "priority", length = 20)
     private String priority;
-
-    @Column(name = "preferred_ot_id")
-    private Long preferredOtId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "preferred_ot_id")
+    private MasOperationTheatre preferredOtId;
 
     @Column(name = "preferred_date")
     private LocalDate preferredDate;
@@ -62,9 +64,9 @@ public class OtBookingRequestHd {
 
     @Column(name = "special_instruction", length = 1000)
     private String specialInstruction;
-
-    @Column(name = "booking_status_id")
-    private Long bookingStatusId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_status_id")
+    private MasOtBookingStatus bookingStatusId;
 
     @Column(name = "requested_by", length = 200)
     private String requestedBy;
@@ -89,5 +91,9 @@ public class OtBookingRequestHd {
 
     @Column(name = "last_chg_date")
     private LocalDateTime lastChgDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admission_id")
+    private Inpatient admissionId;
 
 }

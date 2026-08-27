@@ -2,11 +2,14 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.entity.MasSurgery;
 import com.hims.entity.MasSurgeryType;
 import com.hims.entity.User;
+import com.hims.entity.repository.MasSurgeryRepository;
 import com.hims.entity.repository.MasSurgeryTypeRepository;
 import com.hims.request.MasSurgeryTypeRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.MasSurgeryResponse;
 import com.hims.response.MasSurgeryTypeResponse;
 import com.hims.service.MasSurgeryTypeService;
 import com.hims.utils.AuthUtil;
@@ -26,6 +29,7 @@ import java.util.List;
 public class MasSurgeryTypeServiceImpl implements MasSurgeryTypeService {
 
     private final MasSurgeryTypeRepository repository;
+    private final MasSurgeryRepository masSurgeryRepository;
 
     @Autowired
     private AuthUtil authUtil;
@@ -144,6 +148,34 @@ public class MasSurgeryTypeServiceImpl implements MasSurgeryTypeService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Status update failed", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+    @Override
+    public ApiResponse<List<MasSurgeryResponse>> masSurgeryBySurgeryType(Long surgeryTypeId) {
+        List<MasSurgery> masSurgeries = masSurgeryRepository.findBySurgeryType_SurgeryTypeIdAndStatusIgnoreCase(
+                        surgeryTypeId, AppConstants.STATUS_Y);
+
+        List<MasSurgeryResponse> response = masSurgeries.stream()
+                .map(surgery -> {
+                    MasSurgeryResponse dto = new MasSurgeryResponse();
+
+                    dto.setSurgeryId(surgery.getSurgeryId());dto.setSurgeryCode(surgery.getSurgeryCode());
+                    dto.setSurgeryName(surgery.getSurgeryName());
+                    if (surgery.getSurgeryType() != null) {
+                        dto.setSurgeryTypeId(surgery.getSurgeryType().getSurgeryTypeId());
+                        dto.setSurgeryTypeName(surgery.getSurgeryType().getSurgeryTypeName());
+                    }
+                    dto.setSurgeryLevel(surgery.getSurgeryLevel());
+                    dto.setIsAnesthesiaRequired(surgery.getIsAnesthesiaRequired());
+                    dto.setIsAdmissionRequired(surgery.getIsAdmissionRequired());
+                    dto.setIsImplantRequired(surgery.getIsImplantRequired());
+                    dto.setStatus(surgery.getStatus());
+                    return dto;
+                })
+                .toList();
+
+        return ResponseUtils.createSuccessResponse(response,new TypeReference<>(){});
+
     }
 
     private MasSurgeryTypeResponse toResponse(MasSurgeryType e) {

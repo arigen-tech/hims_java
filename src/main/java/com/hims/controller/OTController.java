@@ -1,18 +1,19 @@
 package com.hims.controller;
 
+import com.hims.request.OpdOpthDetailsRequest;
+import com.hims.request.OtRequest;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ActiveAdmissionResponse;
 import com.hims.response.ApiResponse;
 import com.hims.service.OtService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @Tag(name = "OTController")
@@ -43,6 +44,16 @@ public class OTController {
                 wardId);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/saveOtRequest")
+    public ApiResponse<String> saveOtRequest(@Valid @RequestBody OtRequest request) {
+        log.info("Received OT booking request: {}", request);
+        ApiResponse<String> response = otService.saveOtRequest(request);
+        log.info("OT booking request saved successfully. Response: {}", response);
+        return response;
+    }
+
+
 
 
 
