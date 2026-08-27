@@ -1154,9 +1154,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             log.error("Error while saving bed transfer request. inpatientId: {}", request.getInpatientId(), e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
-                    }, e.getMessage(),
-                    500);
+            throw e;
         }
     }
 

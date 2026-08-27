@@ -2,17 +2,17 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.entity.*;
+import com.hims.entity.repository.*;
+import com.hims.request.OtRequest;
+import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISTransaction;
 import org.springframework.beans.factory.annotation.Value;
-import com.hims.entity.repository.InpatientRepository;
-import com.hims.entity.repository.OtBookingRequestDtRepository;
-import com.hims.entity.repository.OtBookingRequestHdRepository;
 import com.hims.exception.SDDException;
 import com.hims.projection.ActiveAdmissionOtProjection;
 import com.hims.projection.ActiveAdmissionProjectionResponse;
 import com.hims.request.OtBookingRequestDtDto;
-import com.hims.entity.OtBookingRequestDt;
-import com.hims.entity.OtBookingRequestHd;
 import com.hims.request.OtBookingRequestHdDto;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ActiveAdmissionResponse;
@@ -31,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -44,8 +45,21 @@ public class OtServiceImpl implements OtService {
     private final OtBookingRequestHdRepository hdRepository;
     private final OtBookingRequestDtRepository dtRepository;
     private final InpatientRepository inpatientRepository;
+    private final TransactionSequenceService transactionSequenceService;
+    private final AuthUtil authUtil;
+    private final PatientRepository patientRepository;
+    private final MasSurgeryTypeRepository masSurgeryTypeRepository;
+    private final MasSurgeryRepository masSurgeryRepository;
+    private final MasOtBookingStatusRepository masOtBookingStatusRepository;
+    private final MasOperationTheatreRepository masOperationTheatreRepository;
+    private final UserRepo userRepo;
+    private  final MasDepartmentRepository masDepartmentRepository;
     @Value("${ipd.admission.status.admitted}")
     Long ipdAdmissionStatusAdmitted;
+
+    @Value("${surgery.booking-status.requested}")
+    private Long surgeryBookingStatusRequested;
+
 
     @Transactional
     @Override
@@ -99,18 +113,18 @@ public class OtServiceImpl implements OtService {
             }
         }
 
-        hd.setPatientId(dto.getPatientId());
+        hd.setPatientId(patientRepository.findById(dto.getPatientId()).orElseThrow());
         hd.setVisitId(dto.getVisitId());
-        hd.setDepartmentId(dto.getDepartmentId());
-        hd.setPrimarySurgeonId(dto.getPrimarySurgeonId());
+        hd.setDepartmentId(masDepartmentRepository.findById(dto.getDepartmentId()).orElseThrow());
+        hd.setPrimarySurgeonId(userRepo.findById(dto.getPrimarySurgeonId()).orElseThrow());
         hd.setDiagnosis(dto.getDiagnosis());
         hd.setRequestSource(dto.getRequestSource());
-        hd.setPreferredOtId(dto.getPreferredOtId());
+        hd.setPreferredOtId(masOperationTheatreRepository.findById(dto.getPreferredOtId()).orElseThrow());
         hd.setPreferredDate(dto.getPreferredDate());
         hd.setPreferredStartTime(dto.getPreferredStartTime());
         hd.setPreferredEndTime(dto.getPreferredEndTime());
         hd.setStatus(dto.getStatus());
-        hd.setBookingStatusId(dto.getBookingStatusId());
+        hd.setBookingStatusId(masOtBookingStatusRepository.findById(dto.getBookingStatusId()).orElseThrow());
         hd.setPriority(dto.getPriority());
         hd.setRequestedBy(dto.getRequestedBy());
         hd.setRequestedDate(dto.getRequestedDate());
@@ -151,6 +165,73 @@ public class OtServiceImpl implements OtService {
             log.error("Error while fetching active admission list. ");
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Error while fetching active admission list: " + e.getMessage(), 500);
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> saveOtRequest(OtRequest request) {
+        try {
+            User user = authUtil.getCurrentUser();
+            Inpatient inpatient = inpatientRepository.findById(request.getInpatientId())
+                    .orElseThrow(() -> new SDDException(404,"Inpatient not found with ID: " + request.getInpatientId()));
+            Patient patient = patientRepository.findById(request.getPatientId())
+                    .orElseThrow(() -> new SDDException(404,"Patient not found with ID: " + request.getPatientId()));
+            User primarySurgeon = userRepo.findById(request.getPrimarySurgeonId())
+                    .orElseThrow(() -> new SDDException(404,"Primary surgeon not found with ID: " + request.getPrimarySurgeonId()));
+            MasOperationTheatre operationTheatre = masOperationTheatreRepository.findById(request.getPreferredOtId())
+                            .orElseThrow(() -> new SDDException(404,"Operation theatre not found with ID: " + request.getPreferredOtId()));
+            MasOtBookingStatus bookingStatus = masOtBookingStatusRepository.findById(surgeryBookingStatusRequested)
+                            .orElseThrow(() -> new SDDException(404,"OT booking status not found with ID: " + surgeryBookingStatusRequested));
+
+            OtBookingRequestHd header = new OtBookingRequestHd();
+            header.setRequestNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.SURGERY_NO, request.getHospitalId()));
+            header.setPatientId(patient);
+            header.setVisitId(request.getVisitId());
+            header.setRequestSource(AppConstants.SOURCE_TYPE_IPD);
+            header.setPrimarySurgeonId(primarySurgeon);
+            header.setDiagnosis(request.getDiagnosis());
+            header.setPriority(request.getPriority().toUpperCase());
+            header.setPreferredDate(request.getPreferredDate());
+            header.setAdmissionId(inpatient);
+            header.setPreferredOtId(operationTheatre);
+            header.setBookingStatusId(bookingStatus);
+            header.setRequestedBy(user.getFullName());
+            header.setRequestedDate(LocalDateTime.now());
+            header.setSpecialInstruction(request.getSpecialInstructions());
+            header.setStatus(AppConstants.STATUS_N);
+            header.setLastChgBy(user.getFullName());
+            header.setLastChgDate(LocalDateTime.now());
+
+            OtBookingRequestHd savedHeader = hdRepository.save(header);
+
+            log.info("OT booking header saved | requestId={}, requestNo={}, patientId={}, inpatientId={}",
+                    savedHeader.getOtBookingRequestId(),
+                    savedHeader.getRequestNo(),
+                    request.getPatientId(),
+                    request.getInpatientId()
+            );
+
+            MasSurgeryType surgeryType = masSurgeryTypeRepository.findById(request.getSurgeryTypeId()).orElseThrow(() ->
+                                    new SDDException(404,"Surgery type not found with ID: " + request.getSurgeryTypeId()));
+            MasSurgery surgery = masSurgeryRepository.findById(request.getSurgeryId())
+                    .orElseThrow(() -> new SDDException(404,"Surgery not found with ID: " + request.getSurgeryId()));
+
+            OtBookingRequestDt detail = new OtBookingRequestDt();
+            detail.setOtBookingRequest(savedHeader);
+            detail.setSurgeryTypeId(surgeryType);
+            detail.setSurgeryId(surgery);
+            detail.setSequenceNo(1L);
+            detail.setExpectedDurationMin(request.getExpectedDuration());
+            detail.setStatus(AppConstants.STATUS_N);
+            detail.setLastChgBy(user.getFullName());
+            detail.setLastChgDate(LocalDateTime.now());
+            OtBookingRequestDt savedDetail = dtRepository.save(detail);
+            log.info("OT booking request completed successfully | requestId={}, requestNo={}", savedHeader.getOtBookingRequestId(), savedHeader.getRequestNo());
+            return ResponseUtils.createSuccessResponse("OT booking request saved successfully", new TypeReference<>() {});
+
+       } catch (Exception e) {
+            throw e;
         }
     }
 
@@ -206,8 +287,8 @@ public class OtServiceImpl implements OtService {
             }
             // ================= MAP DATA =================
             dt.setOtBookingRequest(hd);
-            dt.setSurgeryId(dto.getSurgeryId());
-            dt.setSurgeryTypeId(dto.getSurgeryTypeId());
+            dt.setSurgeryId(masSurgeryRepository.findById(dto.getSurgeryId()).orElseThrow());
+            dt.setSurgeryTypeId(masSurgeryTypeRepository.findById(dto.getSurgeryTypeId()).orElseThrow());
             dt.setSequenceNo(sequence++);
             dt.setExpectedDurationMin(dto.getExpectedDurationMin());
             dt.setStatus(AppConstants.STATUS_N);

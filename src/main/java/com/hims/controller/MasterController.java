@@ -5549,6 +5549,11 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
         return ResponseEntity.ok(masSurgeryTypeService.changeStatusMasSurgeryType(id, status));
     }
 
+    @GetMapping("masSurgeryBySurgeryType/{surgeryTypeId}")
+    public ResponseEntity<ApiResponse<List<MasSurgeryResponse>>> masSurgeryBySurgeryType(@PathVariable Long surgeryTypeId) {
+        return ResponseEntity.ok(masSurgeryTypeService.masSurgeryBySurgeryType(surgeryTypeId));
+    }
+
     //======================================= Mas Anaesthesia Type ====================================================
 
     @GetMapping("masAnaesthesiaType/getAll/{flag}")
