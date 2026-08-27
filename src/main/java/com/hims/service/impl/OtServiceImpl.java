@@ -197,6 +197,9 @@ public class OtServiceImpl implements OtService {
             header.setPreferredOtId(operationTheatre);
             header.setBookingStatusId(bookingStatus);
             header.setRequestedBy(user.getFullName());
+            header.setDepartmentId(masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow());
+            header.setPreferredStartTime(request.getPreferredStartTime());
+            header.setPreferredEndTime(request.getPreferredEndTime());
             header.setRequestedDate(LocalDateTime.now());
             header.setSpecialInstruction(request.getSpecialInstructions());
             header.setStatus(AppConstants.STATUS_N);
