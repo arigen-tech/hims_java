@@ -15,6 +15,8 @@ public class StoreInternalIssueDetailRequest {
     private String batchNo;
     private Long manufacturerId;
     private LocalDate expiryDate;
+    private  LocalDate manufactureDate;
+    private  Long stockId;
 //    private BigDecimal itemCost;
 
 }

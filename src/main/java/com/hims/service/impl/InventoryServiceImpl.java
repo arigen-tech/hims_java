@@ -6,13 +6,16 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.mapper.InventoryMapper;
 import com.hims.projection.BatchNameForStockProjection;
 import com.hims.projection.IndentDetailsForIssueProjection;
+import com.hims.projection.IndentDetailsWithAvlStockProjection;
 import com.hims.projection.MasStoreItemProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.InventoryService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.InventoryUtils;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -79,6 +82,10 @@ public class InventoryServiceImpl implements InventoryService {
     private final StoreItemDamagedStockRepository damagedStockRepository;
 
     private final MasHsnRepository hsnRepository;
+
+    private final InventoryUtils inventoryUtils;
+
+    private final InventoryMapper inventoryMapper;
 
     @Value("${op_txn_type}")
     private String opTxnType;
@@ -491,7 +498,7 @@ public class InventoryServiceImpl implements InventoryService {
                     new TypeReference<>() {});
 
         } catch (Exception e) {
-            log.info("getItemById method error for itemId - {} :: ",itemId);
+            log.info("getItemById method error for itemId - {} :: ",itemId,e);
             return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG,HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
@@ -589,11 +596,13 @@ public class InventoryServiceImpl implements InventoryService {
     public ApiResponse<List<IndentDetailsWithAvlStock>> getIndentDetailsForIssueWithAvailableStock(Long indentMId,Long deptId) {
       try{
           log.info("getIndentDetailsForIssueWithAvailableStock method started for indentMId - {} with deptId {}:: ", indentMId,deptId);
-            List<IndentDetailsWithAvlStock> response =
+            List<IndentDetailsWithAvlStockProjection> response =
                     indentTRepository.findIndentDetailsWithStock(indentMId,deptId,LocalDate.now().plusDays(storeDrugExpDay));
           log.info("getIndentDetailsForIssueWithAvailableStock method ended for indentMId - {} with deptId {}:: ", indentMId,deptId);
             return ResponseUtils.createSuccessResponse(
-                        response,
+                        response.stream()
+                                .map(inventoryMapper::mapToResponseIndentDetailsWithAvlStock)
+                                .toList(),
                         new TypeReference<>() {}
                 );
       } catch (Exception e) {
@@ -893,6 +902,7 @@ public class InventoryServiceImpl implements InventoryService {
                                     p.getReason(),
                                     p.getUnitAuName(),
                                     p.getUnitAUid(),
+                                    p.getStockId(),
                                     p.getBatchNo(),
                                     p.getBatchAvailableStock(),
                                     p.getManufacturerId(),
@@ -1028,6 +1038,10 @@ public class InventoryServiceImpl implements InventoryService {
             // === Load Master ===
             StoreInternalIndentM indentM = indentMRepository.findById(request.getIndentMId())
                     .orElseThrow(() -> new RuntimeException(AppConstants.INDENT_HEADER_NOT_FOUND_ERR_MSG));
+            Boolean isDrug=false;
+            if(indentM.getIndentType().equalsIgnoreCase(AppConstants.ITEM_TYPE_DRUG)){
+                isDrug=true;
+            }
 
             // === Generate Issue No ===
             String issueNo = generateIssueNumber();
@@ -1110,7 +1124,7 @@ public class InventoryServiceImpl implements InventoryService {
                     throw new RuntimeException(AppConstants.INDENT_DETAILS_NOT_FOUND_ERR_MSG);
                 }
 
-                BigDecimal approved = nvl(indentT.getApprovedQty());
+//                BigDecimal approved = nvl(indentT.getApprovedQty());
                 BigDecimal prevIssued = nvl(indentT.getIssuedQty());
 
                 BigDecimal totalIssuedFromRequest = itemList.stream()
@@ -1124,31 +1138,46 @@ public class InventoryServiceImpl implements InventoryService {
                     continue;
                 }
 
-                BigDecimal remainingApproved = approved.subtract(prevIssued);
+//                BigDecimal remainingApproved = approved.subtract(prevIssued);
 
                 // === VALIDATION: FULL ISSUE ONLY ===
-                if (totalIssuedFromRequest.compareTo(remainingApproved) != 0) {
-                    throw new RuntimeException(
-                            "Must issue full remaining quantity. Remaining: " + remainingApproved +
-                                    ", Trying: " + totalIssuedFromRequest
-                    );
-                }
+//                if (totalIssuedFromRequest.compareTo(remainingApproved) != 0) {
+//                    throw new RuntimeException(
+//                            "Must issue full remaining quantity. Remaining: " + remainingApproved +
+//                                    ", Trying: " + totalIssuedFromRequest
+//                    );
+//                }
 
                 // ============================================================
                 // === PROCESS EACH BATCH FROM REQUEST ========================
                 // ============================================================
                 for (StoreInternalIssueDetailRequest itemReq : itemList) {
+                    StoreItemBatchStock batch
+                            =inventoryUtils.getUniqueStock(hospitalId,
+                            departmentId,
+                            indentT.getItemId().getItemId(),
+                            itemReq.getBatchNo(),
+                            itemReq.getManufactureDate(),
+                            itemReq.getExpiryDate(),
+                            itemReq.getManufacturerId()
+                            );
+                    if (batch==null){
+                        throw  new SDDException("Batch Number",
+                                HttpStatus.NOT_FOUND.value(),
+                                AppConstants.BATCH_NOT_FOUND_MSG
+                        );
+                    }
 
-                    StoreItemBatchStock batch = storeItemBatchStockRepository
-                            .findExistingBatchStockForDrug(
-                                    indentT.getItemId(),
-                                    departmentId,
-                                    hospitalId,
-                                    itemReq.getBatchNo(),
-                                    itemReq.getManufacturerId(),
-                                    itemReq.getExpiryDate()
-                            )
-                            .orElseThrow(() -> new RuntimeException("Batch not found"));
+//                    StoreItemBatchStock batch = storeItemBatchStockRepository
+//                            .findExistingBatchStockForDrug(
+//                                    indentT.getItemId(),
+//                                    departmentId,
+//                                    hospitalId,
+//                                    itemReq.getBatchNo(),
+//                                    itemReq.getManufacturerId(),
+//                                    itemReq.getExpiryDate()
+//                            )
+//                            .orElseThrow(() -> new RuntimeException("Batch not found"));
 
                     long closing = batch.getClosingStock() == null ? 0L : batch.getClosingStock();
                     long issueQty = itemReq.getIssuedQty().longValue();
@@ -1229,6 +1258,7 @@ public class InventoryServiceImpl implements InventoryService {
 
             StoreInternalIndentResponse resp = buildResponse(indentM);
 
+//            int a=10/0;
             return ResponseUtils.createSuccessResponse(
                     resp,
                     new TypeReference<StoreInternalIndentResponse>() {}

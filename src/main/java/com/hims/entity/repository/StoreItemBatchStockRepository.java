@@ -367,24 +367,23 @@ ORDER BY i.nomenclature ASC
             @Param("batchNo") String batchNo,
             @Param("departmentId") Long departmentId);
 
-    @Query("""
-    SELECT s
-    FROM StoreItemBatchStock s
-    LEFT JOIN s.departmentId d 
-    LEFT JOIN s.itemId i 
-    LEFT JOIN s.manufacturerId m 
-    WHERE d.id = :deptId
-      AND i.itemId = :itemId
-      AND s.batchNo = :batchName
-      AND s.manufactureDate = :manufacturerDate
-      AND m.manufacturerId = :manufacturer
+    @Query(value = """
+    SELECT *
+    FROM store_item_batch_stock s
+    WHERE s.hospital_id = :hospitalId
+      AND s.department_id = :deptId
+      AND s.item_id = :itemId
+      AND s.batch_no = :batchName
+      AND s.manufacture_date = :manufacturerDate
+      AND s.manufacturer_id = :manufacturer
       AND (
-            (:expiryDate IS NULL AND s.expiryDate IS NULL)
-            OR
-            (:expiryDate IS NOT NULL AND s.expiryDate = :expiryDate)
+            CAST(:expiryDate AS DATE) IS NULL
+            OR s.expiry_date = CAST(:expiryDate AS DATE)
           )
-""")
+    """,
+            nativeQuery = true)
     List<StoreItemBatchStock> findStocksByUniqueCombination(
+            @Param("hospitalId") Long hospitalId,
             @Param("deptId") Long deptId,
             @Param("itemId") Long itemId,
             @Param("batchName") String batchName,
