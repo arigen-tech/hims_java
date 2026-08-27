@@ -12,6 +12,7 @@ import com.hims.request.StoreStockLedgerRequest;
 import com.hims.request.UpdateStoreItemBatchStockRequest;
 import com.hims.response.StockUpdateResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class InventoryUtils {
 
@@ -34,15 +36,24 @@ public class InventoryUtils {
     private final StoreStockLedgerRepository storeStockLedgerRepository;
 
     public StoreItemBatchStock getUniqueStock(
+            Long hospitalId,
             Long deptId,
             Long itemId,
             String batchName,
             LocalDate manufacturerDate,
             LocalDate expiryDate,
             Long manufacturer) {
+        log.info("getUniqueStock method started for hospitalId-{},deptId-{},itemId-{},batchName-{},manufacturerDate-{},expiryDate-{},manufacturerId-{}",hospitalId,
+                deptId,
+                itemId,
+                batchName,
+                manufacturerDate,
+                expiryDate,
+                manufacturer);
 
         List<StoreItemBatchStock> stocks =
                 storeItemBatchStockRepository.findStocksByUniqueCombination(
+                        hospitalId,
                         deptId,
                         itemId,
                         batchName,
@@ -58,6 +69,14 @@ public class InventoryUtils {
                     "Multiple stock records found for the same stock combination"
             );
         }
+
+        log.info("getUniqueStock method ended for hospitalId-{},deptId-{},itemId-{},batchName-{},manufacturerDate-{},expiryDate-{},manufacturerId-{}",hospitalId,
+                deptId,
+                itemId,
+                batchName,
+                manufacturerDate,
+                expiryDate,
+                manufacturer);
 
         return stocks.isEmpty() ? null : stocks.get(0);
     }

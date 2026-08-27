@@ -4,6 +4,7 @@ import com.hims.entity.StoreInternalIndentM;
 import com.hims.entity.StoreInternalIndentT;
 import com.hims.projection.IndentDetailsForIssueProjection;
 import com.hims.projection.IndentDetailsResponseForRequestDeptProjection;
+import com.hims.projection.IndentDetailsWithAvlStockProjection;
 import com.hims.response.IndentDetailsResponseForIndentTracking;
 import com.hims.response.IndentDetailsResponseForRequestDept;
 import com.hims.response.IndentDetailsWithAvlStock;
@@ -83,29 +84,66 @@ public interface StoreInternalIndentTRepository extends JpaRepository<StoreInter
     List<IndentDetailsResponseForIndentTracking>
     findIndentDetailsForTracking(@Param("indentMId") Long indentMId);
 
-    @Query("""
-SELECT new com.hims.response.IndentDetailsWithAvlStock(
-    t.indentTId,
-    i.nomenclature,
-    u.unitName,
-    t.requestedQty,
-    t.approvedQty,
-    t.receivedQty,
-    t.reason,
-    COALESCE((
-        SELECT SUM(s.closingStock)
-        FROM StoreItemBatchStock s
-        WHERE s.itemId.itemId = i.itemId
-        AND s.departmentId.id = :departmentId
-        AND s.expiryDate >= :expiryDate
-    ), 0)
-)
-FROM StoreInternalIndentT t
-LEFT JOIN t.itemId i
-LEFT JOIN i.unitAU u
-WHERE t.indentM.indentMId = :indentMId
-""")
-    List<IndentDetailsWithAvlStock> findIndentDetailsWithStock(
+//    @Query("""
+//SELECT new com.hims.response.IndentDetailsWithAvlStock(
+//    t.indentTId,
+//    i.nomenclature,
+//    u.unitName,
+//    t.requestedQty,
+//    t.approvedQty,
+//    t.receivedQty,
+//    t.reason,
+//    COALESCE((
+//        SELECT SUM(s.closingStock)
+//        FROM StoreItemBatchStock s
+//        WHERE s.itemId.itemId = i.itemId
+//        AND s.departmentId.id = :departmentId
+//        AND (
+//          :expiryDate IS NULL OR s.expiryDate >= :expiryDate
+//        )
+//    ), 0)
+//)
+//FROM StoreInternalIndentT t
+//LEFT JOIN t.itemId i
+//LEFT JOIN i.unitAU u
+//WHERE t.indentM.indentMId = :indentMId
+//""")
+//    List<IndentDetailsWithAvlStock> findIndentDetailsWithStock(
+//            @Param("indentMId") Long indentMId,
+//            @Param("departmentId") Long departmentId,
+//            @Param("expiryDate") LocalDate expiryDate
+//    );
+
+    @Query(value = """
+    SELECT
+        t.indent_t_id AS "indentTId",
+        i.nomenclature AS "itemName",
+        u.unit_name AS "itemUnitName",
+        t.requested_qty AS "qtyRequested",
+        t.approved_qty AS "qtyApproved",
+        t.received_qty AS "qtyReceived",
+        t.reason AS "reasonForIndent",
+
+        COALESCE((
+            SELECT SUM(s.closing_stock)
+            FROM store_item_batch_stock s
+            WHERE s.item_id = i.item_id
+              AND s.department_id = :departmentId
+              AND (
+                       s.expiry_date IS NULL
+                       OR s.expiry_date >= CAST(:expiryDate AS DATE)
+                   )
+        ), 0) AS "availableStock"
+
+    FROM store_internal_indent_t t
+    LEFT JOIN mas_store_item i
+        ON i.item_id = t.item_id
+    LEFT JOIN mas_store_unit u
+        ON u.unit_id = i.unit_au
+    WHERE t.indent_m_id = :indentMId
+    """,
+            nativeQuery = true)
+    List<IndentDetailsWithAvlStockProjection> findIndentDetailsWithStock(
             @Param("indentMId") Long indentMId,
             @Param("departmentId") Long departmentId,
             @Param("expiryDate") LocalDate expiryDate
@@ -128,7 +166,10 @@ SELECT
         FROM store_item_batch_stock bs
         WHERE bs.item_id = i.item_id
         AND bs.department_id = :deptId
-        AND bs.expiry_date >= :expiryDate
+        AND (
+                       bs.expiry_date IS NULL
+                       OR bs.expiry_date >= CAST(:expiryDate AS DATE)
+            )
     ) AS availableStock,
 
     t.issue_status AS issueStatus,
@@ -136,7 +177,7 @@ SELECT
 
     u.unit_name AS unitAuName,
     u.unit_id AS unitAUid,
-
+    bs2.stock_id AS stockId,
     bs2.batch_no AS batchNo,
     bs2.closing_stock AS batchAvailableStock,
     mm.manufacturer_id AS manufacturerId,
@@ -156,7 +197,10 @@ LEFT JOIN store_item_batch_stock bs2
         FROM store_item_batch_stock bs3
         WHERE bs3.item_id = i.item_id
         AND bs3.department_id = :deptId
-        AND bs3.expiry_date >= :expiryDate
+        AND (
+                       bs3.expiry_date IS NULL
+                       OR bs3.expiry_date >= CAST(:expiryDate AS DATE)
+            )
         AND bs3.closing_stock>0
         ORDER BY bs3.expiry_date
         LIMIT 1

@@ -134,85 +134,227 @@ public interface MasStoreItemRepository extends JpaRepository<MasStoreItem,Long>
 """)
     List<ItemProjection> findDrugsBySection(@Param("sectionId") Integer sectionId);
 
+//
+//    @Query("""
+//SELECT
+//    m.itemId as itemId,
+//    m.pvmsNo as pvmsNo,
+//    m.nomenclature as nomenclature,
+//    m.status as status,
+//    m.lastChgBy as lastChgBy,
+//    m.lastChgDate as lastChgDate,
+//    m.lastChgTime as lastChgTime,
+//    m.adispQty as adispQty,
+//    m.dosageUnit as dosageUnit,
+//
+//    uau.unitId as unitAU,
+//    du.unitId as dispUnit,
+//    s.sectionId as sectionId,
+//    it.id as itemTypeId,
+//    g.id as groupId,
+//    ic.itemClassId as itemClassId,
+//    cat.itemCategoryId as masItemCategoryid,
+//
+//    cat.itemCategoryName as masItemCategoryName,
+//    uau.unitName as unitAuName,
+//    du.unitName as dispUnitName,
+//    s.sectionName as sectionName,
+//    it.name as itemTypeName,
+//    g.groupName as groupName,
+//    ic.itemClassName as itemClassName,
+//    h.hsnCode as hsnCode,
+//    h.gstRate as hsnGstPercent,
+//
+//    m.reOrderLevelDispensary as reOrderLevelDispensary,
+//    m.reOrderLevelStore as reOrderLevelStore,
+//
+//    COALESCE(SUM(CASE
+//        WHEN sb.departmentId.id = :requestedDeptId
+//         AND sb.hospitalId.id = :hospitalId
+//         AND sb.closingStock > 0
+//         AND sb.expiryDate >= COALESCE(:drugExpDay, sb.expiryDate)
+//        THEN sb.closingStock ELSE 0 END),0) as requestedDeptStocks,
+//
+//    COALESCE(SUM(CASE
+//        WHEN sb.departmentId.id = :currentDeptId
+//         AND sb.hospitalId.id = :hospitalId
+//         AND sb.closingStock > 0
+//         AND sb.expiryDate >= COALESCE(:drugExpDay, sb.expiryDate)
+//        THEN sb.closingStock ELSE 0 END),0) as currentDeptStocks
+//FROM MasStoreItem m
+//LEFT JOIN m.groupId g
+//LEFT JOIN m.itemClassId ic
+//LEFT JOIN m.itemTypeId it
+//LEFT JOIN m.sectionId s
+//LEFT JOIN m.unitAU uau
+//LEFT JOIN m.dispUnit du
+//LEFT JOIN m.masItemCategory cat
+//LEFT JOIN m.hsnCode h
+//LEFT JOIN StoreItemBatchStock sb ON sb.itemId.itemId = m.itemId
+//
+//WHERE m.itemId = :itemId
+//
+//GROUP BY
+//    m.itemId, m.pvmsNo, m.nomenclature, m.status,
+//    m.lastChgBy, m.lastChgDate, m.lastChgTime, m.adispQty,
+//    uau.unitId, du.unitId,
+//    s.sectionId, it.id, g.id, ic.itemClassId, cat.itemCategoryId,
+//    cat.itemCategoryName, uau.unitName, du.unitName,
+//    s.sectionName, it.name, g.groupName, ic.itemClassName,
+//    h.hsnCode, h.gstRate,
+//    m.reOrderLevelDispensary, m.reOrderLevelStore, m.dosageUnit
+//""")
+//    Optional<MasStoreItemProjection> findItemWithStock(
+//            @Param("itemId") Long itemId,
+//            @Param("hospitalId") Long hospitalId,
+//            @Param("requestedDeptId") Long requestedDeptId,
+//            @Param("currentDeptId") Long currentDeptId,
+//            @Param(("drugExpDay")) LocalDate drugExpDay
+////            @Param("storeExpiry") LocalDate storeExpiry,
+////            @Param("dispExpiry") LocalDate dispExpiry,
+////            @Param("wardExpiry") LocalDate wardExpiry
+//    );
 
-    @Query("""
-SELECT
-    m.itemId as itemId,
-    m.pvmsNo as pvmsNo,
-    m.nomenclature as nomenclature,
-    m.status as status,
-    m.lastChgBy as lastChgBy,
-    m.lastChgDate as lastChgDate,
-    m.lastChgTime as lastChgTime,
-    m.adispQty as adispQty,
-    m.dosageUnit as dosageUnit,
 
-    uau.unitId as unitAU,
-    du.unitId as dispUnit,
-    s.sectionId as sectionId,
-    it.id as itemTypeId,
-    g.id as groupId,
-    ic.itemClassId as itemClassId,
-    cat.itemCategoryId as masItemCategoryid,
+    @Query(value = """
+    SELECT
+        m.item_id AS itemId,
+        m.pvms_no AS pvmsNo,
+        m.nomenclature AS nomenclature,
+        m.status AS status,
+        m.last_chg_by AS lastChgBy,
+        m.last_chg_date AS lastChgDate,
+        m.last_chg_time AS lastChgTime,
+        m.a_disp_qty AS adispQty,
+        m.dosage_unit AS dosageUnit,
 
-    cat.itemCategoryName as masItemCategoryName,
-    uau.unitName as unitAuName,
-    du.unitName as dispUnitName,
-    s.sectionName as sectionName,
-    it.name as itemTypeName,
-    g.groupName as groupName,
-    ic.itemClassName as itemClassName,
-    h.hsnCode as hsnCode,
-    h.gstRate as hsnGstPercent,
+        uau.unit_id AS unitAU,
+        du.unit_id AS dispUnit,
+        s.section_id AS sectionId,
+        it.item_type_id AS itemTypeId,
+        g.group_id AS groupId,
+        ic.item_class_id AS itemClassId,
+        cat.item_category_id AS masItemCategoryid,
 
-    m.reOrderLevelDispensary as reOrderLevelDispensary,
-    m.reOrderLevelStore as reOrderLevelStore,
+        cat.item_category_name AS masItemCategoryName,
+        uau.unit_name AS unitAuName,
+        du.unit_name AS dispUnitName,
+        s.section_name AS sectionName,
+        it.item_type_name AS itemTypeName,
+        g.group_name AS groupName,
+        ic.item_class_name AS itemClassName,
+        h.hsn_code AS hsnCode,
+        h.gst_rate AS hsnGstPercent,
 
-    COALESCE(SUM(CASE
-        WHEN sb.departmentId.id = :requestedDeptId
-         AND sb.hospitalId.id = :hospitalId
-         AND sb.closingStock > 0
-         AND sb.expiryDate >= :drugExpDay
-        THEN sb.closingStock ELSE 0 END),0) as requestedDeptStocks,
+        m.re_order_level_dispensary AS reOrderLevelDispensary,
+        m.re_order_level_store AS reOrderLevelStore,
 
-    COALESCE(SUM(CASE
-        WHEN sb.departmentId.id = :currentDeptId
-         AND sb.hospitalId.id = :hospitalId
-         AND sb.closingStock > 0
-         AND sb.expiryDate >= :drugExpDay
-        THEN sb.closingStock ELSE 0 END),0) as currentDeptStocks
-FROM MasStoreItem m
-LEFT JOIN m.groupId g
-LEFT JOIN m.itemClassId ic
-LEFT JOIN m.itemTypeId it
-LEFT JOIN m.sectionId s
-LEFT JOIN m.unitAU uau
-LEFT JOIN m.dispUnit du
-LEFT JOIN m.masItemCategory cat
-LEFT JOIN m.hsnCode h
-LEFT JOIN StoreItemBatchStock sb ON sb.itemId.itemId = m.itemId
+       COALESCE(
+                                                              SUM(
+                                                                  CASE
+                                                                      WHEN sb.department_id = :requestedDeptId
+                                                                       AND sb.hospital_id = :hospitalId
+                                                                       AND sb.closing_stock > 0
+                                                                       AND (
+                                                                           sb.expiry_date IS NULL
+                                                                           OR CAST(:drugExpDay AS DATE) IS NULL
+                                                                           OR sb.expiry_date >= CAST(:drugExpDay AS DATE)
+                                                                       )
+                                                                      THEN sb.closing_stock
+                                                                      ELSE 0
+                                                                  END
+                                                              ),
+                                                              0
+                                                          ) AS requestedDeptStocks,
 
-WHERE m.itemId = :itemId
+        COALESCE(
+                                  SUM(
+                                      CASE
+                                          WHEN sb.department_id = :currentDeptId
+                                           AND sb.hospital_id = :hospitalId
+                                           AND sb.closing_stock > 0
+                                           AND (
+                                               sb.expiry_date IS NULL
+                                               OR CAST(:drugExpDay AS DATE) IS NULL
+                                               OR sb.expiry_date >= CAST(:drugExpDay AS DATE)
+                                           )
+                                          THEN sb.closing_stock
+                                          ELSE 0
+                                      END
+                                  ),
+                                  0
+                              ) AS currentDeptStocks
 
-GROUP BY
-    m.itemId, m.pvmsNo, m.nomenclature, m.status,
-    m.lastChgBy, m.lastChgDate, m.lastChgTime, m.adispQty,
-    uau.unitId, du.unitId,
-    s.sectionId, it.id, g.id, ic.itemClassId, cat.itemCategoryId,
-    cat.itemCategoryName, uau.unitName, du.unitName,
-    s.sectionName, it.name, g.groupName, ic.itemClassName,
-    h.hsnCode, h.gstRate,
-    m.reOrderLevelDispensary, m.reOrderLevelStore, m.dosageUnit
-""")
+    FROM mas_store_item m
+
+    LEFT JOIN mas_store_unit uau
+        ON uau.unit_id = m.unit_au
+
+    LEFT JOIN mas_store_unit du
+        ON du.unit_id = m.dispensing_unit
+
+    LEFT JOIN mas_store_section s
+        ON s.section_id = m.section_id
+
+    LEFT JOIN mas_item_type it
+        ON it.item_type_id = m.item_type_id
+
+    LEFT JOIN mas_store_group g
+        ON g.group_id = m.group_id
+
+    LEFT JOIN mas_item_class ic
+        ON ic.item_class_id = m.item_class_id
+
+    LEFT JOIN mas_item_category cat
+        ON cat.item_category_id = m.item_category_id
+
+    LEFT JOIN mas_hsn h
+        ON h.hsn_code = m.hsn_code
+
+    LEFT JOIN store_item_batch_stock sb
+        ON sb.item_id = m.item_id
+
+    WHERE m.item_id = :itemId
+
+    GROUP BY
+        m.item_id,
+        m.pvms_no,
+        m.nomenclature,
+        m.status,
+        m.last_chg_by,
+        m.last_chg_date,
+        m.last_chg_time,
+        m.a_disp_qty,
+        m.dosage_unit,
+
+        uau.unit_id,
+        du.unit_id,
+        s.section_id,
+        it.item_type_id,
+        g.group_id,
+        ic.item_class_id,
+        cat.item_category_id,
+
+        cat.item_category_name,
+        uau.unit_name,
+        du.unit_name,
+        s.section_name,
+        it.item_type_name,
+        g.group_name,
+        ic.item_class_name,
+        h.hsn_code,
+        h.gst_rate,
+
+        m.re_order_level_dispensary,
+        m.re_order_level_store
+    """,
+            nativeQuery = true)
     Optional<MasStoreItemProjection> findItemWithStock(
             @Param("itemId") Long itemId,
             @Param("hospitalId") Long hospitalId,
             @Param("requestedDeptId") Long requestedDeptId,
             @Param("currentDeptId") Long currentDeptId,
-            @Param(("drugExpDay")) LocalDate drugExpDay
-//            @Param("storeExpiry") LocalDate storeExpiry,
-//            @Param("dispExpiry") LocalDate dispExpiry,
-//            @Param("wardExpiry") LocalDate wardExpiry
+            @Param("drugExpDay") LocalDate drugExpDay
     );
 
 

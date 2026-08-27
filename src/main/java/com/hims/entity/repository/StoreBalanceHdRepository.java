@@ -95,6 +95,7 @@ LEFT JOIN MasCommonStatus mcs
 WHERE sb.hospitalId.id = :hospitalId
 AND sb.departmentId.id = :departmentId
 AND LOWER(sb.status) = :status
+ORDER BY sb.lastUpdatedDt DESC
 """
     )
     List<OpeningBalanceEntryHeaderResponse> findOpeningBalanceHeadersWrtDeptWithoutPagination(
