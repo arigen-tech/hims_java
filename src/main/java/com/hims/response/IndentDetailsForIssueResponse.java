@@ -26,6 +26,7 @@ public class IndentDetailsForIssueResponse {
     private String reason;
     private String unitAuName;
     private Long unitAUid;
+    private Long stockId;
     private String batchNo;
     private BigDecimal batchAvailableStock;
     private Long manufacturerId;

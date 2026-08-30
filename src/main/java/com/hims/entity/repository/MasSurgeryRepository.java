@@ -44,4 +44,6 @@ public interface MasSurgeryRepository extends JpaRepository<MasSurgery, Long> {
 """)
    List<MasSurgery> findBySurgeryLevelAndFlag(@Param("surgeryLevel") String surgeryLevel,
                                               @Param("activeStatus") String activeStatus);
+
+    List<MasSurgery> findBySurgeryType_SurgeryTypeIdAndStatusIgnoreCase(Long surgeryTypeId, String statusY);
 }

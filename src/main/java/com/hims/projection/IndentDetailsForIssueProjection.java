@@ -22,6 +22,7 @@ public interface IndentDetailsForIssueProjection {
     String getUnitAuName();
     Long getUnitAUid();
 
+    Long getStockId();
     String getBatchNo();
     BigDecimal getBatchAvailableStock();
     Long getManufacturerId();

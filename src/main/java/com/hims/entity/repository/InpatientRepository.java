@@ -1,10 +1,7 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.Inpatient;
-import com.hims.projection.ActiveAdmissionProjectionResponse;
-import com.hims.projection.InpatientAdmissionProjection;
-import com.hims.projection.InpatientAdvanceCollectionProjection;
-import com.hims.projection.InpatientDietOrderProjection;
+import com.hims.projection.*;
 import lombok.Locked;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -408,4 +405,132 @@ AND (
             Pageable pageable);
 
 
+    @Query(value = """
+        SELECT
+            i.inpatient_id AS inpatientId,
+            i.visit_id AS visitId,
+            p.patient_id AS patientId,
+
+            CONCAT_WS(' ', p.p_fn, p.p_mn, p.p_ln) AS patientName,
+
+            p.uhid_no AS uhid,
+            p.p_age AS age,
+
+            g.id AS genderId,
+            g.gender_name AS gender,
+
+            p.p_mobile_number AS mobileNo,
+            p.emer_mobile AS emergencyMobileNo,
+
+            i.admission_no AS admissionNo,
+
+            w.ward_id AS wardId,
+            w.ward_name AS ward,
+
+            r.room_id AS rooId,
+            r.room_name AS room,
+
+            b.bed_id AS bedId,
+            b.bed_number AS bed,
+
+            CAST(i.admission_date AS timestamp) + i.admission_time
+                AS admissionDateTime,
+
+            i.doctor_name AS doctorName
+
+        FROM public.inpatient i
+
+        INNER JOIN public.patient p
+            ON p.patient_id = i.patient
+
+        LEFT JOIN public.mas_gender g
+            ON g.id = p.p_gender_id
+
+        LEFT JOIN public.mas_ward w
+            ON w.ward_id = i.admitting_ward_id
+
+        LEFT JOIN public.mas_room r
+            ON r.room_id = i.room_id
+
+        LEFT JOIN public.mas_bed b
+            ON b.bed_id = i.bed_id
+
+        WHERE
+            i.admission_status = :admissionStatus
+
+            AND (
+                :patientName IS NULL
+                OR :patientName = ''
+                OR LOWER(
+                    CONCAT_WS(' ', p.p_fn, p.p_mn, p.p_ln)
+                ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+            )
+
+            AND (
+                :mobileNo IS NULL
+                OR :mobileNo = ''
+                OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+            )
+
+            AND (
+                :admissionNo IS NULL
+                OR :admissionNo = ''
+                OR LOWER(i.admission_no)
+                    LIKE LOWER(CONCAT('%', :admissionNo, '%'))
+            )
+
+            AND (
+                :wardId IS NULL
+                OR i.admitting_ward_id = :wardId
+            )
+
+        ORDER BY i.inpatient_id DESC
+        """,
+
+            countQuery = """
+        SELECT COUNT(i.inpatient_id)
+
+        FROM public.inpatient i
+
+        INNER JOIN public.patient p
+            ON p.patient_id = i.patient
+
+        WHERE
+            i.admission_status = :admissionStatus
+
+            AND (
+                :patientName IS NULL
+                OR :patientName = ''
+                OR LOWER(
+                    CONCAT_WS(' ', p.p_fn, p.p_mn, p.p_ln)
+                ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+            )
+
+            AND (
+                :mobileNo IS NULL
+                OR :mobileNo = ''
+                OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+            )
+
+            AND (
+                :admissionNo IS NULL
+                OR :admissionNo = ''
+                OR LOWER(i.admission_no)
+                    LIKE LOWER(CONCAT('%', :admissionNo, '%'))
+            )
+
+            AND (
+                :wardId IS NULL
+                OR i.admitting_ward_id = :wardId
+            )
+        """,
+            nativeQuery = true)
+    Page<ActiveAdmissionOtProjection> activeAdmissionList(
+            @Param("admissionStatus") Long admissionStatus,
+            @Param("patientName") String patientName,
+            @Param("mobileNo") String mobileNo,
+            @Param("admissionNo") String admissionNo,
+            @Param("wardId") Long wardId,
+            Pageable pageable
+    );
 }
