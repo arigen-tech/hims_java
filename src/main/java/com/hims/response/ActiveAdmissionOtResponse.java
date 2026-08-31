@@ -25,6 +25,7 @@ public class ActiveAdmissionOtResponse {
     private String room;
     private Long bedId;
     private String bed;
+    private String diagnosis;
     private LocalDateTime admissionDateTime;
     private String doctorName;
 

@@ -351,6 +351,7 @@ public class OtServiceImpl implements OtService {
         response.setRoom(projection.getRoom());
         response.setBedId(projection.getBedId());
         response.setBed(projection.getBed());
+        response.setDiagnosis(projection.getDiagnosis());
         response.setAdmissionDateTime(projection.getAdmissionDateTime());
         response.setDoctorName(projection.getDoctorName());
 
