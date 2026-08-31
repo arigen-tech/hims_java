@@ -36,6 +36,8 @@ public interface ActiveAdmissionOtProjection {
 
     String getBed();
 
+    String getDiagnosis();
+
     LocalDateTime getAdmissionDateTime();
 
     String getDoctorName();

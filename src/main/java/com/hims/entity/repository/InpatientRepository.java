@@ -432,6 +432,7 @@ AND (
 
             b.bed_id AS bedId,
             b.bed_number AS bed,
+            i.initial_diagnosis as diagnosis,
 
             CAST(i.admission_date AS timestamp) + i.admission_time
                 AS admissionDateTime,
