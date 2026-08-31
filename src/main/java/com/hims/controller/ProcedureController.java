@@ -35,11 +35,7 @@ public class ProcedureController {
                 );
 
         return ResponseEntity.ok(
-                new ApiResponse<>(
-                        200,
-                        "Procedure worklist fetched successfully",
-                        worklist
-                )
+                new ApiResponse<>(200, "Procedure worklist fetched successfully", worklist)
         );
     }
 }

@@ -227,4 +227,5 @@ public class AppConstants {
     public static final String NOT_APPLICABLE_LABEL = "NOT_APPLICABLE";
     public static final String BILLING_PENDING_LABEL = "PENDING";
     public static final String PACKAGE_LABEL = "PACKAGE";
+    public static final String DUPLICATE_DATA_OPD_SERVICE_TARIFF = "Doctor tariff already exists for the selected service category, hospital, department and date range";
 }
