@@ -384,7 +384,6 @@ public class AdminServiceImpl implements AdminService {
                         LocalDate rosterLocalDate = new java.sql.Date(roster.getRoasterDate().getTime()).toLocalDate();
                         return !rosterLocalDate.isBefore(rosterDate);
                     })
-                    .limit(7)
                     .map(roster -> {
                         DoctorRosterResponseDTO.DateEntry entry = new DoctorRosterResponseDTO.DateEntry();
                         entry.setId(roster.getId());
