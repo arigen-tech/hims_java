@@ -1,8 +1,5 @@
 package com.hims.request;
 
-import com.hims.entity.MasCareLevel;
-import com.hims.entity.MasDepartment;
-import com.hims.entity.MasWardCategory;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -77,7 +74,7 @@ public class OpdPatientDetailCreateRequest {
     private String doctorRemarks;
 
     // ============================== Procedure Care =============================
-//    private List<ProcedureCare> procedureCare;
+    private List<ProcedureCare> procedureCare;
 
 
     // ========================= Admission Advice =====================================
@@ -107,6 +104,7 @@ public class OpdPatientDetailCreateRequest {
     private OpdEntDetailsRequest entExaminationDetails;
     private PregnancyDetails pregnancyDetails;
     private SurgeryAdviceRequestDTO surgeryAdvice;
+    private DentalDetailsRequest dentalDetails;
 
 
 
@@ -160,7 +158,29 @@ public class OpdPatientDetailCreateRequest {
 //        private Long frequencyId;
 //        private Long noOfDays;
 //        private String remarks;
+//        private Long patientId;
+//        private Long visitId;
+//        private Long departmentId;
+//        private Long hospitalId;
+//        private Long doctorId;
+//        private String diagnosis;
 //    }
+
+    @Getter
+    @Setter
+    public static class ProcedureCare {
+        private Long procedureId;
+        private String procedureName;
+        private Long frequencyId;
+        private Long noOfDays;
+        private String remarks;
+        private Long patientId;
+        private Long visitId;
+        private Long departmentId;
+        private Long hospitalId;
+        private Long doctorId;
+        private String diagnosis;
+    }
 
 
 }

@@ -12,4 +12,7 @@ public interface MasToothMasterRepository  extends JpaRepository<MasToothMaster,
     List<MasToothMaster> findByStatusIgnoreCaseOrderByDisplayOrderAsc(String y);
 
     List<MasToothMaster> findAllByOrderByStatusDescLastUpdateDateDesc();
+
+    List<MasToothMaster> findByToothTypeIgnoreCaseAndStatusIgnoreCaseOrderByDisplayOrderAsc(String toothType,String status);
+
 }
