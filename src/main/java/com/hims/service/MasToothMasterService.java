@@ -16,4 +16,7 @@ public interface MasToothMasterService {
     ApiResponse<MasToothMasterResponse> update(Long id, MasToothMasterRequest request);
 
     ApiResponse<MasToothMasterResponse> changeStatus(Long id, String status);
+
+    // Service
+    ApiResponse<List<MasToothMasterResponse>> getToothByToothType(String toothType);
 }

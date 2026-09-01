@@ -147,7 +147,12 @@ public class BillingServiceImpl implements BillingService {
             header.setReferredBy(visit.getIniDoctor().getFullName());
             header.setGstnBillNo("");
             header.setBillDate(OffsetDateTime.now());
-            Instant currentDate = Instant.now();
+        Instant instant = Instant.now();
+        Instant dateOnly = instant
+                .atZone(ZoneId.of("Asia/Kolkata"))
+                .toLocalDate()
+                .atStartOfDay(ZoneId.of("Asia/Kolkata"))
+                .toInstant();
             Optional<Visit> lastVisitOpt = visitRepository.findPreviousVisit(
                     patient.getId(),
                     visit.getDoctor().getUserId(),
@@ -163,7 +168,7 @@ public class BillingServiceImpl implements BillingService {
 
             header.setBillingPolicy(policy);
 
-            Optional<MasServiceOpd> serviceOpd = masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatIdAndCurrentDate(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory, currentDate);
+            Optional<MasServiceOpd> serviceOpd = masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatIdAndCurrentDate(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory, dateOnly);
             if (serviceOpd.isPresent()) {
                 if (discount != null) {
                     if (discount.getDisPercentage() != null && discount.getMaxDiscount() != null) {

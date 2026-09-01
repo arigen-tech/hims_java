@@ -505,9 +505,9 @@ public class RegistrationServiceImpl implements RegistrationService {
         if (v.getDepartment() != null && v.getDepartment().getDepartmentType() != null) {
             departmentTypeCode = v.getDepartment().getDepartmentType().getDepartmentTypeCode();
         }
-        boolean isOpdAppointment = AppConstants.OPDTYPE.equalsIgnoreCase(departmentTypeCode);
+        boolean isOpdAppointment = AppConstants.OPD_TYPE.equalsIgnoreCase(departmentTypeCode);
         boolean isLabOrRadiologyAppointment =
-                AppConstants.LABTYPE.equalsIgnoreCase(departmentTypeCode) || AppConstants.RADIOTYPE.equalsIgnoreCase(departmentTypeCode);
+                AppConstants.LAB_TYPE.equalsIgnoreCase(departmentTypeCode) || AppConstants.RADIO_TYPE.equalsIgnoreCase(departmentTypeCode);
 
         if (request.getVisitDate() == null) {
             return new ApiResponse<>(HttpStatus.BAD_REQUEST, "visitDate is required");
@@ -578,7 +578,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             return;
         }
 
-        if (AppConstants.LABTYPE.equalsIgnoreCase(departmentTypeCode)) {
+        if (AppConstants.LAB_TYPE.equalsIgnoreCase(departmentTypeCode)) {
             List<DgOrderHd> labHeaders = labHdRepository.findAllByVisitId(visit);
             for (DgOrderHd header : labHeaders) {
                 header.setOrderDate(updatedVisitDate);
@@ -593,7 +593,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             return;
         }
 
-        if (AppConstants.RADIOTYPE.equalsIgnoreCase(departmentTypeCode)) {
+        if (AppConstants.RADIO_TYPE.equalsIgnoreCase(departmentTypeCode)) {
             List<RadOrderHd> radHeaders = radOrderHdRepository.findAllByVisit_Id(visit.getId());
             for (RadOrderHd header : radHeaders) {
                 header.setOrderDate(updatedVisitDate);
@@ -1035,7 +1035,6 @@ public class RegistrationServiceImpl implements RegistrationService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},checkDoctorRoaster.getMessage(),400);
 
         }
-
         AppSetup appSetup = optionalSetup.get(0);
         if (appSetup == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"App setup not defined for this day",400);
