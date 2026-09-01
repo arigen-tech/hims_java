@@ -2200,8 +2200,10 @@ public class MasterController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String nursingStatus,
-            @RequestParam(required = false) String search) {
-        return masProcedureService.getAllProceduresWIthFilter(flag, page, size,nursingStatus, search);
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String opdStatus,
+            @RequestParam(required = false) String ipdStatus) {
+        return masProcedureService.getAllProceduresWIthFilter(flag, page, size,nursingStatus,opdStatus,ipdStatus, search);
     }
 
     @GetMapping("masProcedure/getById/{id}")
@@ -2754,14 +2756,12 @@ public class MasterController {
     }
 
     @PutMapping("masNursingType/update/{id}")
-    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> updateNursingType(@PathVariable Long id,
-                                                                                 @RequestBody MasNursingTypeRequest request) {
+    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> updateNursingType(@PathVariable Long id, @RequestBody MasNursingTypeRequest request) {
         return ResponseEntity.ok(masNursingTypeService.update(id, request));
     }
 
     @PutMapping("masNursingType/status/{id}")
-    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> changeStatusNursingType(@PathVariable Long id,
-                                                                                       @RequestParam String status) {
+    public ResponseEntity<ApiResponse<MasNursingTypeResponse>> changeStatusNursingType(@PathVariable Long id, @RequestParam String status) {
         return ResponseEntity.ok(masNursingTypeService.changeStatus(id, status));
     }
     //    ===============================Mas Tooth=====================================
@@ -2792,6 +2792,12 @@ public class MasterController {
     public ResponseEntity<ApiResponse<MasToothMasterResponse>> changeStatusTooth(@PathVariable Long id,
                                                                                  @RequestParam String status) {
         return ResponseEntity.ok(masToothMasterService.changeStatus(id, status));
+    }
+
+    @GetMapping("masToothByToothType/getAll/{type}")
+    public ResponseEntity<ApiResponse<List<MasToothMasterResponse>>> getToothByToothType(
+            @PathVariable("type") String type) {
+        return ResponseEntity.ok(masToothMasterService.getToothByToothType(type));
     }
 
     //    ===============================Mas Tooth Condition=====================================

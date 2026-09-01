@@ -86,6 +86,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final MasSurgeryRepository masSurgeryRepository;
     private final OtBookingRequestHdRepository otBookingRequestHdRepository;
     private final OtBookingRequestDtRepository otBookingRequestDtRepository;
+    private final DentalService dentalService;
+    private final ProcedureService procedureService;
 
     @Value("${hos.define.storeDay}")
     private Integer hospDefinedDays;
@@ -113,6 +115,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     @Value("${surgery.booking-status.requested}")
     private Long surgeryBookingStatusRequested;
+
+    @Value("${procedure.type.code}")
+    private String dentalProcedureTypeCode;
 
     @Autowired
     HelperUtils helperUtils;
@@ -179,6 +184,53 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 .collect(Collectors.toList());
         saveOrUpdateIcdDiagnosis(diagIdList, saved.getOpdPatientDetailsId(), request.getVisitId(), user.getUserId());
         //diagnosis - End
+
+//         ===================== DENTAL EXAMINATION DETAILS =====================
+        if (request.getDentalDetails() != null) {
+            ApiResponse<String> dentalResponse = dentalService.createOrUpdateDentalDetails(
+                            request.getDentalDetails(),
+                            patient,
+                            visit,
+                            user,
+                            deptId
+                    );
+
+            if (dentalResponse == null || dentalResponse.getStatus() != HttpStatus.OK.value()) {
+
+                throw new SDDException("dental", 500, dentalResponse != null
+                                ? dentalResponse.getMessage()
+                                : "Failed to save dental details"
+                );
+            }
+
+
+
+        }
+
+        // ===================== PROCEDURE =====================
+
+        if (request.getDentalDetails() != null && request.getDentalDetails().getProceduresDetails() != null) {
+            ProcedureRequestHd procedureRequest = request.getDentalDetails().getProceduresDetails();
+            // Set common OPD information from the main request
+            procedureRequest.setPatientId(patient.getId());
+            procedureRequest.setVisitId(visit.getId());
+            procedureRequest.setDepartmentId(deptId);
+            procedureRequest.setHospitalId(user.getHospital().getId());
+            procedureRequest.setDiagnosis(request.getWorkingDiagnosis());
+            procedureRequest.setProcedureTypeCode(dentalProcedureTypeCode);
+
+            ProcedureResponse procedureResponse = procedureService.createProcedure(procedureRequest,AppConstants.PACKAGE_LABEL,AppConstants.PROCEDURE_PRIORITY_ROUTINE);
+
+            if (procedureResponse == null) {
+                throw new SDDException("procedure", 500, "Failed to create procedure");
+            }
+
+            log.info(
+                    "Procedure created successfully. Procedure HD ID: {}, Procedure No: {}",
+                    procedureResponse.getProcedureHdId(),
+                    procedureResponse.getProcedureNo()
+            );
+        }
 
 
         //validate and map into generic treatment data
@@ -325,10 +377,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             otRequest.setPreferredStartTime(surgeryRequest.getSurgeryStartTime());
             otRequest.setPreferredEndTime(surgeryRequest.getSurgeryEndTime());
             otRequest.setDiagnosis(request.getWorkingDiagnosis());
-            otRequest.setRequestSource(AppConstants.OPDTYPE);
+            otRequest.setRequestSource(AppConstants.OPD_TYPE);
             otRequest.setLastChgBy(user.getFullName());
             otRequest.setLastChgDate(LocalDateTime.now());
-            otRequest.setPriority("URGENT");
+            otRequest.setPriority(AppConstants.PROCEDURE_PRIORITY_ROUTINE);
             otRequest.setBookingStatusId(surgeryBookingStatusRequested);
             otRequest.setRequestedBy(userRepository.getById(request.getDoctorId()).getFullName());
             otRequest.setRequestedDate(LocalDateTime.now());
@@ -3155,7 +3207,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         log.info("Fetching OPD reports for visitId: {}, page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
 
             Page<OpdReportListProjection> projections = visitRepository.getOpdReportsList
-                    (AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPDTYPE, mobileNumber, patientName, pageable);
+                    (AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE, mobileNumber, patientName, pageable);
 
             Page<OpdReportListResponse> responses = projections.map(projection -> {
 

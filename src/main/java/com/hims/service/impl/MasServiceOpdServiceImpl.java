@@ -80,11 +80,36 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
         try {
             User currentUser = getCurrentUser();
             if (currentUser == null) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Current user not found", 401);
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Current user not found",
+                        401
+                );
+            }
+
+            boolean duplicate = masServiceOpdRepository
+                    .existsOverlappingTariff(
+                            req.getServiceCategory(),
+                            req.getHospitalId(),
+                            req.getDepartmentId(),
+                            req.getDoctorId(),
+                            req.getFromDate(),
+                            req.getToDate(),
+                            AppConstants.STATUS_Y.toLowerCase()
+                    );
+
+            if (duplicate) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        AppConstants.DUPLICATE_DATA_OPD_SERVICE_TARIFF,
+                        HttpStatus.CONFLICT.value()
+                );
             }
 
             MasServiceOpd opd = new MasServiceOpd();
+
             opd.setBaseTariff(req.getBaseTariff());
             opd.setServiceCategory(masServiceCategoryRepository.findById(req.getServiceCategory()).orElse(null));
             opd.setHospitalId(masHospitalRepository.findById(req.getHospitalId()).orElse(null));
@@ -96,16 +121,41 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
             opd.setLastChgBy(currentUser.getUsername());
             opd.setLastChgDt(Instant.now());
             masServiceOpdRepository.save(opd);
-            return ResponseUtils.createSuccessResponse(" doctor tariff create successfully ", new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse("Doctor tariff created successfully",new TypeReference<>() {});
         } catch (Exception e) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,  HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
         }
     }
-
 
     @Override
     public ApiResponse<String> edit(Long id, MasServiceOpdRequest req) {
         try {
+
+            boolean duplicate = masServiceOpdRepository
+                    .existsOverlappingTariff(
+                            req.getServiceCategory(),
+                            req.getHospitalId(),
+                            req.getDepartmentId(),
+                            req.getDoctorId(),
+                            req.getFromDate(),
+                            req.getToDate(),
+                            AppConstants.STATUS_Y.toLowerCase()
+                    );
+
+            if (duplicate) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        AppConstants.DUPLICATE_DATA_OPD_SERVICE_TARIFF,
+                        HttpStatus.CONFLICT.value()
+                );
+            }
+
             MasServiceOpd existing = masServiceOpdRepository.findById(id).orElse(null);
             if (existing == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},

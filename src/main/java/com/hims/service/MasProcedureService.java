@@ -11,7 +11,7 @@ public interface MasProcedureService {
     ApiResponse<List<MasProcedureResponse>> getAllMasProcedure(int flag);
 
     ApiResponse<Page<MasProcedureResponse>> getAllProceduresWIthFilter(
-            int flag, int page, int size,String status, String search);
+            int flag, int page, int size,String status,String opdStatus,String ipdStatus, String search);
 
     ApiResponse<MasProcedureResponse> getMasProcedureById(Long id);
 

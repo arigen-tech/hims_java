@@ -470,8 +470,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                patient = patientRepository.getReferenceById(labReq.getPatientId());
          }
 
-            boolean labBillingEnabled =
-                    patient.getPatientHospital() != null
+            boolean labBillingEnabled = patient.getPatientHospital() != null
                             && AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getLabBilling());
 
             Visit savedVisit = createVisitForLabRadio(patient, laboratoryDepartment);

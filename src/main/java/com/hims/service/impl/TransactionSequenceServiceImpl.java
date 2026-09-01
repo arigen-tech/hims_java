@@ -30,8 +30,7 @@ public class TransactionSequenceServiceImpl implements TransactionSequenceServic
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public String generateTransactionNumber(HMISTransaction transactionType,
-                                            Long hospitalId) {
+    public String generateTransactionNumber(HMISTransaction transactionType, Long hospitalId) {
 
         String financialYear = HMISUtil.getCurrentFinancialYear();
 

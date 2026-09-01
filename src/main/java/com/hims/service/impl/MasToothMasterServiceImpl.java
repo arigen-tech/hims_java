@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasToothMaster;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasToothMasterRepository;
@@ -32,9 +33,7 @@ public class MasToothMasterServiceImpl implements MasToothMasterService {
         log.info("Fetching Tooth Master list, flag={}", flag);
         try {
             List<MasToothMaster> list =
-                    (flag == 1)
-                            ? repository.findByStatusIgnoreCaseOrderByDisplayOrderAsc("y")
-                            : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
+                    (flag == 1) ? repository.findByStatusIgnoreCaseOrderByDisplayOrderAsc(AppConstants.STATUS_Y.toLowerCase()): repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             return ResponseUtils.createSuccessResponse(
                     list.stream().map(this::toResponse).toList(),
@@ -189,6 +188,37 @@ public class MasToothMasterServiceImpl implements MasToothMasterService {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Status update failed", 500
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<List<MasToothMasterResponse>> getToothByToothType(String toothType) {
+        log.info("Fetching Tooth Master by toothType={}", toothType);
+        try {
+
+            List<MasToothMaster> teeth = repository.findByToothTypeIgnoreCaseAndStatusIgnoreCaseOrderByDisplayOrderAsc(toothType , AppConstants.STATUS_Y);
+            if (teeth.isEmpty()) {
+                log.warn("No Tooth Master found for toothType={}", toothType);
+                return ResponseUtils.createNotFoundResponse(
+                        "No teeth found for tooth type: " + toothType,
+                        404
+                );
+            }
+            List<MasToothMasterResponse> response = teeth.stream()
+                    .map(this::toResponse)
+                    .toList();
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<List<MasToothMasterResponse>>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while fetching Tooth Master by toothType={}", toothType, e);
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<List<MasToothMasterResponse>>() {},
+                    "Error occurred",
+                    500
             );
         }
     }

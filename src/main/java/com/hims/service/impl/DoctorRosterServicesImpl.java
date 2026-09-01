@@ -117,9 +117,7 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
 
 
 
-    public ApiResponse<List<DoctorRosterDTO>> getDoctorRoster(
-            Long deptId, Long doctorId, LocalDate rosterDate, Long sessionId) {
-
+    public ApiResponse<List<DoctorRosterDTO>> getDoctorRoster(Long deptId, Long doctorId, LocalDate rosterDate, Long sessionId) {
         Date convertedDate = java.sql.Date.valueOf(rosterDate);
         Instant currentDate = rosterDate
                 .atStartOfDay(ZoneOffset.UTC)

@@ -71,45 +71,103 @@ public class MasProcedureServiceImpl implements MasProcedureService {
 
     @Override
     public ApiResponse<Page<MasProcedureResponse>> getAllProceduresWIthFilter(
-            int flag, int page, int size,String status, String search) {
+            int flag,
+            int page,
+            int size,
+            String nursingStatus,
+            String opdStatus,
+            String ipdStatus,
+            String search) {
+
         try {
 
-        Pageable pageable = PageRequest.of(page, size);Page<MasProcedure> procedurePage;
-        boolean hasSearch = (search != null && !search.trim().isEmpty());
-            String searchPattern = hasSearch
-                    ? "%" + search.trim().toLowerCase() + "%"
-                    : "%";
+            Pageable pageable = PageRequest.of(page, size);
 
-        if (hasSearch) {
-            //  If flag = 1 → Only status = 'Y'
-            if (flag == 1) {
-                procedurePage = repository.searchProcedure(
-                        AppConstants.STATUS_Y.toLowerCase(),status, searchPattern, pageable
-                );
+            boolean hasSearch = search != null && !search.trim().isEmpty();
+
+            String searchPattern = hasSearch ? "%" + search.trim().toLowerCase() + "%" : "%";
+
+            nursingStatus = normalizeStatus(nursingStatus);
+            opdStatus = normalizeStatus(opdStatus);
+            ipdStatus = normalizeStatus(ipdStatus);
+
+            Optional<MasProcedureType> masProcedure= procedureTypeRepository.findByProcedureTypeCode(AppConstants.DENTAL_TYPE);
+            Long typeId = 0L;
+            if(masProcedure.isPresent()) {
+                typeId = masProcedure.get().getProcedureTypeId();
             }
-            //  Flag != 1 → status IN (Y, N)
-            else {
-                procedurePage = repository.searchProcedureIn(
-                        List.of(AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase()), searchPattern, pageable
-                );
+            Page<MasProcedure> procedurePage;
+            if (hasSearch) {
+
+                if (flag == 1) {
+                    procedurePage = repository.searchProcedure(AppConstants.STATUS_Y,nursingStatus,opdStatus,ipdStatus,searchPattern,pageable);
+                } else {
+                    procedurePage = repository.searchProcedureIn(List.of(
+                                    AppConstants.STATUS_Y,
+                                    AppConstants.STATUS_N
+                            ),
+                            nursingStatus,
+                            opdStatus,
+                            ipdStatus,
+                            searchPattern,
+                            pageable
+                    );
+                }
+            } else {
+                if (flag == 1) {
+                    procedurePage = repository.findByStatusWithFilters(
+                            AppConstants.STATUS_Y,
+                            nursingStatus,
+                            opdStatus,
+                            ipdStatus,
+                            typeId,
+                            pageable
+                    );
+                } else {
+                    procedurePage = repository.findByStatusInWithFilters(
+                            List.of(
+                                    AppConstants.STATUS_Y,
+                                    AppConstants.STATUS_N
+                            ),
+                            nursingStatus,
+                            opdStatus,
+                            ipdStatus,
+                            pageable
+                    );
+                }
             }
-        }
-        else if (flag == 1) {
-            procedurePage = repository.findByStatusIgnoreCase(AppConstants.STATUS_Y.toLowerCase(), pageable);
-        } else {
-            procedurePage = repository.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase()), pageable);
-        }
 
-        Page<MasProcedureResponse> responsePage = procedurePage.map(this::toResponse);
-
-        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+            Page<MasProcedureResponse> responsePage = procedurePage.map(this::toResponse);
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
         } catch (Exception ex) {
-            log.error("Error while fetching procedures. flag={}, page={}, size={}, search={}", flag, page, size, search, ex);
-
-            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,HttpStatus.INTERNAL_SERVER_ERROR.value());
+            log.error(
+                    "Error while fetching procedures. flag={}, page={}, size={}, " +
+                            "nursingStatus={}, opdStatus={}, ipdStatus={}, search={}",
+                    flag,
+                    page,
+                    size,
+                    nursingStatus,
+                    opdStatus,
+                    ipdStatus,
+                    search,
+                    ex
+            );
+            return ResponseUtils.createFailureResponse(  null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
         }
     }
 
+
+    private String normalizeStatus(String status) {
+
+        if (status == null || status.trim().isEmpty()) {
+            return null;
+        }
+        return status.trim().toUpperCase();
+    }
 
 
     @Override

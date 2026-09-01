@@ -150,6 +150,7 @@ List<MasDepartmentResponse> findActiveWardDepartments(
 
     @Query(value = "select d.department_id from mas_department d where department_id = :departmentId", nativeQuery = true)
     Long findByDepartmentId(@Param("departmentId") Long departmentId);
+
     @Query("""
     SELECT new com.hims.response.DepartmentDropdownResponse(
         d.id,
