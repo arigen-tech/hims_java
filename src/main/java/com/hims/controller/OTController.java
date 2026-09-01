@@ -78,11 +78,12 @@ public class OTController {
     @PostMapping("/saveAcceptAndReject")
     public ApiResponse<String> acceptAndRejectRequest(
             @RequestParam(required = false) Long otBookingRequestId,
-            @RequestParam(required = false) String flag) {
+            @RequestParam(required = false) String flag,
+            @RequestParam(required = false) String remark) {
 
-        log.info("Accept/Reject OT request API called: otBookingRequestId={}, flag={}", otBookingRequestId, flag);
-        ApiResponse<String> response = otService.saveAcceptAndReject(otBookingRequestId, flag);
-        log.info("Accept/Reject OT request API completed: otBookingRequestId={}, flag={}", otBookingRequestId, flag);
+        log.info("Accept/Reject OT request API called: otBookingRequestId={}, flag={}, remark={}", otBookingRequestId, flag, remark);
+        ApiResponse<String> response = otService.saveAcceptAndReject(otBookingRequestId, flag, remark);
+        log.info("Accept/Reject OT request API completed: otBookingRequestId={}, flag={}, remark={}", otBookingRequestId, flag, remark);
         return response;
     }
 

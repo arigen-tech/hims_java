@@ -300,8 +300,8 @@ public class OtServiceImpl implements OtService {
     }
     @Override
     @Transactional
-    public ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag) {
-        log.info("Processing OT request, otBookingRequestId={}, flag={}", otBookingRequestId, flag);
+    public ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark) {
+        log.info("Processing OT request, otBookingRequestId={}, flag={}, remark={}", otBookingRequestId, flag, remark);
         try {
         User user = authUtil.getCurrentUser();
 
@@ -323,6 +323,7 @@ public class OtServiceImpl implements OtService {
                         .orElseThrow(() -> new RuntimeException("OT booking status not found: " + statusId));
 
         request.setBookingStatusId(toStatus);
+        request.setRejectionRemarks(flag.equalsIgnoreCase("R") ? remark : null);
         LocalDateTime now = LocalDateTime.now();
         String currentUser = user.getFullName();
 
