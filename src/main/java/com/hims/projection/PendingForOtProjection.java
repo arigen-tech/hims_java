@@ -42,6 +42,8 @@ public interface PendingForOtProjection {
 
     LocalTime getRequestedTime();
 
+    String getPriority();
+
     String getRequestedBy();
 
     String getRequestedNo();

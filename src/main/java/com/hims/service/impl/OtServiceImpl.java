@@ -290,6 +290,7 @@ public class OtServiceImpl implements OtService {
                     response.setRequestedDate(projection.getRequestedDate());
                     response.setRequestedTime(projection.getRequestedTime());
                     response.setRequestedBy(projection.getRequestedBy());
+                    response.setPriority(projection.getPriority());
                     response.setRequestedNo(projection.getRequestedNo());
                     response.setSurgeryResponses(surgeryMap.getOrDefault(projection.getOtBookingRequestId(), new ArrayList<>()));
                     return response;});
