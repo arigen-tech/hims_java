@@ -31,6 +31,7 @@ public interface OtBookingRequestHdRepository extends JpaRepository<OtBookingReq
                 u.user_id AS surgeonId,
               CONCAT(COALESCE(u.first_name, ''), ' ',  COALESCE(u.middle_name, ''),' ',  COALESCE(u.last_name, '') ) AS surgeonName,
                 h.request_source AS patientType,
+                h.priority,
                 ot.ot_id AS otId,
                 ot.ot_name AS otName,
                 CAST(h.requested_date AS date) AS requestedDate,

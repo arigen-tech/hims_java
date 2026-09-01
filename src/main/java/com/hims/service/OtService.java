@@ -18,5 +18,5 @@ public interface OtService {
 
     ApiResponse<Page<PendingForOtResponse>> pendingForReviewOt(int page, int size, String patientName, String mobileNo, String patientType);
 
-    ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag);
+    ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark);
 }
