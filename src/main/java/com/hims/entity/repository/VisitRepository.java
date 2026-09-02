@@ -1330,6 +1330,10 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
               ))
           ) LIKE LOWER(CONCAT('%', :patientName, '%'))
       )
+                AND (
+                    :patientId IS NULL
+                    OR p.id = :patientId
+                )
     ORDER BY v.visitDate DESC
     """)
     Page<OpdReportListProjection> getOpdReportsList(
@@ -1337,7 +1341,10 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("departmentTypeCode") String departmentTypeCode,
             @Param("mobileNo") String mobileNo,
             @Param("patientName") String patientName,
+            @Param("patientId") Long patientId,
             Pageable pageable
     );
+
+
     }
 

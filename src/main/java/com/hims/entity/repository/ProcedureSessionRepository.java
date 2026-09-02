@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface ProcedureSessionRepository extends JpaRepository<ProcedureSession, Long> {
 
-    List<ProcedureSession> findByProcedureDtProcedureDtId(Long procedureDtId);
+    List<ProcedureSession> findByProcedureDt_ProcedureDtIdAndStatusOrderBySessionNoAsc(Long procedureDtId, String status);
 
 }

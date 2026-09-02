@@ -9,6 +9,5 @@ import java.util.List;
 @Repository
 public interface DentalProcedureToothRepository extends JpaRepository<DentalProcedureTooth, Long> {
 
-    List<DentalProcedureTooth> findByProcedureDtProcedureDtId(Long procedureDtId);
-    List<DentalProcedureTooth> findByToothToothId(Long toothId);
+    List<DentalProcedureTooth> findByProcedureDt_ProcedureDtIdAndStatus(Long procedureDtId, String status);
 }
