@@ -74,5 +74,5 @@ public interface OpdPatientDetailService {
 
     ApiResponse<Page<OpdRecallVisitResponse>> getRecallOpdVisit(String name, String mobile, LocalDate visitDate, int page, int size);
 
-    ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(Pageable pageable,String mobileNumber, String patientName, Long hospitalId);
+    ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(Pageable pageable,String mobileNumber, String patientName, Long hospitalId, Long patientId);
 }

@@ -1152,7 +1152,8 @@ public class ReportController {
             @RequestParam  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam (required = false) Long doctorId,
             @RequestParam (required = false) Long cancellationId,
-            @RequestParam String flag) {
+            @RequestParam String flag,
+            @RequestParam (required = false) String departmentType) {
 
         Long safeDepartmentId = departmentId != null ? departmentId: 0L;
         Long safeDoctorId = doctorId != null ? doctorId: 0L;
@@ -1165,6 +1166,7 @@ public class ReportController {
         params.put("to_date", toDate);
         params.put("doctor_id", safeDoctorId);
         params.put("cancellation_reason_id", safeCancellationId);
+        params.put("department_type", departmentType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
@@ -1925,5 +1927,38 @@ public class ReportController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "inline" + fileName + ".pdf")
                 .body(pdfData);
+    }
+
+
+    @GetMapping(value = "/nisMedicineDetails", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintNisMedicineDetails(
+            @RequestParam (required = false) Integer hospitalId,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag){
+        Map<String , Object> params = new HashMap<>();
+        params.put("hospitalId", hospitalId);
+        params.put("fromDate", fromDate);
+        params.put("toDate", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_DISPENSARY,ReportConstants.NIS_MEDICINE_DETAILS_JASPER, params, dataSource);
+                return buildPdfResponse(viewPdf,ReportConstants.NIS_MEDICINE_DETAILS_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_IPD,ReportConstants.NIS_MEDICINE_DETAILS_JASPER, params, dataSource);
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
     }
 }

@@ -14,7 +14,10 @@ import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
-import com.hims.utils.*;
+import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISTransaction;
+import com.hims.utils.ResponseUtils;
+import com.hims.utils.StockFound;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +37,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hims.helperUtil.ConverterUtils.ageCalculator;
-
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -88,47 +89,39 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final OtBookingRequestDtRepository otBookingRequestDtRepository;
     private final DentalService dentalService;
     private final ProcedureService procedureService;
-
-    @Value("${hos.define.storeDay}")
-    private Integer hospDefinedDays;
-
-    @Value("${hos.define.storeId}")
-    private Integer deptIdStore;
-
-    @Value("${lab.track-order-status-reg.ordered}")
-    private Long orderedStatusId;
-
-    @Value("${prescription.history.days}")
-    private Integer prescriptionHistoryDays;
-
-    @Value("${app.radiologyDepartment}")
-    private Integer radiologyDepartment;
-
-    @Value("${app.laboratoryDepartment}")
-    private Integer laboratoryDepartment;
-
-    @Value("${serviceCategoryLab}")
-    private String serviceCategoryLab;
-
-    @Value("${serviceCategoryRad}")
-    private String serviceCategoryRad;
-
-    @Value("${surgery.booking-status.requested}")
-    private Long surgeryBookingStatusRequested;
-
-    @Value("${procedure.type.code}")
-    private String dentalProcedureTypeCode;
+    private final ProcedureHdRepository procedureHdRepository;
+    private final ProcedureDtRepository procedureDtRepository;
+    private final ProcedureSessionRepository procedureSessionRepository;
+    private final DentalProcedureToothRepository dentalProcedureToothRepository;
+    private final OpdPatientDentalSummaryRepository  opdPatientDentalSummaryRepository;
+    private final OpdToothPatientConditionRepository opdToothPatientConditionRepository;
 
     @Autowired
     HelperUtils helperUtils;
-
     @Autowired
-    BillingHeaderRepository  billingHeaderRepository;
-
+    BillingHeaderRepository billingHeaderRepository;
     @Autowired
     BillingDetailRepository billingDetailRepository;
-
-
+    @Value("${hos.define.storeDay}")
+    private Integer hospDefinedDays;
+    @Value("${hos.define.storeId}")
+    private Integer deptIdStore;
+    @Value("${lab.track-order-status-reg.ordered}")
+    private Long orderedStatusId;
+    @Value("${prescription.history.days}")
+    private Integer prescriptionHistoryDays;
+    @Value("${app.radiologyDepartment}")
+    private Integer radiologyDepartment;
+    @Value("${app.laboratoryDepartment}")
+    private Integer laboratoryDepartment;
+    @Value("${serviceCategoryLab}")
+    private String serviceCategoryLab;
+    @Value("${serviceCategoryRad}")
+    private String serviceCategoryRad;
+    @Value("${surgery.booking-status.requested}")
+    private Long surgeryBookingStatusRequested;
+    @Value("${procedure.type.code}")
+    private String dentalProcedureTypeCode;
 
     @Override
     public ApiResponse<OpdPatientVitalResponse> getOpdPatientByVisit(Long visitId) {
@@ -139,7 +132,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (opdPObj == null) {
             return ResponseUtils.createNotFoundResponse("OPD details not found for visitId: " + visitId, 404);
         }
-        OpdPatientVitalResponse responseDto = opdPatientDetailMapper.mapToVitalResponse(opdPObj);
+        OpdPatientVitalResponse responseDto = OpdPatientDetailMapper.mapToVitalResponse(opdPObj);
         return ResponseUtils.createSuccessResponse(responseDto, new TypeReference<>() {
         });
     }
@@ -157,9 +150,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new SDDException("visit", 404, "Visit not found"));
         Long deptId = authUtil.getCurrentDepartmentId();
         OpdPatientDetail opd = opdPatientDetailRepository.findByVisit_Id(request.getVisitId()).orElseGet(() -> {
-                    log.info("Creating new OPD Patient Detail for visit ID: {}", request.getVisitId());
-                    return new OpdPatientDetail();
-                });
+            log.info("Creating new OPD Patient Detail for visit ID: {}", request.getVisitId());
+            return new OpdPatientDetail();
+        });
 
         if ((request.getWorkingDiagnosis() == null || request.getWorkingDiagnosis().isBlank()) && (request.getIcdDiagnosis() == null || request.getIcdDiagnosis().isEmpty())) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
@@ -177,34 +170,18 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         log.info("Saved OPD detail with ID: {}", saved.getOpdPatientDetailsId());
 
         //saving diagnosis data for opd - Start
-        List<Long> diagIdList = Optional.ofNullable(request.getIcdDiagnosis())
-                .orElse(Collections.emptyList())
-                .stream()
-                .map(OpdPatientDetailCreateRequest.IcdDiagnosis::getIcdId)
-                .collect(Collectors.toList());
+        List<Long> diagIdList = Optional.ofNullable(request.getIcdDiagnosis()).orElse(Collections.emptyList()).stream().map(OpdPatientDetailCreateRequest.IcdDiagnosis::getIcdId).collect(Collectors.toList());
         saveOrUpdateIcdDiagnosis(diagIdList, saved.getOpdPatientDetailsId(), request.getVisitId(), user.getUserId());
         //diagnosis - End
 
 //         ===================== DENTAL EXAMINATION DETAILS =====================
         if (request.getDentalDetails() != null) {
-            ApiResponse<String> dentalResponse = dentalService.createOrUpdateDentalDetails(
-                            request.getDentalDetails(),
-                            patient,
-                            visit,
-                            user,
-                            deptId
-                    );
+            ApiResponse<String> dentalResponse = dentalService.createOrUpdateDentalDetails(request.getDentalDetails(), patient, visit, user, deptId);
 
             if (dentalResponse == null || dentalResponse.getStatus() != HttpStatus.OK.value()) {
 
-                throw new SDDException("dental", 500, dentalResponse != null
-                                ? dentalResponse.getMessage()
-                                : "Failed to save dental details"
-                );
+                throw new SDDException("dental", 500, dentalResponse != null ? dentalResponse.getMessage() : "Failed to save dental details");
             }
-
-
-
         }
 
         // ===================== PROCEDURE =====================
@@ -219,17 +196,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             procedureRequest.setDiagnosis(request.getWorkingDiagnosis());
             procedureRequest.setProcedureTypeCode(dentalProcedureTypeCode);
 
-            ProcedureResponse procedureResponse = procedureService.createProcedure(procedureRequest,AppConstants.PACKAGE_LABEL,AppConstants.PROCEDURE_PRIORITY_ROUTINE);
+            ProcedureResponse procedureResponse = procedureService.createProcedure(procedureRequest, AppConstants.PACKAGE_LABEL, AppConstants.PROCEDURE_PRIORITY_ROUTINE);
 
             if (procedureResponse == null) {
                 throw new SDDException("procedure", 500, "Failed to create procedure");
             }
 
-            log.info(
-                    "Procedure created successfully. Procedure HD ID: {}, Procedure No: {}",
-                    procedureResponse.getProcedureHdId(),
-                    procedureResponse.getProcedureNo()
-            );
+            log.info("Procedure created successfully. Procedure HD ID: {}, Procedure No: {}", procedureResponse.getProcedureHdId(), procedureResponse.getProcedureNo());
         }
 
 
@@ -238,89 +211,47 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             if (request.getInvestigation().stream().anyMatch(i -> i == null || i.getInvestigationDate() == null)) {
                 throw new SDDException("investigation", 400, "Investigation date cannot be null");
             }
-            LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId)
-                    .orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
+            LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
 
-            List<InvestigationData> investigations =
-                    opdPatientDetailMapper.mapInvestigations(
-                            request.getInvestigation(),
-                            item -> new InvestigationData(
-                                    item.getInvestigationId(),
-                                    item.getInvestigationName(),
-                                    item.getInvestigationDate(),
-                                    item.getInvestigationId(),
-                                    null
-                            ));
+            List<InvestigationData> investigations = opdPatientDetailMapper.mapInvestigations(request.getInvestigation(), item -> new InvestigationData(item.getInvestigationId(), item.getInvestigationName(), item.getInvestigationDate(), item.getInvestigationId(), null));
 
             // Group investigations by department
-            Map<Long, Map<LocalDate, List<InvestigationData>>> grouped =
-                    investigations.stream()
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.groupingBy(
-                                    inv -> helperUtils.getDepartmentFromInvestigation(
-                                            inv.investigationId()
-                                    ),
-                                    Collectors.groupingBy(
-                                            InvestigationData::investigationDate
-                                    )));
+            Map<Long, Map<LocalDate, List<InvestigationData>>> grouped = investigations.stream().filter(Objects::nonNull).collect(Collectors.groupingBy(inv -> helperUtils.getDepartmentFromInvestigation(inv.investigationId()), Collectors.groupingBy(InvestigationData::investigationDate)));
 
 
             //if hospital flag
-           // if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getLabBilling())) {
-                if (grouped.containsKey(Long.valueOf(laboratoryDepartment))) {
-                    log.info("Processing LAB investigations");
-                    Map<LocalDate, List<InvestigationData>> labInvestigations = grouped.get(Long.valueOf(laboratoryDepartment));
+            // if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getLabBilling())) {
+            if (grouped.containsKey(Long.valueOf(laboratoryDepartment))) {
+                log.info("Processing LAB investigations");
+                Map<LocalDate, List<InvestigationData>> labInvestigations = grouped.get(Long.valueOf(laboratoryDepartment));
 
-                    processLabInvestigations(labInvestigations, patient, visit, user, labOrderedStatus);
+                processLabInvestigations(labInvestigations, patient, visit, user, labOrderedStatus);
 
-                    String labAdvised = labInvestigations.values().stream()
-                            .flatMap(List::stream)
-                            .map(InvestigationData::investigationName)
-                            .filter(Objects::nonNull)
-                            .distinct()
-                            .collect(Collectors.joining(", "));
+                String labAdvised = labInvestigations.values().stream().flatMap(List::stream).map(InvestigationData::investigationName).filter(Objects::nonNull).distinct().collect(Collectors.joining(", "));
 
-                    saved.setLabAdvised(labAdvised);
-                    saved.setLabFlag(AppConstants.STATUS_Y.toLowerCase());
+                saved.setLabAdvised(labAdvised);
+                saved.setLabFlag(AppConstants.STATUS_Y.toLowerCase());
 
-                }
-           // }
+            }
+            // }
 //            if( AppConstants.STATUS_N.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling())){
-                if (grouped.containsKey(Long.valueOf(radiologyDepartment))) {
-                    log.info("Processing RADIOLOGY investigations");
-                    Map<LocalDate, List<InvestigationData>> radioInvestigations = grouped.get(Long.valueOf(radiologyDepartment));
-                    String radioAdvised = radioInvestigations.values().stream()
-                            .flatMap(List::stream)
-                            .map(InvestigationData::investigationName)
-                            .filter(Objects::nonNull)
-                            .distinct()
-                            .collect(Collectors.joining(", "));
+            if (grouped.containsKey(Long.valueOf(radiologyDepartment))) {
+                log.info("Processing RADIOLOGY investigations");
+                Map<LocalDate, List<InvestigationData>> radioInvestigations = grouped.get(Long.valueOf(radiologyDepartment));
+                String radioAdvised = radioInvestigations.values().stream().flatMap(List::stream).map(InvestigationData::investigationName).filter(Objects::nonNull).distinct().collect(Collectors.joining(", "));
 
-                    processRadiologyInvestigations(radioInvestigations, patient, visit, user);
+                processRadiologyInvestigations(radioInvestigations, patient, visit, user);
 
-                    saved.setRadioAdvised(radioAdvised);
-                    saved.setRadioFlag(AppConstants.STATUS_Y.toLowerCase());
-                }
+                saved.setRadioAdvised(radioAdvised);
+                saved.setRadioFlag(AppConstants.STATUS_Y.toLowerCase());
+            }
 //            }
         }
 
         //validate and map into Treatment data
         if (request.getTreatment() != null && !request.getTreatment().isEmpty()) {
-            List<TreatmentData> treatments = request.getTreatment()
-                    .stream()
-                    .map(t -> new TreatmentData(
-                            null,
-                            null,
-                            t.getItemId(),
-                            t.getDosage(),
-                            t.getFrequency(),
-                            t.getDays(),
-                            t.getTotal(),
-                            t.getInstraction(),
-                            t.getFlag()
-                    ))
-                    .toList();
-            saveOrUpdateTreatments(treatments,patient,visit,user,deptId);
+            List<TreatmentData> treatments = request.getTreatment().stream().map(t -> new TreatmentData(null, null, t.getItemId(), t.getDosage(), t.getFrequency(), t.getDays(), t.getTotal(), t.getInstraction(), t.getFlag())).toList();
+            saveOrUpdateTreatments(treatments, patient, visit, user, deptId);
         }
 
         //saving opthal details if exist
@@ -357,7 +288,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         //saving psychiatric details if exist
         if (request.getPsychiatricDetailsRequests() != null && !request.getPsychiatricDetailsRequests().isEmpty()) {
             log.info("Saving Psychiatric Assessment Header and Details for OPD ID: {}", saved.getOpdPatientDetailsId());
-            saveOrUpdatePsychiatricAssessment(request.getPsychiatricDetailsRequests(),request.getTopicId(), visit, saved, authUtil.getCurrentUser());
+            saveOrUpdatePsychiatricAssessment(request.getPsychiatricDetailsRequests(), request.getTopicId(), visit, saved, authUtil.getCurrentUser());
         }
 
 
@@ -371,7 +302,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             otRequest.setDepartmentId(deptId);
             otRequest.setPrimarySurgeonId(request.getDoctorId());
             if (surgeryRequest.getOtId() != null) {
-                otRequest.setPreferredOtId(Long.valueOf(surgeryRequest.getOtId()));
+                otRequest.setPreferredOtId(surgeryRequest.getOtId());
             }
             otRequest.setPreferredDate(surgeryRequest.getSurgeryDate());
             otRequest.setPreferredStartTime(surgeryRequest.getSurgeryStartTime());
@@ -395,17 +326,16 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 long sequence = 1;
                 for (SurgeryAdviceRequestDTO.SurgeryDetailDTO surgery : surgeryRequest.getSurgeryDetails()) {
                     OtBookingRequestDtDto dt = new OtBookingRequestDtDto();
-                    MasSurgery masSurgery = masSurgeryRepository.findById(surgery.getSurgeryId()).orElseThrow(() -> new SDDException("surgery", 404, "Surgery not found with ID: " + surgery.getSurgeryId()));                    dt.setSurgeryId(masSurgery.getSurgeryId());dt.setSurgeryTypeId(masSurgery.getSurgeryType().getSurgeryTypeId());
+                    MasSurgery masSurgery = masSurgeryRepository.findById(surgery.getSurgeryId()).orElseThrow(() -> new SDDException("surgery", 404, "Surgery not found with ID: " + surgery.getSurgeryId()));
+                    dt.setSurgeryId(masSurgery.getSurgeryId());
+                    dt.setSurgeryTypeId(masSurgery.getSurgeryType().getSurgeryTypeId());
 
                     dt.setSequenceNo(sequence++);
                     dt.setStatus(AppConstants.STATUS_N);
                     dt.setLastChgBy(user.getFullName());
                     if (surgeryRequest.getSurgeryStartTime() != null && surgeryRequest.getSurgeryEndTime() != null) {
 
-                        long duration = Duration.between(
-                                surgeryRequest.getSurgeryStartTime(),
-                                surgeryRequest.getSurgeryEndTime()
-                        ).toMinutes();
+                        long duration = Duration.between(surgeryRequest.getSurgeryStartTime(), surgeryRequest.getSurgeryEndTime()).toMinutes();
 
                         if (duration < 0) {
                             duration += 24 * 60;
@@ -420,19 +350,11 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             ApiResponse<String> otResponse = otBookingService.createOrUpdateOtBookingHeader(otRequest);
 
-            if (otResponse == null ||
-                    otResponse.getStatus() != HttpStatus.OK.value()) {
+            if (otResponse == null || otResponse.getStatus() != HttpStatus.OK.value()) {
 
-                throw new SDDException(
-                        "otBooking",
-                        500,
-                        otResponse != null
-                                ? otResponse.getMessage()
-                                : "Failed to create OT booking request"
-                );
+                throw new SDDException("otBooking", 500, otResponse != null ? otResponse.getMessage() : "Failed to create OT booking request");
             }
         }
-
 
 
         opdPatientDetailRepository.save(saved);
@@ -464,11 +386,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
 
-
     private OpdPatientDetail getOpdPatient(Long opdId) {
         return opdPatientDetailRepository.findById(opdId).orElseThrow(() -> new SDDException("opd", 404, "OPD detail not found"));
     }
-
 
 
     private PatientPrescriptionHd createPrescriptionHeader(Patient patient, Visit visit, User user, Long deptId) {
@@ -488,7 +408,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         hd.setVisit(visit);
 
         String medicineBilling = user.getHospital().getMedicineBilling();
-        if (medicineBilling != null && AppConstants.PAYMENT_NOT_PAID.toLowerCase().equalsIgnoreCase(medicineBilling)) {
+        if (AppConstants.PAYMENT_NOT_PAID.toLowerCase().equalsIgnoreCase(medicineBilling)) {
             hd.setBillingStatus(AppConstants.STATUS_N.toLowerCase());
         } else {
             hd.setBillingStatus(AppConstants.STATUS_Y.toLowerCase());
@@ -506,7 +426,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             log.info("Closed visit with ID: {}", visit.getId());
         }
     }
-
 
 
     @Transactional(rollbackFor = Exception.class)
@@ -529,56 +448,23 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         handleRecallPregnancyDetails(opd, request.getPregnancyDetails(), user);
 
         //ICD diagnosis details{
-        List<Long> icdIds = Optional.ofNullable(request.getIcdDiagnosisList())
-                .orElse(Collections.emptyList())
-                .stream()
-                .map(RecallOpdPatientDetailRequest.IcdDiagnosis::getIcdId)
-                .collect(Collectors.toList());
+        List<Long> icdIds = Optional.ofNullable(request.getIcdDiagnosisList()).orElse(Collections.emptyList()).stream().map(RecallOpdPatientDetailRequest.IcdDiagnosis::getIcdId).collect(Collectors.toList());
         saveOrUpdateIcdDiagnosis(icdIds, opd.getOpdPatientDetailsId(), visit.getId(), user.getUserId());
         //}
 
         //investigation details{
 
-        List<InvestigationData> investigations =
-                opdPatientDetailMapper.mapInvestigations(
-                        request.getInvestigations(),
-                        item -> new InvestigationData(
-                                item.getInvestigationId(),
-                                item.getInvestigationName(),
-                                item.getInvestigationDate(),
-                                item.getInvestigationId(),
-                                item.getFlag()
-                        ));
+        List<InvestigationData> investigations = opdPatientDetailMapper.mapInvestigations(request.getInvestigations(), item -> new InvestigationData(item.getInvestigationId(), item.getInvestigationName(), item.getInvestigationDate(), item.getInvestigationId(), item.getFlag()));
 
         createOrDeleteInvestigation(investigations, patient, visit, user, opdPatientDetail);
 
-        updateInvestigationAdvisedNames(
-                investigations,
-                opdPatientDetail
-        );
+        updateInvestigationAdvisedNames(investigations, opdPatientDetail);
 
         //    }
         //Treatment data {
-        List<TreatmentData> treatments = request.getTreatments()
-                .stream()
-                .map(t -> new TreatmentData(
-                        t.getPrescriptionHdId(),
-                        t.getPrescriptionDtId(),
-                        t.getItemId(),
-                        t.getDosage(),
-                        t.getFrequencyName() != null
-                                ? t.getFrequencyName()
-                                : null,
-                        t.getDays(),
-                        t.getTotal() != null
-                                ? BigDecimal.valueOf(t.getTotal())
-                                : null,
-                        t.getInstruction(),
-                        t.getFlag()
-                ))
-                .toList();
+        List<TreatmentData> treatments = request.getTreatments().stream().map(t -> new TreatmentData(t.getPrescriptionHdId(), t.getPrescriptionDtId(), t.getItemId(), t.getDosage(), t.getFrequencyName() != null ? t.getFrequencyName() : null, t.getDays(), t.getTotal() != null ? BigDecimal.valueOf(t.getTotal()) : null, t.getInstruction(), t.getFlag())).toList();
 
-        saveOrUpdateTreatments(treatments,patient,visit,user,authUtil.getCurrentDepartmentId());
+        saveOrUpdateTreatments(treatments, patient, visit, user, authUtil.getCurrentDepartmentId());
         //}
 
         // ===================== OT BOOKING =====================
@@ -604,7 +490,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             // OT selection
             if (surgery.getOtId() != null) {
-                otRequest.setPreferredOtId(Long.valueOf(surgery.getOtId()));
+                otRequest.setPreferredOtId(surgery.getOtId());
             }
 
             // Surgery date/time
@@ -633,13 +519,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     OtBookingRequestDtDto dt = new OtBookingRequestDtDto();
 
                     // Validate surgery exists
-                    MasSurgery masSurgery = masSurgeryRepository
-                            .findById(surgeryDetail.getSurgeryId())
-                            .orElseThrow(() -> new SDDException(
-                                    "surgery",
-                                    404,
-                                    "Surgery not found with ID: " + surgeryDetail.getSurgeryId()
-                            ));
+                    MasSurgery masSurgery = masSurgeryRepository.findById(surgeryDetail.getSurgeryId()).orElseThrow(() -> new SDDException("surgery", 404, "Surgery not found with ID: " + surgeryDetail.getSurgeryId()));
 
                     dt.setSurgeryId(masSurgery.getSurgeryId());
                     if (masSurgery.getSurgeryType() != null) {
@@ -649,13 +529,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     dt.setSequenceNo(sequence++);
                     dt.setStatus(AppConstants.STATUS_N);
                     dt.setLastChgBy(user.getFullName());
-                    if (surgery.getSurgeryStartTime() != null
-                            && surgery.getSurgeryEndTime() != null) {
+                    if (surgery.getSurgeryStartTime() != null && surgery.getSurgeryEndTime() != null) {
 
-                        long duration = Duration.between(
-                                surgery.getSurgeryStartTime(),
-                                surgery.getSurgeryEndTime()
-                        ).toMinutes();
+                        long duration = Duration.between(surgery.getSurgeryStartTime(), surgery.getSurgeryEndTime()).toMinutes();
 
                         if (duration < 0) {
                             duration += 24 * 60;
@@ -677,11 +553,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             ApiResponse<String> response = otBookingService.createOrUpdateOtBookingHeader(otRequest);
 
             if (response == null || response.getStatus() != HttpStatus.OK.value()) {
-                throw new SDDException(
-                        "otBooking",
-                        500,
-                        response != null ? response.getMessage() : "Failed to save OT booking"
-                );
+                throw new SDDException("otBooking", 500, response != null ? response.getMessage() : "Failed to save OT booking");
             }
         }
         replacePsychiatryAssessment(request, patient, visit, user);
@@ -712,7 +584,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         });
     }
 
-    private void saveOrUpdateIcdDiagnosis(List<Long> icdIds, Long opdId,Long visitId,Long userId) {
+    private void saveOrUpdateIcdDiagnosis(List<Long> icdIds, Long opdId, Long visitId, Long userId) {
 
         dischargeIcdCodeRepository.deleteByOpdPatientDetailsId(opdId);
         if (icdIds == null || icdIds.isEmpty()) {
@@ -738,12 +610,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
 
-    private void saveOrUpdateTreatments(
-            List<TreatmentData> treatments,
-            Patient patient,
-            Visit visit,
-            User user,
-            Long deptId) {
+    private void saveOrUpdateTreatments(List<TreatmentData> treatments, Patient patient, Visit visit, User user, Long deptId) {
 
         if (treatments == null || treatments.isEmpty()) {
             return;
@@ -755,41 +622,21 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             if (header == null || header.getPrescriptionHdId() == null) {
                 continue;
             }
-            List<PatientPrescriptionDt> details =
-                    patientPrescriptionDtRepository.findByPrescriptionHdId(
-                            header.getPrescriptionHdId()
-                    );
+            List<PatientPrescriptionDt> details = patientPrescriptionDtRepository.findByPrescriptionHdId(header.getPrescriptionHdId());
 
             for (PatientPrescriptionDt detail : details) {
 
                 if (detail.getPrescriptionDtId() != null) {
-                    existingDetails.put(
-                            detail.getPrescriptionDtId(),
-                            detail
-                    );
+                    existingDetails.put(detail.getPrescriptionDtId(), detail);
                 }
             }
         }
 
-        List<TreatmentData> deleteList = treatments.stream()
-                .filter(Objects::nonNull)
-                .filter(t -> t.itemId() != null)
-                .filter(t -> Integer.valueOf(-1).equals(t.flag()))
-                .toList();
+        List<TreatmentData> deleteList = treatments.stream().filter(Objects::nonNull).filter(t -> t.itemId() != null).filter(t -> Integer.valueOf(-1).equals(t.flag())).toList();
 
-        List<TreatmentData> updateList = treatments.stream()
-                .filter(Objects::nonNull)
-                .filter(t -> t.itemId() != null)
-                .filter(t -> Integer.valueOf(0).equals(t.flag()))
-                .toList();
+        List<TreatmentData> updateList = treatments.stream().filter(Objects::nonNull).filter(t -> t.itemId() != null).filter(t -> Integer.valueOf(0).equals(t.flag())).toList();
 
-        List<TreatmentData> createList = treatments.stream()
-                .filter(Objects::nonNull)
-                .filter(t -> t.itemId() != null)
-                .filter(t ->
-                        Integer.valueOf(1).equals(t.flag()) || t.prescriptionDtId() == null
-                )
-                .toList();
+        List<TreatmentData> createList = treatments.stream().filter(Objects::nonNull).filter(t -> t.itemId() != null).filter(t -> Integer.valueOf(1).equals(t.flag()) || t.prescriptionDtId() == null).toList();
 
         Set<Long> headersToCheckForDelete = new HashSet<>();
 
@@ -799,19 +646,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         for (TreatmentData treatment : deleteList) {
             Long prescriptionDtId = treatment.prescriptionDtId();
             if (prescriptionDtId == null) {
-                log.warn(
-                        "Cannot delete treatment. prescriptionDtId is null. itemId={}",
-                        treatment.itemId()
-                );
+                log.warn("Cannot delete treatment. prescriptionDtId is null. itemId={}", treatment.itemId());
                 continue;
             }
 
             PatientPrescriptionDt detail = existingDetails.get(prescriptionDtId);
             if (detail == null) {
-                log.warn(
-                        "Treatment detail ID {} not found for deletion",
-                        prescriptionDtId
-                );
+                log.warn("Treatment detail ID {} not found for deletion", prescriptionDtId);
                 continue;
             }
 
@@ -824,19 +665,19 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 headersToCheckForDelete.add(headerId);
             }
 
-            log.info("Deleted treatment detail ID {} from header ID {}",prescriptionDtId,headerId);
+            log.info("Deleted treatment detail ID {} from header ID {}", prescriptionDtId, headerId);
         }
 
         for (TreatmentData treatment : updateList) {
             Long prescriptionDtId = treatment.prescriptionDtId();
             if (prescriptionDtId == null) {
-                log.warn("Cannot update treatment. prescriptionDtId is null. itemId={}",treatment.itemId());
+                log.warn("Cannot update treatment. prescriptionDtId is null. itemId={}", treatment.itemId());
                 continue;
             }
 
             PatientPrescriptionDt detail = existingDetails.get(prescriptionDtId);
             if (detail == null) {
-                log.warn("Treatment detail ID {} not found for update",prescriptionDtId);
+                log.warn("Treatment detail ID {} not found for update", prescriptionDtId);
                 continue;
             }
 
@@ -847,32 +688,21 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             detail.setTotal(treatment.total());
             detail.setInstruction(treatment.instruction());
             patientPrescriptionDtRepository.save(detail);
-            log.info(
-                    "Updated treatment detail ID {} under header ID {}",
-                    detail.getPrescriptionDtId(),
-                    detail.getPrescriptionHdId()
-            );
+            log.info("Updated treatment detail ID {} under header ID {}", detail.getPrescriptionDtId(), detail.getPrescriptionHdId());
         }
 
         if (!createList.isEmpty()) {
-            PatientPrescriptionHd headerToUse = existingHeaders.stream()
-                    .filter(Objects::nonNull)
-                    .filter(h -> h.getPrescriptionHdId() != null)
-                    .findFirst()
-                    .orElse(null);
+            PatientPrescriptionHd headerToUse = existingHeaders.stream().filter(Objects::nonNull).filter(h -> h.getPrescriptionHdId() != null).findFirst().orElse(null);
 
             // No existing header -> create new header
             if (headerToUse == null) {
-                headerToUse = createPrescriptionHeader(patient,visit,user,deptId);
-                log.info(
-                        "No existing prescription header found. Created new header {}",
-                        headerToUse.getPrescriptionHdId()
-                );
+                headerToUse = createPrescriptionHeader(patient, visit, user, deptId);
+                log.info("No existing prescription header found. Created new header {}", headerToUse.getPrescriptionHdId());
             } else if (AppConstants.STATUS_Y.equalsIgnoreCase(headerToUse.getStatus())) {
                 // Existing header already completed -> create new header
                 PatientPrescriptionHd oldHeader = headerToUse;
-                headerToUse = createPrescriptionHeader(patient,visit,user,deptId);
-                log.info("Existing prescription header {} has status Y. Created new header {}",oldHeader.getPrescriptionHdId(),headerToUse.getPrescriptionHdId());
+                headerToUse = createPrescriptionHeader(patient, visit, user, deptId);
+                log.info("Existing prescription header {} has status Y. Created new header {}", oldHeader.getPrescriptionHdId(), headerToUse.getPrescriptionHdId());
             } else if (AppConstants.STATUS_N.equalsIgnoreCase(headerToUse.getStatus())) {
                 // Existing active header -> reuse it
                 log.info("Using existing prescription header {} with status N", headerToUse.getPrescriptionHdId());
@@ -893,11 +723,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                     patientPrescriptionDtRepository.save(detail);
 
-                    log.info(
-                            "Created treatment detail ID {} under header ID {}",
-                            detail.getPrescriptionDtId(),
-                            headerToUse.getPrescriptionHdId()
-                    );
+                    log.info("Created treatment detail ID {} under header ID {}", detail.getPrescriptionDtId(), headerToUse.getPrescriptionHdId());
                 }
             }
         }
@@ -908,16 +734,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             List<PatientPrescriptionDt> remainingDetails = patientPrescriptionDtRepository.findByPrescriptionHdId(headerId);
             if (remainingDetails.isEmpty()) {
                 patientPrescriptionHdRepository.deleteById(headerId);
-                log.info(
-                        "Deleted empty prescription header ID {}",
-                        headerId
-                );
+                log.info("Deleted empty prescription header ID {}", headerId);
             }
         }
     }
-    private void updateInvestigationAdvisedNames(
-            List<InvestigationData> investigations,
-            OpdPatientDetail opdPatientDetail) {
+
+    private void updateInvestigationAdvisedNames(List<InvestigationData> investigations, OpdPatientDetail opdPatientDetail) {
 
         if (investigations == null || investigations.isEmpty()) {
             opdPatientDetail.setLabAdvised(null);
@@ -929,45 +751,17 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         Long radDepartmentId = Long.valueOf(radiologyDepartment);
 
         // LAB
-        String labAdvised = investigations.stream()
-                .filter(Objects::nonNull)
-                .filter(inv -> inv.flag() != null && inv.flag() != -1)
-                .filter(inv -> inv.investigationId() != null)
-                .filter(inv -> labDepartmentId.equals(
-                        helperUtils.getDepartmentFromInvestigation(
-                                inv.investigationId()
-                        )
-                ))
-                .map(InvestigationData::investigationName)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.joining(", "));
+        String labAdvised = investigations.stream().filter(Objects::nonNull).filter(inv -> inv.flag() != null && inv.flag() != -1).filter(inv -> inv.investigationId() != null).filter(inv -> labDepartmentId.equals(helperUtils.getDepartmentFromInvestigation(inv.investigationId()))).map(InvestigationData::investigationName).filter(Objects::nonNull).distinct().collect(Collectors.joining(", "));
 
         // RADIOLOGY
-        String radioAdvised = investigations.stream()
-                .filter(Objects::nonNull)
-                .filter(inv -> inv.flag() != null && inv.flag() != -1)
-                .filter(inv -> inv.investigationId() != null)
-                .filter(inv -> radDepartmentId.equals(
-                        helperUtils.getDepartmentFromInvestigation(
-                                inv.investigationId()
-                        )
-                ))
-                .map(InvestigationData::investigationName)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.joining(", "));
+        String radioAdvised = investigations.stream().filter(Objects::nonNull).filter(inv -> inv.flag() != null && inv.flag() != -1).filter(inv -> inv.investigationId() != null).filter(inv -> radDepartmentId.equals(helperUtils.getDepartmentFromInvestigation(inv.investigationId()))).map(InvestigationData::investigationName).filter(Objects::nonNull).distinct().collect(Collectors.joining(", "));
 
-        opdPatientDetail.setLabAdvised(
-                labAdvised.isBlank() ? null : labAdvised
-        );
+        opdPatientDetail.setLabAdvised(labAdvised.isBlank() ? null : labAdvised);
 
-        opdPatientDetail.setRadioAdvised(
-                radioAdvised.isBlank() ? null : radioAdvised
-        );
+        opdPatientDetail.setRadioAdvised(radioAdvised.isBlank() ? null : radioAdvised);
     }
 
-    private void createOrDeleteInvestigation(List<InvestigationData> investigations, Patient patient, Visit visit, User user,OpdPatientDetail opdPatientDetail) {
+    private void createOrDeleteInvestigation(List<InvestigationData> investigations, Patient patient, Visit visit, User user, OpdPatientDetail opdPatientDetail) {
         if (investigations == null || investigations.isEmpty()) {
             return;
         }
@@ -986,14 +780,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }
         }
 
-        Set<InvestigationKey> existingLabKeys = labDetails.stream()
-                .filter(dt -> dt.getInvestigation() != null)
-                .filter(dt -> dt.getAppointmentDate() != null)
-                .map(dt -> new InvestigationKey(
-                        dt.getInvestigation().getInvestigationId(),
-                        dt.getAppointmentDate()
-                ))
-                .collect(Collectors.toSet());
+        Set<InvestigationKey> existingLabKeys = labDetails.stream().filter(dt -> dt.getInvestigation() != null).filter(dt -> dt.getAppointmentDate() != null).map(dt -> new InvestigationKey(dt.getInvestigation().getInvestigationId(), dt.getAppointmentDate())).collect(Collectors.toSet());
 
         // 2. EXISTING RADIOLOGY ORDERS
 
@@ -1006,199 +793,51 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 radDetails.addAll(details);
             }
         }
-        Set<InvestigationKey> existingRadKeys = radDetails.stream()
-                .filter(dt -> dt.getInvestigation() != null)
-                .filter(dt -> dt.getAppointmentDate() != null)
-                .map(dt -> new InvestigationKey(
-                        dt.getInvestigation().getInvestigationId(),
-                        dt.getAppointmentDate()
-                ))
-                .collect(Collectors.toSet());
+        Set<InvestigationKey> existingRadKeys = radDetails.stream().filter(dt -> dt.getInvestigation() != null).filter(dt -> dt.getAppointmentDate() != null).map(dt -> new InvestigationKey(dt.getInvestigation().getInvestigationId(), dt.getAppointmentDate())).collect(Collectors.toSet());
 
         // 3. REQUESTED INVESTIGATIONS
-        Set<InvestigationKey> requestedKeys = investigations.stream()
-                .filter(Objects::nonNull)
-                .filter(inv -> inv.investigationId() != null)
-                .filter(inv -> inv.investigationDate() != null)
-                .map(inv -> new InvestigationKey(
-                        inv.investigationId(),
-                        inv.investigationDate()
-                ))
-                .collect(Collectors.toSet());
+        Set<InvestigationKey> requestedKeys = investigations.stream().filter(Objects::nonNull).filter(inv -> inv.investigationId() != null).filter(inv -> inv.investigationDate() != null).map(inv -> new InvestigationKey(inv.investigationId(), inv.investigationDate())).collect(Collectors.toSet());
 
-        
+
         //validate the same date same investigation
-        investigations.stream()
-                .filter(Objects::nonNull)
-                .filter(inv -> inv.flag() == 1)
-                .filter(inv -> inv.investigationId() != null)
-                .filter(inv -> inv.investigationDate() != null)
-                .filter(inv -> labDepartmentId.equals(
-                        helperUtils.getDepartmentFromInvestigation(
-                                inv.investigationId()
-                        )
-                ))
-                .filter(inv -> existingLabKeys.contains(
-                        new InvestigationKey(
-                                inv.investigationId(),
-                                inv.investigationDate()
-                        )
-                ))
-                .findFirst()
-                .ifPresent(inv -> {
-                    throw new SDDException("investigation",400,AppConstants.CANNOT_ADD_SAME_INVESTIGATION );
-                });
+        investigations.stream().filter(Objects::nonNull).filter(inv -> inv.flag() == 1).filter(inv -> inv.investigationId() != null).filter(inv -> inv.investigationDate() != null).filter(inv -> labDepartmentId.equals(helperUtils.getDepartmentFromInvestigation(inv.investigationId()))).filter(inv -> existingLabKeys.contains(new InvestigationKey(inv.investigationId(), inv.investigationDate()))).findFirst().ifPresent(inv -> {
+            throw new SDDException("investigation", 400, AppConstants.CANNOT_ADD_SAME_INVESTIGATION);
+        });
 
-        investigations.stream()
-                .filter(Objects::nonNull)
-                .filter(inv -> inv.flag() == 1)
-                .filter(inv -> inv.investigationId() != null)
-                .filter(inv -> inv.investigationDate() != null)
-                .filter(inv -> radDepartmentId.equals(
-                        helperUtils.getDepartmentFromInvestigation(
-                                inv.investigationId()
-                        )
-                ))
-                .filter(inv -> existingRadKeys.contains(
-                        new InvestigationKey(
-                                inv.investigationId(),
-                                inv.investigationDate()
-                        )
-                ))
-                .findFirst()
-                .ifPresent(inv -> {
-                    throw new SDDException(
-                            "investigation",
-                            400,
-                            AppConstants.CANNOT_ADD_SAME_INVESTIGATION
-                    );
-                });
+        investigations.stream().filter(Objects::nonNull).filter(inv -> inv.flag() == 1).filter(inv -> inv.investigationId() != null).filter(inv -> inv.investigationDate() != null).filter(inv -> radDepartmentId.equals(helperUtils.getDepartmentFromInvestigation(inv.investigationId()))).filter(inv -> existingRadKeys.contains(new InvestigationKey(inv.investigationId(), inv.investigationDate()))).findFirst().ifPresent(inv -> {
+            throw new SDDException("investigation", 400, AppConstants.CANNOT_ADD_SAME_INVESTIGATION);
+        });
 
 
         // 4. LAB ADD LIST
-        List<InvestigationData> addLabList = investigations.stream()
-                .filter(Objects::nonNull)
-                .filter(inv -> inv.flag() == 1)
-                .filter(inv -> inv.investigationId() != null)
-                .filter(inv -> inv.investigationDate() != null)
-                .filter(inv ->
-                        labDepartmentId.equals(
-                                helperUtils.getDepartmentFromInvestigation(
-                                        inv.investigationId()
-                                )
-                        )
-                )
-                .filter(inv ->
-                        !existingLabKeys.contains(
-                                new InvestigationKey(
-                                        inv.investigationId(),
-                                        inv.investigationDate()
-                                )
-                        )
-                )
-                .toList();
+        List<InvestigationData> addLabList = investigations.stream().filter(Objects::nonNull).filter(inv -> inv.flag() == 1).filter(inv -> inv.investigationId() != null).filter(inv -> inv.investigationDate() != null).filter(inv -> labDepartmentId.equals(helperUtils.getDepartmentFromInvestigation(inv.investigationId()))).filter(inv -> !existingLabKeys.contains(new InvestigationKey(inv.investigationId(), inv.investigationDate()))).toList();
 
         // 5. RADIOLOGY ADD LIST
-        List<InvestigationData> addRadList = investigations.stream()
-                .filter(Objects::nonNull)
-                .filter(inv -> inv.flag() == 1)
-                .filter(inv -> inv.investigationId() != null)
-                .filter(inv -> inv.investigationDate() != null)
-                .filter(inv ->
-                        radDepartmentId.equals(
-                                helperUtils.getDepartmentFromInvestigation(
-                                        inv.investigationId()
-                                )
-                        )
-                )
-                .filter(inv ->
-                        !existingRadKeys.contains(
-                                new InvestigationKey(
-                                        inv.investigationId(),
-                                        inv.investigationDate()
-                                )
-                        )
-                )
-                .toList();
+        List<InvestigationData> addRadList = investigations.stream().filter(Objects::nonNull).filter(inv -> inv.flag() == 1).filter(inv -> inv.investigationId() != null).filter(inv -> inv.investigationDate() != null).filter(inv -> radDepartmentId.equals(helperUtils.getDepartmentFromInvestigation(inv.investigationId()))).filter(inv -> !existingRadKeys.contains(new InvestigationKey(inv.investigationId(), inv.investigationDate()))).toList();
 
 
-        List<DgOrderDt> deleteLabList = labDetails.stream()
-                .filter(dt -> dt.getInvestigation() != null)
-                .filter(dt -> dt.getAppointmentDate() != null)
-                .filter(dt -> investigations.stream()
-                        .filter(Objects::nonNull)
-                        .filter(inv -> inv.investigationId() != null)
-                        .filter(inv -> inv.investigationDate() != null)
-                        .anyMatch(inv ->
-                                inv.investigationId().equals(
-                                        dt.getInvestigation()
-                                                .getInvestigationId()
-                                )
-                                        && inv.investigationDate().equals(
-                                        dt.getAppointmentDate()
-                                )
-                                        && inv.flag() == -1
-                        )
-                        ||
-                        !requestedKeys.contains(
-                                new InvestigationKey(
-                                        dt.getInvestigation()
-                                                .getInvestigationId(),
-                                        dt.getAppointmentDate()
-                                )
-                        )
-                )
-                .toList();
+        List<DgOrderDt> deleteLabList = labDetails.stream().filter(dt -> dt.getInvestigation() != null).filter(dt -> dt.getAppointmentDate() != null).filter(dt -> investigations.stream().filter(Objects::nonNull).filter(inv -> inv.investigationId() != null).filter(inv -> inv.investigationDate() != null).anyMatch(inv -> inv.investigationId().equals(dt.getInvestigation().getInvestigationId()) && inv.investigationDate().equals(dt.getAppointmentDate()) && inv.flag() == -1) || !requestedKeys.contains(new InvestigationKey(dt.getInvestigation().getInvestigationId(), dt.getAppointmentDate()))).toList();
         // 7. RADIOLOGY DELETE LIST
-        List<RadOrderDt> deleteRadList = radDetails.stream()
-                .filter(dt -> dt.getInvestigation() != null)
-                .filter(dt -> dt.getAppointmentDate() != null)
-                .filter(dt -> investigations.stream()
-                        .filter(Objects::nonNull)
-                        .filter(inv -> inv.investigationId() != null)
-                        .filter(inv -> inv.investigationDate() != null)
-                        .anyMatch(inv ->
-                                inv.investigationId().equals(
-                                        dt.getInvestigation()
-                                                .getInvestigationId()
-                                )
-                                        && inv.investigationDate().equals(
-                                        dt.getAppointmentDate()
-                                )
-                                        && inv.flag() == -1
-                        )
-                        ||
-                        !requestedKeys.contains(
-                                new InvestigationKey(
-                                        dt.getInvestigation()
-                                                .getInvestigationId(),
-                                        dt.getAppointmentDate()
-                                )
-                        )
-                )
-                .toList();
+        List<RadOrderDt> deleteRadList = radDetails.stream().filter(dt -> dt.getInvestigation() != null).filter(dt -> dt.getAppointmentDate() != null).filter(dt -> investigations.stream().filter(Objects::nonNull).filter(inv -> inv.investigationId() != null).filter(inv -> inv.investigationDate() != null).anyMatch(inv -> inv.investigationId().equals(dt.getInvestigation().getInvestigationId()) && inv.investigationDate().equals(dt.getAppointmentDate()) && inv.flag() == -1) || !requestedKeys.contains(new InvestigationKey(dt.getInvestigation().getInvestigationId(), dt.getAppointmentDate()))).toList();
 
         if (!deleteLabList.isEmpty()) {
             boolean deleteLabHeader = deleteLabList.size() == labDetails.size();
-            deleteInvestigation(deleteLabList,deleteLabHeader);
+            deleteInvestigation(deleteLabList, deleteLabHeader);
         }
         // 9. DELETE RADIOLOGY
         if (!deleteRadList.isEmpty()) {
             boolean deleteRadHeader = deleteRadList.size() == radDetails.size();
-            deleteRadiologyInvestigation(deleteRadList,deleteRadHeader);
+            deleteRadiologyInvestigation(deleteRadList, deleteRadHeader);
         }
         // 10. LAB ORDERED STATUS
-        LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId)
-                        .orElseThrow(() -> new SDDException( "status", 500, "Ordered status not found with id: " + orderedStatusId));
+        LabOrderTrackingStatus labOrderedStatus = labOrderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(() -> new SDDException("status", 500, "Ordered status not found with id: " + orderedStatusId));
 
 
         // 11. ADD LAB INVESTIGATIONS
         if (!addLabList.isEmpty()) {
-            Map<LocalDate, List<InvestigationData>> labGrouped = addLabList.stream().collect(Collectors.groupingBy(
-                                    InvestigationData::investigationDate
-                            ));
+            Map<LocalDate, List<InvestigationData>> labGrouped = addLabList.stream().collect(Collectors.groupingBy(InvestigationData::investigationDate));
 
-            for (Map.Entry<LocalDate, List<InvestigationData>> entry: labGrouped.entrySet()) {
+            for (Map.Entry<LocalDate, List<InvestigationData>> entry : labGrouped.entrySet()) {
                 LocalDate appointmentDate = entry.getKey();
                 List<InvestigationData> dateInvestigations = entry.getValue();
 
@@ -1206,29 +845,18 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 labHeaders = dgOrderHdRepo.findAllByVisitId(visit);
 
                 // Compare appointmentDate, NOT orderDate.
-                DgOrderHd existingLabHeader = labHeaders.stream()
-                                .filter(hd -> appointmentDate.equals(hd.getAppointmentDate()))
-                                .filter(hd -> AppConstants.STATUS_N.equalsIgnoreCase(hd.getOrderStatus())
-                                                ||AppConstants.STATUS_P.equalsIgnoreCase(hd.getOrderStatus()))
-                                .findFirst()
-                                .orElse(null);
+                DgOrderHd existingLabHeader = labHeaders.stream().filter(hd -> appointmentDate.equals(hd.getAppointmentDate())).filter(hd -> AppConstants.STATUS_N.equalsIgnoreCase(hd.getOrderStatus()) || AppConstants.STATUS_P.equalsIgnoreCase(hd.getOrderStatus())).findFirst().orElse(null);
 
                 if (existingLabHeader != null) {
-                    createLabOrderDetails(dateInvestigations,existingLabHeader,labOrderedStatus,null);
+                    createLabOrderDetails(dateInvestigations, existingLabHeader, labOrderedStatus, null);
                 } else {
                     // NEW LAB HEADER
                     Map<LocalDate, List<InvestigationData>> grouped = new HashMap<>();
                     grouped.put(appointmentDate, dateInvestigations);
 
-                    String radioAdvised = grouped.values().stream()
-                            .flatMap(List::stream)
-                            .map(InvestigationData::investigationName)
-                            .filter(Objects::nonNull)
-                            .distinct()
-                            .collect(Collectors.joining(", "));
+                    String radioAdvised = grouped.values().stream().flatMap(List::stream).map(InvestigationData::investigationName).filter(Objects::nonNull).distinct().collect(Collectors.joining(", "));
 
-                    processLabInvestigations(grouped,patient,visit,user,labOrderedStatus);
-
+                    processLabInvestigations(grouped, patient, visit, user, labOrderedStatus);
 
 
                 }
@@ -1245,15 +873,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 // Refresh after deletion
                 radHeaders = radOrderHdRepository.findAllByVisit_Id(visit.getId());
                 // Find existing RAD header
-                RadOrderHd existingRadHeader =
-                        radHeaders.stream()
-                                .filter(hd ->
-                                        appointmentDate.equals(
-                                                hd.getAppointmentDate()
-                                        )
-                                )
-                                .findFirst()
-                                .orElse(null);
+                RadOrderHd existingRadHeader = radHeaders.stream().filter(hd -> appointmentDate.equals(hd.getAppointmentDate())).findFirst().orElse(null);
 
                 if (existingRadHeader != null) {
                     // EXISTING RADIOLOGY HEADER
@@ -1268,17 +888,17 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 //                        );
 //                    }
 
-                    createRadiologyOrderDetails(dateInvestigations,existingRadHeader,billingHeader);
-                    if(billingHeader!=null){
-                        updateBillingHeaderById(billingHeader.getId(),true,user);
+                    createRadiologyOrderDetails(dateInvestigations, existingRadHeader, billingHeader);
+                    if (billingHeader != null) {
+                        updateBillingHeaderById(billingHeader.getId(), true, user);
 
                     }
 
                 } else {
                     // NEW RADIOLOGY HEADER
                     Map<LocalDate, List<InvestigationData>> grouped = new HashMap<>();
-                    grouped.put(appointmentDate,dateInvestigations);
-                    processRadiologyInvestigations(grouped,patient,visit,user);
+                    grouped.put(appointmentDate, dateInvestigations);
+                    processRadiologyInvestigations(grouped, patient, visit, user);
                 }
             }
         }
@@ -1290,11 +910,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             return null;
         }
 
-        return details.stream()
-                .filter(dt -> dt.getBillingHd() != null)
-                .map(DgOrderDt::getBillingHd)
-                .findFirst()
-                .orElse(null);
+        return details.stream().filter(dt -> dt.getBillingHd() != null).map(DgOrderDt::getBillingHd).findFirst().orElse(null);
     }
 
 
@@ -1304,20 +920,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             return null;
         }
 
-        return details.stream()
-                .filter(dt -> dt.getBillingHd() != null)
-                .map(RadOrderDt::getBillingHd)
-                .findFirst()
-                .map(billingHd ->
-                        billingHeaderRepository
-                                .findById(
-                                        Math.toIntExact(
-                                                billingHd.getId()
-                                        )
-                                )
-                                .orElse(null)
-                )
-                .orElse(null);
+        return details.stream().filter(dt -> dt.getBillingHd() != null).map(RadOrderDt::getBillingHd).findFirst().map(billingHd -> billingHeaderRepository.findById(Math.toIntExact(billingHd.getId())).orElse(null)).orElse(null);
     }
 
     private void deleteRadiologyInvestigation(List<RadOrderDt> deleteList, boolean deleteHeader) {
@@ -1332,39 +935,15 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     Long investigationId = dt.getInvestigation().getInvestigationId();
 
                     List<BillingDetail> billingDetails = billingDetailRepository.findByBillingHd(billingHeader);
-                    List<BillingDetail> billingDetailsToDelete = billingDetails.stream()
-                                    .filter(detail -> detail.getInvestigation() != null)
-                                    .filter(detail -> investigationId.equals(detail.getInvestigation().getInvestigationId()))
-                                    .toList();
+                    List<BillingDetail> billingDetailsToDelete = billingDetails.stream().filter(detail -> detail.getInvestigation() != null).filter(detail -> investigationId.equals(detail.getInvestigation().getInvestigationId())).toList();
 
                     if (!billingDetailsToDelete.isEmpty()) {
 
-                        BigDecimal totalAmount =
-                                billingDetailsToDelete.stream()
-                                        .map(BillingDetail::getBasePrice)
-                                        .filter(Objects::nonNull)
-                                        .reduce(
-                                                BigDecimal.ZERO,
-                                                BigDecimal::add
-                                        );
+                        BigDecimal totalAmount = billingDetailsToDelete.stream().map(BillingDetail::getBasePrice).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                        BigDecimal discountAmount =
-                                billingDetailsToDelete.stream()
-                                        .map(BillingDetail::getDiscount)
-                                        .filter(Objects::nonNull)
-                                        .reduce(
-                                                BigDecimal.ZERO,
-                                                BigDecimal::add
-                                        );
+                        BigDecimal discountAmount = billingDetailsToDelete.stream().map(BillingDetail::getDiscount).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                        BigDecimal netAmount =
-                                billingDetailsToDelete.stream()
-                                        .map(BillingDetail::getNetAmount)
-                                        .filter(Objects::nonNull)
-                                        .reduce(
-                                                BigDecimal.ZERO,
-                                                BigDecimal::add
-                                        );
+                        BigDecimal netAmount = billingDetailsToDelete.stream().map(BillingDetail::getNetAmount).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
 
                         billingDetailRepository.deleteAll(billingDetailsToDelete);
                         billingDetailRepository.flush();
@@ -1404,32 +983,14 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 if (billingHeader != null) {
                     Long investigationId = dt.getInvestigation().getInvestigationId();
                     List<BillingDetail> billingDetails = billingDetailRepository.findByBillingHd(billingHeader);
-                    List<BillingDetail> billingDetailsToDelete =
-                            billingDetails.stream()
-                                    .filter(detail -> detail.getInvestigation() != null)
-                                    .filter(detail ->
-                                            investigationId.equals(
-                                                    detail.getInvestigation()
-                                                            .getInvestigationId()
-                                            )
-                                    )
-                                    .toList();
+                    List<BillingDetail> billingDetailsToDelete = billingDetails.stream().filter(detail -> detail.getInvestigation() != null).filter(detail -> investigationId.equals(detail.getInvestigation().getInvestigationId())).toList();
 
                     if (!billingDetailsToDelete.isEmpty()) {
-                        BigDecimal totalAmount = billingDetailsToDelete.stream()
-                                .map(BillingDetail::getBasePrice)
-                                .filter(Objects::nonNull)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                        BigDecimal totalAmount = billingDetailsToDelete.stream().map(BillingDetail::getBasePrice).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                        BigDecimal discountAmount = billingDetailsToDelete.stream()
-                                .map(BillingDetail::getDiscount)
-                                .filter(Objects::nonNull)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                        BigDecimal discountAmount = billingDetailsToDelete.stream().map(BillingDetail::getDiscount).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                        BigDecimal netAmount = billingDetailsToDelete.stream()
-                                .map(BillingDetail::getNetAmount)
-                                .filter(Objects::nonNull)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                        BigDecimal netAmount = billingDetailsToDelete.stream().map(BillingDetail::getNetAmount).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
 
                         // Delete details FIRST
                         billingDetailRepository.deleteAll(billingDetailsToDelete);
@@ -1464,30 +1025,18 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
 
-
     private void replacePsychiatryAssessment(RecallOpdPatientDetailRequest request, Patient patient, Visit visit, User user) {
         if (request.getPsychiatricDetailsRequests() != null && !request.getPsychiatricDetailsRequests().isEmpty()) {
             // Get or create OpdPatientDetail (needed for header)
-            OpdPatientDetail opdPatientDetail = opdPatientDetailRepository
-                    .findByVisit_Id(visit.getId())
-                    .orElseThrow(() -> new SDDException("opdPatientDetail", 404,
-                            "OPD patient detail not found for visit ID: " + visit.getId()));
+            OpdPatientDetail opdPatientDetail = opdPatientDetailRepository.findByVisit_Id(visit.getId()).orElseThrow(() -> new SDDException("opdPatientDetail", 404, "OPD patient detail not found for visit ID: " + visit.getId()));
 
             // Save or update using the improved method
-            saveOrUpdatePsychiatricAssessment(
-                    request.getPsychiatricDetailsRequests(),
-                    request.getTopicId(),
-                    visit,
-                    opdPatientDetail,
-                    user
-            );
+            saveOrUpdatePsychiatricAssessment(request.getPsychiatricDetailsRequests(), request.getTopicId(), visit, opdPatientDetail, user);
 
             log.info("Psychiatric assessment updated successfully for visit ID: {}", visit.getId());
         } else {
             // If details are null or empty, delete existing psychiatric assessment
-            OpdPsychiatryAssessmentHeader existingHeader = opdPsychiatryAssessmentHeaderRepository
-                    .findByVisit_Id(visit.getId())
-                    .orElse(null);
+            OpdPsychiatryAssessmentHeader existingHeader = opdPsychiatryAssessmentHeaderRepository.findByVisit_Id(visit.getId()).orElse(null);
 
             if (existingHeader != null) {
                 deleteAllPsychiatricDetails(existingHeader);
@@ -1502,13 +1051,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             OpdObgDetailsRequest obgRequest = request.getOpdObgDetailsRequest();
             obgRequest.setPatientId(patient.getId());
             obgRequest.setVisitId(visit.getId());
-            ApiResponse<String> response = opdObgDetailsService.createOrUpdateObgDetails(
-                    request.getVisitId(),
-                    obgRequest
-            );
+            ApiResponse<String> response = opdObgDetailsService.createOrUpdateObgDetails(request.getVisitId(), obgRequest);
             if (response == null || response.getStatus() != HttpStatus.OK.value()) {
-                throw new SDDException("obg", 500,
-                        response != null ? response.getMessage() : "Failed to update OBG details");
+                throw new SDDException("obg", 500, response != null ? response.getMessage() : "Failed to update OBG details");
             }
             log.info("OBG details updated successfully for visit ID: {}", visit.getId());
         } catch (Exception e) {
@@ -1538,7 +1083,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         opd.setWorkingDiag(request.getWorkingDiagnosis());
         opd.setFinalMedicalAdvice(request.getDoctorRemarks());
         opd.setTreatmentAdvice(request.getTreatmentAdvice());
-        if(request.getIcdDiagnosisList() != null && !request.getIcdDiagnosisList().isEmpty()) {
+        if (request.getIcdDiagnosisList() != null && !request.getIcdDiagnosisList().isEmpty()) {
             String joinedNames = request.getIcdDiagnosisList().stream().filter(Objects::nonNull).map(RecallOpdPatientDetailRequest.IcdDiagnosis::getIcdDiagnosisName).filter(Objects::nonNull).collect(Collectors.joining(","));
             opd.setIcdDiag(joinedNames);
         } else {
@@ -1639,19 +1184,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
     }
 
-    private void handleRecallPregnancyDetails(
-            OpdPatientDetail opd,
-            RecallOpdPatientDetailRequest.PregnancyDetails pregnancyDetails,
-            User user
-    ) {
+    private void handleRecallPregnancyDetails(OpdPatientDetail opd, RecallOpdPatientDetailRequest.PregnancyDetails pregnancyDetails, User user) {
         if (opd == null || pregnancyDetails == null || opd.getVisit() == null || opd.getPatient() == null) {
             return;
         }
 
         Long visitId = opd.getVisit().getId();
-        OpdPatientPregnancyDetails pregnancyEntity = opdPatientPregnancyDetailsRepository
-                .findByVisit_Id(visitId)
-                .orElseGet(OpdPatientPregnancyDetails::new);
+        OpdPatientPregnancyDetails pregnancyEntity = opdPatientPregnancyDetailsRepository.findByVisit_Id(visitId).orElseGet(OpdPatientPregnancyDetails::new);
 
         pregnancyEntity.setVisit(opd.getVisit());
         pregnancyEntity.setPatient(opd.getPatient());
@@ -1704,18 +1243,17 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             dgOrderHd.setLastChgTime(LocalTime.now().toString());
             DgOrderHd savedOrderHd = dgOrderHdRepo.save(dgOrderHd);
 
-            MasServiceCategory masServiceCategory= masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
+            MasServiceCategory masServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab);
             BillingHeader billingHeader = null;
             visitRepository.save(visit);
             log.info("LAB Order Header saved - Order ID: {}", savedOrderHd.getId());
-            createLabOrderDetails(investigations,savedOrderHd, labOrderedStatus, billingHeader);
+            createLabOrderDetails(investigations, savedOrderHd, labOrderedStatus, billingHeader);
         }
         log.info("LAB investigations processing completed");
     }
 
     //creating Lab order details
-    private void createLabOrderDetails(List<InvestigationData> investigations, DgOrderHd savedOrderHd,
-                                       LabOrderTrackingStatus labOrderedStatus, BillingHeader billingHeader){
+    private void createLabOrderDetails(List<InvestigationData> investigations, DgOrderHd savedOrderHd, LabOrderTrackingStatus labOrderedStatus, BillingHeader billingHeader) {
         User currentUser = getCurrentUser();
         for (InvestigationData invObj : investigations) {
             if (invObj == null || invObj.investigationId() == null) {
@@ -1745,7 +1283,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             dgOrderDt.setOrderTrackingStatus(labOrderedStatus);
             dgOrderDt.setLastChgTime(LocalTime.now().toString());
             DgOrderDt savedOrderDt = dgOrderDtRepo.save(dgOrderDt);
-            if(billingHeader!=null){
+            if (billingHeader != null) {
                 savedOrderDt.setBillingHd(billingHeader);
             }
             dgOrderDtRepo.save(dgOrderDt);
@@ -1765,8 +1303,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         try {
             // Find the billing header
-            BillingHeader billingHeader = billingHeaderRepository.findById(Math.toIntExact(billingHeaderId))
-                    .orElseThrow(() -> new SDDException("billing", 404, "Billing header not found with ID: " + billingHeaderId));
+            BillingHeader billingHeader = billingHeaderRepository.findById(Math.toIntExact(billingHeaderId)).orElseThrow(() -> new SDDException("billing", 404, "Billing header not found with ID: " + billingHeaderId));
 
             BigDecimal totalAmount = BigDecimal.ZERO;
             BigDecimal totalDiscount = BigDecimal.ZERO;
@@ -1789,8 +1326,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 }
 
                 if (serviceCategory != null && serviceCategory.getGstApplicable()) {
-                    totalTax = totalAmount.multiply(BigDecimal.valueOf(serviceCategory.getGstPercent()))
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                    totalTax = totalAmount.multiply(BigDecimal.valueOf(serviceCategory.getGstPercent())).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                 }
 
             } else {
@@ -1809,8 +1345,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 }
 
                 if (serviceCategory != null && serviceCategory.getGstApplicable()) {
-                    totalTax = totalAmount.multiply(BigDecimal.valueOf(serviceCategory.getGstPercent()))
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                    totalTax = totalAmount.multiply(BigDecimal.valueOf(serviceCategory.getGstPercent())).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
                 }
             }
 
@@ -1825,8 +1360,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             billingHeaderRepository.save(billingHeader);
 
-            log.info("Updated billing header ID: {} with total: {}, tax: {}",
-                    billingHeaderId, totalAmount, totalTax);
+            log.info("Updated billing header ID: {} with total: {}, tax: {}", billingHeaderId, totalAmount, totalTax);
 
         } catch (Exception e) {
             log.error("Error updating billing header by ID: {}", e.getMessage(), e);
@@ -1891,7 +1425,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             RadOrderHd savedRadOrderHd = radOrderHdRepository.save(radOrderHd);
             log.info("RADIOLOGY Order Header saved - Order ID: {}", savedRadOrderHd.getId());
             if (savedRadOrderHd == null) {
-                throw new SDDException("RadOrderHeader",500,"Failed to create order header");
+                throw new SDDException("RadOrderHeader", 500, "Failed to create order header");
             }
             BillingHeader billingHeader = null;
             visitRepository.save(visit);
@@ -1903,7 +1437,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         log.info("RADIOLOGY investigations processing completed");
     }
 
-    private void createRadiologyOrderDetails(List<InvestigationData> investigations, RadOrderHd savedRadOrderHd,BillingHeader billingHeader) {
+    private void createRadiologyOrderDetails(List<InvestigationData> investigations, RadOrderHd savedRadOrderHd, BillingHeader billingHeader) {
         for (InvestigationData invObj : investigations) {
             if (invObj == null || invObj.investigationId() == null) {
                 log.warn("Skipping null radiology investigation object");
@@ -1939,7 +1473,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }
         }
     }
-
 
 
     @Override
@@ -2106,7 +1639,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     continue;
                 }
 
-                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd =new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
+                OpdPatientRecallResponce.NewDPatientPrescriptionHd hd = new OpdPatientRecallResponce.NewDPatientPrescriptionHd();
                 hd.setPrescriptionHdId(prescriptionHd.getPrescriptionHdId());
                 hd.setStatus(prescriptionHd.getStatus());
                 hd.setPrescriptionDate(prescriptionHd.getPrescriptionDate());
@@ -2201,12 +1734,74 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 }
             }
             response.setSurgeryDetails(getSurgeryDetails(visitId));
+
+            // ================= PROCEDURE / DENTAL RECALL =================
+            List<DentalProcedureResponse> procedureRecallList = getProcedureRecallDetails(visitId);
+            DentalDetailsResponse dentalDetailsResponse = getDentalDetails(response.getPatientId(), visitId);
+
+            if (dentalDetailsResponse != null) {
+                dentalDetailsResponse.setProcedureHdDetails(procedureRecallList);
+            }
+
+            response.setDentalDetailsResponse(dentalDetailsResponse);
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
             });
         } catch (Exception ex) {
             log.error("Error while fetching data : ", ex);
             return ResponseUtils.createFailureResponse(null, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+
+    public DentalDetailsResponse getDentalDetails(
+            Long patientId,
+            Long visitId
+    ) {
+
+        Optional<OpdPatientDentalSummary> summaryOptional =
+                opdPatientDentalSummaryRepository.findByPatientIdAndVisitId(patientId, visitId);
+
+        if (summaryOptional.isEmpty()) {
+            return null;
+        }
+
+        OpdPatientDentalSummary summary = summaryOptional.get();
+
+        List<OpdToothPatientCondition> toothConditionEntities =
+                opdToothPatientConditionRepository.findByPatientIdAndVisitIdAndStatus(
+                        patientId,
+                        visitId,
+                        AppConstants.STATUS_N
+                );
+
+        List<DentalDetailsResponse.DentalToothConditionResponse> toothConditions =
+                toothConditionEntities.stream()
+                        .map(condition -> DentalDetailsResponse.DentalToothConditionResponse.builder()
+                                .toothPatientConditionId(condition.getPatientToothConditionId())
+                                .toothId(condition.getTooth().getToothId())
+                                .conditionId(condition.getCondition().getConditionId())
+                                .build())
+                        .toList();
+
+        DentalDetailsResponse.DentalExaminationResponse examination =
+                DentalDetailsResponse.DentalExaminationResponse.builder()
+                        .summaryId(summary.getSummaryId())
+                        .totalTeeth(summary.getTotalTeeth())
+                        .missingTeeth(summary.getMissingTeeth())
+                        .unsalvageableTeeth(summary.getUnsalvageableTeeth())
+                        .affectedTeeth(summary.getAffectedTeeth())
+                        .dentalDiseaseScore(summary.getDentalDiseaseScore())
+                        .notes(summary.getNotes())
+                        .ongoingProcedures(summary.getOngoingProcedures())
+                        .toothConditions(toothConditions)
+                        .build();
+
+        return DentalDetailsResponse.builder()
+                .summaryId(summary.getSummaryId())
+                .patientId(patientId)
+                .visitId(visitId)
+                .dentalExamination(examination)
+                .build();
     }
 
     private void mapBasicDetails(OpdPatientRecallResponce response, RecallPatientProjection data) {
@@ -2331,15 +1926,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         response.setRadioFlag(opd.getRadioFlag());
     }
 
-    private OpdPatientRecallResponce.PregnancyDetails mapPregnancyDetails(
-            OpdPatientPregnancyDetails pregnancyDetails
-    ) {
+    private OpdPatientRecallResponce.PregnancyDetails mapPregnancyDetails(OpdPatientPregnancyDetails pregnancyDetails) {
         if (pregnancyDetails == null) {
             return null;
         }
 
-        OpdPatientRecallResponce.PregnancyDetails response =
-                new OpdPatientRecallResponce.PregnancyDetails();
+        OpdPatientRecallResponce.PregnancyDetails response = new OpdPatientRecallResponce.PregnancyDetails();
         response.setIsPregnant(pregnancyDetails.getIsPregnant());
         response.setLmpDate(pregnancyDetails.getLmpDate());
         response.setEdd(pregnancyDetails.getEdd());
@@ -2348,14 +1940,72 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return response;
     }
 
+    private List<DentalProcedureResponse> getProcedureRecallDetails(Long visitId) {
+
+        List<ProcedureHd> procedureHdList = procedureHdRepository.findByVisitIdAndProcedureType_ProcedureTypeCodeAndStatus(visitId, "DENT", AppConstants.STATUS_N);
+        if (procedureHdList == null || procedureHdList.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<DentalProcedureResponse> responseList = new ArrayList<>();
+        for (ProcedureHd procedureHd : procedureHdList) {
+            if (procedureHd == null) {
+                continue;
+            }
+
+            List<ProcedureDt> procedureDtList = procedureDtRepository.findByProcedureHd_ProcedureHdIdAndStatusOrderBySequenceNoAsc(procedureHd.getProcedureHdId(), AppConstants.STATUS_N);
+            List<ProcedureItemResponse> procedureItems = new ArrayList<>();
+            for (ProcedureDt procedureDt : procedureDtList) {
+                if (procedureDt == null) {
+                    continue;
+                }
+
+                List<ProcedureSession> sessionList = procedureSessionRepository.findByProcedureDt_ProcedureDtIdAndStatusOrderBySessionNoAsc(procedureDt.getProcedureDtId(), AppConstants.STATUS_N);
+                List<ProcedureSessionResponse> sessionResponses = sessionList.stream()
+                        .filter(Objects::nonNull)
+                        .map(session -> ProcedureSessionResponse.builder()
+                                .procedureSessionId(session.getProcedureSessionId())
+                                .sessionNo(session.getSessionNo())
+                                .scheduledDateTime(session.getScheduledDateTime())
+                                .remarks(session.getRemarks())
+                                .sessionStatus(session.getSessionStatus())
+                                .isFinalSession(session.getIsFinalSession())
+                                .build()).toList();
+                List<DentalProcedureTooth> dentalToothList = dentalProcedureToothRepository.findByProcedureDt_ProcedureDtIdAndStatus(procedureDt.getProcedureDtId(), AppConstants.STATUS_N);
+                List<DentalToothResponse> toothResponses = dentalToothList.stream()
+                        .filter(Objects::nonNull)
+                        .map(tooth -> DentalToothResponse.builder()
+                                .dentalProcedureToothId(tooth.getDentalProcedureToothId())
+                                .toothId(tooth.getTooth() != null ? tooth.getTooth().getToothId() : null)
+                                .toothSurface(tooth.getToothSurface())
+                                .build()).toList();
+                ProcedureItemResponse procedureItem = ProcedureItemResponse.builder()
+                        .procedureDtId(procedureDt.getProcedureDtId())
+                        .procedureId(procedureDt.getProcedure() != null ? procedureDt.getProcedure().getProcedureId() : null)
+                        .procedureName(procedureDt.getProcedure() != null ? procedureDt.getProcedure().getProcedureName() : null)
+                        .plannedSessionCount(procedureDt.getPlannedSessionCount())
+                        .completedSessionCount(procedureDt.getCompletedSessionCount())
+                        .remarks(procedureDt.getRemarks()).sessions(sessionResponses)
+                        .dentalProcedureTeeth(toothResponses).build();
+                procedureItems.add(procedureItem);
+            }
+            DentalProcedureResponse dentalResponse = DentalProcedureResponse.builder()
+                    .procedureHdId(procedureHd.getProcedureHdId())
+                    .procedureNo(procedureHd.getProcedureNo())
+                    .patientId(procedureHd.getPatientId())
+                    .visitId(procedureHd.getVisitId())
+                    .departmentId(procedureHd.getDepartmentId())
+                    .procedureDetails(procedureItems).build();
+
+            responseList.add(dentalResponse);
+        }
+
+        return responseList;
+    }
+
     private List<OpdPatientRecallResponce.LabOrderHd> buildDgOrderHdList(List<DgOrderHd> hdList) {
-
         List<OpdPatientRecallResponce.LabOrderHd> newHdList = new ArrayList<>();
-
         for (DgOrderHd hdObj : safeList(hdList)) {
-
             if (hdObj == null) continue;
-
             OpdPatientRecallResponce.LabOrderHd hd = new OpdPatientRecallResponce.LabOrderHd();
 
             hd.setOrderHdId(hdObj.getId());
@@ -2367,11 +2017,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             hd.setAppointmentDate(hdObj.getAppointmentDate());
 
             List<DgOrderDt> dtList = safeList(dgOrderDtRepo.findByOrderHd(hdObj));
-
             List<OpdPatientRecallResponce.LabOrderDt> newDtList = new ArrayList<>();
-
             for (DgOrderDt dt : dtList) {
-
                 if (dt == null) continue;
 
                 OpdPatientRecallResponce.LabOrderDt nd = new OpdPatientRecallResponce.LabOrderDt();
@@ -2390,7 +2037,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                 // Package
                 nd.setPackageId(dt.getInvestigationPackage() != null ? dt.getInvestigationPackage().getPackId() : null);
-
                 // Billing
                 nd.setBillingHd(dt.getBillingHd() != null ? dt.getBillingHd().getBillingHdId() : null);
 
@@ -2479,14 +2125,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         List<OtBookingRequestDt> dtList = otBookingRequestDtRepository.findByOtBookingRequest(hd);
 
-        List<SurgeryAdviceResponseDTO.SurgeryDetailResponseDTO>
-                surgeryDetails = new ArrayList<>();
+        List<SurgeryAdviceResponseDTO.SurgeryDetailResponseDTO> surgeryDetails = new ArrayList<>();
         for (OtBookingRequestDt dt : dtList) {
             if (dt == null) {
                 continue;
             }
-            SurgeryAdviceResponseDTO.SurgeryDetailResponseDTO
-                    detail = new SurgeryAdviceResponseDTO.SurgeryDetailResponseDTO();
+            SurgeryAdviceResponseDTO.SurgeryDetailResponseDTO detail = new SurgeryAdviceResponseDTO.SurgeryDetailResponseDTO();
 
             detail.setOtBookingRequestDtId(dt.getOtBookingRequestDtId());
             detail.setSurgeryId(dt.getSurgeryId().getSurgeryId());
@@ -2700,11 +2344,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     @Override
-    public ApiResponse<Page<PreviousOpdPsychiatryHistoryResponse>> getPreviousOpdPsychiatryDetailsHistory(
-            Long patientId,
-            Long hospitalId,
-            int page,
-            int size) {
+    public ApiResponse<Page<PreviousOpdPsychiatryHistoryResponse>> getPreviousOpdPsychiatryDetailsHistory(Long patientId, Long hospitalId, int page, int size) {
 
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "assessmentDate"));
@@ -2736,7 +2376,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             }
 
 
-
             Page<PreviousOpdPsychiatryHistoryResponse> responsePage = headerPage.map(header -> {
                 PreviousOpdPsychiatryHistoryResponse response = new PreviousOpdPsychiatryHistoryResponse();
                 response.setAssessmentHeaderId(header.getAssessmentHeaderId());
@@ -2747,13 +2386,11 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 response.setTotalScore(header.getTotalScore());
                 response.setRemarks(header.getRemarks());
 
-                Map<Long, List<PreviousOpdPsychiatryHistoryResponse.AssessmentQuestionsResponse>> topicsMap =
-                        detailsByHeaderId.getOrDefault(header.getAssessmentHeaderId(), Collections.emptyMap());
+                Map<Long, List<PreviousOpdPsychiatryHistoryResponse.AssessmentQuestionsResponse>> topicsMap = detailsByHeaderId.getOrDefault(header.getAssessmentHeaderId(), Collections.emptyMap());
 
                 List<PreviousOpdPsychiatryHistoryResponse.PsychiatricAssessmentResponse> assessments = new ArrayList<>();
                 for (Map.Entry<Long, List<PreviousOpdPsychiatryHistoryResponse.AssessmentQuestionsResponse>> entry : topicsMap.entrySet()) {
-                    PreviousOpdPsychiatryHistoryResponse.PsychiatricAssessmentResponse pa =
-                            new PreviousOpdPsychiatryHistoryResponse.PsychiatricAssessmentResponse();
+                    PreviousOpdPsychiatryHistoryResponse.PsychiatricAssessmentResponse pa = new PreviousOpdPsychiatryHistoryResponse.PsychiatricAssessmentResponse();
                     Long tId = entry.getKey();
                     String tName = null;
                     Map<Long, String> topicNames = topicNamesByHeaderId.getOrDefault(header.getAssessmentHeaderId(), Collections.emptyMap());
@@ -2772,19 +2409,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 return response;
             });
 
-            return ResponseUtils.createSuccessResponse(
-                    responsePage,
-                    new TypeReference<Page<PreviousOpdPsychiatryHistoryResponse>>() {
-                    });
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<Page<PreviousOpdPsychiatryHistoryResponse>>() {
+            });
 
         } catch (Exception ex) {
             log.error("Error fetching previous psychiatry history for patientId={}, hospitalId={}", patientId, hospitalId, ex);
-            return ResponseUtils.createFailureResponse(
-                    null,
-                    new TypeReference<>() {
-                    },
-                    AppConstants.INTERNAL_SERVER_ERR_MSG,
-                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+            }, AppConstants.INTERNAL_SERVER_ERR_MSG, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
@@ -2955,17 +2586,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     @Transactional
-    public OpdPsychiatryAssessmentHeader saveOrUpdatePsychiatricAssessment(
-            List<OpdPsychiatricDetailsRequest> details,
-            Long topicId,
-            Visit visit,
-            OpdPatientDetail opdPatientDetail,
-            User user) {
+    public OpdPsychiatryAssessmentHeader saveOrUpdatePsychiatricAssessment(List<OpdPsychiatricDetailsRequest> details, Long topicId, Visit visit, OpdPatientDetail opdPatientDetail, User user) {
 
         // 1. Find or create header
-        OpdPsychiatryAssessmentHeader header = opdPsychiatryAssessmentHeaderRepository
-                .findByVisit_Id(visit.getId())
-                .orElse(new OpdPsychiatryAssessmentHeader());
+        OpdPsychiatryAssessmentHeader header = opdPsychiatryAssessmentHeaderRepository.findByVisit_Id(visit.getId()).orElse(new OpdPsychiatryAssessmentHeader());
 
         boolean isNew = header.getAssessmentHeaderId() == null;
 
@@ -2985,8 +2609,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             // Optionally update topic if changed
             if (topicId != null && !topicId.equals(header.getTopic().getQuestionHeadingId())) {
-                header.setTopic(masQuestionHeadingRepository.findById(topicId)
-                        .orElseThrow(() -> new EntityNotFoundException("Topic not found with id: " + topicId)));
+                header.setTopic(masQuestionHeadingRepository.findById(topicId).orElseThrow(() -> new EntityNotFoundException("Topic not found with id: " + topicId)));
             }
         }
 
@@ -3008,11 +2631,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return opdPsychiatryAssessmentHeaderRepository.save(savedHeader);
     }
 
-    private void handlePsychiatricDetails(
-            List<OpdPsychiatricDetailsRequest> details,
-            OpdPsychiatryAssessmentHeader header,
-            boolean isNew,
-            User user) {
+    private void handlePsychiatricDetails(List<OpdPsychiatricDetailsRequest> details, OpdPsychiatryAssessmentHeader header, boolean isNew, User user) {
 
         if (isNew) {
             // For new records, simply save all details
@@ -3024,15 +2643,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             // For existing records, we need to handle updates more intelligently
 
             // Get existing details
-            List<OpdPsychiatryAssessmentDetail> existingDetails = opdPsychiatryAssessmentDetailRepository
-                    .findByAssessmentHeaderId_AssessmentHeaderId(header.getAssessmentHeaderId());
+            List<OpdPsychiatryAssessmentDetail> existingDetails = opdPsychiatryAssessmentDetailRepository.findByAssessmentHeaderId_AssessmentHeaderId(header.getAssessmentHeaderId());
 
             // Create a map of existing details by question ID for quick lookup
-            Map<Long, OpdPsychiatryAssessmentDetail> existingDetailMap = existingDetails.stream()
-                    .collect(Collectors.toMap(
-                            d -> d.getQuestionId().getId(),
-                            d -> d
-                    ));
+            Map<Long, OpdPsychiatryAssessmentDetail> existingDetailMap = existingDetails.stream().collect(Collectors.toMap(d -> d.getQuestionId().getId(), d -> d));
 
             // Process each incoming detail
             for (OpdPsychiatricDetailsRequest detailReq : details) {
@@ -3054,16 +2668,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             // Delete details that are no longer present in the request
             if (!existingDetailMap.isEmpty()) {
                 opdPsychiatryAssessmentDetailRepository.deleteAll(existingDetailMap.values());
-                log.info("Deleted {} psychiatric assessment details for header ID: {}",
-                        existingDetailMap.size(), header.getAssessmentHeaderId());
+                log.info("Deleted {} psychiatric assessment details for header ID: {}", existingDetailMap.size(), header.getAssessmentHeaderId());
             }
         }
     }
 
-    private OpdPsychiatryAssessmentDetail createPsychiatricDetail(
-            OpdPsychiatricDetailsRequest detailReq,
-            OpdPsychiatryAssessmentHeader header,
-            User user) {
+    private OpdPsychiatryAssessmentDetail createPsychiatricDetail(OpdPsychiatricDetailsRequest detailReq, OpdPsychiatryAssessmentHeader header, User user) {
 
         OpdPsychiatryAssessmentDetail detail = new OpdPsychiatryAssessmentDetail();
 
@@ -3071,16 +2681,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         // Set question
         if (detailReq.getQuestionId() != null) {
-            detail.setQuestionId(opdQuestionMasterRepository.findById(detailReq.getQuestionId())
-                    .orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + detailReq.getQuestionId())));
+            detail.setQuestionId(opdQuestionMasterRepository.findById(detailReq.getQuestionId()).orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + detailReq.getQuestionId())));
         }
 
         // Set answer option
         BigDecimal score = BigDecimal.ZERO;
         if (detailReq.getAnswerOptionId() != null) {
-            MasQuestionOptionValue optionValue = masQuestionOptionValueRepository
-                    .findById(detailReq.getAnswerOptionId())
-                    .orElseThrow(() -> new EntityNotFoundException("Option value not found with id: " + detailReq.getAnswerOptionId()));
+            MasQuestionOptionValue optionValue = masQuestionOptionValueRepository.findById(detailReq.getAnswerOptionId()).orElseThrow(() -> new EntityNotFoundException("Option value not found with id: " + detailReq.getAnswerOptionId()));
             detail.setAnswerOptionId(optionValue);
             score = BigDecimal.valueOf(optionValue.getOptionScore());
         }
@@ -3092,23 +2699,17 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return detail;
     }
 
-    private void updatePsychiatricDetail(
-            OpdPsychiatryAssessmentDetail detail,
-            OpdPsychiatricDetailsRequest detailReq,
-            User user) {
+    private void updatePsychiatricDetail(OpdPsychiatryAssessmentDetail detail, OpdPsychiatricDetailsRequest detailReq, User user) {
 
         // Update question if changed
         if (detailReq.getQuestionId() != null && !detailReq.getQuestionId().equals(detail.getQuestionId().getId())) {
-            detail.setQuestionId(opdQuestionMasterRepository.findById(detailReq.getQuestionId())
-                    .orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + detailReq.getQuestionId())));
+            detail.setQuestionId(opdQuestionMasterRepository.findById(detailReq.getQuestionId()).orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + detailReq.getQuestionId())));
         }
 
         // Update answer option if changed
         BigDecimal score = BigDecimal.ZERO;
         if (detailReq.getAnswerOptionId() != null) {
-            MasQuestionOptionValue optionValue = masQuestionOptionValueRepository
-                    .findById(detailReq.getAnswerOptionId())
-                    .orElseThrow(() -> new EntityNotFoundException("Option value not found with id: " + detailReq.getAnswerOptionId()));
+            MasQuestionOptionValue optionValue = masQuestionOptionValueRepository.findById(detailReq.getAnswerOptionId()).orElseThrow(() -> new EntityNotFoundException("Option value not found with id: " + detailReq.getAnswerOptionId()));
             detail.setAnswerOptionId(optionValue);
             score = BigDecimal.valueOf(optionValue.getOptionScore());
         } else {
@@ -3119,62 +2720,37 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     private void deleteAllPsychiatricDetails(OpdPsychiatryAssessmentHeader header) {
-        List<OpdPsychiatryAssessmentDetail> existingDetails = opdPsychiatryAssessmentDetailRepository
-                .findByAssessmentHeaderId_AssessmentHeaderId(header.getAssessmentHeaderId());
+        List<OpdPsychiatryAssessmentDetail> existingDetails = opdPsychiatryAssessmentDetailRepository.findByAssessmentHeaderId_AssessmentHeaderId(header.getAssessmentHeaderId());
 
         if (!existingDetails.isEmpty()) {
             opdPsychiatryAssessmentDetailRepository.deleteAll(existingDetails);
-            log.info("Deleted all psychiatric assessment details for header ID: {}",
-                    header.getAssessmentHeaderId());
+            log.info("Deleted all psychiatric assessment details for header ID: {}", header.getAssessmentHeaderId());
         }
     }
 
     private BigDecimal calculateTotalScore(OpdPsychiatryAssessmentHeader header) {
-        List<OpdPsychiatryAssessmentDetail> details = opdPsychiatryAssessmentDetailRepository
-                .findByAssessmentHeaderId_AssessmentHeaderId(header.getAssessmentHeaderId());
+        List<OpdPsychiatryAssessmentDetail> details = opdPsychiatryAssessmentDetailRepository.findByAssessmentHeaderId_AssessmentHeaderId(header.getAssessmentHeaderId());
 
-        return details.stream()
-                .map(OpdPsychiatryAssessmentDetail::getScore)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return details.stream().map(OpdPsychiatryAssessmentDetail::getScore).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private void handlePregnancyDetails(
-            OpdPatientDetail opd,
-            OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails,
-            User user
-    ) {
+    private void handlePregnancyDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails, User user) {
         if (pregnancyDetails == null) {
             return;
         }
 
         if (opd.getVisit() == null) {
-            throw new IllegalArgumentException(
-                    "Visit is required to save pregnancy details"
-            );
+            throw new IllegalArgumentException("Visit is required to save pregnancy details");
         }
 
         if (opd.getPatient() == null) {
-            throw new IllegalArgumentException(
-                    "Patient is required to save pregnancy details"
-            );
+            throw new IllegalArgumentException("Patient is required to save pregnancy details");
         }
 
         Long visitId = opd.getVisit().getId();
-        log.info(
-                "Saving pregnancy details for visitId={}, isPregnant={}, lmpDate={}, edd={}, currentEdd={}, gestationPeriod={}",
-                visitId,
-                pregnancyDetails.getIsPregnant(),
-                pregnancyDetails.getLmpDate(),
-                pregnancyDetails.getEdd(),
-                pregnancyDetails.getCurrentEdd(),
-                pregnancyDetails.getGestationPeriod()
-        );
+        log.info("Saving pregnancy details for visitId={}, isPregnant={}, lmpDate={}, edd={}, currentEdd={}, gestationPeriod={}", visitId, pregnancyDetails.getIsPregnant(), pregnancyDetails.getLmpDate(), pregnancyDetails.getEdd(), pregnancyDetails.getCurrentEdd(), pregnancyDetails.getGestationPeriod());
 
-        OpdPatientPregnancyDetails pregnancyEntity =
-                opdPatientPregnancyDetailsRepository
-                        .findByVisit_Id(visitId)
-                        .orElseGet(OpdPatientPregnancyDetails::new);
+        OpdPatientPregnancyDetails pregnancyEntity = opdPatientPregnancyDetailsRepository.findByVisit_Id(visitId).orElseGet(OpdPatientPregnancyDetails::new);
 
         pregnancyEntity.setVisit(opd.getVisit());
         pregnancyEntity.setPatient(opd.getPatient());
@@ -3182,58 +2758,48 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         pregnancyEntity.setLmpDate(pregnancyDetails.getLmpDate());
         pregnancyEntity.setEdd(pregnancyDetails.getEdd());
         pregnancyEntity.setCurrentEdd(pregnancyDetails.getCurrentEdd());
-        pregnancyEntity.setGestationPeriod(
-                pregnancyDetails.getGestationPeriod()
-        );
+        pregnancyEntity.setGestationPeriod(pregnancyDetails.getGestationPeriod());
         pregnancyEntity.setLastChgDate(Instant.now());
-        pregnancyEntity.setLastChgBy(
-                user != null ? user.getFullName() : null
-        );
+        pregnancyEntity.setLastChgBy(user != null ? user.getFullName() : null);
 
-        OpdPatientPregnancyDetails savedEntity =
-                opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
+        OpdPatientPregnancyDetails savedEntity = opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
 
-        log.info(
-                "Pregnancy details saved successfully. pregnancyDetailsId: {}, OPD patient ID: {}, visit ID: {}",
-                savedEntity.getPregnancyDetailsId(),
-                opd.getOpdPatientDetailsId(),
-                visitId
-        );
+        log.info("Pregnancy details saved successfully. pregnancyDetailsId: {}, OPD patient ID: {}, visit ID: {}", savedEntity.getPregnancyDetailsId(), opd.getOpdPatientDetailsId(), visitId);
     }
 
     @Override
-    public ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(Pageable pageable,String mobileNumber, String patientName, Long hospitalId ) {
+    public ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(Pageable pageable, String mobileNumber, String patientName, Long hospitalId, Long patientId) {
 
         log.info("Fetching OPD reports for visitId: {}, page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
 
-            Page<OpdReportListProjection> projections = visitRepository.getOpdReportsList
-                    (AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE, mobileNumber, patientName, pageable);
+        Page<OpdReportListProjection> projections = visitRepository.getOpdReportsList(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE, mobileNumber, patientName, patientId, pageable);
 
-            Page<OpdReportListResponse> responses = projections.map(projection -> {
+        Page<OpdReportListResponse> responses = projections.map(projection -> {
 
-                OpdReportListResponse response = new OpdReportListResponse();
+            OpdReportListResponse response = new OpdReportListResponse();
 
-                response.setVisitId(projection.getVisitId());
-                response.setPatientId(projection.getPatientId());
-                response.setPatientName(projection.getPatientName());
-                response.setMobileNumber(projection.getMobileNumber());
-                response.setUhid(projection.getUhid());
-                response.setRelation(projection.getRelation());
-                response.setGender(projection.getGender());
-                response.setAge(projection.getAge());
-                response.setSpecialty(projection.getSpecialty());
-                response.setDoctorName(projection.getDoctorName());
-                response.setVisitDateTime(projection.getVisitDateTime());
-                response.setPrescriptionHdId(projection.getPrescriptionHdId());
-                response.setPrescriptionStatus(projection.getPrescriptionStatus());
+            response.setVisitId(projection.getVisitId());
+            response.setPatientId(projection.getPatientId());
+            response.setPatientName(projection.getPatientName());
+            response.setMobileNumber(projection.getMobileNumber());
+            response.setUhid(projection.getUhid());
+            response.setRelation(projection.getRelation());
+            response.setGender(projection.getGender());
+            response.setAge(projection.getAge());
+            response.setSpecialty(projection.getSpecialty());
+            response.setDoctorName(projection.getDoctorName());
+            response.setVisitDateTime(projection.getVisitDateTime());
+            response.setPrescriptionHdId(projection.getPrescriptionHdId());
+            response.setPrescriptionStatus(projection.getPrescriptionStatus());
 
-                return response;
-            });
+            return response;
+        });
 
-            return ResponseUtils.createSuccessResponse(
-                    responses,
-                    new TypeReference<>() {}
-            );
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {
+        });
     }
+
+
+
 }
 
