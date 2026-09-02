@@ -25,6 +25,7 @@ public class PendingForOtResponse {
     private String patientType;
     private Long otId;
     private String otName;
+    private String priority;
     private LocalDate requestedDate;
     private LocalTime requestedTime;
     private String requestedBy;

@@ -1,6 +1,5 @@
 package com.hims.config;
 
-
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -28,8 +27,7 @@ public class SwaggerConfig {
     public OpenAPI springShopOpenAPI() {
         return new OpenAPI()
                 .servers(List.of(
-                        new Server().url("https://api.arigenhmis.com").description("Production Server (HTTPS)"),
-                        new Server().url("http://localhost:8081").description("Local Dev Server")
+                        new Server().url("/").description("Default Server")
                 ))
                 .addSecurityItem(new SecurityRequirement().
                         addList("Bearer Authentication"))
@@ -43,8 +41,5 @@ public class SwaggerConfig {
                 .externalDocs(new ExternalDocumentation()
                         .description("Hospital Management System")
                         .url("https://github.com/arigen-tech"));
-
     }
-
-
 }
