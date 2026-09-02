@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Prescription_issue_slip" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="9dc8aef2-a407-46f5-a6e5-8dbed0a3d192">
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="314"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="676"/>
 	<parameter name="prescriptionId" class="java.lang.Integer"/>
 	<parameter name="path" class="java.lang.String">
 		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
@@ -12,40 +14,77 @@
     sim.store_issue_m_id,
     sim.issue_no,
     TO_CHAR(sim.issue_date, 'DD/MM/YYYY HH12:MI AM') AS issue_date,
+
     pph.prescription_number,
     TO_CHAR(pph.prescription_date, 'DD/MM/YYYY HH12:MI AM') AS prescription_date,
+
     mh.hospital_name,
-    CONCAT_WS(' ', p.p_fn, NULLIF(p.p_mn, ''), NULLIF(p.p_ln, '')) AS patient_name,
+
+    CONCAT_WS(
+        ' ',
+        p.p_fn,
+        NULLIF(p.p_mn, ''),
+        NULLIF(p.p_ln, '')
+    ) AS patient_name,
+
     p.uhid_no,
+
     CASE
-        WHEN p.p_age IS NOT NULL AND mg.gender_code IS NOT NULL THEN SPLIT_PART(p.p_age, 'Y', 1) || ' / ' || mg.gender_code
-        WHEN p.p_age IS NOT NULL THEN SPLIT_PART(p.p_age, 'Y', 1)
+        WHEN p.p_age IS NOT NULL AND mg.gender_code IS NOT NULL
+            THEN SPLIT_PART(p.p_age, 'Y', 1) || ' / ' || mg.gender_code
+        WHEN p.p_age IS NOT NULL
+            THEN SPLIT_PART(p.p_age, 'Y', 1)
         ELSE mg.gender_code
     END AS age_gender,
+
     p.p_mobile_number,
     pph.doctor_name,
     md.department_name,
+
     msi.nomenclature AS medicine_name,
+
     ppd.frequency,
     ppd.days,
+
     sit.batch_no,
     TO_CHAR(sit.expiry_date, 'Mon-YYYY') AS expiry_date,
     sit.issued_qty,
+
     ppd.dosage,
     msi.dosage_unit,
     ppd.instruction,
+
     sim.issued_by
-FROM store_issue_m sim
-INNER JOIN store_issue_t sit ON sit.store_issue_m_id = sim.store_issue_m_id
-INNER JOIN patient p ON p.patient_id = sim.patient_id
-LEFT JOIN patient_prescription_hd pph ON pph.prescription_hd_id = sim.prescription_hd_id
-LEFT JOIN patient_prescription_dt ppd ON ppd.prescription_dt_id = sit.prescription_dt_id
-LEFT JOIN mas_hospital mh ON mh.hospital_id = sim.hospital_id
-LEFT JOIN mas_department md ON md.department_id = pph.department_id  
-LEFT JOIN mas_gender mg ON mg.id = p.p_gender_id
-LEFT JOIN mas_store_item msi ON msi.item_id = sit.item_id
-WHERE sim.prescription_hd_id = $P{prescriptionId}
-and pph.status = 'y']]>
+
+FROM patient_prescription_hd pph
+
+INNER JOIN patient_prescription_dt ppd
+    ON ppd.prescription_hd_id = pph.prescription_hd_id
+
+INNER JOIN patient p
+    ON p.patient_id = pph.patient_id
+
+LEFT JOIN store_issue_m sim
+    ON sim.prescription_hd_id = pph.prescription_hd_id
+
+LEFT JOIN store_issue_t sit
+    ON sit.store_issue_m_id = sim.store_issue_m_id
+    AND sit.prescription_dt_id = ppd.prescription_dt_id
+
+LEFT JOIN mas_hospital mh
+    ON mh.hospital_id = sim.hospital_id
+
+LEFT JOIN mas_department md
+    ON md.department_id = pph.department_id
+
+LEFT JOIN mas_gender mg
+    ON mg.id = p.p_gender_id
+
+LEFT JOIN mas_store_item msi
+    ON msi.item_id = ppd.item_id
+
+WHERE pph.prescription_hd_id = $P{prescriptionId}
+  AND LOWER(pph.status) = 'y']]>
 	</queryString>
 	<field name="store_issue_m_id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="store_issue_m_id"/>
@@ -632,7 +671,7 @@ and pph.status = 'y']]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{expiry_date}]]></textFieldExpression>
 			</textField>
-			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+			<textField textAdjust="StretchHeight" pattern="#,##0.###;#,##0.###-" isBlankWhenNull="true">
 				<reportElement x="496" y="4" width="56" height="14" uuid="d9c4332c-a1b2-4f04-a9de-3ee695f0d79a"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" isBold="false"/>
