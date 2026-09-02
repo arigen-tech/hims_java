@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Daily_cancellation_report" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="5974717a-870d-4dfc-9581-a6d7f735c014">
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="218"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="772"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
 	<parameter name="path" class="java.lang.String">
-		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+		<defaultValueExpression><![CDATA["D:\\hims_java\\src\\main\\resources\\Assets\\arigen_health.png"]]></defaultValueExpression>
 	</parameter>
 	<parameter name="hospital_id" class="java.lang.Long"/>
 	<parameter name="department_id" class="java.lang.Long"/>
@@ -16,6 +18,7 @@
 	<parameter name="to_date" class="java.util.Date">
 		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
 	</parameter>
+	<parameter name="department_type" class="java.lang.String"/>
 	<queryString>
 		<![CDATA[select 
     v.visit_id as visit_id,
@@ -35,7 +38,7 @@
     v.doctor_name as doctor_name,
     v.department_id as department_id,
     d.department_name as department_name,
-	h.hospital_name,
+    h.hospital_name,
     to_char(v.visit_date, 'dd/MM/yyyy') as appointment_date,
     concat(
         to_char(v.start_time, 'HH24:MI'),
@@ -49,12 +52,14 @@ from visit v
 left join patient p on p.patient_id = v.patient_id
 left join mas_gender g on g.id = p.p_gender_id
 left join mas_department d on d.department_id = v.department_id
+left join mas_department_type dt on dt.department_type_id = d.department_type_id
 left join mas_appointment_change_reason r on r.reason_id = v.cancelled_reason_id
 left join mas_hospital h on v.hospital_id = h.hospital_id
 where lower(v.visit_status) = 'c'
   and v.visit_date between $P{from_date} and $P{to_date}
   and v.hospital_id = $P{hospital_id}
   and ($P{department_id} = 0 or v.department_id = $P{department_id})
+  and ($P{department_type} is null or dt.department_type_code = $P{department_type})
   and ($P{doctor_id} = 0 or v.doctor_id = $P{doctor_id})
   and ($P{cancellation_reason_id} = 0 or v.cancelled_reason_id = $P{cancellation_reason_id})
 order by d.department_name, v.cancelled_datetime]]>
