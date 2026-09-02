@@ -70,6 +70,7 @@ public class MasAnaesthesiaTypeServiceImpl implements MasAnaesthesiaTypeService 
             MasAnaesthesiaType data = MasAnaesthesiaType.builder()
                     .anaesthesiaTypeCode(request.getAnaesthesiaTypeCode())
                     .anaesthesiaTypeName(request.getAnaesthesiaTypeName())
+                    .price(request.getPrice())
                     .status(STATUS_Y)
                     .lastChgBy(user.getFirstName())
                     .lastChgDate(LocalDateTime.now())
@@ -96,6 +97,7 @@ public class MasAnaesthesiaTypeServiceImpl implements MasAnaesthesiaTypeService 
 
             data.setAnaesthesiaTypeCode(request.getAnaesthesiaTypeCode());
             data.setAnaesthesiaTypeName(request.getAnaesthesiaTypeName());
+            data.setPrice(request.getPrice());
             data.setLastChgBy(user.getFirstName());
             data.setLastChgDate(LocalDateTime.now());
 
@@ -140,6 +142,7 @@ public class MasAnaesthesiaTypeServiceImpl implements MasAnaesthesiaTypeService 
                 m.getAnaesthesiaTypeId(),
                 m.getAnaesthesiaTypeCode(),
                 m.getAnaesthesiaTypeName(),
+                m.getPrice(),
                 m.getStatus(),
                 m.getLastChgBy(),
                 m.getLastChgDate()

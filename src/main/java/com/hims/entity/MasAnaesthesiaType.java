@@ -3,6 +3,7 @@ package com.hims.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,6 +28,9 @@ public class MasAnaesthesiaType {
 
     @Column(name = "anaesthesia_type_name", nullable = false,   unique = true)
     private String anaesthesiaTypeName;
+
+    @Column(name = "price", precision = 10, scale = 2)
+    private BigDecimal price;
 
     @Column(name = "status", length = 1)
     private String status;
