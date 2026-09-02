@@ -4,13 +4,8 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.DentalDetailsRequest;
-import com.hims.response.ApiResponse;
-import com.hims.service.DentalService;
 import com.hims.request.DentalExaminationRequest;
-import com.hims.request.DentalProcedureRequest;
-//import com.hims.request.DentalRequest;
-//import com.hims.request.DentalToothConditionRequest;
-import com.hims.request.DentalToothRequest;
+import com.hims.response.ApiResponse;
 import com.hims.service.DentalService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
@@ -30,8 +25,8 @@ public class DentalServiceImpl implements DentalService {
     private final OpdPatientDentalSummaryRepository dentalSummaryRepository;
     private final OpdToothPatientConditionRepository toothConditionRepository;
     private final DentalProcedureToothRepository dentalProcedureToothRepository;
-    private final MasToothMasterRepository  masToothMasterRepository;
-    private final MasToothConditionRepository  masToothConditionRepository;
+    private final MasToothMasterRepository masToothMasterRepository;
+    private final MasToothConditionRepository masToothConditionRepository;
 
     private final AuthUtil authUtil;
 
@@ -137,18 +132,10 @@ public class DentalServiceImpl implements DentalService {
 
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public ApiResponse<String> createOrUpdateDentalDetails(
-            DentalDetailsRequest request,
-            Patient patient,
-            Visit visit,
-            User user,
-            Long departmentId) {
+    public ApiResponse<String> createOrUpdateDentalDetails(DentalDetailsRequest request, Patient patient, Visit visit, User user, Long departmentId) {
 
         if (request == null || request.getDentalExamination() == null) {
-            return ResponseUtils.createSuccessResponse(
-                    "No dental examination details found",
-                    null
-            );
+            return ResponseUtils.createSuccessResponse("No dental examination details found", null);
         }
 
         DentalExaminationRequest examination = request.getDentalExamination();
@@ -156,18 +143,8 @@ public class DentalServiceImpl implements DentalService {
         Long patientId = patient.getId();
         Long visitId = visit.getId();
 
-        log.info(
-                "Saving dental details for patientId={}, visitId={}",
-                patientId,
-                visitId
-        );
-
-        // ============================================================
-        // 1. SAVE / UPDATE DENTAL SUMMARY
-        // ============================================================
-
-        OpdPatientDentalSummary summary = dentalSummaryRepository.findByPatientIdAndVisitId(patientId, visitId)
-                        .orElseGet(OpdPatientDentalSummary::new);
+        log.info("Saving dental details for patientId={}, visitId={}", patientId, visitId);
+        OpdPatientDentalSummary summary = dentalSummaryRepository.findByPatientIdAndVisitId(patientId, visitId).orElseGet(OpdPatientDentalSummary::new);
 
         summary.setPatientId(patientId);
         summary.setVisitId(visitId);
@@ -189,30 +166,30 @@ public class DentalServiceImpl implements DentalService {
 
         List<DentalExaminationRequest.DentalToothConditionRequest> toothConditions = examination.getToothConditions();
         if (toothConditions != null && !toothConditions.isEmpty()) {
-            List<OpdToothPatientCondition> entities = toothConditions.stream()
-                            .map(tooth -> {
+            List<OpdToothPatientCondition> entities = toothConditions.stream().map(tooth -> {
 
-                                OpdToothPatientCondition entity = new OpdToothPatientCondition();
+                OpdToothPatientCondition entity = new OpdToothPatientCondition();
 
-                                entity.setPatientId(patientId);
-                                entity.setVisitId(visitId);
-                                entity.setTooth(masToothMasterRepository.getReferenceById(tooth.getToothId()));
-                                entity.setCondition(masToothConditionRepository.getReferenceById(tooth.getConditionId()));
-                                entity.setStatus(AppConstants.STATUS_N);
-                                entity.setLastUpdatedBy(user.getFullName());
-                                entity.setLastUpdateDate(LocalDateTime.now());
-                                entity.setStatus(AppConstants.STATUS_N);
-                                entity.setCreatedBy(user.getFullName());
-                                entity.setCreatedDate(LocalDateTime.now());
-                                return entity;
-                            })
-                            .toList();
+                entity.setPatientId(patientId);
+                entity.setVisitId(visitId);
+                entity.setTooth(masToothMasterRepository.getReferenceById(tooth.getToothId()));
+                entity.setCondition(masToothConditionRepository.getReferenceById(tooth.getConditionId()));
+                entity.setStatus(AppConstants.STATUS_N);
+                entity.setLastUpdatedBy(user.getFullName());
+                entity.setLastUpdateDate(LocalDateTime.now());
+                entity.setStatus(AppConstants.STATUS_N);
+                entity.setCreatedBy(user.getFullName());
+                entity.setCreatedDate(LocalDateTime.now());
+                return entity;
+            }).toList();
 
             toothConditionRepository.saveAll(entities);
-            log.info( "Saved {} tooth conditions for patientId={}, visitId={}", entities.size(), patientId, visitId);
+            log.info("Saved {} tooth conditions for patientId={}, visitId={}", entities.size(), patientId, visitId);
         }
         log.info("Dental details saved successfully for patientId={}, visitId={}", patientId, visitId);
         return ResponseUtils.createSuccessResponse("Dental details saved successfully", null);
     }
+
+
 }
 

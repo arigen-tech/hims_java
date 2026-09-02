@@ -1,9 +1,11 @@
 package com.hims.entity.repository;
 
+import com.hims.entity.ProcedureHd;
 import com.hims.entity.ProcedureHeader;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository

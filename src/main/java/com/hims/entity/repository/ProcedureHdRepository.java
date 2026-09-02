@@ -6,10 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProcedureHdRepository extends JpaRepository<ProcedureHd, Long> {
     List<MasProcedureStatus> findByStatus(String status);
 
-    //List<MasProcedureStatus> findByStatusOrderByDisplayOrderAsc(String status);
+    List<ProcedureHd> findByVisitIdAndProcedureType_ProcedureTypeCodeAndStatus(Long visitId, String procedureTypeCode, String status);
 }

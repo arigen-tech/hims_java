@@ -292,12 +292,13 @@ public class OPDPatientController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String mobileNo,
             @RequestParam(required = false) String patientName,
-            @RequestParam(required = false) Long hospitalId
+            @RequestParam(required = false) Long hospitalId,
+            @RequestParam(required = false) Long patientId
     ) {
 
         log.info("Received request to fetch OPD reports. Filters - mobileNo: {}, patientName: {}, hospitalId: {}, page: {}, size: {}", mobileNo, patientName, hospitalId, page, size);
         Pageable pageable = PageRequest.of(page, size);
-        return opdPatientDetailService.getOpdReportsList(pageable, mobileNo, patientName, hospitalId);
+        return opdPatientDetailService.getOpdReportsList(pageable, mobileNo, patientName, hospitalId, patientId);
     }
 
     @GetMapping("otDayAllocation/checkAvailability")

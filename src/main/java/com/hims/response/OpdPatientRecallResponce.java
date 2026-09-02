@@ -68,6 +68,7 @@ public class OpdPatientRecallResponce {
     private NewDPatientPrescriptionHd patientPrescriptionHd;
     private List<NewDPatientPrescriptionHd> patientPrescriptionHds;
     private List<NewDPatientPrescriptionDt> patientPrescriptionDts;
+    private DentalDetailsResponse dentalDetailsResponse;
 
 
     // ============================== final medicine advice =============================
