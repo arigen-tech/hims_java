@@ -1153,7 +1153,7 @@ public class ReportController {
             @RequestParam (required = false) Long doctorId,
             @RequestParam (required = false) Long cancellationId,
             @RequestParam String flag,
-            @RequestParam (required = false) Long departmentTypeId) {
+            @RequestParam (required = false) String departmentType) {
 
         Long safeDepartmentId = departmentId != null ? departmentId: 0L;
         Long safeDoctorId = doctorId != null ? doctorId: 0L;
@@ -1166,7 +1166,7 @@ public class ReportController {
         params.put("to_date", toDate);
         params.put("doctor_id", safeDoctorId);
         params.put("cancellation_reason_id", safeCancellationId);
-        params.put("department_type_id", departmentTypeId);
+        params.put("department_type", departmentType);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
