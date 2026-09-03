@@ -449,7 +449,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             "v.iniDoctor.userId = :doctorId AND " +
             "v.session.id = :sessionId AND " +
             "v.visitDate >= :startOfDay AND v.visitDate < :endOfDay AND " +
-            "v.visitStatus NOT IN (:completedVisit,:pendingVisit)")
+            "LOWER(v.visitStatus) IN (LOWER(:completedVisit), LOWER(:pendingVisit)) ")
     List<Long> findOccupiedTokens(
             @Param("departmentId") Long departmentId,
             @Param("doctorId") Long doctorId,
@@ -457,13 +457,12 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("startOfDay") Instant startOfDay,
             @Param("endOfDay") Instant endOfDay,
             @Param("pendingVisit") String pendingVisit,
-            @Param("completedVisit") String completedVisit
-    );
+            @Param("completedVisit") String completedVisit);
 
     @Query(value = "SELECT v.* FROM visit v WHERE v.patient_id = :patientId " +
             "AND ((DATE(v.visit_date) >= CURRENT_DATE AND v.visit_status = 'n') " +
             "OR (DATE(v.visit_date) = CURRENT_DATE AND v.visit_status = 'y' " +
-            "AND v.start_time > CURRENT_TIMESTAMP)) " +  // TIMESTAMP compare
+            "AND v.start_time > CURRENT_TIMESTAMP)) " +
             "ORDER BY v.visit_date ASC, v.visit_status DESC",
             nativeQuery = true)
     List<Visit> findRelevantVisitsByPatientId(@Param("patientId") Long patientId);
