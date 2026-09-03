@@ -40,7 +40,7 @@ public class ReportController {
             @RequestParam Integer billHdId,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
-        params.put("billHdId", billHdId);
+        params.put("Bill_header_id", billHdId);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
@@ -1194,7 +1194,7 @@ public class ReportController {
             @RequestParam Integer billHdId,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
-        params.put("billHdId", billHdId);
+        params.put("Bill_header_id", billHdId);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
