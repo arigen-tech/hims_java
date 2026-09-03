@@ -200,6 +200,9 @@ public final class ReportConstants {
     public static final String IPD_DETAILED_BILL_JASPER = "IPD_detailed_bill";
     public static final String IPD_DETAILED_BILL_REPORT = "IPDetailedBill";
 
-    public static final String NIS_MEDICINE_DETAILS_JASPER = "nis_medicine_details";
-    public static final String NIS_MEDICINE_DETAILS_REPORT = "nisMedicineDetails";
+    public static final String NIS_MEDICINE_REGISTER_JASPER = "nis_medicine_register";
+    public static final String NIS_MEDICINE_REGISTER_REPORT = "nisMedicineRegister";
+
+    public static final String NIS_MEDICINE_REPORT_JASPER = "nis_medicine_report";
+    public static final String NIS_MEDICINE_REPORT_REPORT = "NisMedicineReport";
 }

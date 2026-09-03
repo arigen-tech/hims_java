@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Lab_invoice" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f5067bb0-2893-46f8-a599-4ba330bf259b">
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
 	<subDataset name="paymentDataset" uuid="9b85723f-fb83-414f-b94e-600f0b1ae591">
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
@@ -43,7 +43,7 @@
 			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
 		</field>
 	</subDataset>
-	<parameter name="Bill_no" class="java.lang.String"/>
+	<parameter name="Bill_header_id" class="java.lang.Integer"/>
 	<parameter name="Pay_status" class="java.lang.String" isForPrompting="false"/>
 	<parameter name="path" class="java.lang.String">
 		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
@@ -115,7 +115,7 @@ left join dg_mas_investigation dmi on bd.investigation_id = dmi.investigation_id
 left join dg_orderhd doh on bh.hdorder_id = doh.orderhd_id
 where bd.payment_status ilike 'y'
 and bh.service_category_id = 2
-and bh.bill_no = $P{Bill_no}]]>
+and bh.bill_hd_id = $P{Bill_header_id}]]>
 	</queryString>
 	<field name="bill_hd_id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="bill_hd_id"/>
