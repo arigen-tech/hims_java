@@ -64,10 +64,10 @@ public class ReportController {
 
     @GetMapping(value = "/opdInvoice", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintOpdReportPdf(
-            @RequestParam Long visit ,
+            @RequestParam Integer billHdId,
             @RequestParam String flag) {
         Map<String, Object> params = new HashMap<>();
-        params.put("visit_id", visit);
+        params.put("Bill_header_id", billHdId);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
@@ -1837,10 +1837,10 @@ public class ReportController {
 
     @GetMapping(value = "/prescriptionInvoice", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintPrescriptionInvoice(
-            @RequestParam Integer prescriptionId,
+            @RequestParam Integer billHdId,
             @RequestParam String flag){
         Map<String , Object> params = new HashMap<>();
-        params.put("prescriptionId", prescriptionId);
+        params.put("Bill_header_id", billHdId);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
