@@ -31,6 +31,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -668,11 +669,11 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     @Override
-    public ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(Long hospitalId,Long departmentId,Long doctorId,LocalDate fromDate,LocalDate toDate,Long cancellationReasonId
+    public ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(Long hospitalId,Long departmentId,String departmentType,Long doctorId,LocalDate fromDate,LocalDate toDate,Long cancellationReasonId
     ) {
 
-        log.info("Fetching cancelled appointments: hospitalId={}, departmentId={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}",
-                hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId);
+        log.info("Fetching cancelled appointments: hospitalId={}, departmentId={}, departmentType={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}",
+                hospitalId, departmentId, departmentType, doctorId, fromDate, toDate, cancellationReasonId);
 
         try {
             if (hospitalId == null || hospitalId <= 0) {
@@ -685,10 +686,25 @@ public class RegistrationServiceImpl implements RegistrationService {
                 );
             }
 
-
-            List<CancelledAppointmentProjection> projectionList = visitRepository.findCancelledAppointments(
-                    hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId
-            );
+            List<CancelledAppointmentProjection> projectionList;
+            if (departmentId != null) {
+                projectionList = visitRepository.findCancelledAppointments(
+                        hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId
+                );
+            } else if (StringUtils.hasText(departmentType)) {
+                List<Long> departmentIds = masDepartmentRepository.findDepartmentIdsByDepartmentTypeCode(departmentType.trim());
+                if (departmentIds.isEmpty()) {
+                    log.info("No active departments found for departmentType={}", departmentType);
+                    return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
+                }
+                projectionList = visitRepository.findCancelledAppointmentsByDepartmentIds(
+                        hospitalId, departmentIds, doctorId, fromDate, toDate, cancellationReasonId
+                );
+            } else {
+                projectionList = visitRepository.findCancelledAppointments(
+                        hospitalId, null, doctorId, fromDate, toDate, cancellationReasonId
+                );
+            }
 
             // Map projections to response DTOs
             List<CancelledAppointmentResponse> responseList = projectionList.stream()
@@ -699,8 +715,8 @@ public class RegistrationServiceImpl implements RegistrationService {
             return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
 
         } catch (Exception ex) {
-            log.error("Error fetching cancelled appointments for hospitalId={}, departmentId={}, doctorId={}",
-                    hospitalId, departmentId, doctorId, ex);
+            log.error("Error fetching cancelled appointments for hospitalId={}, departmentId={}, departmentType={}, doctorId={}",
+                    hospitalId, departmentId, departmentType, doctorId, ex);
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},

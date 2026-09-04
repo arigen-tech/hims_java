@@ -32,7 +32,7 @@ public interface RegistrationService {
 
     ApiResponse<BookingAppointmentResponse> bookAppointment(Long patientId, VisitRequest visitRequest);
 
-    ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate, Long cancellationReasonId);
+    ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(Long hospitalId, Long departmentId, String departmentType, Long doctorId, LocalDate fromDate, LocalDate toDate, Long cancellationReasonId);
 
     ApiResponse<List<AvailableTokenSlotResponse>> getAppointmentSlots(Long deptId, Long doctorId, String appointmentDate, Long sessionId, int flag);
 

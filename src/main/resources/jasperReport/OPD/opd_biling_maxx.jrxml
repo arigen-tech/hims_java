@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="opd_biling_maxx" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="26e9412c-746d-4df1-be4e-d2f6300f378b">
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="206"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="783"/>
 	<subDataset name="paymentDataset" uuid="673cfb41-afa1-46f2-82b5-7e41e8d7e804">
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
@@ -43,81 +45,147 @@
 			<property name="com.jaspersoft.studio.field.tree.path" value="payment_details"/>
 		</field>
 	</subDataset>
-	<parameter name="visit_id" class="java.lang.String"/>
+	<parameter name="Bill_hd_id" class="java.lang.Integer"/>
 	<parameter name="path" class="java.lang.String">
 		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
 	</parameter>
 	<queryString>
-		<![CDATA[with visit_stats as (
-    select count(distinct visit_id) as visit_count,
-				sum(net_amount) as grand_total,
-				sum(total_paid) as grand_total_paid
-    from billing_header
-    where visit_id = any (
-    string_to_array($P{visit_id}, ',')::int[]
-	)
+		<![CDATA[WITH visit_stats AS (
+    SELECT
+        COUNT(DISTINCT bill_hd_id) AS visit_count,
+        SUM(net_amount) AS grand_total,
+        SUM(total_paid) AS grand_total_paid
+    FROM billing_header
+    WHERE bill_hd_id = ANY (
+        string_to_array(CAST($P{Bill_hd_id} AS varchar), ',')::int[]
+    )
 )
-select distinct
-	bh.bill_hd_id,
-	bh.visit_id,
-	bh.hospital_address,
-    p.p_mobile_number as patient_contact,
-	case bh.patient_gender
-		when 'Male' then concat('Mr.', bh.patient_display_name)
-		when 'Female' then concat('Ms/Mrs.', bh.patient_display_name)
-	end as patient_name,
-    concat(bh.patient_age, '/', bh.patient_gender) as age_sex,
-    bh.patient_address,    
+SELECT DISTINCT
+    bh.bill_hd_id,
+    bh.visit_id,
+    bh.hospital_address,
+    p.p_mobile_number AS patient_contact,
+
+    CASE bh.patient_gender
+        WHEN 'Male' THEN CONCAT('Mr.', bh.patient_display_name)
+        WHEN 'Female' THEN CONCAT('Ms/Mrs.', bh.patient_display_name)
+    END AS patient_name,
+
+    CONCAT(bh.patient_age, '/', bh.patient_gender) AS age_sex,
+    bh.patient_address,
     vi.doctor_name,
-    cast(bh.billing_date as date) as bill_date,
-    p.uhid_no as patient_id,
+    CAST(bh.billing_date AS date) AS bill_date,
+    p.uhid_no AS patient_id,
     bh.bill_no,
-    coalesce(bh.gstn_bill_no, 'NA') as gstn_bill,
-    coalesce(bh.hospital_gstin, 'NA') as gstn_no,
-	concat(msc.service_cat_name, ' (' , md.department_name, ')') as opd_service_name,
+    COALESCE(bh.gstn_bill_no, 'NA') AS gstn_bill,
+    COALESCE(bh.hospital_gstin, 'NA') AS gstn_no,
+
+    CONCAT(
+        msc.service_cat_name,
+        ' (',
+        md.department_name,
+        ')'
+    ) AS opd_service_name,
+
     msc.sac_code,
-	coalesce(bd.quantity, 1) as qty,
-	bd.base_price,
-	bd.discount as discount_amount,
-	bd.amount_after_discount as net_amount,
-	bd.tax_amount as tax_total,
-	bd.net_amount as bill_amount,
-	case 
-        when vs.visit_count > 1 then vs.grand_total
-        else bh.net_amount
-    end as total,
+    COALESCE(bd.quantity, 1) AS qty,
+    bd.base_price,
+    bd.discount AS discount_amount,
+    bd.amount_after_discount AS net_amount,
+    bd.tax_amount AS tax_total,
+    bd.net_amount AS bill_amount,
+
+    CASE
+        WHEN vs.visit_count > 1 THEN vs.grand_total
+        ELSE bh.net_amount
+    END AS total,
+
     num_to_words(
-        case 
-            when vs.visit_count > 1 then vs.grand_total
-            else bh.net_amount
-        end
-    ) as total_in_words,
-	case
-		when vs.visit_count > 1 then vs.grand_total_paid
-		else bh.total_paid
-	end as total_paid,
-	coalesce(pd.payment_mode, 'cash') as payment_mode,
-	coalesce(pd.payment_reference_no, 'NA') as payment_reference_number,
-	cast(pd.payment_date as date) as payment_date,
-	to_char(vi.visit_date, 'DD/MM/YYYY HH12:MMAM') as appointment_date,
-	bh.created_by
-from billing_details bd
-left join mas_service_category msc on bd.service_category_id = msc.id
-left join billing_header bh on bd.bill_hd_id = bh.bill_hd_id
-left join patient p on bh.patient_id = p.patient_id
-left join payment_details pd on bh.bill_hd_id = pd.billing_hd_id
-left join visit vi on bh.visit_id = vi.visit_id
-left join mas_department md on vi.department_id = md.department_id
-left join dg_orderhd doh on vi.visit_id = doh.visit_id
-cross join visit_stats vs
-where bh.visit_id = any (
-    string_to_array($P{visit_id}, ',')::int[]
+        CASE
+            WHEN vs.visit_count > 1 THEN vs.grand_total
+            ELSE bh.net_amount
+        END
+    ) AS total_in_words,
+
+    CASE
+        WHEN vs.visit_count > 1 THEN vs.grand_total_paid
+        ELSE bh.total_paid
+    END AS total_paid,
+
+    COALESCE(pd.payment_mode, 'cash') AS payment_mode,
+    COALESCE(pd.payment_reference_no, 'NA') AS payment_reference_number,
+    CAST(pd.payment_date AS date) AS payment_date,
+
+    TO_CHAR(
+        vi.visit_date,
+        'DD/MM/YYYY HH12:MIAM'
+    ) AS appointment_date,
+
+    bh.created_by
+
+FROM billing_details bd
+
+LEFT JOIN mas_service_category msc
+    ON bd.service_category_id = msc.id
+
+LEFT JOIN billing_header bh
+    ON bd.bill_hd_id = bh.bill_hd_id
+
+LEFT JOIN patient p
+    ON bh.patient_id = p.patient_id
+
+LEFT JOIN payment_details pd
+    ON bh.bill_hd_id = pd.billing_hd_id
+
+LEFT JOIN visit vi
+    ON bh.visit_id = vi.visit_id
+
+LEFT JOIN mas_department md
+    ON vi.department_id = md.department_id
+
+LEFT JOIN dg_orderhd doh
+    ON vi.visit_id = doh.visit_id
+
+CROSS JOIN visit_stats vs
+
+WHERE bh.bill_hd_id = ANY (
+    string_to_array(CAST($P{Bill_hd_id} AS varchar), ',')::int[]
 )
-group by 
-	bh.hospital_address, p.p_mobile_number, bh.patient_display_name,bh.patient_age, bh.patient_gender, bh.patient_address, 
-	vi.doctor_name, bh.billing_date ,p.uhid_no ,bh.bill_no ,bh.gstn_bill_no ,bh.hospital_gstin ,bh.visit_id ,msc.service_cat_name,
-	msc.sac_code ,bd.quantity ,bd.base_price ,bd.discount ,bd.amount_after_discount ,bd.tax_amount ,bd.net_amount ,bh.net_amount, vs.visit_count,
-	bh.total_paid,vs.grand_total, vs.grand_total_paid, pd.payment_mode, pd.payment_reference_no, pd.payment_date, vi.visit_date, md.department_name, bh.created_by, bh.bill_hd_id]]>
+
+GROUP BY
+    bh.hospital_address,
+    p.p_mobile_number,
+    bh.patient_display_name,
+    bh.patient_age,
+    bh.patient_gender,
+    bh.patient_address,
+    vi.doctor_name,
+    bh.billing_date,
+    p.uhid_no,
+    bh.bill_no,
+    bh.gstn_bill_no,
+    bh.hospital_gstin,
+    bh.visit_id,
+    msc.service_cat_name,
+    msc.sac_code,
+    bd.quantity,
+    bd.base_price,
+    bd.discount,
+    bd.amount_after_discount,
+    bd.tax_amount,
+    bd.net_amount,
+    bh.net_amount,
+    vs.visit_count,
+    bh.total_paid,
+    vs.grand_total,
+    vs.grand_total_paid,
+    pd.payment_mode,
+    pd.payment_reference_no,
+    pd.payment_date,
+    vi.visit_date,
+    md.department_name,
+    bh.created_by,
+    bh.bill_hd_id;]]>
 	</queryString>
 	<field name="bill_hd_id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="bill_hd_id"/>
@@ -891,7 +959,7 @@ group by
 			</textField>
 			<componentElement>
 				<reportElement x="0" y="165" width="555" height="20" uuid="1294d079-ee6f-4323-bf4c-65ee2f6ecc80"/>
-				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
 					<datasetRun subDataset="paymentDataset" uuid="4ef98d85-25a1-4f17-ae35-0a3eea90578c">
 						<datasetParameter name="bill_id">
 							<datasetParameterExpression><![CDATA[$F{bill_hd_id}]]></datasetParameterExpression>
