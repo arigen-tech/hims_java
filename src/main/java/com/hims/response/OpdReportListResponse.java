@@ -20,6 +20,7 @@ public class OpdReportListResponse {
     private String age;
     private String specialty;
     private String doctorName;
+    private String nisNo;
     private String visitDateTime;
     private Long prescriptionHdId;
     private String prescriptionStatus;

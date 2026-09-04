@@ -11,6 +11,7 @@ public interface OpdReportListProjection {
     String getAge();
     String getSpecialty();
     String getDoctorName();
+    String getNisNo();
     String getVisitDateTime();
     Long getPrescriptionHdId();
     String getPrescriptionStatus();
