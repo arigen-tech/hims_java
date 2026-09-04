@@ -2,8 +2,10 @@
 <!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Prescription_invoice" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="9dc8aef2-a407-46f5-a6e5-8dbed0a3d192">
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="155"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="834"/>
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
-	<parameter name="prescriptionId" class="java.lang.Integer"/>
+	<parameter name="Bill_hd_id" class="java.lang.Integer"/>
 	<parameter name="path" class="java.lang.String"/>
 	<queryString language="SQL">
 		<![CDATA[SELECT
@@ -55,7 +57,7 @@ LEFT JOIN (
 LEFT JOIN mas_department md ON md.department_id = pph.department_id
 LEFT JOIN mas_store_item msi ON msi.item_id = bd.item_id
 WHERE bd.service_category_id = 3
-AND pph.prescription_hd_id = $P{prescriptionId}]]>
+AND bh.bill_hd_id = $P{Bill_hd_id}]]>
 	</queryString>
 	<field name="bill_hd_id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="bill_hd_id"/>
