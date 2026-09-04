@@ -1349,6 +1349,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
         d.departmentName AS specialty,
         ph.prescriptionHdId AS prescriptionHdId,
         ph.status AS prescriptionStatus,
+        ph.nisNo AS nisNo,
         TRIM(CONCAT(
             COALESCE(u.firstName, ''), ' ',
             COALESCE(u.middleName, ''), ' ',
