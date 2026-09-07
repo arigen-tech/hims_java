@@ -94,7 +94,7 @@ ORDER BY item.nomenclature;]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="15" isBold="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="15" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
 				<text><![CDATA[Dispensary]]></text>
 			</staticText>
@@ -107,7 +107,7 @@ ORDER BY item.nomenclature;]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
 				<text><![CDATA[NIS MEDICINE DETAILS FROM ]]></text>
 			</staticText>
@@ -122,7 +122,7 @@ ORDER BY item.nomenclature;]]>
 				<imageExpression><![CDATA[$P{path}]]></imageExpression>
 			</image>
 			<staticText>
-				<reportElement key="staticText-21" positionType="Float" x="342" y="51" width="67" height="20" uuid="fba9fe9d-f49d-4da4-b544-67a110fd443d"/>
+				<reportElement key="staticText-21" positionType="Float" x="352" y="51" width="67" height="20" uuid="fba9fe9d-f49d-4da4-b544-67a110fd443d"/>
 				<box>
 					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
@@ -130,12 +130,12 @@ ORDER BY item.nomenclature;]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
 				<text><![CDATA[TO]]></text>
 			</staticText>
 			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
-				<reportElement key="textField" x="303" y="51" width="91" height="20" uuid="cb896836-bcb7-423a-8bb3-34d8e7c67992"/>
+				<reportElement key="textField" x="302" y="51" width="91" height="20" uuid="cb896836-bcb7-423a-8bb3-34d8e7c67992"/>
 				<box>
 					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
@@ -143,12 +143,12 @@ ORDER BY item.nomenclature;]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{fromDate}]]></textFieldExpression>
 			</textField>
 			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
-				<reportElement key="textField-2" x="393" y="51" width="91" height="20" uuid="628803f8-efb7-4841-9228-4431d67b1268"/>
+				<reportElement key="textField-2" x="403" y="51" width="91" height="20" uuid="628803f8-efb7-4841-9228-4431d67b1268"/>
 				<box>
 					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
@@ -156,7 +156,7 @@ ORDER BY item.nomenclature;]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{toDate}]]></textFieldExpression>
 			</textField>
@@ -169,7 +169,7 @@ ORDER BY item.nomenclature;]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="Arial" size="15" isBold="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="15" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
@@ -189,7 +189,7 @@ ORDER BY item.nomenclature;]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
 				<text><![CDATA[Sl.No.]]></text>
 			</staticText>
@@ -202,7 +202,7 @@ ORDER BY item.nomenclature;]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
 				<text><![CDATA[Nomenclature]]></text>
 			</staticText>
@@ -215,7 +215,7 @@ ORDER BY item.nomenclature;]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
 				<text><![CDATA[Qty]]></text>
 			</staticText>
@@ -240,7 +240,7 @@ ORDER BY item.nomenclature;]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement textAlignment="Center">
-					<font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
 				</textElement>
 				<text><![CDATA[Mat Code]]></text>
 			</staticText>
@@ -265,7 +265,9 @@ ORDER BY item.nomenclature;]]>
 					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
-				<textElement textAlignment="Center"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
 				<textFieldExpression><![CDATA[$F{particulars}]]></textFieldExpression>
 			</textField>
 			<line>
@@ -285,7 +287,9 @@ ORDER BY item.nomenclature;]]>
 					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
-				<textElement textAlignment="Center"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
 				<textFieldExpression><![CDATA[$F{item_code}]]></textFieldExpression>
 			</textField>
 			<line>
@@ -299,7 +303,9 @@ ORDER BY item.nomenclature;]]>
 					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
-				<textElement textAlignment="Center"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
 				<textFieldExpression><![CDATA[new Integer($F{total}.intValue()-$F{issued}.intValue())]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="false">
@@ -310,7 +316,9 @@ ORDER BY item.nomenclature;]]>
 					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
-				<textElement textAlignment="Center"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed"/>
+				</textElement>
 				<textFieldExpression><![CDATA[$V{Sl_No}]]></textFieldExpression>
 			</textField>
 			<line>

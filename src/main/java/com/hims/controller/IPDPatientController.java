@@ -580,6 +580,7 @@ public class IPDPatientController {
             @RequestParam(required = false) String mobileNo,
             @RequestParam(required = false) String admissionNo,
             @RequestParam(required = false) Long wardId,
+            @RequestParam(required = false) Long patientId,
             @RequestParam Integer admissionStatus) {
 
         log.info("Fetching active admissions. page={}, size={}, patientName={}, mobileNo={}, admissionNo={}, wardId={}, admissionStatus={}", page, size, patientName, mobileNo,
@@ -591,6 +592,7 @@ public class IPDPatientController {
                         mobileNo,
                         admissionNo,
                         wardId,
+                patientId,
                         admissionStatus);
         return ResponseEntity.ok(response);
     }
