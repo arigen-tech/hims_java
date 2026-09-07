@@ -32,6 +32,11 @@ public class DashboardServiceImpl implements DashboardService {
         return getParsedDashboardResponse(fromDate, toDate, dashboardRepository.getBillingFinanceDashboardData(fromDate, toDate));
     }
 
+    @Override
+    public ApiResponse<Map<String, Object>> getInpatientSummaryData(LocalDate fromDate, LocalDate toDate) {
+        return getParsedDashboardResponse(fromDate, toDate, dashboardRepository.getInpatientSummaryData(fromDate,toDate));
+    }
+
     private ApiResponse<Map<String, Object>> getParsedDashboardResponse(LocalDate fromDate, LocalDate toDate, String response) {
         try {
             if (fromDate == null || toDate == null) {
