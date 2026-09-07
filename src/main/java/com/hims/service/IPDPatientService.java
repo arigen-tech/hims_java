@@ -113,7 +113,7 @@ public interface IPDPatientService {
 
     ApiResponse<List<IpAdverseEventResponse>> getAdverseReactionDetails(Long inpatientId);
 
-    ApiResponse<Page<ActiveAdmissionResponse>> activeAdmissionAndDischargeAdmissionList(int page, int size, String patientName, String mobileNo, String admissionNo, Long wardId, Integer admissionStatus);
+    ApiResponse<Page<ActiveAdmissionResponse>> activeAdmissionAndDischargeAdmissionList(int page, int size, String patientName, String mobileNo, String admissionNo, Long wardId,Long patientId, Integer admissionStatus);
 
     ApiResponse<Page<InpatientDietResponse>> activeDietByInpatient(int page, int size, String patientName, String mobileNo, Long wardId);
 

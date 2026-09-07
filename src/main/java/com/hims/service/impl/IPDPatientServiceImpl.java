@@ -3931,6 +3931,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             String mobileNo,
             String admissionNo,
             Long wardId,
+            Long patientId,
             Integer admissionStatus) {
 
         try {
@@ -3943,6 +3944,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                             mobileNo,
                             admissionNo,
                             wardId,
+                    patientId,
                             pageable
             );
 

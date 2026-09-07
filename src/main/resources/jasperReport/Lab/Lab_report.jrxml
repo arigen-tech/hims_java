@@ -3,6 +3,8 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Lab_invoice" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f5067bb0-2893-46f8-a599-4ba330bf259b">
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="270"/>
+	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="719"/>
 	<subDataset name="paymentDataset" uuid="9b85723f-fb83-414f-b94e-600f0b1ae591">
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
@@ -44,7 +46,6 @@
 		</field>
 	</subDataset>
 	<parameter name="Bill_header_id" class="java.lang.Integer"/>
-	<parameter name="Pay_status" class="java.lang.String" isForPrompting="false"/>
 	<parameter name="path" class="java.lang.String">
 		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
 	</parameter>
@@ -87,7 +88,10 @@
     pd.payment_mode,
     pd.payment_reference_no,
     pd.payment_date,
-    (doh.appointment_date + (dmi.report_ready_days * interval '1 day')) as estimated_report_by,
+   TO_CHAR(
+    doh.appointment_date + (dmi.estimated_days * INTERVAL '1 day'),
+    'DD/MM/YY'
+) || ' 11:00 PM' AS estimated_report_by,
     doh.order_no as lab_id,
     doh.order_date as lab_order_date,
 	doh.appointment_date,
@@ -113,7 +117,7 @@ left join (
 ) pd on bh.bill_hd_id = pd.billing_hd_id
 left join dg_mas_investigation dmi on bd.investigation_id = dmi.investigation_id
 left join dg_orderhd doh on bh.hdorder_id = doh.orderhd_id
-where bd.payment_status ilike 'y'
+where bd.payment_status = 'y'
 and bh.service_category_id = 2
 and bh.bill_hd_id = $P{Bill_header_id}]]>
 	</queryString>
@@ -251,7 +255,7 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 		<property name="com.jaspersoft.studio.field.name" value="payment_date"/>
 		<property name="com.jaspersoft.studio.field.label" value="payment_date"/>
 	</field>
-	<field name="estimated_report_by" class="java.sql.Timestamp">
+	<field name="estimated_report_by" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="estimated_report_by"/>
 		<property name="com.jaspersoft.studio.field.label" value="estimated_report_by"/>
 	</field>
@@ -737,8 +741,8 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{test_code}]]></textFieldExpression>
 			</textField>
-			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
-				<reportElement x="333" y="0" width="137" height="15" uuid="843766e9-55a9-43f7-9de0-6d6297c59a94"/>
+			<textField isBlankWhenNull="true">
+				<reportElement x="333" y="1" width="137" height="15" uuid="843766e9-55a9-43f7-9de0-6d6297c59a94"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
