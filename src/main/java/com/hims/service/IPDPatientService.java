@@ -128,5 +128,10 @@ public interface IPDPatientService {
     ApiResponse<String> saveShiftHandover(@Valid ShiftHandoverRequest request);
 
     ApiResponse<List<ShiftHandoverResponse>> getShiftHandover(Long inpatientId);
+
+    ApiResponse<List<WardWiseInpatientResponse>> getWardWiseInpatient(
+            String patientName,
+            String mobileNo,
+            Long wardId);
 }
 

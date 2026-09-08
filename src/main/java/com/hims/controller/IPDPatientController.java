@@ -671,4 +671,20 @@ public class IPDPatientController {
         log.info("getShiftHandover completed successfully.inpatientId={}", inpatientId);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/getWardWiseInpatient")
+    public ResponseEntity<ApiResponse<List<WardWiseInpatientResponse>>> getWardWiseInpatient(
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) Long wardId) {
+
+        ApiResponse<List<WardWiseInpatientResponse>> response =
+                ipdPatientService.getWardWiseInpatient(
+                        patientName,
+                        mobileNo,
+                        wardId);
+
+        return ResponseEntity.ok(response);
+    }
+
 }
