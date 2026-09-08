@@ -558,6 +558,7 @@ AND (
             r.room_name AS room,
             b.bed_id AS bedId,
             b.bed_number AS bed,
+               i.doctor_name AS doctorName,
           CAST(i.admission_date AS timestamp) + i.admission_time AS admissionDateTime           
       FROM public.inpatient i
  INNER JOIN public.patient p
