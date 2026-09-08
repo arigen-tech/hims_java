@@ -4133,6 +4133,30 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         return ResponseUtils.createSuccessResponse(list, new TypeReference<>() {});
     }
 
+    @Override
+    public ApiResponse<List<WardWiseInpatientResponse>> getWardWiseInpatient(
+            String patientName,
+            String mobileNo,
+            Long wardId) {
+
+        try {
+            List<WardWiseInpatientProjectionResponse> projectionList = inpatientRepository.findWardWiseInpatient(
+                            patientName,
+                            mobileNo,
+                            wardId);
+
+            List<WardWiseInpatientResponse> responseList = projectionList.stream()
+                            .map(this::mapWardWiseInpatientResponse)
+                            .toList();
+
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error while fetching ward wise inpatient list", e);
+            throw new RuntimeException("Failed to fetch ward wise inpatient list: " + e.getMessage(), e);
+        }
+    }
+
     private InpatientDietResponse mapActiveDietByInpatientResponse(
             InpatientDietOrderProjection projection) {
 
@@ -4197,6 +4221,27 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         response.setStatus(p.getStatus());
         response.setBillingType(p.getBillingType());
 
+        return response;
+    }
+    private WardWiseInpatientResponse mapWardWiseInpatientResponse(
+            WardWiseInpatientProjectionResponse p) {
+
+        WardWiseInpatientResponse response = new WardWiseInpatientResponse();
+        response.setInpatientId(p.getInpatientId());
+        response.setPatientName(p.getPatientName());
+        response.setUhid(p.getUhid());
+        response.setAge(p.getAge());
+        response.setGenderId(p.getGenderId());
+        response.setGender(p.getGender());
+        response.setMobileNo(p.getMobileNo());
+        response.setAdmissionNo(p.getAdmissionNo());
+        response.setWardId(p.getWardId());
+        response.setWard(p.getWard());
+        response.setRoomId(p.getRoomId());
+        response.setRoom(p.getRoom());
+        response.setBedId(p.getBedId());
+        response.setBed(p.getBed());
+        response.setAdmissionDateTime(p.getAdmissionDateTime());
         return response;
     }
 
