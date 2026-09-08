@@ -20,5 +20,6 @@ public class WardWiseInpatientResponse {
     private Long bedId;
     private String bed;
     private LocalDateTime admissionDateTime;
+    private String doctorName;
 
 }

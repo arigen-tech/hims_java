@@ -33,4 +33,7 @@ public interface WardWiseInpatientProjectionResponse {
 
         LocalDateTime getAdmissionDateTime();
 
+        String getDoctorName();
+
+
 }

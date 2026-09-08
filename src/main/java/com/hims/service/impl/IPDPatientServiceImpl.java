@@ -4242,6 +4242,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         response.setBedId(p.getBedId());
         response.setBed(p.getBed());
         response.setAdmissionDateTime(p.getAdmissionDateTime());
+        response.setDoctorName(p.getDoctorName());
         return response;
     }
 
