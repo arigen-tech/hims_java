@@ -28,4 +28,12 @@ public interface DashboardRepository extends JpaRepository<User, Long> {
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate
     );
+
+    @Query(value = """
+            SELECT *
+            FROM public.fn_inpatient_summary_dashboard(:fromDate, :toDate)
+            """, nativeQuery = true)
+    String getInpatientSummaryData(@Param("fromDate") LocalDate fromDate,
+                                   @Param("toDate") LocalDate toDate
+    );
 }
