@@ -264,7 +264,10 @@ AND (
             AND (
                 :wardId IS NULL
                 OR i.admitting_ward_id = :wardId
-            )
+            )  AND (
+                      :patientId IS NULL
+                      OR i.patient = :patientId
+                  )
         ORDER BY i.inpatient_id DESC
 
         """,
@@ -298,6 +301,10 @@ AND (
                 :wardId IS NULL
                 OR i.admitting_ward_id = :wardId
             )
+              AND (
+                                     :patientId IS NULL
+                                     OR i.patient= :patientId
+                                 )
         """,
                 nativeQuery = true)
         Page<ActiveAdmissionProjectionResponse> findActiveAdmissions(
@@ -306,6 +313,7 @@ AND (
                 @Param("mobileNo") String mobileNo,
                 @Param("admissionNo") String admissionNo,
                 @Param("wardId") Long wardId,
+                @Param("patientId") Long patientId,
                 Pageable pageable
         );
     @Query(value = """
