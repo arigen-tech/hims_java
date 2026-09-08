@@ -1590,17 +1590,49 @@ public class LabServiceImpl implements LabService {
      }
 
     @Override
-    public ApiResponse<Page<OrderTrackingReportResponse>> getOrderTrackingDetailsByPatientId(Long hospitalId, Long patientId, int page, int size) {
+    public ApiResponse<Page<OrderTrackingReportResponse>> getOrderTrackingDetailsByPatientId(
+            Long hospitalId,
+            Long patientId,
+            Long inPatientId,
+            String resultType,
+            int page,
+            int size) {
         try {
-            log.info("getOrderTrackingReports method started with hospitalId={}, patientId={}", hospitalId, patientId);
+            if (inPatientId == null && patientId == null) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Either patientId or inPatientId is required",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            String normalizedResultType = resultType == null ? null : resultType.trim().toUpperCase();
+            if (inPatientId == null
+                    && normalizedResultType != null
+                    && !normalizedResultType.equals("OPD")
+                    && !normalizedResultType.equals("IPD")) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "resultType must be OPD or IPD",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            log.info("getOrderTrackingReports method started with hospitalId={}, patientId={}, inPatientId={}, resultType={}",
+                    hospitalId, patientId, inPatientId, normalizedResultType);
             log.info("getOrderTrackingDetailsByPatientId() started...");
             Pageable pageable = PageRequest.of(page, size, Sort.by("orderHd.orderDate").descending());
             Page<OrderTrackingReportResponse> result = labOrderDtRepository.getOrderTrackingDetailsByPatientId(
                     hospitalId,
                     patientId,
+                    inPatientId,
+                    normalizedResultType,
                     pageable
             );
-            log.info("getOrderTrackingDetailsByPatientId method ended with hospitalId={}, patientId={}", hospitalId, patientId);
+            log.info("getOrderTrackingDetailsByPatientId method ended with hospitalId={}, patientId={}, inPatientId={}, resultType={}",
+                    hospitalId, patientId, inPatientId, normalizedResultType);
             return ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
 
         } catch (Exception e) {

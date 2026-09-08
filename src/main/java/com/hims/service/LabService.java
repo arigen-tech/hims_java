@@ -109,6 +109,8 @@ public interface LabService {
     ApiResponse<Page<OrderTrackingReportResponse>>  getOrderTrackingDetailsByPatientId(
             Long hospitalId,
             Long patientId,
+            Long inPatientId,
+            String resultType,
             int page,
             int size
     );
