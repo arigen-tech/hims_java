@@ -265,7 +265,10 @@ AND (
             AND (
                 :wardId IS NULL
                 OR i.admitting_ward_id = :wardId
-            )
+            )  AND (
+                      :patientId IS NULL
+                      OR i.patient = :patientId
+                  )
         ORDER BY i.inpatient_id DESC
 
         """,
@@ -299,6 +302,10 @@ AND (
                 :wardId IS NULL
                 OR i.admitting_ward_id = :wardId
             )
+              AND (
+                                     :patientId IS NULL
+                                     OR i.patient= :patientId
+                                 )
         """,
                 nativeQuery = true)
         Page<ActiveAdmissionProjectionResponse> findActiveAdmissions(
@@ -307,6 +314,7 @@ AND (
                 @Param("mobileNo") String mobileNo,
                 @Param("admissionNo") String admissionNo,
                 @Param("wardId") Long wardId,
+                @Param("patientId") Long patientId,
                 Pageable pageable
         );
     @Query(value = """
@@ -534,5 +542,89 @@ AND (
             @Param("admissionNo") String admissionNo,
             @Param("wardId") Long wardId,
             Pageable pageable
+    );
+    @Query(value = """
+        SELECT
+            i.inpatient_id AS inpatientId,
+          p.patient_id AS patientId,
+          CONCAT_WS(' ',p.p_fn,p.p_mn,p.p_ln) AS patientName,
+            p.uhid_no AS uhid,
+            p.p_age AS age,
+           g.id AS genderId,
+           g.gender_name AS gender,
+            p.p_mobile_number AS mobileNo,
+            i.admission_no AS admissionNo,
+            w.ward_id AS wardId,
+            w.ward_name AS ward,
+            r.room_id AS roomId,
+            r.room_name AS room,
+            b.bed_id AS bedId,
+            b.bed_number AS bed,
+               i.doctor_name AS doctorName,
+          CAST(i.admission_date AS timestamp) + i.admission_time AS admissionDateTime           
+      FROM public.inpatient i
+ INNER JOIN public.patient p
+            ON p.patient_id = i.patient
+        LEFT JOIN public.mas_gender g
+            ON g.id = p.p_gender_id
+        LEFT JOIN public.mas_ward w
+            ON w.ward_id = i.admitting_ward_id
+        LEFT JOIN public.mas_room r
+            ON r.room_id = i.room_id
+        LEFT JOIN public.mas_bed b
+            ON b.bed_id = i.bed_id
+      LEFT JOIN public.mas_admission_status s
+            ON s.admission_status_id = i.admission_status
+        LEFT JOIN public.ipd_billing_header ibh
+            ON ibh.inpatient_id = i.inpatient_id
+         WHERE
+            i.admission_status =1
+            AND (
+                :patientName IS NULL
+                OR :patientName = ''
+                OR LOWER(
+                    CONCAT_WS(' ', p.p_fn, p.p_mn, p.p_ln)
+                ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+            )
+            AND (
+                :mobileNo IS NULL
+                OR :mobileNo = ''
+                OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+            )
+           AND (
+                :wardId IS NULL
+                OR i.admitting_ward_id = :wardId
+            ) 
+        ORDER BY i.inpatient_id DESC
+        """,
+            countQuery = """
+        SELECT COUNT(i.inpatient_id)
+        FROM public.inpatient i
+        INNER JOIN public.patient p
+            ON p.patient_id = i.patient
+        WHERE
+            i.admission_status = :admissionStatus
+            AND (
+                :patientName IS NULL
+                OR :patientName = ''
+                OR LOWER(
+                    CONCAT_WS(' ', p.p_fn, p.p_mn, p.p_ln)
+                ) LIKE LOWER(CONCAT('%', :patientName, '%'))
+            )
+            AND (
+                :mobileNo IS NULL
+                OR :mobileNo = ''
+                OR p.p_mobile_number LIKE CONCAT('%', :mobileNo, '%')
+            )         
+            AND (
+                :wardId IS NULL
+                OR i.admitting_ward_id = :wardId
+            )           
+        """,
+            nativeQuery = true)
+    List<WardWiseInpatientProjectionResponse> findWardWiseInpatient(
+            @Param("patientName") String patientName,
+            @Param("mobileNo") String mobileNo,
+            @Param("wardId") Long wardId
     );
 }

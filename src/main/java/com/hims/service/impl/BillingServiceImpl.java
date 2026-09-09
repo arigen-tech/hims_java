@@ -578,6 +578,7 @@ public class BillingServiceImpl implements BillingService {
             response.setPatientUhid(patient.getUhidNo());
 
 
+
             List<AppointmentBlock> appointments = visits.stream().map(v -> {
 
                 AppointmentBlock block = new AppointmentBlock();
