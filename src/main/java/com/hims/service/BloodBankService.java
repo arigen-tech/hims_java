@@ -37,4 +37,6 @@ public interface BloodBankService {
    ApiResponse<String> mandatoryTestingTestEntry(MandatoryTestingSaveRequest mandatoryTestingSaveRequest, List<MultipartFile> files);
 
    ApiResponse<?> getBloodStock(BloodStockFilterRequest request);
+
+   ApiResponse<String> createBloodRequest(BloodRequestRequest request);
 }

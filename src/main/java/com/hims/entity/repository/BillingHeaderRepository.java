@@ -141,7 +141,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             
                 bp.policy_code AS policyCode,
                 bp.applicable_billing_type AS policyType,
-                bp.discount_percentage AS policyDiscountPercent,
+                bp.discount_percentag e AS policyDiscountPercent,
                 bp.followup_days_allowed AS policyEligibilityDays,
                 bp.description AS policyDescription
             

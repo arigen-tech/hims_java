@@ -4228,6 +4228,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         WardWiseInpatientResponse response = new WardWiseInpatientResponse();
         response.setInpatientId(p.getInpatientId());
+        response.setPatientId(p.getPatientId());
         response.setPatientName(p.getPatientName());
         response.setUhid(p.getUhid());
         response.setAge(p.getAge());

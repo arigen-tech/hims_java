@@ -678,12 +678,7 @@ public class IPDPatientController {
             @RequestParam(required = false) String mobileNo,
             @RequestParam(required = false) Long wardId) {
 
-        ApiResponse<List<WardWiseInpatientResponse>> response =
-                ipdPatientService.getWardWiseInpatient(
-                        patientName,
-                        mobileNo,
-                        wardId);
-
+        ApiResponse<List<WardWiseInpatientResponse>> response = ipdPatientService.getWardWiseInpatient(patientName, mobileNo, wardId);
         return ResponseEntity.ok(response);
     }
 

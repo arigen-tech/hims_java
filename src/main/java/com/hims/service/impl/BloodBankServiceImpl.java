@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -64,9 +65,17 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Autowired
     private MasBloodBagTypeRepository masBloodBagTypeRepository;
 
-    @Autowired MasBloodDonationStatusRepository masBloodDonationStatusRepository;
+    @Autowired
+    private MasBloodDonationStatusRepository masBloodDonationStatusRepository;
+
     @Autowired
     private MasBloodInventoryStatusRepository masBloodInventoryStatusRepository;
+    @Autowired
+    private PatientRepository patientRepository;
+    @Autowired
+    private InpatientRepository inpatientRepository;
+    @Autowired
+    private MasDepartmentRepository masDepartmentRepository;
 
     @Value("${bloodDonationStatusCollected}")
     private Long bloodDonationStatusCollected;
@@ -106,6 +115,12 @@ public class BloodBankServiceImpl implements BloodBankService{
     private MasBloodTestRepository masBloodTestRepository;
     @Autowired
     private BloodDonationInvestigationDocRepository bloodDonationInvestigationDocRepository;
+    @Autowired
+    private BloodRequestHdRepository bloodRequestHdRepository;
+    @Autowired
+    private BloodRequestDtRepository bloodRequestDtRepository;
+    @Autowired
+    private MasBloodComponentRepository bloodComponentRepository;
 
 
 
@@ -849,4 +864,80 @@ public class BloodBankServiceImpl implements BloodBankService{
             }
         }
     }
+
+
+    @Override
+    @Transactional
+    public ApiResponse<String> createBloodRequest(BloodRequestRequest request) {
+        try {
+            String currentUser = authUtil.getCurrentUser().getFullName();
+
+            BloodRequestHd bloodRequestHd = new BloodRequestHd();
+            bloodRequestHd.setInpatient(inpatientRepository.findById(request.getInpatientId())
+                    .orElseThrow(() -> new RecordNotFoundException("Inpatient not found")));
+            bloodRequestHd.setPatient(patientRepository.findById(request.getPatientId())
+                    .orElseThrow(() -> new RecordNotFoundException("Patient not found")));
+            bloodRequestHd.setRequestDepartment(masDepartmentRepository.findById(request.getRequestDepartment())
+                    .orElseThrow(() -> new RecordNotFoundException("Department not found")));
+            bloodRequestHd.setRequestDatetime(LocalDateTime.now());
+            bloodRequestHd.setRequestedBy(currentUser);
+            bloodRequestHd.setOverallStatus(AppConstants.STATUS_N.toLowerCase());
+            bloodRequestHd.setCreatedDate(LocalDateTime.now());
+            bloodRequestHd.setCreatedBy(currentUser);
+
+            BloodRequestHd savedHeader = bloodRequestHdRepository.save(bloodRequestHd);
+
+            List<BloodRequestDt> details = new ArrayList<>();
+
+            for (BloodRequirementDetailRequest detailRequest : request.getBloodRequirementDetails()) {
+                MasBloodComponent component = bloodComponentRepository.findById(detailRequest.getComponentId())
+                        .orElseThrow(() -> new RecordNotFoundException(
+                                "Blood component not found: " + detailRequest.getComponentId()));
+
+                BloodRequestDt detail = new BloodRequestDt();
+                detail.setBloodRequestHd(savedHeader);
+                detail.setComponent(component);
+                detail.setUnitsRequired(detailRequest.getUnitsRequired());
+                detail.setRequiredByDatetime(detailRequest.getRequiredDateTime());
+                detail.setUrgency(detailRequest.getUrgency());
+                detail.setClinicalIndication(detailRequest.getIndication());
+                detail.setRemarks(detailRequest.getRemarks());
+                detail.setFulfilledUnits(0);
+                detail.setDetailStatus(AppConstants.STATUS_N.toLowerCase());
+                detail.setCreatedDate(LocalDateTime.now());
+                detail.setCreatedBy(currentUser);
+
+                details.add(detail);
+            }
+
+            bloodRequestDtRepository.saveAll(details);
+
+            return ResponseUtils.createSuccessResponse(
+                    null,
+                    new TypeReference<String>() {},
+                    "Blood request created successfully"
+            );
+
+        } catch (RecordNotFoundException e) {
+            log.error("Blood request creation failed: {}", e.getMessage());
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Blood request creation failed: " + e.getMessage(),
+                    HttpStatus.NOT_FOUND.value()
+            );
+
+        } catch (Exception e) {
+            log.error("Unexpected error while creating blood request", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Failed to create blood request. Please try again.",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
 }
