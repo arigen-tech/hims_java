@@ -976,7 +976,9 @@ public class LabController {
      * It's essential for managing laboratory workflow and patient care coordination.
      *
      * @param hospitalId ID of the hospital (required)
-     * @param patientId Patient ID for search (required)
+        * @param patientId Patient ID for search (required when inPatientId is absent)
+        * @param inPatientId Inpatient ID for search; when provided, this takes precedence over patientId
+        * @param resultType Optional record type filter: OPD, IPD, or null for both
      * @param page Page number for pagination (optional, default: 0)
      * @param size Number of records per page (optional, default: 5)
      * @return Paginated list of order tracking reports with complete order lifecycle information
@@ -984,7 +986,9 @@ public class LabController {
     @GetMapping("/orderTrackingByPatientId")
     public ResponseEntity<?> getOrderTrackingDetailsByPatientId(
             @RequestParam Long  hospitalId,
-            @RequestParam Long patientId,
+            @RequestParam(required = false) Long patientId,
+            @RequestParam(name = "inPatientId", required = false) Long inPatientId,
+            @RequestParam(required = false) String resultType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
@@ -992,6 +996,8 @@ public class LabController {
                 labService.getOrderTrackingDetailsByPatientId(
                         hospitalId,
                         patientId,
+                        inPatientId,
+                        resultType,
                         page,
                         size
                 )
