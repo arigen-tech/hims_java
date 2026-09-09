@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -952,6 +953,39 @@ public class BloodBankServiceImpl implements BloodBankService{
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
+    }
+
+    @Override
+    public ApiResponse<Page<BloodTrackingResponse>> getBloodRequestTrackingList(
+            int page,
+            int size,
+            String inpatientNo,
+            String patientName) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<BloodTrackingProjection> projectionPage = bloodRequestDtRepository.getBloodRequestTrackingList(
+                        inpatientNo, patientName, pageable);
+
+        Page<BloodTrackingResponse> responsePage = projectionPage.map(p -> {
+
+                    BloodTrackingResponse response = new BloodTrackingResponse();
+                    response.setInpatientId(p.getInpatientId());
+                    response.setInpatientNo(p.getInpatientNo());
+                    response.setPatientId(p.getPatientId());
+                    response.setPatientName(p.getPatientName());
+                    response.setBloodGroup(p.getBloodGroup());
+                    response.setComponent(p.getComponent());
+                    response.setUnits(p.getUnits());
+                    response.setUrgency(p.getUrgency());
+                    response.setRequestedDateTime(p.getRequestedDateTime());
+                    response.setRequestedBy(p.getRequestedBy());
+                    response.setTrackingStatus(p.getTrackingStatus());
+                    return response;
+                });
+
+        return ResponseUtils.createSuccessResponse(responsePage ,new TypeReference<>() {}
+        );
     }
 
 }
