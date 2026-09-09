@@ -11,7 +11,9 @@ import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BloodBankService;
+import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISTransaction;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +78,8 @@ public class BloodBankServiceImpl implements BloodBankService{
     private InpatientRepository inpatientRepository;
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
+    @Autowired
+    private TransactionSequenceService transactionSequenceService;
 
     @Autowired
     private MasWardRepository masWardRepository;
@@ -876,6 +880,8 @@ public class BloodBankServiceImpl implements BloodBankService{
             String currentUser = authUtil.getCurrentUser().getFullName();
 
             BloodRequestHd bloodRequestHd = new BloodRequestHd();
+            bloodRequestHd.setRequestNo(transactionSequenceService.generateTransactionNumber
+                    (HMISTransaction.BLOOD_REQUEST_NO, authUtil.getCurrentUser().getHospital().getId()));
             bloodRequestHd.setInpatient(inpatientRepository.findById(request.getInpatientId())
                     .orElseThrow(() -> new RecordNotFoundException("Inpatient not found")));
             bloodRequestHd.setPatient(patientRepository.findById(request.getPatientId())

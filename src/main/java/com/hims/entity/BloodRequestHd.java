@@ -21,6 +21,9 @@ public class BloodRequestHd {
     @Column(name = "request_hd_id")
     private Long requestHdId;
 
+    @Column(name = "request_no", nullable = false, unique = true, length = 50)
+    private String requestNo;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inpatient_id", nullable = false)
     private Inpatient inpatient;
