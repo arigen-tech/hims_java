@@ -84,6 +84,9 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Autowired
     private MasWardRepository masWardRepository;
 
+    @Autowired
+    private MasWardRepository masWardRepository;
+
     @Value("${bloodDonationStatusCollected}")
     private Long bloodDonationStatusCollected;
 
