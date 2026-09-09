@@ -218,6 +218,7 @@ AND (
                 AS varchar
             ) AS los,
             s.status_code AS status,
+            ibh.bill_id AS billingHeaderId,
             bt.billing_type_name AS billingType
 
         FROM public.inpatient i
