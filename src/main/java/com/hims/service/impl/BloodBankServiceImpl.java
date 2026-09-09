@@ -77,6 +77,9 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
 
+    @Autowired
+    private MasWardRepository masWardRepository;
+
     @Value("${bloodDonationStatusCollected}")
     private Long bloodDonationStatusCollected;
 
@@ -877,8 +880,10 @@ public class BloodBankServiceImpl implements BloodBankService{
                     .orElseThrow(() -> new RecordNotFoundException("Inpatient not found")));
             bloodRequestHd.setPatient(patientRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new RecordNotFoundException("Patient not found")));
-            bloodRequestHd.setRequestDepartment(masDepartmentRepository.findById(request.getRequestDepartment())
-                    .orElseThrow(() -> new RecordNotFoundException("Department not found")));
+            bloodRequestHd.setMasWard(masWardRepository.findById(request.getWardId())
+                    .orElseThrow(() -> new RecordNotFoundException("Ward not found")));
+            bloodRequestHd.setBloodGroup(masBloodGroupRepository.findById(request.getBloodGroupId())
+                    .orElseThrow(() -> new RecordNotFoundException("Blood group not found")));
             bloodRequestHd.setRequestDatetime(LocalDateTime.now());
             bloodRequestHd.setRequestedBy(currentUser);
             bloodRequestHd.setOverallStatus(AppConstants.STATUS_N.toLowerCase());
