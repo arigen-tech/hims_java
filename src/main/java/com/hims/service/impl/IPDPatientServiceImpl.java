@@ -4218,6 +4218,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         response.setDoctorName(p.getDoctorName());
         response.setLos(p.getLos());
+        response.setBillingHeaderId(p.getBillingHeaderId());
         response.setStatus(p.getStatus());
         response.setBillingType(p.getBillingType());
 

@@ -27,6 +27,7 @@ public class ActiveAdmissionResponse {
     private String categoryName;
     private String doctorName;
     private String los;
+    private Long billingHeaderId;
     private String status;
     private String billingType;
 

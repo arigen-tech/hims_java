@@ -46,6 +46,8 @@ public interface ActiveAdmissionProjectionResponse {
 
         String getLos();
 
+        Long getBillingHeaderId();
+
         String getStatus();
 
         String getBillingType();
