@@ -77,6 +77,9 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
 
+    @Autowired
+    private MasWardRepository masWardRepository;
+
     @Value("${bloodDonationStatusCollected}")
     private Long bloodDonationStatusCollected;
 
@@ -106,32 +109,21 @@ public class BloodBankServiceImpl implements BloodBankService{
 
     @Autowired
     private MasComponentFailureReasonRepository masComponentFailureReasonRepository;
-
     @Autowired
     private MasBloodComponentRepository masBloodComponentRepository;
-
-    @Autowired
-    BloodDonationDtRepository bloodDonationDtRepository;
-
+    @Autowired BloodDonationDtRepository bloodDonationDtRepository;
     @Autowired
     private BloodDonationTestResultRepository bloodDonationTestResultRepository;
-
     @Autowired
     private MasBloodTestRepository masBloodTestRepository;
     @Autowired
     private BloodDonationInvestigationDocRepository bloodDonationInvestigationDocRepository;
-
     @Autowired
     private BloodRequestHdRepository bloodRequestHdRepository;
-
     @Autowired
     private BloodRequestDtRepository bloodRequestDtRepository;
-
     @Autowired
     private MasBloodComponentRepository bloodComponentRepository;
-
-    @Autowired
-    private MasWardRepository masWardRepository;
 
 
 
