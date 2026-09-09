@@ -13,5 +13,6 @@ public class BloodRequestRequest {
     private Long wardId;
     private Long patientId;
     private Long requestDepartment;
+    private Long bloodGroupId;
     private List<BloodRequirementDetailRequest> bloodRequirementDetails;
 }
