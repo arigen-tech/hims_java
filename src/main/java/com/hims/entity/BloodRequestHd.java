@@ -30,8 +30,12 @@ public class BloodRequestHd {
     private Patient patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "request_department_id", nullable = false)
-    private MasDepartment requestDepartment;
+    @JoinColumn(name = "request_ward_id")
+    private MasWard masWard;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "blood_group_id", nullable = false)
+    private MasBloodGroup bloodGroup;
 
     @Column(name = "request_datetime", nullable = false)
     private LocalDateTime requestDatetime;
