@@ -283,6 +283,16 @@ public class BloodBankController {
 
         return ResponseEntity.ok(response);
     }
+    @GetMapping("/getBloodRequestTrackingList")
+    public ApiResponse<Page<BloodTrackingResponse>> getAllDonor(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String inpatientNo,
+            @RequestParam(required = false) String patientName) {
+        return bloodBankService.getBloodRequestTrackingList(page,size, inpatientNo, patientName);
+    }
+
+
 
 
 }

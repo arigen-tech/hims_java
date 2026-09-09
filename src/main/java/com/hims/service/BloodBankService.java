@@ -39,4 +39,6 @@ public interface BloodBankService {
    ApiResponse<?> getBloodStock(BloodStockFilterRequest request);
 
    ApiResponse<String> createBloodRequest(BloodRequestRequest request);
+
+   ApiResponse<Page<BloodTrackingResponse>> getBloodRequestTrackingList(int page, int size, String inpatientNo, String patientName);
 }
