@@ -261,4 +261,28 @@ public class BloodBankController {
         req.setViewType(viewType);
         return bloodBankService.getBloodStock(req);
     }
+
+    /**
+     * Creates a new blood request with header and component-level details.
+     *
+     * @param request Request containing inpatient, ward and blood component requirements
+     * @return ApiResponse containing confirmation message
+     */
+    @PostMapping("/createBloodRequest")
+    public ResponseEntity<ApiResponse<String>> createBloodRequest(
+            @Valid @RequestBody BloodRequestRequest request) {
+
+        log.info("Received request to create blood request for inpatientId: {}, wardId: {}",
+                request.getInpatientId(),
+                request.getWardId());
+
+        ApiResponse<String> response = bloodBankService.createBloodRequest(request);
+
+        log.info("Successfully created blood request for inpatientId: {}",
+                request.getInpatientId());
+
+        return ResponseEntity.ok(response);
+    }
+
+
 }

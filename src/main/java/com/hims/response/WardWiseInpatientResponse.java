@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 @Data
 public class WardWiseInpatientResponse {
     private Long inpatientId;
+    private Long patientId;
     private String patientName;
     private String uhid;
     private String age;

@@ -545,6 +545,7 @@ AND (
     @Query(value = """
         SELECT
             i.inpatient_id AS inpatientId,
+          p.patient_id AS patientId,
           CONCAT_WS(' ',p.p_fn,p.p_mn,p.p_ln) AS patientName,
             p.uhid_no AS uhid,
             p.p_age AS age,
