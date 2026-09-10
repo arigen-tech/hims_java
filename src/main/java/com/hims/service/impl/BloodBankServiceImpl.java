@@ -85,9 +85,6 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Autowired
     private MasWardRepository masWardRepository;
 
-    @Autowired
-    private MasWardRepository masWardRepository;
-
     @Value("${bloodDonationStatusCollected}")
     private Long bloodDonationStatusCollected;
 
@@ -970,6 +967,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         Page<BloodTrackingResponse> responsePage = projectionPage.map(p -> {
 
                     BloodTrackingResponse response = new BloodTrackingResponse();
+                    response.setRequestNo(p.getRequestNo());
                     response.setInpatientId(p.getInpatientId());
                     response.setInpatientNo(p.getInpatientNo());
                     response.setPatientId(p.getPatientId());
@@ -979,8 +977,9 @@ public class BloodBankServiceImpl implements BloodBankService{
                     response.setUnits(p.getUnits());
                     response.setUrgency(p.getUrgency());
                     response.setRequestedDateTime(p.getRequestedDateTime());
-                    response.setRequestedBy(p.getRequestedBy());
-                    response.setTrackingStatus(p.getTrackingStatus());
+                    response.setRequiredByDateTime(p.getRequiredByDateTime());
+                    response.setRequestedWard(p.getRequestedWard());
+//                    response.setTrackingStatus(p.getTrackingStatus());
                     return response;
                 });
 
