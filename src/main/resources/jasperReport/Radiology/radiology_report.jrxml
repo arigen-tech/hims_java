@@ -17,15 +17,7 @@
 	to_char(dt.study_date, 'dd/MM/yyyy hh12:mi am') as study_date_time,
 	to_char(dt.report_date, 'dd/MM/yyyy hh12:mi am') as report_date_time,
 	dmi.investigation_name,
-	replace(
-		replace(
-			replace(
-				replace(
-					rsr.report_desc,'<h3><strong>','<b>'
-				),'</strong></h3>','</b><br/><br/>'
-			),'<p>',''
-		),'</p>','<br/><br/>'
-	) as description,
+	rsr.report_desc as description,
 	concat(me.emp_fn, ' ', coalesce(me.emp_mn, ''), ' ',me.emp_ln) as doc_name,
 	me.qualification,
 	me.medical_registration_no
@@ -239,9 +231,37 @@ and dt.rad_orderdt_id = $P{rad_orderdt_id}]]>
 			<textField textAdjust="StretchHeight">
 				<reportElement stretchType="ElementGroupBottom" x="4" y="30" width="543" height="14" isPrintWhenDetailOverflows="true" uuid="0f6056be-69f3-480b-91fd-fc8e215172e7"/>
 				<textElement textAlignment="Left" markup="html">
-					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="false"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{description}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$F{description} == null ? "" :
+					$F{description}
+						.replaceAll("(?is)<h1[^>]*>\\s*", "<b><font size=\"6\">")
+						.replaceAll("(?is)</h1>\\s*", "</font></b><br/><br/>")
+						.replaceAll("(?is)<h2[^>]*>\\s*", "<b><font size=\"5\">")
+						.replaceAll("(?is)</h2>\\s*", "</font></b><br/><br/>")
+						.replaceAll("(?is)<h3[^>]*>\\s*", "<b><font size=\"4\">")
+						.replaceAll("(?is)</h3>\\s*", "</font></b><br/><br/>")
+						.replaceAll("(?is)<h4[^>]*>\\s*", "<b><font size=\"3\">")
+						.replaceAll("(?is)</h4>\\s*", "</font></b><br/><br/>")
+						.replaceAll("(?is)<h5[^>]*>\\s*", "<b><font size=\"3\">")
+						.replaceAll("(?is)</h5>\\s*", "</font></b><br/><br/>")
+						.replaceAll("(?is)<h6[^>]*>\\s*", "<b><font size=\"3\">")
+						.replaceAll("(?is)</h6>\\s*", "</font></b><br/><br/>")
+						.replaceAll("(?is)<strong>", "<b>")
+						.replaceAll("(?is)</strong>", "</b>")
+						.replaceAll("(?is)<em>", "<i>")
+						.replaceAll("(?is)</em>", "</i>")
+						.replaceAll("(?is)<ul[^>]*>", "")
+						.replaceAll("(?is)</ul>", "<br/>")
+						.replaceAll("(?is)<ol[^>]*>", "")
+						.replaceAll("(?is)</ol>", "<br/>")
+						.replaceAll("(?is)<li[^>]*>", "&#8226;&#160;")
+						.replaceAll("(?is)</li>", "<br/>")
+						.replaceAll("(?is)<p[^>]*>", "")
+						.replaceAll("(?is)</p>", "<br/><br/>")
+						.replaceAll("(?is)<br\\s*/?>", "<br/>")
+						.replaceAll("(?is)&nbsp;", " ")
+				]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>

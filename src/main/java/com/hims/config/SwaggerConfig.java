@@ -27,7 +27,8 @@ public class SwaggerConfig {
     public OpenAPI springShopOpenAPI() {
         return new OpenAPI()
                 .servers(List.of(
-                        new Server().url("/").description("Default Server")
+                        new Server().url("/").description("Local URL"),
+                        new Server().url("/hims").description("Server URL (hims)")
                 ))
                 .addSecurityItem(new SecurityRequirement().
                         addList("Bearer Authentication"))
