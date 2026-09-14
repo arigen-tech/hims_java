@@ -974,6 +974,8 @@ public class BloodBankServiceImpl implements BloodBankService{
                     response.setPatientName(p.getPatientName());
                     response.setBloodGroup(p.getBloodGroup());
                     response.setComponent(p.getComponent());
+                    response.setBloodGroupId(p.getBloodGroupId());
+                    response.setComponentId(p.getComponentId());
                     response.setUnits(p.getUnits());
                     response.setUrgency(p.getUrgency());
                     response.setRequestedDateTime(p.getRequestedDateTime());
@@ -985,6 +987,47 @@ public class BloodBankServiceImpl implements BloodBankService{
 
         return ResponseUtils.createSuccessResponse(responsePage ,new TypeReference<>() {}
         );
+    }
+
+
+    @Override
+    public ApiResponse<List<BloodInventoryResponse>> getAvailableInventory(BloodInventoryRequest request) {
+
+        List<BloodInventoryProjection> inventoryList =
+                bloodComponentInventoryRepository.findAvailableBloodInventory(
+                        request.getPatientBloodGroupId(),
+                        request.getComponentId(),
+                        AppConstants.STATUS_Y.toLowerCase(),
+                        1L
+                );
+
+        List<BloodInventoryResponse> responseList = inventoryList.stream()
+                .map(this::mapToBloodInventoryResponse)
+                .toList();
+
+        return new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Available blood inventory fetched successfully",
+                responseList
+        );
+    }
+
+    private BloodInventoryResponse mapToBloodInventoryResponse(
+            BloodInventoryProjection projection) {
+
+        BloodInventoryResponse response = new BloodInventoryResponse();
+
+        response.setInventoryId(projection.getInventoryId());
+        response.setUnitNo(projection.getUnitNo());
+        response.setBloodGroupId(projection.getBloodGroupId());
+        response.setVolumeMl(projection.getVolumeMl());
+        response.setExpiryDate(projection.getExpiryDate());
+        response.setComponentId(projection.getComponentId());
+        response.setCompatibility("Compatible");
+        response.setStatus("Available");
+        response.setPreferred(AppConstants.STATUS_Y.equalsIgnoreCase(projection.getPreferred()));
+
+        return response;
     }
 
 }

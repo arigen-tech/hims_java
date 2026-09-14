@@ -9,7 +9,9 @@ public interface BloodTrackingProjection {
     Long getPatientId();
     String getPatientName();
     String getBloodGroup();
+    Long getBloodGroupId();
     String getComponent();
+    Long getComponentId();
     Integer getUnits();
     String getUrgency();
     String getRequestedWard();

@@ -1,10 +1,12 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.BloodComponentInventory;
+import com.hims.projection.BloodInventoryProjection;
 import com.hims.projection.BloodStockDetailedProjection;
 import com.hims.projection.BloodStockSummaryProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -112,5 +114,40 @@ public interface BloodComponentInventoryRepository extends JpaRepository<BloodCo
             Long collectionType,
             String expiryFilter
 
+    );
+
+    @Query(value = """
+    SELECT
+        bci.inventory_id AS inventoryId,
+        bci.unit_no AS unitNo,
+        bci.blood_group_id AS bloodGroupId,
+        bci.volume_ml AS volumeMl,
+        bci.expiry_date AS expiryDate,
+        bci.component_id AS componentId,
+        c.is_preferred AS preferred
+    FROM blood_component_inventory bci
+    JOIN mas_blood_compatibility c
+        ON c.donor_blood_group_id = bci.blood_group_id
+    WHERE c.patient_blood_group_id = :patientBloodGroupId
+      AND c.component_id = :componentId
+      AND LOWER(c.status) = LOWER(:status)
+      AND bci.component_id = :componentId
+      AND bci.inventory_status = :inventoryStatus
+      AND bci.expiry_date > CURRENT_TIMESTAMP
+      AND bci.reserved_for_patient_id IS NULL
+      AND bci.reserved_for_inpatient_id IS NULL
+      AND bci.issue_datetime IS NULL
+    ORDER BY
+        CASE
+            WHEN LOWER(c.is_preferred) = :status THEN 0
+            ELSE 1
+        END,
+        bci.expiry_date ASC
+    """, nativeQuery = true)
+    List<BloodInventoryProjection> findAvailableBloodInventory(
+            @Param("patientBloodGroupId") Long patientBloodGroupId,
+            @Param("componentId") Long componentId,
+            @Param("status") String status,
+            @Param("inventoryStatus") Long inventoryStatus
     );
 }

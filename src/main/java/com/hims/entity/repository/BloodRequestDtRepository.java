@@ -17,7 +17,9 @@ public interface BloodRequestDtRepository extends JpaRepository<BloodRequestDt, 
             p.patient_id AS patientId,
             TRIM(CONCAT_WS(' ',  p.p_fn,  p.p_mn,  p.p_ln )) AS patientName,
             bg.blood_group_name AS bloodGroup,
+            bg.blood_group_id AS bloodGroupId,
             bc.component_name AS component,
+            bc.component_id AS componentId,
             brd.units_required AS units,
             brd.urgency AS urgency,
             brh.request_datetime AS requestedDateTime,
@@ -26,6 +28,7 @@ public interface BloodRequestDtRepository extends JpaRepository<BloodRequestDt, 
             brd.detail_status AS trackingStatus,
             brd.required_by_datetime AS requiredByDateTime,
             mw.ward_Name AS requestedWard
+            
         FROM blood_request_dt brd
         LEFT JOIN blood_request_hd brh
             ON brh.request_hd_id = brd.request_hd_id
