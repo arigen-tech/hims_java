@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.projection.AppointmentHistoryProjection;
 import com.hims.request.*;
@@ -1907,10 +1908,11 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
     @Override
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>>  appointmentHistoryList(
-            Long hospitalId, Long patientId, String mobileNo,String patientName, String deptTypeCode, Boolean includeHistory) {
+            Long hospitalId, Long patientId, String mobileNo, String patientName, String deptTypeCode, Boolean includeHistory, String payment) {
 
         String normalizedMobileNo = cleanStringParameter(mobileNo);
         String normalizedPatientName = cleanStringParameter(patientName);
+        String normalizedPayment = cleanStringParameter(payment);
 
         log.info("Fetching appointment history list: hospitalId={}, patientId={}, mobileNo={}, patientName={}, deptTypeCode={}, includeHistory={}",
                  hospitalId, patientId, normalizedMobileNo != null ? "***" : null, normalizedPatientName, deptTypeCode, includeHistory);
@@ -1980,14 +1982,22 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 log.debug("Fetching appointment history by patient Id and  using native query");
 
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase()
+                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase(),normalizedPayment
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
-            } else {
+            }
+            else{
                 log.debug("Fetching upcoming appointments by mobile and department ");
+//                if(payment ==null){
+//                    throw  new SDDException("Online Payment",
+//                            HttpStatus.BAD_REQUEST.value(),
+//                            "payment is required when patientId is not provided"
+//                    );
+//                }
+
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase()
+                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase(),normalizedPayment
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
@@ -1997,6 +2007,14 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                      response.size(), normalizedDeptTypeCode, includeHistoryFlag);
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
 
+        }catch (SDDException ex) {
+            log.error("SDDException occurred: {}", ex.getMessage(), ex);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    ex.getMessage(),
+                    ex.getStatus()
+            );
         } catch (Exception ex) {
             log.error("Error fetching appointment history list for hospitalId={}, patientId={}, mobileNo={}, deptTypeCode={}",
                       hospitalId, patientId, mobileNo, deptTypeCode, ex);
@@ -2014,13 +2032,18 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             return List.of();
         }
 
-        return Arrays.stream(deptTypeCode.split(","))
+        List<String> codes = Arrays.stream(deptTypeCode.split(","))
                 .map(String::trim)
                 .filter(code -> !code.isEmpty())
-                .distinct()
-                .flatMap(code -> masDepartmentRepository.findDepartmentIdsByDepartmentTypeCode(code).stream())
+                .map(String::toLowerCase)
                 .distinct()
                 .toList();
+
+        if (codes.isEmpty()) {
+            return List.of();
+        }
+
+        return masDepartmentRepository.findDepartmentIdsByDepartmentTypeCodes(codes);
     }
 
     private String cleanStringParameter(String param) {
@@ -2038,7 +2061,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             List<Visit> visits = visitRepository.findByVisitStatusIgnoreCase("n");
 
             List<AppointmentBookingHistoryResponseDetails> response = visits.stream()
-                    .filter(v -> v.getVisitDate() != null && !v.getVisitDate().isBefore(startOfToday))
+                    .filter(v -> v.getVisitDate() != null && !v.getVisitDate().isBefore(HelperUtils.instantToLocalDateTime(startOfToday)))
                     .sorted(Comparator.comparing(Visit::getVisitDate))
                     .map(this::mapToDto)
                     .toList();
@@ -2067,9 +2090,9 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setDoctorName(v.getDoctorName());
         dto.setDepartmentId(v.getDepartment().getId());
         dto.setDepartmentName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
-        dto.setAppointmentDate(HelperUtils.instantTimeToLocalDateTime(v.getVisitDate()));
-        dto.setAppointmentStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
-        dto.setAppointmentEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
+        dto.setAppointmentDate(HelperUtils.convertLocalDateTimeToDDMMYYYYHHmm(v.getVisitDate()));
+        dto.setAppointmentStartTime(HelperUtils.convertLocalDateTimeToDDMMYYYYHHmm(v.getStartTime()));
+        dto.setAppointmentEndTime(HelperUtils.extractTimeWithSecondsFromLocalDateTime(v.getEndTime()));
         dto.setVisitStatus(v.getVisitStatus());
         dto.setReason(v.getReason()!=null? v.getReason().getReasonName():null);
         return dto;
@@ -2100,9 +2123,12 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setAppointmentEndTime(projection.getAppointmentEndTime() != null ? HelperUtils.extractTimeFromInstant(projection.getAppointmentEndTime()) : null);
         dto.setVisitStatus(projection.getVisitStatus());
         dto.setReason(projection.getReason());
-        dto.setPaymentStatus(projection.getPaymentStatus());
+        dto.setVisitPaymentStatus(projection.getVisitPaymentStatus());
         dto.setBilledAmount(projection.getBilledAmount());
         dto.setBillingHeaderId(projection.getBillingHeaderId());
+        dto.setPaymentId(projection.getPaymentId());
+        dto.setPaymentGatewayMode(projection.getPaymentGatewayMode());
+        dto.setPaymentV2PaymentStatusCode(projection.getPaymentV2PaymentStatusCode());
 
         return dto;
     }

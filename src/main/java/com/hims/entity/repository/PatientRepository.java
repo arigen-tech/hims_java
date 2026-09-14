@@ -7,6 +7,7 @@ import com.hims.entity.Patient;
 //import com.hims.projection.CancellationReportProjection;
 import com.hims.projection.PatientProjection;
 import com.hims.projection.PatientProjectionFollowUpDetails;
+import com.hims.projection.RazorpayPrefillPatientProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -203,4 +204,19 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     WHERE p.patient_id = :patientId
 """, nativeQuery = true)
     PatientProjectionFollowUpDetails findPatientDetails(Long patientId);
+
+
+    @Query("""
+    SELECT
+        p.patientFn AS patientFn,
+        p.patientMn AS patientMn,
+        p.patientLn AS patientLn,
+        p.patientEmailId AS email,
+        p.patientMobileNumber AS phoneNumber
+    FROM Patient p
+    WHERE p.id = :patientId
+    """)
+    Optional<RazorpayPrefillPatientProjection> findRazorpayPrefillByPatientId(
+            @Param("patientId") Long patientId
+    );
 }

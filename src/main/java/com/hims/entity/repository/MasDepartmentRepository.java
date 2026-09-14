@@ -62,6 +62,14 @@ List<MasDepartmentResponse> findActiveWardDepartments(
 
     List<MasDepartment> findByDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(Long opdId, String keyword);
 
+
+    @Query("""
+        SELECT d.id
+        FROM MasDepartment d
+        WHERE LOWER(d.departmentType.departmentTypeCode) IN :deptTypeCodes
+          AND LOWER(d.status) = 'y'
+    """)
+    List<Long> findDepartmentIdsByDepartmentTypeCodes(@Param("deptTypeCodes") List<String> deptTypeCodes);
     /**
      * Get department IDs by department type code
      * @param deptTypeCode Department type code from mas_department_type table

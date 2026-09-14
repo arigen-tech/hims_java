@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.PaymentStatusCode;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -21,6 +22,8 @@ import com.hims.service.DoctorRosterServices;
 import com.hims.service.PatientLoginService;
 import com.hims.service.RegistrationService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISUtil;
+import com.hims.utils.PaymentUtils;
 import com.hims.utils.ResponseUtils;
 import kong.unirest.HttpStatus;
 import org.slf4j.Logger;
@@ -147,6 +150,15 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Autowired
     private InpatientValidationService inpatientValidationService;
 
+    @Autowired
+    private PaymentDetailsV2Repository paymentDetailsV2Repository;
+
+    @Autowired
+    private PaymentUtils paymentUtils;
+
+    @Autowired
+    private PaymentRefundRepository paymentRefundRepository;
+
 
 
 
@@ -204,76 +216,84 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Override
     @Transactional
     public ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq followUpRequest) {
-        if (followUpRequest == null || followUpRequest.getPatientDetails() == null) {
-            throw new RuntimeException("Invalid request");
-        }
-        PatientRegistrationReq details = followUpRequest.getPatientDetails();
-        PatientRegFollowUpResp resp = new PatientRegFollowUpResp();
-        Patient patient;
+        try {
 
-        if (details.getPatient() != null && details.getPatient().getId() != null) {
-            patient = updatePatientDetails(details.getPatient(), true);
-        } else if (followUpRequest.isAppointmentFlag()
-                && details.getVisits() != null
-                && !details.getVisits().isEmpty()
-                && details.getVisits().get(0).getPatientId() != null) {
 
-            Long patientId = details.getVisits().get(0).getPatientId();
+            if (followUpRequest == null || followUpRequest.getPatientDetails() == null) {
+                throw new RuntimeException("Invalid request");
+            }
+            PatientRegistrationReq details = followUpRequest.getPatientDetails();
+            PatientRegFollowUpResp resp = new PatientRegFollowUpResp();
+            Patient patient;
 
-            patient = patientRepository.findById(patientId).orElseThrow(() -> new SDDException(500,"Patient not found"));
+            if (details.getPatient() != null && details.getPatient().getId() != null) {
+                patient = updatePatientDetails(details.getPatient(), true);
+            } else if (followUpRequest.isAppointmentFlag()
+                    && details.getVisits() != null
+                    && !details.getVisits().isEmpty()
+                    && details.getVisits().get(0).getPatientId() != null) {
 
-        } else {
-            throw new SDDException(500,"Patient ID is required");
-        }
+                Long patientId = details.getVisits().get(0).getPatientId();
 
-        resp.setPatient(PatientMapper.mapToDTO(patient));
+                patient = patientRepository.findById(patientId).orElseThrow(() -> new SDDException(500, "Patient not found"));
 
-        if (followUpRequest.isAppointmentFlag()) {
-            List<VisitRequest> visitList = details.getVisits();
-            OpdPatientDetailRequest opdReq = details.getOpdPatientDetail();
-            List<Visit> updatedVisits = new ArrayList<>();
-            OpdPatientDetail opdDetails = null;
+            } else {
+                throw new SDDException(500, "Patient ID is required");
+            }
 
-            if (visitList != null && !visitList.isEmpty()) {
-                validateDuplicateAppointments(visitList, patient.getId());
-                for (VisitRequest v : visitList) {
-                    if (v.getPatientId() == null) {
-                        v.setPatientId(patient.getId());
-                    }
-                    if (v.getHospitalId() == null && patient.getPatientHospital() != null) {
-                        v.setHospitalId(patient.getPatientHospital().getId());
-                    }
-                    if (v.getVisitDate() == null) {
-                        v.setVisitDate(Instant.now());
-                    }
-                    if (v.getVisitType() == null) {
-                        v.setVisitType(AppConstants.VISIT_TYPE_FOLLOW_UP);
-                    }
-                    Visit visit;
-                    if (v.getId() != null) {
-                        visit = updateExistingVisitById(v, patient);
-                    } else {
-                        visit = createSingleAppointment(v, patient);
-                    }
-                    updatedVisits.add(visit);
-                    if (visit.getHospital().getPreConsultationAvailable()
-                            .equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
-                        opdDetails = addOpdDetails(visit, opdReq, patient);
+            resp.setPatient(PatientMapper.mapToDTO(patient));
+
+            if (followUpRequest.isAppointmentFlag()) {
+                List<VisitRequest> visitList = details.getVisits();
+                OpdPatientDetailRequest opdReq = details.getOpdPatientDetail();
+                List<Visit> updatedVisits = new ArrayList<>();
+                OpdPatientDetail opdDetails = null;
+
+                if (visitList != null && !visitList.isEmpty()) {
+                    validateDuplicateAppointments(visitList, patient.getId());
+                    for (VisitRequest v : visitList) {
+                        if (v.getPatientId() == null) {
+                            v.setPatientId(patient.getId());
+                        }
+                        if (v.getHospitalId() == null && patient.getPatientHospital() != null) {
+                            v.setHospitalId(patient.getPatientHospital().getId());
+                        }
+                        if (v.getVisitDate() == null) {
+                            v.setVisitDate(HMISUtil.getCurrentLocalDateTime());
+                        }
+                        if (v.getVisitType() == null) {
+                            v.setVisitType(AppConstants.VISIT_TYPE_FOLLOW_UP);
+                        }
+                        Visit visit;
+                        if (v.getId() != null) {
+                            visit = updateExistingVisitById(v, patient);
+                        } else {
+                            visit = createSingleAppointment(v, patient);
+                        }
+                        updatedVisits.add(visit);
+                        if (visit.getHospital().getPreConsultationAvailable()
+                                .equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
+                            opdDetails = addOpdDetails(visit, opdReq, patient);
+                        }
                     }
                 }
+                List<OpdVisitResponseDTO> visitResponses = updatedVisits.stream()
+                        .map(visitMapper::mapToDTO)
+                        .toList();
+                resp.setVisits(visitResponses);
+                if (opdDetails != null) {
+                    resp.setOpdPatientDetail(opdPatientDetailMapper.mapToDTO(opdDetails));
+                }
+                OPDBillingPatientResponse finalResponse =
+                        buildFinalResponse(patient, updatedVisits);
+                resp.setOpdBillingPatientResponse(finalResponse);
             }
-            List<OpdVisitResponseDTO> visitResponses = updatedVisits.stream()
-                    .map(visitMapper::mapToDTO)
-                    .toList();
-            resp.setVisits(visitResponses);
-            if (opdDetails != null) {
-                resp.setOpdPatientDetail(opdPatientDetailMapper.mapToDTO(opdDetails));
-            }
-            OPDBillingPatientResponse finalResponse =
-                    buildFinalResponse(patient, updatedVisits);
-            resp.setOpdBillingPatientResponse(finalResponse);
+            return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {
+            });
+        }catch (Exception e){
+            log.error("updatePatient method error :: ",e);
+            throw  e;
         }
-        return ResponseUtils.createSuccessResponse(resp, new TypeReference<>() {});
     }
 
 
@@ -460,9 +480,10 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
         Visit visit = optionalVisit.get();
         //Check billing Entry
+        BillingHeader billingHeader=null;
         if(visit.getBillingHd()!=null){
-            BillingHeader bill = billingHeaderRepository.findByVisit(visit);
-            if (bill == null) {
+             billingHeader=billingHeaderRepository.findByVisit(visit);
+            if (billingHeader == null) {
                 return new ApiResponse<>(HttpStatus.NOT_FOUND, "Billing not found for appointment ID: " + request.getVisitId());
             }
         }
@@ -474,19 +495,73 @@ public class RegistrationServiceImpl implements RegistrationService {
         // Update visit
         visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
         visit.setCancelledBy(currentUser.getFirstName());
-        visit.setCancelledDateTime(Instant.now());
-        if (request.getCancelReasonId() != null) {
+        visit.setCancelledDateTime(HMISUtil.getCurrentLocalDateTime());
+
             MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId())
                     .orElseThrow(() -> new RuntimeException("Cancel reason not found with ID: " + request.getCancelReasonId()));
             visit.setReason(reason);
-        }
+
 
         syncCancelledOrderStatus(visit);
 
       //  bill.setPaymentStatus("y");
       //  billingHeaderRepository.save(bill);
         Visit savedVisit = visitRepository.save(visit);
+
+        try {
+            Optional<PaymentDetailsV2> paymentOpt = paymentDetailsV2Repository.findByBillingHeader_IdAndGatewayPaymentIdIsNull(billingHeader.getId());
+            if(paymentOpt.isPresent()){
+                PaymentDetailsV2 paymentDetailsV2 = paymentOpt.get();
+                boolean refundApplicable = paymentUtils
+                        .getStatusCodeById(paymentDetailsV2.getPaymentStatusId()).equalsIgnoreCase("PAID");
+                if(request.getPaymentMode()!=null &&
+                        paymentDetailsV2.getPaymentGateway().equalsIgnoreCase(request.getPaymentMode())
+                        && refundApplicable){
+
+                    saveRefundDetailsForCash(paymentDetailsV2,request.getRefundAmount(),reason);
+                }
+            }
+        }catch (Exception e){
+            log.error("cancelAppointment method error :: ",e);
+            throw e;
+        }
+
         return new ApiResponse<>(HttpStatus.OK, "Appointment cancelled successfully");
+    }
+
+    private void saveRefundDetailsForCash(PaymentDetailsV2 payment,BigDecimal refundAmount,MasAppointmentChangeReason reason) {
+
+        PaymentRefund refund = new PaymentRefund();
+
+        refund.setPayment(payment);
+        refund.setRefundModeId(payment.getPaymentModeId()!=null ?
+                payment.getPaymentModeId() :
+                null
+        );
+        refund.setRefundAmount(refundAmount);
+        refund.setRefundStatusId(
+                paymentUtils
+                        .getPaymentStatus(PaymentStatusCode.REFUND_PENDING_CASH)
+                        .getId()
+        );
+        refund.setRefundReferenceNo(paymentUtils.generateRefundReferenceNo());
+        refund.setPaymentGatewayId(
+                paymentUtils
+                        .getPaymentGateway("CASH")
+                        .getGatewayId()
+        );
+        refund.setAppointmentChangeReason(reason);
+        refund.setRefundReason(reason.getReasonName());
+
+        String currentUser = authUtil.getCurrentUserFullName();
+        refund.setCreatedBy(currentUser);
+        refund.setUpdatedBy(currentUser);
+        refund.setRefundRequestedAt(HMISUtil.getCurrentLocalDateTime());
+
+
+
+        PaymentRefund savedRefund = paymentRefundRepository.save(refund);
+
     }
 
     @Override
@@ -529,31 +604,32 @@ public class RegistrationServiceImpl implements RegistrationService {
                 ? request.getTokenNumber()
                 : v.getTokenNo();
 
-        Instant resolvedStartTime = isOpdAppointment
-                ? request.getAppointmentStartTime()
+        LocalDateTime resolvedStartTime = isOpdAppointment
+                ? HelperUtils.instantToLocalDateTime(request.getAppointmentStartTime())
                 : v.getStartTime();
 
-        Instant resolvedEndTime = isOpdAppointment
-                ? request.getAppointmentEndTime()
+        LocalDateTime resolvedEndTime = isOpdAppointment
+                ? HelperUtils.instantToLocalDateTime(request.getAppointmentEndTime())
                 : v.getEndTime();
 
         VisitRescheduleHistory history = new VisitRescheduleHistory();
         history.setVisitId(v);
-        history.setRescheduleDatetime(request.getVisitDate());
+        history.setRescheduleDatetime(HelperUtils.instantToLocalDateTime(request.getVisitDate()));
         history.setRescheduleBy(authUtil.getCurrentUser().getFirstName());
         history.setNewTokenNo(resolvedTokenNumber);
         history.setOldTokenNo(v.getTokenNo());
         history.setNewVisitDatetime(
-                isOpdAppointment ? request.getAppointmentStartTime() : request.getVisitDate()
+                isOpdAppointment ? HelperUtils.instantToLocalDateTime(request.getAppointmentStartTime())
+                        : HelperUtils.instantToLocalDateTime(request.getVisitDate())
         );
         history.setOldVisitDatetime(v.getVisitDate());
-        history.setRescheduleDatetime(Instant.now());
+        history.setRescheduleDatetime(HMISUtil.getCurrentLocalDateTime());
         history.setRescheduleReason("");
         historyRepository.save(history);
 
         LocalDate updatedVisitDate = toLocalDate(request.getVisitDate());
 
-        v.setVisitDate(request.getVisitDate());
+        v.setVisitDate(HelperUtils.instantToLocalDateTime(request.getVisitDate()));
         if (isOpdAppointment) {
             v.setStartTime(resolvedStartTime);
             v.setEndTime(resolvedEndTime);
@@ -561,14 +637,14 @@ public class RegistrationServiceImpl implements RegistrationService {
         } else if (isLabOrRadiologyAppointment) {
             v.setTokenNo(resolvedTokenNumber);
             if (request.getAppointmentStartTime() != null) {
-                v.setStartTime(request.getAppointmentStartTime());
+                v.setStartTime(HelperUtils.instantToLocalDateTime(request.getAppointmentStartTime()));
             }
             if (request.getAppointmentEndTime() != null) {
-                v.setEndTime(request.getAppointmentEndTime());
+                v.setEndTime(HelperUtils.instantToLocalDateTime(request.getAppointmentEndTime()));
             }
             syncLabOrRadiologyReschedule(v, updatedVisitDate, departmentTypeCode);
         }
-        v.setLastChgDate(Instant.now());
+        v.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
 
         visitRepository.save(v);
         return new ApiResponse<>(HttpStatus.OK, "Success");
@@ -650,7 +726,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
             if (visitReq!=null) {
 
-                Instant date = visitReq.getVisitDate();
+                LocalDateTime date = visitReq.getVisitDate();
                 String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
                 visitReq.setVisitType(visitType);
                 Visit saved = createSingleAppointment(visitReq, patient);
@@ -830,15 +906,27 @@ public class RegistrationServiceImpl implements RegistrationService {
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
         validateDuplicateAppointment(visit, patient.getId(), null);
         User currentLoggedInUser = authUtil.getCurrentUser();
-        LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
-        LocalDate tokenStartTime = visit.getTokenStartTime().atZone(ZoneOffset.UTC).toLocalDate();
-        LocalDate tokenEndTime = visit.getTokenEndTime().atZone(ZoneOffset.UTC).toLocalDate();
-        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+
+//        LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
+//        LocalDate tokenStartTime = visit.getTokenStartTime().atZone(ZoneOffset.UTC).toLocalDate();
+//        LocalDate tokenEndTime = visit.getTokenEndTime().atZone(ZoneOffset.UTC).toLocalDate();
+//        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+
+        LocalDate visitDate = visit.getVisitDate().toLocalDate();
+        LocalDate tokenStartTime = visit.getTokenStartTime().toLocalDate();
+        LocalDate tokenEndTime = visit.getTokenEndTime().toLocalDate();
+
+        LocalDate today = LocalDate.now();
+
         if (visitDate.isBefore(today)||visitDate.isBefore(tokenStartTime)||visitDate.isBefore(tokenEndTime)) {
             throw new InvalidDateException("Past dates are not allowed. Please select today or a future date.");
         }
-        Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+//        Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+//        Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+        LocalDateTime startOfDay = visitDate.atStartOfDay();
+        LocalDateTime endOfDay = visitDate.plusDays(1)
+                .atStartOfDay()
+                .minusNanos(1);
         boolean alreadyExists =
                 visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(
                         visit.getDepartmentId(),
@@ -874,7 +962,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         newVisit.setEndTime(visit.getTokenEndTime());
         newVisit.setTokenNo(visit.getTokenNo());
         newVisit.setVisitDate(visit.getVisitDate());
-        newVisit.setLastChgDate(Instant.now());
+        newVisit.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
         newVisit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase()); // "n"
         newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS.toLowerCase()); // "wp"
         newVisit.setPriority(visit.getPriority());
@@ -1350,7 +1438,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         log.info("Updating existing visit ID: {} for patient: {}",
                 existingVisit.getId(), patient.getId());
 
-        existingVisit.setLastChgDate(Instant.now());
+        existingVisit.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
         existingVisit.setPriority(visit.getPriority());
         existingVisit.setVisitType(visit.getVisitType());
 
@@ -1412,8 +1500,11 @@ public class RegistrationServiceImpl implements RegistrationService {
             return;
         }
         LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
-        Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+//        Instant startOfDay = visitDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+//        Instant endOfDay = visitDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+
+        LocalDateTime startOfDay = visitDate.atStartOfDay();
+        LocalDateTime endOfDay =visitDate.plusDays(1).atStartOfDay();
 
         boolean duplicateExists =
                 visitRepository.existsDuplicatePatientAppointment(
@@ -1570,7 +1661,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             appt.setDoctorName(v.getDoctorName());
             appt.setSessionId(v.getSessionId());
             appt.setSessionName(v.getSessionName());
-            appt.setVisitDate(v.getVisitDate());
+            appt.setVisitDate(HelperUtils.instantToLocalDateTime(v.getVisitDate()));
             appt.setVisitType(v.getVisitType());
             appt.setTokenNo(v.getTokenNo());
             appt.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.equalsIgnoreCase(v.getVisitStatus()) ? "Completed" : "Pending");

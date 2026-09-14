@@ -3,14 +3,14 @@ package com.hims.response;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
 public class OpdVisitResponseDTO {
     private Long id;
     private Long tokenNo;
-    private Instant visitDate;
+    private LocalDateTime visitDate;
     private String visitStatus;
     private Long priority;
     private Long patientId;
@@ -23,11 +23,11 @@ public class OpdVisitResponseDTO {
     private String hospitalName;
     private Long BillingHdId;
     private String billingStatus;
-    private Instant startTime;
-    private Instant endTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
     private String visitType;
     private String displayPatientStatus;
 
-    private Instant cancelledDateTime;
+    private LocalDateTime cancelledDateTime;
     private String cancelledBy;
 }

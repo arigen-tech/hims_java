@@ -1,6 +1,7 @@
 package com.hims.projection;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public interface BillingHeaderResponseProjection {
     Long getHeaderId();
@@ -14,7 +15,7 @@ public interface BillingHeaderResponseProjection {
     String getRelation();
     String getSex();
     String getDepartment();
-    String getBillDate();
+    LocalDateTime getBillDate();
     BigDecimal getNetAmount();
     Long getServiceCategoryId();
     String getServiceCategoryName();

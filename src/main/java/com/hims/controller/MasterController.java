@@ -359,6 +359,9 @@ public class MasterController {
     @Autowired
     private MasSurgeryTypeService masSurgeryTypeService;
 
+    @Autowired
+    private MasPaymentGatewayService masPaymentGatewayService;
+
 
     //    ================================Mas Application Controller================================//
 
@@ -5811,6 +5814,13 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
     public ResponseEntity<ApiResponse<String>> updateOtTeamRole(
             @PathVariable Long id, @RequestBody MasOtTeamRoleRequest request) {
         return ResponseEntity.ok(masOtTeamRoleService.updateOtTeamRole(id, request));
+    }
+
+    //------------------------------MasPaymentGateway---------------------------------------------
+
+    @GetMapping("/paymentGateway/getAll/{flag}")
+    public ResponseEntity<?> getPaymentGateways(@PathVariable int flag) {
+        return ResponseEntity.ok(masPaymentGatewayService.getMasPaymentGateways(flag));
     }
 
 }
