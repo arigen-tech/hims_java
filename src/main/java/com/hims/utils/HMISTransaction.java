@@ -16,7 +16,8 @@ public enum HMISTransaction {
     SURGERY_NO("SURGERY_NO", "SUR"),
     NIS_NO("NIS_NO", "NIS"),
     PROCEDURE_NO("PROCEDURE_NO", "PROC"),
-    OT_BOOKING_NO("BOOK_NO", "OT");
+    OT_BOOKING_NO("BOOK_NO", "OT"),
+    BLOOD_REQUEST_NO("BLOOD_REQUEST_NO", "BRQ");
 
 
 
