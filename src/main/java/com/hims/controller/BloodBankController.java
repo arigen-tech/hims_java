@@ -293,6 +293,21 @@ public class BloodBankController {
     }
 
 
+    @GetMapping("/getAvailableInventoryUnits")
+    public ResponseEntity<ApiResponse<List<BloodInventoryResponse>>> getAvailableInventory(
+            @RequestParam Long patientBloodGroupId,
+            @RequestParam Long componentId) {
+
+        BloodInventoryRequest request = new BloodInventoryRequest();
+        request.setPatientBloodGroupId(patientBloodGroupId);
+        request.setComponentId(componentId);
+
+        return ResponseEntity.ok(
+                bloodBankService.getAvailableInventory(request)
+        );
+    }
+
+
 
 
 }

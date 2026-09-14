@@ -1863,29 +1863,58 @@ public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatie
                         "Invalid billing header Id ,Billing header not found"
                 );
             }
-            Optional<PaymentDetailsV2> paymentOpt=paymentDetailsV2Repository
-                    .findByBillingHeader_IdAndGatewayPaymentIdIsNull(billingHeader.getId());
-            PaymentDetailsV2 payment;
-//            if(paymentOpt.isEmpty()){
-                payment = new PaymentDetailsV2();
-                payment.setBillingHeader(billingHeader);
-                payment.setPaymentReferenceNo(paymentUtils.generatePaymentReferenceNo());
-//            }else{
-//                payment=paymentOpt.get();
-//            }
+        Optional<PaymentDetailsV2> paymentOpt =
+                paymentDetailsV2Repository
+                        .findByBillingHeader_IdAndGatewayPaymentIdIsNull(billingHeader.getId());
 
-                payment.setAmount(request.getAmount());
-                payment.setCurrency("INR");
-                payment.setPaymentGateway("CASH");
-                payment.setPaymentVia(request.getMode());
-                payment.setPaymentModeId(paymentUtils.getPaymentMode(request.getMode()).getPaymentModeId());
-                payment.setReceiptNo(paymentUtils.generateReceiptNumber(billingHeader));
-                payment.setPaymentStatusId(paymentUtils.getPaymentStatus(PaymentStatusCode.PAID).getId());
-                payment.setCreatedBy(authUtil.getCurrentUserFullName());
-                payment.setPaymentDate(HMISUtil.getCurrentLocalDateTime());
-                PaymentDetailsV2 saved = paymentDetailsV2Repository.save(payment);
-                log.info("PaymentDetail saved, id={}", saved.getPaymentId());
+        PaymentDetailsV2 payment;
 
+        if (paymentOpt.isEmpty()
+                && (request.getAmount().compareTo(BigDecimal.ZERO) == 0
+                || "free".equalsIgnoreCase(request.getMode()))) {
+
+            payment = new PaymentDetailsV2();
+            payment.setBillingHeader(billingHeader);
+            payment.setAmount(request.getAmount());
+            payment.setCurrency("INR");
+            payment.setPaymentGateway("FREE");
+            payment.setPaymentVia(request.getMode());
+            payment.setPaymentStatusId(
+                    paymentUtils.getPaymentStatus(PaymentStatusCode.PAID).getId()
+            );
+            payment.setPaymentReferenceNo(
+                    paymentUtils.generatePaymentReferenceNo()
+            );
+            payment.setCreatedBy(authUtil.getCurrentUserFullName());
+            payment.setCreatedAt(HMISUtil.getCurrentLocalDateTime());
+
+        } else {
+
+            payment = new PaymentDetailsV2();
+            payment.setBillingHeader(billingHeader);
+            payment.setPaymentReferenceNo(
+                    paymentUtils.generatePaymentReferenceNo()
+            );
+            payment.setAmount(request.getAmount());
+            payment.setCurrency("INR");
+            payment.setPaymentGateway("CASH");
+            payment.setPaymentVia(request.getMode());
+            payment.setPaymentModeId(
+                    paymentUtils.getPaymentMode(request.getMode()).getPaymentModeId()
+            );
+            payment.setReceiptNo(
+                    paymentUtils.generateReceiptNumber(billingHeader)
+            );
+            payment.setPaymentStatusId(
+                    paymentUtils.getPaymentStatus(PaymentStatusCode.PAID).getId()
+            );
+            payment.setCreatedBy(authUtil.getCurrentUserFullName());
+            payment.setPaymentDate(HMISUtil.getCurrentLocalDateTime());
+        }
+
+        PaymentDetailsV2 saved = paymentDetailsV2Repository.save(payment);
+
+        log.info("PaymentDetail saved, id={}", saved.getPaymentId());
 
         }catch (Exception e){
             log.error("savePaymentDetailsV2 method error :: ",e);
