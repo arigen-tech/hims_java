@@ -11,6 +11,7 @@ import com.hims.exception.patientRegistrationException.TokenAlreadyBookedExcepti
 import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.OpdPatientDetailMapper;
 import com.hims.mapper.PatientMapper;
+import com.hims.mapper.RazorpayPrefillPatientMapper;
 import com.hims.mapper.VisitMapper;
 import com.hims.projection.CancelledAppointmentProjection;
 import com.hims.projection.OpdPreConsultationProjection;
@@ -20,6 +21,7 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISUtil;
 import com.hims.utils.ResponseUtils;
 import kong.unirest.HttpStatus;
 import lombok.RequiredArgsConstructor;
@@ -98,6 +100,9 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     HelperUtils helperUtils;
 
+    @Autowired
+    private RazorpayPrefillPatientMapper razorpayPrefillPatientMapper;
+
 
     @Value("${upload.image.path}")
     private String baseUrl;
@@ -160,7 +165,7 @@ public class PatientServiceImpl implements PatientService {
             List<Visit> savedVisits = new ArrayList<>();
             if (!visit.isEmpty()) {
                 for (VisitRequest v : visit) {
-                    Instant today = v.getVisitDate();
+                    LocalDateTime today = v.getVisitDate();
                     String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
                     v.setVisitType(visitType);
                     Visit saved = createSingleAppointment(v, patient);
@@ -372,7 +377,7 @@ public class PatientServiceImpl implements PatientService {
                         v.setHospitalId(patient.getPatientHospital().getId());
                     }
                     if (v.getVisitDate() == null) {
-                        v.setVisitDate(Instant.now());
+                        v.setVisitDate(HMISUtil.getCurrentLocalDateTime());
                     }
                     if (v.getVisitType() == null) {
                         v.setVisitType("F");
@@ -417,7 +422,6 @@ public class PatientServiceImpl implements PatientService {
         log.info("Updating existing visit ID: {} for patient: {}",
                 existingVisit.getId(), patient.getId());
 
-        existingVisit.setLastChgDate(Instant.now());
         existingVisit.setPriority(visit.getPriority());
         existingVisit.setVisitType(visit.getVisitType());
 
@@ -821,8 +825,12 @@ public class PatientServiceImpl implements PatientService {
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
         LocalDate date = visit.getVisitDate().atOffset(ZoneOffset.UTC).toLocalDate();
 
-        Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+//        Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
+//        Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1)
+                .atStartOfDay()
+                .minusNanos(1);
         boolean alreadyExists =
                 visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(
                         visit.getDepartmentId(),
@@ -859,7 +867,6 @@ public class PatientServiceImpl implements PatientService {
         newVisit.setEndTime(visit.getTokenEndTime());
         newVisit.setTokenNo(visit.getTokenNo());
         newVisit.setVisitDate(visit.getVisitDate());
-        newVisit.setLastChgDate(Instant.now());
         newVisit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase());
         newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS);
         newVisit.setPriority(visit.getPriority());
@@ -1014,8 +1021,8 @@ public class PatientServiceImpl implements PatientService {
             } else if (AppConstants.STATUS_N.equalsIgnoreCase(v.getVisitStatus())) {
                 appt.setVisitStatus("Pending");
             }
-            appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
-            appt.setTokenEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
+            appt.setTokenStartTime(HelperUtils.extractTimeWithSecondsFromLocalDateTime(v.getStartTime()));
+            appt.setTokenEndTime(HelperUtils.extractTimeWithSecondsFromLocalDateTime(v.getEndTime()));
             appointmentList.add(appt);
         }
 
@@ -1049,7 +1056,7 @@ public class PatientServiceImpl implements PatientService {
         // Update visit
         visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
         visit.setCancelledBy(currentUser.getFirstName());
-        visit.setCancelledDateTime(Instant.now());
+        visit.setCancelledDateTime(HMISUtil.getCurrentLocalDateTime());
         if (request.getCancelReasonId() != null) {
             MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId())
                     .orElseThrow(() -> new SDDException(500,"Cancel reason not found with ID: "));
@@ -1104,29 +1111,29 @@ public class PatientServiceImpl implements PatientService {
                 ? request.getTokenNumber()
                 : v.getTokenNo();
 
-        Instant resolvedStartTime = isOpdAppointment
-                ? request.getAppointmentStartTime()
+        LocalDateTime resolvedStartTime = isOpdAppointment
+                ? HelperUtils.instantToLocalDateTime(request.getAppointmentStartTime())
                 : v.getStartTime();
 
-        Instant resolvedEndTime = isOpdAppointment
-                ? request.getAppointmentEndTime()
+        LocalDateTime resolvedEndTime = isOpdAppointment
+                ? HelperUtils.instantToLocalDateTime(request.getAppointmentEndTime())
                 : v.getEndTime();
 
         VisitRescheduleHistory history = new VisitRescheduleHistory();
         history.setVisitId(v);
-        history.setRescheduleDatetime(request.getVisitDate());
+        history.setRescheduleDatetime(HelperUtils.instantToLocalDateTime(request.getVisitDate()));
         history.setRescheduleBy(authUtil.getCurrentUser().getFirstName());
         history.setNewTokenNo(resolvedTokenNumber);
         history.setOldTokenNo(v.getTokenNo());
         history.setNewVisitDatetime(
-                isOpdAppointment ? request.getAppointmentStartTime() : request.getVisitDate()
+                isOpdAppointment ? HelperUtils.instantToLocalDateTime(request.getAppointmentStartTime()) :HelperUtils.instantToLocalDateTime( request.getVisitDate())
         );
         history.setOldVisitDatetime(v.getVisitDate());
-        history.setRescheduleDatetime(Instant.now());
+        history.setRescheduleDatetime(HMISUtil.getCurrentLocalDateTime());
         history.setRescheduleReason("");
         historyRepository.save(history);
 
-        v.setVisitDate(request.getVisitDate());
+        v.setVisitDate(HelperUtils.instantToLocalDateTime(request.getVisitDate()));
         if (isOpdAppointment) {
             v.setStartTime(resolvedStartTime);
             v.setEndTime(resolvedEndTime);
@@ -1136,13 +1143,12 @@ public class PatientServiceImpl implements PatientService {
             // Keep the existing token and time values intact.
             v.setTokenNo(resolvedTokenNumber);
             if (request.getAppointmentStartTime() != null) {
-                v.setStartTime(request.getAppointmentStartTime());
+                v.setStartTime(HelperUtils.instantToLocalDateTime(request.getAppointmentStartTime()));
             }
             if (request.getAppointmentEndTime() != null) {
-                v.setEndTime(request.getAppointmentEndTime());
+                v.setEndTime(HelperUtils.instantToLocalDateTime(request.getAppointmentEndTime()));
             }
         }
-        v.setLastChgDate(Instant.now());
 
         visitRepository.save(v);
         return new ApiResponse<>(HttpStatus.OK, "Success");
@@ -1161,7 +1167,7 @@ public class PatientServiceImpl implements PatientService {
 
             if (visitReq!=null) {
 
-                Instant date = visitReq.getVisitDate();
+                LocalDateTime date = visitReq.getVisitDate();
                 String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
                 visitReq.setVisitType(visitType);
                 Visit saved = createSingleAppointment(visitReq, patient);
@@ -1330,6 +1336,38 @@ public class PatientServiceImpl implements PatientService {
                 startTime, endTime, timeTakenMin, occupiedTokens,flag);
 
         return ResponseUtils.createSuccessResponse(list, new TypeReference<List<AvailableTokenSlotResponse>>() {});
+    }
+
+    @Override
+    public ApiResponse<RazorpayPrefillPatientResponse> getRazorpayPrefillDetails(Long patientId) {
+
+        try {
+            log.info("getRazorpayPrefillDetails method started for patient id :: {}",patientId);
+            RazorpayPrefillPatientResponse razorpayPrefillPatientResponse = patientRepository.findRazorpayPrefillByPatientId(patientId)
+                    .map(razorpayPrefillPatientMapper::toResponse)
+                    .orElseThrow(() -> new SDDException("Patient Id",
+                            HttpStatus.NOT_FOUND,
+                            "Patient not found")
+                    );
+            log.info("getRazorpayPrefillDetails method ended for patient id :: {}",patientId);
+            return  ResponseUtils.createSuccessResponse(razorpayPrefillPatientResponse, new TypeReference<>() {});
+        }catch (SDDException e){
+            log.error("getRazorpayPrefillDetails method error :: ",e);
+            return  ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>() {},
+                    e.getMessage(),
+                    e.getStatus()
+            );
+        }catch (Exception e){
+            log.error("getRazorpayPrefillDetails method error :: ",e);
+            return  ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>() {},
+                    e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+
+
     }
 
     public static List<AvailableTokenSlotResponse> generateSlotsWithAvailability(int tokenStart,int tokenInterval, int totalTokens, String dayStartTime, String dayEndTime, int timeTakenMin, Set<Long> occupiedTokenNumbers, int flag) {

@@ -11,10 +11,7 @@ import com.hims.request.UpdateStoreItemBatchStockRequest;
 import com.hims.response.*;
 import com.hims.service.DispensaryService;
 import com.hims.service.TransactionSequenceService;
-import com.hims.utils.AuthUtil;
-import com.hims.utils.HMISTransaction;
-import com.hims.utils.InventoryUtils;
-import com.hims.utils.ResponseUtils;
+import com.hims.utils.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -425,7 +422,7 @@ public class DispensaryServiceImpl implements DispensaryService {
          */
         BillingHeader billingHeader = new BillingHeader();
 
-        billingHeader.setBillDate(OffsetDateTime.now());
+        billingHeader.setBillDate(HMISUtil.getCurrentLocalDateTime());
 
         billingHeader.setPatient(visit.getPatient());
 
@@ -460,10 +457,7 @@ public class DispensaryServiceImpl implements DispensaryService {
         billingHeader.setVisit(visit);
 
         billingHeader.setCreatedBy(currentUser.getFullName());
-        billingHeader.setCreatedDt(Instant.now());
-        billingHeader.setUpdatedDt(Instant.now());
-        billingHeader.setUpdatedAt(OffsetDateTime.now());
-        billingHeader.setBillingDate(Instant.now());
+        billingHeader.setBillingDate(HMISUtil.getCurrentLocalDateTime());
         billingHeader.setServiceCategory(serviceCategory);
         billingHeader.setPrescriptionHeader(prescriptionHeader);
         billingHeader.setInvoiceNo("");

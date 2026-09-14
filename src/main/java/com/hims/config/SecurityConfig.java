@@ -94,7 +94,8 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/webjars/**",
             "/swagger-resources/**",
-            "/swagger-resources/configuration/security"
+            "/swagger-resources/configuration/security",
+            "/api/payment/razorpay/webhook"
     };
 
     @Bean

@@ -3,6 +3,7 @@ package com.hims.request;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,7 +31,7 @@ public class OpdPatientDetailRequest {
     @Size(max = 48)
     private String temperature;
 
-    private Instant opdDate;
+    private LocalDateTime opdDate;
 
     @Size(max = 12)
     private String rr;

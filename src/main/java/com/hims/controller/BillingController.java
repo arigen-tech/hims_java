@@ -117,19 +117,60 @@ public class BillingController {
         return billingService.searchInvoiceDetails(patientName, phoneNo, registrationNo,serviceCategoryId, page,size);
     }
 
+//    @GetMapping("/billingRefundPatientList")
+//    public ResponseEntity<ApiResponse<Page<PaidCancelledAppointmentResponse>>> getBillingRefundPatientList(
+//        @RequestParam(defaultValue = "0") int page,
+//        @RequestParam(defaultValue = "10") int size,
+//        @RequestParam(required = false) String patientName,
+//        @RequestParam(required = false) String mobileNo,
+//        @RequestParam(required = false) String billingServiceType,
+//        @RequestParam(required = false) String refundStatus,
+//        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+//        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+//        log.info("Billing refund patient list request received");
+//        ApiResponse<Page<PaidCancelledAppointmentResponse>> response =
+//                billingService.getBillingRefundPatientList(page, size, patientName, mobileNo, billingServiceType, refundStatus, fromDate, toDate);
+//        return ResponseEntity.ok(response);
+//    }
+
     @GetMapping("/billingRefundPatientList")
     public ResponseEntity<ApiResponse<Page<PaidCancelledAppointmentResponse>>> getBillingRefundPatientList(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(required = false) String patientName,
-        @RequestParam(required = false) String mobileNo,
-        @RequestParam(required = false) String billingServiceType,
-        @RequestParam(required = false) String refundStatus,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) String billingServiceType,
+            @RequestParam(required = false) String refundStatus,
+            @RequestParam(required = false) Long paymentModeId,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate toDate) {
+
         log.info("Billing refund patient list request received");
+
         ApiResponse<Page<PaidCancelledAppointmentResponse>> response =
-                billingService.getBillingRefundPatientList(page, size, patientName, mobileNo, billingServiceType, refundStatus, fromDate, toDate);
+                billingService.getBillingRefundPatientList(
+                        page,
+                        size,
+                        patientName,
+                        mobileNo,
+                        billingServiceType,
+                        refundStatus,
+                        paymentModeId,
+                        fromDate,
+                        toDate
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/refundDetails/{refundId}")
+    public ResponseEntity<ApiResponse<RefundDetailsResponse>> getRefundDetails(@PathVariable Long refundId) {
+        log.info("Fetching refund details for refundId={}", refundId);
+        ApiResponse<RefundDetailsResponse> response = billingService.getRefundDetails(refundId);
         return ResponseEntity.ok(response);
     }
 
