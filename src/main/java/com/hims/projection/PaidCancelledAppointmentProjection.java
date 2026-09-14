@@ -1,22 +1,85 @@
+//package com.hims.projection;
+//
+//import java.time.LocalDate;
+//import java.time.LocalDateTime;
+//
+//public interface PaidCancelledAppointmentProjection {
+//
+//    Long getVisitId();
+//    Long getPatientId();
+//    Long getBillingHeaderId();
+//    String getRegistrationNo();
+//    String getPatientName();
+//    String getMobileNo();
+//    String getAge();
+//    String getGender();
+//    String getBillingType();
+//    LocalDateTime getDate();
+//    Long getBillingAmount();
+//    LocalDateTime getCancelledDate();
+//
+//    Long getPaymentId();
+//    Long getRefundId();
+//
+//    LocalDateTime getRefundDate();
+//    String getRefundStatus();
+//    String getDepartmentName();
+//}
+
 package com.hims.projection;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public interface PaidCancelledAppointmentProjection {
 
     Long getVisitId();
+
     Long getPatientId();
+
     Long getBillingHeaderId();
-    String getRegistrationNo();
+
     String getPatientName();
+
     String getMobileNo();
+
     String getAge();
+
     String getGender();
+
     String getBillingType();
-    LocalDate getDate();
+
+    LocalDateTime getDate();
+
+    Instant getBillDate();
+
+    LocalDateTime getCancelledDate();
+
     Long getBillingAmount();
-    LocalDate getCancelledDate();
-    LocalDate getRefundDate();
+
+    Long getPaymentId();
+
+    Long getRefundId();
+
+    BigDecimal getRefundAmount();
+
+    String getRefundReferenceNo();
+
+    String getRefundReason();
+
+    String getGatewayRefundId();
+
+    LocalDateTime getRefundDate();
+
     String getRefundStatus();
+
+    Long getPaymentModeId();
+
+    String getPaymentModeCode();
+
+    String getPaymentModeName();
+
     String getDepartmentName();
 }

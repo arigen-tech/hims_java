@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MasPaymentModeRepository extends JpaRepository<MasPaymentMode,Long> {
@@ -12,4 +13,6 @@ public interface MasPaymentModeRepository extends JpaRepository<MasPaymentMode,L
     List<MasPaymentMode> findByStatusIgnoreCaseOrderByModeNameAsc(String lowerCase);
 
     List<MasPaymentMode> findAllByOrderByStatusDescLastChgDateDesc();
+
+    Optional<MasPaymentMode> findByModeCodeIgnoreCase(String value);
 }

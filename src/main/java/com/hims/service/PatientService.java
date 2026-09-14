@@ -40,4 +40,5 @@ public interface PatientService {
 
     ApiResponse<List<AvailableTokenSlotResponse>> getAppointmentSlots(Long deptId, Long doctorId, String appointmentDate, Long sessionId, int flag);
 
+    ApiResponse<RazorpayPrefillPatientResponse> getRazorpayPrefillDetails(Long patientId);
 }

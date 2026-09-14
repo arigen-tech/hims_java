@@ -2,8 +2,8 @@ package com.hims.response;
 
 import lombok.Data;
 
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.math.BigDecimal;
 
@@ -101,7 +101,7 @@ public class FollowUpPatientResponseDetails {
         private String doctorName;
         private Long sessionId;
         private String sessionName;
-        private Instant visitDate;
+        private LocalDateTime visitDate;
         private String visitType;
         private Long tokenNo;
         private String visitStatus;

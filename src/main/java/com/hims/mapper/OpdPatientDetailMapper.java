@@ -11,6 +11,7 @@ import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.OpdPatientDetailResponseDTO;
 import com.hims.response.OpdPatientVitalResponse;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISUtil;
 import org.mapstruct.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -145,7 +146,7 @@ public class OpdPatientDetailMapper {
     public void mapGeneralDetails(OpdPatientDetail opd, Patient patient, Visit visit, User user, Long deptId) {
         opd.setPatient(patient);
         opd.setVisit(visit);
-        opd.setOpdDate(Instant.now());
+        opd.setOpdDate(HMISUtil.getCurrentLocalDateTime());
         opd.setHospital(user.getHospital());
         opd.setDoctor(user);
         opd.setDepartment(departmentRepository.findById(deptId).orElseThrow(() -> new SDDException("department", 404, "Department not found")));

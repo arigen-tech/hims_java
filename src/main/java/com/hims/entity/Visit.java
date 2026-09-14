@@ -2,14 +2,14 @@ package com.hims.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -28,10 +28,11 @@ public class Visit {
     private Long tokenNo;
 
     @Column(name = "visit_date")
-    private Instant visitDate;
+    private LocalDateTime visitDate;
 
+    @UpdateTimestamp
     @Column(name = "last_chg_date")
-    private Instant lastChgDate;
+    private LocalDateTime lastChgDate;
 
     @Size(max = 1)
     @NotNull
@@ -77,10 +78,10 @@ public class Visit {
     private String billingStatus;
 
     @Column(name = "start_time")
-    private Instant startTime;
+    private LocalDateTime startTime;
 
     @Column(name = "end_time")
-    private Instant endTime;
+    private LocalDateTime endTime;
 
     @Size(max = 1)
     @Column(name = "pre_consultation", length = 1)
@@ -104,7 +105,7 @@ public class Visit {
     private MasAppointmentChangeReason reason;
 
     @Column(name = "cancelled_datetime")
-    private Instant cancelledDateTime;
+    private LocalDateTime cancelledDateTime;
 
     @Column(name = "cancelled_by")
     private String cancelledBy;
