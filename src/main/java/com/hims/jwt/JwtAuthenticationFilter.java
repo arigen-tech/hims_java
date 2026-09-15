@@ -1,5 +1,7 @@
 package com.hims.jwt;
 
+import com.hims.entity.Patient;
+import com.hims.entity.repository.PatientRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
@@ -31,6 +33,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private UserDetailsService userDetailsService;
 
     @Autowired
+    private PatientRepository patientRepository;
+
+    @Autowired
     private TokenBlacklistService tokenBlacklistService;
 
     @Override
@@ -53,9 +58,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 // Extract username and validate token
-                String username = extractUsernameFromToken(token);
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    authenticateUser(request, token, username);
+                if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                    if ("PATIENT".equals(jwtHelper.getClaimFromToken(token,
+                            claims -> claims.get("principalType", String.class)))) {
+                        authenticatePatient(request, token);
+                    } else {
+                        String username = extractUsernameFromToken(token);
+                        if (username != null) {
+                            authenticateUser(request, token, username);
+                        }
+                    }
                 }
             } else {
                 logger.info("Invalid or missing Authorization header.");
@@ -110,6 +122,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             logger.info("User authenticated successfully: {}", username);
         } else {
             logger.warn("Token validation failed for user: {}", username);
+        }
+    }
+
+    private void authenticatePatient(HttpServletRequest request, String token) {
+        Long patientId = jwtHelper.getClaimFromToken(token,
+                claims -> claims.get("patientId", Long.class));
+        if (patientId == null) {
+            logger.warn("Patient token does not contain patientId");
+            return;
+        }
+
+        Patient patient = patientRepository.findById(patientId).orElse(null);
+        if (patient == null) {
+            logger.warn("Patient not found for patientId: {}", patientId);
+            return;
+        }
+
+        PatientPrincipal patientPrincipal = new PatientPrincipal(patient);
+        if (jwtHelper.validateToken(token, patientPrincipal)) {
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(patientPrincipal, null,
+                            patientPrincipal.getAuthorities());
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            logger.info("Patient authenticated successfully: {}", patientId);
         }
     }
 }
