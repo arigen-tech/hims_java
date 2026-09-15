@@ -27,4 +27,9 @@ public interface PaymentDetailsV2Repository extends JpaRepository<PaymentDetails
     Optional<PaymentDetailsV2> findByBillingHeader_IdAndGatewayPaymentIdIsNull(
             Long billingHdId
     );
+
+    List<PaymentDetailsV2> findAllByGatewayOrderId(String gatewayOrderId);
+
+    List<PaymentDetailsV2> findAllByGatewayPaymentId(String gatewayPaymentId);
+
 }

@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -75,143 +76,36 @@ public class RazorpayWebhookServiceImpl
                                 String eventIdHeader,
                                 String webhookSecret
     ) {
-
-        log.info("==================================================");
-        log.info("RAZORPAY WEBHOOK SERVICE PROCESSING STARTED");
-        log.info("==================================================");
-
-        log.info("Step 1: processWebhook() method entered");
-        log.info("Step 1.1: Razorpay signature received: {}", razorpaySignature);
-        log.info("Step 1.1.1: Event id header received: {}", eventIdHeader);
-        log.info("Step 1.2: Webhook secret configured: {}", webhookSecret != null && !webhookSecret.isBlank());
-        log.info("Step 1.3: Raw webhook body received. Payload length: {}", rawBody != null ? rawBody.length() : 0);
-
-
-        /*
-         * ======================================================
-         * 1. VERIFY RAZORPAY SIGNATURE
-         * ======================================================
-         */
-
-        log.info("Step 2: Starting Razorpay webhook signature verification");
-
         try {
             verifyWebhookSignature(rawBody, razorpaySignature, webhookSecret);
-            log.info("Step 2.1: Razorpay webhook signature verified successfully");
         } catch (Exception e) {
-            log.error("Step 2.2: Razorpay webhook signature verification FAILED", e);
             throw e;
         }
-
-
-        /*
-         * ======================================================
-         * 2. PARSE WEBHOOK JSON
-         * ======================================================
-         */
-
-        log.info("Step 3: Starting webhook JSON parsing");
         JsonNode root;
 
         try {
 
             root = objectMapper.readTree(rawBody);
-            log.info("Step 3.1: Webhook JSON parsed successfully");
 
         } catch (Exception e) {
-
-            log.error("Step 3.2: Unable to parse Razorpay webhook JSON", e);
             throw new IllegalArgumentException("Malformed webhook JSON body", e);
         }
-
-
-        /*
-         * ======================================================
-         * 3. GET EVENT ID AND EVENT TYPE
-         * ======================================================
-         */
-
-        log.info("Step 4: Extracting event ID and event type from webhook");
         String eventId = eventIdHeader;
         String eventType = textOrNull(root, "event");
-
-        log.info("Step 4.1: Extracted eventId={}", eventId);
-        log.info("Step 4.2: Extracted eventType={}", eventType);
-
-        if (eventId == null || eventId.isBlank() || eventType == null) {
-            log.error("Step 4.3: Webhook payload is missing required event id (header) or 'event' field");
+        if (eventId == null || eventId.isBlank() || eventType == null){
             throw new IllegalArgumentException(
                     "Webhook missing X-Razorpay-Event-Id header or 'event' field"
             );
         }
-
-        log.info(
-                "Step 4.4: Event ID and event type validation successful. " +
-                        "eventId={}, eventType={}",
-                eventId,
-                eventType
-        );
-
-
-        /*
-         * ======================================================
-         * 4. IDEMPOTENCY CHECK
-         * ======================================================
-         */
-
-        log.info(
-                "Step 5: Checking whether webhook event already exists. " +
-                        "gateway={}, eventId={}",
-                RAZORPAY,
-                eventId
-        );
-
         boolean eventAlreadyExists =
                 webhookEventRepository
                         .existsByGatewayAndEventId(
                                 RAZORPAY,
                                 eventId
                         );
-
-        log.info(
-                "Step 5.1: Idempotency check completed. eventAlreadyExists={}",
-                eventAlreadyExists
-        );
-
-
         if (eventAlreadyExists) {
-
-            log.info(
-                    "Step 5.2: Razorpay webhook already exists. " +
-                            "eventId={}, eventType={}",
-                    eventId,
-                    eventType
-            );
-
-            log.info(
-                    "Step 5.3: Skipping duplicate webhook processing"
-            );
-
-            log.info(
-                    "========== RAZORPAY DUPLICATE WEBHOOK COMPLETED =========="
-            );
-
             return;
         }
-
-        log.info(
-                "Step 5.4: Webhook is new. Continuing processing"
-        );
-
-
-        /*
-         * ======================================================
-         * 5. GET PAYMENT / ORDER / REFUND ENTITY
-         * ======================================================
-         */
-
-        log.info("Step 6: Extracting payment, order and refund entities");
-
         JsonNode paymentEntity =
                 root.at("/payload/payment/entity");
 
@@ -220,31 +114,6 @@ public class RazorpayWebhookServiceImpl
 
         JsonNode refundEntity =
                 root.at("/payload/refund/entity");
-
-        log.info(
-                "Step 6.1: Payment entity present: {}",
-                !paymentEntity.isMissingNode() && !paymentEntity.isNull()
-        );
-
-        log.info(
-                "Step 6.2: Order entity present: {}",
-                !orderEntity.isMissingNode() && !orderEntity.isNull()
-        );
-
-        log.info(
-                "Step 6.3: Refund entity present: {}",
-                !refundEntity.isMissingNode() && !refundEntity.isNull()
-        );
-
-
-        /*
-         * ======================================================
-         * 6. GET GATEWAY ORDER ID
-         * ======================================================
-         */
-
-        log.info("Step 7: Extracting Razorpay gateway order ID");
-
         String gatewayOrderId =
                 firstNonNull(
                         textOrNull(
@@ -256,242 +125,50 @@ public class RazorpayWebhookServiceImpl
                                 "id"
                         )
                 );
-
-        log.info(
-                "Step 7.1: Gateway order ID resolved: {}",
-                gatewayOrderId
-        );
-
-
-        /*
-         * ======================================================
-         * 7. GET GATEWAY PAYMENT ID
-         * ======================================================
-         */
-
-        log.info("Step 8: Extracting Razorpay gateway payment ID");
-
         String gatewayPaymentId = firstNonNull(
-                                        textOrNull(paymentEntity, "id"),
-                                        textOrNull(refundEntity, "payment_id")
-                                  );
+                textOrNull(paymentEntity, "id"),
+                textOrNull(refundEntity, "payment_id")
+        );
 
-        log.info("Step 8.1: Gateway payment ID resolved: {}", gatewayPaymentId);
+        /*
+         * One gatewayOrderId can now map to MULTIPLE rows -- one per
+         * billing header paid together in a single multi-appointment
+         * checkout. See resolvePayment().
+         */
+        List<PaymentDetailsV2> payments = resolvePayment(gatewayOrderId, gatewayPaymentId);
+        List<PaymentDetailsV2> auditPayments = resolveAuditPayments(refundEntity, payments);
+
+        PaymentWebhookEvent webhookEvent = webhookAuditService.saveWebhookEvent(
+                eventId, eventType, gatewayOrderId, gatewayPaymentId, rawBody, auditPayments);
 
 
         /*
-         * ======================================================
-         * 8. FIND HMIS PAYMENT
-         * ======================================================
+         * Audit log only needs ONE representative row to link to
+         * (payment_webhook_event.payment_id is a single FK) -- take
+         * the first match from the group, if any.
          */
-
-        log.info("Step 9: Resolving HMIS payment using gateway identifiers");
-        log.info("Step 9.1: Searching payment using gatewayOrderId={}", gatewayOrderId);
-        log.info("Step 9.2: Searching payment using gatewayPaymentId={}", gatewayPaymentId);
-
-        Optional<PaymentDetailsV2> paymentOpt =
-                resolvePayment(
-                        gatewayOrderId,
-                        gatewayPaymentId
-                );
-
-        log.info("Step 9.3: HMIS payment lookup completed. Payment found={}", paymentOpt.isPresent());
-
-        if (paymentOpt.isPresent()) {
-            log.info("Step 9.4: HMIS payment successfully resolved");
-
-        } else {
-            log.warn("Step 9.4: HMIS payment NOT found. " +
-                            "gatewayOrderId={}, gatewayPaymentId={}",
-                    gatewayOrderId,
-                    gatewayPaymentId
-            );
-        }
-
-
-        /*
-         * ======================================================
-         * 9. SAVE WEBHOOK EVENT
-         * ======================================================
-         */
-
-        log.info(
-                "Step 10: Saving webhook event into database"
-        );
-
-        log.info(
-                "Step 10.1: Calling webhookAuditService.saveWebhookEvent()"
-        );
-
-        PaymentWebhookEvent webhookEvent =
-                webhookAuditService.saveWebhookEvent(
-                        eventId,
-                        eventType,
-                        gatewayOrderId,
-                        gatewayPaymentId,
-                        rawBody,
-                        paymentOpt
-                );
-
-        log.info(
-                "Step 10.2: Webhook event saved successfully. " +
-                        "webhookEventId={}",
-                webhookEvent.getWebhookEventId()
-        );
-
-
-        /*
-         * ======================================================
-         * 10. PROCESS BUSINESS LOGIC
-         * ======================================================
-         */
-
-        log.info(
-                "Step 11: Starting webhook business logic processing"
-        );
-
-        log.info(
-                "Step 11.1: Calling processWebhookBusinessLogic(). " +
-                        "eventType={}, eventId={}",
-                eventType,
-                eventId
-        );
-
+//        PaymentWebhookEvent webhookEvent =
+//                webhookAuditService.saveWebhookEvent(
+//                        eventId,
+//                        eventType,
+//                        gatewayOrderId,
+//                        gatewayPaymentId,
+//                        rawBody,
+//                        auditPayment
+//                );
         try {
 
             processWebhookBusinessLogic(
                     eventType,
-                    paymentOpt,
+                    payments,
                     paymentEntity,
                     refundEntity
-            );
-
-            log.info(
-                    "Step 11.2: Webhook business logic completed successfully"
-            );
-
-
-            /*
-             * ==================================================
-             * 11. MARK WEBHOOK PROCESSED
-             * ==================================================
-             */
-
-            log.info(
-                    "Step 12: Marking webhook event as PROCESSED"
-            );
-
-            log.info(
-                    "Step 12.1: webhookEventId={}",
-                    webhookEvent.getWebhookEventId()
             );
 
             webhookAuditService.markProcessed(
                     webhookEvent.getWebhookEventId()
             );
-
-            log.info(
-                    "Step 12.2: Webhook event marked as PROCESSED successfully"
-            );
-
-
-            /*
-             * ==================================================
-             * SUCCESS
-             * ==================================================
-             */
-
-            log.info(
-                    "=================================================="
-            );
-
-            log.info(
-                    "RAZORPAY WEBHOOK PROCESSED SUCCESSFULLY"
-            );
-
-            log.info(
-                    "eventId={}, eventType={}, " +
-                            "gatewayOrderId={}, gatewayPaymentId={}, " +
-                            "webhookEventId={}",
-                    eventId,
-                    eventType,
-                    gatewayOrderId,
-                    gatewayPaymentId,
-                    webhookEvent.getWebhookEventId()
-            );
-
-            log.info(
-                    "=================================================="
-            );
-
-
         } catch (Exception e) {
-
-            /*
-             * ==================================================
-             * 12. BUSINESS PROCESSING FAILED
-             * ==================================================
-             */
-
-            log.error(
-                    "=================================================="
-            );
-
-            log.error(
-                    "Step ERROR 13: Razorpay webhook business processing FAILED"
-            );
-
-            log.error(
-                    "Step ERROR 13.1: eventId={}",
-                    eventId
-            );
-
-            log.error(
-                    "Step ERROR 13.2: eventType={}",
-                    eventType
-            );
-
-            log.error(
-                    "Step ERROR 13.3: gatewayOrderId={}",
-                    gatewayOrderId
-            );
-
-            log.error(
-                    "Step ERROR 13.4: gatewayPaymentId={}",
-                    gatewayPaymentId
-            );
-
-            log.error(
-                    "Step ERROR 13.5: webhookEventId={}",
-                    webhookEvent.getWebhookEventId()
-            );
-
-            log.error(
-                    "Step ERROR 13.6: Exception type={}",
-                    e.getClass().getName()
-            );
-
-            log.error(
-                    "Step ERROR 13.7: Exception message={}",
-                    e.getMessage()
-            );
-
-            log.error(
-                    "Step ERROR 13.8: Full exception stack trace",
-                    e
-            );
-
-
-            /*
-             * ==================================================
-             * 13. MARK WEBHOOK FAILED
-             * ==================================================
-             */
-
-            log.info(
-                    "Step 14: Attempting to mark webhook event as FAILED"
-            );
-
             try {
 
                 webhookAuditService.markFailed(
@@ -499,36 +176,64 @@ public class RazorpayWebhookServiceImpl
                         e.getMessage()
                 );
 
-                log.info(
-                        "Step 14.1: Webhook event marked as FAILED successfully. " +
-                                "webhookEventId={}",
-                        webhookEvent.getWebhookEventId()
-                );
-
             } catch (Exception auditException) {
-
-                log.error(
-                        "Step 14.2: Unable to mark webhook event as FAILED. " +
-                                "webhookEventId={}",
-                        webhookEvent.getWebhookEventId(),
-                        auditException
-                );
+                log.error("processWebhook method error :: ",e);
+//                throw e;
             }
+        }
+    }
 
+    @Transactional
+    public void processWebhookBusinessLogic(
+            String eventType,
+            List<PaymentDetailsV2> payments,
+            JsonNode paymentEntity,
+            JsonNode refundEntity) {
 
-            /*
-             * ==================================================
-             * FINAL FAILURE
-             * ==================================================
-             */
+        switch (eventType) {
+            case "payment.captured":
 
-            log.error("Step 15: Business processing failure handled");
-            log.error("Step 15.1: Webhook was already stored in audit table");
-            log.error("Step 15.2: Webhook status should be FAILED");
-            log.error("Step 15.3: Exception will NOT be re-thrown");
-            log.error("==================================================");
-            log.error("RAZORPAY WEBHOOK PROCESSING FINISHED WITH FAILURE");
-            log.error("==================================================");
+                handlePaymentCaptured(
+                        payments,
+                        paymentEntity
+                );
+
+                break;
+            case "payment.failed":
+
+                handlePaymentFailed(
+                        payments,
+                        paymentEntity
+                );
+
+                break;
+            case "order.paid":
+
+                log.info(
+                        "order.paid received. " +
+                                "Payment status handled by payment.captured."
+                );
+
+                break;
+            case "refund.created":
+
+                handleRefundCreated(
+                        refundEntity
+                );
+
+                break;
+            case "refund.processed":
+                handleRefundProcessed(
+                        refundEntity
+                );
+
+                break;
+            default:
+
+                log.info(
+                        "Unhandled Razorpay event type: {}",
+                        eventType
+                );
         }
     }
 
@@ -681,103 +386,45 @@ public class RazorpayWebhookServiceImpl
      * PROCESS WEBHOOK BUSINESS LOGIC
      * ==========================================================
      */
-    @Transactional
-    public void processWebhookBusinessLogic(
-            String eventType,
-            Optional<PaymentDetailsV2> paymentOpt,
-            JsonNode paymentEntity,
-            JsonNode refundEntity) {
-
-        switch (eventType) {
-
-            /*
-             * ==================================================
-             * PAYMENT CAPTURED
-             * ==================================================
-             */
-            case "payment.captured":
-
-                handlePaymentCaptured(
-                        paymentOpt,
-                        paymentEntity
-                );
-
-                break;
-
-
-            /*
-             * ==================================================
-             * PAYMENT FAILED
-             * ==================================================
-             */
-            case "payment.failed":
-
-                handlePaymentFailed(
-                        paymentOpt,
-                        paymentEntity
-                );
-
-                break;
-
-
-            /*
-             * ==================================================
-             * ORDER PAID
-             * ==================================================
-             *
-             * payment.captured already updates payment status.
-             */
-            case "order.paid":
-
-                log.info(
-                        "order.paid received. " +
-                                "Payment status handled by payment.captured."
-                );
-
-                break;
-
-
-            /*
-             * ==================================================
-             * REFUND CREATED
-             * ==================================================
-             */
-            case "refund.created":
-
-                handleRefundCreated(
-                        refundEntity
-                );
-
-                break;
-
-
-            /*
-             * ==================================================
-             * REFUND PROCESSED
-             * ==================================================
-             */
-            case "refund.processed":
-
-                handleRefundProcessed(
-                        refundEntity
-                );
-
-                break;
-
-
-            /*
-             * ==================================================
-             * OTHER EVENTS
-             * ==================================================
-             */
-            default:
-
-                log.info(
-                        "Unhandled Razorpay event type: {}",
-                        eventType
-                );
-        }
-    }
+//    @Transactional
+//    public void processWebhookBusinessLogic(
+//            String eventType,
+//            List<PaymentDetailsV2> payments,
+//            JsonNode paymentEntity,
+//            JsonNode refundEntity) {
+//
+//        switch (eventType) {
+//
+//            case "payment.captured":
+//                handlePaymentCaptured(payments, paymentEntity);
+//                break;
+//
+//            case "payment.failed":
+//                handlePaymentFailed(payments, paymentEntity);
+//                break;
+//
+//            case "order.paid":
+//                log.info(
+//                        "order.paid received. " +
+//                                "Payment status handled by payment.captured."
+//                );
+//                break;
+//
+//            case "refund.created":
+//                handleRefundCreated(refundEntity);
+//                break;
+//
+//            case "refund.processed":
+//                handleRefundProcessed(refundEntity);
+//                break;
+//
+//            default:
+//                log.info(
+//                        "Unhandled Razorpay event type: {}",
+//                        eventType
+//                );
+//        }
+//    }
 
     /**
      * ==========================================================
@@ -786,8 +433,139 @@ public class RazorpayWebhookServiceImpl
      *
      * PENDING -> PAID
      */
+//    private void handlePaymentCaptured(
+//            Optional<PaymentDetailsV2> paymentOpt,
+//            JsonNode paymentEntity) {
+//
+//        String gatewayOrderId =
+//                textOrNull(
+//                        paymentEntity,
+//                        "order_id"
+//                );
+//
+//
+//
+//
+//        PaymentDetailsV2 payment =
+//                paymentOpt.orElseThrow(
+//                        () -> new IllegalStateException(
+//                                "payment.captured received "
+//                                        + "for unknown order: "
+//                                        + gatewayOrderId
+//                        )
+//                );
+//
+//
+//        /*
+//         * ======================================================
+//         * GET PAID STATUS
+//         * ======================================================
+//         */
+//        Long paidStatusId =
+//                paymentUtils
+//                        .getPaymentStatus(
+//                                PaymentStatusCode.PAID
+//                        )
+//                        .getId();
+//
+//
+//        /*
+//         * ======================================================
+//         * GET RAZORPAY PAYMENT ID
+//         * ======================================================
+//         */
+//        String gatewayPaymentId =
+//                textOrNull(
+//                        paymentEntity,
+//                        "id"
+//                );
+//        String methodRaw = textOrNull(paymentEntity, "method");
+//        payment.setPaymentModeId(paymentUtils.resolvePaymentModeId(methodRaw));
+//
+//        String paymentVia = extractPaymentVia(paymentEntity);
+//        payment.setPaymentVia(paymentVia);
+//
+//
+//
+//        /*
+//         * ======================================================
+//         * UPDATE PAYMENT STATUS
+//         * ======================================================
+//         */
+//        payment.setPaymentStatusId(
+//                paidStatusId
+//        );
+//
+//
+//        /*
+//         * Razorpay payment ID.
+//         */
+//        if (gatewayPaymentId != null) {
+//
+//            payment.setGatewayPaymentId(
+//                    gatewayPaymentId
+//            );
+//        }
+//
+//
+//        /*
+//         * Razorpay payment status.
+//         */
+//        payment.setGatewayPaymentStatus(
+//                "captured"
+//        );
+//
+//
+//        /*
+//         * Payment date.
+//         *
+//         * Only set if not already available.
+//         */
+//        if (payment.getPaymentDate() == null) {
+//
+//            payment.setPaymentDate(
+//                    HMISUtil.getCurrentLocalDateTime()
+//            );
+//        }
+//
+//
+//        /*
+//         * ======================================================
+//         * GENERATE RECEIPT
+//         * ======================================================
+//         *
+//         * Only generate a receipt if one doesn't already exist.
+//         */
+//        if (payment.getReceiptNo() == null
+//                || payment.getReceiptNo().isBlank()) {
+//
+//            payment.setReceiptNo(
+//                    paymentUtils.generateReceiptNumber(payment.getBillingHeader())
+//            );
+//        }
+//
+//
+//        /*
+//         * ======================================================
+//         * SAVE PAYMENT
+//         * ======================================================
+//         */
+//        paymentRepository.save(
+//                payment
+//        );
+//
+//
+//        log.info(
+//                "Payment marked PAID. " +
+//                        "paymentId={}, orderId={}, " +
+//                        "gatewayPaymentId={}",
+//                payment.getPaymentId(),
+//                payment.getGatewayOrderId(),
+//                gatewayPaymentId
+//        );
+//    }
     private void handlePaymentCaptured(
-            Optional<PaymentDetailsV2> paymentOpt,
+            List<PaymentDetailsV2> payments,
             JsonNode paymentEntity) {
 
         String gatewayOrderId =
@@ -796,17 +574,14 @@ public class RazorpayWebhookServiceImpl
                         "order_id"
                 );
 
+        if (payments.isEmpty()) {
 
-
-
-        PaymentDetailsV2 payment =
-                paymentOpt.orElseThrow(
-                        () -> new IllegalStateException(
-                                "payment.captured received "
-                                        + "for unknown order: "
-                                        + gatewayOrderId
-                        )
-                );
+            throw new IllegalStateException(
+                    "payment.captured received "
+                            + "for unknown order: "
+                            + gatewayOrderId
+            );
+        }
 
 
         /*
@@ -824,8 +599,11 @@ public class RazorpayWebhookServiceImpl
 
         /*
          * ======================================================
-         * GET RAZORPAY PAYMENT ID
+         * GET RAZORPAY PAYMENT ID / METHOD / VIA
          * ======================================================
+         *
+         * Same for every row in this group -- computed once,
+         * applied to each billing header's row below.
          */
         String gatewayPaymentId =
                 textOrNull(
@@ -833,91 +611,97 @@ public class RazorpayWebhookServiceImpl
                         "id"
                 );
         String methodRaw = textOrNull(paymentEntity, "method");
-        payment.setPaymentModeId(paymentUtils.resolvePaymentModeId(methodRaw));
-
+        Long paymentModeId = paymentUtils.resolvePaymentModeId(methodRaw);
         String paymentVia = extractPaymentVia(paymentEntity);
-        payment.setPaymentVia(paymentVia);
 
 
+        for (PaymentDetailsV2 payment : payments) {
 
-        /*
-         * ======================================================
-         * UPDATE PAYMENT STATUS
-         * ======================================================
-         */
-        payment.setPaymentStatusId(
-                paidStatusId
-        );
+            payment.setPaymentModeId(paymentModeId);
+            payment.setPaymentVia(paymentVia);
 
 
-        /*
-         * Razorpay payment ID.
-         */
-        if (gatewayPaymentId != null) {
+            /*
+             * ======================================================
+             * UPDATE PAYMENT STATUS
+             * ======================================================
+             */
+            payment.setPaymentStatusId(
+                    paidStatusId
+            );
 
-            payment.setGatewayPaymentId(
+
+            /*
+             * Razorpay payment ID.
+             */
+            if (gatewayPaymentId != null) {
+
+                payment.setGatewayPaymentId(
+                        gatewayPaymentId
+                );
+            }
+
+
+            /*
+             * Razorpay payment status.
+             */
+            payment.setGatewayPaymentStatus(
+                    "captured"
+            );
+
+
+            /*
+             * Payment date.
+             *
+             * Only set if not already available.
+             */
+            if (payment.getPaymentDate() == null) {
+
+                payment.setPaymentDate(
+                        HMISUtil.getCurrentLocalDateTime()
+                );
+            }
+
+
+            /*
+             * ======================================================
+             * GENERATE RECEIPT
+             * ======================================================
+             *
+             * Only generate a receipt if one doesn't already exist.
+             * Each billing header gets its OWN receipt number, since
+             * each row is its own billing header's payment record.
+             */
+            if (payment.getReceiptNo() == null
+                    || payment.getReceiptNo().isBlank()) {
+
+                payment.setReceiptNo(
+                        paymentUtils.generateReceiptNumber(payment.getBillingHeader())
+                );
+            }
+
+
+            /*
+             * ======================================================
+             * SAVE PAYMENT
+             * ======================================================
+             */
+            paymentRepository.save(
+                    payment
+            );
+
+
+            log.info(
+                    "Payment marked PAID. " +
+                            "paymentId={}, billingHdId={}, orderId={}, " +
+                            "gatewayPaymentId={}",
+                    payment.getPaymentId(),
+                    payment.getBillingHeader().getId(),
+                    gatewayOrderId,
                     gatewayPaymentId
             );
         }
-
-
-        /*
-         * Razorpay payment status.
-         */
-        payment.setGatewayPaymentStatus(
-                "captured"
-        );
-
-
-        /*
-         * Payment date.
-         *
-         * Only set if not already available.
-         */
-        if (payment.getPaymentDate() == null) {
-
-            payment.setPaymentDate(
-                    HMISUtil.getCurrentLocalDateTime()
-            );
-        }
-
-
-        /*
-         * ======================================================
-         * GENERATE RECEIPT
-         * ======================================================
-         *
-         * Only generate a receipt if one doesn't already exist.
-         */
-        if (payment.getReceiptNo() == null
-                || payment.getReceiptNo().isBlank()) {
-
-            payment.setReceiptNo(
-                    paymentUtils.generateReceiptNumber(payment.getBillingHeader())
-            );
-        }
-
-
-        /*
-         * ======================================================
-         * SAVE PAYMENT
-         * ======================================================
-         */
-        paymentRepository.save(
-                payment
-        );
-
-
-        log.info(
-                "Payment marked PAID. " +
-                        "paymentId={}, orderId={}, " +
-                        "gatewayPaymentId={}",
-                payment.getPaymentId(),
-                payment.getGatewayOrderId(),
-                gatewayPaymentId
-        );
     }
-
 
     /**
      * ==========================================================
@@ -927,7 +711,7 @@ public class RazorpayWebhookServiceImpl
      * PENDING -> FAILED
      */
     private void handlePaymentFailed(
-            Optional<PaymentDetailsV2> paymentOpt,
+            List<PaymentDetailsV2> payments,
             JsonNode paymentEntity) {
 
         String gatewayOrderId =
@@ -936,20 +720,19 @@ public class RazorpayWebhookServiceImpl
                         "order_id"
                 );
 
+        if (payments.isEmpty()) {
 
-        PaymentDetailsV2 payment =
-                paymentOpt.orElseThrow(
-                        () -> new IllegalStateException(
-                                "payment.failed received "
-                                        + "for unknown order: "
-                                        + gatewayOrderId
-                        )
-                );
+            throw new IllegalStateException(
+                    "payment.failed received "
+                            + "for unknown order: "
+                            + gatewayOrderId
+            );
+        }
 
 
         /*
          * ======================================================
-         * GET CURRENT PAYMENT STATUS
+         * GET STATUS IDS
          * ======================================================
          */
         Long paidStatusId =
@@ -959,7 +742,6 @@ public class RazorpayWebhookServiceImpl
                         )
                         .getId();
 
-
         Long refundedStatusId =
                 paymentUtils
                         .getPaymentStatus(
@@ -967,46 +749,6 @@ public class RazorpayWebhookServiceImpl
                         )
                         .getId();
 
-
-        /*
-         * ======================================================
-         * DO NOT DOWNGRADE FINAL SUCCESSFUL STATUS
-         * ======================================================
-         *
-         * PAID -> FAILED     NOT ALLOWED
-         * REFUNDED -> FAILED NOT ALLOWED
-         */
-        if (paidStatusId.equals(
-                payment.getPaymentStatusId())) {
-
-            log.warn(
-                    "Ignoring payment.failed for already "
-                            + "PAID payment. paymentId={}",
-                    payment.getPaymentId()
-            );
-
-            return;
-        }
-
-
-        if (refundedStatusId.equals(
-                payment.getPaymentStatusId())) {
-
-            log.warn(
-                    "Ignoring payment.failed for already "
-                            + "REFUNDED payment. paymentId={}",
-                    payment.getPaymentId()
-            );
-
-            return;
-        }
-
-
-        /*
-         * ======================================================
-         * GET FAILED STATUS
-         * ======================================================
-         */
         Long failedStatusId =
                 paymentUtils
                         .getPaymentStatus(
@@ -1014,58 +756,105 @@ public class RazorpayWebhookServiceImpl
                         )
                         .getId();
 
-
-        /*
-         * ======================================================
-         * UPDATE PAYMENT STATUS
-         * ======================================================
-         */
-        payment.setPaymentStatusId(
-                failedStatusId
-        );
+        String gatewayPaymentId =
+                textOrNull(
+                        paymentEntity,
+                        "id"
+                );
 
 
-        /*
-         * Razorpay payment status.
-         */
-        payment.setGatewayPaymentStatus(
-                "failed"
-        );
+        for (PaymentDetailsV2 payment : payments) {
+
+            /*
+             * ======================================================
+             * DO NOT DOWNGRADE FINAL SUCCESSFUL STATUS
+             * ======================================================
+             *
+             * PAID -> FAILED     NOT ALLOWED
+             * REFUNDED -> FAILED NOT ALLOWED
+             *
+             * Checked PER ROW -- in a multi-item order it's entirely
+             * possible (though unusual) for one billing header's row
+             * to already be in a terminal state while others aren't,
+             * so each row is evaluated independently rather than
+             * bailing out of the whole group on the first match.
+             */
+            if (paidStatusId.equals(
+                    payment.getPaymentStatusId())) {
+
+                log.warn(
+                        "Ignoring payment.failed for already "
+                                + "PAID payment. paymentId={}",
+                        payment.getPaymentId()
+                );
+
+                continue;
+            }
 
 
-        /*
-         * Sometimes Razorpay sends payment ID in
-         * payment.failed event.
-         */
-        if (payment.getGatewayPaymentId() == null) {
+            if (refundedStatusId.equals(
+                    payment.getPaymentStatusId())) {
 
-            payment.setGatewayPaymentId(
-                    textOrNull(
-                            paymentEntity,
-                            "id"
-                    )
+                log.warn(
+                        "Ignoring payment.failed for already "
+                                + "REFUNDED payment. paymentId={}",
+                        payment.getPaymentId()
+                );
+
+                continue;
+            }
+
+
+            /*
+             * ======================================================
+             * UPDATE PAYMENT STATUS
+             * ======================================================
+             */
+            payment.setPaymentStatusId(
+                    failedStatusId
+            );
+
+
+            /*
+             * Razorpay payment status.
+             */
+            payment.setGatewayPaymentStatus(
+                    "failed"
+            );
+
+
+            /*
+             * Sometimes Razorpay sends payment ID in
+             * payment.failed event.
+             */
+            if (payment.getGatewayPaymentId() == null) {
+
+                payment.setGatewayPaymentId(
+                        gatewayPaymentId
+                );
+            }
+
+
+            /*
+             * ======================================================
+             * SAVE PAYMENT
+             * ======================================================
+             */
+            paymentRepository.save(
+                    payment
+            );
+
+
+            log.info(
+                    "Payment marked FAILED. " +
+                            "paymentId={}, billingHdId={}, orderId={}, " +
+                            "gatewayPaymentId={}",
+                    payment.getPaymentId(),
+                    payment.getBillingHeader().getId(),
+                    gatewayOrderId,
+                    payment.getGatewayPaymentId()
             );
         }
-
-
-        /*
-         * ======================================================
-         * SAVE PAYMENT
-         * ======================================================
-         */
-        paymentRepository.save(
-                payment
-        );
-
-
-        log.info(
-                "Payment marked FAILED. " +
-                        "paymentId={}, orderId={}, " +
-                        "gatewayPaymentId={}",
-                payment.getPaymentId(),
-                payment.getGatewayOrderId(),
-                payment.getGatewayPaymentId()
-        );
     }
 
 
@@ -1274,42 +1063,89 @@ public class RazorpayWebhookServiceImpl
      *
      * gateway_payment_id
      */
-    public Optional<PaymentDetailsV2> resolvePayment(
+//    public Optional<PaymentDetailsV2> resolvePayment(
+//            String gatewayOrderId,
+//            String gatewayPaymentId) {
+//
+//        /*
+//         * Search by order ID first.
+//         */
+//        if (gatewayOrderId != null
+//                && !gatewayOrderId.isBlank()) {
+//
+//            Optional<PaymentDetailsV2> paymentByOrder =
+//                    paymentRepository.findByGatewayOrderId(
+//                            gatewayOrderId
+//                    );
+//
+//
+//            if (paymentByOrder.isPresent()) {
+//
+//                return paymentByOrder;
+//            }
+//        }
+//
+//
+//        /*
+//         * Search by payment ID.
+//         */
+//        if (gatewayPaymentId != null
+//                && !gatewayPaymentId.isBlank()) {
+//
+//            return paymentRepository.findByGatewayPaymentId(
+//                    gatewayPaymentId
+//            );
+//        }
+//
+//
+//        return Optional.empty();
+//    }
+    public List<PaymentDetailsV2> resolvePayment(
             String gatewayOrderId,
             String gatewayPaymentId) {
 
         /*
-         * Search by order ID first.
+         * Search by order ID first — this is the group key now.
+         * One order can map to MULTIPLE PaymentDetailsV2 rows
+         * (one per billing header paid together in a single checkout).
          */
-        if (gatewayOrderId != null
-                && !gatewayOrderId.isBlank()) {
+        if (gatewayOrderId != null && !gatewayOrderId.isBlank()) {
 
-            Optional<PaymentDetailsV2> paymentByOrder =
-                    paymentRepository.findByGatewayOrderId(
-                            gatewayOrderId
-                    );
+            List<PaymentDetailsV2> byOrder =
+                    paymentRepository.findAllByGatewayOrderId(gatewayOrderId);
 
-
-            if (paymentByOrder.isPresent()) {
-
-                return paymentByOrder;
+            if (!byOrder.isEmpty()) {
+                return byOrder;
             }
         }
 
-
         /*
-         * Search by payment ID.
+         * Fallback: search by gateway payment ID (used once captured,
+         * e.g. for refund webhooks that only carry payment_id).
+         * Still returns every row sharing that payment ID.
          */
-        if (gatewayPaymentId != null
-                && !gatewayPaymentId.isBlank()) {
-
-            return paymentRepository.findByGatewayPaymentId(
-                    gatewayPaymentId
-            );
+        if (gatewayPaymentId != null && !gatewayPaymentId.isBlank()) {
+            return paymentRepository.findAllByGatewayPaymentId(gatewayPaymentId);
         }
 
+        return List.of();
+    }
 
-        return Optional.empty();
+    private List<PaymentDetailsV2> resolveAuditPayments(
+            JsonNode refundEntity, List<PaymentDetailsV2> payments) {
+
+        if (refundEntity != null && !refundEntity.isMissingNode()) {
+            String gatewayRefundId = textOrNull(refundEntity, "id");
+            if (gatewayRefundId != null) {
+                Optional<PaymentDetailsV2> viaRefund =
+                        refundRepository.findByGatewayRefundId(gatewayRefundId)
+                                .map(PaymentRefund::getPayment);
+                if (viaRefund.isPresent()) {
+                    return List.of(viaRefund.get());
+                }
+            }
+        }
+        return payments;
     }
 
 
