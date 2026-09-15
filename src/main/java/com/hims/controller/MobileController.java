@@ -80,9 +80,12 @@ public class MobileController {
             }
 
             // OTP verified generate JWT
-            String token = jwtUtil.mobileGenerateToken(
-                    otpRequest.getMobileNo()
-            );
+                Long patientId = patientLoginList.stream()
+                    .map(PatientLogin::getPatientId)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Patient not found for mobile number"));
+                String token = jwtUtil.mobileGenerateToken(otpRequest.getMobileNo(), patientId);
+                String refreshToken = jwtUtil.mobileGenerateRefreshToken(otpRequest.getMobileNo(), patientId);
 
             AuthResponse authResponse = new AuthResponse();
             List<PatientIdResponse> patientIdList = patientLoginList.stream()
@@ -110,6 +113,7 @@ public class MobileController {
                     .toList();
             authResponse.setPatientIdResponseList(patientIdList);
             authResponse.setToken(token);
+            authResponse.setRefreshToken(refreshToken);
             authResponse.setMessage("OTP verified successfully");
             return ResponseUtils.createSuccessResponse( authResponse, new TypeReference<>() {});
 
