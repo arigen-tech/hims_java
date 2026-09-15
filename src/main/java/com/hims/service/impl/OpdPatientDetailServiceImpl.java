@@ -1355,8 +1355,6 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             BigDecimal netAmount = totalAmount.subtract(totalDiscount).add(totalTax);
             billingHeader.setNetAmount(netAmount);
             billingHeader.setTaxTotal(totalTax);
-            billingHeader.setUpdatedDt(Instant.now());
-            billingHeader.setUpdatedAt(OffsetDateTime.now());
 
             billingHeaderRepository.save(billingHeader);
 

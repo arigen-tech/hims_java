@@ -3,14 +3,15 @@ package com.hims.response;
 import lombok.Data;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 
 public class VisitResponse {
     private Long id;
     private Long tokenNo;
-    private Instant visitDate;
-    private Instant lastChgDate;
+    private LocalDateTime visitDate;
+    private LocalDateTime lastChgDate;
     private String visitStatus;
     private Long priority;
     private Long departmentId;
@@ -23,8 +24,8 @@ public class VisitResponse {
     private Long iniDoctor;
     private Long sessionId;
     private String billingStatus;
-    private Instant startTime;
-    private Instant endTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
     private String preConsultation;
     private Long billingHdId;
 }

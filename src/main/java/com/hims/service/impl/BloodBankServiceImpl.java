@@ -11,7 +11,9 @@ import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BloodBankService;
+import com.hims.service.TransactionSequenceService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISTransaction;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,6 +79,8 @@ public class BloodBankServiceImpl implements BloodBankService{
     private InpatientRepository inpatientRepository;
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
+    @Autowired
+    private TransactionSequenceService transactionSequenceService;
 
     @Autowired
     private MasWardRepository masWardRepository;
@@ -877,6 +881,8 @@ public class BloodBankServiceImpl implements BloodBankService{
             String currentUser = authUtil.getCurrentUser().getFullName();
 
             BloodRequestHd bloodRequestHd = new BloodRequestHd();
+            bloodRequestHd.setRequestNo(transactionSequenceService.generateTransactionNumber
+                    (HMISTransaction.BLOOD_REQUEST_NO, authUtil.getCurrentUser().getHospital().getId()));
             bloodRequestHd.setInpatient(inpatientRepository.findById(request.getInpatientId())
                     .orElseThrow(() -> new RecordNotFoundException("Inpatient not found")));
             bloodRequestHd.setPatient(patientRepository.findById(request.getPatientId())
@@ -961,22 +967,67 @@ public class BloodBankServiceImpl implements BloodBankService{
         Page<BloodTrackingResponse> responsePage = projectionPage.map(p -> {
 
                     BloodTrackingResponse response = new BloodTrackingResponse();
+                    response.setRequestNo(p.getRequestNo());
                     response.setInpatientId(p.getInpatientId());
                     response.setInpatientNo(p.getInpatientNo());
                     response.setPatientId(p.getPatientId());
                     response.setPatientName(p.getPatientName());
                     response.setBloodGroup(p.getBloodGroup());
                     response.setComponent(p.getComponent());
+                    response.setBloodGroupId(p.getBloodGroupId());
+                    response.setComponentId(p.getComponentId());
                     response.setUnits(p.getUnits());
                     response.setUrgency(p.getUrgency());
                     response.setRequestedDateTime(p.getRequestedDateTime());
-                    response.setRequestedBy(p.getRequestedBy());
-                    response.setTrackingStatus(p.getTrackingStatus());
+                    response.setRequiredByDateTime(p.getRequiredByDateTime());
+                    response.setRequestedWard(p.getRequestedWard());
+//                    response.setTrackingStatus(p.getTrackingStatus());
                     return response;
                 });
 
         return ResponseUtils.createSuccessResponse(responsePage ,new TypeReference<>() {}
         );
+    }
+
+
+    @Override
+    public ApiResponse<List<BloodInventoryResponse>> getAvailableInventory(BloodInventoryRequest request) {
+
+        List<BloodInventoryProjection> inventoryList =
+                bloodComponentInventoryRepository.findAvailableBloodInventory(
+                        request.getPatientBloodGroupId(),
+                        request.getComponentId(),
+                        AppConstants.STATUS_Y.toLowerCase(),
+                        1L
+                );
+
+        List<BloodInventoryResponse> responseList = inventoryList.stream()
+                .map(this::mapToBloodInventoryResponse)
+                .toList();
+
+        return new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Available blood inventory fetched successfully",
+                responseList
+        );
+    }
+
+    private BloodInventoryResponse mapToBloodInventoryResponse(
+            BloodInventoryProjection projection) {
+
+        BloodInventoryResponse response = new BloodInventoryResponse();
+
+        response.setInventoryId(projection.getInventoryId());
+        response.setUnitNo(projection.getUnitNo());
+        response.setBloodGroupId(projection.getBloodGroupId());
+        response.setVolumeMl(projection.getVolumeMl());
+        response.setExpiryDate(projection.getExpiryDate());
+        response.setComponentId(projection.getComponentId());
+        response.setCompatibility("Compatible");
+        response.setStatus("Available");
+        response.setPreferred(AppConstants.STATUS_Y.equalsIgnoreCase(projection.getPreferred()));
+
+        return response;
     }
 
 }

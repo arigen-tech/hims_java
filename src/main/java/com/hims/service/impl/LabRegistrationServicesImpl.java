@@ -362,9 +362,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         visit.setHospital(hospital);
         visit.setTokenNo(token + 1);
         visit.setDepartment(dept);
-        Instant visitDate = Instant.now();
-        visit.setVisitDate(visitDate);
-        visit.setLastChgDate(visitDate);
+        visit.setVisitDate(HMISUtil.getCurrentLocalDateTime());
+        visit.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
         visit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS);
         String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
         visit.setVisitType(visitType);
@@ -593,7 +592,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingHeader.setHospitalGstin(vId.getHospital().getGstnNo());
         billingHeader.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryLab));  ///for which table
         billingHeader.setReferredBy(vId.getDoctorName());
-        billingHeader.setBillingDate(Instant.now());
+        billingHeader.setBillingDate(HMISUtil.getCurrentLocalDateTime());
         billingHeader.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
         billingHeader.setVisit(vId);
         billingHeader.setHdorder(hdId);
@@ -604,10 +603,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         //billingHeader.setDiscount();
         //billingHeader.setDiscountAmount(BigDecimal.valueOf(labReq.getDiscountAmount()));
         billingHeader.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-        billingHeader.setCreatedDt(Instant.now());
-        billingHeader.setUpdatedDt(Instant.now());
-        billingHeader.setBillDate(OffsetDateTime.now());
-        billingHeader.setUpdatedAt(OffsetDateTime.now());
+        billingHeader.setBillDate(HMISUtil.getCurrentLocalDateTime());
+
         return billingHeaderRepository.save(billingHeader);
     }
     private BillingDetail BillingDetaiDataSave(BillingHeader bhdId, DgOrderDt dtId, LabInvestigationReq investigation) {

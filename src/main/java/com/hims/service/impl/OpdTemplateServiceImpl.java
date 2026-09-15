@@ -159,7 +159,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
             MasDepartment department = departmentRepo.findById(depId)
                     .orElseThrow(() -> new RuntimeException("Department not found"));
             opdt.setDepartmentId(department);
-            User doctor = userRepo.findById(currentUser.getUserId())
+            User doctor = userRepo.findById(opdTempReq.getDoctorId())
                     .orElseThrow(() -> new RuntimeException("Doctor not found"));
             opdt.setDoctorId(doctor);
             OpdTemplate savedOpdTemplate = opdTempRepo.save(opdt);
@@ -436,7 +436,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
                     .orElseThrow(() -> new RuntimeException("Department not found"));
             template.setDepartmentId(department);
 
-            User doctor = userRepo.findById(currentUser.getUserId())
+            User doctor = userRepo.findById(request.getDoctorId())
                     .orElseThrow(() -> new RuntimeException("Doctor not found"));
             template.setDoctorId(doctor);
 

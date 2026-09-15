@@ -2,7 +2,6 @@ package com.hims.response;
 
 import lombok.Data;
 
-import java.time.Instant;
 
 @Data
 public class AppointmentBookingHistoryResponseDetails {
@@ -21,9 +20,12 @@ public class AppointmentBookingHistoryResponseDetails {
     private String appointmentEndTime;
     private String visitStatus;
     private String reason;
-    private String paymentStatus;
+    private String visitPaymentStatus;
     private Double billedAmount;
     private Long billingHeaderId;
+    private Long paymentId;
+    private String paymentGatewayMode;
+    private String paymentV2PaymentStatusCode;
 
 
 }

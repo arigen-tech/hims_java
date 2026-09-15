@@ -1,19 +1,18 @@
 package com.hims.request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 public class VisitRequest {
     private Long id;
     private Long tokenNo;
-    private Instant tokenStartTime;
-    private Instant tokenEndTime;
-    private Instant visitDate;
+    private LocalDateTime tokenStartTime;
+    private LocalDateTime tokenEndTime;
+    private LocalDateTime visitDate;
     private Long priority;
     private Long departmentId;
     private Long doctorId;

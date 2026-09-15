@@ -118,6 +118,51 @@ public class HelperUtils {
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
     }
 
+    public static String convertLocalDateTimeToDDMMYYYYHHmm(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+
+        return dateTime.format(
+                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+        );
+    }
+
+    public static String convertLocalDateTimeToDDMMYYYYHHmmSS(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+
+        return dateTime.format(
+                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
+        );
+    }
+
+    public static String extractTimeFromLocalDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+
+        return dateTime.toLocalTime()
+                .format(DateTimeFormatter.ofPattern("HH:mm"));
+    }
+
+    public static String extractTimeWithSecondsFromLocalDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+
+        return dateTime.toLocalTime()
+                .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+    }
+
+    public static LocalDateTime instantToLocalDateTime(Instant instant) {
+        if (instant == null) {
+            return LocalDateTime.now();
+        }
+        return LocalDateTime.ofInstant(instant, ZoneId.of("Asia/Kolkata"));
+    }
+
     public String createInvoices() {
         return randomNumGenerator.generateOrderNumber("BILL",true,true);
     }

@@ -135,9 +135,8 @@ public class RadiologyServiceImpl implements RadiologyService {
             visit.setBillingStatus("n");
             visit.setHospital(masHospital);
             visit.setTokenNo(existingTokens + 1);
-             Instant visitDate = Instant.now();
-            visit.setVisitDate(visitDate);
-            visit.setLastChgDate(visitDate);
+            visit.setVisitDate(HMISUtil.getCurrentLocalDateTime());
+            visit.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
             visit.setDepartment(department);
             visit.setDisplayPatientStatus("wp");
             Visit savedVisit = visitRepository.save(visit);
@@ -318,7 +317,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         billingHeader.setHospitalGstin(vId.getHospital().getGstnNo());  //column is not exist in Patient table
         billingHeader.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad));  ///for which table
         billingHeader.setReferredBy(vId.getDoctorName());//few doute
-        billingHeader.setBillingDate(Instant.now());
+        billingHeader.setBillingDate(HMISUtil.getCurrentLocalDateTime());
         billingHeader.setPaymentStatus("n");
         billingHeader.setVisit(vId);
         billingHeader.setRadOrderHd(hdId);
@@ -329,10 +328,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         //billingHeader.setDiscount();//id is Pass
         //billingHeader.setDiscountAmount(BigDecimal.valueOf(labReq.getDiscountAmount()));
         billingHeader.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
-        billingHeader.setCreatedDt(Instant.now());
-        billingHeader.setUpdatedDt(Instant.now());
-        billingHeader.setBillDate(OffsetDateTime.now());
-        billingHeader.setUpdatedAt(OffsetDateTime.now());
+        billingHeader.setBillDate(HMISUtil.getCurrentLocalDateTime());
+        billingHeader.setUpdatedAt(HMISUtil.getCurrentLocalDateTime());
         return  billingHeaderRepository.save(billingHeader);
     }
 
@@ -588,8 +585,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         visit.setHospital(hospital);
         visit.setTokenNo(token + 1);
         visit.setDepartment(dept);
-        visit.setVisitDate(Instant.now());
-        visit.setLastChgDate(Instant.now());
+        visit.setVisitDate(HMISUtil.getCurrentLocalDateTime());
+        visit.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
         visit.setDisplayPatientStatus("wp");
 
         String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());

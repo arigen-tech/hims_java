@@ -17,12 +17,18 @@ public interface BloodRequestDtRepository extends JpaRepository<BloodRequestDt, 
             p.patient_id AS patientId,
             TRIM(CONCAT_WS(' ',  p.p_fn,  p.p_mn,  p.p_ln )) AS patientName,
             bg.blood_group_name AS bloodGroup,
+            bg.blood_group_id AS bloodGroupId,
             bc.component_name AS component,
+            bc.component_id AS componentId,
             brd.units_required AS units,
             brd.urgency AS urgency,
             brh.request_datetime AS requestedDateTime,
+            brh.request_no AS requestNo,
             brh.requested_by AS requestedBy,
-            brd.detail_status AS trackingStatus
+            brd.detail_status AS trackingStatus,
+            brd.required_by_datetime AS requiredByDateTime,
+            mw.ward_Name AS requestedWard
+            
         FROM blood_request_dt brd
         LEFT JOIN blood_request_hd brh
             ON brh.request_hd_id = brd.request_hd_id
@@ -34,6 +40,12 @@ public interface BloodRequestDtRepository extends JpaRepository<BloodRequestDt, 
             ON bg.blood_group_id = brh.blood_group_id
         LEFT JOIN mas_blood_component bc
             ON bc.component_id = brd.component_id
+        LEFT JOIN mas_ward mw
+            ON mw.ward_id = brh.request_ward_id
+        LEFT JOIN mas_room mr
+            ON mr.room_id = i.room_id
+        LEFT JOIN mas_bed mb
+            ON mb.bed_id = i.bed_id
         WHERE
             (
                 :inpatientNo IS NULL

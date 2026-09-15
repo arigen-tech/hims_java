@@ -5,7 +5,6 @@ import com.hims.projection.BillingHeaderResponseProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -80,9 +79,20 @@ public interface BillingService {
             String serviceCategoryCode);
 
 
-    ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page, int size,String patientName,
-                                String mobileNo,String billingServiceType, String refundStatus,LocalDate fromDate,LocalDate toDate);
+//    ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page, int size,String patientName,
+//                                String mobileNo,String billingServiceType, String refundStatus,LocalDate fromDate,LocalDate toDate);
 
+    public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(
+            int page,
+            int size,
+            String patientName,
+            String mobileNo,
+            String billingServiceType,
+            String refundStatus,
+            Long paymentModeId,
+            LocalDate fromDate,
+            LocalDate toDate
+    );
     ApiResponse<List<PatientBillingRefundDetailsResponse>> getPatientBillingRefundDetails(Long billingId);
 
     BillingHeader saveBillingHeaderIfEnabled(boolean billingEnabled, Object orderHd, Visit visit, User currentUser,
@@ -90,4 +100,5 @@ public interface BillingService {
                                              String serviceCategoryCode, boolean isRadiology);
 
 
+    ApiResponse<RefundDetailsResponse> getRefundDetails(Long refundId);
 }

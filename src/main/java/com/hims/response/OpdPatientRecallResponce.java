@@ -31,7 +31,7 @@ public class OpdPatientRecallResponce {
     //============================== For OpdPatientDetails ==================================
 
     private Long opdPatientId;
-    private Instant opdDate;
+    private LocalDateTime opdDate;
 
                 //=============clinic===========
     private String pastMedicalHistory;
