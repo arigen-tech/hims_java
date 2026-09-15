@@ -13,6 +13,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Immutable audit table - every distinct Razorpay webhook event is a new row.
@@ -104,19 +106,12 @@ public class PaymentWebhookEvent {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-//
-//    @PrePersist
-//    protected void onCreate() {
-//        Instant now = Instant.now();
-//        this.createdAt = now;
-//        this.updatedAt = now;
-//        if (this.receivedAt == null) {
-//            this.receivedAt = now;
-//        }
-//    }
-//
-//    @PreUpdate
-//    protected void onUpdate() {
-//        this.updatedAt = Instant.now();
-//    }
+
+    @ManyToMany
+    @JoinTable(
+            name = "payment_webhook_event_payment",
+            joinColumns = @JoinColumn(name = "webhook_event_id"),
+            inverseJoinColumns = @JoinColumn(name = "payment_id")
+    )
+    private List<PaymentDetailsV2> payments = new ArrayList<>();
 }
