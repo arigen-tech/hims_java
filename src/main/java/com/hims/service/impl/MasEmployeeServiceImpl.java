@@ -1935,16 +1935,6 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 );
             }
 
-//            if ( mobileNo == null || mobileNo.trim().isEmpty()) {
-//                log.warn("Either patientId or mobileNo is required");
-//                return ResponseUtils.createFailureResponse(
-//                        null,
-//                        new TypeReference<>() {},
-//                        "Mobile number is required",
-//                        HttpStatus.BAD_REQUEST.value()
-//                );
-//            }
-
             if (deptTypeCode == null || deptTypeCode.trim().isEmpty()) {
                 log.warn("Department Type Code is required");
                 return ResponseUtils.createFailureResponse(
@@ -1997,12 +1987,6 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
             else{
                 log.debug("Fetching upcoming appointments by mobile and department ");
-//                if(payment ==null){
-//                    throw  new SDDException("Online Payment",
-//                            HttpStatus.BAD_REQUEST.value(),
-//                            "payment is required when patientId is not provided"
-//                    );
-//                }
 
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
                         hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, normalizedVisitStatuses, normalizedPayment
@@ -2160,6 +2144,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setBillingHeaderId(projection.getBillingHeaderId());
         dto.setPaymentId(projection.getPaymentId());
         dto.setPaymentGatewayMode(projection.getPaymentGatewayMode());
+        dto.setPaymentGatewayModeName(projection.getPaymentGatewayModeName());
         dto.setPaymentV2PaymentStatusCode(projection.getPaymentV2PaymentStatusCode());
 
         return dto;
