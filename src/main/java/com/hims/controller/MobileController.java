@@ -149,6 +149,7 @@ public class MobileController {
      * @param mobileNo Mobile number (optional if patientId provided)
      * @param deptTypeCode Department type code(s), comma-separated when multiple types are needed
      * @param includeAllHistory true (default) = all appointments (past + future), false = only future appointments
+    * @param visitStatus Visit status code(s): c (cancelled), y (completed), n (pending), x (closed); comma-separated
      * @return Appointment history based on flag
      */
     @GetMapping("/getAppointmentHistoryList")
@@ -160,10 +161,11 @@ public class MobileController {
             @RequestParam(required = false) String mobileNo,
             @RequestParam(required = false) String deptTypeCode,
             @RequestParam(required = false, defaultValue = "true") Boolean includeAllHistory,
-            @RequestParam(required = false) String payment
+            @RequestParam(required = false) String payment,
+            @RequestParam(required = false) String visitStatus
     ) {
         String resolvedPatientName = patientName != null ? patientName : name;
-        return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, resolvedPatientName, deptTypeCode, includeAllHistory, payment);
+        return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, resolvedPatientName, deptTypeCode, includeAllHistory, payment, visitStatus);
     }
 
 }
