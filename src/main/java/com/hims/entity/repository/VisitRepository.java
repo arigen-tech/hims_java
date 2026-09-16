@@ -778,7 +778,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("patientName") String patientName,
             @Param("departmentIds") List<Long> departmentIds,
             @Param("includeAllHistory") Boolean includeAllHistory,
-            @Param("visitStatus") String visitStatus,
+            @Param("visitStatus") List<String> visitStatus,
             @Param("payment") String payment
     );
 

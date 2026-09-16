@@ -51,6 +51,13 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     private static final Set<String> ALLOWED_PIC_EXTENSIONS = new HashSet<>(
             Arrays.asList("jpg", "jpeg", "png"));
 
+        private static final Set<String> ALLOWED_VISIT_STATUSES = Set.of(
+            AppConstants.VISIT_STATUS_CANCELLED.toLowerCase(),
+            AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(),
+            AppConstants.VISIT_STATUS_PENDING.toLowerCase(),
+            AppConstants.VISIT_STATUS_CLOSED.toLowerCase()
+        );
+
     @Value("${upload.image.path}")
     private String uploadDir;
 
@@ -1908,7 +1915,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
     @Override
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>>  appointmentHistoryList(
-            Long hospitalId, Long patientId, String mobileNo, String patientName, String deptTypeCode, Boolean includeHistory, String payment) {
+            Long hospitalId, Long patientId, String mobileNo, String patientName, String deptTypeCode, Boolean includeHistory, String payment, String visitStatus) {
 
         String normalizedMobileNo = cleanStringParameter(mobileNo);
         String normalizedPatientName = cleanStringParameter(patientName);
@@ -1961,6 +1968,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             // Default to true (all history) if not provided
             boolean includeHistoryFlag = includeHistory != null ? includeHistory : true;
             String normalizedDeptTypeCode = deptTypeCode.trim();
+            List<String> normalizedVisitStatuses = normalizeVisitStatuses(visitStatus);
 
             List<AppointmentBookingHistoryResponseDetails> response;
 
@@ -1982,7 +1990,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 log.debug("Fetching appointment history by patient Id and  using native query");
 
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase(),normalizedPayment
+                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, normalizedVisitStatuses, normalizedPayment
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
@@ -1997,7 +2005,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 //                }
 
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase(),normalizedPayment
+                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, normalizedVisitStatuses, normalizedPayment
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
@@ -2051,6 +2059,30 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             return null;
         }
         return param.trim();
+    }
+
+    private List<String> normalizeVisitStatuses(String visitStatus) {
+        String normalizedVisitStatus = cleanStringParameter(visitStatus);
+        if (normalizedVisitStatus == null) {
+            return List.of(AppConstants.VISIT_STATUS_PENDING.toLowerCase());
+        }
+
+        List<String> statuses = Arrays.stream(normalizedVisitStatus.split(","))
+                .map(String::trim)
+                .filter(status -> !status.isEmpty())
+                .map(String::toLowerCase)
+                .distinct()
+                .toList();
+
+        if (statuses.isEmpty() || statuses.stream().anyMatch(status -> !ALLOWED_VISIT_STATUSES.contains(status))) {
+            throw new SDDException(
+                    "visitStatus",
+                    HttpStatus.BAD_REQUEST.value(),
+                    "Invalid visitStatus. Allowed values are c, y, n and x"
+            );
+        }
+
+        return statuses;
     }
 
     @Override
