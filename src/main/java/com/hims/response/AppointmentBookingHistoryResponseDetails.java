@@ -25,6 +25,7 @@ public class AppointmentBookingHistoryResponseDetails {
     private Long billingHeaderId;
     private Long paymentId;
     private String paymentGatewayMode;
+    private String paymentGatewayModeName;
     private String paymentV2PaymentStatusCode;
 
 

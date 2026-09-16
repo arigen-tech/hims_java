@@ -44,6 +44,7 @@ public interface AppointmentHistoryProjection {
     Long getBillingHeaderId();
      Long getPaymentId();
      String getPaymentGatewayMode();
+    String getPaymentGatewayModeName();
 
 
     String getPaymentV2PaymentStatusCode();

@@ -1,5 +1,6 @@
 package com.hims.service.impl;
 
+import com.hims.constants.AppConstants;
 import com.hims.entity.PaymentDetailsV2;
 import com.hims.entity.PaymentWebhookEvent;
 import com.hims.entity.repository.PaymentWebhookEventRepository;
@@ -19,8 +20,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class WebhookAuditServiceImpl implements WebhookAuditService{
 
-    private static final String PROCESSED = "PROCESSED";
-    private static final String FAILED = "FAILED";
+
 
     private final PaymentWebhookEventRepository webhookEventRepository;
 
@@ -38,11 +38,11 @@ public class WebhookAuditServiceImpl implements WebhookAuditService{
 
         webhookEvent.setEventId(eventId);
         webhookEvent.setEventType(eventType);
-        webhookEvent.setGateway("RAZORPAY");
+        webhookEvent.setGateway(AppConstants.RAZORPAY_GATEWAY);
         webhookEvent.setGatewayOrderId(gatewayOrderId);
         webhookEvent.setGatewayPaymentId(gatewayPaymentId);
         webhookEvent.setPayload(rawBody);
-        webhookEvent.setProcessingStatus("RECEIVED");
+        webhookEvent.setProcessingStatus(AppConstants.WEBHOOK_RECEIVED_STATUS);
         paymentOpt.ifPresent(webhookEvent::setPayment);
         webhookEvent.setReceivedAt(HMISUtil.getCurrentLocalDateTime());
         webhookEvent.setCreatedAt(HMISUtil.getCurrentLocalDateTime());
@@ -66,7 +66,7 @@ public class WebhookAuditServiceImpl implements WebhookAuditService{
                                 )
                         );
 
-        event.setProcessingStatus(PROCESSED);
+        event.setProcessingStatus(AppConstants.WEBHOOK_PROCESSED_STATUS);
         event.setProcessedAt(HMISUtil.getCurrentLocalDateTime());
         event.setUpdatedAt(HMISUtil.getCurrentLocalDateTime());
 
@@ -88,7 +88,7 @@ public class WebhookAuditServiceImpl implements WebhookAuditService{
                                 )
                         );
 
-        event.setProcessingStatus(FAILED);
+        event.setProcessingStatus(AppConstants.WEBHOOK_FAILED_STATUS);
         event.setErrorMessage(truncate(errorMessage, 2000));
         event.setUpdatedAt(HMISUtil.getCurrentLocalDateTime());
 
@@ -104,11 +104,11 @@ public class WebhookAuditServiceImpl implements WebhookAuditService{
         PaymentWebhookEvent webhookEvent = new PaymentWebhookEvent();
         webhookEvent.setEventId(eventId);
         webhookEvent.setEventType(eventType);
-        webhookEvent.setGateway("RAZORPAY");
+        webhookEvent.setGateway(AppConstants.RAZORPAY_GATEWAY);
         webhookEvent.setGatewayOrderId(gatewayOrderId);
         webhookEvent.setGatewayPaymentId(gatewayPaymentId);
         webhookEvent.setPayload(rawBody);
-        webhookEvent.setProcessingStatus("RECEIVED");
+        webhookEvent.setProcessingStatus(AppConstants.WEBHOOK_RECEIVED_STATUS);
 
         webhookEvent.setPayments(matchedPayments);
         matchedPayments.stream().findFirst().ifPresent(webhookEvent::setPayment);
