@@ -223,7 +223,7 @@ public class AuthServiceImpl implements AuthService {
             if (user == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "INVALID USERNAME!", 401);
             }
-            if (!"y".equalsIgnoreCase(user.getStatus())) {
+            if (!AppConstants.STATUS_Y.equalsIgnoreCase(user.getStatus())) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ACTIVE USER NOT FOUND WITH THIS USERNAME", 400);
             }
             UsernamePasswordAuthenticationToken authentication =

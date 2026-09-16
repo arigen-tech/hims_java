@@ -8,6 +8,7 @@ import com.hims.entity.repository.MasPaymentModeRepository;
 import com.hims.entity.repository.MasPaymentStatusRepository;
 import com.hims.exception.SDDException;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,8 @@ public class PaymentUtils {
     private final AuthUtil authUtil;
 
     private final TransactionSequenceService transactionSequenceService;
+
+    private final UserContextService userContextService;
 
 
 
@@ -96,7 +99,7 @@ public class PaymentUtils {
     public String generatePaymentReferenceNo() {
         return   transactionSequenceService.generateTransactionNumber(
                 HMISTransaction.PAYMENT_REFERENCE_NO,
-                authUtil.getCurrentUser().getHospital().getId()
+                userContextService.getCurrentUserContext().getHospitalId()
         );
     }
 
@@ -111,7 +114,7 @@ public class PaymentUtils {
     public String generateRefundReferenceNo() {
         return transactionSequenceService.generateTransactionNumber(
                 HMISTransaction.REFUND_REFERENCE_NO,
-                authUtil.getCurrentUser().getHospital().getId()
+                userContextService.getCurrentUserContext().getHospitalId()
         );
     }
 

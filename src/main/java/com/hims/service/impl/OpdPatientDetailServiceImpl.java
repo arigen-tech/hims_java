@@ -14,6 +14,7 @@ import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
 import com.hims.utils.ResponseUtils;
@@ -61,6 +62,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final PatientPrescriptionHdRepository patientPrescriptionHdRepository;
     private final PatientPrescriptionDtRepository patientPrescriptionDtRepository;
     private final AuthUtil authUtil;
+    private final UserContextService userContextService;
     private final MasStoreItemRepository masStoreItemRepository;
     private final MasCareLevelRepo masCareLevelRepository;
     private final MasWardCategoryRepository masWardCategoryRepository;
@@ -421,7 +423,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (visit != null) {
             visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
             visit.setDoctor(authUtil.getCurrentUser());
-            visit.setDoctorName(authUtil.getCurrentUser().getFullName());
+            visit.setDoctorName(userContextService.getCurrentUserContext().getUserFullName());
             visitRepository.save(visit);
             log.info("Closed visit with ID: {}", visit.getId());
         }
@@ -1647,7 +1649,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             response.setPatientPrescriptionHds(hdList);
             // ================= PRESCRIPTION DT =================
             List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newDtList = new ArrayList<>();
-            Long hospitalId = authUtil.getCurrentUser() != null && authUtil.getCurrentUser().getHospital() != null ? authUtil.getCurrentUser().getHospital().getId() : null;
+            Long hospitalId = authUtil.getCurrentUser() != null && authUtil.getCurrentUser().getHospital() != null ? userContextService.getCurrentUserContext().getHospitalId() : null;
             for (PatientPrescriptionDt dt : prescDtList) {
                 if (dt == null) continue;
                 OpdPatientRecallResponce.NewDPatientPrescriptionDt newDt = new OpdPatientRecallResponce.NewDPatientPrescriptionDt();

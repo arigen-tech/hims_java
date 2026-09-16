@@ -444,8 +444,9 @@ public class RadiologyServiceImpl implements RadiologyService {
             throw new IllegalArgumentException("Invalid service category");
         }
 
-        User currentUser = authUtil.getCurrentUser();
-        String userName = currentUser.getFirstName() + " " + currentUser.getLastName();
+//        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = authUtil.getCurrentUserContext();
+        String userName = userContext.getUserFullName();
 
         List<Long> investigationIds = new ArrayList<>();
         List<Long> packageIds = new ArrayList<>();
@@ -519,7 +520,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                 }
 
                 BillingHeader billing = billingService.saveBillingHeaderIfEnabled(
-                        radBillingEnabled, orderHd, visit, currentUser,
+                        radBillingEnabled, orderHd, visit, userContext,
                         amount.getTotal(), amount.getTax(), amount.getDiscount(),
                         serviceCategoryRad, true
                 );
@@ -808,8 +809,9 @@ public class RadiologyServiceImpl implements RadiologyService {
             throw new SDDException("serviceCategory", 400, "Invalid service category");
         }
 
-        User currentUser = authUtil.getCurrentUser();
-        String userName = getCurrentUserName();
+//        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = authUtil.getCurrentUserContext();
+        String userName = userContext.getUserFullName();
 
         List<Long> investigationIds = new ArrayList<>();
         List<Long> packageIds = new ArrayList<>();
@@ -870,7 +872,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                 }
 
                 BillingHeader billing = billingService.saveBillingHeaderIfEnabled(
-                        radBillingEnabled, orderHd, visit, currentUser,
+                        radBillingEnabled, orderHd, visit, userContext,
                         amount.getTotal(), amount.getTax(), amount.getDiscount(),
                         serviceCategoryRad, true
                 );

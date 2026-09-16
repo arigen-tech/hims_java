@@ -12,6 +12,7 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BloodBankService;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
 import com.hims.utils.ResponseUtils;
@@ -57,6 +58,8 @@ public class BloodBankServiceImpl implements BloodBankService{
     private MasDistrictRepository masDistrictRepository;
     @Autowired
     private AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
     @Autowired
     private BloodDonorScreeningRepository bloodDonorScreeningRepository;
     @Autowired
@@ -435,7 +438,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         bloodDonationHdr.setBagTypeId(masBloodBagTypeRepository.findById(bloodCollectionRequest.getBagTypeId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.BAG_TYPE_NOT_FOUND_ERR_MSG)));
         bloodDonationHdr.setTotalCollectedVolumeMl(bloodCollectionRequest.getTotalCollectedVolume());
         bloodDonationHdr.setCreatedDate(LocalDate.now());
-        bloodDonationHdr.setCreatedBy(authUtil.getCurrentUser().getFullName());
+        bloodDonationHdr.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
         bloodDonationHdr.setDonationDatetime(LocalDateTime.now());
         bloodDonationHdr.setHospital(authUtil.getCurrentUser().getHospital());
             bloodDonationHdr.setDonationStatusId(masBloodDonationStatusRepository.findById(bloodDonationStatusCollected).orElseThrow());
@@ -527,7 +530,7 @@ public class BloodBankServiceImpl implements BloodBankService{
                 dt.setVolumeMl(row.getVolumeMl());
                 dt.setExpiryDate(row.getExpiryDate());
                 dt.setCreatedDate(LocalDateTime.now());
-                dt.setCreatedBy(authUtil.getCurrentUser().getFullName());
+                dt.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
                 dt.setHospital(authUtil.getCurrentUser().getHospital());
                 donationDtList.add(dt);
             }
@@ -606,7 +609,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             entity.setTestDate(dto.getTestDate());
             entity.setRemarks(dto.getRemarks());
             entity.setCreatedDate(LocalDateTime.now());
-            entity.setCreatedBy(authUtil.getCurrentUser().getFullName());
+            entity.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
             entity.setHospital(authUtil.getCurrentUser().getHospital());
 
             bloodDonationTestResultRepository.save(entity);
@@ -651,10 +654,10 @@ public class BloodBankServiceImpl implements BloodBankService{
                             req.getCollectionType(),
                             req.getExpiryFilter(),
                     req.getHospitalId(),
-                    AppConstants.COMPONENT_CRYO,
-                    AppConstants.COMPONENT_PLASMA,
-                    AppConstants.COMPONENT_PLT,
-                    AppConstants.COMPONENT_PRBC);
+                    AppConstants.COMPONENT_CRYO.toLowerCase(),
+                    AppConstants.COMPONENT_PLASMA.toLowerCase(),
+                    AppConstants.COMPONENT_PLT.toLowerCase(),
+                    AppConstants.COMPONENT_PRBC.toLowerCase());
             return ResponseUtils.createSuccessResponse(list, new TypeReference<>() {});
 
         } else {
@@ -833,7 +836,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             inventory.setExpiryDate(dt.getExpiryDate());
             inventory.setInventoryStatus(masBloodInventoryStatusRepository.findById(inventoryStatusAvailable).orElseThrow());
             inventory.setCreatedDate(LocalDateTime.now());
-            inventory.setCreatedBy(authUtil.getCurrentUser().getFullName());
+            inventory.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
             inventory.setHospital(authUtil.getCurrentUser().getHospital());
 
             bloodDonationDtRepository.save(dt);
@@ -863,7 +866,7 @@ public class BloodBankServiceImpl implements BloodBankService{
                 doc.setFilePath(filePath);
                 doc.setDocType(mimeType);
                 doc.setUploadedDate(LocalDateTime.now());
-                doc.setUploadedBy(authUtil.getCurrentUser().getFullName());
+                doc.setUploadedBy(userContextService.getCurrentUserContext().getUserFullName());
 
                 bloodDonationInvestigationDocRepository.save(doc);
 
@@ -878,11 +881,11 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Transactional
     public ApiResponse<String> createBloodRequest(BloodRequestRequest request) {
         try {
-            String currentUser = authUtil.getCurrentUser().getFullName();
+            String currentUser = userContextService.getCurrentUserContext().getUserFullName();
 
             BloodRequestHd bloodRequestHd = new BloodRequestHd();
             bloodRequestHd.setRequestNo(transactionSequenceService.generateTransactionNumber
-                    (HMISTransaction.BLOOD_REQUEST_NO, authUtil.getCurrentUser().getHospital().getId()));
+                    (HMISTransaction.BLOOD_REQUEST_NO, userContextService.getCurrentUserContext().getHospitalId()));
             bloodRequestHd.setInpatient(inpatientRepository.findById(request.getInpatientId())
                     .orElseThrow(() -> new RecordNotFoundException("Inpatient not found")));
             bloodRequestHd.setPatient(patientRepository.findById(request.getPatientId())
@@ -998,7 +1001,7 @@ public class BloodBankServiceImpl implements BloodBankService{
                         request.getPatientBloodGroupId(),
                         request.getComponentId(),
                         AppConstants.STATUS_Y.toLowerCase(),
-                        1L
+                        inventoryStatusAvailable
                 );
 
         List<BloodInventoryResponse> responseList = inventoryList.stream()

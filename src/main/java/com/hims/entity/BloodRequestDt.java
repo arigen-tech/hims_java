@@ -55,4 +55,10 @@ public class BloodRequestDt {
 
     @Column(name = "remarks", length = 200)
     private String remarks;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tracking_status_id", nullable = false)
+    private BloodTrackingStatusMaster trackingStatus;
+
+
 }

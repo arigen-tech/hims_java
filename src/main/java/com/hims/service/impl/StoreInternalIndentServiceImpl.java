@@ -7,6 +7,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.StoreInternalIndentService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.DepartmentConfig;
 import com.hims.utils.ResponseUtils;
@@ -41,6 +42,8 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     private final MasCommonStatusRepository masCommonStatusRepository;
     @Autowired
     AuthUtil authUtil;
+    @Autowired
+    UserContextService userContextService;
     @Autowired
     DepartmentConfig departmentConfig;
     @Autowired
@@ -705,7 +708,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                         continue;
                     }
 
-                    Long hospitalId = authUtil.getCurrentUser().getHospital().getId();
+                    Long hospitalId = userContextService.getCurrentUserContext().getHospitalId();
                     Integer deptIdAsInt = deptId.intValue();
                     Long itemId = detail.getItemId().getItemId();
 
@@ -2096,7 +2099,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
 //    public ApiResponse<List<ROLItemResponse>> getROLItems() {
 //        try {
 //            Long currentDeptId = authUtil.getCurrentDepartmentId();
-//            Long hospitalId = authUtil.getCurrentUser().getHospital().getId();
+//            Long hospitalId = userContextService.getCurrentUserContext().getHospitalId();
 //
 //            if (currentDeptId == null) {
 //                return ResponseUtils.createFailureResponse(
@@ -2149,7 +2152,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     public ApiResponse<List<ROLItemResponse>> getROLItems() {
         try {
             Long currentDeptId = authUtil.getCurrentDepartmentId();
-            Long hospitalId = authUtil.getCurrentUser().getHospital().getId();
+            Long hospitalId = userContextService.getCurrentUserContext().getHospitalId();
 
             if (currentDeptId == null) {
                 return ResponseUtils.createFailureResponse(

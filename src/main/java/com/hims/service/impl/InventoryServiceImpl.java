@@ -14,6 +14,7 @@ import com.hims.projection.MasStoreItemProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.InventoryService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.InventoryUtils;
 import com.hims.utils.RandomNumGenerator;
@@ -56,6 +57,7 @@ public class InventoryServiceImpl implements InventoryService {
     private final StoreItemBatchStockRepository storeItemBatchStockRepository;
     private final StoreStockLedgerRepository storeStockLedgerRepository;
     private final AuthUtil authUtil;
+    private final UserContextService userContextService;
     private final MasCommonStatusRepository masCommonStatusRepository;
 
     private final  MasStoreItemRepository masStoreItemRepository;
@@ -1050,7 +1052,7 @@ public class InventoryServiceImpl implements InventoryService {
             String userName = authUtil.getCurrentUser().getFirstName();
 
             Long departmentId = authUtil.getCurrentDepartmentId();
-            Long hospitalId = authUtil.getCurrentUser().getHospital().getId();
+            Long hospitalId = userContextService.getCurrentUserContext().getHospitalId();
 
             String issuedStatusM = masCommonStatusRepository
                     .findByEntityNameAndColumnNameAndStatusCode(
@@ -2304,7 +2306,7 @@ public class InventoryServiceImpl implements InventoryService {
                 StoreReturnT savesReturnDetails = storeReturnTRepository.save(storeReturnT);
 
 //                storeItemBatchStock.setClosingStock(storeItemBatchStock.getClosingStock()-detailRequest.getDamagedQty().longValue());
-                storeItemBatchStock.setLastChgBy(authUtil.getCurrentUser().getFullName());
+                storeItemBatchStock.setLastChgBy(userContextService.getCurrentUserContext().getUserFullName());
                 storeItemBatchStock.setReturnQty(storeItemBatchStock.getReturnQty()!=null?
                         storeItemBatchStock.getReturnQty().add(detailRequest.getDamagedQty()):
                         detailRequest.getDamagedQty());
@@ -2388,13 +2390,13 @@ public class InventoryServiceImpl implements InventoryService {
                                     StoreItemBatchStock storeItemBatchStock) {
         StoreItemDamagedStock damagedStock= new StoreItemDamagedStock();
         damagedStock.setStoreItemBatchStock(storeItemBatchStock);
-        damagedStock.setApprovedBy(authUtil.getCurrentUser().getFullName());
+        damagedStock.setApprovedBy(userContextService.getCurrentUserContext().getUserFullName());
         damagedStock.setApprovedDate(LocalDateTime.now());
         damagedStock.setBrandName(storeItemBatchStock.getBrandId().getBrandName());
-        damagedStock.setCreatedBy(authUtil.getCurrentUser().getFullName());
+        damagedStock.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
         damagedStock.setDamagedQty(detailRequest.getDamagedQty());
         damagedStock.setLastUpdateDate(LocalDateTime.now());
-        damagedStock.setLastUpdatedBy(authUtil.getCurrentUser().getFullName());
+        damagedStock.setLastUpdatedBy(userContextService.getCurrentUserContext().getUserFullName());
         damagedStock.setManufacturerName(storeItemBatchStock.getManufacturerId().getManufacturerName());
         damagedStock.setMasStoreItem(storeItemBatchStock.getItemId());
         damagedStock.setReason(detailRequest.getReason());

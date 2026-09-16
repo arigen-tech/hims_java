@@ -11,6 +11,7 @@ import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.LabRegistrationServices;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     BillingHeaderRepository billingHeaderRepository;
     @Autowired
     AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
     @Autowired
     UserDepartmentRepository userDepartmentRepository;
     private final BillingDetailRepository billingDetailRepository;
@@ -237,7 +240,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             throw new SDDException("patient", 400, "Patient data is required");
         }
 
-        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = authUtil.getCurrentUserContext();
 
         Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(
                 patient.getPatientFn(), patient.getPatientLn(),
@@ -290,14 +293,14 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
                 BigDecimal[] amounts = calculateBillingAmounts(investigations);
 
-                DgOrderHd savedHd = saveLabOrderHeader(savedPatient, savedVisit, currentUser, date, labBillingEnabled);
+                DgOrderHd savedHd = saveLabOrderHeader(savedPatient, savedVisit, userContext, date, labBillingEnabled);
 
                 if (savedHd == null) {
                     throw new SDDException("order", 500, "Failed to create lab order");
                 }
 
                 BillingHeader billingHeader = billingService.saveBillingHeaderIfEnabled(
-                        labBillingEnabled, savedHd, savedVisit, currentUser,
+                        labBillingEnabled, savedHd, savedVisit, userContext,
                         amounts[0], amounts[1], amounts[2],
                         serviceCategoryLab, false
                 );
@@ -309,7 +312,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         DgMasInvestigation invEntity = investigation.findById(inv.getId())
                                 .orElseThrow(() -> new SDDException("investigation", 400, "Invalid investigation ID: " + inv.getId()));
 
-                       saveLabOrderDetail(savedHd, billingHeader, inv, invEntity, currentUser, serviceCategoryLab);
+                       saveLabOrderDetail(savedHd, billingHeader, inv, invEntity, userContext, serviceCategoryLab);
 
                     } else if (AppConstants.STATUS_P.equalsIgnoreCase(inv.getType())) {
 
@@ -320,7 +323,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
                         for (PackageInvestigationMapping map : mappings) {
                             saveLabOrderDetailForPackage(
-                                    savedHd, billingHeader, inv, map.getInvestId(), pkgObj, currentUser
+                                    savedHd, billingHeader, inv, map.getInvestId(), pkgObj, userContext
                             );
                         }
 
@@ -351,8 +354,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         }
     }
     public Visit createVisitForLabRadio(Patient patient,Long department) {
-        User user = authUtil.getCurrentUser();
-        MasHospital hospital = masHospitalRepository.findById(user.getHospital().getId()).orElseThrow(() -> new RuntimeException("Invalid hospital"));
+        UserContext user = authUtil.getCurrentUserContext();
+        MasHospital hospital = masHospitalRepository.findById(user.getHospitalId()).orElseThrow(() -> new RuntimeException("Invalid hospital"));
         MasDepartment dept = masDepartmentRepository.findById(department).orElseThrow(() -> new RuntimeException("Invalid department"));
         Long token = visitRepository.countTokensForToday(hospital.getId(), dept.getId());
         Visit visit = new Visit();
@@ -427,7 +430,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             }
 
             dt.setOrderTrackingStatus(getOrderedStatus());
-            String currentUserFullName = authUtil.getCurrentUser().getFullName();
+            String currentUserFullName = userContextService.getCurrentUserContext().getUserFullName();
             dt.setCreatedBy(currentUserFullName);
             dt.setLastChgBy(currentUserFullName);
             dt.setCreatedOn(HMISUtil.getCurrentLocalDateTime());
@@ -445,10 +448,11 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
         log.info("Starting lab update + booking");
 
-        User currentUser = authUtil.getCurrentUser();
+//        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         Long departmentId = laboratoryDepartment;
 
-        if (currentUser == null) {
+        if (userContext == null) {
             throw new SDDException("user", 401, "Current user not found");
         }
 
@@ -513,14 +517,14 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     }
                 }
 
-                DgOrderHd savedHd = saveLabOrderHeader(patient, savedVisit, currentUser, date, labBillingEnabled);
+                DgOrderHd savedHd = saveLabOrderHeader(patient, savedVisit, userContext, date, labBillingEnabled);
 
                 if (savedHd == null) {
                     throw new SDDException("order", 500, "Failed to create order");
                 }
 
                 BillingHeader billingHeader = billingService.saveBillingHeaderIfEnabled(
-                        labBillingEnabled, savedHd, savedVisit, currentUser,
+                        labBillingEnabled, savedHd, savedVisit, userContext,
                         sum, tax, disc,
                         serviceCategoryLab, false
                 );
@@ -536,7 +540,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         DgMasInvestigation invEntity = investigation.findById(inv.getId())
                                 .orElseThrow(() -> new SDDException("investigation", 400, "Invalid investigation ID: " + inv.getId()));
 
-                        saveLabOrderDetail(savedHd, billingHeader, inv, invEntity, currentUser, serviceCategoryLab);
+                        saveLabOrderDetail(savedHd, billingHeader, inv, invEntity, userContext, serviceCategoryLab);
 
                     } else if (AppConstants.PACKAGE.equalsIgnoreCase(inv.getType())) {
 
@@ -547,7 +551,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
                         for (PackageInvestigationMapping map : mappings) {
                          saveLabOrderDetailForPackage(
-                                    savedHd, billingHeader, inv, map.getInvestId(), pkg, currentUser
+                                    savedHd, billingHeader, inv, map.getInvestId(), pkg, userContext
                             );
                         }
 
@@ -565,9 +569,6 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
             return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {});
 
-        } catch (SDDException e) {
-            log.error("Business error: {}", e.getMessage());
-            throw e;
         } catch (Exception e) {
             log.error("Unexpected error", e);
             throw new SDDException("system", 500, "Error while updating lab booking");
@@ -575,9 +576,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     }
 
 
-    private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, User currentUser, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
+    private BillingHeader BillingHeaderDataSave(DgOrderHd hdId, Visit vId, LabRegRequest labReq, UserContext userContext, BigDecimal sum, BigDecimal tax, BigDecimal disc) {
         BillingHeader billingHeader = new BillingHeader();
-        billingHeader.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
+        billingHeader.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, userContext.getHospitalId()));
         billingHeader.setPatient(vId.getPatient());
         billingHeader.setVisit(vId);
         billingHeader.setPatientDisplayName(vId.getPatient().getPatientFn());
@@ -585,7 +586,10 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingHeader.setPatientAge(ageCalculator(dob));
         billingHeader.setPatientGender(vId.getPatient().getPatientGender().getGenderName());
         billingHeader.setPatientAddress(vId.getPatient().getPatientAddress1());
-        billingHeader.setHospital(currentUser.getHospital());
+        billingHeader.setHospital(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new SDDException("Hospitals Details",
+                HttpStatus.NOT_FOUND.value(),
+                "Hospital details not found for refundId: ")
+        ));
         billingHeader.setHospitalName(vId.getPatient().getPatientHospital().getHospitalName());
         billingHeader.setHospitalAddress(vId.getHospital().getAddress());
         billingHeader.setHospitalMobileNo(vId.getHospital().getContactNumber());
@@ -602,7 +606,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         billingHeader.setTaxTotal(tax);
         //billingHeader.setDiscount();
         //billingHeader.setDiscountAmount(BigDecimal.valueOf(labReq.getDiscountAmount()));
-        billingHeader.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+        billingHeader.setCreatedBy(userContext.getUserFullName());
         billingHeader.setBillDate(HMISUtil.getCurrentLocalDateTime());
 
         return billingHeaderRepository.save(billingHeader);
@@ -676,10 +680,11 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     public ApiResponse<AppsetupResponse> labRegForExistingOrder(LabBillingOnlyRequest labReq) {
         log.info("Starting lab billing for existing order. OrderHdId={}", labReq.getOrderhdid());
 
-        User currentUser = authUtil.getCurrentUser();
+//        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = authUtil.getCurrentUserContext();
         AppsetupResponse res = new AppsetupResponse();
 
-        if (currentUser == null) {
+        if (userContext == null) {
             log.warn("Current user not found during lab billing");
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
@@ -741,7 +746,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     existingOrderHd,
                     visit,
                     null,
-                    currentUser,
+                    userContext,
                     sum,
                     tax,
                     disc
@@ -822,7 +827,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     @Override
     public DgOrderDt saveLabOrderDetailForPackage(DgOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
                                                   DgMasInvestigation investEntity, DgInvestigationPackage pkg,
-                                                  User currentUser) {
+                                                  UserContext userContext) {
         if (hd == null || investEntity == null || pkg == null) {
             throw new SDDException("orderDetail", 400, "Invalid data for package order detail");
         }
@@ -841,8 +846,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     : AppConstants.PAYMENT_PAID.toLowerCase());
             dt.setBillingHd(billing);
             dt.setOrderTrackingStatus(getOrderedStatus());
-            dt.setCreatedBy(currentUser.getFullName());
-            dt.setLastChgBy(currentUser.getFullName());
+            dt.setCreatedBy(userContext.getUserFullName());
+            dt.setLastChgBy(userContext.getUserFullName());
             dt.setCreatedOn(HMISUtil.getCurrentLocalDateTime());
             dt.setLastChgDate(LocalDate.now());
             dt.setLastChgTime(HMISUtil.getCurrentLocalTime().toString());
@@ -858,7 +863,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     @Override
     public DgOrderDt saveLabOrderDetail(DgOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
-                                        DgMasInvestigation entity, User currentUser, String serviceCategoryCode) {
+                                        DgMasInvestigation entity, UserContext userContext, String serviceCategoryCode) {
 
         DgOrderDt dt = new DgOrderDt();
         dt.setInvestigation(entity);
@@ -870,8 +875,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
                 : AppConstants.PAYMENT_PAID.toLowerCase());
         dt.setBillingHd(billing);
-        dt.setCreatedBy(currentUser.getFullName());
-        dt.setLastChgBy(currentUser.getFullName());
+        dt.setCreatedBy(userContext.getUserFullName());
+        dt.setLastChgBy(userContext.getUserFullName());
         dt.setLastChgDate(LocalDate.now());
         dt.setMainChargeCodeId(entity.getMainChargeCodeId().getChargecodeId());
         dt.setSubChargeCodeId(entity.getSubChargeCodeId().getSubId());
@@ -889,8 +894,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     }
 
     @Override
-    public DgOrderHd saveLabOrderHeader(Patient patient, Visit visit, User currentUser, LocalDate appointmentDate, boolean billingEnabled) {
-        if (patient == null || visit == null || currentUser == null) {
+    public DgOrderHd saveLabOrderHeader(Patient patient, Visit visit, UserContext userContext, LocalDate appointmentDate, boolean billingEnabled) {
+        if (patient == null || visit == null || userContext == null) {
             throw new SDDException("order", 400, "Invalid data for creating order header");
         }
         try {
@@ -898,20 +903,20 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             hd.setAppointmentDate(appointmentDate);
             hd.setOrderDate(LocalDate.now());
             hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
-            hd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
+            hd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, userContext.getHospitalId()));
             hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
             hd.setPaymentStatus(billingEnabled
                     ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
                     : AppConstants.PAYMENT_PAID.toLowerCase());
-            hd.setHospitalId(currentUser.getHospital().getId());
+            hd.setHospitalId(userContext.getHospitalId());
             hd.setDepartmentId(visit.getDepartment().getId());
             hd.setPatientId(patient);
             hd.setVisitId(visit);
             hd.setSource(AppConstants.SOURCE_LAB.toLowerCase());
             hd.setDiscountId(1);
-            hd.setCreatedBy(currentUser.getFullName());
-            hd.setLastChgBy(currentUser.getFullName());
+            hd.setCreatedBy(userContext.getUserFullName());
+            hd.setLastChgBy(userContext.getUserFullName());
             hd.setCreatedOn(LocalDate.now());
             hd.setLastChgDate(LocalDate.now());
             hd.setLastChgTime(HMISUtil.getCurrentLocalTime().toString());

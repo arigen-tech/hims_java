@@ -134,6 +134,9 @@ public class BillingServiceImpl implements BillingService {
     @Autowired
     TransactionSequenceService transactionSequenceService;
 
+    @Autowired
+    MasHospitalRepository masHospitalRepository;
+
 
     @Override
     @Transactional
@@ -1367,12 +1370,12 @@ public class BillingServiceImpl implements BillingService {
 
 
     public BillingHeader saveBillingHeader(
-            Object orderHd, Visit vId, User currentUser,
+            Object orderHd, Visit vId, UserContext currentUser,
             BigDecimal sum, BigDecimal tax, BigDecimal disc,
             String serviceCategoryCode, boolean isRadiology) {
 
         BillingHeader billingHeader = new BillingHeader();
-        billingHeader.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
+        billingHeader.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospitalId()));
 
         billingHeader.setPatient(vId.getPatient());
         billingHeader.setVisit(vId);
@@ -1383,7 +1386,10 @@ public class BillingServiceImpl implements BillingService {
         billingHeader.setPatientGender(vId.getPatient().getPatientGender().getGenderName());
         billingHeader.setPatientAddress(vId.getPatient().getPatientAddress1());
 
-        billingHeader.setHospital(currentUser.getHospital());
+        billingHeader.setHospital(masHospitalRepository.findById(currentUser.getHospitalId()).orElseThrow(() -> new SDDException("Hospital Id",
+                HttpStatus.NOT_FOUND.value(),
+                "Hospital Data not found")
+        ));
         billingHeader.setHospitalName(vId.getPatient().getPatientHospital().getHospitalName());
         billingHeader.setHospitalAddress(vId.getHospital().getAddress());
         billingHeader.setHospitalMobileNo(vId.getHospital().getContactNumber());
@@ -1411,7 +1417,7 @@ public class BillingServiceImpl implements BillingService {
         billingHeader.setDiscountAmount(disc);
         billingHeader.setNetAmount(sum.subtract(disc).add(tax));
         billingHeader.setTaxTotal(tax);
-        billingHeader.setCreatedBy(currentUser.getFullName());
+        billingHeader.setCreatedBy(currentUser.getUserFullName());
         billingHeader.setBillDate(HMISUtil.getCurrentLocalDateTime());
         return billingHeaderRepository.save(billingHeader);
     }
@@ -1800,7 +1806,7 @@ public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatie
 
     @Override
     public BillingHeader saveBillingHeaderIfEnabled(
-            boolean billingEnabled, Object orderHd, Visit visit, User currentUser,
+            boolean billingEnabled, Object orderHd, Visit visit, UserContext currentUser,
             BigDecimal total, BigDecimal tax, BigDecimal discount,
             String serviceCategoryCode, boolean isRadiology) {
 
