@@ -630,7 +630,7 @@ public class InventoryServiceImpl implements InventoryService {
                 throw new RuntimeException(AppConstants.INDENT_APPROVED_WARNING_MSG);
             }
 
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
             // Validate action
@@ -747,7 +747,7 @@ public class InventoryServiceImpl implements InventoryService {
             }
 
             // 3. Current user
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
             String action = request.getAction() != null ? request.getAction().trim().toLowerCase() : "";
@@ -1049,7 +1049,7 @@ public class InventoryServiceImpl implements InventoryService {
             String issueNo = generateIssueNumber();
 
             // === Current User ===
-            String userName = authUtil.getCurrentUser().getFirstName();
+            String userName = userContextService.getCurrentUserContext().getUserName();
 
             Long departmentId = authUtil.getCurrentDepartmentId();
             Long hospitalId = userContextService.getCurrentUserContext().getHospitalId();
@@ -1319,8 +1319,8 @@ public class InventoryServiceImpl implements InventoryService {
             }
 
             // Get current user
-            User currentUser = authUtil.getCurrentUser();
-            String currentUserName = currentUser != null ? currentUser.getFullName() : "";
+            User currentUser = userContextService.getCurrentUser();
+            String currentUserName = currentUser != null ? userContextService.getCurrentUserContext().getUserFullName() : "";
 
             // Get current department (receiving department)
             Long receivingDeptId = authUtil.getCurrentDepartmentId();
@@ -1590,7 +1590,7 @@ public class InventoryServiceImpl implements InventoryService {
         // Save HD record
         StoreBalanceHd hd = new StoreBalanceHd();
         MasDepartment depObj = masDepartmentRepository.findById(openingBalanceEntryRequest.getDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found"));
-        hd.setHospitalId(authUtil.getCurrentUser().getHospital());
+        hd.setHospitalId(userContextService.getCurrentUser().getHospital());
         hd.setDepartmentId(depObj);
         hd.setEnteredBy(openingBalanceEntryRequest.getEnteredBy());
         String orderNum = createInvoice();
@@ -1814,7 +1814,7 @@ public class InventoryServiceImpl implements InventoryService {
     public ApiResponse<String> createOpeningBalanceEntryAndUpdateStatus(OpeningBalanceEntryRequest request) {
         StoreBalanceHd hd = new StoreBalanceHd();
         MasDepartment depObj = masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found"));
-        hd.setHospitalId(authUtil.getCurrentUser().getHospital());
+        hd.setHospitalId(userContextService.getCurrentUser().getHospital());
         hd.setDepartmentId(depObj);
         hd.setEnteredBy(request.getEnteredBy());
         String orderNum = createInvoice();
@@ -1956,7 +1956,7 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional
     @Override
     public ApiResponse<String> approveOpeningBalance(Long id, OpeningBalanceRequestForApprove request) {
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         Long currentDepartmentId = authUtil.getCurrentDepartmentId();
         Long hospitalId = currentUser.getHospital().getId();
 
@@ -2112,8 +2112,8 @@ public class InventoryServiceImpl implements InventoryService {
         StoreItemBatchStock stock = stockOpt.get();
         StoreStockLedger ledger = new StoreStockLedger();
         ledger.setCreatedDt(LocalDateTime.now());
-        User currentUser = authUtil.getCurrentUser();
-        String fName= currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+        User currentUser = userContextService.getCurrentUser();
+        String fName= userContextService.getCurrentUserContext().getUserFullName();
 
 
             ledger.setCreatedBy(fName);
@@ -2124,7 +2124,7 @@ public class InventoryServiceImpl implements InventoryService {
         ledger.setQtyBefore(BigDecimal.valueOf(qtyBefore));
         ledger.setQtyAfter(BigDecimal.valueOf(qtyBefore+qty));
         ledger.setReferenceNum(referenceNum);
-        ledger.setHospital(authUtil.getCurrentUser().getHospital());
+        ledger.setHospital(userContextService.getCurrentUser().getHospital());
         ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Department Not Found")));
         ledger.setTxnSource(opTxnType);
         ledger.setTxnType(opTxnType);
@@ -2578,7 +2578,7 @@ public class InventoryServiceImpl implements InventoryService {
         ledger.setTxnReferenceId(indentT.getIndentTId());
         ledger.setTxnSource(AppConstants.TRANSACTION_TYPE_AND_SOURCE_RECEIVE);
         ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Invalid Department ID")));
-        ledger.setHospital(authUtil.getCurrentUser().getHospital());
+        ledger.setHospital(userContextService.getCurrentUser().getHospital());
         ledger.setQtyBefore(batchStock.getClosingStock()>0?BigDecimal.valueOf(batchStock.getClosingStock()).subtract(qty):BigDecimal.ZERO);
         ledger.setQtyAfter(BigDecimal.valueOf(batchStock.getClosingStock()));
         ledger.setReferenceNum(indentT.getIndentM().getIssueNo());
@@ -2786,10 +2786,8 @@ public class InventoryServiceImpl implements InventoryService {
         StoreStockLedger ledger = new StoreStockLedger();
         ledger.setCreatedDt(LocalDateTime.now());
 
-        User currentUser = authUtil.getCurrentUser();
-        String fName = currentUser.getFirstName()
-                + (currentUser.getMiddleName() != null ? " " + currentUser.getMiddleName() : "")
-                + (currentUser.getLastName() != null ? " " + currentUser.getLastName() : "");
+        User currentUser = userContextService.getCurrentUser();
+        String fName = userContextService.getCurrentUserContext().getUserFullName();
 
         ledger.setCreatedBy(fName.trim());
         ledger.setTxnDate(LocalDate.now());
@@ -2835,10 +2833,8 @@ public class InventoryServiceImpl implements InventoryService {
         StoreStockLedger ledger = new StoreStockLedger();
         ledger.setCreatedDt(LocalDateTime.now());
 
-        User currentUser = authUtil.getCurrentUser();
-        String fName = currentUser.getFirstName()
-                + (currentUser.getMiddleName() != null ? " " + currentUser.getMiddleName() : "")
-                + (currentUser.getLastName() != null ? " " + currentUser.getLastName() : "");
+        User currentUser = userContextService.getCurrentUser();
+        String fName = userContextService.getCurrentUserContext().getUserFullName();
 
         ledger.setCreatedBy(fName.trim());
         ledger.setTxnDate(LocalDate.now());
@@ -3019,7 +3015,7 @@ public class InventoryServiceImpl implements InventoryService {
         StoreInternalIndentM indentM;
         boolean isNew = (request.getIndentMId() == null);
 
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
         String indentType;
        if( request.getIndentType().equalsIgnoreCase(drugSectionCode)){

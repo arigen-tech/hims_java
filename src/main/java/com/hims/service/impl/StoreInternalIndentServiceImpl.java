@@ -131,7 +131,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
                 throw new RuntimeException("Only pending indents can be approved or rejected. Current status: " + indentM.getStatus());
             }
 
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
             // Validate action
@@ -260,7 +260,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         StoreInternalIndentM indentM;
         boolean isNew = (request.getIndentMId() == null);
 
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
         if (isNew) {
@@ -456,7 +456,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         StoreInternalIndentM previous = indentMRepository.findById(previousIndentMId)
                 .orElseThrow(() -> new RuntimeException("Previous indent not found"));
 
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
         StoreInternalIndentM newHeader = new StoreInternalIndentM();
@@ -542,7 +542,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             }
 
             // 3. Current user
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
             String action = request.getAction() != null ? request.getAction().trim().toLowerCase() : "";
@@ -1134,7 +1134,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             }
 
             // Get current user
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
             // Get current department (receiving department)
@@ -1554,7 +1554,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         ledger.setTxnReferenceId(indentT.getIndentTId());
         ledger.setTxnSource("RECEIVED");
         ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Invalid Department ID")));
-        ledger.setHospital(authUtil.getCurrentUser().getHospital());
+        ledger.setHospital(userContextService.getCurrentUser().getHospital());
         ledger.setQtyBefore(batchStock.getClosingStock()>0?BigDecimal.valueOf(batchStock.getClosingStock()).subtract(qty):BigDecimal.ZERO);
         ledger.setQtyAfter(BigDecimal.valueOf(batchStock.getClosingStock()));
         ledger.setReferenceNum(indentT.getIndentM().getIssueNo());
@@ -1683,7 +1683,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
             String issueNo = generateIssueNumber();
 
             // === Current User ===
-            String userName = authUtil.getCurrentUser().getFirstName();
+            String userName = userContextService.getCurrentUserContext().getUserName();
 
             String issuedStatusM = masCommonStatusRepository
                     .findByEntityNameAndColumnNameAndStatusCode(AppConstants.ENTITY_STORE_ISSUE_M, AppConstants.COLUMN_NAME, AppConstants.INDENT_ISSUED_AT_ISSUE_DEPT)
@@ -2311,7 +2311,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         StoreStockLedger ledger = new StoreStockLedger();
         ledger.setCreatedDt(LocalDateTime.now());
 
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         String fName = currentUser.getFirstName()
                 + (currentUser.getMiddleName() != null ? " " + currentUser.getMiddleName() : "")
                 + (currentUser.getLastName() != null ? " " + currentUser.getLastName() : "");
@@ -2346,7 +2346,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
         StoreStockLedger ledger = new StoreStockLedger();
         ledger.setCreatedDt(LocalDateTime.now());
 
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         String fName = currentUser.getFirstName()
                 + (currentUser.getMiddleName() != null ? " " + currentUser.getMiddleName() : "")
                 + (currentUser.getLastName() != null ? " " + currentUser.getLastName() : "");

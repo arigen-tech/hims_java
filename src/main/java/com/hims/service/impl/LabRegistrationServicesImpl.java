@@ -240,7 +240,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             throw new SDDException("patient", 400, "Patient data is required");
         }
 
-        UserContext userContext = authUtil.getCurrentUserContext();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(
                 patient.getPatientFn(), patient.getPatientLn(),
@@ -354,7 +354,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         }
     }
     public Visit createVisitForLabRadio(Patient patient,Long department) {
-        UserContext user = authUtil.getCurrentUserContext();
+        UserContext user = userContextService.getCurrentUserContext();
         MasHospital hospital = masHospitalRepository.findById(user.getHospitalId()).orElseThrow(() -> new RuntimeException("Invalid hospital"));
         MasDepartment dept = masDepartmentRepository.findById(department).orElseThrow(() -> new RuntimeException("Invalid department"));
         Long token = visitRepository.countTokensForToday(hospital.getId(), dept.getId());
@@ -681,7 +681,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         log.info("Starting lab billing for existing order. OrderHdId={}", labReq.getOrderhdid());
 
 //        User currentUser = authUtil.getCurrentUser();
-        UserContext userContext = authUtil.getCurrentUserContext();
+        UserContext userContext = userContextService.getCurrentUserContext();
         AppsetupResponse res = new AppsetupResponse();
 
         if (userContext == null) {

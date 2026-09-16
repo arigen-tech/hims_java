@@ -12,6 +12,7 @@ import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.RadiologyService;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,8 @@ public class RadiologyServiceImpl implements RadiologyService {
     private static final Logger log = LoggerFactory.getLogger(LabRegistrationServicesImpl.class);
     @Autowired
     AuthUtil authUtil;
+    @Autowired
+    UserContextService userContextService;
     @Autowired
     PatientServiceImpl patientService;
     @Autowired
@@ -98,7 +101,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     public ApiResponse<LabRadiologyRegistrationResponse> registerPatientWithInv(PatientRequest patient, List<LabInvestigationReq> radInvestigationReq) {
         log.info("Starting lab registration process");
         LabRadiologyRegistrationResponse response=new LabRadiologyRegistrationResponse();
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(
                 patient.getPatientFn(),
                 patient.getPatientLn(),
@@ -575,7 +578,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
 
     public Visit createVisitForLabRadio(Patient patient,Long department) {
-        User user = authUtil.getCurrentUser();
+        User user = userContextService.getCurrentUser();
         MasHospital hospital = masHospitalRepository.findById(user.getHospital().getId()).orElseThrow(() -> new RuntimeException("Invalid hospital"));
         MasDepartment dept = masDepartmentRepository.findById(department).orElseThrow(() -> new RuntimeException("Invalid department"));
         Long token = visitRepository.countTokensForToday(hospital.getId(), dept.getId());
@@ -751,8 +754,8 @@ public class RadiologyServiceImpl implements RadiologyService {
      * Gets current user full name
      */
     private String getCurrentUserName() {
-        User user = authUtil.getCurrentUser();
-        return user.getFirstName() + " " + user.getLastName();
+        UserContext userContext = userContextService.getCurrentUserContext();
+        return userContext.getUserName() + " " + userContext.getUserName();
     }
 
     
@@ -934,7 +937,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         PaymentResponse res = new PaymentResponse();
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         try{
 
             //Payment table data inserted
@@ -945,7 +948,7 @@ public class RadiologyServiceImpl implements RadiologyService {
             paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
             paymentDetail.setPaymentDate(Instant.now());
             paymentDetail.setAmount(request.getAmount());
-            paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+            paymentDetail.setCreatedBy(userContextService.getCurrentUserContext().getUserName());
             paymentDetail.setCreatedAt(Instant.now());
             paymentDetail.setUpdatedAt(Instant.now());
             paymentDetail.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
@@ -1036,7 +1039,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Override
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingRadiology(Long modalityId, String patientName, String phoneNumber, int page, int size) {
         try {
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
@@ -1106,7 +1109,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingListForRadiologyReport(
             Long modality, String patientName, String phoneNumber, int page, int size) {
         try {
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
@@ -1131,7 +1134,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Override
     public ApiResponse<String> saveDetailsReportForRadiology(RadiologyReportRequest request,String status) {
         try {
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             if (currentUser == null) {
                 return ResponseUtils.createNotFoundResponse("current user not found", 404
                 );
@@ -1206,7 +1209,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Override
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size) {
         try {
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
