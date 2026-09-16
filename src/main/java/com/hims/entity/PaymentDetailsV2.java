@@ -76,7 +76,7 @@ public class PaymentDetailsV2 {
 
 
     @Size(max = 100)
-    @Column(name = "gateway_order_id", length = 100, unique = true)
+    @Column(name = "gateway_order_id", length = 100)
     private String gatewayOrderId;
 
     @Size(max = 100)

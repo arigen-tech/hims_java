@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -92,6 +93,31 @@ public class WebhookAuditServiceImpl implements WebhookAuditService{
         event.setUpdatedAt(HMISUtil.getCurrentLocalDateTime());
 
         webhookEventRepository.save(event);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public PaymentWebhookEvent saveWebhookEvent(
+            String eventId, String eventType, String gatewayOrderId, String gatewayPaymentId,
+            String rawBody, List<PaymentDetailsV2> matchedPayments) {
+
+        PaymentWebhookEvent webhookEvent = new PaymentWebhookEvent();
+        webhookEvent.setEventId(eventId);
+        webhookEvent.setEventType(eventType);
+        webhookEvent.setGateway("RAZORPAY");
+        webhookEvent.setGatewayOrderId(gatewayOrderId);
+        webhookEvent.setGatewayPaymentId(gatewayPaymentId);
+        webhookEvent.setPayload(rawBody);
+        webhookEvent.setProcessingStatus("RECEIVED");
+
+        webhookEvent.setPayments(matchedPayments);
+        matchedPayments.stream().findFirst().ifPresent(webhookEvent::setPayment);
+
+        webhookEvent.setReceivedAt(HMISUtil.getCurrentLocalDateTime());
+        webhookEvent.setCreatedAt(HMISUtil.getCurrentLocalDateTime());
+        webhookEvent.setUpdatedAt(HMISUtil.getCurrentLocalDateTime());
+
+        return webhookEventRepository.save(webhookEvent);
     }
 
 

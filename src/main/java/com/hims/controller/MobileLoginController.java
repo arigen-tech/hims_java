@@ -1,6 +1,8 @@
 package com.hims.controller;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.jwt.JwtHelper;
+import com.hims.entity.PatientLogin;
+import com.hims.entity.repository.PatientLoginRepository;
 import com.hims.request.LoginRequest;
 import com.hims.request.OtpRequest;
 import com.hims.response.ApiResponse;
@@ -36,6 +38,8 @@ public class MobileLoginController {
     MobileLoginService mobileLoginService;
     @Autowired
     private JwtHelper jwtUtil;
+    @Autowired
+    private PatientLoginRepository patientLoginRepository;
     @PostMapping("/mLogin")
     public ResponseEntity<ApiResponse>  loginResponse(@RequestBody LoginRequest request) {
         return new ResponseEntity<>(mobileLoginService.loginRequest(request), HttpStatus.OK);
@@ -63,12 +67,18 @@ public class MobileLoginController {
             }
 
             // OTP verified generate JWT
-            String token = jwtUtil.mobileGenerateToken(
-                    otpRequest.getMobileNo()
-            );
+                Long patientId = patientLoginRepository
+                    .findByMobileNoOrderByPatientLoginIdDesc(otpRequest.getMobileNo())
+                    .stream()
+                    .map(PatientLogin::getPatientId)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Patient not found for mobile number"));
+                String token = jwtUtil.mobileGenerateToken(otpRequest.getMobileNo(), patientId);
+                String refreshToken = jwtUtil.mobileGenerateRefreshToken(otpRequest.getMobileNo(), patientId);
 
             AuthResponse authResponse = new AuthResponse();
             authResponse.setToken(token);
+            authResponse.setRefreshToken(refreshToken);
             authResponse.setMessage("OTP verified successfully");
             return ResponseUtils.createSuccessResponse( authResponse, new TypeReference<>() {});
 

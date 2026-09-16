@@ -4,6 +4,7 @@ import com.hims.constants.PaymentStatusCode;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.request.BillingItemRequest;
 import com.hims.request.OrderRequest;
 import com.hims.request.RefundRequest;
 import com.hims.response.PaymentGatewayStatusResponse;
@@ -25,10 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -100,164 +98,342 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
 //        return response;
 //    }
 
+//    @Transactional
+//    @Override
+//    public Map<String, Object> createPaymentOrder(OrderRequest request) throws RazorpayException {
+//
+//        BillingHeader billingHeader =
+//                billingHeaderRepository.findById(request.getBillingHdId().intValue())
+//                        .orElseThrow(
+//                                () -> new SDDException(
+//                                        "Billing Header",
+//                                        HttpStatus.NOT_FOUND.value(),
+//                                        "Billing Header not found"
+//                                )
+//                        );
+//
+//        Optional<PaymentDetailsV2> existingOpt =
+//                paymentRepository.findByBillingHeader_Id(request.getBillingHdId());
+//
+//        if (existingOpt.isPresent()) {
+//            return handleExistingPayment(existingOpt.get(), request);
+//        }
+//
+//        return createNewOrderAndPaymentRow(billingHeader, request);
+//    }
+//
+//    private Map<String, Object> handleExistingPayment(
+//            PaymentDetailsV2 existing, OrderRequest request) throws RazorpayException {
+//
+//        String statusCode = paymentUtils.getStatusCodeById(existing.getPaymentStatusId());
+//
+//        switch (statusCode) {
+//
+//
+//            case "PAID":
+//            case "REFUND_PENDING":
+//            case "PARTIALLY_REFUNDED":
+//            case "REFUNDED":
+//                // Money has moved (fully or partially) or is in flight -
+//                // never allow a brand new order against this bill.
+//                throw new SDDException(
+//                        "Payment already exists",
+//                        HttpStatus.CONFLICT.value(),
+//                        "This bill already has a payment in progress or completed. Current status: "
+//                                + statusCode
+//                );
+//
+//            case "PENDING": {
+//                // Order was already created — user likely backed out of the
+//                // Razorpay popup without paying. Reuse the SAME order/row,
+//                // do not call Razorpay again and do not insert a new row.
+//                log.info(
+//                        "Reusing existing PENDING order for billingHdId={}. paymentId={}, gatewayOrderId={}",
+//                        request.getBillingHdId(),
+//                        existing.getPaymentId(),
+//                        existing.getGatewayOrderId()
+//                );
+//
+//                Map<String, Object> reuseResponse = new HashMap<>();
+//                reuseResponse.put("paymentId", existing.getPaymentId());
+//                reuseResponse.put("orderId", existing.getGatewayOrderId());
+//                reuseResponse.put(
+//                        "amount",
+//                        existing.getAmount().multiply(BigDecimal.valueOf(100)).longValueExact()
+//                );
+//                reuseResponse.put("currency", existing.getCurrency());
+//                reuseResponse.put("paymentReferenceNo", existing.getPaymentReferenceNo());
+//                return reuseResponse;
+//            }
+//
+//            case "FAILED":
+//            case "CANCELLED":
+//                // Genuinely dead attempt — allow a fresh Razorpay order,
+//                // but update the SAME row rather than inserting a new one.
+//                return retryFailedPayment(existing, request);
+//
+//            default:
+//                throw new SDDException(
+//                        "Invalid payment state",
+//                        HttpStatus.CONFLICT.value(),
+//                        "Unexpected payment status for billing header: " + statusCode
+//                );
+//        }
+//    }
+//
+//    private Map<String, Object> retryFailedPayment(
+//            PaymentDetailsV2 existing, OrderRequest request) throws RazorpayException {
+//
+//        long amountInSubUnit = request.getAmount() * 100L;
+//
+//        JSONObject options = new JSONObject();
+//        options.put("amount", amountInSubUnit);
+//        options.put("currency", "INR");
+//        options.put("receipt", "hmis_rcpt_" + System.currentTimeMillis());
+//        options.put("payment_capture", 1);
+//
+//        Order order = razorpayClient.orders.create(options);
+//        String newOrderId = order.get("id");
+//
+//        log.info(
+//                "Retrying previously {} payment. paymentId={}, oldOrderId={}, newOrderId={}",
+//                paymentUtils.getStatusCodeById(existing.getPaymentStatusId()),
+//                existing.getPaymentId(),
+//                existing.getGatewayOrderId(),
+//                newOrderId
+//        );
+//
+//        existing.setGatewayOrderId(newOrderId);
+//        existing.setGatewayPaymentId(null);
+//        existing.setGatewayPaymentStatus("created");
+//        existing.setPaymentStatusId(paymentUtils.getPaymentStatus(PaymentStatusCode.PENDING).getId());
+//        existing.setAmount(BigDecimal.valueOf(request.getAmount()));
+//        paymentRepository.save(existing);
+//
+//        return buildOrderResponse(existing, order);
+//    }
+
     @Transactional
     @Override
     public Map<String, Object> createPaymentOrder(OrderRequest request) throws RazorpayException {
 
-        BillingHeader billingHeader =
-                billingHeaderRepository.findById(request.getBillingHdId().intValue())
-                        .orElseThrow(
-                                () -> new SDDException(
-                                        "Billing Header",
-                                        HttpStatus.NOT_FOUND.value(),
-                                        "Billing Header not found"
-                                )
+        List<BillingItemRequest> items = request.getBillingItems();
+
+        // ------------------------------------------------------------
+        // VALIDATE: every billing header must exist, and none of them
+        // may already have a payment in progress / completed.
+        // ------------------------------------------------------------
+
+        List<BillingHeader> billingHeaders = new ArrayList<>();
+        List<PaymentDetailsV2> reusableExisting = new ArrayList<>();
+
+        for (BillingItemRequest item : items) {
+
+            BillingHeader billingHeader =
+                    billingHeaderRepository.findById(item.getBillingHdId().intValue())
+                            .orElseThrow(() -> new SDDException(
+                                    "Billing Header",
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Billing Header not found: " + item.getBillingHdId()
+                            ));
+            billingHeaders.add(billingHeader);
+
+            Optional<PaymentDetailsV2> existingOpt =
+                    paymentRepository.findByBillingHeader_Id(item.getBillingHdId());
+
+            if (existingOpt.isPresent()) {
+
+                String statusCode =
+                        paymentUtils.getStatusCodeById(existingOpt.get().getPaymentStatusId());
+
+                switch (statusCode) {
+
+                    case "PAID":
+                    case "REFUND_PENDING":
+                    case "PARTIALLY_REFUNDED":
+                    case "REFUNDED":
+                        throw new SDDException(
+                                "Payment already exists",
+                                HttpStatus.CONFLICT.value(),
+                                "Billing header " + item.getBillingHdId()
+                                        + " already has a payment in progress or completed. Current status: "
+                                        + statusCode
                         );
 
-        Optional<PaymentDetailsV2> existingOpt =
-                paymentRepository.findByBillingHeader_Id(request.getBillingHdId());
+                    case "PENDING":
+                    case "FAILED":
+                    case "CANCELLED":
+                        // Fine to reuse/retry — collect for the reuse-or-retry
+                        // branch below instead of inserting a fresh row.
+                        reusableExisting.add(existingOpt.get());
+                        break;
 
-        if (existingOpt.isPresent()) {
-            return handleExistingPayment(existingOpt.get(), request);
-        }
-
-        return createNewOrderAndPaymentRow(billingHeader, request);
-    }
-
-    private Map<String, Object> handleExistingPayment(
-            PaymentDetailsV2 existing, OrderRequest request) throws RazorpayException {
-
-        String statusCode = paymentUtils.getStatusCodeById(existing.getPaymentStatusId());
-
-        switch (statusCode) {
-
-
-            case "PAID":
-            case "REFUND_PENDING":
-            case "PARTIALLY_REFUNDED":
-            case "REFUNDED":
-                // Money has moved (fully or partially) or is in flight -
-                // never allow a brand new order against this bill.
-                throw new SDDException(
-                        "Payment already exists",
-                        HttpStatus.CONFLICT.value(),
-                        "This bill already has a payment in progress or completed. Current status: "
-                                + statusCode
-                );
-
-            case "PENDING": {
-                // Order was already created — user likely backed out of the
-                // Razorpay popup without paying. Reuse the SAME order/row,
-                // do not call Razorpay again and do not insert a new row.
-                log.info(
-                        "Reusing existing PENDING order for billingHdId={}. paymentId={}, gatewayOrderId={}",
-                        request.getBillingHdId(),
-                        existing.getPaymentId(),
-                        existing.getGatewayOrderId()
-                );
-
-                Map<String, Object> reuseResponse = new HashMap<>();
-                reuseResponse.put("paymentId", existing.getPaymentId());
-                reuseResponse.put("orderId", existing.getGatewayOrderId());
-                reuseResponse.put(
-                        "amount",
-                        existing.getAmount().multiply(BigDecimal.valueOf(100)).longValueExact()
-                );
-                reuseResponse.put("currency", existing.getCurrency());
-                reuseResponse.put("paymentReferenceNo", existing.getPaymentReferenceNo());
-                return reuseResponse;
+                    default:
+                        throw new SDDException(
+                                "Invalid payment state",
+                                HttpStatus.CONFLICT.value(),
+                                "Unexpected payment status for billing header "
+                                        + item.getBillingHdId() + ": " + statusCode
+                        );
+                }
             }
-
-            case "FAILED":
-            case "CANCELLED":
-                // Genuinely dead attempt — allow a fresh Razorpay order,
-                // but update the SAME row rather than inserting a new one.
-                return retryFailedPayment(existing, request);
-
-            default:
-                throw new SDDException(
-                        "Invalid payment state",
-                        HttpStatus.CONFLICT.value(),
-                        "Unexpected payment status for billing header: " + statusCode
-                );
         }
-    }
 
-    private Map<String, Object> retryFailedPayment(
-            PaymentDetailsV2 existing, OrderRequest request) throws RazorpayException {
+        // ------------------------------------------------------------
+        // If EVERY item in this group already has a PENDING row sharing
+        // the same gateway_order_id, this is a pure retry — reuse the
+        // existing order instead of creating a new one in Razorpay.
+        // ------------------------------------------------------------
 
-        long amountInSubUnit = request.getAmount() * 100L;
+        if (reusableExisting.size() == items.size()) {
+
+            String sharedOrderId = reusableExisting.get(0).getGatewayOrderId();
+
+            boolean allPending = reusableExisting.stream()
+                    .allMatch(p ->
+                            "PENDING".equals(paymentUtils.getStatusCodeById(p.getPaymentStatusId()))
+                                    && sharedOrderId != null
+                                    && sharedOrderId.equals(p.getGatewayOrderId())
+                    );
+
+            if (allPending) {
+                log.info(
+                        "Reusing existing PENDING multi-item order. gatewayOrderId={}, billingHdIds={}",
+                        sharedOrderId,
+                        items.stream().map(BillingItemRequest::getBillingHdId).toList()
+                );
+                return buildMultiOrderResponse(reusableExisting, sharedOrderId);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // Otherwise: create ONE new Razorpay order for the total, and
+        // either insert new rows or update the FAILED/CANCELLED ones
+        // in place, all pointing at the same new gatewayOrderId.
+        // ------------------------------------------------------------
+
+        BigDecimal totalAmount = items.stream()
+                .map(BillingItemRequest::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long totalAmountInPaise = paymentUtils.getAmountInSubUnitINR(totalAmount);
 
         JSONObject options = new JSONObject();
-        options.put("amount", amountInSubUnit);
+        options.put("amount", totalAmountInPaise);
         options.put("currency", "INR");
         options.put("receipt", "hmis_rcpt_" + System.currentTimeMillis());
         options.put("payment_capture", 1);
 
         Order order = razorpayClient.orders.create(options);
-        String newOrderId = order.get("id");
+        String orderId = order.get("id");
+
+        List<PaymentDetailsV2> savedRows = new ArrayList<>();
+
+        for (int i = 0; i < items.size(); i++) {
+
+            BillingItemRequest item = items.get(i);
+            BillingHeader billingHeader = billingHeaders.get(i);
+
+            PaymentDetailsV2 existingRow = reusableExisting.stream()
+                    .filter(p -> p.getBillingHeader().getId().equals(billingHeader.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            PaymentDetailsV2 payment = existingRow != null ? existingRow : new PaymentDetailsV2();
+
+            payment.setBillingHeader(billingHeader);
+            payment.setPaymentStatusId(paymentUtils.getPaymentStatus(PaymentStatusCode.PENDING).getId());
+            payment.setAmount(item.getAmount());
+            payment.setCurrency("INR");
+            payment.setPaymentGateway("RAZORPAY");
+            payment.setGatewayOrderId(orderId);
+            payment.setGatewayPaymentId(null);
+            payment.setGatewayPaymentStatus("created");
+
+            if (existingRow == null) {
+                payment.setPaymentReferenceNo(paymentUtils.generatePaymentReferenceNo());
+                payment.setCreatedBy(authUtil.getCurrentUserFullName());
+            }
+
+            paymentRepository.save(payment);
+            savedRows.add(payment);
+        }
 
         log.info(
-                "Retrying previously {} payment. paymentId={}, oldOrderId={}, newOrderId={}",
-                paymentUtils.getStatusCodeById(existing.getPaymentStatusId()),
-                existing.getPaymentId(),
-                existing.getGatewayOrderId(),
-                newOrderId
+                "Created new multi-item Razorpay order. gatewayOrderId={}, billingHdIds={}, total={}",
+                orderId,
+                items.stream().map(BillingItemRequest::getBillingHdId).toList(),
+                totalAmount
         );
 
-        existing.setGatewayOrderId(newOrderId);
-        existing.setGatewayPaymentId(null);
-        existing.setGatewayPaymentStatus("created");
-        existing.setPaymentStatusId(paymentUtils.getPaymentStatus(PaymentStatusCode.PENDING).getId());
-        existing.setAmount(BigDecimal.valueOf(request.getAmount()));
-        paymentRepository.save(existing);
-
-        return buildOrderResponse(existing, order);
+        return buildMultiOrderResponse(savedRows, orderId);
     }
 
-    private Map<String, Object> buildOrderResponse(PaymentDetailsV2 payment, Order order) {
+    private Map<String, Object> buildMultiOrderResponse(
+            List<PaymentDetailsV2> rows, String orderId) {
+
+        BigDecimal totalAmount = rows.stream()
+                .map(PaymentDetailsV2::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         Map<String, Object> response = new HashMap<>();
-        response.put("paymentId", payment.getPaymentId());
-        response.put("orderId", order.get("id"));
-        response.put("amount", order.get("amount"));
-        response.put("currency", order.get("currency"));
-        response.put("paymentReferenceNo", payment.getPaymentReferenceNo());
+        response.put("orderId", orderId);
+        response.put("amount", paymentUtils.getAmountInSubUnitINR(totalAmount));
+        response.put("currency", "INR");
+        response.put(
+                "paymentIds",
+                rows.stream().map(PaymentDetailsV2::getPaymentId).toList()
+        );
+        response.put(
+                "billingHdIds",
+                rows.stream().map(p -> p.getBillingHeader().getId()).toList()
+        );
         return response;
     }
 
-    private Map<String, Object> createNewOrderAndPaymentRow(
-            BillingHeader billingHeader, OrderRequest request) throws RazorpayException {
+//    private Map<String, Object> buildOrderResponse(PaymentDetailsV2 payment, Order order) {
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("paymentId", payment.getPaymentId());
+//        response.put("orderId", order.get("id"));
+//        response.put("amount", order.get("amount"));
+//        response.put("currency", order.get("currency"));
+//        response.put("paymentReferenceNo", payment.getPaymentReferenceNo());
+//        return response;
+//    }
 
-        long amountInSubUnit = request.getAmount() * 100L;
-
-        JSONObject options = new JSONObject();
-        options.put("amount", amountInSubUnit);
-        options.put("currency", "INR");
-        options.put("receipt", "hmis_rcpt_" + System.currentTimeMillis());
-        options.put("payment_capture", 1); // auto-capture for pay-and-done billing
-
-        Order order = razorpayClient.orders.create(options);
-        String orderId = order.get("id");
-
-        PaymentDetailsV2 payment = new PaymentDetailsV2();
-        payment.setBillingHeader(billingHeader);
-        payment.setPaymentStatusId(paymentUtils.getPaymentStatus(PaymentStatusCode.PENDING).getId());
-        payment.setPaymentReferenceNo(paymentUtils.generatePaymentReferenceNo());
-        payment.setAmount(BigDecimal.valueOf(request.getAmount()));
-        payment.setCurrency("INR");
-        payment.setPaymentGateway("RAZORPAY");
-        payment.setGatewayOrderId(orderId);
-        payment.setGatewayPaymentStatus("created");
-        payment.setCreatedBy(authUtil.getCurrentUserFullName());
-        paymentRepository.save(payment);
-
-        log.info(
-                "Created new Razorpay order. billingHdId={}, paymentId={}, orderId={}",
-                billingHeader.getId(), payment.getPaymentId(), orderId
-        );
-
-        return buildOrderResponse(payment, order);
-    }
+//    private Map<String, Object> createNewOrderAndPaymentRow(
+//            BillingHeader billingHeader, OrderRequest request) throws RazorpayException {
+//
+//        long amountInSubUnit = request.getAmount() * 100L;
+//
+//        JSONObject options = new JSONObject();
+//        options.put("amount", amountInSubUnit);
+//        options.put("currency", "INR");
+//        options.put("receipt", "hmis_rcpt_" + System.currentTimeMillis());
+//        options.put("payment_capture", 1); // auto-capture for pay-and-done billing
+//
+//        Order order = razorpayClient.orders.create(options);
+//        String orderId = order.get("id");
+//
+//        PaymentDetailsV2 payment = new PaymentDetailsV2();
+//        payment.setBillingHeader(billingHeader);
+//        payment.setPaymentStatusId(paymentUtils.getPaymentStatus(PaymentStatusCode.PENDING).getId());
+//        payment.setPaymentReferenceNo(paymentUtils.generatePaymentReferenceNo());
+//        payment.setAmount(BigDecimal.valueOf(request.getAmount()));
+//        payment.setCurrency("INR");
+//        payment.setPaymentGateway("RAZORPAY");
+//        payment.setGatewayOrderId(orderId);
+//        payment.setGatewayPaymentStatus("created");
+//        payment.setCreatedBy(authUtil.getCurrentUserFullName());
+//        paymentRepository.save(payment);
+//
+//        log.info(
+//                "Created new Razorpay order. billingHdId={}, paymentId={}, orderId={}",
+//                billingHeader.getId(), payment.getPaymentId(), orderId
+//        );
+//
+//        return buildOrderResponse(payment, order);
+//    }
 /**
  * ==========================================================
  * INITIATE REFUND
@@ -475,6 +651,11 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
 
         refundOptions.put("amount", refundAmountInPaise);
         refundOptions.put("speed", "normal");
+        refundOptions.put("receipt", "hmis_rfnd_pd" + payment.getPaymentId());
+        JSONObject notes = new JSONObject();
+        notes.put("payment_detail_id", String.valueOf(payment.getPaymentId()));
+        notes.put("billing_hd_id", String.valueOf(request.getBillingHeaderId()));
+        refundOptions.put("notes", notes);
 
 
         /*
