@@ -1,17 +1,21 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasBloodDonationType;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasBloodDonationTypeRepository;
 import com.hims.request.MasBloodDonationTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasBloodDonationTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBloodDonationTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,6 +29,8 @@ public class MasBloodDonationTypeServiceImpl
 
     private final MasBloodDonationTypeRepository repository;
     private final AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasBloodDonationTypeResponse>> getAll(int flag) {
@@ -69,8 +75,8 @@ public class MasBloodDonationTypeServiceImpl
 
         log.info("Creating Blood Donation Type");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -80,9 +86,9 @@ public class MasBloodDonationTypeServiceImpl
                     .donationTypeCode(request.getDonationTypeCode())
                     .donationTypeName(request.getDonationTypeName())
                     .description(request.getDescription())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -110,8 +116,8 @@ public class MasBloodDonationTypeServiceImpl
                         "Blood Donation Type not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -120,7 +126,7 @@ public class MasBloodDonationTypeServiceImpl
             entity.setDonationTypeCode(request.getDonationTypeCode());
             entity.setDonationTypeName(request.getDonationTypeName());
             entity.setDescription(request.getDescription());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -154,15 +160,15 @@ public class MasBloodDonationTypeServiceImpl
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

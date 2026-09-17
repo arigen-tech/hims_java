@@ -1,17 +1,21 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasComponentFailureReason;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasComponentFailureReasonRepository;
 import com.hims.request.MasComponentFailureReasonRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasComponentFailureReasonResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasComponentFailureReasonService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,6 +28,9 @@ public class MasComponentFailureReasonServiceImpl implements MasComponentFailure
 
     private final MasComponentFailureReasonRepository repository;
     private final AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasComponentFailureReasonResponse>> getAll(int flag) {
@@ -74,8 +81,8 @@ public class MasComponentFailureReasonServiceImpl implements MasComponentFailure
     @Override
     public ApiResponse<MasComponentFailureReasonResponse> create(MasComponentFailureReasonRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -87,9 +94,9 @@ public class MasComponentFailureReasonServiceImpl implements MasComponentFailure
                     .failureReasonCode(request.getFailureReasonCode())
                     .failureReasonName(request.getFailureReasonName().trim())
                     .description(request.getDescription())
-                    .status("y")
-                    .createdBy(user.getFullName())
-                    .lastUpdatedBy(user.getFullName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -115,8 +122,8 @@ public class MasComponentFailureReasonServiceImpl implements MasComponentFailure
                 return ResponseUtils.createNotFoundResponse("Component failure reason not found", 404
                 );
             }
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -127,7 +134,7 @@ public class MasComponentFailureReasonServiceImpl implements MasComponentFailure
             entity.setFailureReasonCode(request.getFailureReasonCode().trim().toUpperCase());
             entity.setFailureReasonName(request.getFailureReasonName().trim());
             entity.setDescription(request.getDescription());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(
@@ -158,13 +165,13 @@ public class MasComponentFailureReasonServiceImpl implements MasComponentFailure
                 );
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found", 401
                 );
             }
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {}

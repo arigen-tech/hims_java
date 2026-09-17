@@ -5,15 +5,21 @@ import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.projection.ProcedureWorklistProjection;
-import com.hims.request.*;
+import com.hims.request.DentalToothRequest;
+import com.hims.request.ProcedureItemRequest;
+import com.hims.request.ProcedureRequestHd;
+import com.hims.request.ProcedureSessionRequest;
 import com.hims.response.ProcedureDetailResponse;
 import com.hims.response.ProcedureResponse;
 import com.hims.response.ProcedureWorklistResponse;
+import com.hims.response.UserContext;
 import com.hims.service.ProcedureService;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -41,6 +47,8 @@ public class ProcedureServiceImpl implements ProcedureService {
     private final AuthUtil authUtil;
     private final DentalProcedureToothRepository dentalProcedureToothRepository;
     private final MasToothMasterRepository  masToothMasterRepository;
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Override
@@ -75,8 +83,8 @@ public class ProcedureServiceImpl implements ProcedureService {
     }
 
     private ProcedureHd createProcedureHeader(ProcedureRequestHd request,String priority) {
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             throw new SDDException("user",
                     401,
                     "Authenticated user not found"
@@ -84,14 +92,14 @@ public class ProcedureServiceImpl implements ProcedureService {
         }
         ProcedureHd procedureHd = new ProcedureHd();
         procedureHd.setPatientId(request.getPatientId());
-        procedureHd.setProcedureNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.PROCEDURE_NO, user.getHospital().getId()));
+        procedureHd.setProcedureNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.PROCEDURE_NO, userContext.getHospitalId()));
         procedureHd.setVisitId(request.getVisitId());
         procedureHd.setDepartmentId(request.getDepartmentId());
         MasProcedureType procedureType =
                 masProcedureTypeRepository.findByProcedureTypeCode(request.getProcedureTypeCode()).orElseThrow(() ->
                         new SDDException( "procedureType", 404, "Procedure type not found with id: " + request.getProcedureTypeCode()));
         procedureHd.setProcedureType(procedureType);
-        procedureHd.setAdvisedBy(authUtil.getCurrentUserFullName());
+        procedureHd.setAdvisedBy(userContext.getUserFullName());
         procedureHd.setAdvisedDate(LocalDateTime.now());
         procedureHd.setDiagnosis(request.getDiagnosis());
         procedureHd.setPriority(priority);
@@ -101,9 +109,9 @@ public class ProcedureServiceImpl implements ProcedureService {
         );
         procedureHd.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID);
         procedureHd.setStatus(AppConstants.STATUS_N);
-        procedureHd.setCreatedBy(authUtil.getCurrentUserFullName());
+        procedureHd.setCreatedBy(userContext.getUserFullName());
         procedureHd.setCreatedDate(LocalDateTime.now());
-        procedureHd.setLastUpdatedBy(authUtil.getCurrentUserFullName());
+        procedureHd.setLastUpdatedBy(userContext.getUserFullName());
         procedureHd.setLastUpdateDate(LocalDateTime.now());
         return procedureHdRepository.save(procedureHd);
     }
@@ -111,6 +119,8 @@ public class ProcedureServiceImpl implements ProcedureService {
         if (request.getProcedureId() == null) {
             throw new SDDException("procedureId", 400, "Procedure ID cannot be null");
         }
+
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         MasProcedure procedure = masProcedureRepository.findById(request.getProcedureId()
                 ).orElseThrow(() ->
@@ -138,14 +148,15 @@ public class ProcedureServiceImpl implements ProcedureService {
 
         procedureDt.setRemarks(request.getRemarks());
         procedureDt.setStatus(AppConstants.STATUS_N);
-        procedureDt.setCreatedBy(authUtil.getCurrentUserFullName());
+        procedureDt.setCreatedBy(userContext.getUserFullName());
         procedureDt.setCreatedDate(LocalDateTime.now());
-        procedureDt.setLastUpdatedBy(authUtil.getCurrentUserFullName());
+        procedureDt.setLastUpdatedBy(userContext.getUserFullName());
         procedureDt.setLastUpdateDate(LocalDateTime.now());
         return procedureDtRepository.save(procedureDt);
     }
     private List<Long> createSessions(ProcedureDt procedureDt, ProcedureItemRequest request) {
 
+        UserContext userContext = userContextService.getCurrentUserContext();
         List<Long> sessionIds = new ArrayList<>();
         int plannedSessions = procedureDt.getPlannedSessionCount();
 
@@ -172,9 +183,9 @@ public class ProcedureServiceImpl implements ProcedureService {
             session.setBillingRequired(AppConstants.STATUS_Y);
             session.setBillingStatus(AppConstants.NOT_APPLICABLE_LABEL);
             session.setStatus(AppConstants.STATUS_N);
-            session.setCreatedBy(authUtil.getCurrentUserFullName());
+            session.setCreatedBy(userContext.getUserFullName());
             session.setCreatedDate(LocalDateTime.now());
-            session.setLastUpdatedBy(authUtil.getCurrentUserFullName() );
+            session.setLastUpdatedBy(userContext.getUserFullName());
             session.setLastUpdateDate(LocalDateTime.now());
             session.setComplicationFlag(AppConstants.STATUS_N);
             session = procedureSessionRepository.save(session);
@@ -190,6 +201,7 @@ public class ProcedureServiceImpl implements ProcedureService {
 
             return;
         }
+        UserContext userContext = userContextService.getCurrentUserContext();
         for (DentalToothRequest dentalToothRequest : request.getDentalProcedureTeeth()) {
                 if (dentalToothRequest.getToothId() == null) { throw new SDDException(
                             "toothId",
@@ -202,9 +214,9 @@ public class ProcedureServiceImpl implements ProcedureService {
                 dentalProcedureTooth.setTooth(masToothMasterRepository.getReferenceById(dentalToothRequest.getToothId()));
                 dentalProcedureTooth.setToothSurface(dentalToothRequest.getToothSurface());
                 dentalProcedureTooth.setStatus(AppConstants.STATUS_N);
-                dentalProcedureTooth.setCreatedBy(authUtil.getCurrentUserFullName());
+                dentalProcedureTooth.setCreatedBy(userContext.getUserFullName());
                 dentalProcedureTooth.setCreatedDate(LocalDateTime.now());
-                dentalProcedureTooth.setLastUpdatedBy(authUtil.getCurrentUserFullName());
+                dentalProcedureTooth.setLastUpdatedBy(userContext.getUserFullName());
                 dentalProcedureTooth.setLastUpdateDate(LocalDateTime.now());
                 dentalProcedureToothRepository.save(dentalProcedureTooth);
             }

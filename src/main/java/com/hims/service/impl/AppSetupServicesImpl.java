@@ -8,11 +8,9 @@ import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.request.AppointmentReq;
 import com.hims.request.AppointmentReqDaysKeys;
-import com.hims.response.ApiResponse;
-import com.hims.response.AppSetupDTO;
-import com.hims.response.AppsetupResponse;
-import com.hims.response.AppsetupgetResponse;
+import com.hims.response.*;
 import com.hims.service.AppSetupServices;
+import com.hims.service.UserContextService;
 import com.hims.utils.Calender;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -46,6 +44,11 @@ public class AppSetupServicesImpl implements AppSetupServices {
     @Autowired
     UserRepo userRepo;
 
+    @Autowired
+    UserContextService userContextService;
+    @Autowired
+    MasHospitalRepository masHospitalRepository;
+
 
     @Override
     public ApiResponse<AppsetupResponse> appSetup(AppointmentReq appointmentReq) {
@@ -75,8 +78,8 @@ public class AppSetupServicesImpl implements AppSetupServices {
                     entry = new AppSetup();
                 }
 
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
@@ -99,9 +102,9 @@ public class AppSetupServicesImpl implements AppSetupServices {
                 entry.setMinNoOfDays(key.getMinNoOfday());
 
                 entry.setLastChgDate(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate());
-                entry.setLastChgBy(currentUser.getUserId().intValue());
+                entry.setLastChgBy(userContext.getUserId().intValue());
                 entry.setLastChgTime(Calender.getCurrentTimeStamp());
-                entry.setHospital(currentUser.getHospital());
+                entry.setHospital(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new SDDException("hospitalId", 404, "Hospital not found")));
                 entry.setOpdLocation(key.getOpdLocation());
                 appSetupRepository.save(entry);
             }
@@ -113,17 +116,6 @@ public class AppSetupServicesImpl implements AppSetupServices {
         } catch (Exception e) {
             return ResponseUtils.createFailureResponse(res, new TypeReference<AppsetupResponse>() {}, "Internal Server Error", 500);
         }
-    }
-
-    private User getCurrentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        User user = userRepo.findByUserName(username);
-        if (user == null) {
-            log.warn("User not found for username: {}", username);
-
-        }
-        return user;
     }
 
 

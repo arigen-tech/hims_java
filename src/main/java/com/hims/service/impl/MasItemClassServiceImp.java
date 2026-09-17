@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasItemClass;
 import com.hims.entity.MasStoreSection;
 import com.hims.entity.User;
@@ -10,7 +11,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasItemClassRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasItemClassResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasItemClassService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,14 +38,10 @@ public class MasItemClassServiceImp implements MasItemClassService {
     private MasItemClassRepository masItemClassRepository;
     @Autowired
     private MasStoreSectionRepository masStoreSectionRepository;
-    private User getCurrentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepo.findByUserName(username);
-        if (user == null) {
-            log.warn("User not found for username: {}", username);
-        }
-        return user;
-    }
+
+    @Autowired
+    private UserContextService userContextService;
+
 
     private String getCurrentTimeFormatted() {
         return LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
@@ -58,14 +57,14 @@ public class MasItemClassServiceImp implements MasItemClassService {
         masItemClass.setMasStoreSection(masStoreSection.get());
         masItemClass.setItemClassCode(masItemClassRequest.getItemClassCode());
         masItemClass.setItemClassName(masItemClassRequest.getItemClassName());
-        masItemClass.setStatus("y");
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        masItemClass.setStatus(AppConstants.STATUS_Y.toLowerCase());
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
-        masItemClass.setLastChgBy(String.valueOf(currentUser.getUserId()));
+        masItemClass.setLastChgBy(String.valueOf(userContext.getUserId()));
         masItemClass.setLastChgDate(LocalDate.now());
         masItemClass.setLastChgTime(getCurrentTimeFormatted());
 
@@ -119,13 +118,13 @@ public class MasItemClassServiceImp implements MasItemClassService {
             MasItemClass masItemClass1 =  masItemClass.get();
             if ("y".equals(status) || "n".equals(status)) {
                 masItemClass1.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                masItemClass1.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                masItemClass1.setLastChgBy(String.valueOf(userContext.getUserId()));
                 masItemClass1.setLastChgDate(LocalDate.now());
 
                 return ResponseUtils.createSuccessResponse(mapToResponse( masItemClassRepository.save(masItemClass1)), new TypeReference<>() {
@@ -148,13 +147,13 @@ public class MasItemClassServiceImp implements MasItemClassService {
             MasItemClass masItemClass1 = masItemClass.get();
             masItemClass1.setItemClassCode(masItemClassdRequest.getItemClassCode());
             masItemClass1.setItemClassName(masItemClassdRequest.getItemClassName());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            masItemClass1.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            masItemClass1.setLastChgBy(String.valueOf(userContext.getUserId()));
             masItemClass1.setLastChgDate(LocalDate.now());
             masItemClass1.setLastChgTime(getCurrentTimeFormatted());
             masItemClass1.setStatus(masItemClass.get().getStatus());

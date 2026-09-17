@@ -2,12 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.GynMasFlow;
-import com.hims.entity.User;
 import com.hims.entity.repository.GynMasFlowRepository;
 import com.hims.request.GynMasFlowRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.GynMasFlowResponse;
+import com.hims.response.UserContext;
 import com.hims.service.GynMasFlowService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,9 @@ public class GynMasFlowServiceImpl
 
     @Autowired
     private GynMasFlowRepository repository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     private AuthUtil authUtil;
@@ -66,8 +70,8 @@ public class GynMasFlowServiceImpl
 
         log.info("Creating Gyn Flow={}", request.getFlowValue());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -76,8 +80,8 @@ public class GynMasFlowServiceImpl
             GynMasFlow entity = GynMasFlow.builder()
                     .flowValue(request.getFlowValue())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -105,15 +109,15 @@ public class GynMasFlowServiceImpl
                     "Flow not found", 404);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setFlowValue(request.getFlowValue());
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);
@@ -141,15 +145,15 @@ public class GynMasFlowServiceImpl
                     "Invalid status", 400);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setStatus(status);
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);

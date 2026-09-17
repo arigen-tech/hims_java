@@ -132,6 +132,8 @@ public class BloodBankServiceImpl implements BloodBankService{
     private BloodRequestDtRepository bloodRequestDtRepository;
     @Autowired
     private MasBloodComponentRepository bloodComponentRepository;
+    @Autowired
+    private MasHospitalRepository masHospitalRepository;
 
 
 
@@ -440,7 +442,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         bloodDonationHdr.setCreatedDate(LocalDate.now());
         bloodDonationHdr.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
         bloodDonationHdr.setDonationDatetime(LocalDateTime.now());
-        bloodDonationHdr.setHospital(authUtil.getCurrentUser().getHospital());
+        bloodDonationHdr.setHospital(masHospitalRepository.findById(userContextService.getCurrentUserContext().getHospitalId()).orElseThrow(()-> new RecordNotFoundException("Hospital Not Found")));
             bloodDonationHdr.setDonationStatusId(masBloodDonationStatusRepository.findById(bloodDonationStatusCollected).orElseThrow());
 
             bloodDonationHdrRepository.save(bloodDonationHdr);
@@ -531,7 +533,7 @@ public class BloodBankServiceImpl implements BloodBankService{
                 dt.setExpiryDate(row.getExpiryDate());
                 dt.setCreatedDate(LocalDateTime.now());
                 dt.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
-                dt.setHospital(authUtil.getCurrentUser().getHospital());
+                dt.setHospital(masHospitalRepository.findById(userContextService.getCurrentUserContext().getHospitalId()).orElseThrow(() -> new RecordNotFoundException("Hospital Not Found")));
                 donationDtList.add(dt);
             }
 
@@ -610,7 +612,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             entity.setRemarks(dto.getRemarks());
             entity.setCreatedDate(LocalDateTime.now());
             entity.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
-            entity.setHospital(authUtil.getCurrentUser().getHospital());
+            entity.setHospital(masHospitalRepository.findById(userContextService.getCurrentUserContext().getHospitalId()).orElseThrow(() -> new RecordNotFoundException("Hospital Not Found")));
 
             bloodDonationTestResultRepository.save(entity);
 
@@ -714,8 +716,8 @@ public class BloodBankServiceImpl implements BloodBankService{
             donor.setCity(personalDetailsRequest.getCity());
             donor.setPincode(personalDetailsRequest.getPinCode());
             donor.setCreatedDate(LocalDateTime.now());
-            donor.setCreatedBy(authUtil.getCurrentUser().getFirstName());
-            donor.setHospital(authUtil.getCurrentUser().getHospital());
+            donor.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
+            donor.setHospital(masHospitalRepository.findById(userContextService.getCurrentUserContext().getHospitalId()).orElseThrow(() -> new RecordNotFoundException("Hospital Not Found")));
 
             return bloodDonorRepository.save(donor);
         }catch (Exception ex){
@@ -757,8 +759,8 @@ public class BloodBankServiceImpl implements BloodBankService{
 
             }
             screening.setCreatedDate(LocalDateTime.now());
-            screening.setCreatedBy(authUtil.getCurrentUser().getFirstName());
-            screening.setHospital(authUtil.getCurrentUser().getHospital());
+            screening.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
+            screening.setHospital(masHospitalRepository.findById(userContextService.getCurrentUserContext().getHospitalId()).orElseThrow(() -> new RecordNotFoundException("Hospital Not Found")));
             return bloodDonorScreeningRepository.save(screening);
         }catch (Exception ex){
             ex.printStackTrace();
@@ -837,7 +839,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             inventory.setInventoryStatus(masBloodInventoryStatusRepository.findById(inventoryStatusAvailable).orElseThrow());
             inventory.setCreatedDate(LocalDateTime.now());
             inventory.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
-            inventory.setHospital(authUtil.getCurrentUser().getHospital());
+            inventory.setHospital(masHospitalRepository.findById(userContextService.getCurrentUserContext().getHospitalId()).orElseThrow(() -> new RecordNotFoundException("Hospital Not Found")));
 
             bloodDonationDtRepository.save(dt);
             bloodComponentInventoryRepository.save(inventory);

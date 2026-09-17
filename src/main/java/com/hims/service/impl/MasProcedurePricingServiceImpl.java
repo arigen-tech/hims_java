@@ -14,7 +14,9 @@ import com.hims.projection.MasProcedurePricingProjection;
 import com.hims.request.MasProcedurePricingRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasProcedurePricingResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasProcedurePricingService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -41,12 +43,14 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
     private AuthUtil authUtil;
     @Autowired
     private MasProcedurePricingRepository masProcedurePricingRepository;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<String> addMasProcedurePricing(MasProcedurePricingRequest request) {
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             MasProcedurePricing entity = new MasProcedurePricing();
             entity.setProcedure( masProcedureRepository.findById(request.getProcedureId()).orElseThrow());
             entity.setBasePrice(request.getBasePrice());
@@ -54,8 +58,8 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
             entity.setEffectiveFrom(request.getEffectiveFrom());
             entity.setEffectiveTo(request.getEffectiveTo());
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setCreatedBy(user.getFullName());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             entity.setDiscount(request.getDiscount());
             entity.setBillingTypeId(masIpdBillingTypeRepository.findById(request.getBillingTypeId()).orElseThrow());
@@ -74,7 +78,7 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
     public ApiResponse<String> updateMasProcedurePricing(Long id, MasProcedurePricingRequest request) {
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             MasProcedurePricing entity=masProcedurePricingRepository.findById(id).orElse(null);
             if(entity==null){
                 return ResponseUtils.createNotFoundResponse("Procedure pricing id not found", HttpStatus.NOT_FOUND.value());
@@ -84,8 +88,8 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
             entity.setDiscountAllowed(request.getDiscountAllowed());
             entity.setEffectiveFrom(request.getEffectiveFrom());
             entity.setEffectiveTo(request.getEffectiveTo());
-            entity.setCreatedBy(user.getFullName());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             entity.setDiscount(request.getDiscount());
             entity.setBillingTypeId(masIpdBillingTypeRepository.findById(request.getBillingTypeId()).orElseThrow());
@@ -105,10 +109,10 @@ public class MasProcedurePricingServiceImpl implements MasProcedurePricingServic
     public ApiResponse<String> changeStatusMasProcedurePricing(Long id, String status) {
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             MasProcedurePricing entity = masProcedurePricingRepository.findById(id).orElseThrow(() -> new RuntimeException("Invalid Id"));
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             masProcedurePricingRepository.save(entity);
             return ResponseUtils.createSuccessResponse("status change successfully", new TypeReference<>() {}

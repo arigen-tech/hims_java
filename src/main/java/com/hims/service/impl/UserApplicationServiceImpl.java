@@ -8,7 +8,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.UserApplicationRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.UserApplicationResponse;
+import com.hims.response.UserContext;
 import com.hims.service.UserApplicationService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -33,6 +35,9 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     private UserApplicationRepository userApplicationRepository;
     @Autowired
     UserRepo userRepo;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<UserApplicationResponse>> getAllApplications(int flag) {
@@ -62,8 +67,8 @@ public class UserApplicationServiceImpl implements UserApplicationService {
 
     public ApiResponse<UserApplicationResponse> createApplication(UserApplicationRequest request) {
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -73,7 +78,7 @@ public class UserApplicationServiceImpl implements UserApplicationService {
         application.setUserAppName(request.getUserAppName());
         application.setUrl(request.getUrl());
         application.setStatus("y"); // Default status to "Y"
-        application.setLastChgBy(currentUser.getUserId());
+        application.setLastChgBy(userContext.getUserId());
         application.setLastChgDate(Instant.now());
 
         UserApplication savedApplication = userApplicationRepository.save(application);
@@ -92,8 +97,8 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     public ApiResponse<UserApplicationResponse> updateApplication(Long id, UserApplicationRequest request) {
         Optional<UserApplication> existingApplication = userApplicationRepository.findById(id);
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -102,7 +107,7 @@ public class UserApplicationServiceImpl implements UserApplicationService {
             UserApplication application = existingApplication.get();
             application.setUserAppName(request.getUserAppName());
             application.setUrl(request.getUrl());
-            application.setLastChgBy(currentUser.getUserId());
+            application.setLastChgBy(userContext.getUserId());
             application.setLastChgDate(Instant.now());
 
             UserApplication updatedApplication = userApplicationRepository.save(application);
@@ -116,8 +121,8 @@ public class UserApplicationServiceImpl implements UserApplicationService {
         if (!isValidStatus(status)) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status. Status should be 'Y' or 'N'", 400);
         }
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -127,7 +132,7 @@ public class UserApplicationServiceImpl implements UserApplicationService {
             UserApplication userApplication = application.get();
             userApplication.setStatus(status);
             userApplication.setLastChgDate(Instant.now());
-            userApplication.setLastChgBy(currentUser.getUserId());
+            userApplication.setLastChgBy(userContext.getUserId());
             userApplicationRepository.save(userApplication);
             return ResponseUtils.createSuccessResponse("Application status updated to '" + status + "'", new TypeReference<>() {});
         } else {

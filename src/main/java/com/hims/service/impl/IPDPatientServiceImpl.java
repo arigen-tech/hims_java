@@ -16,6 +16,7 @@ import com.hims.service.IPDPatientService;
 import com.hims.mapper.IpMarDetailsMapper;
 import com.hims.mapper.IpProcedureTxnMapper;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -287,6 +288,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Value("${upload.image.path}")
     String filePath;
 
+    @Autowired
+    private UserContextService userContextService;
+
 
 
     @Override
@@ -510,7 +514,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         );
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
             if (inpatient.isEmpty()) {
@@ -599,16 +603,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             assessment.setSystemCnsExamination(request.getCnsExamination());
             assessment.setProvisionalDiagnosis(request.getProvisionalDiagnosis());
             if (isNewAssessment) {
-                assessment.setCreatedBy(user.getFullName());
+                assessment.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
                 assessment.setCreatedDate(LocalDateTime.now());
             }
-            assessment.setUpdatedBy(user.getFullName());
+            assessment.setUpdatedBy(userContextService.getCurrentUserContext().getUserFullName());
             assessment.setUpdatedDate(LocalDateTime.now());
 
             IpNursingMedicalAssessment savedAssessment = ipNursingMedicalAssessmentRepository.save(assessment);
 
             // Save an entry in ip_vitals
-            saveIpVitals(request, inpatient.get(), user);
+            saveIpVitals(request, inpatient.get(), userContextService.getCurrentUserContext());
 
 
             log.info("IP nursing medical assessment saved successfully. assessmentId: {}, inpatientId: {}",
@@ -629,7 +633,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private void saveIpVitals(
             IpNursingMedicalAssessmentRequest request,
             Inpatient inpatient,
-            User user
+            UserContext user
     ) {
         try {
             LocalDateTime currentDateTime = LocalDateTime.now();
@@ -645,8 +649,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             ipVitals.setRespiration(request.getRespiratoryRate());
             ipVitals.setSpo2(request.getSpo2());
             ipVitals.setPainScore(request.getPainScore());
-            ipVitals.setCreatedBy(user.getFullName());
-            ipVitals.setLastUpdatedBy(user.getFullName());
+            ipVitals.setCreatedBy(user.getUserFullName());
+            ipVitals.setLastUpdatedBy(user.getUserFullName());
             ipVitals.setLastUpdateDate(currentDateTime);
 
             IpVitals savedVitals = ipVitalsRepository.save(ipVitals);
@@ -750,13 +754,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Override
     public ApiResponse<String> updateAdmissionInternalStatus(Long inpatientId, Long internalStatusId) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             Inpatient inpatient = inpatientRepository.findById(inpatientId).orElseThrow(() -> new RuntimeException("Inpatient not found with id: "
                     + inpatientId));
             inpatient.setMasIpdInternalStatus(masIpdInternalStatusRepository.findById(internalStatusId).orElseThrow());
             inpatient.setLastUpdateDate(LocalDateTime.now());
-            inpatient.setLastUpdatedBy(user.getFullName());
+            inpatient.setLastUpdatedBy(userContext.getUserFullName());
             inpatientRepository.save(inpatient);
 
             return ResponseUtils.createSuccessResponse("Ip internal status change successfully", new TypeReference<>() {
@@ -809,7 +813,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Saving vitals details started for inpatientId: {}", request.getInpatientId());
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
 
             if (inpatient == null) {
@@ -831,8 +835,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             ipVitals.setSpo2(request.getSpo2());
             ipVitals.setPainScore(request.getPainScore());
             ipVitals.setLastUpdateDate(LocalDateTime.now());
-            ipVitals.setCreatedBy(user.getFullName());
-            ipVitals.setLastUpdatedBy(user.getFullName());
+            ipVitals.setCreatedBy(userContext.getUserFullName());
+            ipVitals.setLastUpdatedBy(userContext.getUserFullName());
 
             IpVitals savedVitals = ipVitalsRepository.save(ipVitals);
 
@@ -878,7 +882,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 }, "Patient is not associated with this inpatient", 400);
             }
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             LocalDateTime currentDateTime = LocalDateTime.now();
 
             List<IpIntakeOutputEntry> entities = new ArrayList<>();
@@ -888,7 +892,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 IpIntakeOutputEntryRequest entryRequest = request.getEntries().get(index);
 
 
-                IpIntakeOutputEntry entity = buildIntakeOutputEntity(entryRequest, inpatient, patient, currentUser, currentDateTime);
+                IpIntakeOutputEntry entity = buildIntakeOutputEntity(entryRequest, inpatient, patient, userContext, currentDateTime);
 
                 entities.add(entity);
             }
@@ -923,7 +927,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             LocalDateTime currentDateTime = LocalDateTime.now();
 
-            User loggedInUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException("Inpatient not found with ID: "
                     + request.getInpatientId()));
@@ -974,8 +978,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                             .carePlanChanges(request.getCarePlanChanges())
                             .nextFollowUpPlan(request.getNextFollowUpPlan())
                             .lastUpdateDate(currentDateTime)
-                            .createdBy(loggedInUser.getFullName())
-                            .lastUpdatedBy(loggedInUser.getFullName())
+                            .createdBy(userContext.getUserFullName())
+                            .lastUpdatedBy(userContext.getUserFullName())
                             .visitType(visitType)
                             .build();
 
@@ -1086,7 +1090,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         try {
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() -> new RuntimeException(
                     "Inpatient not found with ID: " + request.getInpatientId()));
@@ -1125,11 +1129,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     .priority(request.getPriority())
                     .clinicalNotes(request.getClinicalNotes())
                     .requestDatetime(LocalDateTime.now())
-                    .requestedBy(currentUser.getFullName())
+                    .requestedBy(userContext.getUserFullName())
                     .transferStatus(AppConstants.IPD_BED_TRANSFER_REQUEST)
-                    .createdBy(currentUser.getFullName())
+                    .createdBy(userContext.getUserFullName())
                     .createdDate(LocalDateTime.now())
-                    .lastUpdatedBy(currentUser.getFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -1247,14 +1251,14 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             }
 
             // Get the currently logged-in user.
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse("current user not found", new TypeReference<>() {
                 }.toString(), HttpStatus.NOT_FOUND.value());
             }
 
-            String updatedBy = user.getFullName();
+            String updatedBy = userContext.getUserFullName();
             LocalDateTime currentDateTime = LocalDateTime.now();
 
             /*
@@ -1405,7 +1409,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             IpIntakeOutputEntryRequest request,
             Inpatient inpatient,
             Patient patient,
-            User userName,
+            UserContext userContext,
             LocalDateTime currentDateTime) {
 
         String ioType = request.getIoType().trim().toUpperCase();
@@ -1418,8 +1422,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         entity.setObservationDatetime(currentDateTime);
         entity.setIoType(ioType);
         entity.setLastUpdateDate(currentDateTime);
-        entity.setCreatedBy(userName.getFullName());
-        entity.setLastUpdatedBy(userName.getFullName());
+        entity.setCreatedBy(userContext.getUserFullName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
 
         if (AppConstants.IO_TYPE_I.equals(ioType)) {
 
@@ -1446,7 +1450,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     private void saveDoctorDiagnosis(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         IpDiagnosisEntry ipDiagnosisEntry = new IpDiagnosisEntry();
         ipDiagnosisEntry.setDiagnosisDatetime(LocalDateTime.now());
@@ -1456,9 +1460,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         ipDiagnosisEntry.setRecordedBy(userRepo.findById(request.getTreatingDoctor()).orElseThrow());
         ipDiagnosisEntry.setDiagnosisType(AppConstants.WORKING_DIAGNOSIS_TYPE);
         ipDiagnosisEntry.setDiagnosisText(request.getWorkingDiagnosis());
-        ipDiagnosisEntry.setCreatedBy(user.getFullName());
+        ipDiagnosisEntry.setCreatedBy(userContext.getUserFullName());
         ipDiagnosisEntry.setLastUpdateDate(LocalDateTime.now());
-        ipDiagnosisEntry.setLastUpdatedBy(user.getFullName());
+        ipDiagnosisEntry.setLastUpdatedBy(userContext.getUserFullName());
 
 
         ipDiagnosisEntryRepository.save(ipDiagnosisEntry);
@@ -1467,7 +1471,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     private void saveIpdBillingAndPaymentDetails(IpdPatientRequest request, Inpatient inpatient) {
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         LocalDateTime now = LocalDateTime.now();
 
         // ====================== Calculate Total Advance ======================
@@ -1513,8 +1517,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         billingHeader.setOutstandingAmount(outstandingAmount);
         billingHeader.setBillStatus(masIpdBillStatusRepository.findById(ipBillStatusInterim).orElseThrow());
         billingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPending).orElseThrow());
-        billingHeader.setCreatedBy(user.getFullName());
-        billingHeader.setUpdatedBy(user.getFullName());
+        billingHeader.setCreatedBy(userContext.getUserFullName());
+        billingHeader.setUpdatedBy(userContext.getUserFullName());
         billingHeader.setCreatedAt(now);
         billingHeader.setUpdatedAt(now);
 
@@ -1545,9 +1549,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         receiptHd.setTotalAmount(totalAdvance);
         receiptHd.setReceiptStatus(AppConstants.IP_RECEIPT_STATUS.toLowerCase());
-        receiptHd.setCreatedBy(user.getFullName());
+        receiptHd.setCreatedBy(userContext.getUserFullName());
         receiptHd.setCreatedDate(now);
-        receiptHd.setLastChgBy(user.getFullName());
+        receiptHd.setLastChgBy(userContext.getUserFullName());
         receiptHd.setLastChgDate(now);
 
         IpdBlReceiptHd savedReceiptHd = ipdBlReceiptHdRepository.save(receiptHd);
@@ -1577,7 +1581,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             paymentDetail.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid).orElseThrow());
             paymentDetail.setReceipt(savedReceiptHd);
             paymentDetail.setReceiptAmount(payment.getAdvanceAmount());
-            paymentDetail.setLastChgBy(user.getFullName());
+            paymentDetail.setLastChgBy(userContext.getUserFullName());
             paymentDetail.setLastChgDate(now);
 
             ipPaymentDetailRepository.save(paymentDetail);
@@ -1588,9 +1592,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             receiptDt.setReceipt(savedReceiptHd);
             receiptDt.setPaymentMode(paymentMode);
             receiptDt.setAmount(payment.getAdvanceAmount());
-            receiptDt.setCreatedBy(user.getFullName());
+            receiptDt.setCreatedBy(userContext.getUserFullName());
             receiptDt.setCreatedDate(now);
-            receiptDt.setLastChgBy(user.getFullName());
+            receiptDt.setLastChgBy(userContext.getUserFullName());
             receiptDt.setLastChgDate(now);
 
             ipdBlReceiptDtRepository.save(receiptDt);
@@ -1608,7 +1612,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
 
     private Inpatient saveInpatientDetails(IpdPatientRequest request, Patient patient, Visit visit) {
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         // find doctor
         User user1= userRepo.findById(request.getTreatingDoctor()).orElseThrow();
         Inpatient inpatient = new Inpatient();
@@ -1664,9 +1668,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         inpatient.setConditionNotes(request.getConditionNotes());
         inpatient.setLastUpdateDate(LocalDateTime.now());
 
-        if (user != null) {
-            inpatient.setCreatedBy(user.getFullName());
-            inpatient.setLastUpdatedBy(user.getFullName());
+        if (userContext != null) {
+            inpatient.setCreatedBy(userContext.getUserFullName());
+            inpatient.setLastUpdatedBy(userContext.getUserFullName());
         }
 
         Inpatient savedInpatient = inpatientRepository.save(inpatient);
@@ -1676,7 +1680,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
 
     private void saveNokDetails(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         IpNokDetails nokDetails = new IpNokDetails();
 
@@ -1694,9 +1698,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         nokDetails.setPincode(request.getPincode());
         nokDetails.setLastUpdateDate(LocalDateTime.now());
 
-        if (user != null) {
-            nokDetails.setCreatedBy(user.getFullName());
-            nokDetails.setLastUpdatedBy(user.getFullName());
+        if (userContext != null) {
+            nokDetails.setCreatedBy(userContext.getUserFullName());
+            nokDetails.setLastUpdatedBy(userContext.getUserFullName());
         }
         ipNokDetailsRepository.save(nokDetails);
         log.info("NOK details saved successfully for inpatientId: {}", inpatient.getInpatientId());
@@ -1704,7 +1708,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
 
     private void saveBedAllocationDetails(IpdPatientRequest request, Inpatient inpatient, Patient patient) {
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         IpBedAllocation bedAllocation = new IpBedAllocation();
 
@@ -1729,9 +1733,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         bedAllocation.setAllocationStartDate(LocalDateTime.now());
         bedAllocation.setLastUpdateDate(LocalDateTime.now());
 
-        if (user != null) {
-            bedAllocation.setCreatedBy(user.getFullName());
-            bedAllocation.setLastUpdatedBy(user.getFullName());
+        if (userContext != null) {
+            bedAllocation.setCreatedBy(userContext.getUserFullName());
+            bedAllocation.setLastUpdatedBy(userContext.getUserFullName());
         }
         ipBedAllocationRepository.save(bedAllocation);
         log.info("Bed allocation details saved successfully for inpatientId: {}", inpatient.getInpatientId());
@@ -1980,8 +1984,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 }, "patientId does not match the inpatient record", HttpStatus.BAD_REQUEST.value());
             }
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                 }, "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -2016,7 +2020,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                             ));
 
             LocalTime now = LocalTime.now();
-            String userName = currentUser.getFullName();
+            String userName = userContext.getUserFullName();
             List<Long> createdLabOrderIds = new ArrayList<>();
             List<Long> createdRadOrderIds = new ArrayList<>();
             MasIpdServiceCategory billingCategory = masIpdServiceCategoryRepository.findById(ipdInvestigationServiceCategoryId)
@@ -2026,7 +2030,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             Map<LocalDate, List<LabRadioInvestigationRequest>> labGroups = grouped.getOrDefault(laboratoryDepartment, Collections.emptyMap());
             for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : labGroups.entrySet()) {
                 LocalDate appointmentDate = entry.getKey();
-                DgOrderHd orderHd = buildLabOrderHeader(inpatient, currentUser, appointmentDate, now);
+                DgOrderHd orderHd = buildLabOrderHeader(inpatient, userContext, appointmentDate, now);
                 DgOrderHd savedHd = labHdRepository.save(orderHd);
                 LabOrderTrackingStatus orderedStatus = labOrderTrackingStatusRepository.findById(labOrderedStatusId)
                         .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(), "Lab ordered status not found with id: " + labOrderedStatusId));
@@ -2036,7 +2040,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     DgOrderDt orderDt = buildLabOrderDetail(
                             savedHd,
                             master,
-                            currentUser,
+                            userContext,
                             appointmentDate,
                             now,
                             orderedStatus,
@@ -2053,7 +2057,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             Map<LocalDate, List<LabRadioInvestigationRequest>> radGroups = grouped.getOrDefault(radiologyDepartment, Collections.emptyMap());
             for (Map.Entry<LocalDate, List<LabRadioInvestigationRequest>> entry : radGroups.entrySet()) {
                 LocalDate appointmentDate = entry.getKey();
-                RadOrderHd orderHd = buildRadiologyOrderHeader(inpatient, currentUser, appointmentDate);
+                RadOrderHd orderHd = buildRadiologyOrderHeader(inpatient, userContext, appointmentDate);
                 RadOrderHd savedHd = radOrderHdRepository.save(orderHd);
 
                 for (LabRadioInvestigationRequest item : entry.getValue()) {
@@ -2061,7 +2065,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     RadOrderDt orderDt = buildRadiologyOrderDetail(
                             savedHd,
                             master,
-                            currentUser,
+                            userContext,
                             appointmentDate,
                             item.getRemarks()
                     );
@@ -2137,7 +2141,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 request.getDiagnosisType());
 
         try {
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             LocalDateTime currentDateTime = LocalDateTime.now();
 
             String diagnosisType = request.getDiagnosisType() == null ? null : request.getDiagnosisType().trim().toUpperCase();
@@ -2208,9 +2212,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             diagnosisEntry.setStatus(request.getStatus().toUpperCase());
             diagnosisEntry.setDiagnosisDatetime(request.getDateTime());
-            diagnosisEntry.setRecordedBy(currentUser);
-            diagnosisEntry.setCreatedBy(currentUser.getFullName());
-            diagnosisEntry.setLastUpdatedBy(currentUser.getFullName());
+            diagnosisEntry.setRecordedBy(userRepo.findByUserName(userContext.getUserName()));
+            diagnosisEntry.setCreatedBy(userContext.getUserFullName());
+            diagnosisEntry.setLastUpdatedBy(userContext.getUserFullName());
             diagnosisEntry.setLastUpdateDate(currentDateTime);
 
             inpatientRepository.save(inpatient);
@@ -2344,7 +2348,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Saving discharge summary for inpatientId : {}", request.getInpatientId());
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             //=========================
             // FIND EXISTING SUMMARY
             //=========================
@@ -2411,7 +2415,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             if (existingSummary.isPresent()) {
 
                 summary = existingSummary.get();
-                summary.setLastUpdatedBy(user.getFullName());
+                summary.setLastUpdatedBy(userContext.getUserFullName());
                 summary.setLastUpdateDate(LocalDateTime.now());
 
                 log.info("Updating discharge summary.");
@@ -2420,8 +2424,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
                 summary = new IpDischargeSummary();
                 summary.setInpatient(inpatient);
-                summary.setCreatedBy(user.getFullName());
-                summary.setLastUpdatedBy(user.getFullName());
+                summary.setCreatedBy(userContext.getUserFullName());
+                summary.setLastUpdatedBy(userContext.getUserFullName());
                 summary.setLastUpdateDate(LocalDateTime.now());
 
                 log.info("Creating discharge summary.");
@@ -2482,9 +2486,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     medication.setTotalDoses(medicationRequest.getTotalDoses());
                     medication.setRoute(medicationRequest.getRoute());
                     medication.setInstruction(medicationRequest.getInstruction());
-                    medication.setCreatedBy(user.getFullName());
+                    medication.setCreatedBy(userContext.getUserFullName());
                     medication.setCreatedDate(LocalDateTime.now());
-                    medication.setUpdatedBy(user.getFullName());
+                    medication.setUpdatedBy(userContext.getUserFullName());
                     medication.setUpdatedDate(LocalDateTime.now());
                     medicationList.add(medication);
                 }
@@ -2681,7 +2685,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         log.info("Saving advance collection for inpatientId : {}", request.getInpatientId());
         try {
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
             if (inpatient.isEmpty()) {
@@ -2706,11 +2710,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             receiptHd.setInpatient(inpatient.get());
             receiptHd.setBill(billingHeader.get());
             receiptHd.setTotalAmount(totalAmount);
-            receiptHd.setCreatedBy(user.getUsername());
+            receiptHd.setCreatedBy(userContext.getUserFullName());
             receiptHd.setCreatedDate(LocalDateTime.now());
             receiptHd.setReceiptStatus(AppConstants.IP_RECEIPT_STATUS.toLowerCase());
-            receiptHd.setCreatedBy(user.getFullName());
-            receiptHd.setLastChgBy(user.getFullName());
+            receiptHd.setCreatedBy(userContext.getUserFullName());
+            receiptHd.setLastChgBy(userContext.getUserFullName());
             receiptHd.setLastChgDate(LocalDateTime.now());
             receiptHd.setReceiptType(masReceiptTypeRepository.findById(request.getCollectionTypeId()).orElseThrow());
             receiptHd = ipdBlReceiptHdRepository.save(receiptHd);
@@ -2726,10 +2730,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 receiptDt.setReceipt(receiptHd);
                 receiptDt.setPaymentMode(paymentMode);
                 receiptDt.setAmount(dto.getAmount());
-                receiptDt.setCreatedBy(user.getUsername());
+                receiptDt.setCreatedBy(userContext.getUserFullName());
                 receiptDt.setCreatedDate(LocalDateTime.now());
-                receiptDt.setCreatedBy(user.getFullName());
-                receiptDt.setLastChgBy(user.getFullName());
+                receiptDt.setCreatedBy(userContext.getUserFullName());
+                receiptDt.setLastChgBy(userContext.getUserFullName());
                 receiptDt.setLastChgDate(LocalDateTime.now());
                 ipdBlReceiptDtRepository.save(receiptDt);
 
@@ -2742,7 +2746,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 payment.setReceiptAmount(dto.getAmount());
                 payment.setPaymentDate(request.getCollectionDateTime());
                 payment.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid).orElseThrow());
-                payment.setLastChgBy(user.getUsername());
+                payment.setLastChgBy(userContext.getUserFullName());
                 payment.setLastChgDate(LocalDateTime.now());
                 ipPaymentDetailRepository.save(payment);
             }
@@ -2762,7 +2766,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             // Update Billing Header
             ipdBillingHeader.setPatientPaidAmount(patientPaidAmount);
             ipdBillingHeader.setOutstandingAmount(outstandingAmount);
-            ipdBillingHeader.setUpdatedBy(user.getUsername());
+            ipdBillingHeader.setUpdatedBy(userContext.getUserFullName());
             ipdBillingHeader.setUpdatedAt(LocalDateTime.now());
 
             // If Bill Final and Outstanding = 0 then Payment Status = Paid
@@ -2828,7 +2832,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             }
 
             LocalDateTime currentDateTime = LocalDateTime.now();
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElse(null);
             if (inpatient == null) {
@@ -2867,7 +2871,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 return ResponseUtils.createNotFoundResponse("Frequency not found with ID: " + request.getFrequencyId(), HttpStatus.NOT_FOUND.value());
             }
 
-            String userName = currentUser != null ? currentUser.getFullName() : null;
+            String userName = userContext != null ? userContext.getUserFullName() : null;
 
             IpMedicinePrescription prescription = new IpMedicinePrescription();
             prescription.setInpatient(inpatient);
@@ -2957,8 +2961,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             }
 
             LocalDateTime currentDateTime = LocalDateTime.now();
-            User currentUser = authUtil.getCurrentUser();
-            String userName = currentUser != null ? currentUser.getFullName() : null;
+            UserContext userContext = userContextService.getCurrentUserContext();
+            String userName = userContext != null ? userContext.getUserFullName() : null;
 
             prescription.setStopDate(currentDateTime);
             prescription.setStopReason(request.getStopReason());
@@ -2985,7 +2989,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         log.info("saveMarDetails started for {} record(s)", requests != null ? requests.size() : 0);
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         try {
             for (MarDetailsRequest request : requests) {
@@ -3009,13 +3013,13 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 mar.setPrescription(prescription);
                 mar.setAdministeredQty(request.getRequestQty());
                 mar.setAdministrationTime(request.getDateTime());
-                mar.setAdministeredBy(user.getUsername());
+                mar.setAdministeredBy(userContext.getUserFullName());
                 mar.setBatchNo(request.getBatchNo());
                 mar.setExpiryDate(request.getExpiryDate());
                 mar.setRemarks(request.getRemark());
-                mar.setCreatedBy(user.getFullName());
+                mar.setCreatedBy(userContext.getUserFullName());
                 mar.setLastUpdateDate(LocalDateTime.now());
-                mar.setLastUpdatedBy(user.getFullName());
+                mar.setLastUpdatedBy(userContext.getUserFullName());
                 ipMarDetailsRepository.save(mar);
 
                 log.info("MAR entry saved with id={} for inpatientId={}", mar.getMarId(), inpatient.getInpatientId());
@@ -3064,10 +3068,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 ipMedicineIssue.setExpiryDate(request.getExpiryDate());
                 ipMedicineIssue.setIssueQty(request.getRequestQty());
                 ipMedicineIssue.setIssueDatetime(LocalDateTime.now());
-                ipMedicineIssue.setIssuedBy(user.getUserId());
-                ipMedicineIssue.setCreatedBy(user.getUserId());
+                ipMedicineIssue.setIssuedBy(userContext.getUserId());
+                ipMedicineIssue.setCreatedBy(userContext.getUserId());
                 ipMedicineIssue.setCreatedOn(LocalDateTime.now());
-                ipMedicineIssue.setLastChgBy(user.getUserId());
+                ipMedicineIssue.setLastChgBy(userContext.getUserId());
                 ipMedicineIssue.setLastChgOn(LocalDateTime.now());
                 ipMedicineIssue.setRemarks(request.getRemark());
 
@@ -3094,7 +3098,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 storeStockLedgerRequest.setQtyOut(request.getRequestQty());
                 storeStockLedgerRequest.setQtyAfter(updatedQty);
                 storeStockLedgerRequest.setTxnSource(AppConstants.INPATIENT_ISSUE);
-                storeStockLedgerRequest.setCreatedBy(user.getUsername());
+                storeStockLedgerRequest.setCreatedBy(userContext.getUserFullName());
                 storeStockLedgerRequest.setHospitalId(stock.getHospitalId().getId());
                 storeStockLedgerRequest.setDepartmentId(stock.getDepartmentId().getId());
                 inventoryUtils.updateStoreStockLedger(storeStockLedgerRequest);
@@ -3269,24 +3273,24 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     }
 
 
-    private DgOrderHd buildLabOrderHeader(Inpatient inpatient, User currentUser, LocalDate appointmentDate, LocalTime now) {
+    private DgOrderHd buildLabOrderHeader(Inpatient inpatient, UserContext userContext, LocalDate appointmentDate, LocalTime now) {
         DgOrderHd hd = new DgOrderHd();
         hd.setOrderDate(LocalDate.now());
         hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
-        hd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
+        hd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, userContext.getHospitalId()));
         hd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
         hd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
         hd.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
         hd.setSource(AppConstants.SOURCE_TYPE_IPD);
-        hd.setHospitalId(currentUser.getHospital().getId());
-        hd.setPrescribedBy(currentUser.getUserId() != null ? currentUser.getUserId().intValue() : 0);
+        hd.setHospitalId(userContext.getHospitalId());
+        hd.setPrescribedBy(userContext.getUserId() != null ? userContext.getUserId().intValue() : 0);
         hd.setDepartmentId(authUtil.getCurrentDepartmentId());
         hd.setInvestigationRequestNo(0);
         hd.setPatientId(inpatient.getPatient());
         hd.setDiscountId(null);
         hd.setAppointmentDate(appointmentDate);
-        hd.setCreatedBy(currentUser.getFullName());
-        hd.setLastChgBy(currentUser.getFullName());
+        hd.setCreatedBy(userContext.getUserFullName());
+        hd.setLastChgBy(userContext.getUserFullName());
         hd.setCreatedOn(LocalDate.now());
         hd.setLastChgDate(LocalDate.now());
         hd.setLastChgTime(now.toString());
@@ -3296,7 +3300,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         return hd;
     }
 
-    private DgOrderDt buildLabOrderDetail(DgOrderHd orderHd, DgMasInvestigation investigation, User currentUser, LocalDate appointmentDate, LocalTime now, LabOrderTrackingStatus orderedStatus, String remarks) {
+    private DgOrderDt buildLabOrderDetail(DgOrderHd orderHd, DgMasInvestigation investigation, UserContext userContext, LocalDate appointmentDate, LocalTime now, LabOrderTrackingStatus orderedStatus, String remarks) {
         DgOrderDt dt = new DgOrderDt();
         dt.setOrderHd(orderHd);
         dt.setInvestigation(investigation);
@@ -3304,8 +3308,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         dt.setOrderQty(1);
         dt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setBillingStatus(AppConstants.STATUS_Y.toLowerCase());
-        dt.setCreatedBy(currentUser.getFullName());
-        dt.setLastChgBy(currentUser.getFullName());
+        dt.setCreatedBy(userContext.getUserFullName());
+        dt.setLastChgBy(userContext.getUserFullName());
         dt.setLastChgDate(LocalDate.now());
         dt.setLastChgTime(now.toString());
         dt.setMainChargeCodeId(investigation.getMainChargeCodeId() != null ? investigation.getMainChargeCodeId().getChargecodeId() : 0L);
@@ -3317,29 +3321,30 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         return dt;
     }
 
-    private RadOrderHd buildRadiologyOrderHeader(Inpatient inpatient, User currentUser, LocalDate appointmentDate) {
+    private RadOrderHd buildRadiologyOrderHeader(Inpatient inpatient, UserContext userContext, LocalDate appointmentDate) {
         RadOrderHd hd = new RadOrderHd();
         hd.setOrderDate(LocalDate.now());
         hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
         hd.setAppointmentDate(appointmentDate);
         hd.setPatient(inpatient.getPatient());
-        hd.setHospital(currentUser.getHospital());
+        hd.setHospital(masHospitalRepository.findById(userContext.getHospitalId())
+                .orElseThrow(() -> new SDDException(404, "Hospital not found with id: " + userContext.getHospitalId())));
         hd.setDepartment(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId())
                 .orElseThrow(() -> new SDDException(404, "Department not found with id: " + authUtil.getCurrentDepartmentId())));
-        hd.setPrescribedBy(currentUser.getFullName());
-        hd.setCreatedBy(currentUser.getFullName());
-        hd.setLastChgBy(currentUser.getFullName());
+        hd.setPrescribedBy(userContext.getUserFullName());
+        hd.setCreatedBy(userContext.getUserFullName());
+        hd.setLastChgBy(userContext.getUserFullName());
         hd.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
         hd.setInpatient(inpatient);
         return hd;
     }
 
-    private RadOrderDt buildRadiologyOrderDetail(RadOrderHd orderHd, DgMasInvestigation investigation, User currentUser, LocalDate appointmentDate, String remarks) {
+    private RadOrderDt buildRadiologyOrderDetail(RadOrderHd orderHd, DgMasInvestigation investigation, UserContext userContext, LocalDate appointmentDate, String remarks) {
         RadOrderDt dt = new RadOrderDt();
         dt.setRadOrderhd(orderHd);
         dt.setInvestigation(investigation);
         dt.setSubChargecode(investigation.getSubChargeCodeId());
-        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, currentUser.getHospital().getId()));
+        dt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, userContext.getHospitalId()));
         dt.setAppointmentDate(appointmentDate);
         dt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
@@ -3347,8 +3352,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setBillingStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
-        dt.setCreatedby(currentUser.getFullName());
-        dt.setLastChgBy(currentUser.getFullName());
+        dt.setCreatedby(userContext.getUserFullName());
+        dt.setLastChgBy(userContext.getUserFullName());
         dt.setRemarks(remarks);
         return dt;
     }
@@ -3571,11 +3576,11 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             procedureTxn.setProcedureDatetime(request.getProcedureDatetime());
             procedureTxn.setPerformedBy(request.getPerformedBy());
             procedureTxn.setRemarks(request.getRemarks());
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             procedureTxn.setCreatedAt(LocalDateTime.now());
-            procedureTxn.setCreatedBy(user.getFullName());
+            procedureTxn.setCreatedBy(userContext.getUserFullName());
             procedureTxn.setUpdatedAt(LocalDateTime.now());
-            procedureTxn.setUpdatedBy(user.getFullName());
+            procedureTxn.setUpdatedBy(userContext.getUserFullName());
 
             ipProcedureTxnRepository.save(procedureTxn);
 
@@ -3646,8 +3651,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             template.setTemplateCode(request.getTemplateCode());
             template.setTemplateName(request.getTemplateName());
             template.setLastChgDate(LocalDateTime.now());
-            User user = authUtil.getCurrentUser();
-            template.setLastChgBy(user.getFullName());
+            UserContext userContext = userContextService.getCurrentUserContext();
+            template.setLastChgBy(userContext.getUserFullName());
 
             // 5. Save parent
             MasProcedureConsumableTemplate savedTemplate = masProcedureConsumableTemplateRepository.save(template);
@@ -3860,7 +3865,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         try {
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             // Validate Inpatient
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId())
@@ -3894,7 +3899,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     .doctorInformed(request.getDoctorInformed().toLowerCase())
                     .informedDoctorId(informedDoctor)
                     .patientConditionAfter(request.getPatientConditionAfter())
-                    .recordedBy(currentUser.getUserId())
+                    .recordedBy(userContext.getUserId())
                     .routeId(request.getRouteId() != null ? masRouteRepository.findById(request.getRouteId()).orElse(null) : null)
                     .dose(request.getDose())
                     .recordedDatetime(LocalDateTime.now())
@@ -3981,7 +3986,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Override
     public ApiResponse<String> saveDietOrderByInpatient(DietOrderRequest request) {
         try {
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId()).orElseThrow(() ->
                             new RuntimeException("Inpatient not found with ID: " + request.getInpatientId()));
             /*
@@ -3998,7 +4003,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 previousDiet.setStatus(AppConstants.IP_COMPLETE_DIET);
                 previousDiet.setToDate(LocalDate.now());
                 previousDiet.setLastUpdateDate(LocalDateTime.now());
-                previousDiet.setLastUpdatedBy(currentUser.getFullName());
+                previousDiet.setLastUpdatedBy(userContext.getUserFullName());
                 ipDietOrderRepository.save(previousDiet);
             }
             IpDietOrder ipDietOrder = new IpDietOrder();
@@ -4012,10 +4017,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     .orElseThrow(() -> new RuntimeException("Diet type not found with ID: " + request.getDietTypeId())));
 
             ipDietOrder.setSpecialInstruction(request.getSpecialInstruction());
-            ipDietOrder.setCreatedBy(currentUser.getFullName());
+            ipDietOrder.setCreatedBy(userContext.getUserFullName());
             ipDietOrder.setFromDate(request.getEffectiveFrom());
             ipDietOrder.setLastUpdateDate(LocalDateTime.now());
-            ipDietOrder.setLastUpdatedBy(currentUser.getFullName());
+            ipDietOrder.setLastUpdatedBy(userContext.getUserFullName());
             ipDietOrder.setStatus(AppConstants.IP_ACTIVE_DIET);
             ipDietOrder.setRemark(request.getRemark());
             ipDietOrderRepository.save(ipDietOrder);
@@ -4049,7 +4054,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     @Transactional
     public ApiResponse<String> saveCurrentActiveDietSchedule(CurrentActiveDietScheduleRequest request) {
         try {
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
             if(inpatient.isEmpty()){
@@ -4078,8 +4083,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             schedule.setRemarks(request.getRemark());
             schedule.setConsumedPercentage(request.getConsumed());
             schedule.setAdministeredBy(request.getGivenBy());
-            schedule.setCreatedBy(currentUser.getFullName());
-            schedule.setLastUpdatedBy(currentUser.getFullName());
+            schedule.setCreatedBy(userContext.getUserFullName());
+            schedule.setLastUpdatedBy(userContext.getUserFullName());
             schedule.setLastUpdateDate(LocalDateTime.now());
             schedule.setAdministeredDatetime(LocalDateTime.now());
             ipDietScheduleRepository.save(schedule);
@@ -4112,7 +4117,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Override
     public ApiResponse<String> saveShiftHandover(ShiftHandoverRequest request) {
-        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         Optional<Inpatient> inpatient = inpatientRepository.findById(request.getInpatientId());
         if(inpatient.isEmpty()){
             return ResponseUtils.createNotFoundResponse("Inpatient not found",HttpStatus.NOT_FOUND.value());
@@ -4120,8 +4125,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         ShiftHandover shiftHandover=new ShiftHandover();
         shiftHandover.setHandoverNotes(request.getNotes());
         shiftHandover.setInpatient(inpatient.get());
-        shiftHandover.setCreatedBy(currentUser.getFullName());
-        shiftHandover.setLastUpdatedBy(currentUser.getFullName());
+        shiftHandover.setCreatedBy(userContext.getUserFullName());
+        shiftHandover.setLastUpdatedBy(userContext.getUserFullName());
         shiftHandover.setLastUpdateDate(LocalDateTime.now());
         shiftHandoverRepository.save(shiftHandover);
         return ResponseUtils.createSuccessResponse("ShiftHandover save successfully", new TypeReference<>() {});
@@ -4259,7 +4264,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         log.info("saveNursingCareProcedure started for {} record(s)", requests != null ? requests.size() : 0);
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         Long departmentId=authUtil.getCurrentDepartmentId();
         try {
 
@@ -4312,10 +4317,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 ipMedicineIssue.setExpiryDate(request.getExpiryDate());
                 ipMedicineIssue.setIssueQty(request.getRequestQty());
                 ipMedicineIssue.setIssueDatetime(LocalDateTime.now());
-                ipMedicineIssue.setIssuedBy(user.getUserId());
-                ipMedicineIssue.setCreatedBy(user.getUserId());
+                ipMedicineIssue.setIssuedBy(userContext.getUserId());
+                ipMedicineIssue.setCreatedBy(userContext.getUserId());
                 ipMedicineIssue.setCreatedOn(LocalDateTime.now());
-                ipMedicineIssue.setLastChgBy(user.getUserId());
+                ipMedicineIssue.setLastChgBy(userContext.getUserId());
                 ipMedicineIssue.setLastChgOn(LocalDateTime.now());
                 ipMedicineIssue.setRemarks(request.getRemark());
 
@@ -4341,7 +4346,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     ipConsumableTxn.setProcedureTxnId(null);
                 }
                 ipConsumableTxn.setRemarks(request.getRemark());
-                ipConsumableTxn.setCreatedBy(user.getFullName());
+                ipConsumableTxn.setCreatedBy(userContext.getUserFullName());
                 ipConsumableTxn.setCreatedAt(LocalDateTime.now());
 
                 ipConsumableTxnRepository.save(ipConsumableTxn);
@@ -4363,7 +4368,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 storeStockLedgerRequest.setQtyOut(request.getRequestQty());
                 storeStockLedgerRequest.setQtyAfter(updatedQty);
                 storeStockLedgerRequest.setTxnSource(AppConstants.INPATIENT_ISSUE);
-                storeStockLedgerRequest.setCreatedBy(user.getUsername());
+                storeStockLedgerRequest.setCreatedBy(userContext.getUserFullName());
                 storeStockLedgerRequest.setHospitalId(stock.getHospitalId().getId());
                 storeStockLedgerRequest.setDepartmentId(stock.getDepartmentId().getId());
                 inventoryUtils.updateStoreStockLedger(storeStockLedgerRequest);
@@ -4403,7 +4408,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
                 // Mark consumable transaction as billed
                 ipConsumableTxn.setIsBilled(true);
-                ipConsumableTxn.setUpdatedBy(user.getUsername());
+                ipConsumableTxn.setUpdatedBy(userContext.getUserFullName());
                 ipConsumableTxn.setUpdatedAt(LocalDateTime.now());
 
                 ipConsumableTxnRepository.save(ipConsumableTxn);

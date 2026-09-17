@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.MasItemTypeRepository;
 import com.hims.entity.repository.MasStoreSectionRepository;
@@ -8,7 +9,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasStoreSectionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasStoreSectionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasStoreSectionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +39,9 @@ public class MasStoreSectionImp implements MasStoreSectionService {
     @Autowired
     private MasStoreSectionRepository masStoreSectionRepository;
 
+    @Autowired
+    private UserContextService userContextService;
+
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepo.findByUserName(username);
@@ -59,13 +65,13 @@ public class MasStoreSectionImp implements MasStoreSectionService {
         masStoreSection.setSectionCode(masStoreSectionRequest.getSectionCode());
         masStoreSection.setSectionName(masStoreSectionRequest.getSectionName());
         masStoreSection.setStatus("y");
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
-        masStoreSection.setLastChgBy(String.valueOf(currentUser.getUserId()));
+        masStoreSection.setLastChgBy(String.valueOf(userContext.getUserId()));
         masStoreSection.setLastChgDate(LocalDate.now());
         masStoreSection.setLastChgTime(getCurrentTimeFormatted());
         masStoreSection.setMasItemType(masItemType.get());
@@ -116,15 +122,15 @@ public class MasStoreSectionImp implements MasStoreSectionService {
         Optional<MasStoreSection> masStoreSection = masStoreSectionRepository.findById(id);
         if (masStoreSection.isPresent()) {
             MasStoreSection masStoreSection1 = masStoreSection.get();
-            if ("y".equals(status) || "n".equals(status)) {
+            if (AppConstants.STATUS_Y.equalsIgnoreCase(status) || AppConstants.STATUS_N.equalsIgnoreCase(status)) {
                 masStoreSection1.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                masStoreSection1.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                masStoreSection1.setLastChgBy(String.valueOf(userContext.getUserId()));
                 masStoreSection1.setLastChgDate(LocalDate.now());
 
                 return ResponseUtils.createSuccessResponse(mapToResponse(masStoreSectionRepository.save(masStoreSection1)), new TypeReference<>() {
@@ -148,13 +154,13 @@ public class MasStoreSectionImp implements MasStoreSectionService {
             MasStoreSection masStoreSection1 = masStoreSection.get();
             masStoreSection1.setSectionCode(masStoreSectionRequest.getSectionCode());
             masStoreSection1.setSectionName(masStoreSectionRequest.getSectionName());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            masStoreSection1.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            masStoreSection1.setLastChgBy(String.valueOf(userContext.getUserId()));
             masStoreSection1.setLastChgDate(LocalDate.now());
             masStoreSection1.setLastChgTime(getCurrentTimeFormatted());
 

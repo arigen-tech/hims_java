@@ -4,12 +4,13 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasDrugSchedule;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasDrugScheduleRepository;
 import com.hims.request.MasDrugScheduleRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDrugScheduleResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasDrugScheduleService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import kong.unirest.HttpStatus;
@@ -28,6 +29,9 @@ public class MasDrugScheduleServiceImpl implements MasDrugScheduleService {
      @Autowired
     private MasDrugScheduleRepository repository;
     private final AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
+
 
     @Override
     public ApiResponse<List<MasDrugScheduleResponse>> getAllSchedule(int flag) {
@@ -88,8 +92,7 @@ public class MasDrugScheduleServiceImpl implements MasDrugScheduleService {
             MasDrugScheduleRequest request) {
 
         try {
-
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasDrugSchedule entity = new MasDrugSchedule();
 
@@ -97,8 +100,8 @@ public class MasDrugScheduleServiceImpl implements MasDrugScheduleService {
             entity.setScheduleName(request.getScheduleName());
             entity.setLegalDescription(request.getLegalDescription());
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setCreatedBy(user.getFullName());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -127,6 +130,7 @@ public class MasDrugScheduleServiceImpl implements MasDrugScheduleService {
             MasDrugScheduleRequest request) {
 
         try {
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasDrugSchedule entity = repository.findById(id).orElse(null);
 
@@ -138,10 +142,9 @@ public class MasDrugScheduleServiceImpl implements MasDrugScheduleService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
             entity.setScheduleName(request.getScheduleName());
             entity.setLegalDescription(request.getLegalDescription());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             repository.save(entity);
 
@@ -166,6 +169,7 @@ public class MasDrugScheduleServiceImpl implements MasDrugScheduleService {
             String status) {
 
         try {
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasDrugSchedule entity = repository.findById(id).orElse(null);
 
@@ -175,10 +179,9 @@ public class MasDrugScheduleServiceImpl implements MasDrugScheduleService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

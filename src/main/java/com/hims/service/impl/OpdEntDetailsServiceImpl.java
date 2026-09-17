@@ -4,23 +4,21 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.OpdEntDetails;
 import com.hims.entity.Patient;
-import com.hims.entity.User;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.OpdEntDetailsRepository;
-import com.hims.entity.repository.OpdObgDetailsRepository;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.entity.repository.VisitRepository;
 import com.hims.projection.OpdEntDetailsProjection;
 import com.hims.request.OpdEntDetailsRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpdEntDetailsResponse;
-import com.hims.response.OphthalmologyExaminationDetailResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OpdEntDetailsService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,6 +36,9 @@ public class OpdEntDetailsServiceImpl implements OpdEntDetailsService {
     @Autowired
     private AuthUtil authUtil;
 
+    @Autowired
+    private UserContextService userContextService;
+
     @Override
     public ApiResponse<String> createOrUpdateEntDetails(Long visitId, OpdEntDetailsRequest request) {
             log.info("Creating or updating ENT details for visit ID: {}", visitId);
@@ -47,7 +48,7 @@ public class OpdEntDetailsServiceImpl implements OpdEntDetailsService {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid visit ID", HttpStatus.BAD_REQUEST.value());
             }
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             Patient patient = patientRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new RuntimeException("Patient not found"));
             Visit visit = visitRepository.findById(visitId)
@@ -109,9 +110,9 @@ public class OpdEntDetailsServiceImpl implements OpdEntDetailsService {
             // Set system fields
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
             if (isNew) {
-                entity.setCreatedBy(user.getFullName());
+                entity.setCreatedBy(userContext.getUserFullName());
             }
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             opdEntDetailsRepository.save(entity);

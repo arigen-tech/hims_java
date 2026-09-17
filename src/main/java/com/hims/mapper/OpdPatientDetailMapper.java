@@ -3,16 +3,16 @@ package com.hims.mapper;
 
 import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
-import com.hims.entity.User;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.request.OpdPatientDetailCreateRequest;
 import com.hims.response.OpdPatientDetailResponseDTO;
 import com.hims.response.OpdPatientVitalResponse;
+import com.hims.response.UserContext;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISUtil;
-import org.mapstruct.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +33,9 @@ public class OpdPatientDetailMapper {
     private VisitRepository visitRepository;
 
     @Autowired
+    MasHospitalRepository masHospitalRepository;
+
+    @Autowired
     private MasDepartmentRepository departmentRepository;
 
     @Autowired
@@ -43,6 +46,9 @@ public class OpdPatientDetailMapper {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
     public OpdPatientDetailResponseDTO mapToDTO(OpdPatientDetail opd) {
@@ -123,7 +129,7 @@ public class OpdPatientDetailMapper {
         opd.setHospital(request.getHospitalId() != null ? hospitalRepository.findById(request.getHospitalId()).orElseThrow(() -> new SDDException("hospital", 404, "Hospital not found")) : null);
         opd.setDoctor(request.getDoctorId() != null ? userRepository.findById(request.getDoctorId()).orElseThrow(() -> new SDDException("doctor", 404, "Doctor not found")) : null);
         opd.setLastChgDate(Instant.now());
-        opd.setLastChgBy(Objects.requireNonNull(authUtil.getCurrentUser()).getFullName());
+        opd.setLastChgBy(Objects.requireNonNull(userContextService.getCurrentUserContext()).getUserFullName());
     }
 
     public void mapClinicalDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest request) {
@@ -143,14 +149,14 @@ public class OpdPatientDetailMapper {
         }
     }
 
-    public void mapGeneralDetails(OpdPatientDetail opd, Patient patient, Visit visit, User user, Long deptId) {
+    public void mapGeneralDetails(OpdPatientDetail opd, Patient patient, Visit visit, UserContext userContext, Long deptId) {
         opd.setPatient(patient);
         opd.setVisit(visit);
         opd.setOpdDate(HMISUtil.getCurrentLocalDateTime());
-        opd.setHospital(user.getHospital());
-        opd.setDoctor(user);
+        opd.setHospital(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new SDDException("hospital", 404, "Hospital not found")));
+        opd.setDoctor(userRepository.findById(userContext.getUserId()).orElseThrow(() -> new SDDException("doctor", 404, "Doctor not found")));
         opd.setDepartment(departmentRepository.findById(deptId).orElseThrow(() -> new SDDException("department", 404, "Department not found")));
-        opd.setLastChgBy(user.getUsername());
+        opd.setLastChgBy(userContext.getUserFullName());
         opd.setLastChgDate(Instant.now());
     }
 

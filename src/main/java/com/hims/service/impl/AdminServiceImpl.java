@@ -11,6 +11,7 @@ import com.hims.projection.GetDoctorRosterProjection;
 import com.hims.request.DoctorRosterReqKeys;
 import com.hims.request.DoctorRosterRequest;
 import com.hims.response.*;
+import com.hims.service.UserContextService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import com.hims.exception.SDDException;
@@ -70,6 +71,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     MasServiceCategoryRepository masServiceCategoryRepository;
+    
+    @Autowired
+    UserContextService userContextService;
+
+    @Autowired
+    MasHospitalRepository masHospitalRepository;
 
 
 
@@ -80,8 +87,8 @@ public class AdminServiceImpl implements AdminService {
             log.info("appSetup called: deptId={}, doctorId={}, sessionId={}", appointmentReq.getDepartmentId(), appointmentReq.getDoctorId(),
                     appointmentReq.getSessionId());
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext =  userContextService.getCurrentUserContext(); 
+            if (userContext  == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -120,9 +127,9 @@ public class AdminServiceImpl implements AdminService {
                 entry.setMaxNoOfDays(key.getMaxNoOfDay());
                 entry.setMinNoOfDays(key.getMinNoOfday());
                 entry.setLastChgDate(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate());
-                entry.setLastChgBy(currentUser.getUserId().intValue());
+                entry.setLastChgBy(userContext .getUserId().intValue());
                 entry.setLastChgTime(Calender.getCurrentTimeStamp());
-                entry.setHospital(currentUser.getHospital());
+                entry.setHospital(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new SDDException("hospitalId", 404, "Hospital not found")));
                 entry.setOpdLocation(key.getOpdLocation());
                 AppSetup saved = appSetupRepository.save(entry);
                 log.info("AppSetup saved: id={}, day={}, startTime={}, endTime={}",
@@ -219,8 +226,8 @@ public class AdminServiceImpl implements AdminService {
                 (doctorReq != null && doctorReq.getDates() != null) ? doctorReq.getDates().size() : 0);
         AppsetupResponse res = new AppsetupResponse();
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext =  userContextService.getCurrentUserContext(); 
+            if (userContext  == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -248,8 +255,8 @@ public class AdminServiceImpl implements AdminService {
                 entry.setDepartment(dept);
                 entry.setRoasterValue(key.getRosterVale());
                 entry.setChgDate(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate());
-                entry.setChgBy(currentUser.getUserId());
-                entry.setHospital(currentUser.getHospital());
+                entry.setChgBy(userContext .getUserId());
+                entry.setHospital(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new SDDException("hospitalId", 404, "Hospital not found")));
                 entry.setChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
 
                 doctorRoasterRepository.save(entry);

@@ -448,7 +448,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
         log.info("Starting lab update + booking");
 
-//        User currentUser = authUtil.getCurrentUser();
+//        UserContext userContext = userContextService.getCurrentUserContext();
         UserContext userContext = userContextService.getCurrentUserContext();
         Long departmentId = laboratoryDepartment;
 
@@ -680,7 +680,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     public ApiResponse<AppsetupResponse> labRegForExistingOrder(LabBillingOnlyRequest labReq) {
         log.info("Starting lab billing for existing order. OrderHdId={}", labReq.getOrderhdid());
 
-//        User currentUser = authUtil.getCurrentUser();
+//        UserContext userContext = userContextService.getCurrentUserContext();
         UserContext userContext = userContextService.getCurrentUserContext();
         AppsetupResponse res = new AppsetupResponse();
 

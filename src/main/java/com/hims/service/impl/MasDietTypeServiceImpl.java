@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasDietType;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasDietTypeRepository;
 import com.hims.request.MasDietTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDietTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasDietTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +31,8 @@ public class MasDietTypeServiceImpl implements MasDietTypeService {
 
     @Autowired
     private MasDietTypeRepository repository;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasDietTypeResponse>> getAllDietType(int flag) {
@@ -73,8 +78,8 @@ public class MasDietTypeServiceImpl implements MasDietTypeService {
     @Override
     public ApiResponse<MasDietTypeResponse> addDietType(MasDietTypeRequest request) {
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", 400);
         }
@@ -82,9 +87,9 @@ public class MasDietTypeServiceImpl implements MasDietTypeService {
         MasDietType diet = MasDietType.builder()
                 .dietTypeName(request.getDietTypeName())
                 .description(request.getDescription())
-                .status("y")
-                .createdBy(user.getFirstName() + " " + user.getLastName())
-                .lastUpdatedBy(user.getFirstName() + " " + user.getLastName())
+                .status(AppConstants.STATUS_Y.toLowerCase())
+                .createdBy(userContext.getUserFullName())
+                .lastUpdatedBy(userContext.getUserFullName())
                 .lastUpdateDate(LocalDateTime.now())
                 .build();
 
@@ -96,7 +101,7 @@ public class MasDietTypeServiceImpl implements MasDietTypeService {
     @Override
     public ApiResponse<MasDietTypeResponse> update(Long id, MasDietTypeRequest request) {
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         Optional<MasDietType> dietOpt = repository.findById(id);
         if (dietOpt.isEmpty()) {
@@ -106,7 +111,7 @@ public class MasDietTypeServiceImpl implements MasDietTypeService {
         MasDietType diet = dietOpt.get();
         diet.setDietTypeName(request.getDietTypeName());
         diet.setDescription(request.getDescription());
-        diet.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
+        diet.setLastUpdatedBy(userContext.getUserFullName());
         diet.setLastUpdateDate(LocalDateTime.now());
 
         MasDietType saved = repository.save(diet);
@@ -117,7 +122,7 @@ public class MasDietTypeServiceImpl implements MasDietTypeService {
     @Override
     public ApiResponse<MasDietTypeResponse> changeStatus(Long id, String status) {
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         Optional<MasDietType> dietOpt = repository.findById(id);
         if (dietOpt.isEmpty()) {
@@ -131,7 +136,7 @@ public class MasDietTypeServiceImpl implements MasDietTypeService {
 
         MasDietType diet = dietOpt.get();
         diet.setStatus(status);
-        diet.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
+        diet.setLastUpdatedBy(userContext.getUserFullName());
         diet.setLastUpdateDate(LocalDateTime.now());
 
         MasDietType saved = repository.save(diet);

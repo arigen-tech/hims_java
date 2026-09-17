@@ -8,7 +8,9 @@ import com.hims.entity.repository.BillingPolicyRepository;
 import com.hims.request.BillingPolicyRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.BillingPolicyResponse;
+import com.hims.response.UserContext;
 import com.hims.service.BillingPolicyService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,9 @@ public class BillingPolicyServiceImpl implements BillingPolicyService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<BillingPolicyResponse>> getAll(int flag) {
@@ -65,7 +70,7 @@ public class BillingPolicyServiceImpl implements BillingPolicyService {
     @Override
     public ApiResponse<BillingPolicyResponse> create(BillingPolicyRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             BillingPolicyMaster policy = BillingPolicyMaster.builder()
                     .policyCode(request.getPolicyCode())
@@ -73,8 +78,8 @@ public class BillingPolicyServiceImpl implements BillingPolicyService {
                     .applicableBillingType(request.getApplicableBillingType())
                     .followupDaysAllowed(request.getFollowupDaysAllowed())
                     .discountPercentage(request.getDiscountPercentage())
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .status(AppConstants.STATUS_Y.toLowerCase())
                     .build();
@@ -99,14 +104,14 @@ public class BillingPolicyServiceImpl implements BillingPolicyService {
             return ResponseUtils.createNotFoundResponse(
                     "Billing Policy not found", 404);
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         policy.setPolicyCode(request.getPolicyCode());
         policy.setDescription(request.getDescription());
         policy.setApplicableBillingType(request.getApplicableBillingType());
         policy.setFollowupDaysAllowed(request.getFollowupDaysAllowed());
         policy.setDiscountPercentage(request.getDiscountPercentage());
-        policy.setLastUpdatedBy(user.getFirstName());
+        policy.setLastUpdatedBy(userContext.getUserFullName());
         policy.setLastUpdateDate(LocalDateTime.now());
 
         repo.save(policy);
@@ -125,15 +130,15 @@ public class BillingPolicyServiceImpl implements BillingPolicyService {
             return ResponseUtils.createNotFoundResponse(
                     "Billing Policy not found", 404);
 
-        if (!status.equalsIgnoreCase("y")
-                && !status.equalsIgnoreCase("n"))
+        if (!status.equalsIgnoreCase(AppConstants.STATUS_Y.toLowerCase())
+                && !status.equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase()))
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {}, "Invalid status", 400);
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         policy.setStatus(status);
-        policy.setLastUpdatedBy(user.getFirstName());
+        policy.setLastUpdatedBy(userContext.getUserFullName());
         policy.setLastUpdateDate(LocalDateTime.now());
 
         repo.save(policy);

@@ -5,13 +5,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasDepartment;
 import com.hims.entity.MasItemFacility;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasItemFacilityRepository;
 import com.hims.request.MasItemFacilityRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasItemFacilityResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasItemFacilityService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import kong.unirest.HttpStatus;
@@ -33,6 +34,9 @@ public class MasItemFacilityServiceImpl implements MasItemFacilityService {
     private MasDepartmentRepository departmentRepository;
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasItemFacilityResponse>> getAllFacility(int flag) {
@@ -88,7 +92,7 @@ public class MasItemFacilityServiceImpl implements MasItemFacilityService {
 
         try {
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasItemFacility entity = new MasItemFacility();
             entity.setFacilityCode(request.getFacilityCode());
@@ -96,8 +100,8 @@ public class MasItemFacilityServiceImpl implements MasItemFacilityService {
             MasDepartment department = departmentRepository.findById(request.getDepartmentId()).orElse(null);
             entity.setDepartment(department);
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setCreatedBy(user.getFullName());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -130,7 +134,7 @@ public class MasItemFacilityServiceImpl implements MasItemFacilityService {
                         HttpStatus.NOT_FOUND);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             entity.setFacilityCode(request.getFacilityCode());
             entity.setFacilityName(request.getFacilityName());
@@ -144,7 +148,7 @@ public class MasItemFacilityServiceImpl implements MasItemFacilityService {
 
                 entity.setDepartment(null);
             }
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             repository.save(entity);
 
@@ -177,9 +181,9 @@ public class MasItemFacilityServiceImpl implements MasItemFacilityService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             repository.save(entity);
 

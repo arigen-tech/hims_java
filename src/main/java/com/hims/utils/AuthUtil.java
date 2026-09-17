@@ -40,13 +40,10 @@ public class AuthUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    public User getCurrentUser() {
-        return userContextService.getCurrentUser();
-    }
+//    public User getCurrentUser() {
+//        return userContextService.getCurrentUser();
+//    }
 
-    public UserContext getCurrentUserContext() {
-        return userContextService.getCurrentUserContext();
-    }
 
     public Long getCurrentDepartmentId() {
         return getDepartmentIdFromToken();
@@ -79,7 +76,7 @@ public class AuthUtil {
         }
     }
 
-    public String getCurrentUserFullName(){
-        return getCurrentUser().getFullName();
-    }
+//    public String getCurrentUserFullName(){
+//        return getCurrentUser().getFullName();
+//    }
 }

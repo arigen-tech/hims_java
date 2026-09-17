@@ -415,7 +415,7 @@ public class DispensaryServiceImpl implements DispensaryService {
 
         Visit visit = prescriptionHeader.getVisit();
 
-        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         /*
          * ==========================================================
@@ -455,36 +455,27 @@ public class DispensaryServiceImpl implements DispensaryService {
         billingHeader.setHospitalAddress(visit.getHospital().getAddress());
         billingHeader.setHospitalMobileNo(visit.getHospital().getContactNumber());
         billingHeader.setHospitalGstin(visit.getHospital().getGstnNo());
-
         billingHeader.setVisit(visit);
-
-        billingHeader.setCreatedBy(currentUser.getFullName());
+        billingHeader.setCreatedBy(userContext.getUserFullName());
         billingHeader.setBillingDate(HMISUtil.getCurrentLocalDateTime());
         billingHeader.setServiceCategory(serviceCategory);
         billingHeader.setPrescriptionHeader(prescriptionHeader);
         billingHeader.setInvoiceNo("");
-
         billingHeader.setBillNo(
                 transactionSequenceService.generateTransactionNumber(
                         HMISTransaction.BILL_NO,
-                        currentUser.getHospital().getId()
+                        userContext.getHospitalId()
                 )
         );
 
         billingHeader.setGstnBillNo("");
-
         billingHeader.setTotalAmount(BigDecimal.ZERO);
         billingHeader.setNetAmount(BigDecimal.ZERO);
         billingHeader.setTaxTotal(BigDecimal.ZERO);
         billingHeader.setTotalPaid(BigDecimal.ZERO);
         billingHeader.setDiscountAmount(BigDecimal.ZERO);
-
-        billingHeader.setPaymentStatus(
-                AppConstants.PAYMENT_PAID.toLowerCase()
-        );
-
-        BillingHeader savedBillingHeader =
-                billingHeaderRepository.save(billingHeader);
+        billingHeader.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+        BillingHeader savedBillingHeader = billingHeaderRepository.save(billingHeader);
 
 
         /*
@@ -612,7 +603,7 @@ public class DispensaryServiceImpl implements DispensaryService {
             );
 
             billingDetail.setItem(item);
-            billingDetail.setCollectedBy(authUtil.getCurrentUser());
+            billingDetail.setCollectedBy(userContext.getUserFullName());
 
             billingDetailRepository.save(billingDetail);
 

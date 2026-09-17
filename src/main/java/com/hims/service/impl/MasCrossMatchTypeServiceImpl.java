@@ -3,12 +3,13 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasCrossMatchType;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasCrossMatchTypeRepository;
 import com.hims.request.MasCrossMatchTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasCrossMatchTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasCrossMatchTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,9 @@ public class MasCrossMatchTypeServiceImpl implements MasCrossMatchTypeService {
     private  MasCrossMatchTypeRepository repository;
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasCrossMatchTypeResponse>> getAll(int flag) {
@@ -68,8 +72,8 @@ public class MasCrossMatchTypeServiceImpl implements MasCrossMatchTypeService {
     @Override
     public ApiResponse<MasCrossMatchTypeResponse> create(MasCrossMatchTypeRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -88,7 +92,7 @@ public class MasCrossMatchTypeServiceImpl implements MasCrossMatchTypeService {
             entity.setIsEmergencyAllowed(request.getIsEmergencyAllowed().toLowerCase());
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
             entity.setCreatedDate(LocalDateTime.now());
-            entity.setCreatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
             repository.save(entity);
 
             return ResponseUtils.createSuccessResponse(

@@ -1371,7 +1371,7 @@ public class StoreInternalIndentServiceImpl implements StoreInternalIndentServic
     @Override
     public ApiResponse<List<StoreIssueMResponse>> getIssuesForReceiving(Long fromDeptId, LocalDate fromDate, LocalDate toDate) {
         try {
-          //  User currentUser = authUtil.getCurrentUser();
+          //  UserContext userContext = userContextService.getCurrentUserContext();
 //            if (currentUser == null) {
 //                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
 //                        },

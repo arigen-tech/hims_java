@@ -7,7 +7,9 @@ import com.hims.entity.repository.MasAnaesthesiaInstructionRepository;
 import com.hims.request.MasAnaesthesiaInstructionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasAnaesthesiaInstructionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasAnaesthesiaInstructionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,9 @@ public class MasAnaesthesiaInstructionServiceImpl implements MasAnaesthesiaInstr
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasAnaesthesiaInstructionResponse>> getAll(int flag) {
@@ -73,13 +78,13 @@ public class MasAnaesthesiaInstructionServiceImpl implements MasAnaesthesiaInstr
                 return invalidInstructionTypeResponse();
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasAnaesthesiaInstruction data = MasAnaesthesiaInstruction.builder()
                     .instructionType(instructionType)
                     .instruction(request.getInstruction())
                     .status(STATUS_Y)
-                    .lastChgBy(user.getFirstName())
+                    .lastChgBy(userContext.getUserFullName())
                     .lastChgDate(LocalDateTime.now())
                     .build();
 
@@ -105,11 +110,11 @@ public class MasAnaesthesiaInstructionServiceImpl implements MasAnaesthesiaInstr
                 return invalidInstructionTypeResponse();
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             data.setInstructionType(instructionType);
             data.setInstruction(request.getInstruction());
-            data.setLastChgBy(user.getFirstName());
+            data.setLastChgBy(userContext.getUserFullName());
             data.setLastChgDate(LocalDateTime.now());
 
             repository.save(data);
@@ -133,10 +138,10 @@ public class MasAnaesthesiaInstructionServiceImpl implements MasAnaesthesiaInstr
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid Status!", HttpStatus.BAD_REQUEST.value());
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             data.setStatus(status.toUpperCase());
-            data.setLastChgBy(user.getFirstName());
+            data.setLastChgBy(userContext.getUserFullName());
             data.setLastChgDate(LocalDateTime.now());
 
             repository.save(data);

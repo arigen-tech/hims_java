@@ -7,7 +7,9 @@ import com.hims.entity.repository.EntMasEarCanalRepository;
 import com.hims.request.EntMasEarCanalRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.EntMasEarCanalResponse;
+import com.hims.response.UserContext;
 import com.hims.service.EntMasEarCanalService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,9 @@ public class EntMasEarCanalServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<EntMasEarCanalResponse>> getAll(int flag) {
@@ -71,8 +76,8 @@ public class EntMasEarCanalServiceImpl
             EntMasEarCanalRequest request) {
         log.info("Creating Ear Canal");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -81,8 +86,8 @@ public class EntMasEarCanalServiceImpl
             EntMasEarCanal entity = EntMasEarCanal.builder()
                     .earCanalCondition(request.getEarCanalCondition())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -109,15 +114,15 @@ public class EntMasEarCanalServiceImpl
                         "Ear Canal not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setEarCanalCondition(request.getEarCanalCondition());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -150,15 +155,15 @@ public class EntMasEarCanalServiceImpl
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

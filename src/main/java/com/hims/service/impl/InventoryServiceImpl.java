@@ -2302,7 +2302,7 @@ public class InventoryServiceImpl implements InventoryService {
                 }
                 StoreItemBatchStock storeItemBatchStock = stockOpt.get();
                 storeReturnT.setIsVerified(AppConstants.STATUS_Y.toLowerCase());
-                storeReturnT.setLastUpdatedBy(authUtil.getCurrentUserFullName());
+                storeReturnT.setLastUpdatedBy(userContextService.getCurrentUserContext().getUserFullName());
                 StoreReturnT savesReturnDetails = storeReturnTRepository.save(storeReturnT);
 
 //                storeItemBatchStock.setClosingStock(storeItemBatchStock.getClosingStock()-detailRequest.getDamagedQty().longValue());

@@ -2,7 +2,6 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasItemCategory;
-import com.hims.entity.MasItemClass;
 import com.hims.entity.MasStoreSection;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasItemCategoryRepository;
@@ -11,8 +10,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasItemCategoryRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasItemCategoryResponse;
-import com.hims.response.MasItemClassResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasItemCategoryService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +36,9 @@ public class MasItemCategoryServiceImp implements MasItemCategoryService {
 private MasItemCategoryRepository masItemCategoryRepository;
         @Autowired
         private MasStoreSectionRepository masStoreSectionRepository;
+
+    @Autowired
+    private UserContextService userContextService;
     @Autowired
     private UserRepo userRepo;
     private static final Logger log = LoggerFactory.getLogger(MasStateServiceImpl.class);
@@ -62,13 +65,13 @@ private MasItemCategoryRepository masItemCategoryRepository;
         masItemCategory.setItemCategoryCode(masItemCategoryRequest.getItemCategoryCode());
         masItemCategory.setItemCategoryName(masItemCategoryRequest.getItemCategoryName());
         masItemCategory.setStatus("y");
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
-        masItemCategory.setLastChgBy(String.valueOf(currentUser.getUserId()));
+        masItemCategory.setLastChgBy(String.valueOf(userContext.getUserId()));
         masItemCategory.setLastChgDate(LocalDate.now());
         masItemCategory.setLastChgTime(getCurrentTimeFormatted());
 
@@ -143,13 +146,13 @@ private MasItemCategoryRepository masItemCategoryRepository;
             MasItemCategory masItemCategory1=  masItemCategory.get();
             if ("y".equals(status) || "n".equals(status)) {
                 masItemCategory1.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                masItemCategory1.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                masItemCategory1.setLastChgBy(String.valueOf(userContext.getUserId()));
                 masItemCategory1.setLastChgDate(LocalDate.now());
                 masItemCategory1.setLastChgTime(getCurrentTimeFormatted());
                 return ResponseUtils.createSuccessResponse(mapToResponse( masItemCategoryRepository.save(masItemCategory1)), new TypeReference<>() {
@@ -172,13 +175,13 @@ private MasItemCategoryRepository masItemCategoryRepository;
             MasItemCategory masItemCategory1 = masItemCategory.get();
             masItemCategory1.setItemCategoryCode(masItemCategoryRequest.getItemCategoryCode());
             masItemCategory1.setItemCategoryName(masItemCategoryRequest.getItemCategoryName());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            masItemCategory1.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            masItemCategory1.setLastChgBy(String.valueOf(userContext.getUserId()));
             masItemCategory1.setLastChgDate(LocalDate.now());
             masItemCategory1.setLastChgTime(getCurrentTimeFormatted());
 

@@ -23,6 +23,7 @@ import com.hims.service.*;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISUtil;
 import com.hims.utils.ResponseUtils;
+import jakarta.persistence.EntityNotFoundException;
 import kong.unirest.HttpStatus;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -137,6 +138,9 @@ public class PatientServiceImpl implements PatientService {
     private UserRepo userRepo;
     @Autowired
     private RestClient.Builder builder;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Override
@@ -265,6 +269,7 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional
     public ApiResponse<PaymentResponse> paymentStatusReq(PaymentUpdateRequest request) {
+        UserContext userContext = userContextService.getCurrentUserContext();
         PaymentResponse res = new PaymentResponse();
         BillingHeader header;
         List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
@@ -302,7 +307,7 @@ public class PatientServiceImpl implements PatientService {
             paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
             paymentDetail.setPaymentDate(Instant.now());
             paymentDetail.setAmount(netAmount);
-            paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+            paymentDetail.setCreatedBy(userContext.getUserFullName());
             paymentDetail.setCreatedAt(Instant.now());
             paymentDetail.setUpdatedAt(Instant.now());
             paymentDetail.setBillingHd(header);
@@ -450,8 +455,8 @@ public class PatientServiceImpl implements PatientService {
     }
 
     public Patient updatePatientDetails(PatientRequest request, boolean followUp) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             log.info("current user not found");
             throw new RuntimeException("Current user not found");
         }
@@ -460,9 +465,7 @@ public class PatientServiceImpl implements PatientService {
 
         patient.setUpdatedOn(Instant.now());
         patient.setUhidNo(patient.getUhidNo());
-        patient.setLastChgBy(currentUser.getFirstName() + " " +
-                currentUser.getMiddleName() + " " +
-                currentUser.getLastName());
+        patient.setLastChgBy(userContext.getUserFullName());
         patient.setPatientFn(request.getPatientFn());
         patient.setPatientMn(request.getPatientMn());
         patient.setPatientLn(request.getPatientLn());
@@ -675,8 +678,8 @@ public class PatientServiceImpl implements PatientService {
     }
 
     public Patient savePatient(PatientRequest request, boolean followUp) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null){
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null){
             log.info("current users not found");
         }
 
@@ -711,8 +714,8 @@ public class PatientServiceImpl implements PatientService {
         patient.setRegDate(request.getRegDate());
         patient.setCreatedOn(Instant.now());
         patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
-        patient.setPatientHospital(currentUser.getHospital());
+        patient.setLastChgBy(userContext.getUserFullName());
+        patient.setPatientHospital(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new EntityNotFoundException("hospital not found")));
         patient.setPatientAbhaId(request.getPatientAbhaId());
 
 
@@ -898,7 +901,7 @@ public class PatientServiceImpl implements PatientService {
         }
 
         if (visit.getIniDoctorId() != null) {
-            authUtil.getCurrentUser().getUserId();
+            userContextService.getCurrentUserContext().getUserId();
         }
 
         if (visit.getSessionId() != null) {
@@ -1049,13 +1052,13 @@ public class PatientServiceImpl implements PatientService {
             return new ApiResponse<>(HttpStatus.NOT_FOUND, "Billing not found for appointment ID: " + request.getVisitId());
         }
         // Get current user
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null || currentUser.getFirstName() == null) {
-            throw new SDDException(500,"User authentication failed or user has no first name");
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null || userContext.getUserFullName() == null) {
+            throw new SDDException(500,"User authentication failed or user has no name");
         }
         // Update visit
         visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
-        visit.setCancelledBy(currentUser.getFirstName());
+        visit.setCancelledBy(userContext.getUserFullName());
         visit.setCancelledDateTime(HMISUtil.getCurrentLocalDateTime());
         if (request.getCancelReasonId() != null) {
             MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId())
@@ -1122,7 +1125,7 @@ public class PatientServiceImpl implements PatientService {
         VisitRescheduleHistory history = new VisitRescheduleHistory();
         history.setVisitId(v);
         history.setRescheduleDatetime(HelperUtils.instantToLocalDateTime(request.getVisitDate()));
-        history.setRescheduleBy(authUtil.getCurrentUser().getFirstName());
+        history.setRescheduleBy(userContextService.getCurrentUserContext().getUserFullName());
         history.setNewTokenNo(resolvedTokenNumber);
         history.setOldTokenNo(v.getTokenNo());
         history.setNewVisitDatetime(

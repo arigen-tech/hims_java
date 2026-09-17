@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasBloodCompatibility;
 import com.hims.entity.MasBloodComponent;
 import com.hims.entity.MasBloodGroup;
@@ -11,7 +12,9 @@ import com.hims.entity.repository.MasBloodGroupRepository;
 import com.hims.request.MasBloodCompatibilityRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasBloodCompatibilityResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBloodCompatibilityService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,8 @@ public class MasBloodCompatibilityServiceImpl implements MasBloodCompatibilitySe
 
     private final MasBloodCompatibilityRepository repository;
     private final AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
     @Autowired
     private MasBloodComponentRepository masBloodComponentRepository;
     @Autowired
@@ -74,8 +79,8 @@ public class MasBloodCompatibilityServiceImpl implements MasBloodCompatibilitySe
     public ApiResponse<MasBloodCompatibilityResponse> create(
             MasBloodCompatibilityRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 401);
@@ -90,9 +95,9 @@ public class MasBloodCompatibilityServiceImpl implements MasBloodCompatibilitySe
                     .patientBloodGroupId(masBloodGroup1.orElse(null))
                     .donorBloodGroupId(masBloodGroup.orElse(null))
                     .isPreferred(request.getIsPreferred())
-                    .status("y")
+                    .status(AppConstants.STATUS_Y.toLowerCase())
                     .lastUpdateDate(LocalDateTime.now())
-                    .createdBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
                     .build();
 
             repository.save(entity);
@@ -117,7 +122,7 @@ public class MasBloodCompatibilityServiceImpl implements MasBloodCompatibilitySe
                         "Blood compatibility not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             Optional<MasBloodComponent> masBloodComponent=masBloodComponentRepository.findById(request.getComponentId());
             Optional<MasBloodGroup> masBloodGroup=masBloodGroupRepository.findById(request.getDonorBloodGroupId());
             Optional<MasBloodGroup> masBloodGroup1=masBloodGroupRepository.findById(request.getPatientBloodGroupId());
@@ -128,7 +133,7 @@ public class MasBloodCompatibilityServiceImpl implements MasBloodCompatibilitySe
             entity.setDonorBloodGroupId(masBloodGroup.orElse(null));
             entity.setIsPreferred(request.getIsPreferred());
             entity.setLastUpdateDate(LocalDateTime.now());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
 
             repository.save(entity);
 
