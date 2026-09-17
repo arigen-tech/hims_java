@@ -40,10 +40,10 @@ public class AppConstants {
     public static final String DONOR_SCREENING_STATUS_FAIL = "F";
     public static final String DONOR_SCREENING_TEMPORARILY_DEFERRED = "T";
     public static final String DONOR_SCREENING_PERMANENTLY_DEFERRED = "P";
-    public static final String COMPONENT_PRBC = "prbc";
-    public static final String COMPONENT_PLT = "plt";
-    public static final String COMPONENT_PLASMA = "plasma";
-    public static final String COMPONENT_CRYO = "cryo";
+    public static final String COMPONENT_PRBC = "PRBC";
+    public static final String COMPONENT_PLT = "PLT";
+    public static final String COMPONENT_PLASMA = "FFP";
+    public static final String COMPONENT_CRYO = "CRYO";
     public static final String SUMMARY = "S";
     public static final String REACTIVE = "REACTIVE";
 

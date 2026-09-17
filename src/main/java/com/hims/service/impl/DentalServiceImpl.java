@@ -1,17 +1,23 @@
 package com.hims.service.impl;
 
 import com.hims.constants.AppConstants;
-import com.hims.entity.*;
+import com.hims.entity.OpdPatientDentalSummary;
+import com.hims.entity.OpdToothPatientCondition;
+import com.hims.entity.Patient;
+import com.hims.entity.Visit;
 import com.hims.entity.repository.*;
 import com.hims.request.DentalDetailsRequest;
 import com.hims.request.DentalExaminationRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.UserContext;
 import com.hims.service.DentalService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,6 +35,9 @@ public class DentalServiceImpl implements DentalService {
     private final MasToothConditionRepository masToothConditionRepository;
 
     private final AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
 //    @Override
 //    @Transactional
@@ -132,7 +141,9 @@ public class DentalServiceImpl implements DentalService {
 
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public ApiResponse<String> createOrUpdateDentalDetails(DentalDetailsRequest request, Patient patient, Visit visit, User user, Long departmentId) {
+    public ApiResponse<String> createOrUpdateDentalDetails(DentalDetailsRequest request, Patient patient, Visit visit, Long departmentId) {
+
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         if (request == null || request.getDentalExamination() == null) {
             return ResponseUtils.createSuccessResponse("No dental examination details found", null);
@@ -157,7 +168,7 @@ public class DentalServiceImpl implements DentalService {
         summary.setNotes(examination.getNotes());
 
         summary.setStatus(AppConstants.STATUS_N);
-        summary.setLastUpdatedBy(user.getFullName());
+        summary.setLastUpdatedBy(userContext.getUserFullName());
         summary.setLastUpdateDate(LocalDateTime.now());
 
         OpdPatientDentalSummary savedSummary = dentalSummaryRepository.save(summary);
@@ -175,10 +186,10 @@ public class DentalServiceImpl implements DentalService {
                 entity.setTooth(masToothMasterRepository.getReferenceById(tooth.getToothId()));
                 entity.setCondition(masToothConditionRepository.getReferenceById(tooth.getConditionId()));
                 entity.setStatus(AppConstants.STATUS_N);
-                entity.setLastUpdatedBy(user.getFullName());
+                entity.setLastUpdatedBy(userContext.getUserFullName());
                 entity.setLastUpdateDate(LocalDateTime.now());
                 entity.setStatus(AppConstants.STATUS_N);
-                entity.setCreatedBy(user.getFullName());
+                entity.setCreatedBy(userContext.getUserFullName());
                 entity.setCreatedDate(LocalDateTime.now());
                 return entity;
             }).toList();

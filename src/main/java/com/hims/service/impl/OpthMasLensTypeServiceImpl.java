@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.OpthMasLensType;
 import com.hims.entity.User;
 import com.hims.entity.repository.OpthMasLensTypeRepository;
 import com.hims.request.OpthMasLensTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpthMasLensTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OpthMasLensTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,9 @@ public class OpthMasLensTypeServiceImpl implements OpthMasLensTypeService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<OpthMasLensTypeResponse>> getAll(int flag) {
@@ -80,8 +86,8 @@ public class OpthMasLensTypeServiceImpl implements OpthMasLensTypeService {
 
         log.info("Creating Lens Type={}", request.getLensType());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -90,9 +96,9 @@ public class OpthMasLensTypeServiceImpl implements OpthMasLensTypeService {
 
             OpthMasLensType lensType = OpthMasLensType.builder()
                     .lensType(request.getLensType())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -123,8 +129,8 @@ public class OpthMasLensTypeServiceImpl implements OpthMasLensTypeService {
                         "Lens Type not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -132,7 +138,7 @@ public class OpthMasLensTypeServiceImpl implements OpthMasLensTypeService {
             }
 
             lensType.setLensType(request.getLensType());
-            lensType.setLastUpdatedBy(user.getFirstName());
+            lensType.setLastUpdatedBy(userContext.getUserFullName());
             lensType.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(lensType);
@@ -170,8 +176,8 @@ public class OpthMasLensTypeServiceImpl implements OpthMasLensTypeService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -179,7 +185,7 @@ public class OpthMasLensTypeServiceImpl implements OpthMasLensTypeService {
             }
 
             lensType.setStatus(status);
-            lensType.setLastUpdatedBy(user.getFirstName());
+            lensType.setLastUpdatedBy(userContext.getUserFullName());
             lensType.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(lensType);

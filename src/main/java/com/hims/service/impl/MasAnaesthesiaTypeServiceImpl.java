@@ -7,7 +7,9 @@ import com.hims.entity.repository.MasAnaesthesiaTypeRepository;
 import com.hims.request.MasAnaesthesiaTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasAnaesthesiaTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasAnaesthesiaTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,8 @@ public class MasAnaesthesiaTypeServiceImpl implements MasAnaesthesiaTypeService 
 
     @Autowired
     private AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasAnaesthesiaTypeResponse>> getAll(int flag) {
@@ -65,14 +69,14 @@ public class MasAnaesthesiaTypeServiceImpl implements MasAnaesthesiaTypeService 
     @Override
     public ApiResponse<MasAnaesthesiaTypeResponse> create(MasAnaesthesiaTypeRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasAnaesthesiaType data = MasAnaesthesiaType.builder()
                     .anaesthesiaTypeCode(request.getAnaesthesiaTypeCode())
                     .anaesthesiaTypeName(request.getAnaesthesiaTypeName())
                     .price(request.getPrice())
                     .status(STATUS_Y)
-                    .lastChgBy(user.getFirstName())
+                    .lastChgBy(userContext.getUserFullName())
                     .lastChgDate(LocalDateTime.now())
                     .build();
 
@@ -93,12 +97,12 @@ public class MasAnaesthesiaTypeServiceImpl implements MasAnaesthesiaTypeService 
             if (data == null)
                 return ResponseUtils.createNotFoundResponse("ID Not Found!", HttpStatus.NOT_FOUND.value());
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             data.setAnaesthesiaTypeCode(request.getAnaesthesiaTypeCode());
             data.setAnaesthesiaTypeName(request.getAnaesthesiaTypeName());
             data.setPrice(request.getPrice());
-            data.setLastChgBy(user.getFirstName());
+            data.setLastChgBy(userContext.getUserFullName());
             data.setLastChgDate(LocalDateTime.now());
 
             repository.save(data);
@@ -122,10 +126,10 @@ public class MasAnaesthesiaTypeServiceImpl implements MasAnaesthesiaTypeService 
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid Status!", HttpStatus.BAD_REQUEST.value());
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             data.setStatus(status.toUpperCase());
-            data.setLastChgBy(user.getFirstName());
+            data.setLastChgBy(userContext.getUserFullName());
             data.setLastChgDate(LocalDateTime.now());
 
             repository.save(data);

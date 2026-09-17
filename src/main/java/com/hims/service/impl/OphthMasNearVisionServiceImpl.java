@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.OphthMasNearVision;
 import com.hims.entity.User;
 import com.hims.entity.repository.OphthMasNearVisionRepository;
 import com.hims.request.OphthMasNearVisionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OphthMasNearVisionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OphthMasNearVisionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import jakarta.transaction.Transactional;
@@ -29,13 +32,16 @@ public class OphthMasNearVisionServiceImpl implements OphthMasNearVisionService 
     @Autowired
     private AuthUtil authUtil;
 
+    @Autowired
+    private UserContextService userContextService;
+
     @Override
     public ApiResponse<OphthMasNearVisionResponse> create(
             OphthMasNearVisionRequest request) {
 
         try {
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -44,9 +50,9 @@ public class OphthMasNearVisionServiceImpl implements OphthMasNearVisionService 
 
             OphthMasNearVision entity = OphthMasNearVision.builder()
                     .nearValue(request.getNearValue())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -79,8 +85,8 @@ public class OphthMasNearVisionServiceImpl implements OphthMasNearVisionService 
                 );
             }
 
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -88,7 +94,7 @@ public class OphthMasNearVisionServiceImpl implements OphthMasNearVisionService 
             }
 
             entity.setNearValue(request.getNearValue());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -180,8 +186,8 @@ public class OphthMasNearVisionServiceImpl implements OphthMasNearVisionService 
                 );
             }
 
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -189,7 +195,7 @@ public class OphthMasNearVisionServiceImpl implements OphthMasNearVisionService 
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

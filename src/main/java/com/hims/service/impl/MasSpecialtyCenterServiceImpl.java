@@ -2,12 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasSpecialtyCenter;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasSpecialtyCenterRepository;
 import com.hims.request.MasSpecialtyCenterRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasSpecialtyCenterResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasSpecialtyCenterService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ public class MasSpecialtyCenterServiceImpl implements MasSpecialtyCenterService 
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasSpecialtyCenterResponse>> getAll(int flag) {
@@ -77,15 +81,15 @@ public class MasSpecialtyCenterServiceImpl implements MasSpecialtyCenterService 
     public ApiResponse<MasSpecialtyCenterResponse> create(
             MasSpecialtyCenterRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasSpecialtyCenter center =
                     MasSpecialtyCenter.builder()
                             .centerName(request.getCenterName())
                             .description(request.getDescription())
                             .status("y")
-                            .createdBy(user.getFirstName())
-                            .lastUpdatedBy(user.getFirstName())
+                            .createdBy(userContext.getUserFullName())
+                            .lastUpdatedBy(userContext.getUserFullName())
                             .lastUpdateDate(LocalDateTime.now())
                             .build();
 
@@ -114,11 +118,11 @@ public class MasSpecialtyCenterServiceImpl implements MasSpecialtyCenterService 
                 return ResponseUtils.createNotFoundResponse(
                         "Center ID not found!", 404);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             center.setCenterName(request.getCenterName());
             center.setDescription(request.getDescription());
-            center.setLastUpdatedBy(user.getFirstName());
+            center.setLastUpdatedBy(userContext.getUserFullName());
             center.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(center);
@@ -155,10 +159,10 @@ public class MasSpecialtyCenterServiceImpl implements MasSpecialtyCenterService 
                         400
                 );
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             center.setStatus(status);
-            center.setLastUpdatedBy(user.getFirstName());
+            center.setLastUpdatedBy(userContext.getUserFullName());
             center.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(center);

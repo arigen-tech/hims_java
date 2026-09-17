@@ -8,6 +8,7 @@ import com.hims.request.DoctorRosterReqKeys;
 import com.hims.request.DoctorRosterRequest;
 import com.hims.response.*;
 import com.hims.service.DoctorRosterServices;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,11 +52,17 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
     @Autowired
     MasServiceOpdRepository masServiceOpdRepository;
 
+    @Autowired
+    private UserContextService userContextService;
+
     @Value("${serviceCategoryOPD}")
     private String serviceCategoryOPD;
 
     @Autowired
     MasServiceCategoryRepository masServiceCategoryRepository;
+
+    @Autowired
+    MasHospitalRepository masHospitalRepository;
 
     @Override
     public ApiResponse<AppsetupResponse> doctorRoster(DoctorRosterRequest doctorReq) {
@@ -79,8 +86,8 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
                     entry = new DoctorRoaster();
                 }
 
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
@@ -90,8 +97,9 @@ public class DoctorRosterServicesImpl implements DoctorRosterServices {
                 entry.setDepartment(deDepartment.get());
                 entry.setRoasterValue(key.getRosterVale());
                 entry.setChgDate(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate());
-                entry.setChgBy(currentUser.getUserId());
-                entry.setHospital(currentUser.getHospital());
+                entry.setChgBy(userContext.getUserId());
+                entry.setHospital(masHospitalRepository.findById(userContext.getHospitalId())
+                        .orElseThrow(() -> new SDDException("hospitalId", 404, "Hospital not found")));
                 entry.setChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
 
                 doctorRoasterRepository.save(entry);

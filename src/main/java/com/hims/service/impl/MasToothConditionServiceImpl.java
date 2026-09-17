@@ -7,7 +7,9 @@ import com.hims.entity.repository.MasToothConditionRepository;
 import com.hims.request.MasToothConditionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasToothConditionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasToothConditionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,9 @@ public class MasToothConditionServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasToothConditionResponse>> getAll(int flag) {
@@ -83,8 +88,8 @@ public class MasToothConditionServiceImpl
         log.info("Creating Tooth Condition, name={}",
                 request.getConditionName());
         try {
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -97,8 +102,8 @@ public class MasToothConditionServiceImpl
                     .isExclusive(request.getIsExclusive())
                     .points(request.getPoints())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -136,8 +141,8 @@ public class MasToothConditionServiceImpl
             }
 
 
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -147,7 +152,7 @@ public class MasToothConditionServiceImpl
             condition.setConditionName(request.getConditionName());
             condition.setIsExclusive(request.getIsExclusive());
             condition.setPoints(request.getPoints());
-            condition.setLastUpdatedBy(user.getFirstName());
+            condition.setLastUpdatedBy(userContext.getUserFullName());
             condition.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(condition);
@@ -191,10 +196,10 @@ public class MasToothConditionServiceImpl
                         "Condition ID not found!", 404);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             condition.setStatus(status);
-            condition.setLastUpdatedBy(user.getFirstName());
+            condition.setLastUpdatedBy(userContext.getUserFullName());
             condition.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(condition);

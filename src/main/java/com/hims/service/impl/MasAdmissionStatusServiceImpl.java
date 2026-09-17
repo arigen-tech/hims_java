@@ -2,12 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasAdmissionStatus;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasAdmissionStatusRepository;
 import com.hims.request.MasAdmissionStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasAdmissionStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasAdmissionStatusService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class MasAdmissionStatusServiceImpl implements MasAdmissionStatusService 
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasAdmissionStatusResponse>> getAll(int flag) {
@@ -56,13 +60,13 @@ public class MasAdmissionStatusServiceImpl implements MasAdmissionStatusService 
     @Override
     public ApiResponse<MasAdmissionStatusResponse> create(MasAdmissionStatusRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasAdmissionStatus obj = MasAdmissionStatus.builder()
                     .statusCode(request.getStatusCode())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -84,10 +88,10 @@ public class MasAdmissionStatusServiceImpl implements MasAdmissionStatusService 
             if (obj == null)
                 return ResponseUtils.createNotFoundResponse("Admission Status not found", 404);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             obj.setStatusCode(request.getStatusCode());
-            obj.setLastUpdatedBy(user.getFirstName());
+            obj.setLastUpdatedBy(userContext.getUserFullName());
             obj.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(obj);
@@ -117,10 +121,10 @@ public class MasAdmissionStatusServiceImpl implements MasAdmissionStatusService 
                         400
                 );
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             obj.setStatus(status);
-            obj.setLastUpdatedBy(user.getFirstName());
+            obj.setLastUpdatedBy(userContext.getUserFullName());
             obj.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(obj);

@@ -12,7 +12,9 @@ import com.hims.request.MasBrandRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasBrandResponse;
 import com.hims.response.MasHsnResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBrandService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +50,9 @@ public class MasBrandServiceImp implements MasBrandService {
 
     @Value("${medicalNonConsumableItemTypeCode}")
     private String medicalNonConsumableItemTypeCode;
+
+    @Autowired
+    private UserContextService userContextService;
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -122,8 +127,8 @@ public class MasBrandServiceImp implements MasBrandService {
     @Override
     public ApiResponse<MasBrandResponse> changeMasBrandStatus(Long id, String status) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -141,7 +146,7 @@ public class MasBrandServiceImp implements MasBrandService {
 
             MasBrand masBrand = optionalMasHsn.get();
             masBrand.setStatus(status.toLowerCase());
-            masBrand.setLastUpdatedBy(currentUser.getUsername());
+            masBrand.setLastUpdatedBy(userContext.getUserFullName());
             masBrand.setLastUpdatedDt(LocalDateTime.now());
             MasBrand updatedEntity = masBrandRepository.save(masBrand);
 

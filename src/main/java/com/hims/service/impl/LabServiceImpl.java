@@ -7,12 +7,14 @@ import com.hims.entity.repository.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.LabService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -114,6 +116,11 @@ public class LabServiceImpl implements LabService {
     @Value("${lab.track-order-status-result.entry}")
     private Long resultEnteredStatusId;
 
+    @Autowired
+    private UserContextService userContextService;
+    @Autowired
+    private MasHospitalRepository masHospitalRepository;
+
 
 
     @Override
@@ -177,7 +184,7 @@ public class LabServiceImpl implements LabService {
 
         try {
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
 
             Optional<Visit>  visitOpt = visitRepository.findById((long) sampleReq.getVisitId());
@@ -210,12 +217,6 @@ public class LabServiceImpl implements LabService {
 
             LocalDateTime now = LocalDateTime.now();
 
-            String fullName = Stream.of(
-                            currentUser.getFirstName(),
-                            currentUser.getMiddleName(),
-                            currentUser.getLastName()
-                    ).filter(Objects::nonNull)
-                    .collect(Collectors.joining(" "));
 
             //GROUP BY MODALITY (SubChargeCodeId)
             Map<Integer, List<SampleCollectionInvestigationReq>> groupedData =
@@ -258,7 +259,7 @@ public class LabServiceImpl implements LabService {
                     header.setInpatient(inpatient);
                     header.setPatientId(dgOrderHd.getPatientId());
 
-                    header.setHospitalId(currentUser.getHospital());
+                    header.setHospitalId(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new RuntimeException("Invalid hospital id")));
 
                     header.setDgOrderHd(dgOrderHd);
 
@@ -272,10 +273,10 @@ public class LabServiceImpl implements LabService {
 
                     header.setSubChargeCode(subChargeCode);
 
-                    header.setCollection_by(fullName);
+                    header.setCollection_by(userContext.getUserFullName());
                     header.setCollection_time(now);
 
-                    header.setLastChgBy(fullName);
+                    header.setLastChgBy(userContext.getUserFullName());
                     header.setLastChgDate(now);
                     header.setLastChgTime(now);
 
@@ -354,7 +355,7 @@ public class LabServiceImpl implements LabService {
                         tat.setOrderHd(dgOrderHd);
                         tat.setPatient(dgOrderHd.getPatientId());
                         tat.setSampleCollectionDateTime(now);
-                        tat.setSampleCollectedBy(fullName);
+                        tat.setSampleCollectedBy(userContext.getUserFullName());
                         tat.setGeneratedSampleId(sampleId);
 
                         labTurnAroundTimeRepository.save(tat);
@@ -476,14 +477,10 @@ public class LabServiceImpl implements LabService {
                     requests != null ? requests.size() : 0);
 
             // =====================  CURRENT USER =====================
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
 
-            String validatedBy =
-                    currentUser.getFirstName() + " " +
-                            currentUser.getMiddleName() + " " +
-                            currentUser.getLastName();
-            log.debug("Validation performed by={}", validatedBy);
+            log.debug("Validation performed by={}", userContext.getUserFullName());
 
 
             Long headerId = requests.get(0).getSampleHeaderId();
@@ -530,7 +527,7 @@ public class LabServiceImpl implements LabService {
                                 );
 
                 tat.setIsReject(!accepted);
-                tat.setSampleValidatedBy(validatedBy);
+                tat.setSampleValidatedBy(userContext.getUserFullName());
                 tat.setSampleValidatedDateTime(LocalDateTime.now());
                 labTurnAroundTimeRepository.save(tat);
                 log.debug("TAT updated for investigationId={}", investigationId);
@@ -599,7 +596,7 @@ public class LabServiceImpl implements LabService {
             header.setValidated(finalHeaderStatus);
             header.setValidation_date(LocalDate.now());
             header.setValidationTime(HMISUtil.getCurrentLocalDateTime());
-            header.setValidatedBy(validatedBy);
+            header.setValidatedBy(userContext.getUserFullName());
             dgSampleCollectionHeaderRepository.save(header);
 
             // ===================== 9. UPDATE ORDER HD =====================
@@ -742,13 +739,13 @@ public class LabServiceImpl implements LabService {
         try {
             Long depart = authUtil.getCurrentDepartmentId();
             MasDepartment depObj = masDepartmentRepository.findById(depart).orElseThrow(()-> new RuntimeException("Invalid Dept Id"));
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            log.debug("Current user={}, department={}", currentUser.getUsername(), depObj.getDepartmentName());
+            log.debug("Current user={}, department={}", userContext.getUserFullName(), depObj.getDepartmentName());
             //  Check if header already exists for same Sample + SubChargeCode
             Optional<DgResultEntryHeader> existingHeaderOpt =
                     dgResultEntryHeaderRepository.findBySampleCollectionHeaderId_SampleCollectionHeaderIdAndSubChargeCodeId_SubId(
@@ -772,7 +769,7 @@ public class LabServiceImpl implements LabService {
                 // Update existing header
                 header = existingHeaderOpt.get();
                 header.setRemarks(request.getClinicalNotes());
-                header.setLastChgdBy(currentUser.getLastChangedBy());
+                header.setLastChgdBy(userContext.getUserFullName());
                 header.setLastChgdDate(LocalDate.now());
                 header.setResultStatus("n");
                 header.setLastChgdTime(String.valueOf(LocalTime.now()));
@@ -796,12 +793,12 @@ public class LabServiceImpl implements LabService {
                 header.setResultStatus("n");
                 //  header.setVerified("n");
                 header.setDepartmentId(depObj);
-                header.setLastChgdBy(currentUser.getLastChangedBy());
+                header.setLastChgdBy(userContext.getUserFullName());
                 header.setLastChgdDate(LocalDate.now());
                 header.setLastChgdTime(String.valueOf(LocalTime.now()));
                 header.setResultNo(createInvoice());
-                header.setHospitalId(currentUser.getHospital());
-                header.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                header.setHospitalId(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new RuntimeException("Invalid hospital id")));
+                header.setResultEnteredBy(userContext.getUserFullName());
 //                Optional<DgOrderHd> dgOrderH=labHdRepository.findById(Math.toIntExact(request.getPatientId()));
 //                header.setOrderHd(dgOrderH.get());
                 // Optional<DgOrderHd> dgOrderH = labHdRepository.findByPatientId_IdAndOrderstatusN(request.getPatientId(),"n");
@@ -898,7 +895,7 @@ public class LabServiceImpl implements LabService {
 
 
                     LabTurnAroundTime labTurnAroundTime=labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(dgOrderH.getId(),investigation.getInvestigationId(),patientId.getId(),false);
-                    labTurnAroundTime.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                    labTurnAroundTime.setResultEnteredBy(userContext.getUserFullName());
                     labTurnAroundTime.setResultEntryDateTime(LocalDateTime.now());
                     labTurnAroundTimeRepository.save( labTurnAroundTime);
                     dgResultEntryDetailRepository.save(detail);
@@ -1023,7 +1020,7 @@ public class LabServiceImpl implements LabService {
                 request.getResultEntryHeaderId());
 
         try {
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
 
             //For Date Time Formating
@@ -1075,7 +1072,7 @@ public class LabServiceImpl implements LabService {
 
                 // Save each detail
                 LabTurnAroundTime labTurnAroundTime=labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(header.getOrderHd().getId(),detail.getInvestigationId().getInvestigationId(),header.getHinId().getId(),false);
-                labTurnAroundTime.setResultValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                labTurnAroundTime.setResultValidatedBy(userContext.getUserFullName());
                 labTurnAroundTime.setResultValidationTime(LocalDateTime.now());
                 labTurnAroundTimeRepository.save(labTurnAroundTime);
                 dgResultEntryDetailRepository.save(detail);
@@ -1093,7 +1090,7 @@ public class LabServiceImpl implements LabService {
                 // header.setVerified("y");
                 header.setVerifiedOn(LocalDate.now());
                 header.setVerifiedTime(LocalTime.now().format(formatter));
-                header.setResultVerifiedBy(Math.toIntExact(currentUser.getUserId()));
+                header.setResultVerifiedBy(Math.toIntExact(userContext.getUserId()));
                 // header.setResultUpdatedBy(currentUser.getUsername());
                 //  header.setUpdateOn(LocalDateTime.now());
                 dgResultEntryHeaderRepository.save(header);
@@ -1209,7 +1206,7 @@ public class LabServiceImpl implements LabService {
     public ApiResponse<String> updateResult(ResultUpdateRequest request) {
         log.info("Starting updateResult process for HeaderId={}", request.getResultEntryHeaderId());
         try {
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
 
             // Fetch header
@@ -1237,7 +1234,7 @@ public class LabServiceImpl implements LabService {
 
                 labResultAmendAudit.setPatient(header.getHinId());
                 labResultAmendAudit.setAmendmentType(masLabResultAmendmentType);
-                labResultAmendAudit.setAmendedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                labResultAmendAudit.setAmendedBy(userContext.getUserFullName());
                 labResultAmendAudit.setNewResult(detailReq.getResult());
                 labResultAmendAudit.setOldResult(detailReq.getOldResult());
                 labResultAmendAudit.setAmendedDatetime(LocalDateTime.now());
@@ -1259,7 +1256,7 @@ public class LabServiceImpl implements LabService {
                 dgResultEntryDetailRepository.save(detail);
             }
             //  Update header audit fields
-            header.setResultUpdatedBy(Math.toIntExact(currentUser.getUserId()));  // Who updated
+            header.setResultUpdatedBy(Math.toIntExact(userContext.getUserId()));  // Who updated
             header.setUpdateOn(LocalDateTime.now());           // When updated
             dgResultEntryHeaderRepository.save(header);
             log.info("Result update completed successfully for HeaderId={}",

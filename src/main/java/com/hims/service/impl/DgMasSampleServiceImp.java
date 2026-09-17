@@ -9,7 +9,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.DgMasSampleRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DgMasSampleResponse;
+import com.hims.response.UserContext;
 import com.hims.service.DgMasSampleService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,9 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
     @Autowired
     private DgMasSampleRepository dgMasSampleRepository;
 
+    @Autowired
+    private UserContextService userContextService;
+
     @Override
     public ApiResponse<DgMasSampleResponse> addDgMasSample(DgMasSampleRequest dgMasSampleRequest) {
 
@@ -41,13 +46,13 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
             dgMasSample.setSampleCode(dgMasSampleRequest.getSampleCode());
             dgMasSample.setSampleDescription(dgMasSampleRequest.getSampleDescription());
             dgMasSample.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            dgMasSample.setLastChgBy(currentUser.getUsername());
+            dgMasSample.setLastChgBy(userContext.getUserFullName());
             dgMasSample.setLastChgDate(LocalDateTime.now());
             log.info("Adding DgMasSample Process Ended...");
             return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save(dgMasSample)), new TypeReference<>() {
@@ -113,12 +118,12 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     }, "Invalid status. Status should be 'y' or 'n'", 400);
                 }
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                newDgUom.setLastChgBy(currentUser.getUsername());
+                newDgUom.setLastChgBy(userContext.getUserFullName());
                 return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save(newDgUom)), new TypeReference<>() {
                 });
 
@@ -141,12 +146,12 @@ public class DgMasSampleServiceImp implements DgMasSampleService {
                 newDgMas.setSampleCode(dgMasSampleRequest.getSampleCode());
                 newDgMas.setSampleDescription(dgMasSampleRequest.getSampleDescription());
                 newDgMas.setStatus("y");
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                newDgMas.setLastChgBy(currentUser.getUsername());
+                newDgMas.setLastChgBy(userContext.getUserFullName());
                 newDgMas.setLastChgDate(LocalDateTime.now());
                 log.info("MasSample updating process ended...");
                 return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasSampleRepository.save( newDgMas)), new TypeReference<>() {

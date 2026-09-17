@@ -2,16 +2,18 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasPatientPreparation;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasPatientPreparationRepo;
 import com.hims.request.MasPatientPreparationRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasPatientPreparationResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasPatientPreparationService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -25,13 +27,16 @@ public class MasPatientPreparationServiceImpl implements MasPatientPreparationSe
     private final MasPatientPreparationRepo repo;
     private final AuthUtil authUtil;
 
+    @Autowired
+    private UserContextService userContextService;
+
     @Override
     public ApiResponse<MasPatientPreparationResponse> create(MasPatientPreparationRequest request) {
         try {
             log.info("create() started");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -44,7 +49,7 @@ public class MasPatientPreparationServiceImpl implements MasPatientPreparationSe
                 );
             }
 
-            MasPatientPreparation entity = getEntity(request, currentUser);
+            MasPatientPreparation entity = getEntity(request, userContext);
 
             MasPatientPreparation saved = repo.save(entity);
             log.info("create() ended");
@@ -57,15 +62,15 @@ public class MasPatientPreparationServiceImpl implements MasPatientPreparationSe
         }
     }
 
-    private static MasPatientPreparation getEntity(MasPatientPreparationRequest request, User currentUser) {
+    private static MasPatientPreparation getEntity(MasPatientPreparationRequest request, UserContext userContext) {
         MasPatientPreparation entity = new MasPatientPreparation();
         entity.setPreparationCode(request.getPreparationCode());
         entity.setPreparationName(request.getPreparationName());
         entity.setInstructions(request.getInstructions());
         entity.setApplicableTo(request.getApplicableTo());
         entity.setStatus("y");
-        entity.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-        entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+        entity.setCreatedBy(userContext.getUserFullName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         return entity;
     }
 
@@ -74,8 +79,8 @@ public class MasPatientPreparationServiceImpl implements MasPatientPreparationSe
         try {
             log.info("update() started");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -86,7 +91,7 @@ public class MasPatientPreparationServiceImpl implements MasPatientPreparationSe
             entity.setPreparationName(request.getPreparationName());
             entity.setInstructions(request.getInstructions());
             entity.setApplicableTo(request.getApplicableTo());
-            entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
 
             MasPatientPreparation saved = repo.save(entity);
             log.info("update() ended");
@@ -104,8 +109,8 @@ public class MasPatientPreparationServiceImpl implements MasPatientPreparationSe
         try {
             log.info("changeActiveStatus() started");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -113,7 +118,7 @@ public class MasPatientPreparationServiceImpl implements MasPatientPreparationSe
                     .orElseThrow(() -> new RuntimeException("Invalid Preparation Id"));
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
 
             MasPatientPreparation saved = repo.save(entity);
             log.info("changeActiveStatus() ended");
@@ -131,8 +136,8 @@ public class MasPatientPreparationServiceImpl implements MasPatientPreparationSe
         try {
             log.info("getById() started");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -152,8 +157,8 @@ public class MasPatientPreparationServiceImpl implements MasPatientPreparationSe
         try {
             log.info("getAll() started");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 

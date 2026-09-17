@@ -7,7 +7,9 @@ import com.hims.entity.repository.GynMasSterilisationRepository;
 import com.hims.request.GynMasSterilisationRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.GynMasSterilisationResponse;
+import com.hims.response.UserContext;
 import com.hims.service.GynMasSterilisationService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,9 @@ public class GynMasSterilisationServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<GynMasSterilisationResponse>> getAll(int flag) {
@@ -64,8 +69,8 @@ public class GynMasSterilisationServiceImpl
             GynMasSterilisationRequest request) {
 
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -74,8 +79,8 @@ public class GynMasSterilisationServiceImpl
             GynMasSterilisation entity = GynMasSterilisation.builder()
                     .sterilisationType(request.getSterilisationType())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -103,15 +108,15 @@ public class GynMasSterilisationServiceImpl
                     "Sterilisation not found", 404);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setSterilisationType(request.getSterilisationType());
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);
@@ -139,15 +144,15 @@ public class GynMasSterilisationServiceImpl
                     "Invalid status", 400);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setStatus(status);
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);

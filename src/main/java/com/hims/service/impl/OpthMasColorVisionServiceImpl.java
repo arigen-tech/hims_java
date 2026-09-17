@@ -1,17 +1,21 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.OpthMasColorVision;
 import com.hims.entity.User;
 import com.hims.entity.repository.OpthMasColorVisionRepository;
 import com.hims.request.OpthMasColorVisionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpthMasColorVisionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OpthMasColorVisionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,6 +29,9 @@ public class OpthMasColorVisionServiceImpl
 
     private final OpthMasColorVisionRepository repository;
     private final AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<OpthMasColorVisionResponse>> getAll(int flag) {
@@ -77,8 +84,8 @@ public class OpthMasColorVisionServiceImpl
 
         log.info("Creating Color Vision value={}", request.getColorValue());
         try {
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -87,9 +94,9 @@ public class OpthMasColorVisionServiceImpl
 
             OpthMasColorVision vision = OpthMasColorVision.builder()
                     .colorValue(request.getColorValue())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -120,8 +127,8 @@ public class OpthMasColorVisionServiceImpl
                         "Color Vision not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -129,7 +136,7 @@ public class OpthMasColorVisionServiceImpl
             }
 
             vision.setColorValue(request.getColorValue());
-            vision.setLastUpdatedBy(user.getFirstName());
+            vision.setLastUpdatedBy(userContext.getUserFullName());
             vision.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(vision);
@@ -167,8 +174,8 @@ public class OpthMasColorVisionServiceImpl
                 );
             }
 
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -176,7 +183,7 @@ public class OpthMasColorVisionServiceImpl
             }
 
             vision.setStatus(status);
-            vision.setLastUpdatedBy(user.getFirstName());
+            vision.setLastUpdatedBy(userContext.getUserFullName());
             vision.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(vision);

@@ -2,12 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasProcedureType;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasProcedureTypeRepository;
 import com.hims.request.MasProcedureTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasProcedureTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasProcedureTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,9 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     private MasProcedureTypeRepository repository;
@@ -87,8 +91,8 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
     public ApiResponse<MasProcedureTypeResponse> addProcedureType(MasProcedureTypeRequest request) {
         log.info("MasProcedureType: Create Start | Data={}", request);
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             log.error("Create failed: current user not found");
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", 400);
@@ -99,8 +103,8 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
                 .description(request.getDescription())
                 .procedureTypeCode(request.getProcedureTypeCode())
                 .status("y")
-                .createdBy(user.getFirstName() + " " + user.getLastName())
-                .lastUpdatedBy(user.getFirstName() + " " + user.getLastName())
+                .createdBy(userContext.getUserFullName())
+                .lastUpdatedBy(userContext.getUserFullName())
                 .lastUpdateDate(LocalDateTime.now())
                 .build();
 
@@ -115,8 +119,8 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
     public ApiResponse<MasProcedureTypeResponse> update(Long id, MasProcedureTypeRequest request) {
         log.info("MasProcedureType: Update Start | id={} | Data={}", id, request);
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             log.error("Update failed: current user not found");
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", 401);
@@ -133,7 +137,7 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
         procedure.setDescription(request.getDescription());
         procedure.setProcedureTypeCode(request.getProcedureTypeCode());
         procedure.setStatus("y");
-        procedure.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
+        procedure.setLastUpdatedBy(userContext.getUserFullName());
         procedure.setLastUpdateDate(LocalDateTime.now());
 
         MasProcedureType saved = repository.save(procedure);
@@ -147,8 +151,8 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
     public ApiResponse<MasProcedureTypeResponse> changeStatus(Long id, String status) {
         log.info("MasProcedureType: Change Status Start | id={} | status={}", id, status);
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             log.error("Change status failed: current user not found");
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", 401);
@@ -168,7 +172,7 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
 
         MasProcedureType procedure = procedureOpt.get();
         procedure.setStatus(status);
-        procedure.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
+        procedure.setLastUpdatedBy(userContext.getUserFullName());
         procedure.setLastUpdateDate(LocalDateTime.now());
 
         MasProcedureType saved = repository.save(procedure);

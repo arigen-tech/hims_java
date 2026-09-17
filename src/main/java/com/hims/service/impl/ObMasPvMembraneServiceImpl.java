@@ -7,7 +7,9 @@ import com.hims.entity.repository.ObMasPvMembraneRepository;
 import com.hims.request.ObMasPvMembraneRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.ObMasPvMembraneResponse;
+import com.hims.response.UserContext;
 import com.hims.service.ObMasPvMembraneService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,9 @@ public class ObMasPvMembraneServiceImpl implements ObMasPvMembraneService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<ObMasPvMembraneResponse>> getAll(int flag) {
@@ -65,8 +70,8 @@ public class ObMasPvMembraneServiceImpl implements ObMasPvMembraneService {
 
         log.info("Creating PV Membrane={}", request.getMembraneStatus());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -75,8 +80,8 @@ public class ObMasPvMembraneServiceImpl implements ObMasPvMembraneService {
             ObMasPvMembrane entity = ObMasPvMembrane.builder()
                     .membraneStatus(request.getMembraneStatus())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -104,15 +109,15 @@ public class ObMasPvMembraneServiceImpl implements ObMasPvMembraneService {
                     "PV Membrane not found", 404);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setMembraneStatus(request.getMembraneStatus());
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);
@@ -140,15 +145,15 @@ public class ObMasPvMembraneServiceImpl implements ObMasPvMembraneService {
                     "Invalid status", 400);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setStatus(status.toLowerCase());
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);

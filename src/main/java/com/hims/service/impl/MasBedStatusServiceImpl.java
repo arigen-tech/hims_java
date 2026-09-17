@@ -2,16 +2,18 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasBedStatus;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasBedStatusRepo;
 import com.hims.request.MasBedStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasBedStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBedStatusService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -26,13 +28,16 @@ public class MasBedStatusServiceImpl implements MasBedStatusService {
     private final MasBedStatusRepo masBedStatusRepo;
     private final AuthUtil authUtil;
 
+    @Autowired
+    private UserContextService userContextService;
+
     @Override
     public ApiResponse<MasBedStatusResponse> createBedStatus(MasBedStatusRequest request) {
         try {
             log.info("createBedStatus() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -40,8 +45,8 @@ public class MasBedStatusServiceImpl implements MasBedStatusService {
             entity.setBedStatusName(request.getBedStatusName());
             entity.setStatus("y");
             entity.setLastUpdateDate(LocalDate.now());
-            entity.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-            entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
 
             MasBedStatus saved = masBedStatusRepo.save(entity);
 
@@ -60,8 +65,8 @@ public class MasBedStatusServiceImpl implements MasBedStatusService {
         try {
             log.info("updateBedStatus() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -69,7 +74,7 @@ public class MasBedStatusServiceImpl implements MasBedStatusService {
                     .orElseThrow(() -> new RuntimeException("Invalid Bed Status Id"));
 
             entity.setBedStatusName(request.getBedStatusName());
-            entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDate.now());
 
             MasBedStatus saved = masBedStatusRepo.save(entity);
@@ -89,8 +94,8 @@ public class MasBedStatusServiceImpl implements MasBedStatusService {
         try {
             log.info("changeActiveStatus() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -98,7 +103,7 @@ public class MasBedStatusServiceImpl implements MasBedStatusService {
                     .orElseThrow(() -> new RuntimeException("Invalid Bed Status Id"));
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDate.now());
 
             MasBedStatus saved = masBedStatusRepo.save(entity);
@@ -118,11 +123,6 @@ public class MasBedStatusServiceImpl implements MasBedStatusService {
         try {
             log.info("getById() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
-            }
-
             MasBedStatus entity = masBedStatusRepo.findById(bedStatusId)
                     .orElseThrow(() -> new RuntimeException("Invalid Bed Status Id"));
 
@@ -140,11 +140,6 @@ public class MasBedStatusServiceImpl implements MasBedStatusService {
     public ApiResponse<List<MasBedStatusResponse>> getAll(int flag) {
         try {
             log.info("getAll() method Started...");
-
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
-                return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
-            }
 
             List<MasBedStatus> list;
 

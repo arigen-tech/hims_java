@@ -8,7 +8,9 @@ import com.hims.projection.MasServiceOpdProjection;
 import com.hims.request.MasServiceOpdRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasServiceOpdResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasServiceOpdService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +41,9 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
 
     @Autowired
     private  MasServiceCategoryRepository masServiceCategoryRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<Page<MasServiceOpdResponse>> getOpdTariffByDepartmentAndDoctor(Long hospitalId, Long departmentId, Long doctorId,String doctorName, Pageable pageable) {
@@ -78,8 +83,8 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
     @Override
     public ApiResponse<String> save(MasServiceOpdRequest req) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -118,7 +123,7 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
             opd.setFromDt(req.getFromDate());
             opd.setToDt(req.getToDate());
             opd.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            opd.setLastChgBy(currentUser.getUsername());
+            opd.setLastChgBy(userContext.getUserFullName());
             opd.setLastChgDt(Instant.now());
             masServiceOpdRepository.save(opd);
             return ResponseUtils.createSuccessResponse("Doctor tariff created successfully",new TypeReference<>() {});
@@ -162,8 +167,8 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
                         "Service not found with ID: " + id, 404);
             }
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", 401);
             }
@@ -180,7 +185,7 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
             existing.setFromDt(req.getFromDate());
             existing.setToDt(req.getToDate());
             existing.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            existing.setLastChgBy(currentUser.getUsername());
+            existing.setLastChgBy(userContext.getUserFullName());
             existing.setLastChgDt(java.time.Instant.now());
 
             MasServiceOpd updated = masServiceOpdRepository.save(existing);
@@ -201,14 +206,14 @@ public class MasServiceOpdServiceImpl implements MasServiceOpdService {
                         "Service OPD not found with ID: " + id, 404);
             }
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", 401);
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastChgBy(currentUser.getUsername());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDt(Instant.now());
 
             MasServiceOpd updated = masServiceOpdRepository.save(entity);

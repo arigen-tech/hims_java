@@ -1,19 +1,24 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.*;
+import com.hims.entity.MasRoom;
+import com.hims.entity.MasRoomCategory;
+import com.hims.entity.MasWard;
 import com.hims.entity.repository.MasDepartmentRepository;
-import com.hims.entity.repository.MasRoomRepo;
 import com.hims.entity.repository.MasRoomCategoryRepo;
+import com.hims.entity.repository.MasRoomRepo;
 import com.hims.entity.repository.MasWardRepository;
 import com.hims.request.MasRoomRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasRoomResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasRoomService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +35,9 @@ public class MasRoomServiceImpl implements MasRoomService {
     private final MasWardRepository masWardRepo;
     private final AuthUtil authUtil;
 
+    @Autowired
+    private UserContextService userContextService;
+
     private final MasDepartmentRepository departmentRepository;
 
     @Override
@@ -37,8 +45,8 @@ public class MasRoomServiceImpl implements MasRoomService {
         try {
             log.info("createRoom() Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null)
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null)
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
 
             MasRoomCategory category = masRoomCategoryRepo.findById(request.getRoomCategoryId())
@@ -53,8 +61,8 @@ public class MasRoomServiceImpl implements MasRoomService {
             entity.setMasRoomCategory(category);
             entity.setMasWard(ward);
             entity.setStatus("y");
-            entity.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-            entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
 
             MasRoom saved = masRoomRepo.save(entity);
 
@@ -72,8 +80,8 @@ public class MasRoomServiceImpl implements MasRoomService {
         try {
             log.info("updateRoom() Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null)
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null)
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
 
             MasRoom entity = masRoomRepo.findById(roomId)
@@ -89,7 +97,7 @@ public class MasRoomServiceImpl implements MasRoomService {
             entity.setNoOfBeds(request.getNoOfBeds());
             entity.setMasRoomCategory(category);
             entity.setMasWard(ward);
-            entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
 //            entity.setLastUpdatedDate(LocalDate.now());
 
             MasRoom saved = masRoomRepo.save(entity);
@@ -108,15 +116,15 @@ public class MasRoomServiceImpl implements MasRoomService {
         try {
             log.info("changeActiveStatus() Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null)
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null)
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
 
             MasRoom entity = masRoomRepo.findById(roomId)
                     .orElseThrow(() -> new RuntimeException("Invalid Room Id"));
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDate(LocalDate.now());
 
             MasRoom saved = masRoomRepo.save(entity);
@@ -135,8 +143,8 @@ public class MasRoomServiceImpl implements MasRoomService {
         try {
             log.info("getById() Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null)
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null)
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
 
             MasRoom entity = masRoomRepo.findById(roomId)
@@ -155,8 +163,8 @@ public class MasRoomServiceImpl implements MasRoomService {
         try {
             log.info("getAll() Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null)
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null)
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
 
             List<MasRoom> list;

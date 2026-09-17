@@ -2,17 +2,18 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasBloodDonationStatus;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasBloodDonationStatusRepository;
 import com.hims.request.MasBloodDonationStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasBloodDonationStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBloodDonationStatusService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
-import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,12 +21,13 @@ import java.util.List;
 
 @Slf4j
 @Service
-@Builder
 @RequiredArgsConstructor
 public class MasBloodDonationStatusServiceImpl implements MasBloodDonationStatusService {
 
     private final MasBloodDonationStatusRepository repository;
     private final AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasBloodDonationStatusResponse>> getAll(int flag) {
@@ -70,8 +72,8 @@ public class MasBloodDonationStatusServiceImpl implements MasBloodDonationStatus
 
         log.info("Creating Blood Donation Status");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -83,7 +85,7 @@ public class MasBloodDonationStatusServiceImpl implements MasBloodDonationStatus
                     .description(request.getDescription())
                     .isFinal(request.getIsFinal())
                     .status("y")
-                    .createdBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
                     .createdDate(LocalDateTime.now())
                     .build();
             repository.save(entity);
@@ -108,13 +110,6 @@ public class MasBloodDonationStatusServiceImpl implements MasBloodDonationStatus
             if (entity == null) {
                 return ResponseUtils.createNotFoundResponse(
                         "Blood Donation Status not found", 404);
-            }
-
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
-                return ResponseUtils.createFailureResponse(
-                        null, new TypeReference<>() {},
-                        "Current user not found", 404);
             }
 
             entity.setDonationStatusCode(request.getDonationStatusCode());
@@ -150,13 +145,6 @@ public class MasBloodDonationStatusServiceImpl implements MasBloodDonationStatus
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Invalid status", 400);
-            }
-
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
-                return ResponseUtils.createFailureResponse(
-                        null, new TypeReference<>() {},
-                        "Current user not found", 404);
             }
 
             entity.setStatus(status.toLowerCase());

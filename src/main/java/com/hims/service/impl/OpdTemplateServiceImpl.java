@@ -7,7 +7,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.OpdTemplateService;
-import com.hims.utils.AuthUtil;
+import com.hims.service.UserContextService;
 import com.hims.utils.HMISUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,7 +46,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     private MasDepartmentRepository departmentRepo;
 
     @Autowired
-    private AuthUtil authUtil;
+    private UserContextService userContextService;
 
     @Autowired
     private DgMasInvestigationRepository dgMasInvestigationRepo;
@@ -142,21 +141,20 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     @Override
     public ApiResponse<OpdTemplateResponse> saveInvestigationTemplate(OpdTemplateRequest opdTempReq) {
         try{
-            Long depId = authUtil.getCurrentDepartmentId();
             OpdTemplate opdt = new OpdTemplate();
             opdt.setOpdTemplateName(opdTempReq.getOpdTemplateName());
             opdt.setOpdTemplateCode(opdTempReq.getOpdTemplateCode());
             opdt.setOpdTemplateType(AppConstants.TEMPLATE_TYPE_INVESTIGATION);
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            opdt.setLastChgBy(currentUser.getUsername());
+            opdt.setLastChgBy(userContext.getUserFullName());
             opdt.setLastChgDate(Instant.now());
             opdt.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            MasDepartment department = departmentRepo.findById(depId)
+            MasDepartment department = departmentRepo.findById(userContext.getDepartmentId())
                     .orElseThrow(() -> new RuntimeException("Department not found"));
             opdt.setDepartmentId(department);
             User doctor = userRepo.findById(opdTempReq.getDoctorId())
@@ -230,8 +228,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     @Override
     public ApiResponse<InvestigationByTemplateResponse> multiInvestigationTemplate(InvestigationByTemplateRequest investByTempReq) {
 
-        Long departmentId = authUtil.getCurrentDepartmentId();
-        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         Optional<OpdTemplate> opdTemplateExisting = opdTempRepo.findById(investByTempReq.getTemplateId());
         if(opdTemplateExisting.isPresent()){
@@ -257,10 +254,10 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
                 hd.setOrderStatus("n");
                 hd.setCollectionStatus("n");
                 hd.setPaymentStatus("n");
-                hd.setHospitalId(authUtil.getCurrentUser().getHospital().getId());
-                hd.setDepartmentId(departmentId);
-                hd.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-                hd.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+                hd.setHospitalId(userContext.getHospitalId());
+                hd.setDepartmentId(userContext.getDepartmentId());
+                hd.setLastChgBy(userContext.getUserFullName());
+                hd.setCreatedBy(userContext.getUserFullName());
                 hd.setCreatedOn(LocalDate.now());
                 hd.setLastChgDate(LocalDate.now());
                 hd.setLastChgTime(LocalTime.now().toString());
@@ -285,8 +282,8 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
                     dt.setMainChargeCodeId(invEntity.getMainChargeCodeId().getChargecodeId());
                     dt.setSubChargeCodeId(invEntity.getSubChargeCodeId().getSubId());
                     dt.setAppointmentDate(investTempReq.getDateOfOrder());
-                    dt.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-                    dt.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+                    dt.setLastChgBy(userContext.getUserFullName());
+                    dt.setCreatedBy(userContext.getUserFullName());
                     dt.setLastChgDate(LocalDate.now());
                     dt.setBillingStatus("n");
                     dt.setOrderStatus("n");
@@ -414,25 +411,24 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     @Transactional
     public ApiResponse<OpdTemplateResponse> saveOpdTemplateTreatment(OpdTemplateRequest request) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
 
-            Long depId = authUtil.getCurrentDepartmentId();
 
             // Create template
             OpdTemplate template = new OpdTemplate();
             template.setOpdTemplateCode(request.getOpdTemplateCode());
             template.setOpdTemplateName(request.getOpdTemplateName());
             template.setOpdTemplateType(AppConstants.TEMPLATE_TYPE_PRESCRIPTION);
-            template.setLastChgBy(currentUser.getUsername());
+            template.setLastChgBy(userContext.getUserFullName());
             template.setLastChgDate(Instant.now());
             template.setStatus(AppConstants.STATUS_Y.toLowerCase());
 
             // Department & Doctor mapping
-            MasDepartment department = departmentRepo.findById(depId)
+            MasDepartment department = departmentRepo.findById(userContext.getDepartmentId())
                     .orElseThrow(() -> new RuntimeException("Department not found"));
             template.setDepartmentId(department);
 
@@ -482,7 +478,7 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
     public ApiResponse<OpdTemplateResponse> updateOpdTemplateTreatment(Long templateId, OpdTemplateRequest request) {
         try {
 
-            Long depId = authUtil.getCurrentDepartmentId();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             OpdTemplate existingTemplate = opdTempRepo.findById(templateId)
                     .orElseThrow(() -> new RuntimeException("Template not found with ID: " + templateId));
@@ -492,12 +488,11 @@ public class OpdTemplateServiceImpl implements OpdTemplateService {
 //            existingTemplate.setOpdTemplateType(request.getOpdTemplateType());
             existingTemplate.setLastChgDate(Instant.now());
 
-            MasDepartment department = departmentRepo.findById(depId)
+            MasDepartment department = departmentRepo.findById(userContext.getDepartmentId())
                     .orElseThrow(() -> new RuntimeException("Department not found"));
             existingTemplate.setDepartmentId(department);
 
-            User currentUser = getCurrentUser();
-            existingTemplate.setLastChgBy(currentUser.getUsername());
+            existingTemplate.setLastChgBy(userContext.getUserFullName());
 
             // Delete old treatments
             opdTemplateTreatmentRepository.deleteAllByTemplate(existingTemplate);
