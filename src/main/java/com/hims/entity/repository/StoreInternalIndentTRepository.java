@@ -80,6 +80,7 @@ public interface StoreInternalIndentTRepository extends JpaRepository<StoreInter
     JOIN t.itemId i
     LEFT JOIN i.unitAU u
     WHERE t.indentM.indentMId = :indentMId
+    ORDER BY i.nomenclature ASC
 """)
     List<IndentDetailsResponseForIndentTracking>
     findIndentDetailsForTracking(@Param("indentMId") Long indentMId);

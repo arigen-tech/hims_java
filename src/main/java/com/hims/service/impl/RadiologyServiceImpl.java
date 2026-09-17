@@ -1046,7 +1046,14 @@ public class RadiologyServiceImpl implements RadiologyService {
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdOn"));
-            Page<RadOrderDt> paged = radOrderDtRepository.findPendingRadiology(masHospital.getId(), AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase(), modalityId, patientLike, phoneLike, pageable
+            Page<RadOrderDt> paged = radOrderDtRepository.findPendingRadiology(masHospital.getId(),
+                    AppConstants.STATUS_Y.toLowerCase(),
+                    AppConstants.STATUS_N.toLowerCase(),
+                    AppConstants.STATUS_Y.toLowerCase(),
+                    modalityId,
+                    patientLike,
+                    phoneLike,
+                    pageable
             );
 
             Page<RadiologyRequisitionResponse> response= paged.map(this::mapToRadiologyDto);
