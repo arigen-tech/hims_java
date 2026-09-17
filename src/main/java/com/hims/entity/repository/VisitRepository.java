@@ -700,7 +700,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
         bh.net_amount AS billedAmount,
         v.billing_hd_id AS billingHeaderId,
         pdv2.payment_id AS paymentId,
-        pdv2.payment_gateway AS paymentGatewayMode,
+        mpg.gateway_code AS paymentGatewayMode,
+        mpg.gateway_name AS paymentGatewayModeName,
         mps.payment_status_code AS paymentV2PaymentStatusCode
     FROM visit v
     LEFT JOIN patient p 
@@ -713,6 +714,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
         ON bh.bill_hd_id = v.billing_hd_id
     LEFT JOIN payment_details_v2 pdv2
         ON pdv2.billing_hd_id = bh.bill_hd_id
+    LEFT JOIN mas_payment_gateway mpg 
+       ON mpg.gateway_code=pdv2.payment_gateway
     LEFT JOIN mas_payment_status mps
         ON mps.payment_status_id=pdv2.payment_status_id
     WHERE v.hospital_id = :hospitalId
@@ -778,7 +781,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("patientName") String patientName,
             @Param("departmentIds") List<Long> departmentIds,
             @Param("includeAllHistory") Boolean includeAllHistory,
-            @Param("visitStatus") String visitStatus,
+            @Param("visitStatus") List<String> visitStatus,
             @Param("payment") String payment
     );
 

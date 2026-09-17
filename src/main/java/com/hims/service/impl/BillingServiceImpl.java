@@ -680,7 +680,7 @@ public class BillingServiceImpl implements BillingService {
                     patientNameLike,
                     phoneNoLike,
                     registrationNoLike, AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_P.toLowerCase()
-//                    ,AppConstants.VISIT_STATUS_CANCELLED.toLowerCase()
+                    ,AppConstants.VISIT_STATUS_CANCELLED.toLowerCase()
                     ,serviceCategoryId, pageable
             );
 

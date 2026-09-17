@@ -135,20 +135,6 @@ public class DispensaryServiceImpl implements DispensaryService {
             log.info("Approving prescription started with header ID: {}",
                     request.getPrescriptionHeaderId());
 
-
-
-            PatientPrescriptionHd header = patientPrescriptionHdRepository
-                    .findById(request.getPrescriptionHeaderId())
-                    .orElseThrow(() -> new RuntimeException(
-                            "Prescription header not found with ID: "
-                                    + request.getPrescriptionHeaderId()
-                    ));
-
-            header.setStatus(AppConstants.STATUS_Y.toLowerCase());
-
-
-            patientPrescriptionHdRepository.save(header);
-
             MasServiceCategory serviceCategory =
                     masServiceCategoryRepository.findByServiceCateCode(pharmacyServiceCode);
 
@@ -158,6 +144,15 @@ public class DispensaryServiceImpl implements DispensaryService {
                                 + pharmacyServiceCode
                 );
             }
+
+            PatientPrescriptionHd header = patientPrescriptionHdRepository
+                    .findById(request.getPrescriptionHeaderId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Prescription header not found with ID: "
+                                    + request.getPrescriptionHeaderId()
+                    ));
+
+
 
 
             BillingHeader billingHeader = createPrescriptionBilling(header, request.getPrescriptionDetails(), serviceCategory);
@@ -341,12 +336,20 @@ public class DispensaryServiceImpl implements DispensaryService {
                 );
             }
 
+            header.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            header.setIssuedBy(userContextService.getCurrentUserContext().getUserFullName());
+            header.setIssuedDate(HMISUtil.getCurrentLocalDateTime());
+            patientPrescriptionHdRepository.save(header);
+
             log.info("Approving prescription ended with header ID: {}",
                     request.getPrescriptionHeaderId());
 
             return ResponseUtils.createSuccessResponse(
                     new PrescriptionApproveHeaderResponse(
-                            header.getPrescriptionHdId(), header.getNisNo()
+                            header.getPrescriptionHdId(),
+                            header.getNisNo(),
+                            billingHeader.getId(),
+                            header.getVisit().getId()
                     ),
                     new TypeReference<>() {}
             );

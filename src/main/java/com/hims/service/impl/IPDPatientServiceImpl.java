@@ -223,6 +223,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     IpDietScheduleRepository ipDietScheduleRepository;
     @Autowired
     ShiftHandoverRepository shiftHandoverRepository;
+    @Autowired
+    MasServiceCategoryRepository masServiceCategoryRepository;
 
 
     @Value("${ipd.admission.status.admitted}")
@@ -287,6 +289,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
     @Value("${upload.image.path}")
     String filePath;
+    @Value("${mas.service.category.ipd}")
+    Long masServiceCategory;
 
     @Autowired
     private UserContextService userContextService;
@@ -1553,6 +1557,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         receiptHd.setCreatedDate(now);
         receiptHd.setLastChgBy(userContext.getUserFullName());
         receiptHd.setLastChgDate(now);
+        receiptHd.setMasServiceCategory(masServiceCategoryRepository.findById(masServiceCategory).orElseThrow());
 
         IpdBlReceiptHd savedReceiptHd = ipdBlReceiptHdRepository.save(receiptHd);
 
@@ -2706,7 +2711,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             // Receipt Header
             IpdBlReceiptHd receiptHd = new IpdBlReceiptHd();
             receiptHd.setReceiptNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RECEIPT_NO, inpatient.get().getPatient().getPatientHospital().getId()));
-            receiptHd.setReceiptDate(request.getCollectionDateTime());
+            LocalDateTime reciptDate=LocalDateTime.now();
+            receiptHd.setReceiptDate(reciptDate);
             receiptHd.setInpatient(inpatient.get());
             receiptHd.setBill(billingHeader.get());
             receiptHd.setTotalAmount(totalAmount);
@@ -2715,6 +2721,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             receiptHd.setReceiptStatus(AppConstants.IP_RECEIPT_STATUS.toLowerCase());
             receiptHd.setCreatedBy(userContext.getUserFullName());
             receiptHd.setLastChgBy(userContext.getUserFullName());
+            receiptHd.setMasServiceCategory(masServiceCategoryRepository.findById(masServiceCategory).orElseThrow());
             receiptHd.setLastChgDate(LocalDateTime.now());
             receiptHd.setReceiptType(masReceiptTypeRepository.findById(request.getCollectionTypeId()).orElseThrow());
             receiptHd = ipdBlReceiptHdRepository.save(receiptHd);

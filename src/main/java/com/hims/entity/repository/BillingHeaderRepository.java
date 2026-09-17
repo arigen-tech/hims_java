@@ -220,7 +220,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
         LEFT JOIN mas_department d ON v.department_id = d.department_id
         LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
         WHERE bh.payment_status IN (:complete, :partial)
-     --   AND v.visit_status = :cancelledVisit
+        AND v.visit_status != :cancelledVisit
           AND (
                 :patientName IS NULL OR
                 LOWER(TRIM(
@@ -252,7 +252,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
         LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
 
         WHERE bh.payment_status IN (:complete, :partial)
-   --     AND v.visit_status= :cancelledVisit
+        AND v.visit_status != :cancelledVisit
           AND (
                 :patientName IS NULL OR
                 LOWER(TRIM(
@@ -283,7 +283,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             @Param("registrationNo") String registrationNo,
             @Param("complete") String complete,
             @Param("partial") String partial,
-//            @Param("cancelledVisit") String cancelledVisit,
+            @Param("cancelledVisit") String cancelledVisit,
             Long serviceCategoryId,
             Pageable pageable
     );
