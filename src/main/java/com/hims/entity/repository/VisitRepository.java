@@ -834,7 +834,9 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                 AND LOWER(v.visit_status) = 'c'
                 AND (:departmentId IS NULL OR v.department_id = :departmentId)
                 AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
-                AND (DATE(v.visit_date) BETWEEN :fromDate AND :toDate )
+                AND (:patientId IS NULL OR v.patient_id = :patientId)
+                AND (CAST(:fromDate AS DATE) IS NULL OR DATE(v.visit_date) >= CAST(:fromDate AS DATE))
+                AND (CAST(:toDate AS DATE) IS NULL OR DATE(v.visit_date) <= CAST(:toDate AS DATE))
                 AND (:cancellationReasonId IS NULL OR v.cancelled_reason_id = :cancellationReasonId)
                 ORDER BY v.cancelled_datetime DESC
             """,
@@ -845,7 +847,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("doctorId") Long doctorId,
             @Param("fromDate") java.time.LocalDate fromDate,
             @Param("toDate") java.time.LocalDate toDate,
-            @Param("cancellationReasonId") Long cancellationReasonId
+            @Param("cancellationReasonId") Long cancellationReasonId,
+            @Param("patientId") Long patientId
     );
 
     @Query(value = """
@@ -885,7 +888,9 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                 AND LOWER(v.visit_status) = 'c'
                 AND v.department_id IN (:departmentIds)
                 AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
-                AND (DATE(v.visit_date) BETWEEN :fromDate AND :toDate )
+                AND (:patientId IS NULL OR v.patient_id = :patientId)
+                AND (CAST(:fromDate AS DATE) IS NULL OR DATE(v.visit_date) >= CAST(:fromDate AS DATE))
+                AND (CAST(:toDate AS DATE) IS NULL OR DATE(v.visit_date) <= CAST(:toDate AS DATE))
                 AND (:cancellationReasonId IS NULL OR v.cancelled_reason_id = :cancellationReasonId)
                 ORDER BY v.cancelled_datetime DESC
             """,
@@ -896,7 +901,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("doctorId") Long doctorId,
             @Param("fromDate") java.time.LocalDate fromDate,
             @Param("toDate") java.time.LocalDate toDate,
-            @Param("cancellationReasonId") Long cancellationReasonId
+            @Param("cancellationReasonId") Long cancellationReasonId,
+            @Param("patientId") Long patientId
     );
 
     /**

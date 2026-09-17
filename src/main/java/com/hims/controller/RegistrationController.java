@@ -175,11 +175,12 @@ public class RegistrationController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            @RequestParam(required = false) Long cancellationReasonId) {
-        log.info("GET /registration/getCancelledAppointments called: hospitalId={}, departmentId={}, departmentType={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}",
-                hospitalId, departmentId, departmentType, doctorId, fromDate, toDate, cancellationReasonId);
+                @RequestParam(required = false) Long cancellationReasonId,
+                @RequestParam(required = false) Long patientId) {
+            log.info("GET /registration/getCancelledAppointments called: hospitalId={}, departmentId={}, departmentType={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}, patientId={}",
+                hospitalId, departmentId, departmentType, doctorId, fromDate, toDate, cancellationReasonId, patientId);
         ApiResponse<List<CancelledAppointmentResponse>> response = registrationService.getCancelledAppointments(
-                hospitalId, departmentId, departmentType, doctorId, fromDate, toDate, cancellationReasonId);
+                hospitalId, departmentId, departmentType, doctorId, fromDate, toDate, cancellationReasonId, patientId);
         return ResponseEntity.ok(response);
     }
 

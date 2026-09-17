@@ -1215,7 +1215,7 @@ public class PatientServiceImpl implements PatientService {
 
 
             List<CancelledAppointmentProjection> projectionList = visitRepository.findCancelledAppointments(
-                    hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId
+                    hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId, null
             );
 
             // Map projections to response DTOs
