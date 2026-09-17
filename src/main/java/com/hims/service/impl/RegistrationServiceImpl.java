@@ -745,11 +745,11 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     @Override
-    public ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(Long hospitalId,Long departmentId,String departmentType,Long doctorId,LocalDate fromDate,LocalDate toDate,Long cancellationReasonId
+    public ApiResponse<List<CancelledAppointmentResponse>> getCancelledAppointments(Long hospitalId,Long departmentId,String departmentType,Long doctorId,LocalDate fromDate,LocalDate toDate,Long cancellationReasonId, Long patientId
     ) {
 
-        log.info("Fetching cancelled appointments: hospitalId={}, departmentId={}, departmentType={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}",
-                hospitalId, departmentId, departmentType, doctorId, fromDate, toDate, cancellationReasonId);
+        log.info("Fetching cancelled appointments: hospitalId={}, departmentId={}, departmentType={}, doctorId={}, fromDate={}, toDate={}, cancellationReasonId={}, patientId={}",
+                hospitalId, departmentId, departmentType, doctorId, fromDate, toDate, cancellationReasonId, patientId);
 
         try {
             if (hospitalId == null || hospitalId <= 0) {
@@ -765,7 +765,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             List<CancelledAppointmentProjection> projectionList;
             if (departmentId != null) {
                 projectionList = visitRepository.findCancelledAppointments(
-                        hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId
+                    hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId, patientId
                 );
             } else if (StringUtils.hasText(departmentType)) {
                 List<Long> departmentIds = masDepartmentRepository.findDepartmentIdsByDepartmentTypeCode(departmentType.trim());
@@ -774,11 +774,11 @@ public class RegistrationServiceImpl implements RegistrationService {
                     return ResponseUtils.createSuccessResponse(Collections.emptyList(), new TypeReference<>() {});
                 }
                 projectionList = visitRepository.findCancelledAppointmentsByDepartmentIds(
-                        hospitalId, departmentIds, doctorId, fromDate, toDate, cancellationReasonId
+                    hospitalId, departmentIds, doctorId, fromDate, toDate, cancellationReasonId, patientId
                 );
             } else {
                 projectionList = visitRepository.findCancelledAppointments(
-                        hospitalId, null, doctorId, fromDate, toDate, cancellationReasonId
+                    hospitalId, null, doctorId, fromDate, toDate, cancellationReasonId, patientId
                 );
             }
 
