@@ -219,14 +219,6 @@ public class HelperUtils {
             return null;
         }
 
-        if ("completed".equalsIgnoreCase(cleaned) || AppConstants.STATUS_Y.equalsIgnoreCase(cleaned)) {
-            return AppConstants.STATUS_Y.toLowerCase();
-        }
-
-        if ("pending".equalsIgnoreCase(cleaned) || AppConstants.STATUS_N.equalsIgnoreCase(cleaned)) {
-            return AppConstants.STATUS_N.toLowerCase();
-        }
-
         if ("all".equalsIgnoreCase(cleaned)) {
             return null;
         }

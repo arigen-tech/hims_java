@@ -63,6 +63,7 @@ left join hd.patient p
 where hd.hospital.id = :hospitalId
   and lower(dt.billingStatus) = lower(:billingStatus)
   and lower(dt.studyStatus)   = lower(:studyStatus)
+  and lower(dt.orderStatus)   = lower(:orderStatus) 
   and dt.subChargecode.subId  = :modalityId
  and (
         :patientName is null
@@ -86,6 +87,7 @@ and (
             @Param("hospitalId") Long hospitalId,
             @Param("billingStatus") String billingStatus,
             @Param("studyStatus") String studyStatus,
+            @Param("orderStatus") String orderStatus,
             @Param("modalityId") Long modalityId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,
