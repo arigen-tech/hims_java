@@ -72,5 +72,9 @@ public class IpdBlReceiptHd {
     @Column(name = "last_chg_date")
     private LocalDateTime lastChgDate;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_category_id")
+    private MasServiceCategory masServiceCategory;
+
 
 }

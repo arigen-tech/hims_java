@@ -228,4 +228,9 @@ public class AppConstants {
     public static final String BILLING_PENDING_LABEL = "PENDING";
     public static final String PACKAGE_LABEL = "PACKAGE";
     public static final String DUPLICATE_DATA_OPD_SERVICE_TARIFF = "Doctor tariff already exists for the selected service category, hospital, department and date range";
+
+    public static  final String RAZORPAY_GATEWAY="RAZORPAY";
+    public static final String WEBHOOK_PROCESSED_STATUS = "PROCESSED";
+    public static final String WEBHOOK_FAILED_STATUS = "FAILED";
+    public static final String WEBHOOK_RECEIVED_STATUS = "RECEIVED";
 }
