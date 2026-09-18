@@ -120,6 +120,10 @@ public class InventoryServiceImpl implements InventoryService {
     @Value( "${drug.expiry.inventory}")
     private int drugExpDay;
 
+    @Value( "${drugSectionId}")
+    private Long drugSectionId;
+
+
     @Value(("${drugSectionCode}"))
     private String drugSectionCode;
 
@@ -313,14 +317,21 @@ public class InventoryServiceImpl implements InventoryService {
                     Sort.by(Sort.Direction.ASC,"nomenclature")
             );
             Page<ItemStockLedgerWithBatchResponse> responses ;
-            if(sectionCode==null || sectionCode.trim().isEmpty()){
+            if(sectionCode==null || sectionCode.trim().isEmpty() || AppConstants.SECTION_CODE_NON_DRUG.equals(sectionCode)){
                 List<String> medicalConsumablesAndNonConsumables = List.of(medicalNonConsumableItemTypeCode, medicalConsumableItemTypeCode);
                 responses=storeItemRepository.searchNonDrugItems(drugSectionCode, keyword,medicalConsumablesAndNonConsumables, pageable);
-            }else{
+            }else if (AppConstants.SECTION_CODE_DRUG.equalsIgnoreCase(sectionCode)){
                 responses=storeItemRepository.searchItems(sectionCode, keyword, pageable);
+            }else{
+                throw  new SDDException("Section Code",
+                       HttpStatus.BAD_REQUEST.value(),
+                        "Invalid section code. Please provide Drug or NonDrug as type"
+                );
             }
             log.info("getStoreItems with item contains name {} ,method ended...",keyword);
             return  ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+        }catch (SDDException e){
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},e.getMessage(),e.getStatus());
         }catch (Exception e) {
             log.error("getStoreItems method error :: ",e);
             return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG,HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -2138,29 +2149,77 @@ public class InventoryServiceImpl implements InventoryService {
             String type,
             Long hospitalId,
             Long departmentId,
+            String itemTypeCode,
             Long sectionId,
             Long classId,
             Long itemId
     ) {
 
         try {
-            if ("summary".equalsIgnoreCase(type)) {
 
-                List<OpeningBalanceStockResponse> dtos =
-                        storeItemBatchStockRepository.getStockSummary(
-                                hospitalId, departmentId, sectionId, classId, itemId
-                        );
 
-                return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
 
-            } else if ("details".equalsIgnoreCase(type)) {
+            if(itemTypeCode!=null && AppConstants.SECTION_CODE_DRUG.equalsIgnoreCase(itemTypeCode)){
 
-                List<OpeningBalanceStockResponseDto> dtos =
-                        storeItemBatchStockRepository.getStockDetails(
-                                hospitalId, departmentId, sectionId, classId, itemId
-                        );
+                sectionId=drugSectionId;
+                if ("summary".equalsIgnoreCase(type)) {
 
-                return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+                    List<OpeningBalanceStockResponse> dtos =
+                            storeItemBatchStockRepository.getStockSummaryForDrugs(
+                                    hospitalId, departmentId, sectionId, classId, itemId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+
+                } else if ("details".equalsIgnoreCase(type)) {
+
+                    List<OpeningBalanceStockResponseDto> dtos =
+                            storeItemBatchStockRepository.getStockDetailsForDrugs(
+                                    hospitalId, departmentId, sectionId, classId, itemId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+                }
+
+            }else if(itemTypeCode!=null && AppConstants.SECTION_CODE_NON_DRUG.equalsIgnoreCase(itemTypeCode)){
+
+                if ("summary".equalsIgnoreCase(type)) {
+
+                    List<OpeningBalanceStockResponse> dtos =
+                            storeItemBatchStockRepository.getStockSummaryForNonDrugs(
+                                    hospitalId, departmentId, sectionId, classId, itemId,drugSectionId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+
+                } else if ("details".equalsIgnoreCase(type)) {
+
+                    List<OpeningBalanceStockResponseDto> dtos =
+                            storeItemBatchStockRepository.getStockDetailsForNonDrugs(
+                                    hospitalId, departmentId, sectionId, classId, itemId,drugSectionId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+                }
+            }else{
+                if ("summary".equalsIgnoreCase(type)) {
+
+                    List<OpeningBalanceStockResponse> dtos =
+                            storeItemBatchStockRepository.getStockSummaryForAll(
+                                    hospitalId, departmentId, sectionId, classId, itemId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+
+                } else if ("details".equalsIgnoreCase(type)) {
+
+                    List<OpeningBalanceStockResponseDto> dtos =
+                            storeItemBatchStockRepository.getStockDetailsForAll(
+                                    hospitalId, departmentId, sectionId, classId, itemId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+              }
             }
             return ResponseUtils.createFailureResponse(
                     null,

@@ -233,4 +233,6 @@ public class AppConstants {
     public static final String WEBHOOK_PROCESSED_STATUS = "PROCESSED";
     public static final String WEBHOOK_FAILED_STATUS = "FAILED";
     public static final String WEBHOOK_RECEIVED_STATUS = "RECEIVED";
+    public static final String SECTION_CODE_NON_DRUG = "NON_DRUG";
+    public static final String SECTION_CODE_DRUG = "DRUG";
 }
