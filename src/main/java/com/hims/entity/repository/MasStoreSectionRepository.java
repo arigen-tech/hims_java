@@ -28,4 +28,8 @@ public interface MasStoreSectionRepository extends JpaRepository<MasStoreSection
     List<MasStoreSection> findByMasItemType_CodeOrderBySectionNameAsc(String itemTypeCode);
 
     Optional<MasStoreSection> findBySectionCode(String sectionCode);
+
+    List<MasStoreSection> findBySectionCodeNotIgnoreCaseAndMasItemType_CodeInOrderBySectionNameAsc(String drugSectionCode, List<String> medicalConsumablesAndNonConsumables);
+
+    List<MasStoreSection> findBySectionCodeIgnoreCaseOrderBySectionNameAsc(String drugSectionCode);
 }
