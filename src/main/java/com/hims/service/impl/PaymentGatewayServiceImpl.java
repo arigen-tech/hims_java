@@ -8,8 +8,10 @@ import com.hims.request.BillingItemRequest;
 import com.hims.request.OrderRequest;
 import com.hims.request.RefundRequest;
 import com.hims.response.PaymentGatewayStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.PaymentGatewayService;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
 import com.hims.utils.HMISUtil;
@@ -22,6 +24,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +51,9 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
 
 
     private final AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     /**
      * Creates a Razorpay order and a PENDING row in payment_details_v2.
@@ -352,7 +358,7 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
 
             if (existingRow == null) {
                 payment.setPaymentReferenceNo(paymentUtils.generatePaymentReferenceNo());
-                payment.setCreatedBy(authUtil.getCurrentUserFullName());
+                payment.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
             }
 
             paymentRepository.save(payment);
@@ -721,9 +727,9 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
         refund.setAppointmentChangeReason(cancelReason);
         refund.setRefundReason(cancelReason.getReasonName());
 
-        String currentUser = authUtil.getCurrentUserFullName();
-        refund.setCreatedBy(currentUser);
-        refund.setUpdatedBy(currentUser);
+        UserContext currentUser = userContextService.getCurrentUserContext();
+        refund.setCreatedBy(currentUser.getUserFullName());
+        refund.setUpdatedBy(currentUser.getUserFullName());
         refund.setRefundRequestedAt(HMISUtil.getCurrentLocalDateTime());
 
 

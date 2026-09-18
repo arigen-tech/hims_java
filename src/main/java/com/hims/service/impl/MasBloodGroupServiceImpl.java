@@ -8,7 +8,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasBloodGroupRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasBloodGroupResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBloodGroupService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,9 @@ public class MasBloodGroupServiceImpl implements MasBloodGroupService {
 
     @Autowired
     private MasBloodGroupRepository masBloodGroupRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     private UserRepo userRepo;
@@ -81,13 +86,13 @@ public class MasBloodGroupServiceImpl implements MasBloodGroupService {
             bloodGroup.setBloodGroupCode(bloodGroupRequest.getBloodGroupCode());
             bloodGroup.setBloodGroupName(bloodGroupRequest.getBloodGroupName());
             bloodGroup.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            bloodGroup.setLastChangedBy(String.valueOf(currentUser.getUserId()));
+            bloodGroup.setLastChangedBy(String.valueOf(userContext.getUserId()));
             bloodGroup.setLastChangedDate(Instant.now());
             bloodGroup.setLastChangedTime(getCurrentTimeFormatted());
             //bloodGroup.setHicCode(bloodGroupRequest.getHicCode());
@@ -111,13 +116,13 @@ public class MasBloodGroupServiceImpl implements MasBloodGroupService {
                 MasBloodGroup existingBloodGroup = existingBloodGroupOpt.get();
                 existingBloodGroup.setBloodGroupCode(bloodGroupRequest.getBloodGroupCode());
                 existingBloodGroup.setBloodGroupName(bloodGroupRequest.getBloodGroupName());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                existingBloodGroup.setLastChangedBy(String.valueOf(currentUser.getUserId()));
+                existingBloodGroup.setLastChangedBy(String.valueOf(userContext.getUserId()));
                 existingBloodGroup.setLastChangedDate(Instant.now());
                 existingBloodGroup.setLastChangedTime(getCurrentTimeFormatted());
                 //existingBloodGroup.setHicCode(bloodGroupDetails.getHicCode());
@@ -151,13 +156,13 @@ public class MasBloodGroupServiceImpl implements MasBloodGroupService {
                 }
 
                 existingBloodGroup.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                existingBloodGroup.setLastChangedBy(String.valueOf(currentUser.getUserId()));
+                existingBloodGroup.setLastChangedBy(String.valueOf(userContext.getUserId()));
                 existingBloodGroup.setLastChangedDate(Instant.now());
                 existingBloodGroup.setLastChangedTime(getCurrentTimeFormatted());
                 MasBloodGroup updatedBloodGroup = masBloodGroupRepository.save(existingBloodGroup);

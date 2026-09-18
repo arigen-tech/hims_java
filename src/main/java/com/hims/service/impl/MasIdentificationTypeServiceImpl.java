@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasIdentificationType;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasIdentificationTypeRepository;
@@ -8,7 +9,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasIdentificationTypeRequest;
 import com.hims.response.MasIdentificationTypeResponse;
 import com.hims.response.ApiResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasIdentificationTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +34,9 @@ public class MasIdentificationTypeServiceImpl implements MasIdentificationTypeSe
     private MasIdentificationTypeRepository masIdentificationTypeRepository;
 
     @Autowired
+    private UserContextService userContextService;
+
+    @Autowired
     private UserRepo userRepo;
 
     private User getCurrentUser() {
@@ -48,14 +54,14 @@ public class MasIdentificationTypeServiceImpl implements MasIdentificationTypeSe
             MasIdentificationType type = new MasIdentificationType();
             type.setIdentificationCode(request.getIdentificationCode());
             type.setIdentificationName(request.getIdentificationName());
-            type.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            type.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            type.setLastChangedBy(currentUser.getUserId());
+            type.setLastChangedBy(userContext.getUserId());
             type.setLastChangedDate(Instant.now());
             type.setMapId(request.getMapId());
 
@@ -76,13 +82,13 @@ public class MasIdentificationTypeServiceImpl implements MasIdentificationTypeSe
             if (typeOpt.isPresent()) {
                 MasIdentificationType type = typeOpt.get();
                 type.setStatus(statusValue);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                type.setLastChangedBy(currentUser.getUserId());
+                type.setLastChangedBy(userContext.getUserId());
                 type.setLastChangedDate(Instant.now());
                 masIdentificationTypeRepository.save(type);
                 return ResponseUtils.createSuccessResponse("Identification type status updated", new TypeReference<>() {
@@ -105,13 +111,13 @@ public class MasIdentificationTypeServiceImpl implements MasIdentificationTypeSe
                 MasIdentificationType type = typeOpt.get();
                 type.setIdentificationCode(request.getIdentificationCode());
                 type.setIdentificationName(request.getIdentificationName());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                type.setLastChangedBy(currentUser.getUserId());
+                type.setLastChangedBy(userContext.getUserId());
                 type.setLastChangedDate(Instant.now());
                 type.setMapId(request.getMapId());
 

@@ -8,11 +8,14 @@ import com.hims.entity.repository.OpdHolidayMasterRepository;
 import com.hims.request.OpdHolidayMasterRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpdHolidayMasterResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OpdHolidayService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +30,9 @@ public class OpdHolidayServiceImpl implements OpdHolidayService {
 
     private final OpdHolidayMasterRepository repository;
     private final AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<OpdHolidayMasterResponse>> getAllHoliday(int flag) {
@@ -76,7 +82,7 @@ public class OpdHolidayServiceImpl implements OpdHolidayService {
 
         try {
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             OpdHolidayMaster entity = new OpdHolidayMaster();
 
@@ -86,10 +92,10 @@ public class OpdHolidayServiceImpl implements OpdHolidayService {
 
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
 
-            entity.setCreatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
             entity.setCreatedAt(LocalDateTime.now());
 
-            entity.setUpdatedBy(user.getFullName());
+            entity.setUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDt(LocalDateTime.now());
 
             repository.save(entity);
@@ -122,13 +128,13 @@ public class OpdHolidayServiceImpl implements OpdHolidayService {
                         404);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             entity.setHolidayDate(request.getHolidayDate());
             entity.setHolidayName(request.getHolidayName());
             entity.setRemarks(request.getRemarks());
 
-            entity.setUpdatedBy(user.getFullName());
+            entity.setUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDt(LocalDateTime.now());
 
             repository.save(entity);
@@ -160,10 +166,10 @@ public class OpdHolidayServiceImpl implements OpdHolidayService {
                 return ResponseUtils.createNotFoundResponse("Holiday not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             entity.setStatus(status.toLowerCase());
-            entity.setUpdatedBy(user.getFullName());
+            entity.setUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDt(LocalDateTime.now());
 
             repository.save(entity);

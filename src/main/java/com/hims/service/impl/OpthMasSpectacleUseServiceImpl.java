@@ -2,12 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.OpthMasSpectacleUse;
-import com.hims.entity.User;
 import com.hims.entity.repository.OpthMasSpectacleUseRepository;
 import com.hims.request.OpthMasSpectacleUseRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpthMasSpectacleUseResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OpthMasSpectacleUseService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,9 @@ public class OpthMasSpectacleUseServiceImpl implements OpthMasSpectacleUseServic
     private OpthMasSpectacleUseRepository repository;
    @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<OpthMasSpectacleUseResponse>> getAll(int flag) {
@@ -78,8 +82,8 @@ public class OpthMasSpectacleUseServiceImpl implements OpthMasSpectacleUseServic
 
         log.info("Creating Spectacle Use={}", request.getUseName());
         try {
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -89,8 +93,8 @@ public class OpthMasSpectacleUseServiceImpl implements OpthMasSpectacleUseServic
             OpthMasSpectacleUse use = OpthMasSpectacleUse.builder()
                     .useName(request.getUseName())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -121,8 +125,8 @@ public class OpthMasSpectacleUseServiceImpl implements OpthMasSpectacleUseServic
                         "Spectacle Use not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -130,7 +134,7 @@ public class OpthMasSpectacleUseServiceImpl implements OpthMasSpectacleUseServic
             }
 
             use.setUseName(request.getUseName());
-            use.setLastUpdatedBy(user.getFirstName());
+            use.setLastUpdatedBy(userContext.getUserFullName());
             use.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(use);
@@ -168,8 +172,8 @@ public class OpthMasSpectacleUseServiceImpl implements OpthMasSpectacleUseServic
                 );
             }
 
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -177,7 +181,7 @@ public class OpthMasSpectacleUseServiceImpl implements OpthMasSpectacleUseServic
             }
 
             use.setStatus(status);
-            use.setLastUpdatedBy(user.getFirstName());
+            use.setLastUpdatedBy(userContext.getUserFullName());
             use.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(use);

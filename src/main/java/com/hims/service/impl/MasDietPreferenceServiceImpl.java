@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasDietPreference;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasDietPreferenceRepository;
 import com.hims.request.MasDietPreferenceRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDietPreferenceResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasDietPreferenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +28,8 @@ public class MasDietPreferenceServiceImpl implements MasDietPreferenceService {
 
     @Autowired
     private AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasDietPreferenceResponse>> getAll(int flag) {
@@ -51,14 +56,14 @@ public class MasDietPreferenceServiceImpl implements MasDietPreferenceService {
     @Override
     public ApiResponse<MasDietPreferenceResponse> create(MasDietPreferenceRequest request) {
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         MasDietPreference data = MasDietPreference.builder()
                 .preferenceName(request.getPreferenceName())
                 .description(request.getDescription())
-                .status("y")
-                .createdBy(user.getFirstName())
-                .lastUpdatedBy(user.getFirstName())
+                .status(AppConstants.STATUS_Y.toLowerCase())
+                .createdBy(userContext.getUserFullName())
+                .lastUpdatedBy(userContext.getUserFullName())
                 .lastUpdateDate(LocalDateTime.now())
                 .build();
 
@@ -75,11 +80,11 @@ public class MasDietPreferenceServiceImpl implements MasDietPreferenceService {
         if (data == null)
             return ResponseUtils.createNotFoundResponse("ID Not Found!", 404);
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         data.setPreferenceName(request.getPreferenceName());
         data.setDescription(request.getDescription());
-        data.setLastUpdatedBy(user.getFirstName());
+        data.setLastUpdatedBy(userContext.getUserFullName());
         data.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(data);
@@ -95,13 +100,13 @@ public class MasDietPreferenceServiceImpl implements MasDietPreferenceService {
         if (data == null)
             return ResponseUtils.createNotFoundResponse("ID Not Found!", 404);
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n"))
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid Status!", 400);
 
         data.setStatus(status);
-        data.setLastUpdatedBy(user.getFirstName());
+        data.setLastUpdatedBy(userContext.getUserFullName());
         data.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(data);

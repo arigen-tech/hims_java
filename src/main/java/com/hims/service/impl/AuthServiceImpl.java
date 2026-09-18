@@ -12,11 +12,9 @@ import com.hims.request.PasswordChangeReq;
 import com.hims.request.ResetPasswordReq;
 import com.hims.request.UserCreationReq;
 import com.hims.request.UserDetailsReq;
-import com.hims.response.ApiResponse;
-import com.hims.response.DefaultResponse;
-import com.hims.response.RoleInfoResp;
-import com.hims.response.UserProfileResponse;
+import com.hims.response.*;
 import com.hims.service.AuthService;
+import com.hims.service.UserContextService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,8 +88,11 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private UserContextService userContextService;
+
     private boolean isValidStatus(String status) {
-        return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
+        return AppConstants.STATUS_Y.equalsIgnoreCase(status) || AppConstants.STATUS_Y.equalsIgnoreCase(status);
     }
 
 
@@ -223,7 +224,7 @@ public class AuthServiceImpl implements AuthService {
             if (user == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "INVALID USERNAME!", 401);
             }
-            if (!"y".equalsIgnoreCase(user.getStatus())) {
+            if (!AppConstants.STATUS_Y.equalsIgnoreCase(user.getStatus())) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ACTIVE USER NOT FOUND WITH THIS USERNAME", 400);
             }
             UsernamePasswordAuthenticationToken authentication =
@@ -911,8 +912,8 @@ public class AuthServiceImpl implements AuthService {
                     "Invalid status. Status should be 'y' or 'n'", 400);
         }
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return com.hims.utils.ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -922,7 +923,7 @@ public class AuthServiceImpl implements AuthService {
             User user = userOpt.get();
             user.setStatus(status);
             user.setLastChangeDate(Instant.now());
-            user.setLastChangedBy(currentUser.getUsername());
+            user.setLastChangedBy(userContext.getUserFullName());
             userRepo.save(user);
             return ResponseUtils.createSuccessResponse(
                     "User status updated to '" + status + "'", new TypeReference<>() {});
@@ -934,8 +935,8 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     @Override
     public ApiResponse<String> updateUserRoles(Long id, String roles) {
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -954,7 +955,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setRoleId(roles);
         user.setLastChangeDate(Instant.now());
-        user.setLastChangedBy(currentUser.getUsername());
+        user.setLastChangedBy(userContext.getUserFullName());
 
         userRepo.save(user);
 

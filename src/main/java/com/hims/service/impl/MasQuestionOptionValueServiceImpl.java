@@ -12,7 +12,9 @@ import com.hims.entity.repository.OpdQuestionMasterRepository;
 import com.hims.request.MasQuestionOptionValueRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasQuestionOptionValueResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasQuestionOptionValueService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class MasQuestionOptionValueServiceImpl implements MasQuestionOptionValue
 
     private final AuthUtil authUtil;
     private final OpdQuestionMasterRepository opdQuestionMasterRepository;
+    private final UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasQuestionOptionValueResponse>> getAll(int flag) {
@@ -74,8 +77,8 @@ public class MasQuestionOptionValueServiceImpl implements MasQuestionOptionValue
     public ApiResponse<MasQuestionOptionValueResponse> create(MasQuestionOptionValueRequest request) {
         log.info("Creating Question Option Value");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -95,8 +98,8 @@ public class MasQuestionOptionValueServiceImpl implements MasQuestionOptionValue
                     .optionScore(request.getOptionScore())
                     .questionId(opdQuestionMaster.get())
                     .status(AppConstants.STATUS_Y.toLowerCase())
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -122,8 +125,8 @@ public class MasQuestionOptionValueServiceImpl implements MasQuestionOptionValue
                         "Question option value not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -139,7 +142,7 @@ public class MasQuestionOptionValueServiceImpl implements MasQuestionOptionValue
             entity.setOptionValue(request.getOptionValue());
             entity.setOptionScore(request.getOptionScore());
             entity.setQuestionId(masQuestion.get());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -164,21 +167,21 @@ public class MasQuestionOptionValueServiceImpl implements MasQuestionOptionValue
                         "Question option value not found", 404);
             }
 
-            if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n")) {
+            if (!status.equalsIgnoreCase(AppConstants.STATUS_Y.toLowerCase()) && !status.equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

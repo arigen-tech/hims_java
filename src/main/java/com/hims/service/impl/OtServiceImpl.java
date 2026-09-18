@@ -7,19 +7,18 @@ import com.hims.entity.repository.*;
 import com.hims.projection.PendingForOtProjection;
 import com.hims.projection.PendingForOtSurgeryProjection;
 import com.hims.request.OtRequest;
-import com.hims.response.PendingForOtResponse;
+import com.hims.response.*;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import com.hims.exception.SDDException;
 import com.hims.projection.ActiveAdmissionOtProjection;
 import com.hims.projection.ActiveAdmissionProjectionResponse;
 import com.hims.request.OtBookingRequestDtDto;
 import com.hims.request.OtBookingRequestHdDto;
-import com.hims.response.ActiveAdmissionOtResponse;
-import com.hims.response.ActiveAdmissionResponse;
-import com.hims.response.ApiResponse;
 import com.hims.service.OtService;
 import com.hims.utils.ResponseUtils;
 import jakarta.transaction.Transactional;
@@ -64,6 +63,9 @@ public class OtServiceImpl implements OtService {
 
     @Value("${surgery.booking-status.requested}")
     private Long surgeryBookingStatusRequested;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Transactional
@@ -177,7 +179,7 @@ public class OtServiceImpl implements OtService {
     @Transactional
     public ApiResponse<String> saveOtRequest(OtRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId())
                     .orElseThrow(() -> new SDDException(404,"Inpatient not found with ID: " + request.getInpatientId()));
             Patient patient = patientRepository.findById(request.getPatientId())
@@ -201,14 +203,14 @@ public class OtServiceImpl implements OtService {
             header.setAdmissionId(inpatient);
             header.setPreferredOtId(operationTheatre);
             header.setBookingStatusId(bookingStatus);
-            header.setRequestedBy(user.getFullName());
+            header.setRequestedBy(userContext.getUserFullName());
             header.setDepartmentId(masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow());
             header.setPreferredStartTime(request.getPreferredStartTime());
             header.setPreferredEndTime(request.getPreferredEndTime());
             header.setRequestedDate(LocalDateTime.now());
             header.setSpecialInstruction(request.getSpecialInstructions());
             header.setStatus(AppConstants.STATUS_N);
-            header.setLastChgBy(user.getFullName());
+            header.setLastChgBy(userContext.getUserFullName());
             header.setLastChgDate(LocalDateTime.now());
 
             OtBookingRequestHd savedHeader = hdRepository.save(header);
@@ -232,7 +234,7 @@ public class OtServiceImpl implements OtService {
             detail.setSequenceNo(1L);
             detail.setExpectedDurationMin(request.getExpectedDuration());
             detail.setStatus(AppConstants.STATUS_N);
-            detail.setLastChgBy(user.getFullName());
+            detail.setLastChgBy(userContext.getUserFullName());
             detail.setLastChgDate(LocalDateTime.now());
             OtBookingRequestDt savedDetail = dtRepository.save(detail);
             log.info("OT booking request completed successfully | requestId={}, requestNo={}", savedHeader.getOtBookingRequestId(), savedHeader.getRequestNo());
@@ -303,7 +305,7 @@ public class OtServiceImpl implements OtService {
     public ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark) {
         log.info("Processing OT request, otBookingRequestId={}, flag={}, remark={}", otBookingRequestId, flag, remark);
         try {
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         if (!flag.equalsIgnoreCase("A") && !flag.equalsIgnoreCase("R")) {
             return ResponseUtils.createNotFoundResponse("Invalid flag. Use A for Accept or R for Reject", 400);
@@ -325,10 +327,10 @@ public class OtServiceImpl implements OtService {
         request.setBookingStatusId(toStatus);
         request.setRejectionRemarks(flag.equalsIgnoreCase("R") ? remark : null);
         LocalDateTime now = LocalDateTime.now();
-        String currentUser = user.getFullName();
+        String currentUser = userContext.getUserFullName();
 
         OtBooking booking = OtBooking.builder()
-                .bookingNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.OT_BOOKING_NO, user.getHospital().getId()))
+                .bookingNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.OT_BOOKING_NO, userContext.getHospitalId()))
                 .otBookingRequest(request)
                 .operationTheatre(request.getPreferredOtId())
                 .scheduledDate(request.getPreferredDate())

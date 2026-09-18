@@ -17,13 +17,13 @@ public interface LabRegistrationServices {
     ApiResponse<AppsetupResponse> labRegForExistingOrder(LabBillingOnlyRequest labReq);
 
 
-    DgOrderHd saveLabOrderHeader(Patient patient, Visit visit, User currentUser, LocalDate appointmentDate, boolean billingEnabled);
+    DgOrderHd saveLabOrderHeader(Patient patient, Visit visit, UserContext currentUser, LocalDate appointmentDate, boolean billingEnabled);
 
 
     DgOrderDt saveLabOrderDetail(DgOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
-                                 DgMasInvestigation entity, User currentUser, String serviceCategoryCode);
+                                 DgMasInvestigation entity, UserContext currentUser, String serviceCategoryCode);
 
     DgOrderDt saveLabOrderDetailForPackage(DgOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
                                            DgMasInvestigation investEntity, DgInvestigationPackage pkg,
-                                           User currentUser);
+                                           UserContext currentUser);
 }

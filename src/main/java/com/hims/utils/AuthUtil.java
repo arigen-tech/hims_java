@@ -7,6 +7,8 @@ import com.hims.entity.repository.MasServiceCategoryRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.request.LabInvestigationReq;
 import com.hims.request.LabRadioInvestigationRequest;
+import com.hims.response.UserContext;
+import com.hims.service.UserContextService;
 import com.hims.service.impl.AppSetupServicesImpl;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -15,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -28,6 +31,8 @@ import java.util.List;
 public class AuthUtil {
     private static final Logger log = LoggerFactory.getLogger(AuthUtil.class);
 
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     private UserRepo userRepo;
@@ -35,11 +40,10 @@ public class AuthUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    public User getCurrentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (username == null) return null;
-        return userRepo.findByUserName(username);
-    }
+//    public User getCurrentUser() {
+//        return userContextService.getCurrentUser();
+//    }
+
 
     public Long getCurrentDepartmentId() {
         return getDepartmentIdFromToken();
@@ -72,7 +76,7 @@ public class AuthUtil {
         }
     }
 
-    public String getCurrentUserFullName(){
-        return getCurrentUser().getFullName();
-    }
+//    public String getCurrentUserFullName(){
+//        return getCurrentUser().getFullName();
+//    }
 }

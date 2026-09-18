@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasCountry;
 import com.hims.entity.MasState;
 import com.hims.entity.User;
@@ -10,7 +11,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasStateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasStateResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasStateService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +41,9 @@ public class MasStateServiceImpl implements MasStateService {
     private MasCountryRepository masCountryRepository;
 
     @Autowired
+    private UserContextService userContextService;
+
+    @Autowired
     private UserRepo userRepo;
 
     private String getCurrentTimeFormatted() {
@@ -63,14 +69,14 @@ public class MasStateServiceImpl implements MasStateService {
             MasState state = new MasState();
             state.setStateCode(request.getStateCode());
             state.setStateName(request.getStateName());
-            state.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            state.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            state.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            state.setLastChgBy(String.valueOf(userContext.getUserId()));
             state.setLastChgDate(Instant.now());
             state.setLastChgTime(getCurrentTimeFormatted());
             state.setCountry(countryOpt.get());
@@ -92,13 +98,13 @@ public class MasStateServiceImpl implements MasStateService {
             if (stateOpt.isPresent()) {
                 MasState state = stateOpt.get();
                 state.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                state.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                state.setLastChgBy(String.valueOf(userContext.getUserId()));
                 state.setLastChgDate(Instant.now());
                 masStateRepository.save(state);
                 return ResponseUtils.createSuccessResponse("State status updated", new TypeReference<>() {
@@ -120,13 +126,13 @@ public class MasStateServiceImpl implements MasStateService {
                 MasState state = stateOpt.get();
                 state.setStateCode(request.getStateCode());
                 state.setStateName(request.getStateName());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                state.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                state.setLastChgBy(String.valueOf(userContext.getUserId()));
                 state.setLastChgDate(Instant.now());
                 state.setLastChgTime(getCurrentTimeFormatted());
 

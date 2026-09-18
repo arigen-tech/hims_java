@@ -60,7 +60,7 @@ public interface BillingService {
 
 
     BillingHeader saveBillingHeader(
-            Object orderHd, Visit vId, User currentUser,
+            Object orderHd, Visit vId, UserContext currentUser,
             BigDecimal sum, BigDecimal tax, BigDecimal disc,
             String serviceCategoryCode, boolean isRadiology);
 
@@ -103,7 +103,7 @@ public interface BillingService {
     );
     ApiResponse<List<PatientBillingRefundDetailsResponse>> getPatientBillingRefundDetails(Long billingId);
 
-    BillingHeader saveBillingHeaderIfEnabled(boolean billingEnabled, Object orderHd, Visit visit, User currentUser,
+    BillingHeader saveBillingHeaderIfEnabled(boolean billingEnabled, Object orderHd, Visit visit, UserContext currentUser,
                                              BigDecimal total, BigDecimal tax, BigDecimal discount,
                                              String serviceCategoryCode, boolean isRadiology);
 

@@ -1,17 +1,18 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.*;
+import com.hims.entity.DgInvestigationPackage;
+import com.hims.entity.DgMasInvestigation;
+import com.hims.entity.PackageInvestigationMapping;
+import com.hims.entity.User;
 import com.hims.entity.repository.DgInvestigationPackageRepository;
 import com.hims.entity.repository.DgMasInvestigationRepository;
 import com.hims.entity.repository.PackageInvestigationMappingRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.request.PackageInvestigationMappingRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.DgMasInvestigationRes;
-import com.hims.response.InvestigationPackageDTO;
-import com.hims.response.PackageInvestigationMappingDTO;
+import com.hims.response.*;
 import com.hims.service.PackageInvestigationMappingService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,9 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private UserContextService userContextService;
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -85,8 +89,8 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
             DgInvestigationPackage pack = packRepo.findById(request.getPackageId())
                     .orElseThrow(() -> new RuntimeException("Package not found"));
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -101,7 +105,7 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
                 map.setPackageId(pack);
                 map.setInvestId(investigation);
                 map.setStatus("y");
-                map.setCreatedBy(String.valueOf(currentUser.getUserId()));
+                map.setCreatedBy(String.valueOf(userContext.getUserId()));
                 map.setCreatedOn(LocalDateTime.now());
 
                 mapRepo.save(map);
@@ -160,13 +164,13 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
                 packMap.setInvestId(investigation);
             }
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
 
-            packMap.setUpdatedBy(String.valueOf(currentUser.getUserId()));
+            packMap.setUpdatedBy(String.valueOf(userContext.getUserId()));
             packMap.setUpdatedOn(LocalDateTime.now());
 
             return ResponseUtils.createSuccessResponse(
@@ -191,8 +195,8 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
                         "Invalid status. Status should be 'Y' or 'N'", 400);
             }
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -206,7 +210,7 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
             // Update status for all mappings of this package
             for (PackageInvestigationMapping mapping : allPackageMappings) {
                 mapping.setStatus(status);
-                mapping.setUpdatedBy(String.valueOf(currentUser.getUserId()));
+                mapping.setUpdatedBy(String.valueOf(userContext.getUserId()));
                 mapping.setUpdatedOn(LocalDateTime.now());
                 mapRepo.save(mapping);
             }
@@ -300,8 +304,8 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
     @Override
     public ApiResponse<List<PackageInvestigationMappingDTO>> updatePackageInvestigations(Long packageId, PackageInvestigationMappingRequest request) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -364,7 +368,7 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
                     // Reactivate existing mapping
                     mapping = existingMapping.get();
                     mapping.setStatus("y");
-                    mapping.setUpdatedBy(String.valueOf(currentUser.getUserId()));
+                    mapping.setUpdatedBy(String.valueOf(userContext.getUserId()));
                     mapping.setUpdatedOn(LocalDateTime.now());
                     log.info("REACTIVATING existing mapping for investigation: {}", invId);
                 } else {
@@ -373,7 +377,7 @@ public class PackageInvestigationMappingServicesImpl implements PackageInvestiga
                     mapping.setPackageId(pack);
                     mapping.setInvestId(investigation);
                     mapping.setStatus("y");
-                    mapping.setCreatedBy(String.valueOf(currentUser.getUserId()));
+                    mapping.setCreatedBy(String.valueOf(userContext.getUserId()));
                     mapping.setCreatedOn(LocalDateTime.now());
                     log.info("CREATING new mapping for investigation: {}", invId);
                 }

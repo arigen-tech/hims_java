@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.ObMasBookedStatus;
 import com.hims.entity.User;
 import com.hims.entity.repository.ObMasBookedStatusRepository;
 import com.hims.request.ObMasBookedStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.ObMasBookedStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.ObMasBookedStatusService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,9 @@ public class ObMasBookedStatusServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<ObMasBookedStatusResponse>> getAll(int flag) {
@@ -68,8 +74,8 @@ public class ObMasBookedStatusServiceImpl
 
         log.info("Creating Booked Status={}", request.getBookedStatus());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -78,9 +84,9 @@ public class ObMasBookedStatusServiceImpl
 
             ObMasBookedStatus entity = ObMasBookedStatus.builder()
                     .bookedStatus(request.getBookedStatus())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -109,15 +115,15 @@ public class ObMasBookedStatusServiceImpl
                     "Booked Status not found", 404);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404
             );
         }
         entity.setBookedStatus(request.getBookedStatus());
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);
@@ -146,15 +152,15 @@ public class ObMasBookedStatusServiceImpl
                     "Invalid status", 400);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404
             );
         }
         entity.setStatus(status);
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);

@@ -5,6 +5,7 @@ import com.hims.entity.TransactionSequence;
 import com.hims.entity.repository.MasHospitalRepository;
 import com.hims.entity.repository.TransactionSequenceRepository;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
 import com.hims.utils.HMISUtil;
@@ -27,6 +28,10 @@ public class TransactionSequenceServiceImpl implements TransactionSequenceServic
 
     @Autowired
     private AuthUtil  authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
+
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
@@ -51,7 +56,7 @@ public class TransactionSequenceServiceImpl implements TransactionSequenceServic
                     newSequence.setFinancialYear(financialYear);
                     newSequence.setCurrentSequence(0L);
                     newSequence.setStatus(AppConstants.STATUS_Y.toLowerCase());
-                    newSequence.setLastChgBy(authUtil.getCurrentUser().getUserId());
+                    newSequence.setLastChgBy(userContextService.getCurrentUserContext().getUserId());
                     newSequence.setLastChgDate(LocalDateTime.now());
                     return transactionSequenceRepository.save(newSequence);
                 });

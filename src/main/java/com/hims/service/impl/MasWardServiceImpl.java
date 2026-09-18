@@ -2,7 +2,10 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
-import com.hims.entity.*;
+import com.hims.entity.MasCareLevel;
+import com.hims.entity.MasDepartment;
+import com.hims.entity.MasWard;
+import com.hims.entity.MasWardCategory;
 import com.hims.entity.repository.MasCareLevelRepo;
 import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasWardCategoryRepository;
@@ -11,7 +14,9 @@ import com.hims.request.MasWardRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DepartmentByDepartmentTypeCode;
 import com.hims.response.MasWardResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasWardService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +29,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import static com.hims.constants.AppConstants.*;
+import static com.hims.constants.AppConstants.MSG_INVALID_FLAG;
+import static com.hims.constants.AppConstants.STATUS_Y;
 
 @Slf4j
 @Service
@@ -40,6 +46,9 @@ public class MasWardServiceImpl implements MasWardService {
 
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Value("${department.type.code.ward}")
@@ -88,15 +97,15 @@ public class MasWardServiceImpl implements MasWardService {
         try {
 
             log.info("MasWard() method Started...");
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
             MasWard masWard=new MasWard();
             masWard.setWardName(request.getWardName());
             masWard.setStatus(STATUS_Y);
-            masWard.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
-            masWard.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+            masWard.setLastUpdatedBy(userContext.getUserFullName());
+            masWard.setCreatedBy(userContext.getUserFullName());
             masWard.setLastUpdateDate(LocalDate.now());
             Optional<MasWardCategory> masWardCategory= masWardCategoryRepository.findById(request.getWardCategoryId());
             if(masWardCategory.isEmpty()){
@@ -130,14 +139,14 @@ public class MasWardServiceImpl implements MasWardService {
 
             log.info("updateMasWard() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
             }
 
             MasWard masWard= masWardRepository.findById(id).orElseThrow(()-> new RuntimeException("Invalid Ward Id"));
            masWard.setWardName(request.getWardName());
-           masWard.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+           masWard.setLastUpdatedBy(userContext.getUserFullName());
            masWard.setStatus(STATUS_Y);
             Optional<MasWardCategory> masWardCategory= masWardCategoryRepository.findById(request.getWardCategoryId());
             if(masWardCategory.isEmpty()){
@@ -171,8 +180,8 @@ public class MasWardServiceImpl implements MasWardService {
     public ApiResponse<MasWardResponse> changeMasWardStatus(Long id, String status) {
         try {
             log.info("MasWard() method Started...");
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
             }
             Optional<MasWard> masWard=masWardRepository.findById(id);
@@ -181,7 +190,7 @@ if(masWard.isEmpty()){
 }
             MasWard masWard1=masWard.get();
             masWard1.setStatus(status);
-            masWard1.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+            masWard1.setLastUpdatedBy(userContext.getUserFullName());
             MasWard save = masWardRepository.save( masWard1);
             log.info("changeActiveStatus() method Ended...");
             return  ResponseUtils.createSuccessResponse(mapToResponse(save), new TypeReference<>() {});

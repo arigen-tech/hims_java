@@ -13,7 +13,9 @@ import com.hims.request.MasInvestigationPriceDetailsRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasInvestigationPriceDetailsProjectionResponse;
 import com.hims.response.MasInvestigationPriceDetailsResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasInvestigationPriceDetailsService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +29,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -46,6 +45,9 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
 
     @Autowired
     private DgMasInvestigationRepository investigationRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     private UserRepo userRepo;
@@ -162,8 +164,8 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             );
         }
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -177,7 +179,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
         details.setToDate(request.getToDt());
         details.setLastChgDt(LocalTime.now());
         details.setPrice(request.getPrice());
-        details.setLastChgBy(String.valueOf(currentUser.getUserId()));
+        details.setLastChgBy(String.valueOf(userContext.getUserId()));
         details.setStatus("y");
 
         MasInvestigationPriceDetails saved = repository.save(details);
@@ -207,8 +209,8 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             }
 
             // 2. Validate current user
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -295,7 +297,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             currentRecord.setFromDate(request.getFromDt());
             currentRecord.setToDate(request.getToDt());
             currentRecord.setPrice(request.getPrice());
-            currentRecord.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            currentRecord.setLastChgBy(String.valueOf(userContext.getUserId()));
             currentRecord.setLastChgDt(LocalDateTime.now().toLocalTime());
 
             MasInvestigationPriceDetails updated = repository.save(currentRecord);
@@ -331,8 +333,8 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                 );
             }
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -342,7 +344,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             MasInvestigationPriceDetails details = detailsOpt.get();
             details.setStatus(status);
             details.setLastChgDt(LocalTime.now());
-            details.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            details.setLastChgBy(String.valueOf(userContext.getUserId()));
 
             MasInvestigationPriceDetails updated = repository.save(details);
             return ResponseUtils.createSuccessResponse(mapToResponse(updated), new TypeReference<>() {});

@@ -11,6 +11,7 @@ import com.hims.request.UpdateStoreItemBatchStockRequest;
 import com.hims.response.*;
 import com.hims.service.DispensaryService;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +61,7 @@ public class DispensaryServiceImpl implements DispensaryService {
     private final TransactionSequenceService transactionSequenceService;
 
     private final AuthUtil authUtil;
+    private final UserContextService userContextService;
     private final InventoryUtils inventoryUtils;
 
     @Value("${hos.define.dispensaryId}")
@@ -177,7 +179,7 @@ public class DispensaryServiceImpl implements DispensaryService {
             issueM.setToDeptId(dispensaryDept);
             issueM.setPrescriptionHdId(header.getPrescriptionHdId());
             issueM.setPatientId(header.getPatientId());
-            issueM.setIssuedBy(authUtil.getCurrentUser().getFullName());
+            issueM.setIssuedBy(userContextService.getCurrentUserContext().getUserName());
 
             StoreIssueM savedIssueM = storeIssueMRepository.save(issueM);
 
@@ -311,7 +313,7 @@ public class DispensaryServiceImpl implements DispensaryService {
                         ledgerRequest.setTxnSource("OPD ISSUE");
                         ledgerRequest.setTxnReferenceId( savedDetail.getPrescriptionDtId() );
                         ledgerRequest.setReferenceNo(issueM.getIssueNo());
-                        ledgerRequest.setCreatedBy(authUtil.getCurrentUser().getUsername());
+                        ledgerRequest.setCreatedBy(userContextService.getCurrentUserContext().getUserName());
 
                         inventoryUtils.updateStoreStockLedger(ledgerRequest);
                     }
@@ -321,7 +323,7 @@ public class DispensaryServiceImpl implements DispensaryService {
 
                 String nisNumber = transactionSequenceService.generateTransactionNumber(
                         HMISTransaction.NIS_NO,
-                        authUtil.getCurrentUser().getHospital().getId()
+                        userContextService.getCurrentUserContext().getHospitalId()
                 );
 
                 header.setNisNo(nisNumber);
@@ -335,7 +337,7 @@ public class DispensaryServiceImpl implements DispensaryService {
             }
 
             header.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            header.setIssuedBy(authUtil.getCurrentUserFullName());
+            header.setIssuedBy(userContextService.getCurrentUserContext().getUserFullName());
             header.setIssuedDate(HMISUtil.getCurrentLocalDateTime());
             patientPrescriptionHdRepository.save(header);
 
@@ -416,7 +418,7 @@ public class DispensaryServiceImpl implements DispensaryService {
 
         Visit visit = prescriptionHeader.getVisit();
 
-        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         /*
          * ==========================================================
@@ -456,36 +458,27 @@ public class DispensaryServiceImpl implements DispensaryService {
         billingHeader.setHospitalAddress(visit.getHospital().getAddress());
         billingHeader.setHospitalMobileNo(visit.getHospital().getContactNumber());
         billingHeader.setHospitalGstin(visit.getHospital().getGstnNo());
-
         billingHeader.setVisit(visit);
-
-        billingHeader.setCreatedBy(currentUser.getFullName());
+        billingHeader.setCreatedBy(userContext.getUserFullName());
         billingHeader.setBillingDate(HMISUtil.getCurrentLocalDateTime());
         billingHeader.setServiceCategory(serviceCategory);
         billingHeader.setPrescriptionHeader(prescriptionHeader);
         billingHeader.setInvoiceNo("");
-
         billingHeader.setBillNo(
                 transactionSequenceService.generateTransactionNumber(
                         HMISTransaction.BILL_NO,
-                        currentUser.getHospital().getId()
+                        userContext.getHospitalId()
                 )
         );
 
         billingHeader.setGstnBillNo("");
-
         billingHeader.setTotalAmount(BigDecimal.ZERO);
         billingHeader.setNetAmount(BigDecimal.ZERO);
         billingHeader.setTaxTotal(BigDecimal.ZERO);
         billingHeader.setTotalPaid(BigDecimal.ZERO);
         billingHeader.setDiscountAmount(BigDecimal.ZERO);
-
-        billingHeader.setPaymentStatus(
-                AppConstants.PAYMENT_PAID.toLowerCase()
-        );
-
-        BillingHeader savedBillingHeader =
-                billingHeaderRepository.save(billingHeader);
+        billingHeader.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+        BillingHeader savedBillingHeader = billingHeaderRepository.save(billingHeader);
 
 
         /*
@@ -613,7 +606,7 @@ public class DispensaryServiceImpl implements DispensaryService {
             );
 
             billingDetail.setItem(item);
-            billingDetail.setCollectedBy(authUtil.getCurrentUser());
+            billingDetail.setCollectedBy(userContext.getUserFullName());
 
             billingDetailRepository.save(billingDetail);
 

@@ -3,17 +3,16 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.OpdOpthDetails;
-import com.hims.entity.User;
 import com.hims.entity.repository.OpdOpthDetailsRepository;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.entity.repository.VisitRepository;
 import com.hims.projection.OphthalmologyExaminationDetailProjection;
 import com.hims.request.OpdOpthDetailsRequest;
-import com.hims.request.OpdTemplateRequest;
 import com.hims.response.ApiResponse;
-import com.hims.response.OpdTemplateResponse;
 import com.hims.response.OphthalmologyExaminationDetailResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OpdOpthDetailsService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -34,15 +33,18 @@ public class OpdOpthDetailsImpl implements OpdOpthDetailsService {
     private final PatientRepository patientRepository;
     private final VisitRepository visitRepository;
     @Autowired
+    private UserContextService userContextService;
+
+    @Autowired
     private AuthUtil authUtil;
 
     @Override
     @Transactional
     public ApiResponse<String> opdVisionExaminationDetailsSaveOrUpdate(OpdOpthDetailsRequest req) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -157,13 +159,13 @@ public class OpdOpthDetailsImpl implements OpdOpthDetailsService {
             // Common audit fields
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
             entity.setLastUpdateDate(LocalDateTime.now());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setReColourVision(req.getReColourVision());
             entity.setLeColourVision(req.getLeColourVision());
 
             // Set createdBy only for new record
             if (optional.isEmpty()) {
-                entity.setCreatedBy(user.getFullName());
+                entity.setCreatedBy(userContext.getUserFullName());
             }
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(

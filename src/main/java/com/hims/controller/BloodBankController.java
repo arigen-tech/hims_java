@@ -246,7 +246,7 @@ public class BloodBankController {
             @RequestParam(required = false) String expiryFilter,
             @RequestParam(required = false) Long collectionType,
             @RequestParam Long hospitalId,
-                                        @RequestParam String viewType)
+            @RequestParam String viewType)
     {
         log.info("Request Params -> bloodGroupId: {}, componentId: {}, inventoryStatus: {}, expiryFilter: {}, collectionType: {}, viewType: {}",
                 bloodGroupId, componentId, inventoryStatus, expiryFilter, collectionType, viewType);

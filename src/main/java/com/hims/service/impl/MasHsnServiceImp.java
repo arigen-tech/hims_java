@@ -8,11 +8,9 @@ import com.hims.entity.User;
 import com.hims.entity.repository.MasHsnRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasHsnRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.MasDepartmentResponse;
-import com.hims.response.MasGenderResponse;
-import com.hims.response.MasHsnResponse;
+import com.hims.response.*;
 import com.hims.service.MasHsnService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +30,8 @@ public class MasHsnServiceImp implements MasHsnService {
     private static final Logger log = LoggerFactory.getLogger(MasGenderServiceImpl.class);
     @Autowired
     UserRepo userRepo;
+    @Autowired
+    private UserContextService userContextService;
     @Autowired
     private MasHsnRepository masHsnRepository;
 
@@ -70,14 +70,14 @@ public class MasHsnServiceImp implements MasHsnService {
     @Override
     public ApiResponse<MasHsnResponse> addMasHSN(MasHsnRequest masHsnRequest) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
             MasHSN masHsn = new MasHSN();
-            masHsn.setCreatedBy(currentUser.getUsername());
+            masHsn.setCreatedBy(userContext.getUserFullName());
             masHsn.setHsnCode(masHsnRequest.getHsnCode());
             masHsn.setGstRate(masHsnRequest.getGstRate());
             masHsn.setIsMedicine(masHsnRequest.getIsMedicine());
@@ -112,8 +112,8 @@ public class MasHsnServiceImp implements MasHsnService {
     @Override
     public ApiResponse<MasHsnResponse> changeMasHsnStatus(String id, String status) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -131,7 +131,7 @@ public class MasHsnServiceImp implements MasHsnService {
 
             MasHSN masHsn = optionalMasHsn.get();
             masHsn.setStatus(status.toLowerCase());
-            masHsn.setCreatedBy(currentUser.getUsername());
+            masHsn.setCreatedBy(userContext.getUserFullName());
             masHsn.setLastUpdatedDt(LocalDateTime.now());
             MasHSN updatedEntity = masHsnRepository.save(masHsn); // Save the change
 
@@ -148,8 +148,8 @@ public class MasHsnServiceImp implements MasHsnService {
     @Override
     public ApiResponse<MasHsnResponse> update(String id, MasHsnRequest request) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -167,7 +167,7 @@ public class MasHsnServiceImp implements MasHsnService {
             masHsn.setEffectiveTo(request.getEffectiveTo());
             masHsn.setGstRate(request.getGstRate());
             masHsn.setIsMedicine(request.getIsMedicine());
-            masHsn.setCreatedBy(currentUser.getUsername());
+            masHsn.setCreatedBy(userContext.getUserFullName());
             masHsn.setLastUpdatedDt(LocalDateTime.now());
             MasHSN updatedEntity = masHsnRepository.save(masHsn);
             MasHsnResponse response = mapToResponse(updatedEntity);

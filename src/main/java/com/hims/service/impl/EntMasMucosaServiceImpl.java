@@ -2,12 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.EntMasMucosa;
-import com.hims.entity.User;
 import com.hims.entity.repository.EntMasMucosaRepository;
 import com.hims.request.EntMasMucosaRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.EntMasMucosaResponse;
+import com.hims.response.UserContext;
 import com.hims.service.EntMasMucosaService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,9 @@ public class EntMasMucosaServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<EntMasMucosaResponse>> getAll(int flag) {
@@ -72,8 +76,8 @@ public class EntMasMucosaServiceImpl
             EntMasMucosaRequest request) {
         log.info("Creating Mucosa");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -82,8 +86,8 @@ public class EntMasMucosaServiceImpl
             EntMasMucosa entity = EntMasMucosa.builder()
                     .mucosaStatus(request.getMucosaStatus())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -110,15 +114,15 @@ public class EntMasMucosaServiceImpl
                         "Mucosa not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setMucosaStatus(request.getMucosaStatus());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -151,15 +155,15 @@ public class EntMasMucosaServiceImpl
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

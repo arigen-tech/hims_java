@@ -10,6 +10,7 @@ import com.hims.projection.AppointmentHistoryProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -148,6 +149,9 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     private   MasEmployeeLanguageMappingRepository masEmployeeLanguageMappingRepository;
     @Autowired
     private MasOpdSessionRepository masOpdSessionRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
 
@@ -2161,20 +2165,20 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         if (!errors.isEmpty()) {
             throw new RuntimeException(errors.values().iterator().next());
         }
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             throw new RuntimeException("Current user not found");
         }
-        MasEmployee employee = buildEmployeeFromRequest(req, currentUser);
+        MasEmployee employee = buildEmployeeFromRequest(req, userContext);
         MasEmployee savedEmployee = masEmployeeRepository.save(employee);
-        processQualifications(req.getQualification(), savedEmployee, currentUser);
-        processSpecialtyCenter(req.getSpecialtyCenter(), savedEmployee, currentUser);
-        processLanguages(req.getLanguages(), savedEmployee, currentUser);
-        processWorkExperiences(req.getWorkExperiences(), savedEmployee, currentUser);
-        processMemberships(req.getEmployeeMemberships(), savedEmployee, currentUser);
-        processSpecialtyInterest(req.getEmployeeSpecialtyInterests(), savedEmployee, currentUser);
-        processAwards(req.getEmployeeAwards(), savedEmployee, currentUser);
-        processDocuments(req.getDocument(), savedEmployee, currentUser);
+        processQualifications(req.getQualification(), savedEmployee, userContext);
+        processSpecialtyCenter(req.getSpecialtyCenter(), savedEmployee, userContext);
+        processLanguages(req.getLanguages(), savedEmployee, userContext);
+        processWorkExperiences(req.getWorkExperiences(), savedEmployee, userContext);
+        processMemberships(req.getEmployeeMemberships(), savedEmployee, userContext);
+        processSpecialtyInterest(req.getEmployeeSpecialtyInterests(), savedEmployee, userContext);
+        processAwards(req.getEmployeeAwards(), savedEmployee, userContext);
+        processDocuments(req.getDocument(), savedEmployee, userContext);
 
         log.info("Employee created with ID {}", savedEmployee.getEmployeeId());
 
@@ -2246,7 +2250,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         return user;
     }
 
-    private MasEmployee buildEmployeeFromRequest(MasEmployeeRequest request, User currentUser){
+    private MasEmployee buildEmployeeFromRequest(MasEmployeeRequest request, UserContext userContext){
 
         Optional<MasEmployee> existingEmp = masEmployeeRepository.findByMobileNo(request.getMobileNo());
         if (existingEmp.isPresent()) {
@@ -2310,7 +2314,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         employee.setProfilePicName(profileImagePath);
         employee.setIdDocumentName(documentPath);
         employee.setLastChangedDate(OffsetDateTime.now().toInstant());
-        employee.setLastChangedBy(currentUser.getUsername());
+        employee.setLastChangedBy(userContext.getUserFullName());
         employee.setStatus("S");
         employee.setProfileDescription(request.getProfileDescription());
         employee.setMasDesignationId(masDesignation);
@@ -2381,7 +2385,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             throw new FileProcessingException("Failed to upload profile picture: " + e.getMessage());
         }
     }
-    private void processQualifications(List<EmployeeQualificationReq> qualifications, MasEmployee employee, User currentUser) {
+    private void processQualifications(List<EmployeeQualificationReq> qualifications, MasEmployee employee, UserContext userContext) {
 
         if (qualifications == null || qualifications.isEmpty()) {
             throw new QualificationProcessingException("Qualifications cannot be empty");
@@ -2426,7 +2430,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 eq.setCompletionYear(q.getCompletionYear());
                 eq.setInstitutionName(q.getInstitutionName());
                 eq.setFilePath(filePath.toString().replace("\\", "/"));
-                eq.setLastChangedBy(currentUser.getUserId().toString());
+                eq.setLastChangedBy(userContext.getUserFullName());
                 eq.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
 
                 employeeQualificationRepository.save(eq);
@@ -2436,7 +2440,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processSpecialtyCenter(List<EmployeeSpecialtyCenterRequest> specialtyCenters, MasEmployee savedEmployee, User currentUser){
+    private void processSpecialtyCenter(List<EmployeeSpecialtyCenterRequest> specialtyCenters, MasEmployee savedEmployee, UserContext userContext){
         if (specialtyCenters == null || specialtyCenters.isEmpty()) {
             return;
         }
@@ -2454,7 +2458,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processLanguages(List<EmployeeLanguageRequest> languageRequests,MasEmployee savedEmployee, User currentUser) {
+    private void processLanguages(List<EmployeeLanguageRequest> languageRequests,MasEmployee savedEmployee, UserContext userContext) {
         if (languageRequests == null || languageRequests.isEmpty()) {
             log.debug("No languages provided for employee creation");
             return;
@@ -2469,7 +2473,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 MasEmployeeLanguageMapping mapping = MasEmployeeLanguageMapping.builder()
                         .empId(savedEmployee.getEmployeeId())
                         .languageId(languageReq.getLanguageId())
-                        .lastChgBy(currentUser.getUserId())
+                        .lastChgBy(userContext.getUserId())
                         .build();
 
                 masEmployeeLanguageMappingRepository.save(mapping);
@@ -2481,7 +2485,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 throw new RuntimeException("Failed to process language: " + languageReq.getLanguageId(), e);
             }
         }
-    }    private void processWorkExperiences(List<EmployeeWorkExperienceRequest> workExperiences, MasEmployee savedEmployee, User currentUser){
+    }    private void processWorkExperiences(List<EmployeeWorkExperienceRequest> workExperiences, MasEmployee savedEmployee, UserContext userContext){
         if (workExperiences == null || workExperiences.isEmpty()) {
             return;
         }
@@ -2499,7 +2503,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processMemberships(List<EmployeeMembershipRequest> memberships, MasEmployee savedEmployee, User currentUser){
+    private void processMemberships(List<EmployeeMembershipRequest> memberships, MasEmployee savedEmployee, UserContext userContext){
         if (memberships == null || memberships.isEmpty()) {
             return;
         }
@@ -2517,7 +2521,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processSpecialtyInterest(List<EmployeeSpecialtyInterestRequest> specialtyInterests, MasEmployee savedEmployee, User currentUser){
+    private void processSpecialtyInterest(List<EmployeeSpecialtyInterestRequest> specialtyInterests, MasEmployee savedEmployee, UserContext userContext){
         if (specialtyInterests == null || specialtyInterests.isEmpty()) {
             return;
         }
@@ -2534,7 +2538,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processAwards(List<EmployeeAwardRequest> awards, MasEmployee savedEmployee, User currentUser){
+    private void processAwards(List<EmployeeAwardRequest> awards, MasEmployee savedEmployee, UserContext userContext){
         if (awards == null || awards.isEmpty()) {
             return;
         }
@@ -2551,7 +2555,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processDocuments(List<EmployeeDocumentReq> documents, MasEmployee employee, User currentUser) {
+    private void processDocuments(List<EmployeeDocumentReq> documents, MasEmployee employee, UserContext userContext) {
         if (documents == null || documents.isEmpty()) {
             throw new DocumentProcessingException("Documents cannot be empty");
         }
@@ -2590,7 +2594,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 doc.setEmployee(employee);
                 doc.setDocumentName(d.getDocumentName());
                 doc.setFilePath(filePath.toString().replace("\\", "/"));
-                doc.setLastChangedBy(currentUser.getUserId().toString());
+                doc.setLastChangedBy(userContext.getUserFullName());
                 doc.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
 
                 employeeDocumentRepository.save(doc);

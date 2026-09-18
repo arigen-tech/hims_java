@@ -8,7 +8,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasReligionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasReligionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasReligionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,9 @@ public class MasReligionServiceImpl implements MasReligionService {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private UserContextService userContextService;
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -72,13 +77,13 @@ public class MasReligionServiceImpl implements MasReligionService {
             religion.setName(religionRequest.getName());
             religion.setStatus("y");
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            religion.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            religion.setLastChgBy(String.valueOf(userContext.getUserId()));
             religion.setLastChgDate(LocalDateTime.now());
 
             MasReligion savedReligion = masReligionRepository.save(religion);
@@ -99,13 +104,13 @@ public class MasReligionServiceImpl implements MasReligionService {
             if (existingReligionOpt.isPresent()) {
                 MasReligion existingReligion = existingReligionOpt.get();
                 existingReligion.setName(religionRequest.getName());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                existingReligion.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                existingReligion.setLastChgBy(String.valueOf(userContext.getUserId()));
                 existingReligion.setLastChgDate(LocalDateTime.now());
 
                 MasReligion updatedReligion = masReligionRepository.save(existingReligion);
@@ -137,13 +142,13 @@ public class MasReligionServiceImpl implements MasReligionService {
                 }
 
                 existingReligion.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                existingReligion.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                existingReligion.setLastChgBy(String.valueOf(userContext.getUserId()));
                 existingReligion.setLastChgDate(LocalDateTime.now());
                 MasReligion updatedReligion = masReligionRepository.save(existingReligion);
 

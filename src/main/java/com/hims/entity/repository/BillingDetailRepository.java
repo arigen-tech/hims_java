@@ -25,7 +25,7 @@ public interface BillingDetailRepository extends JpaRepository<BillingDetail, In
 """)
     void updatePaymentStatusInvestigation(
             @Param("paymentStatus") String paymentStatus,
-            @Param("collectedBy") User collectedBy,
+            @Param("collectedBy") String collectedBy,
             @Param("investigationId") int investigationId,
             @Param("billHdId") int billHdId
     );
@@ -39,7 +39,7 @@ public interface BillingDetailRepository extends JpaRepository<BillingDetail, In
 """)
     void updatePaymentStatusPackage(
             @Param("paymentStatus") String paymentStatus,
-            @Param("collectedBy") User collectedBy,
+            @Param("collectedBy") String collectedBy,
             @Param("pkgId") int pkgId,
             @Param("billHdId") int billHdId
     );

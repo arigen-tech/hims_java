@@ -17,10 +17,7 @@ import com.hims.mapper.VisitMapper;
 import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
-import com.hims.service.BillingService;
-import com.hims.service.DoctorRosterServices;
-import com.hims.service.PatientLoginService;
-import com.hims.service.RegistrationService;
+import com.hims.service.*;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISUtil;
 import com.hims.utils.PaymentUtils;
@@ -107,6 +104,9 @@ public class RegistrationServiceImpl implements RegistrationService {
     DoctorRosterServices doctorRosterServices;
     @Autowired
     private HelperUtils helperUtils;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Autowired
@@ -440,7 +440,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
             paymentDetail.setPaymentDate(Instant.now());
             paymentDetail.setAmount(netAmount);
-            paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+            paymentDetail.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
             paymentDetail.setCreatedAt(Instant.now());
             paymentDetail.setUpdatedAt(Instant.now());
             paymentDetail.setBillingHd(header);
@@ -488,13 +488,13 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
         }
         // Get current user
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null || currentUser.getFirstName() == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null || userContext.getUserFullName() == null) {
             throw new RuntimeException("User authentication failed or user has no first name");
         }
         // Update visit
         visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
-        visit.setCancelledBy(currentUser.getFirstName());
+        visit.setCancelledBy(userContext.getUserFullName());
         visit.setCancelledDateTime(HMISUtil.getCurrentLocalDateTime());
 
             MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId())
@@ -553,9 +553,9 @@ public class RegistrationServiceImpl implements RegistrationService {
         refund.setAppointmentChangeReason(reason);
         refund.setRefundReason(reason.getReasonName());
 
-        String currentUser = authUtil.getCurrentUserFullName();
-        refund.setCreatedBy(currentUser);
-        refund.setUpdatedBy(currentUser);
+        UserContext userContext = userContextService.getCurrentUserContext();
+        refund.setCreatedBy(userContext.getUserFullName());
+        refund.setUpdatedBy(userContext.getUserFullName());
         refund.setRefundRequestedAt(HMISUtil.getCurrentLocalDateTime());
 
 
@@ -615,7 +615,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         VisitRescheduleHistory history = new VisitRescheduleHistory();
         history.setVisitId(v);
         history.setRescheduleDatetime(HelperUtils.instantToLocalDateTime(request.getVisitDate()));
-        history.setRescheduleBy(authUtil.getCurrentUser().getFirstName());
+        history.setRescheduleBy(userContextService.getCurrentUserContext().getUserFullName());
         history.setNewTokenNo(resolvedTokenNumber);
         history.setOldTokenNo(v.getTokenNo());
         history.setNewVisitDatetime(
@@ -803,8 +803,8 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     public Patient savePatient(PatientRequest request, boolean followUp) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null){
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null){
             log.info("current users not found");
         }
 
@@ -839,8 +839,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         patient.setRegDate(request.getRegDate());
         patient.setCreatedOn(Instant.now());
         patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
-        patient.setPatientHospital(currentUser.getHospital());
+        patient.setLastChgBy(userContext.getUserFullName());
+        patient.setPatientHospital(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new RuntimeException("Hospital not found with id: " + userContext.getHospitalId())));
         patient.setPatientAbhaId(request.getPatientAbhaId());
 
 
@@ -905,7 +905,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
         validateDuplicateAppointment(visit, patient.getId(), null);
-        User currentLoggedInUser = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
 //        LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
 //        LocalDate tokenStartTime = visit.getTokenStartTime().atZone(ZoneOffset.UTC).toLocalDate();
@@ -1330,8 +1330,8 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 
     private Patient updatePatientDetails(PatientRequest request, boolean followUp) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             log.info("current user not found");
             throw new RuntimeException("Current user not found");
         }
@@ -1340,9 +1340,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         patient.setUhidNo(request.getUhidNo());
         patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(currentUser.getFirstName() + " " +
-                currentUser.getMiddleName() + " " +
-                currentUser.getLastName());
+        patient.setLastChgBy(userContext.getUserFullName());
         patient.setPatientFn(request.getPatientFn());
         patient.setPatientMn(request.getPatientMn());
         patient.setPatientLn(request.getPatientLn());

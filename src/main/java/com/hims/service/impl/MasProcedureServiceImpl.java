@@ -2,10 +2,8 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
-import com.hims.entity.MasDepartment;
 import com.hims.entity.MasProcedure;
 import com.hims.entity.MasProcedureType;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasProcedureRepository;
 import com.hims.entity.repository.MasProcedureTypeRepository;
@@ -13,7 +11,9 @@ import com.hims.projection.MasProcedureProjection;
 import com.hims.request.MasProcedureRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasProcedureResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasProcedureService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.Builder;
@@ -26,7 +26,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +47,9 @@ public class MasProcedureServiceImpl implements MasProcedureService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasProcedureResponse>> getAllMasProcedure(int flag) {
@@ -186,13 +188,13 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         log.info("MasProcedure: Create request={}", req);
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         MasProcedure p = new MasProcedure();
         p.setProcedureCode(req.getProcedureCode());
         p.setProcedureName(req.getProcedureName());
 
-        p.setLastChgBy(user.getFullName());
+        p.setLastChgBy(userContext.getUserFullName());
         p.setIpdAllowed(req.getIpdAllowed().toUpperCase());
         p.setStatus(AppConstants.STATUS_Y.toLowerCase());
         p.setLastChgDate(LocalDateTime.now());
@@ -208,7 +210,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
     public ApiResponse<MasProcedureResponse> updateMasProcedure(Long id, MasProcedureRequest req) {
         log.info("MasProcedure: Update Start | id={} | data={}", id, req);
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         MasProcedure procedure = repository.findById(id).orElse(null);
         if (procedure == null) {
             log.warn("Update failed, id not found={}", id);
@@ -217,7 +219,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         procedure.setProcedureCode(req.getProcedureCode());
         procedure.setProcedureName(req.getProcedureName());
 
-        procedure.setLastChgBy(user.getFullName());
+        procedure.setLastChgBy(userContext.getUserFullName());
         procedure.setIpdAllowed(req.getIpdAllowed().toUpperCase());
         procedure.setStatus(AppConstants.STATUS_Y.toLowerCase());
         procedure.setLastChgDate(LocalDateTime.now());
@@ -231,7 +233,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
     public ApiResponse<MasProcedureResponse>changeStatus(Long id, String status) {
         log.info("MasProcedure: Change Status | id={} | status={}", id, status);
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         MasProcedure procedure = repository.findById(id).orElse(null);
         if (procedure == null) {
             log.warn("Status change failed: id not found");
@@ -245,7 +247,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
 
         procedure.setStatus(status);
         procedure.setLastChgDate(LocalDateTime.now());
-        procedure.setLastChgBy(user.getFullName());
+        procedure.setLastChgBy(userContext.getUserFullName());
         MasProcedure saved = repository.save(procedure);
 
         log.info("MasProcedure: Status changed | id={} | newStatus={}", id, status);

@@ -2,30 +2,27 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
-import com.hims.entity.MasDistrict;
-import com.hims.entity.MasHSN;
 import com.hims.entity.MasManufacturer;
-import com.hims.entity.User;
-import com.hims.entity.repository.MasHsnRepository;
 import com.hims.entity.repository.MasManufacturerRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.exception.SDDException;
 import com.hims.request.MasManufacturerRequest;
-import com.hims.response.*;
+import com.hims.response.ApiResponse;
+import com.hims.response.MasManufacturerResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasManufacturerService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 @Service
 public class MasManufacturerServiceImp implements MasManufacturerService {
     private static final Logger log = LoggerFactory.getLogger(MasGenderServiceImpl.class);
@@ -44,15 +41,9 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
     @Value("${medicalNonConsumableItemTypeCode}")
     private String medicalNonConsumableItemTypeCode;
 
+    @Autowired
+    private UserContextService userContextService;
 
-    private User getCurrentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepo.findByUserName(username);
-        if (user == null) {
-            log.warn("User not found for username: {}", username);
-        }
-        return user;
-    }
     @Autowired
     private MasManufacturerRepository masManufacturerRepository;
 
@@ -87,8 +78,8 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
     @Override
     public ApiResponse<MasManufacturer> addMasManufacturer(MasManufacturerRequest masManufacturerRequest) {
        // try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -99,7 +90,7 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
             masManufacturer.setAddress(masManufacturerRequest.getAddress());
             masManufacturer.setDescription(masManufacturerRequest.getDescription());
             masManufacturer.setContactNumber(masManufacturerRequest.getContactNumber());
-            masManufacturer.setLastUpdatedBy( currentUser.getLastName());
+            masManufacturer.setLastUpdatedBy(userContext.getUserFullName());
             masManufacturer.setStatus("y");
             masManufacturer.setLastUpdatedDt(LocalDateTime.now());
             return ResponseUtils.createSuccessResponse(masManufacturerRepository.save(masManufacturer), new TypeReference<>() {
@@ -114,8 +105,8 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
     @Override
     public ApiResponse<MasManufacturer> changeMasManufacturer(Long id, String status) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -133,7 +124,7 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
 
             MasManufacturer masManufacturer1 = masManufacturer.get();
             masManufacturer1.setStatus(status.toLowerCase());
-            masManufacturer1.setLastUpdatedBy(currentUser.getUsername());
+            masManufacturer1.setLastUpdatedBy(userContext.getUserFullName());
             masManufacturer1.setLastUpdatedDt(LocalDateTime.now());
             MasManufacturer updatedEntity = masManufacturerRepository.save(masManufacturer1); // Save the change
 
@@ -150,8 +141,8 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
     @Override
     public ApiResponse<MasManufacturer> update(Long id, MasManufacturerRequest request) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -169,7 +160,7 @@ public class MasManufacturerServiceImp implements MasManufacturerService {
            masManufacturer1.setAddress(request.getAddress());
            masManufacturer1.setDescription(request.getDescription());
            masManufacturer1.setLastUpdatedDt(LocalDateTime.now());
-           masManufacturer1.setLastUpdatedBy(currentUser.getLastName());
+           masManufacturer1.setLastUpdatedBy(userContext.getUserFullName());
            masManufacturer1.setContactNumber(request.getContactNumber());
             MasManufacturer updatedEntity = masManufacturerRepository.save(masManufacturer1);
 

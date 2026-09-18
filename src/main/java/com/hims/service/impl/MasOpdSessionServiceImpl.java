@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasOpdSession;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasOpdSessionRepository;
@@ -8,7 +9,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasOpdSessionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasOpdSessionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasOpdSessionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +40,8 @@ public class MasOpdSessionServiceImpl implements MasOpdSessionService {
 
     @Autowired
     private UserRepo userRepo;
+    @Autowired
+    private UserContextService userContextService;
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -103,14 +108,14 @@ public class MasOpdSessionServiceImpl implements MasOpdSessionService {
             session.setFromTime(LocalTime.parse(request.getFromTime(), formatter));
             session.setEndTime(LocalTime.parse(request.getEndTime(), formatter));
 
-            session.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            session.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            session.setLasChgBy(String.valueOf(currentUser.getUserId()));
+            session.setLasChgBy(String.valueOf(userContext.getUserId()));
             session.setLastChgDt(LocalDate.now());
 
             masOpdSessionRepository.save(session);
@@ -138,13 +143,13 @@ public class MasOpdSessionServiceImpl implements MasOpdSessionService {
                 session.setFromTime(LocalTime.parse(request.getFromTime(), formatter));
                 session.setEndTime(LocalTime.parse(request.getEndTime(), formatter));
 
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                session.setLasChgBy(String.valueOf(currentUser.getUserId()));
+                session.setLasChgBy(String.valueOf(userContext.getUserId()));
                 session.setLastChgDt(LocalDate.now());
 
                 masOpdSessionRepository.save(session);
@@ -179,13 +184,13 @@ public class MasOpdSessionServiceImpl implements MasOpdSessionService {
                 }
 
                 existingSession.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                existingSession.setLasChgBy(String.valueOf(currentUser.getUserId()));
+                existingSession.setLasChgBy(String.valueOf(userContext.getUserId()));
                 existingSession.setLastChgDt(LocalDate.now());
                 MasOpdSession updatedSession = masOpdSessionRepository.save(existingSession);
 

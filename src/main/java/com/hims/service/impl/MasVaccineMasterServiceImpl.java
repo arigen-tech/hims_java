@@ -2,12 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasVaccineMaster;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasVaccineMasterRepository;
 import com.hims.request.MasVaccineMasterRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasVaccineMasterResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasVaccineMasterService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,9 @@ public class MasVaccineMasterServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasVaccineMasterResponse>> getAll(int flag) {
@@ -72,8 +76,8 @@ public class MasVaccineMasterServiceImpl
             MasVaccineMasterRequest request) {
         log.info("Creating Vaccine Master");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -88,8 +92,8 @@ public class MasVaccineMasterServiceImpl
                             request.getIsMultiDose() == null ? "N" : request.getIsMultiDose())
                     .dosePerVial(request.getDosePerVial())
                     .status("Y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -116,8 +120,8 @@ public class MasVaccineMasterServiceImpl
                         "Vaccine not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -129,7 +133,7 @@ public class MasVaccineMasterServiceImpl
             entity.setDisplayOrder(request.getDisplayOrder());
             entity.setIsMultiDose(request.getIsMultiDose());
             entity.setDosePerVial(request.getDosePerVial());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -162,15 +166,15 @@ public class MasVaccineMasterServiceImpl
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

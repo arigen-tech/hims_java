@@ -14,6 +14,7 @@ import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
 import com.hims.utils.ResponseUtils;
@@ -61,6 +62,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private final PatientPrescriptionHdRepository patientPrescriptionHdRepository;
     private final PatientPrescriptionDtRepository patientPrescriptionDtRepository;
     private final AuthUtil authUtil;
+    private final UserContextService userContextService;
     private final MasStoreItemRepository masStoreItemRepository;
     private final MasCareLevelRepo masCareLevelRepository;
     private final MasWardCategoryRepository masWardCategoryRepository;
@@ -142,13 +144,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<OpdPatientDetailResponseDTO> createOpdPatientDetail(OpdPatientDetailCreateRequest request) {
         validateCreateRequest(request);
-        User user = getCurrentUser();
-        if (user == null || user.getHospital() == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null || userContext.getHospitalId() == null) {
             throw new SDDException("user", 401, "Authenticated user or hospital not found");
         }
         Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new SDDException("patient", 404, "Patient not found"));
         Visit visit = visitRepository.findById(request.getVisitId()).orElseThrow(() -> new SDDException("visit", 404, "Visit not found"));
-        Long deptId = authUtil.getCurrentDepartmentId();
+        Long deptId = userContext.getDepartmentId();
         OpdPatientDetail opd = opdPatientDetailRepository.findByVisit_Id(request.getVisitId()).orElseGet(() -> {
             log.info("Creating new OPD Patient Detail for visit ID: {}", request.getVisitId());
             return new OpdPatientDetail();
@@ -160,7 +162,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
         opdPatientDetailMapper.mapBasicVitalDetails(opd, request);
         opdPatientDetailMapper.mapClinicalDetails(opd, request);
-        opdPatientDetailMapper.mapGeneralDetails(opd, patient, visit, user, deptId);
+        opdPatientDetailMapper.mapGeneralDetails(opd, patient, visit, userContext, deptId);
         handleAdmission(opd, request);
         handleFollowUp(opd, request);
         handleReferral(opd, request);
@@ -171,12 +173,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         //saving diagnosis data for opd - Start
         List<Long> diagIdList = Optional.ofNullable(request.getIcdDiagnosis()).orElse(Collections.emptyList()).stream().map(OpdPatientDetailCreateRequest.IcdDiagnosis::getIcdId).collect(Collectors.toList());
-        saveOrUpdateIcdDiagnosis(diagIdList, saved.getOpdPatientDetailsId(), request.getVisitId(), user.getUserId());
+        saveOrUpdateIcdDiagnosis(diagIdList, saved.getOpdPatientDetailsId(), request.getVisitId(), userContext.getUserId());
         //diagnosis - End
 
 //         ===================== DENTAL EXAMINATION DETAILS =====================
         if (request.getDentalDetails() != null) {
-            ApiResponse<String> dentalResponse = dentalService.createOrUpdateDentalDetails(request.getDentalDetails(), patient, visit, user, deptId);
+            ApiResponse<String> dentalResponse = dentalService.createOrUpdateDentalDetails(request.getDentalDetails(), patient, visit, deptId);
 
             if (dentalResponse == null || dentalResponse.getStatus() != HttpStatus.OK.value()) {
 
@@ -192,7 +194,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             procedureRequest.setPatientId(patient.getId());
             procedureRequest.setVisitId(visit.getId());
             procedureRequest.setDepartmentId(deptId);
-            procedureRequest.setHospitalId(user.getHospital().getId());
+            procedureRequest.setHospitalId(userContext.getHospitalId());
             procedureRequest.setDiagnosis(request.getWorkingDiagnosis());
             procedureRequest.setProcedureTypeCode(dentalProcedureTypeCode);
 
@@ -225,7 +227,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 log.info("Processing LAB investigations");
                 Map<LocalDate, List<InvestigationData>> labInvestigations = grouped.get(Long.valueOf(laboratoryDepartment));
 
-                processLabInvestigations(labInvestigations, patient, visit, user, labOrderedStatus);
+                processLabInvestigations(labInvestigations, patient, visit, labOrderedStatus);
 
                 String labAdvised = labInvestigations.values().stream().flatMap(List::stream).map(InvestigationData::investigationName).filter(Objects::nonNull).distinct().collect(Collectors.joining(", "));
 
@@ -240,7 +242,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 Map<LocalDate, List<InvestigationData>> radioInvestigations = grouped.get(Long.valueOf(radiologyDepartment));
                 String radioAdvised = radioInvestigations.values().stream().flatMap(List::stream).map(InvestigationData::investigationName).filter(Objects::nonNull).distinct().collect(Collectors.joining(", "));
 
-                processRadiologyInvestigations(radioInvestigations, patient, visit, user);
+                processRadiologyInvestigations(radioInvestigations, patient, visit);
 
                 saved.setRadioAdvised(radioAdvised);
                 saved.setRadioFlag(AppConstants.STATUS_Y.toLowerCase());
@@ -251,7 +253,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         //validate and map into Treatment data
         if (request.getTreatment() != null && !request.getTreatment().isEmpty()) {
             List<TreatmentData> treatments = request.getTreatment().stream().map(t -> new TreatmentData(null, null, t.getItemId(), t.getDosage(), t.getFrequency(), t.getDays(), t.getTotal(), t.getInstraction(), t.getFlag())).toList();
-            saveOrUpdateTreatments(treatments, patient, visit, user, deptId);
+            saveOrUpdateTreatments(treatments, patient, visit, deptId);
         }
 
         //saving opthal details if exist
@@ -283,12 +285,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
         //saving pregnancy details if exist
         if (request.getPregnancyDetails() != null) {
-            handlePregnancyDetails(saved, request.getPregnancyDetails(), user);
+            handlePregnancyDetails(saved, request.getPregnancyDetails());
         }
         //saving psychiatric details if exist
         if (request.getPsychiatricDetailsRequests() != null && !request.getPsychiatricDetailsRequests().isEmpty()) {
             log.info("Saving Psychiatric Assessment Header and Details for OPD ID: {}", saved.getOpdPatientDetailsId());
-            saveOrUpdatePsychiatricAssessment(request.getPsychiatricDetailsRequests(), request.getTopicId(), visit, saved, authUtil.getCurrentUser());
+            saveOrUpdatePsychiatricAssessment(request.getPsychiatricDetailsRequests(), request.getTopicId(), visit, saved);
         }
 
 
@@ -309,7 +311,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             otRequest.setPreferredEndTime(surgeryRequest.getSurgeryEndTime());
             otRequest.setDiagnosis(request.getWorkingDiagnosis());
             otRequest.setRequestSource(AppConstants.OPD_TYPE);
-            otRequest.setLastChgBy(user.getFullName());
+            otRequest.setLastChgBy(userContext != null ? userContext.getUserFullName() : null);
             otRequest.setLastChgDate(LocalDateTime.now());
             otRequest.setPriority(AppConstants.PROCEDURE_PRIORITY_ROUTINE);
             otRequest.setBookingStatusId(surgeryBookingStatusRequested);
@@ -332,7 +334,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                     dt.setSequenceNo(sequence++);
                     dt.setStatus(AppConstants.STATUS_N);
-                    dt.setLastChgBy(user.getFullName());
+                    dt.setLastChgBy(userContext != null ? userContext.getUserFullName() : null);
                     if (surgeryRequest.getSurgeryStartTime() != null && surgeryRequest.getSurgeryEndTime() != null) {
 
                         long duration = Duration.between(surgeryRequest.getSurgeryStartTime(), surgeryRequest.getSurgeryEndTime()).toMinutes();
@@ -391,23 +393,26 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
 
-    private PatientPrescriptionHd createPrescriptionHeader(Patient patient, Visit visit, User user, Long deptId) {
+    private PatientPrescriptionHd createPrescriptionHeader(Patient patient, Visit visit, Long deptId) {
         PatientPrescriptionHd hd = new PatientPrescriptionHd();
-        hd.setHospitalId(user.getHospital().getId());
+        UserContext userContext = userContextService.getCurrentUserContext();
+        hd.setHospitalId(userContext.getHospitalId());
         hd.setPatientId(patient.getId());
         hd.setDepartmentId(deptId);
-        hd.setDoctorName(user.getFirstName());
+        hd.setDoctorName(userContext.getUserFullName());
         hd.setPrescriptionDate(LocalDateTime.now());
         hd.setStatus(AppConstants.STATUS_N.toLowerCase());
-        hd.setCreatedBy(user.getFirstName());
+        hd.setCreatedBy(userContext.getUserFullName());
         hd.setTotalCost(BigDecimal.ZERO);
         hd.setTotalGst(BigDecimal.ZERO);
         hd.setTotalDiscount(BigDecimal.ZERO);
         hd.setNetAmount(BigDecimal.ZERO);
-        hd.setPrescriptionNumber(transactionSequenceService.generateTransactionNumber(HMISTransaction.PRESCRIPTION_NO, user.getHospital().getId()));
+        hd.setPrescriptionNumber(transactionSequenceService.generateTransactionNumber(HMISTransaction.PRESCRIPTION_NO, userContext.getHospitalId()));
         hd.setVisit(visit);
 
-        String medicineBilling = user.getHospital().getMedicineBilling();
+        MasHospital hospital = hospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new SDDException("hospital", 404, "Hospital not found"));
+        String medicineBilling = hospital.getMedicineBilling();
+
         if (AppConstants.PAYMENT_NOT_PAID.toLowerCase().equalsIgnoreCase(medicineBilling)) {
             hd.setBillingStatus(AppConstants.STATUS_N.toLowerCase());
         } else {
@@ -420,8 +425,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     private void closeVisit(Visit visit) {
         if (visit != null) {
             visit.setVisitStatus(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase());
-            visit.setDoctor(authUtil.getCurrentUser());
-            visit.setDoctorName(authUtil.getCurrentUser().getFullName());
+            visit.setDoctor(userRepository.findById(userContextService.getCurrentUserContext().getUserId()).orElseThrow(() -> new SDDException("user", 404, "User not found")));
+            visit.setDoctorName(userContextService.getCurrentUserContext().getUserFullName());
             visitRepository.save(visit);
             log.info("Closed visit with ID: {}", visit.getId());
         }
@@ -432,8 +437,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     @Override
     public ApiResponse<String> updateRecallOpdPatientDetail(RecallOpdPatientDetailRequest request) {
         validateUpdateRequest(request);
-        User user = getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             throw new SDDException("user", 401, "Current user not found or not authenticated");
         }
         Patient patient = patientRepository.findById(request.getPatientId()).orElseThrow(() -> new SDDException("patient", 404, "Patient not found"));
@@ -445,18 +450,18 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         handleRecallFollowUp(opd, request);
         handleRecallReferral(opd, request);
         OpdPatientDetail opdPatientDetail = opdPatientDetailRepository.save(opd);
-        handleRecallPregnancyDetails(opd, request.getPregnancyDetails(), user);
+        handleRecallPregnancyDetails(opd, request.getPregnancyDetails());
 
         //ICD diagnosis details{
         List<Long> icdIds = Optional.ofNullable(request.getIcdDiagnosisList()).orElse(Collections.emptyList()).stream().map(RecallOpdPatientDetailRequest.IcdDiagnosis::getIcdId).collect(Collectors.toList());
-        saveOrUpdateIcdDiagnosis(icdIds, opd.getOpdPatientDetailsId(), visit.getId(), user.getUserId());
+        saveOrUpdateIcdDiagnosis(icdIds, opd.getOpdPatientDetailsId(), visit.getId(), userContext.getUserId());
         //}
 
         //investigation details{
 
         List<InvestigationData> investigations = opdPatientDetailMapper.mapInvestigations(request.getInvestigations(), item -> new InvestigationData(item.getInvestigationId(), item.getInvestigationName(), item.getInvestigationDate(), item.getInvestigationId(), item.getFlag()));
 
-        createOrDeleteInvestigation(investigations, patient, visit, user, opdPatientDetail);
+        createOrDeleteInvestigation(investigations, patient, visit, opdPatientDetail);
 
         updateInvestigationAdvisedNames(investigations, opdPatientDetail);
 
@@ -464,7 +469,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         //Treatment data {
         List<TreatmentData> treatments = request.getTreatments().stream().map(t -> new TreatmentData(t.getPrescriptionHdId(), t.getPrescriptionDtId(), t.getItemId(), t.getDosage(), t.getFrequencyName() != null ? t.getFrequencyName() : null, t.getDays(), t.getTotal() != null ? BigDecimal.valueOf(t.getTotal()) : null, t.getInstruction(), t.getFlag())).toList();
 
-        saveOrUpdateTreatments(treatments, patient, visit, user, authUtil.getCurrentDepartmentId());
+        saveOrUpdateTreatments(treatments, patient, visit, userContext.getDepartmentId());
         //}
 
         // ===================== OT BOOKING =====================
@@ -502,9 +507,9 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             otRequest.setDiagnosis(request.getWorkingDiagnosis());
             otRequest.setRequestSource("OPD");
             otRequest.setStatus(AppConstants.STATUS_N);
-            otRequest.setLastChgBy(user.getFullName());
+            otRequest.setLastChgBy(userContext != null ? userContext.getUserFullName() : null);
             otRequest.setLastChgDate(LocalDateTime.now());
-            otRequest.setRequestedBy(user.getFullName());
+            otRequest.setRequestedBy(userContext != null ? userContext.getUserFullName() : null);
             otRequest.setRequestedDate(LocalDateTime.now());
             otRequest.setBookingStatusId(surgeryBookingStatusRequested);
             otRequest.setPriority("URGENT");
@@ -528,7 +533,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                     dt.setSequenceNo(sequence++);
                     dt.setStatus(AppConstants.STATUS_N);
-                    dt.setLastChgBy(user.getFullName());
+                    dt.setLastChgBy(userContext != null ? userContext.getUserFullName() : null);
                     if (surgery.getSurgeryStartTime() != null && surgery.getSurgeryEndTime() != null) {
 
                         long duration = Duration.between(surgery.getSurgeryStartTime(), surgery.getSurgeryEndTime()).toMinutes();
@@ -556,11 +561,11 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                 throw new SDDException("otBooking", 500, response != null ? response.getMessage() : "Failed to save OT booking");
             }
         }
-        replacePsychiatryAssessment(request, patient, visit, user);
+        replacePsychiatryAssessment(request, patient, visit);
 
         //OBG details
         if (request.getOpdObgDetailsRequest() != null) {
-            handleRecallObgDetails(request, patient, visit, user);
+            handleRecallObgDetails(request, patient, visit);
         }
         //
         //EarExamination details save and update
@@ -610,7 +615,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
 
-    private void saveOrUpdateTreatments(List<TreatmentData> treatments, Patient patient, Visit visit, User user, Long deptId) {
+    private void saveOrUpdateTreatments(List<TreatmentData> treatments, Patient patient, Visit visit, Long deptId) {
 
         if (treatments == null || treatments.isEmpty()) {
             return;
@@ -696,12 +701,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
             // No existing header -> create new header
             if (headerToUse == null) {
-                headerToUse = createPrescriptionHeader(patient, visit, user, deptId);
+                headerToUse = createPrescriptionHeader(patient, visit, deptId);
                 log.info("No existing prescription header found. Created new header {}", headerToUse.getPrescriptionHdId());
             } else if (AppConstants.STATUS_Y.equalsIgnoreCase(headerToUse.getStatus())) {
                 // Existing header already completed -> create new header
                 PatientPrescriptionHd oldHeader = headerToUse;
-                headerToUse = createPrescriptionHeader(patient, visit, user, deptId);
+                headerToUse = createPrescriptionHeader(patient, visit, deptId);
                 log.info("Existing prescription header {} has status Y. Created new header {}", oldHeader.getPrescriptionHdId(), headerToUse.getPrescriptionHdId());
             } else if (AppConstants.STATUS_N.equalsIgnoreCase(headerToUse.getStatus())) {
                 // Existing active header -> reuse it
@@ -761,7 +766,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         opdPatientDetail.setRadioAdvised(radioAdvised.isBlank() ? null : radioAdvised);
     }
 
-    private void createOrDeleteInvestigation(List<InvestigationData> investigations, Patient patient, Visit visit, User user, OpdPatientDetail opdPatientDetail) {
+    private void createOrDeleteInvestigation(List<InvestigationData> investigations, Patient patient, Visit visit, OpdPatientDetail opdPatientDetail) {
         if (investigations == null || investigations.isEmpty()) {
             return;
         }
@@ -856,7 +861,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                     String radioAdvised = grouped.values().stream().flatMap(List::stream).map(InvestigationData::investigationName).filter(Objects::nonNull).distinct().collect(Collectors.joining(", "));
 
-                    processLabInvestigations(grouped, patient, visit, user, labOrderedStatus);
+                    processLabInvestigations(grouped, patient, visit, labOrderedStatus);
 
 
                 }
@@ -890,7 +895,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                     createRadiologyOrderDetails(dateInvestigations, existingRadHeader, billingHeader);
                     if (billingHeader != null) {
-                        updateBillingHeaderById(billingHeader.getId(), true, user);
+                        updateBillingHeaderById(billingHeader.getId(), true);
 
                     }
 
@@ -898,7 +903,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
                     // NEW RADIOLOGY HEADER
                     Map<LocalDate, List<InvestigationData>> grouped = new HashMap<>();
                     grouped.put(appointmentDate, dateInvestigations);
-                    processRadiologyInvestigations(grouped, patient, visit, user);
+                    processRadiologyInvestigations(grouped, patient, visit);
                 }
             }
         }
@@ -1025,13 +1030,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
 
-    private void replacePsychiatryAssessment(RecallOpdPatientDetailRequest request, Patient patient, Visit visit, User user) {
+    private void replacePsychiatryAssessment(RecallOpdPatientDetailRequest request, Patient patient, Visit visit) {
         if (request.getPsychiatricDetailsRequests() != null && !request.getPsychiatricDetailsRequests().isEmpty()) {
             // Get or create OpdPatientDetail (needed for header)
             OpdPatientDetail opdPatientDetail = opdPatientDetailRepository.findByVisit_Id(visit.getId()).orElseThrow(() -> new SDDException("opdPatientDetail", 404, "OPD patient detail not found for visit ID: " + visit.getId()));
 
             // Save or update using the improved method
-            saveOrUpdatePsychiatricAssessment(request.getPsychiatricDetailsRequests(), request.getTopicId(), visit, opdPatientDetail, user);
+            saveOrUpdatePsychiatricAssessment(request.getPsychiatricDetailsRequests(), request.getTopicId(), visit, opdPatientDetail);
 
             log.info("Psychiatric assessment updated successfully for visit ID: {}", visit.getId());
         } else {
@@ -1046,7 +1051,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
     }
 
-    private void handleRecallObgDetails(RecallOpdPatientDetailRequest request, Patient patient, Visit visit, User user) {
+    private void handleRecallObgDetails(RecallOpdPatientDetailRequest request, Patient patient, Visit visit) {
         try {
             OpdObgDetailsRequest obgRequest = request.getOpdObgDetailsRequest();
             obgRequest.setPatientId(patient.getId());
@@ -1184,10 +1189,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
     }
 
-    private void handleRecallPregnancyDetails(OpdPatientDetail opd, RecallOpdPatientDetailRequest.PregnancyDetails pregnancyDetails, User user) {
+    private void handleRecallPregnancyDetails(OpdPatientDetail opd, RecallOpdPatientDetailRequest.PregnancyDetails pregnancyDetails) {
         if (opd == null || pregnancyDetails == null || opd.getVisit() == null || opd.getPatient() == null) {
             return;
         }
+
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         Long visitId = opd.getVisit().getId();
         OpdPatientPregnancyDetails pregnancyEntity = opdPatientPregnancyDetailsRepository.findByVisit_Id(visitId).orElseGet(OpdPatientPregnancyDetails::new);
@@ -1200,7 +1207,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         pregnancyEntity.setCurrentEdd(pregnancyDetails.getCurrentEdd());
         pregnancyEntity.setGestationPeriod(pregnancyDetails.getGestationPeriod());
         pregnancyEntity.setLastChgDate(Instant.now());
-        pregnancyEntity.setLastChgBy(user != null ? user.getFullName() : null);
+        pregnancyEntity.setLastChgBy(userContext != null ? userContext.getUserFullName() : null);
 
         opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
     }
@@ -1213,8 +1220,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
      * Process LAB investigations for OPD patient
      * Creates DgOrderHd and DgOrderDt records
      */
-    private void processLabInvestigations(Map<LocalDate, List<InvestigationData>> groupedByDate, Patient patient, Visit visit, User currentUser, LabOrderTrackingStatus labOrderedStatus) {
+    private void processLabInvestigations(Map<LocalDate, List<InvestigationData>> groupedByDate, Patient patient, Visit visit, LabOrderTrackingStatus labOrderedStatus) {
         log.info("Starting LAB investigation processing for patient ID: {}", patient.getId());
+
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         for (Map.Entry<LocalDate, List<InvestigationData>> entry : groupedByDate.entrySet()) {
             LocalDate appointmentDate = entry.getKey();
@@ -1226,7 +1235,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             dgOrderHd.setAppointmentDate(appointmentDate);
             dgOrderHd.setOrderDate(LocalDate.now());
             dgOrderHd.setOrderTime(LocalDateTime.now());
-            dgOrderHd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, currentUser.getHospital().getId()));
+            dgOrderHd.setOrderNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.LAB_NO, userContext.getHospitalId()));
             dgOrderHd.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             dgOrderHd.setCollectionStatus(AppConstants.STATUS_N.toLowerCase());
             dgOrderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.equalsIgnoreCase(patient.getPatientHospital().getLabBilling()) ? AppConstants.PAYMENT_NOT_PAID.toLowerCase() : AppConstants.PAYMENT_PAID.toLowerCase());
@@ -1234,10 +1243,10 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             dgOrderHd.setDiscountId(1);
             dgOrderHd.setPatientId(patient);
             dgOrderHd.setDepartmentId(authUtil.getCurrentDepartmentId());
-            dgOrderHd.setHospitalId(currentUser.getHospital().getId());
+            dgOrderHd.setHospitalId(userContext.getHospitalId());
             dgOrderHd.setVisitId(visit);
-            dgOrderHd.setCreatedBy(currentUser.getFullName());
-            dgOrderHd.setLastChgBy(currentUser.getFullName());
+            dgOrderHd.setCreatedBy(userContext.getUserFullName());
+            dgOrderHd.setLastChgBy(userContext.getUserFullName());
             dgOrderHd.setCreatedOn(LocalDate.now());
             dgOrderHd.setLastChgDate(LocalDate.now());
             dgOrderHd.setLastChgTime(LocalTime.now().toString());
@@ -1254,7 +1263,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     //creating Lab order details
     private void createLabOrderDetails(List<InvestigationData> investigations, DgOrderHd savedOrderHd, LabOrderTrackingStatus labOrderedStatus, BillingHeader billingHeader) {
-        User currentUser = getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         for (InvestigationData invObj : investigations) {
             if (invObj == null || invObj.investigationId() == null) {
                 log.warn("Skipping null investigation object");
@@ -1274,8 +1283,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             dgOrderDt.setOrderQty(1);
             dgOrderDt.setOrderStatus(AppConstants.STATUS_N.toLowerCase());
             dgOrderDt.setBillingStatus(savedOrderHd.getPaymentStatus());
-            dgOrderDt.setCreatedBy(currentUser.getFullName());
-            dgOrderDt.setLastChgBy(currentUser.getFullName());
+            dgOrderDt.setCreatedBy(userContext.getUserFullName());
+            dgOrderDt.setLastChgBy(userContext.getUserFullName());
             dgOrderDt.setCreatedOn(LocalDateTime.now());
             dgOrderDt.setLastChgDate(LocalDate.now());
             dgOrderDt.setMainChargeCodeId(invEntity.getMainChargeCodeId().getChargecodeId());
@@ -1296,7 +1305,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
     }
 
-    public void updateBillingHeaderById(Long billingHeaderId, boolean isRadiology, User currentUser) {
+    public void updateBillingHeaderById(Long billingHeaderId, boolean isRadiology) {
         if (billingHeaderId == null) {
             return;
         }
@@ -1393,13 +1402,15 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
      * Process RADIOLOGY investigations for OPD patient
      * Creates RadOrderHd and RadOrderDt records with billing
      */
-    private void processRadiologyInvestigations(Map<LocalDate, List<InvestigationData>> groupedByDate, Patient patient, Visit visit, User currentUser) {
+    private void processRadiologyInvestigations(Map<LocalDate, List<InvestigationData>> groupedByDate, Patient patient, Visit visit) {
         log.info("Starting RADIOLOGY investigation processing for patient ID: {}", patient.getId());
 //        MasServiceCategory radiologyServiceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
 //        if (radiologyServiceCategory == null) {
 //            log.error("Radiology service category (SC004) not found");
 //            throw new SDDException("serviceCategory", 400, "Radiology service category not configured");
 //        }
+
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         for (Map.Entry<LocalDate, List<InvestigationData>> entry : groupedByDate.entrySet()) {
             LocalDate appointmentDate = entry.getKey();
@@ -1417,7 +1428,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             radOrderHd.setVisit(visit);
             radOrderHd.setDepartment(visit.getDepartment());
             radOrderHd.setHospital(visit.getHospital());
-            radOrderHd.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            radOrderHd.setLastChgBy(userContext.getUserFullName());
             radOrderHd.setLastChgDate(LocalDateTime.now());
 
             RadOrderHd savedRadOrderHd = radOrderHdRepository.save(radOrderHd);
@@ -1445,17 +1456,17 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             DgMasInvestigation invEntity = dgMasInvestigationRepository.findById(invObj.investigationId()).orElseThrow(() -> new SDDException("investigation", 404, "Investigation not found with ID: " + invObj.investigationId()));
             BigDecimal investigationPrice = helperUtils.getInvestigationPrice(invEntity);
             BigDecimal discountAmount = BigDecimal.ZERO;
-            User currentUser = getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             // Create radiology order detail
             RadOrderDt radOrderDt = new RadOrderDt();
             radOrderDt.setRadOrderhd(savedRadOrderHd);
             radOrderDt.setInvestigation(invEntity);
-            radOrderDt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, currentUser.getHospital().getId()));
+            radOrderDt.setOrderAccessionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.RADIOLOGY_NO, userContext.getHospitalId()));
             radOrderDt.setSubChargecode(invEntity.getSubChargeCodeId());
             radOrderDt.setAppointmentDate(invObj.investigationDate());
-            radOrderDt.setLastChgBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-            radOrderDt.setCreatedby(currentUser.getFirstName() + " " + currentUser.getLastName());
+            radOrderDt.setLastChgBy(userContext.getUserFullName());
+            radOrderDt.setCreatedby(userContext.getUserFullName());
             radOrderDt.setBillingStatus(savedRadOrderHd.getPaymentStatus());
             radOrderDt.setBillingHd(billingHeader);
             radOrderDt.setStudyStatus(AppConstants.STATUS_N.toLowerCase());
@@ -1647,7 +1658,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             response.setPatientPrescriptionHds(hdList);
             // ================= PRESCRIPTION DT =================
             List<OpdPatientRecallResponce.NewDPatientPrescriptionDt> newDtList = new ArrayList<>();
-            Long hospitalId = authUtil.getCurrentUser() != null && authUtil.getCurrentUser().getHospital() != null ? authUtil.getCurrentUser().getHospital().getId() : null;
+            Long hospitalId = userContextService.getCurrentUserContext() != null && userContextService.getCurrentUserContext().getHospitalId() != null ? userContextService.getCurrentUserContext().getHospitalId() : null;
             for (PatientPrescriptionDt dt : prescDtList) {
                 if (dt == null) continue;
                 OpdPatientRecallResponce.NewDPatientPrescriptionDt newDt = new OpdPatientRecallResponce.NewDPatientPrescriptionDt();
@@ -2231,13 +2242,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     @Override
     public ApiResponse<Page<OpdPreConsultationResponse>> getPendingPreConsultations(Pageable pageable, String patientName, String mobileNumber) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null || currentUser.getHospital() == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null || userContext.getHospitalId() == null) {
                 Page<OpdPreConsultationResponse> emptyPage = new PageImpl<>(new ArrayList<>(), pageable, 0);
                 return ResponseUtils.createSuccessResponse(emptyPage, new TypeReference<>() {
                 });
             }
-            Long hospitalId = currentUser.getHospital().getId();
+            Long hospitalId = userContext.getHospitalId();
             Long departmentId = authUtil.getCurrentDepartmentId();
             Page<OpdPreConsultationProjection> projectionPage = visitRepository.findPendingPreConsultationsByHospitalPaged(hospitalId, departmentId, AppConstants.STATUS_N.toLowerCase(), AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase(), patientName, mobileNumber, pageable);
             Page<OpdPreConsultationResponse> responsePage = projectionPage.map(this::mapOpdPreConsultationProjectionToResponse);
@@ -2258,13 +2269,13 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     @Override
     public ApiResponse<Page<PatientWaitingListResponse>> getWaitingList(Pageable pageable, String patientName, String mobileNumber, Long doctorId, Long sessionId) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null || currentUser.getHospital() == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null || userContext.getHospitalId() == null) {
                 return ResponseUtils.createFailureResponse(new PageImpl<>(new ArrayList<>(), pageable, 0), new TypeReference<>() {
                 }, "User or hospital not found", 400);
             }
 
-            Long hospitalId = currentUser.getHospital().getId();
+            Long hospitalId = userContext.getHospitalId();
             Long departmentId = authUtil.getCurrentDepartmentId();
             Page<PatientWaitingListProjection> projectionPage = visitRepository.findWaitingPatientsByHospitalWithFilters(hospitalId, departmentId, AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase(), patientName, mobileNumber, doctorId, sessionId, pageable);
 
@@ -2584,7 +2595,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     @Transactional
-    public OpdPsychiatryAssessmentHeader saveOrUpdatePsychiatricAssessment(List<OpdPsychiatricDetailsRequest> details, Long topicId, Visit visit, OpdPatientDetail opdPatientDetail, User user) {
+    public OpdPsychiatryAssessmentHeader saveOrUpdatePsychiatricAssessment(List<OpdPsychiatricDetailsRequest> details, Long topicId, Visit visit, OpdPatientDetail opdPatientDetail) {
 
         // 1. Find or create header
         OpdPsychiatryAssessmentHeader header = opdPsychiatryAssessmentHeaderRepository.findByVisit_Id(visit.getId()).orElse(new OpdPsychiatryAssessmentHeader());
@@ -2616,7 +2627,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
         // 4. Handle details - Update or Create
         if (details != null && !details.isEmpty()) {
-            handlePsychiatricDetails(details, savedHeader, isNew, user);
+            handlePsychiatricDetails(details, savedHeader, isNew);
         } else if (!isNew) {
             // If no details provided and it's an existing record, delete all details
             deleteAllPsychiatricDetails(savedHeader);
@@ -2629,12 +2640,12 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return opdPsychiatryAssessmentHeaderRepository.save(savedHeader);
     }
 
-    private void handlePsychiatricDetails(List<OpdPsychiatricDetailsRequest> details, OpdPsychiatryAssessmentHeader header, boolean isNew, User user) {
+    private void handlePsychiatricDetails(List<OpdPsychiatricDetailsRequest> details, OpdPsychiatryAssessmentHeader header, boolean isNew) {
 
         if (isNew) {
             // For new records, simply save all details
             for (OpdPsychiatricDetailsRequest detailReq : details) {
-                OpdPsychiatryAssessmentDetail detail = createPsychiatricDetail(detailReq, header, user);
+                OpdPsychiatryAssessmentDetail detail = createPsychiatricDetail(detailReq, header);
                 opdPsychiatryAssessmentDetailRepository.save(detail);
             }
         } else {
@@ -2652,11 +2663,11 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
                 if (detail == null) {
                     // Create new detail if it doesn't exist
-                    detail = createPsychiatricDetail(detailReq, header, user);
+                    detail = createPsychiatricDetail(detailReq, header);
                     opdPsychiatryAssessmentDetailRepository.save(detail);
                 } else {
                     // Update existing detail
-                    updatePsychiatricDetail(detail, detailReq, user);
+                    updatePsychiatricDetail(detail, detailReq);
                     opdPsychiatryAssessmentDetailRepository.save(detail);
                     // Remove from map to track which ones are still present
                     existingDetailMap.remove(detailReq.getQuestionId());
@@ -2671,7 +2682,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         }
     }
 
-    private OpdPsychiatryAssessmentDetail createPsychiatricDetail(OpdPsychiatricDetailsRequest detailReq, OpdPsychiatryAssessmentHeader header, User user) {
+    private OpdPsychiatryAssessmentDetail createPsychiatricDetail(OpdPsychiatricDetailsRequest detailReq, OpdPsychiatryAssessmentHeader header) {
 
         OpdPsychiatryAssessmentDetail detail = new OpdPsychiatryAssessmentDetail();
 
@@ -2697,7 +2708,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return detail;
     }
 
-    private void updatePsychiatricDetail(OpdPsychiatryAssessmentDetail detail, OpdPsychiatricDetailsRequest detailReq, User user) {
+    private void updatePsychiatricDetail(OpdPsychiatryAssessmentDetail detail, OpdPsychiatricDetailsRequest detailReq) {
 
         // Update question if changed
         if (detailReq.getQuestionId() != null && !detailReq.getQuestionId().equals(detail.getQuestionId().getId())) {
@@ -2732,7 +2743,8 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         return details.stream().map(OpdPsychiatryAssessmentDetail::getScore).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private void handlePregnancyDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails, User user) {
+    private void handlePregnancyDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest.PregnancyDetails pregnancyDetails) {
+
         if (pregnancyDetails == null) {
             return;
         }
@@ -2744,7 +2756,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         if (opd.getPatient() == null) {
             throw new IllegalArgumentException("Patient is required to save pregnancy details");
         }
-
+        UserContext userContext = userContextService.getCurrentUserContext();
         Long visitId = opd.getVisit().getId();
         log.info("Saving pregnancy details for visitId={}, isPregnant={}, lmpDate={}, edd={}, currentEdd={}, gestationPeriod={}", visitId, pregnancyDetails.getIsPregnant(), pregnancyDetails.getLmpDate(), pregnancyDetails.getEdd(), pregnancyDetails.getCurrentEdd(), pregnancyDetails.getGestationPeriod());
 
@@ -2758,7 +2770,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         pregnancyEntity.setCurrentEdd(pregnancyDetails.getCurrentEdd());
         pregnancyEntity.setGestationPeriod(pregnancyDetails.getGestationPeriod());
         pregnancyEntity.setLastChgDate(Instant.now());
-        pregnancyEntity.setLastChgBy(user != null ? user.getFullName() : null);
+        pregnancyEntity.setLastChgBy(userContext != null ? userContext.getUserFullName() : null);
 
         OpdPatientPregnancyDetails savedEntity = opdPatientPregnancyDetailsRepository.save(pregnancyEntity);
 

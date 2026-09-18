@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasRoute;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasRouteRepository;
 import com.hims.request.MasRouteRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasRouteResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasRouteService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +28,9 @@ public class MasRouteServiceImpl implements MasRouteService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasRouteResponse>> getAll(int flag) {
@@ -60,15 +66,15 @@ public class MasRouteServiceImpl implements MasRouteService {
     @Override
     public ApiResponse<MasRouteResponse> create(MasRouteRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasRoute route = MasRoute.builder()
                     .routeCode(request.getRouteCode())
                     .routeName(request.getRouteName())
                     .description(request.getDescription())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -89,12 +95,12 @@ public class MasRouteServiceImpl implements MasRouteService {
             if (route == null)
                 return ResponseUtils.createNotFoundResponse("Route ID not found!", 404);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             route.setRouteCode(request.getRouteCode());
             route.setRouteName(request.getRouteName());
             route.setDescription(request.getDescription());
-            route.setLastUpdatedBy(user.getFirstName());
+            route.setLastUpdatedBy(userContext.getUserFullName());
             route.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(route);
@@ -114,14 +120,14 @@ public class MasRouteServiceImpl implements MasRouteService {
             if (route == null)
                 return ResponseUtils.createNotFoundResponse("Route ID not found!", 404);
 
-            if (!status.equals("y") && !status.equals("n"))
+            if (!status.equalsIgnoreCase(AppConstants.STATUS_Y) && !status.equalsIgnoreCase(AppConstants.STATUS_N))
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid status!", 400);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             route.setStatus(status);
-            route.setLastUpdatedBy(user.getFirstName());
+            route.setLastUpdatedBy(userContext.getUserFullName());
             route.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(route);

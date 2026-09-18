@@ -7,11 +7,14 @@ import com.hims.entity.repository.MasBloodComponentRepository;
 import com.hims.request.MasBloodComponentRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasBloodComponentResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBloodComponentService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,6 +27,9 @@ public class MasBloodComponentServiceImpl implements MasBloodComponentService {
 
     private final MasBloodComponentRepository repository;
     private final AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasBloodComponentResponse>> getAll(int flag) {
@@ -68,8 +74,8 @@ public class MasBloodComponentServiceImpl implements MasBloodComponentService {
 
         log.info("Creating Blood Component");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -82,8 +88,8 @@ public class MasBloodComponentServiceImpl implements MasBloodComponentService {
                     .storageTemp(request.getStorageTemp())
                     .shelfLifeDays(request.getShelfLifeDays())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -111,8 +117,8 @@ public class MasBloodComponentServiceImpl implements MasBloodComponentService {
                         "Blood Component not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -123,7 +129,7 @@ public class MasBloodComponentServiceImpl implements MasBloodComponentService {
             entity.setDescription(request.getDescription());
             entity.setStorageTemp(request.getStorageTemp());
             entity.setShelfLifeDays(request.getShelfLifeDays());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
 
             entity.setLastUpdateDate(LocalDateTime.now());
 
@@ -158,15 +164,15 @@ public class MasBloodComponentServiceImpl implements MasBloodComponentService {
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

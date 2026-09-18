@@ -1,13 +1,15 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.EntMasRinne;
-import com.hims.entity.User;
 import com.hims.entity.repository.EntMasRinneRepository;
 import com.hims.request.EntMasRinneRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.EntMasRinneResponse;
+import com.hims.response.UserContext;
 import com.hims.service.EntMasRinneService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -21,14 +23,17 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class EntMasRinneServiceImpl
-        implements EntMasRinneService {
+public class EntMasRinneServiceImpl implements EntMasRinneService {
 
     @Autowired
     private EntMasRinneRepository repository;
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
+
 
     @Override
     public ApiResponse<List<EntMasRinneResponse>> getAll(int flag) {
@@ -68,12 +73,12 @@ public class EntMasRinneServiceImpl
     }
 
     @Override
-    public ApiResponse<EntMasRinneResponse> create(
-            EntMasRinneRequest request) {
+    public ApiResponse<EntMasRinneResponse> create(EntMasRinneRequest request) {
         log.info("Creating Rinne");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -82,8 +87,8 @@ public class EntMasRinneServiceImpl
             EntMasRinne entity = EntMasRinne.builder()
                     .rinneResult(request.getRinneResult())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -110,15 +115,15 @@ public class EntMasRinneServiceImpl
                         "Rinne not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setRinneResult(request.getRinneResult());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -144,22 +149,22 @@ public class EntMasRinneServiceImpl
                         "Rinne not found", 404);
             }
 
-            if (!status.equals("y")
-                    && !status.equals("n")) {
+            if (!status.equalsIgnoreCase(AppConstants.STATUS_Y)
+                    && !status.equalsIgnoreCase(AppConstants.STATUS_N)) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

@@ -1,16 +1,20 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.request.MasWardRoomTariffRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasWardRoomTariffResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasWardRoomTariffService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,14 +33,16 @@ public class MasWardRoomTariffServiceImpl implements MasWardRoomTariffService {
     private final MasWardRepository wardRepository;
     private final MasRoomRepo roomRepository;
     private final AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasWardRoomTariffResponse>> getAllWardRoomTariffs(int flag) {
         try {
             log.info("getAllWardRoomTariffs() Started with flag: {}", flag);
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -70,8 +76,8 @@ public class MasWardRoomTariffServiceImpl implements MasWardRoomTariffService {
         try {
             log.info("createWardRoomTariff() Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -106,9 +112,9 @@ public class MasWardRoomTariffServiceImpl implements MasWardRoomTariffService {
             tariff.setTariff(request.getTariff());
             tariff.setEffectiveFrom(request.getEffectiveFrom());
             tariff.setEffectiveTo(request.getEffectiveTo());
-            tariff.setStatus("y");
+            tariff.setStatus(AppConstants.STATUS_Y.toLowerCase());
 
-            String userName = currentUser.getFirstName() + " " + currentUser.getLastName();
+            String userName = userContext.getUserFullName();
             tariff.setCreatedBy(userName);
             tariff.setLastUpdatedBy(userName);
             tariff.setCreatedDate(LocalDateTime.now());
@@ -131,8 +137,8 @@ public class MasWardRoomTariffServiceImpl implements MasWardRoomTariffService {
         try {
             log.info("updateWardRoomTariff() Started for ID: {}", tariffId);
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -178,7 +184,7 @@ public class MasWardRoomTariffServiceImpl implements MasWardRoomTariffService {
             tariff.setTariff(request.getTariff());
             tariff.setEffectiveFrom(request.getEffectiveFrom());
             tariff.setEffectiveTo(request.getEffectiveTo());
-            tariff.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            tariff.setLastUpdatedBy(userContext.getUserFullName());
 
             MasWardRoomTariff updated = tariffRepository.save(tariff);
 
@@ -198,8 +204,8 @@ public class MasWardRoomTariffServiceImpl implements MasWardRoomTariffService {
         try {
             log.info("changeActiveStatus() Started for ID: {}", tariffId);
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -212,7 +218,7 @@ public class MasWardRoomTariffServiceImpl implements MasWardRoomTariffService {
             }
 
             tariff.setStatus(status.toLowerCase());
-            tariff.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            tariff.setLastUpdatedBy(userContext.getUserFullName());
 
             MasWardRoomTariff updated = tariffRepository.save(tariff);
 
@@ -231,8 +237,8 @@ public class MasWardRoomTariffServiceImpl implements MasWardRoomTariffService {
         try {
             log.info("getWardRoomTariffById() Started for ID: {}", tariffId);
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
@@ -254,14 +260,14 @@ public class MasWardRoomTariffServiceImpl implements MasWardRoomTariffService {
         try {
             log.info("getTariffsByWardAndRoom() Started for wardId: {}, roomId: {}", wardId, roomId);
 
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
 
             List<MasWardRoomTariff> tariffs = tariffRepository
                     .findByWard_WardIdAndRoom_RoomIdAndStatusIgnoreCaseOrderByEffectiveFromDesc(
-                            wardId, roomId, "y");
+                            wardId, roomId, AppConstants.STATUS_Y.toLowerCase());
 
             log.info("getTariffsByWardAndRoom() Ended. Found {} records", tariffs.size());
             return ResponseUtils.createSuccessResponse(
