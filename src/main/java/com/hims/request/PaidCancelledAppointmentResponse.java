@@ -30,6 +30,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
@@ -42,8 +43,18 @@ public class PaidCancelledAppointmentResponse {
 
     private String patientName;
     private String mobileNo;
+    private String mobileNumber;
     private String age;
     private String gender;
+
+    private Long doctorId;
+    private String doctorName;
+    private Long departmentId;
+    private LocalDate appointmentDate;
+    private String appointmentTime;
+    private Instant cancellationDateTime;
+    private String cancelledBy;
+    private String cancellationReason;
 
     private String billingType;
 
