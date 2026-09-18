@@ -488,13 +488,13 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
         }
         // Get current user
-        UserContext userContext = userContextService.getCurrentUserContext();
-        if (userContext == null || userContext.getUserFullName() == null) {
+        String userName = userContextService.getCurrentUserFullNameFromToken();
+        if (userName == null || userName.isEmpty()) {
             throw new RuntimeException("User authentication failed or user has no first name");
         }
         // Update visit
         visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
-        visit.setCancelledBy(userContext.getUserFullName());
+        visit.setCancelledBy(userName);
         visit.setCancelledDateTime(HMISUtil.getCurrentLocalDateTime());
 
             MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId())
@@ -553,9 +553,9 @@ public class RegistrationServiceImpl implements RegistrationService {
         refund.setAppointmentChangeReason(reason);
         refund.setRefundReason(reason.getReasonName());
 
-        UserContext userContext = userContextService.getCurrentUserContext();
-        refund.setCreatedBy(userContext.getUserFullName());
-        refund.setUpdatedBy(userContext.getUserFullName());
+        String userName = userContextService.getCurrentUserFullNameFromToken();
+        refund.setCreatedBy(userName);
+        refund.setUpdatedBy(userName);
         refund.setRefundRequestedAt(HMISUtil.getCurrentLocalDateTime());
 
 
@@ -615,7 +615,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         VisitRescheduleHistory history = new VisitRescheduleHistory();
         history.setVisitId(v);
         history.setRescheduleDatetime(HelperUtils.instantToLocalDateTime(request.getVisitDate()));
-        history.setRescheduleBy(userContextService.getCurrentUserContext().getUserFullName());
+        history.setRescheduleBy(userContextService.getCurrentUserFullNameFromToken());
         history.setNewTokenNo(resolvedTokenNumber);
         history.setOldTokenNo(v.getTokenNo());
         history.setNewVisitDatetime(

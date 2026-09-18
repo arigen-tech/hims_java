@@ -727,9 +727,9 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
         refund.setAppointmentChangeReason(cancelReason);
         refund.setRefundReason(cancelReason.getReasonName());
 
-        UserContext currentUser = userContextService.getCurrentUserContext();
-        refund.setCreatedBy(currentUser.getUserFullName());
-        refund.setUpdatedBy(currentUser.getUserFullName());
+        String currentUser = userContextService.getCurrentUserFullNameFromToken();
+        refund.setCreatedBy(currentUser);
+        refund.setUpdatedBy(currentUser);
         refund.setRefundRequestedAt(HMISUtil.getCurrentLocalDateTime());
 
 
