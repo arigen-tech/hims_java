@@ -10,6 +10,7 @@ import com.hims.request.LoginRequest;
 import com.hims.request.OtpRequest;
 import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
+import com.hims.service.BillingService;
 import com.hims.service.MobileLoginService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,16 +38,18 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class MobileController {
 
-    @Autowired
-    MobileLoginService mobileLoginService;
-    @Autowired
-    private JwtHelper jwtUtil;
-    @Autowired
-    private MasEmployeeService masEmployeeService;
-    @Autowired
-    private PatientLoginRepository patientLoginRepository;
-    @Autowired
-    private PatientRepository patientRepository;
+    
+    private final MobileLoginService mobileLoginService;
+    
+    private final JwtHelper jwtUtil;
+    
+    private final MasEmployeeService masEmployeeService;
+    
+    private final BillingService billingService;
+    
+    private final PatientLoginRepository patientLoginRepository;
+    private final PatientRepository patientRepository;
+
 
 
 
@@ -166,6 +170,19 @@ public class MobileController {
     ) {
         String resolvedPatientName = patientName != null ? patientName : name;
         return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, resolvedPatientName, deptTypeCode, includeAllHistory, payment, visitStatus);
+    }
+
+    @GetMapping("/getCancelledRefundAppointments")
+    public ApiResponse<Page<MobileCancelledRefundResponse>> getCancelledRefundAppointments(
+            @RequestParam Long hospitalId,
+            @RequestParam String departmentType,
+            @RequestParam Long patientId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Fetching cancelled refund appointments: hospitalId={}, departmentType={}, patientId={}, page={}, size={}",
+                hospitalId, departmentType, patientId, page, size);
+        return billingService.getMobileCancelledRefundAppointments(
+                hospitalId, departmentType, patientId, page, size);
     }
 
 }

@@ -30,6 +30,7 @@ package com.hims.projection;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
@@ -45,9 +46,27 @@ public interface PaidCancelledAppointmentProjection {
 
     String getMobileNo();
 
+    String getMobileNumber();
+
     String getAge();
 
     String getGender();
+
+    Long getDoctorId();
+
+    String getDoctorName();
+
+    Long getDepartmentId();
+
+    LocalDate getAppointmentDate();
+
+    String getAppointmentTime();
+
+    Instant getCancellationDateTime();
+
+    String getCancelledBy();
+
+    String getCancellationReason();
 
     String getBillingType();
 

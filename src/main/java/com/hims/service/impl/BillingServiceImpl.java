@@ -1723,6 +1723,65 @@ public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatie
 }
 
 
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<MobileCancelledRefundResponse>> getMobileCancelledRefundAppointments(
+            Long hospitalId,
+            String departmentType,
+            Long patientId,
+            int page,
+            int size
+    ) {
+        try {
+            if (hospitalId == null || hospitalId <= 0) {
+                throw new IllegalArgumentException("Valid hospitalId is required");
+            }
+            if (patientId == null || patientId <= 0) {
+                throw new IllegalArgumentException("Valid patientId is required");
+            }
+            if (departmentType == null || departmentType.isBlank()) {
+                throw new IllegalArgumentException("departmentType is required");
+            }
+
+            helperUtils.validatePagination(page, size);
+
+            Pageable pageable = PageRequest.of(page, size);
+            Page<MobileCancelledRefundResponse> responsePage =
+                    paymentRefundRepository.findMobileCancelledRefundAppointments(
+                                    hospitalId,
+                                    departmentType.trim(),
+                                    patientId,
+                                    pageable
+                            )
+                            .map(paidCancelledAppointmentMapper::mapToMobileCancelledRefundResponse);
+
+            return ResponseUtils.createSuccessResponse(
+                    responsePage,
+                    new TypeReference<Page<MobileCancelledRefundResponse>>() {
+                    },
+                    "Cancelled appointment refund list fetched successfully"
+            );
+        } catch (IllegalArgumentException exception) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<Page<MobileCancelledRefundResponse>>() {
+                    },
+                    exception.getMessage(),
+                    HttpStatus.BAD_REQUEST.value()
+            );
+        } catch (Exception exception) {
+            log.error("Error while fetching mobile cancelled appointment refund list", exception);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<Page<MobileCancelledRefundResponse>>() {
+                    },
+                    "Unable to fetch cancelled appointment refund list",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+
 
 
 
