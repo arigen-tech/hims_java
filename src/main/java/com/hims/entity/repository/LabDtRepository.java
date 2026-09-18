@@ -172,7 +172,7 @@ SELECT new com.hims.response.OrderTrackingReportResponse(
     inv.investigationName,
     ots.orderStatusId,
     ots.orderStatusName,
-    oh.orderDate
+    oh.orderTime
 )
 FROM DgOrderDt od
 JOIN od.orderHd oh
