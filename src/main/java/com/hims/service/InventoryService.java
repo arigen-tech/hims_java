@@ -91,7 +91,7 @@ public interface InventoryService {
 
     ApiResponse<String> approveOpeningBalance(Long id, OpeningBalanceRequestForApprove request);
 
-    ApiResponse<List<?>> getAllStock(String type,Long hospitalId, Long departmentId, Long sectionId, Long classId, Long itemId);
+    ApiResponse<List<?>> getAllStock(String type,Long hospitalId, Long departmentId, String itemTypeCode,Long sectionId, Long classId, Long itemId);
 
     ApiResponse<Page<UnverifiedReturnHeaderResponse>> getUnverifiedReturnHeaders(Long hospitalId,
                                                                            Long toDepartmentId,
