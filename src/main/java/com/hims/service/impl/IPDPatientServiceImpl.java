@@ -1624,8 +1624,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         inpatient.setPatient(patient);
         inpatient.setVisit(visit);
-        inpatient.setAdmissionDate(request.getAdmissionDate());
-        inpatient.setAdmissionTime(request.getAdmissionTime());
+        inpatient.setAdmissionDate(LocalDate.now());
+        inpatient.setAdmissionTime(LocalTime.now());
         inpatient.setAdmissionNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.ADMISSION_NO, patient.getPatientHospital().getId()));
         inpatient.setConsentTakenBy(request.getConsentTakenBy());
         inpatient.setMlcCase(request.getMlcCase());
@@ -2889,7 +2889,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             prescription.setRoute(route);
             prescription.setDose(request.getDose());
             prescription.setFrequency(frequency);
-            prescription.setStartDate(request.getStartDate() != null ? request.getStartDate() : currentDateTime);
+            prescription.setStartDate(currentDateTime);
             prescription.setAdministratedBy(request.getAdministratedBy());
             prescription.setCreatedBy(userName);
             prescription.setLastUpdatedBy(userName);
