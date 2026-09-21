@@ -17,6 +17,7 @@ import com.hims.utils.HMISTransaction;
 import com.hims.utils.HMISUtil;
 import com.hims.utils.PaymentUtils;
 import com.razorpay.Order;
+import com.razorpay.Payment;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Refund;
@@ -619,18 +620,53 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
                         .subtract(alreadyRefundedAmount);
 
         /*
-         * ======================================================
-         * 9. VALIDATE REQUESTED REFUND
-         * ======================================================
+         * Razorpay can already have processed a refund while the local
+         * payment row still says PAID. Check the gateway before creating
+         * another refund so Razorpay does not return a 500 error.
          */
-        if (request.getRefundAmount().compareTo(remainingRefundableAmount) > 0) {
+        Payment razorpayPayment =
+                razorpayClient.payments.fetch(payment.getGatewayPaymentId());
+        Object gatewayPaymentStatusValue = razorpayPayment.get("status");
+        Object gatewayRefundStateValue = razorpayPayment.get("refund_status");
+        String gatewayPaymentStatus =
+                gatewayPaymentStatusValue == null
+                        || JSONObject.NULL.equals(gatewayPaymentStatusValue)
+                        ? null
+                        : gatewayPaymentStatusValue.toString();
+        String gatewayRefundState =
+                gatewayRefundStateValue == null
+                        || JSONObject.NULL.equals(gatewayRefundStateValue)
+                        ? null
+                        : gatewayRefundStateValue.toString();
+        Object gatewayRefundedAmountValue = razorpayPayment.get("amount_refunded");
+        BigDecimal gatewayRefundedAmount =
+                paymentUtils.getAmountFromSubUnitINR(
+                        gatewayRefundedAmountValue instanceof Number
+                                ? (Number) gatewayRefundedAmountValue
+                                : null
+                );
 
+        if ("full".equalsIgnoreCase(gatewayRefundState)
+                || "refunded".equalsIgnoreCase(gatewayPaymentStatus)
+                || gatewayRefundedAmount.compareTo(payment.getAmount()) >= 0) {
+
+            throw new SDDException("Refund already processed",
+                    HttpStatus.BAD_REQUEST.value(),
+                    "This payment has already been fully refunded. Payment ID: "
+                            + payment.getPaymentId());
+        }
+
+        BigDecimal totalRefundedAmount =
+                alreadyRefundedAmount.max(gatewayRefundedAmount);
+        BigDecimal gatewayRemainingRefundableAmount =
+                payment.getAmount().subtract(totalRefundedAmount);
+
+        if (request.getRefundAmount().compareTo(gatewayRemainingRefundableAmount) > 0) {
             throw new SDDException("Exceed refund amount",
                     HttpStatus.BAD_REQUEST.value(),
-                    "Refund amount exceeds remaining refundable amount. "
-                            + "Payment amount: " + payment.getAmount()
-                            + ", already refunded: " + alreadyRefundedAmount
-                            + ", remaining refundable: " + remainingRefundableAmount
+                    "Refund amount exceeds the remaining refundable amount. "
+                            + "Already refunded: " + totalRefundedAmount
+                            + ", remaining refundable: " + gatewayRemainingRefundableAmount
             );
         }
 
@@ -717,7 +753,7 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
                         .getPaymentStatus(PaymentStatusCode.REFUND_PENDING)
                         .getId()
         );
-        refund.setRefundReferenceNo(paymentUtils.generateRefundReferenceNo());
+        refund.setRefundReferenceNo(paymentUtils.generateRefundReferenceNo(payment.getBillingHeader()));
         refund.setPaymentGatewayId(
                 paymentUtils
                         .getPaymentGateway("RAZORPAY")

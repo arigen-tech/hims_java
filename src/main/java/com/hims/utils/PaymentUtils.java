@@ -178,4 +178,12 @@ public class PaymentUtils {
         }
         return amountInPaisa;
     }
+
+        public BigDecimal getAmountFromSubUnitINR(Number amountInPaisa) {
+                if (amountInPaisa == null) {
+                        return BigDecimal.ZERO;
+                }
+
+                return BigDecimal.valueOf(amountInPaisa.longValue()).movePointLeft(2);
+        }
 }
