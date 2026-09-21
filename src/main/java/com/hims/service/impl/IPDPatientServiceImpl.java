@@ -2388,6 +2388,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         try {
             UserContext userContext = userContextService.getCurrentUserContext();
+            Optional<MasHospital> masHospital=masHospitalRepository.findById(userContext.getHospitalId());
             //=========================
             // FIND EXISTING SUMMARY
             //=========================
@@ -2466,7 +2467,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 summary.setCreatedBy(userContext.getUserFullName());
                 summary.setLastUpdatedBy(userContext.getUserFullName());
                 summary.setLastUpdateDate(LocalDateTime.now());
-
+                summary.setDischargeNumber(transactionSequenceService.generateTransactionNumber(HMISTransaction.DISCHARGE_NO,masHospital.get().getId()));
                 log.info("Creating discharge summary.");
             }
 
@@ -2535,6 +2536,37 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
                 log.info("Added {} medication(s).", medicationList.size());
             }
+            // =========================
+            // DISCHARGE NOTIFICATION SMS
+            // ONLY WHEN SUBMITTED
+            // =========================
+            if (AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT.equalsIgnoreCase(request.getStatus())) {
+                try {
+                    String mobile = inpatient.getPatient().getPatientMobileNumber();
+                    String patientName = inpatient.getPatient().getFullName();
+                    String dischargeDateTime;
+
+                    if (inpatient.getDischargeDate() != null && inpatient.getDischargeTime() != null) {
+                        LocalDate dischargeDate = inpatient.getDischargeDate();
+                        LocalTime dischargeTime = inpatient.getDischargeTime();
+                        dischargeDateTime = LocalDateTime.of(dischargeDate, dischargeTime).format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a"));
+                    } else {
+                        dischargeDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a"));
+                    }
+                    Map<String, String> smsVariables = new HashMap<>();
+                    smsVariables.put("var1", patientName);
+                    smsVariables.put("var2", dischargeDateTime);
+                    smsVariables.put("var3",summary.getDischargeNumber() );
+                    smsVariables.put("var4", masHospital.get().getContactNumber());
+                    smsUtility.sendSMS(mobile, SMSTemplate.DISCHARGE_NOTIFICATION, smsVariables);
+                    log.info("Discharge notification SMS sent successfully. inpatientId: {}, dischargeNo: {}", request.getInpatientId(),
+                            summary.getDischargeNumber() );
+
+                } catch (Exception smsException) {
+                    log.error("Error while sending discharge notification SMS. inpatientId: {}", request.getInpatientId(), smsException);
+                }
+            }
+
             String message;
 
             if (AppConstants.IP_DISCHARGE_SUMMARY_STATUS_SUMMIT.equalsIgnoreCase(request.getStatus())) {
@@ -2820,6 +2852,35 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         .orElseThrow(() -> new RuntimeException("Paid status not found")));
             }
             ipdBillingHeaderRepository.save(ipdBillingHeader);
+            // =========================
+            // Advance Payment SMS
+            // =========================
+
+            try {
+
+                String mobile = inpatient1.getPatient().getPatientMobileNumber();
+
+                String patientName =inpatient1.getPatient().getFullName();
+
+                String admissionNo = inpatient1.getAdmissionNo();
+
+                String receiptNo = receiptHd.getReceiptNo();
+
+                Map<String, String> smsVariables = new HashMap<>();
+
+                smsVariables.put("var1", patientName);
+                smsVariables.put("var2", totalAmount.toPlainString());
+                smsVariables.put("var3", admissionNo);
+                smsVariables.put("var4", receiptNo);
+
+                smsUtility.sendSMS(mobile, SMSTemplate.ADVANCE_DEPOSIT, smsVariables);
+
+                log.info("IPD Advance Payment SMS sent successfully for admissionNo: {}, receiptNo: {}", admissionNo,receiptNo
+                );
+
+            } catch (Exception smsException) {
+                log.error("Error while sending IPD Advance Payment SMS for inpatientId: {}", request.getInpatientId(), smsException);
+            }
 
             return ResponseUtils.createSuccessResponse("Saving advance collection", new TypeReference<>() {
             });
