@@ -2,9 +2,11 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.temporal.ChronoUnit;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -87,6 +89,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private final UserRepo userRepo;
     private final IpDiagnosisEntryRepository ipDiagnosisEntryRepository;
     private final SaveIpdBillingDetails saveIpdBillingDetails;
+    private final SMSUtility smsUtility;
 
     @Autowired
     MasGenderRepository masGenderRepository;
@@ -338,7 +341,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
         try {
             log.info("Saving IPD patient details started for patientId: {}", request.getPatientId());
-
+            UserContext user=userContextService.getCurrentUserContext();
+            Optional<MasHospital> masHospital=masHospitalRepository.findById(user.getHospitalId());
             Patient patient = patientRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new RuntimeException("Patient not found with id: " + request.getPatientId()));
             Visit visit = null;
@@ -361,9 +365,39 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             saveIpdBillingAndPaymentDetails(request, inpatient);
 
             log.info("Saving IPD patient details completed for patientId: {}, inpatientId: {}", patient.getId(), inpatient.getInpatientId());
+            LocalDateTime admissionDateTime = null;
 
-            return ResponseUtils.createSuccessResponse("IPD patient details saved successfully", new TypeReference<>() {
-            });
+            if (inpatient.getAdmissionDate() != null && inpatient.getAdmissionTime() != null) {
+                admissionDateTime = LocalDateTime.of(
+                        inpatient.getAdmissionDate(),
+                        inpatient.getAdmissionTime()
+                );
+            }
+
+            try {
+
+                Map<String, String> variables = new HashMap<>();
+
+                variables.put("var1", patient.getFullName());
+                variables.put("var2", admissionDateTime != null ? admissionDateTime.format(DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a")) : "");
+
+                variables.put("var3", inpatient.getAdmissionNo());
+                variables.put("var4", inpatient.getAdmittingWardId()!= null ? inpatient.getAdmittingWardId().getWardName() : "");
+                variables.put("var5", masHospital.get().getContactNumber());
+
+
+                smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.ADMISSION_CONFIRMATION, variables);
+
+                log.info("Admission confirmation SMS sent for inpatientId: {}", inpatient.getInpatientId());
+
+            } catch (Exception smsException) {
+                // SMS failure should not affect successful admission
+                log.error("Admission saved successfully but SMS sending failed for inpatientId: {}", inpatient.getInpatientId(), smsException
+                );
+            }
+
+            log.info("Saving IPD patient details completed for patientId: {}, inpatientId: {}", patient.getId(), inpatient.getInpatientId());
+            return ResponseUtils.createSuccessResponse("IPD patient details saved successfully", new TypeReference<>() {});
 
         } catch (Exception e) {
             log.error("Error while saving IPD patient details for patientId: {}. Error: {}", request != null ? request.getPatientId() : null, e.getMessage(),

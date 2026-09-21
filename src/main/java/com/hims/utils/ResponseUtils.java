@@ -75,4 +75,8 @@ public class ResponseUtils {
         return response;
     }
 
+    public static String getReturnMsg(String status, String message) {
+        return status + "|" + message;
+    }
+
 }
