@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.RecordNotFoundException;
@@ -23,6 +24,7 @@ import com.hims.service.*;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISUtil;
 import com.hims.utils.ResponseUtils;
+import com.hims.utils.SMSUtility;
 import jakarta.persistence.EntityNotFoundException;
 import kong.unirest.HttpStatus;
 import lombok.RequiredArgsConstructor;
@@ -103,6 +105,9 @@ public class PatientServiceImpl implements PatientService {
 
     @Autowired
     private RazorpayPrefillPatientMapper razorpayPrefillPatientMapper;
+
+    @Autowired
+    private SMSUtility smsUtility;
 
 
     @Value("${upload.image.path}")
@@ -775,6 +780,15 @@ public class PatientServiceImpl implements PatientService {
             patient.setUhidNo(generateUhid(patient));
         }
         patient = patientRepository.save(patient);
+
+        Map<String, String> variables = new HashMap<>();
+
+        variables.put("var1", patient.getFullName());
+        variables.put("var2", patient.getId().toString());
+
+        smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.REGISTRATION, variables);
+
+        log.info("Lab Booking confirmation SMS sent for patient : {}", patient.getFullName());
         return patient;
     }
 
