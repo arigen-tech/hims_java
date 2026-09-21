@@ -118,6 +118,16 @@ public class PaymentUtils {
         );
     }
 
+    public String generateRefundReferenceNo(BillingHeader billingHeader) {
+
+    return transactionSequenceService.generateTransactionNumber(
+            HMISTransaction.REFUND_REFERENCE_NO,
+            billingHeader != null && billingHeader.getHospital() != null
+                    ? billingHeader.getHospital().getId()
+                    : null
+    );
+}
+
     public MasPaymentMode getPaymentMode(String mode) {
 
         return masPaymentModeRepository

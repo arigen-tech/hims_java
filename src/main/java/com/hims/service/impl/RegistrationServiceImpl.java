@@ -544,7 +544,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                         .getPaymentStatus(PaymentStatusCode.REFUND_PENDING_CASH)
                         .getId()
         );
-        refund.setRefundReferenceNo(paymentUtils.generateRefundReferenceNo());
+        refund.setRefundReferenceNo(paymentUtils.generateRefundReferenceNo(payment.getBillingHeader()));
         refund.setPaymentGatewayId(
                 paymentUtils
                         .getPaymentGateway("CASH")
