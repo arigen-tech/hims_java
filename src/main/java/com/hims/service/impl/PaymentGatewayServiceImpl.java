@@ -358,8 +358,8 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
             payment.setGatewayPaymentStatus("created");
 
             if (existingRow == null) {
-                payment.setPaymentReferenceNo(paymentUtils.generatePaymentReferenceNo());
-                payment.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
+                payment.setPaymentReferenceNo(paymentUtils.generatePaymentReferenceNo(billingHeader));
+                payment.setCreatedBy(userContextService.getCurrentUserFullNameFromToken());
             }
 
             paymentRepository.save(payment);

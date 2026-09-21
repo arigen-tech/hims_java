@@ -102,6 +102,14 @@ public class PaymentUtils {
                 userContextService.getCurrentUserContext().getHospitalId()
         );
     }
+    public String generatePaymentReferenceNo(BillingHeader billingHeader) {
+        return   transactionSequenceService.generateTransactionNumber(
+                HMISTransaction.PAYMENT_REFERENCE_NO,
+                billingHeader != null && billingHeader.getHospital() != null
+                    ? billingHeader.getHospital().getId()
+                    : null
+        );
+    }
 
     public String generateReceiptNumber(BillingHeader billingHeader) {
 
