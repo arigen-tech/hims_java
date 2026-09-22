@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.constants.PaymentStatusCode;
+import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -18,10 +19,7 @@ import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
-import com.hims.utils.AuthUtil;
-import com.hims.utils.HMISUtil;
-import com.hims.utils.PaymentUtils;
-import com.hims.utils.ResponseUtils;
+import com.hims.utils.*;
 import kong.unirest.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -158,6 +157,9 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Autowired
     private PaymentRefundRepository paymentRefundRepository;
+
+    @Autowired
+    private SMSUtility smsUtility;
 
 
 
@@ -508,6 +510,7 @@ public class RegistrationServiceImpl implements RegistrationService {
       //  billingHeaderRepository.save(bill);
         Visit savedVisit = visitRepository.save(visit);
 
+
         try {
             Optional<PaymentDetailsV2> paymentOpt = paymentDetailsV2Repository.findByBillingHeader_IdAndGatewayPaymentIdIsNull(billingHeader.getId());
             if(paymentOpt.isPresent()){
@@ -521,10 +524,26 @@ public class RegistrationServiceImpl implements RegistrationService {
                     saveRefundDetailsForCash(paymentDetailsV2,request.getRefundAmount(),reason);
                 }
             }
+            Map<String, String> variables = new HashMap<>();
+
+            variables.put("var1", visit.getPatient().getFullName());
+            variables.put("var2", visit.getDepartment().getDepartmentName());
+
+            String formattedDate =  visit.getVisitDate()
+                    .format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a", Locale.ENGLISH))
+                    .toUpperCase();
+            variables.put("var3",formattedDate);
+            variables.put("var5",visit.getHospital().getContactNumber());
+
+            smsUtility.sendSMS(visit.getPatient().getPatientMobileNumber(), SMSTemplate.APPOINTMENT_CANCEL, variables);
+
+            log.info("Booking cancel confirmation SMS sent for patient : {}", visit.getPatient().getFullName());
         }catch (Exception e){
             log.error("cancelAppointment method error :: ",e);
             throw e;
         }
+
+
 
         return new ApiResponse<>(HttpStatus.OK, "Appointment cancelled successfully");
     }
@@ -646,7 +665,24 @@ public class RegistrationServiceImpl implements RegistrationService {
         }
         v.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
 
-        visitRepository.save(v);
+        Visit save = visitRepository.save(v);
+
+        Map<String, String> variables = new HashMap<>();
+
+        variables.put("var1", save.getPatient().getFullName());
+        variables.put("var2", save.getDepartment().getDepartmentName());
+        String formattedDate =  save.getVisitDate()
+                .format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a", Locale.ENGLISH))
+                .toUpperCase();
+        log.info("Appointment reschedule formatted date :",formattedDate);
+        variables.put("var4",formattedDate);
+        variables.put("var5",save.getHospital().getContactNumber());
+
+
+        smsUtility.sendSMS(save.getPatient().getPatientMobileNumber(), SMSTemplate.RESCHEDULED_APPOINTMENT, variables);
+
+        log.info("Appointment reschedule SMS sent for patient : {}", save.getPatient().getFullName());
+
         return new ApiResponse<>(HttpStatus.OK, "Success");
     }
 

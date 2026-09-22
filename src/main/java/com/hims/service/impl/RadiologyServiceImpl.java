@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -94,6 +96,9 @@ public class RadiologyServiceImpl implements RadiologyService {
 
     @Autowired
     private HelperUtils helperUtils;
+
+    @Autowired
+    private  SMSUtility smsUtility;
 
 
     @Override
@@ -915,8 +920,9 @@ public class RadiologyServiceImpl implements RadiologyService {
                         }
                     }
                 }
-            }
 
+
+                }
         } catch (SDDException e) {
             log.error("Business error: {}", e.getMessage());
             throw e;
@@ -1306,7 +1312,22 @@ public class RadiologyServiceImpl implements RadiologyService {
         UserContext userContext = userContextService.getCurrentUserContext();
         hd.setCreatedBy(userContext.getUserFullName());
         hd.setLastChgBy(userContext.getUserFullName());
-        return radOrderHdRepository.save(hd);
+        RadOrderHd save = radOrderHdRepository.save(hd);
+        Map<String, String> variables = new HashMap<>();
+
+        variables.put("var1", patient.getFullName());
+        variables.put("var2", "Radiology");
+        String formattedDate =  save!=null?save.getOrderTime()
+                .format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a", Locale.ENGLISH))
+                .toUpperCase():"";
+        log.info("Lab booking formatted date :",formattedDate);
+        variables.put("var4",formattedDate);
+
+        smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.OTHER_APPOINTMENT, variables);
+
+        log.info("Radiology Booking confirmation SMS sent for patient : {}", patient.getFullName());
+
+        return save;
     }
 
 

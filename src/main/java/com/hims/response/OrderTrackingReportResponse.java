@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -22,6 +23,6 @@ public class OrderTrackingReportResponse {
     private String investigationName;
     private Long orderStatusId;
     private String orderStatusName;
-    private LocalDate orderDate;
+    private LocalDateTime orderDate;
 
 }
