@@ -709,7 +709,7 @@ public class BillingServiceImpl implements BillingService {
         PaymentResponse res = new PaymentResponse();
         BillingHeader header;
         List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
-        UserContext userContext = userContextService.getCurrentUserContext();
+        String fullName = userContextService.getCurrentUserFullNameFromToken();
         if (opdPayments == null || opdPayments.isEmpty()) {
             throw new SDDException(500,"OPD payment items missing in request.");
         }
@@ -731,7 +731,7 @@ public class BillingServiceImpl implements BillingService {
                 for (BillingDetail bdt : details) {
                     bdt.setChargeCost(bdt.getNetAmount());
                     bdt.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-                    bdt.setCollectedBy(userContext.getUserFullName());
+                    bdt.setCollectedBy(fullName);
                     billingDetailRepository.save(bdt);
                 }
             }
@@ -766,7 +766,7 @@ public class BillingServiceImpl implements BillingService {
             BigDecimal oldPaid = header.getTotalPaid() == null ? BigDecimal.ZERO : header.getTotalPaid();
             header.setTotalPaid(oldPaid.add(netAmount));
             header.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-            header.setCreatedBy(userContext.getUserFullName());
+            header.setCreatedBy(fullName);
             billingHeaderRepository.save(header);
 
             visit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -796,7 +796,7 @@ public class BillingServiceImpl implements BillingService {
 
         log.info("Starting LAB payment update");
         log.debug("Request: {}", request);
-        UserContext userContext = userContextService.getCurrentUserContext();
+        String userContext = userContextService.getCurrentUserFullNameFromToken();
         PaymentResponse res = new PaymentResponse();
         try {
             BillingHeader billingHeader = billingHeaderRepository
@@ -829,7 +829,7 @@ public class BillingServiceImpl implements BillingService {
 
                 if (AppConstants.INVESTIGATION.equalsIgnoreCase(item.getType())) {
                     billingDetailRepository.updatePaymentStatusInvestigation(
-                            AppConstants.PAYMENT_PAID.toLowerCase(), userContext.getUserFullName(), item.getId(), billHdId);
+                            AppConstants.PAYMENT_PAID.toLowerCase(), userContext, item.getId(), billHdId);
 
                     labDtRepository.updatePaymentStatusInvestigationDt(
                             AppConstants.PAYMENT_PAID.toLowerCase(), item.getId(), billHdId);
@@ -837,7 +837,7 @@ public class BillingServiceImpl implements BillingService {
                 } else {
                     //for package status
                     billingDetailRepository.updatePaymentStatusPackage(
-                            AppConstants.PAYMENT_PAID.toLowerCase(),userContext.getUserFullName(), item.getId(), billHdId);
+                            AppConstants.PAYMENT_PAID.toLowerCase(),userContext, item.getId(), billHdId);
 
                     labDtRepository.updatePaymentStatusPackageDt(
                             AppConstants.PAYMENT_PAID.toLowerCase(), item.getId(), billHdId);
@@ -865,7 +865,7 @@ public class BillingServiceImpl implements BillingService {
                     .orElse(BigDecimal.ZERO);
 
             billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUI));
-            billingHeader.setCreatedBy(userContext.getUserFullName());
+            billingHeader.setCreatedBy(userContext);
 
             if (fullyPaid) {
                 orderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -905,7 +905,7 @@ public class BillingServiceImpl implements BillingService {
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
         PaymentResponse res = new PaymentResponse();
-        UserContext userContext = userContextService.getCurrentUserContext();
+        String fullName = userContextService.getCurrentUserFullNameFromToken();
         try {
 
 
@@ -949,14 +949,14 @@ public class BillingServiceImpl implements BillingService {
 
                     if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(invpkg.getType())) {
                         billingDetailRepository.updatePaymentStatusInvestigation(
-                                AppConstants.PAYMENT_PAID.toLowerCase(),userContext.getUserFullName(), invpkg.getId(), billId);
+                                AppConstants.PAYMENT_PAID.toLowerCase(),fullName, invpkg.getId(), billId);
 
                         radOrderDtRepository.updatePaymentStatusInvestigationDt(
                                 AppConstants.PAYMENT_PAID.toLowerCase(), invpkg.getId(), billId);
 
                     } else {
                         billingDetailRepository.updatePaymentStatusPackage(
-                                AppConstants.PAYMENT_PAID.toLowerCase(),userContext.getUserFullName(), invpkg.getId(), billId);
+                                AppConstants.PAYMENT_PAID.toLowerCase(),fullName, invpkg.getId(), billId);
 
                         radOrderDtRepository.updatePaymentStatusPackegDt(
                                 AppConstants.PAYMENT_PAID.toLowerCase(),
@@ -983,7 +983,7 @@ public class BillingServiceImpl implements BillingService {
                         .orElse(BigDecimal.ZERO);
 
                 billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
-                billingHeader.setCreatedBy(userContext.getUserFullName());
+                billingHeader.setCreatedBy(fullName);
 
                 if (fullyPaid) {
                     orderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -1945,7 +1945,7 @@ public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatie
             payment.setPaymentReferenceNo(
                     paymentUtils.generatePaymentReferenceNo()
             );
-            payment.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
+            payment.setCreatedBy(userContextService.getCurrentUserFullNameFromToken());
             payment.setCreatedAt(HMISUtil.getCurrentLocalDateTime());
 
         } else {
