@@ -2424,7 +2424,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         || response.getOutstandingAmount() == null
                         || !ipBillStatusFinal.equals(response.getBillStatusId())
                         || !ipPaymentStatusPaid.equals(response.getPaymentStatusId())
-                        || response.getOutstandingAmount().compareTo(BigDecimal.ZERO) != 0) {
+                        || response.getOutstandingAmount().compareTo(BigDecimal.ZERO) > 0) {
 
                     return ResponseUtils.createFailureResponse(
                             null,
@@ -2844,13 +2844,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             // If Bill Final and Outstanding = 0 then Payment Status = Paid
 
-            if (outstandingAmount.compareTo(BigDecimal.ZERO) == 0
+            if (outstandingAmount.compareTo(BigDecimal.ZERO) <= 0
                     && ipdBillingHeader.getBillStatus() != null
                     && ipdBillingHeader.getBillStatus().getBillStatusId().equals(ipBillStatusFinal)) {
 
-                ipdBillingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid)
-                        .orElseThrow(() -> new RuntimeException("Paid status not found")));
+                ipdBillingHeader.setPaymentStatus(
+                        masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid)
+                                .orElseThrow(() -> new RuntimeException("Paid status not found"))
+                );
             }
+
             ipdBillingHeaderRepository.save(ipdBillingHeader);
             // =========================
             // Advance Payment SMS
