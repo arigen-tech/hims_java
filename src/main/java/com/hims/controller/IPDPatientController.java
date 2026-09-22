@@ -379,7 +379,7 @@ public class IPDPatientController {
 
     }
     @PostMapping("/saveAdvanceCollection")
-    public ApiResponse<String> saveDischargeSummary(@Valid @RequestBody AdvanceCollectionRequest request) {
+    public ApiResponse<String> saveAdvanceCollection(@Valid @RequestBody AdvanceCollectionRequest request) {
 
         log.info("Request received to save discharge summary for inpatientId: {}", request.getInpatientId());
 
