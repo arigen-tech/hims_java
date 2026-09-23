@@ -311,10 +311,16 @@ public interface PaymentRefundRepository extends JpaRepository<PaymentRefund, Lo
 
             pr.refund_processed_at AS refundDate,
 
-            COALESCE(
-                mps.payment_status_name,
-                'PENDING'
-            ) AS refundStatus,
+            CASE
+            WHEN mps.payment_status_code = 'REFUNDED' THEN
+                CASE
+                    WHEN pr.gateway_reference_type IS NULL
+                         OR pr.gateway_reference_no IS NULL
+                    THEN 'PROCESSED'
+                    ELSE 'REFUNDED'
+                END
+            ELSE 'PENDING'
+        END AS refundStatus,
 
             mpg.payment_gateway_id AS paymentModeId,
             mpg.gateway_code AS paymentModeCode,
@@ -385,14 +391,25 @@ public interface PaymentRefundRepository extends JpaRepository<PaymentRefund, Lo
           )
 
           AND (
-              :refundStatus IS NULL
-              OR :refundStatus = ''
-              OR mps.payment_status_code = :refundStatus
-          )
+          :refundStatus IS NULL
+          OR :refundStatus = ''
+          OR (
+              CASE
+                  WHEN mps.payment_status_code = 'REFUNDED' THEN
+                      CASE
+                          WHEN pr.gateway_reference_type IS NULL
+                               OR pr.gateway_reference_no IS NULL
+                          THEN 'PROCESSED'
+                          ELSE 'REFUNDED'
+                      END
+                  ELSE 'PENDING'
+              END
+          ) = :refundStatus
+      )
 
           AND (
               :paymentModeId IS NULL
-              OR pr.payment_gateway_id = :paymentModeId
+              OR pr.refund_mode_id = :paymentModeId
           )
 
         ORDER BY pr.refund_requested_at DESC
@@ -473,7 +490,7 @@ public interface PaymentRefundRepository extends JpaRepository<PaymentRefund, Lo
 
       AND (
           :paymentModeId IS NULL
-          OR pr.payment_gateway_id = :paymentModeId
+          OR pr.refund_mode_id = :paymentModeId
       )
     """,
 
@@ -572,5 +589,7 @@ public interface PaymentRefundRepository extends JpaRepository<PaymentRefund, Lo
             @Param("patientId") Long patientId,
             Pageable pageable
     );
+
+    List<PaymentRefund> findByPaymentGatewayIdAndGatewayReferenceNoIsNullAndGatewayReferenceTypeIsNull(Long paymentGatewayId);
 
 }
