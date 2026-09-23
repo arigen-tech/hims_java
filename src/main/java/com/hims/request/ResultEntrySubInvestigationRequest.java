@@ -21,6 +21,7 @@ public class ResultEntrySubInvestigationRequest {
     private Long normalId;
     private String normalRange;
     private String fixedValue;
+    private Long resultFlagId;
 
 
 }

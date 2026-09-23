@@ -3,7 +3,9 @@ package com.hims.controller;
 
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
+import com.hims.response.MasResultFlagResponse;
 import com.hims.service.LabService;
+import com.hims.service.ResultFlagService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,6 +23,8 @@ import java.util.List;
 public class LabController {
 
     private final LabService labService;
+
+    private final ResultFlagService resultFlagService;
 
     /**
      * Fetch Pending Sample Collection Headers
@@ -640,6 +644,16 @@ public class LabController {
     @PutMapping("/updateResult")
     public ApiResponse<String> updateResult(@RequestBody ResultUpdateRequest request) {
         return labService.updateResult(request);
+    }
+
+
+    @GetMapping("/detect-flag")
+    public ResponseEntity<ApiResponse<MasResultFlagResponse>> detectFlag(
+            @RequestParam(value = "result", required = false)      String result,
+            @RequestParam(value = "normalRange", required = false) String normalRange) {
+
+
+        return ResponseEntity.ok(resultFlagService.detectResultFlag(result, normalRange));
     }
 
 

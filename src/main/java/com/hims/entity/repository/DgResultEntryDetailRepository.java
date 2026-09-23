@@ -77,12 +77,14 @@ SELECT new com.hims.response.InvestigationsForResultValidation(
 
     d.normalRange,
     d.generatedSampleId,
-    i.investigationType
+    i.investigationType,
+    r.resultFlagId
+    
 
 )
 
 FROM DgResultEntryDetail d
-
+LEFT JOIN d.resultFlag r
 LEFT JOIN d.investigationId i
 LEFT JOIN d.uomId u
 LEFT JOIN d.sampleId s
@@ -109,12 +111,13 @@ SELECT new com.hims.response.SubInvestigationsForResultValidationResponse(
     f.fixedId,
     d.generatedSampleId,
     d.result,
-    d.remarks
+    d.remarks,
+    r.resultFlagId
 
 )
 
 FROM DgResultEntryDetail d
-
+LEFT JOIN d.resultFlag r
 LEFT JOIN d.subInvestigationId sub
 LEFT JOIN sub.investigationId inv
 LEFT JOIN d.uomId u

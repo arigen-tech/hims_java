@@ -4,18 +4,25 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.Inpatient;
 import com.hims.entity.MasIpdServiceCategory;
 import com.hims.entity.MasWardRoomTariff;
+import com.hims.entity.PaymentRefund;
 import com.hims.entity.repository.InpatientRepository;
 import com.hims.entity.repository.MasIpdServiceCategoryRepository;
 import com.hims.entity.repository.MasWardRoomTariffRepo;
+import com.hims.entity.repository.PaymentRefundRepository;
 import com.hims.utils.SaveIpdBillingDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -27,13 +34,15 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class InpatientRoomBillingScheduler {
+public class HMISScheduler {
 
     private final InpatientRepository inpatientRepository;
     private final MasWardRoomTariffRepo masWardRoomTariffRepo;
     private final MasIpdServiceCategoryRepository masIpdServiceCategoryRepository;
     private final SaveIpdBillingDetails saveIpdBillingDetails;
+    private final PaymentRefundRepository paymentRefundRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${ipd.admission.status.admitted}")
     private Long admittedStatusId;
@@ -41,13 +50,25 @@ public class InpatientRoomBillingScheduler {
     @Value("${ipd.service.category.room.rent}")
     private Long ipdServiceCategoryRoomRent;
 
-    // Unique lock key
+    @Value("${razorpay.key.id}")
+    private String razorpayKeyId;
+
+    @Value("${razorpay.key.secret}")
+    private String razorpayKeySecret;
+
     private static final long ROOM_BILLING_LOCK_KEY = 927341L;
+    private static final long REFUND_REFERENCE_LOCK_KEY = 927342L;
+
+    private static final Long GATEWAY_REFUND_MODE_ID = 1L;
+
+    // =========================================================================
+    // Daily inpatient room billing
+    // =========================================================================
 
     @Scheduled(cron = "${ipd.room.billing.scheduler.cron:0 0 23 * * *}")
-   // @Scheduled(fixedRateString = "${ipd.room.billing.scheduler.fixed-rate-ms:300000}")
+    // @Scheduled(fixedRateString = "${ipd.room.billing.scheduler.fixed-rate-ms:300000}")
     public void saveDailyInpatientRoomBilling() {
-        if (!tryAcquireLock()) {
+        if (!tryAcquireLock(ROOM_BILLING_LOCK_KEY)) {
             log.info("Room billing job is already running on another instance. Skipping current node.");
             return;
         }
@@ -73,8 +94,8 @@ public class InpatientRoomBillingScheduler {
             List<MasWardRoomTariff> tariffList = masWardRoomTariffRepo.findCurrentTariffsForRooms(roomIds, billingDate, AppConstants.STATUS_Y.toLowerCase());
 
             Map<Long, MasWardRoomTariff> roomTariffMap = tariffList.stream().collect(Collectors.toMap(
-                            MasWardRoomTariff::getRoomId, t -> t,
-                            (existing, replacement) -> {return existing;}));
+                    MasWardRoomTariff::getRoomId, t -> t,
+                    (existing, replacement) -> {return existing;}));
 
             int successCount = 0;
             int skippedCount = 0;
@@ -112,17 +133,6 @@ public class InpatientRoomBillingScheduler {
     }
 
     /**
-     * Acquires the cluster-wide advisory lock in its own short transaction.
-     * pg_try_advisory_xact_lock auto-releases when this transaction ends,
-     * so the lock isn't held for the entire (potentially long) billing run.
-     */
-    @Transactional
-    public boolean tryAcquireLock() {
-        Boolean acquired = jdbcTemplate.queryForObject("SELECT pg_try_advisory_xact_lock(?)", Boolean.class, ROOM_BILLING_LOCK_KEY);
-        return Boolean.TRUE.equals(acquired);
-    }
-
-    /**
      * Bills exactly one inpatient in its own independent transaction.
      * If this fails (constraint violation, stale data, etc.), only THIS
      * transaction rolls back — billing already committed for other
@@ -155,5 +165,125 @@ public class InpatientRoomBillingScheduler {
                 null,
                 itemName
         );
+    }
+
+
+    // Refund gateway reference (RRN/ARN/UTC) sync
+    @Scheduled(cron = "${refund.reference.scheduler.cron:0 0/30 * * * *}", zone = "Asia/Kolkata")
+    public void syncGatewayRefundReferences() {
+        if (!tryAcquireLock(REFUND_REFERENCE_LOCK_KEY)) {
+            log.info("Refund reference sync job is already running on another instance. Skipping current node.");
+            return;
+        }
+        log.info("Refund reference (RRN/ARN/UTC) sync scheduler started");
+
+        List<PaymentRefund> pendingRefunds = paymentRefundRepository
+                .findByPaymentGatewayIdAndGatewayReferenceNoIsNullAndGatewayReferenceTypeIsNull(GATEWAY_REFUND_MODE_ID);
+
+        if (pendingRefunds.isEmpty()) {
+            log.info("No pending refunds found needing gateway reference sync.");
+            return;
+        }
+
+        int successCount = 0;
+        int skippedCount = 0;
+        int failedCount = 0;
+
+        for (PaymentRefund refund : pendingRefunds) {
+            if (refund.getGatewayRefundId() == null || refund.getGatewayRefundId().isBlank()) {
+                log.warn("Skipping refund reference sync because gatewayRefundId is missing. refundId={}", refund.getRefundId());
+                skippedCount++;
+                continue;
+            }
+            try {
+                boolean updated = syncOneRefund(refund);
+                if (updated) {
+                    successCount++;
+                } else {
+                    skippedCount++;
+                }
+            } catch (Exception e) {
+                failedCount++;
+                log.error("Failed to sync gateway reference for refundId={}, gatewayRefundId={}",
+                        refund.getRefundId(), refund.getGatewayRefundId(), e);
+            }
+        }
+        log.info("Refund reference sync completed. eligibleCount={}, successCount={}, skippedCount={}, failedCount={}",
+                pendingRefunds.size(), successCount, skippedCount, failedCount);
+    }
+
+    /**
+     * Fetches one refund from Razorpay and, if a reference is available yet,
+     * updates gateway_reference_no / gateway_reference_type in its own
+     * independent transaction. Returns true if a reference was written.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean syncOneRefund(PaymentRefund refund) {
+        Map<String, Object> body = fetchRefundFromRazorpay(refund.getGatewayRefundId());
+        if (body == null) {
+            log.warn("Empty response from Razorpay for gatewayRefundId={}", refund.getGatewayRefundId());
+            return false;
+        }
+
+        Object acquirerDataObj = body.get("acquirer_data");
+        if (!(acquirerDataObj instanceof Map)) {
+            log.info("No acquirer_data present yet for gatewayRefundId={}", refund.getGatewayRefundId());
+            return false;
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> acquirerData = (Map<String, Object>) acquirerDataObj;
+
+        String referenceNo = null;
+        String referenceType = null;
+
+
+        if (acquirerData.get("rrn") != null) {
+            referenceNo = String.valueOf(acquirerData.get("rrn"));
+            referenceType = "RRN";
+        } else if (acquirerData.get("arn") != null) {
+            referenceNo = String.valueOf(acquirerData.get("arn"));
+            referenceType = "ARN";
+        } else if (acquirerData.get("utr") != null) {
+            referenceNo = String.valueOf(acquirerData.get("utr"));
+            referenceType = "UTR";
+        }
+
+        if (referenceNo == null) {
+            log.info("Razorpay has not returned an RRN/ARN/UTC yet for gatewayRefundId={}", refund.getGatewayRefundId());
+            return false;
+        }
+
+        refund.setGatewayReferenceNo(referenceNo);
+        refund.setGatewayReferenceType(referenceType);
+        paymentRefundRepository.save(refund);
+        log.info("Updated refundId={} with gatewayReferenceType={}, gatewayReferenceNo={}",
+                refund.getRefundId(), referenceType, referenceNo);
+        return true;
+    }
+
+    private Map<String, Object> fetchRefundFromRazorpay(String gatewayRefundId) {
+        String url = "https://api.razorpay.com/v1/refunds/" + gatewayRefundId;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(razorpayKeyId, razorpayKeySecret);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, Map.class);
+        return response.getBody();
+    }
+
+    // Shared cluster-wide advisory lock
+
+    /**
+     * Acquires a cluster-wide advisory lock, keyed per job, in its own short
+     * transaction. pg_try_advisory_xact_lock auto-releases when this
+     * transaction ends, so the lock isn't held for the entire (potentially
+     * long) job run.
+     */
+    @Transactional
+    public boolean tryAcquireLock(long lockKey) {
+        Boolean acquired = jdbcTemplate.queryForObject("SELECT pg_try_advisory_xact_lock(?)", Boolean.class, lockKey);
+        return Boolean.TRUE.equals(acquired);
     }
 }

@@ -362,6 +362,9 @@ public class MasterController {
     @Autowired
     private MasPaymentGatewayService masPaymentGatewayService;
 
+    @Autowired
+    private ResultFlagService resultFlagService;
+
 
     //    ================================Mas Application Controller================================//
 
@@ -5821,6 +5824,13 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
     @GetMapping("/paymentGateway/getAll/{flag}")
     public ResponseEntity<?> getPaymentGateways(@PathVariable int flag) {
         return ResponseEntity.ok(masPaymentGatewayService.getMasPaymentGateways(flag));
+    }
+
+    //--------------------------------------MasResultFlag-----------------------------------------
+
+    @GetMapping("/result-flag/all")
+    public  ResponseEntity<?> getAllResultFlag(){
+        return  ResponseEntity.ok(resultFlagService.getResultFlagDropdown());
     }
 
 }

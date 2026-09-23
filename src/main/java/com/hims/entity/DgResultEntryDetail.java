@@ -83,6 +83,10 @@ public class DgResultEntryDetail {
     @JoinColumn(name = "sample_collection_details_id")
     private DgSampleCollectionDetails sampleCollectionDetailsId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "result_flag_id")
+    private MasResultFlag resultFlag;
+
    // private Integer nprmalId;
    @Column(name = "normal_range")
     private String normalRange;

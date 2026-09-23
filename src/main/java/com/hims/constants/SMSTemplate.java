@@ -5,6 +5,8 @@ public enum SMSTemplate {
 
     OPD_INVOICE("ARIHLT_OPDINV", "OPD Invoice"),
 
+    INVOICE_NOTIFICATION("ARIHLT_OPDINV_NEW","Invoice"),
+
     LAB_REPORT("ARIHLT_LABREPORT", "Lab Report"),
 
     APPOINTMENT_CONFIRMATION(
@@ -13,6 +15,8 @@ public enum SMSTemplate {
     ),
 
     LOGIN_OTP("ARIHLT_LOGINOTP", "Login OTP"),
+
+    APPOINTMENT_CANCEL_OTP("ARIHLT_CANCELOTP_NEW","Appointment Cancel"),
 
     ADMISSION_CONFIRMATION(
             "Admission Confirmation",
