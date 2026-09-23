@@ -75,6 +75,7 @@
     -- Payment mode name and payment date
     mpm.mode_code AS payment_mode,
     pdv2.payment_date AS payment_date,
+    pdv2.payment_via AS paymentVia,
 
     COALESCE(bh.referred_by, 'self') AS referred_by,
 
@@ -268,6 +269,11 @@ WHERE bd.payment_status = 'y'
 	<field name="payment_date" class="java.sql.Timestamp">
 		<property name="com.jaspersoft.studio.field.name" value="payment_date"/>
 		<property name="com.jaspersoft.studio.field.label" value="payment_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details_v2"/>
+	</field>
+	<field name="paymentvia" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="paymentvia"/>
+		<property name="com.jaspersoft.studio.field.label" value="paymentvia"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details_v2"/>
 	</field>
 	<field name="referred_by" class="java.lang.String">
@@ -1090,11 +1096,25 @@ WHERE bd.payment_status = 'y'
 				<textElement markup="html">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
-				<textFieldExpression><![CDATA["<b>Payment remarks</b> - Received ₹"+ $F{paid_amount}+ " via "+ $F{payment_mode}
+				<textFieldExpression><![CDATA["<b>Payment remarks</b> - Received ₹"
++ $F{paid_amount}
++ " via "
++ $F{payment_mode}
++ (
+    $F{payment_mode} != null
+    && !$F{payment_mode}.equalsIgnoreCase("Cash")
+    && $F{paymentvia} != null
+    && !$F{paymentvia}.trim().isEmpty()
+    ?
+    " (" + $F{paymentvia} + ")"
+    :
+    ""
+  )
 + " from "
 + $F{patient_name}
 + " on "
-+ new java.text.SimpleDateFormat("dd MMM yyyy 'at' hh:mm a").format($F{payment_date})
++ new java.text.SimpleDateFormat("dd MMM yyyy 'at' hh:mm a")
+    .format($F{payment_date})
 + "."]]></textFieldExpression>
 			</textField>
 			<line>
