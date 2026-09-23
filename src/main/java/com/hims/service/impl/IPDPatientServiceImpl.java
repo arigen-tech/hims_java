@@ -342,7 +342,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         try {
             log.info("Saving IPD patient details started for patientId: {}", request.getPatientId());
             UserContext user=userContextService.getCurrentUserContext();
-            Optional<MasHospital> masHospital=masHospitalRepository.findById(user.getHospitalId());
+            MasHospital masHospital = masHospitalRepository.findById(user.getHospitalId())
+                    .orElseThrow(() ->
+                            new RuntimeException("Hospital not found with id: " + user.getHospitalId()));
             Patient patient = patientRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new RuntimeException("Patient not found with id: " + request.getPatientId()));
             Visit visit = null;
@@ -383,7 +385,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
                 variables.put("var3", inpatient.getAdmissionNo());
                 variables.put("var4", inpatient.getAdmittingWardId()!= null ? inpatient.getAdmittingWardId().getWardName() : "");
-                variables.put("var5", masHospital.get().getContactNumber());
+                variables.put("var5", masHospital.getContactNumber());
 
 
                 smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.ADMISSION_CONFIRMATION, variables);
