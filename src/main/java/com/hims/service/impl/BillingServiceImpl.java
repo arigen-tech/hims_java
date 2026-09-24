@@ -147,7 +147,7 @@ public class BillingServiceImpl implements BillingService {
     public ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount) {
         BillingHeader header = new BillingHeader();
         OpdBillingPaymentResponse response = new OpdBillingPaymentResponse();
-        UserContext userContext = userContextService.getCurrentUserContext();
+        String userContext = userContextService.getCurrentUserFullNameFromToken();
         BigDecimal tax = BigDecimal.ZERO;
         BigDecimal registrationCost = BigDecimal.ZERO;
 
@@ -232,8 +232,8 @@ public class BillingServiceImpl implements BillingService {
             } else {
                 header.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
             }
-            header.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, userContext.getHospitalId()));
-            header.setCreatedBy(userContext.getUserFullName());
+            header.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, visit.getHospital().getId()));
+            header.setCreatedBy(userContext);
             header.setInvoiceNo("");
             header.setBillingDate(HMISUtil.getCurrentLocalDateTime());
             header.setDiscount(discount);
