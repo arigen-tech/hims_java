@@ -102,6 +102,14 @@ public class PaymentUtils {
                 userContextService.getCurrentUserContext().getHospitalId()
         );
     }
+    public String generatePaymentReferenceNo(BillingHeader billingHeader) {
+        return   transactionSequenceService.generateTransactionNumber(
+                HMISTransaction.PAYMENT_REFERENCE_NO,
+                billingHeader != null && billingHeader.getHospital() != null
+                    ? billingHeader.getHospital().getId()
+                    : null
+        );
+    }
 
     public String generateReceiptNumber(BillingHeader billingHeader) {
 
@@ -117,6 +125,16 @@ public class PaymentUtils {
                 userContextService.getCurrentUserContext().getHospitalId()
         );
     }
+
+    public String generateRefundReferenceNo(BillingHeader billingHeader) {
+
+    return transactionSequenceService.generateTransactionNumber(
+            HMISTransaction.REFUND_REFERENCE_NO,
+            billingHeader != null && billingHeader.getHospital() != null
+                    ? billingHeader.getHospital().getId()
+                    : null
+    );
+}
 
     public MasPaymentMode getPaymentMode(String mode) {
 
@@ -168,4 +186,12 @@ public class PaymentUtils {
         }
         return amountInPaisa;
     }
+
+        public BigDecimal getAmountFromSubUnitINR(Number amountInPaisa) {
+                if (amountInPaisa == null) {
+                        return BigDecimal.ZERO;
+                }
+
+                return BigDecimal.valueOf(amountInPaisa.longValue()).movePointLeft(2);
+        }
 }

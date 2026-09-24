@@ -44,10 +44,51 @@ package com.hims.mapper;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.projection.PaidCancelledAppointmentProjection;
 import com.hims.request.PaidCancelledAppointmentResponse;
+import com.hims.response.MobileCancelledRefundResponse;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PaidCancelledAppointmentMapper {
+
+    public MobileCancelledRefundResponse mapToMobileCancelledRefundResponse(
+            PaidCancelledAppointmentProjection projection
+    ) {
+        if (projection == null) {
+            return null;
+        }
+
+        MobileCancelledRefundResponse response = new MobileCancelledRefundResponse();
+        response.setVisitId(projection.getVisitId());
+        response.setPatientId(projection.getPatientId());
+        response.setBillingHeaderId(projection.getBillingHeaderId());
+        response.setPatientName(projection.getPatientName());
+        response.setMobileNumber(projection.getMobileNumber() != null
+                ? projection.getMobileNumber() : projection.getMobileNo());
+        response.setAge(projection.getAge());
+        response.setGender(projection.getGender());
+        response.setDoctorId(projection.getDoctorId());
+        response.setDoctorName(projection.getDoctorName());
+        response.setDepartmentId(projection.getDepartmentId());
+        response.setDepartmentName(projection.getDepartmentName());
+        response.setAppointmentDate(projection.getAppointmentDate());
+        response.setAppointmentTime(projection.getAppointmentTime());
+        response.setCancellationDateTime(projection.getCancellationDateTime());
+        response.setCancelledBy(projection.getCancelledBy());
+        response.setCancellationReason(projection.getCancellationReason());
+        response.setBillingAmount(projection.getBillingAmount());
+        response.setPaymentId(projection.getPaymentId());
+        response.setRefundId(projection.getRefundId());
+        response.setRefundAmount(projection.getRefundAmount());
+        response.setRefundReferenceNo(projection.getRefundReferenceNo());
+        response.setRefundReason(projection.getRefundReason());
+        response.setGatewayRefundId(projection.getGatewayRefundId());
+        response.setRefundDate(projection.getRefundDate());
+        response.setRefundStatus(projection.getRefundStatus());
+        response.setPaymentModeId(projection.getPaymentModeId());
+        response.setPaymentModeCode(projection.getPaymentModeCode());
+        response.setPaymentModeName(projection.getPaymentModeName());
+        return response;
+    }
 
     public PaidCancelledAppointmentResponse mapToResponse(
             PaidCancelledAppointmentProjection projection
@@ -66,8 +107,19 @@ public class PaidCancelledAppointmentMapper {
 
         response.setPatientName(projection.getPatientName());
         response.setMobileNo(projection.getMobileNo());
+        response.setMobileNumber(projection.getMobileNumber() != null
+            ? projection.getMobileNumber() : projection.getMobileNo());
         response.setAge(projection.getAge());
         response.setGender(projection.getGender());
+
+        response.setDoctorId(projection.getDoctorId());
+        response.setDoctorName(projection.getDoctorName());
+        response.setDepartmentId(projection.getDepartmentId());
+        response.setAppointmentDate(projection.getAppointmentDate());
+        response.setAppointmentTime(projection.getAppointmentTime());
+        response.setCancellationDateTime(projection.getCancellationDateTime());
+        response.setCancelledBy(projection.getCancelledBy());
+        response.setCancellationReason(projection.getCancellationReason());
 
         response.setBillingType(projection.getBillingType());
 

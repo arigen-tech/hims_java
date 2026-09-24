@@ -28,7 +28,9 @@ public class JasperReportCompiler {
     }
 
     public static void main(String[] args) {
-//        compileAllReports("/Users/rozaltheric/Office Work/hims_java/src/main/resources/jasperReport");
-        compileAllReports("D:\\hims_java\\src\\main\\resources\\jasperReport");
+        String sourceDirPath = args.length > 0
+                ? args[0]
+                : new File("src/main/resources/jasperReport").getAbsolutePath();
+        compileAllReports(sourceDirPath);
     }
 }

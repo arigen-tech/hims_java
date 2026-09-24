@@ -63,6 +63,7 @@ left join hd.patient p
 where hd.hospital.id = :hospitalId
   and lower(dt.billingStatus) = lower(:billingStatus)
   and lower(dt.studyStatus)   = lower(:studyStatus)
+  and lower(dt.orderStatus)   = lower(:orderStatus) 
   and dt.subChargecode.subId  = :modalityId
  and (
         :patientName is null
@@ -86,6 +87,7 @@ and (
             @Param("hospitalId") Long hospitalId,
             @Param("billingStatus") String billingStatus,
             @Param("studyStatus") String studyStatus,
+            @Param("orderStatus") String orderStatus,
             @Param("modalityId") Long modalityId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,
@@ -208,7 +210,7 @@ SELECT
     i.inpatient_id AS inpatientId, i.admission_no AS admissionNo, i.admission_date AS admissionDate,
     concat(coalesce(p.p_fn,''), coalesce(p.p_ln,'')) as patientName,
     p.uhid_no AS uhid, p.p_age AS age, p.p_mobile_number AS mobileNo, rd.rad_orderhd_id AS radOrderhdId,
-    rd.rad_orderdt_id AS radOrderdtId, rd.order_accession_no AS orderAccessionNo, rh.order_date AS orderDate,
+    rd.rad_orderdt_id AS radOrderdtId, rd.order_accession_no AS orderAccessionNo, rh.order_time AS orderDate,
     rh.order_time AS orderTime, dmi.investigation_id AS investigationId, dmi.investigation_name AS investigationName,
     phs.study_datetime AS studyDatetime, rd.study_status AS studyStatus, rd.report_status AS reportStatus,
     rd.remarks AS remarks, rd.pacs_completion_status AS pacsCompletionStatus, msc.sub_chargecode_id AS modalityId,

@@ -2,16 +2,14 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.request.*;
 import com.hims.response.*;
-import com.hims.service.BillingService;
-import com.hims.service.LabRegistrationServices;
-import com.hims.service.TransactionSequenceService;
-import com.hims.service.UserContextService;
+import com.hims.service.*;
 import com.hims.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,6 +120,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     private MasServiceCategory cachedServiceCategory;
     private LabOrderTrackingStatus cachedOrderedStatus;
+
+    @Autowired
+    private  SMSUtility smsUtility;
 
 
     private LabOrderTrackingStatus getOrderedStatus() {
@@ -473,8 +474,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                patient = patientRepository.getReferenceById(labReq.getPatientId());
          }
 
-            boolean labBillingEnabled = patient.getPatientHospital() != null
-                            && AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getLabBilling());
+            MasHospital patientHospital = patient.getPatientHospital();
+            boolean labBillingEnabled = patientHospital != null
+                            && AppConstants.STATUS_Y.equalsIgnoreCase(patientHospital.getLabBilling());
 
             Visit savedVisit = createVisitForLabRadio(patient, laboratoryDepartment);
 
@@ -559,12 +561,34 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                             billingService.saveBillingDetailPackage(billingHeader, pkg, inv, serviceCategoryLab);
                         }
 
+
                     } else {
                         throw new SDDException("type", 400, "Invalid investigation type");
                     }
                 }
-            }
+                try {
 
+                    Map<String, String> variables = new HashMap<>();
+
+                    variables.put("var1", patient.getFullName());
+                    variables.put("var2", "Lab");
+                    String formattedDate =  savedHd!=null?savedHd.getOrderTime()
+                            .format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a", Locale.ENGLISH))
+                            .toUpperCase():"";
+                    log.info("Lab booking formatted date :",formattedDate);
+                    variables.put("var4",formattedDate);
+
+                    smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.OTHER_APPOINTMENT, variables);
+
+                    log.info("Lab Booking confirmation SMS sent for patient : {}", patient.getFullName());
+
+                } catch (Exception smsException) {
+                    // SMS failure should not affect successful admission
+                    log.error("Lab Booking successfully but SMS sending failed for patient: {}", patient.getFullName(), smsException
+                    );
+                    throw  smsException;
+                }
+            }
             res.setMsg("Success");
 
             return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {});
@@ -920,7 +944,26 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
             hd.setCreatedOn(LocalDate.now());
             hd.setLastChgDate(LocalDate.now());
             hd.setLastChgTime(HMISUtil.getCurrentLocalTime().toString());
-            return labHdRepository.save(hd);
+            DgOrderHd save = labHdRepository.save(hd);
+
+
+
+                Map<String, String> variables = new HashMap<>();
+
+                variables.put("var1", patient.getFullName());
+                variables.put("var2", "Lab");
+                String formattedDate =  visit!=null?visit.getVisitDate()
+                        .format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a", Locale.ENGLISH))
+                        .toUpperCase():"";
+                log.info("Lab booking formatted date :",formattedDate);
+                variables.put("var4",formattedDate);
+
+                smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.OTHER_APPOINTMENT, variables);
+
+                log.info("Lab Booking confirmation SMS sent for patient : {}", patient.getFullName());
+
+
+            return save;
         } catch (Exception e) {
             throw new SDDException("order", 500, "Error while building order header");
         }

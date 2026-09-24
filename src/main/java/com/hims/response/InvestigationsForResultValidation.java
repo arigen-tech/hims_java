@@ -19,4 +19,5 @@ public class InvestigationsForResultValidation {
     private String normalValue;
     private String generatedSampleId;
     private String investigationType;
+    private  Long resultFlagId;
 }

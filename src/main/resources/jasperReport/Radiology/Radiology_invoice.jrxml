@@ -51,70 +51,156 @@
 		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
 	</parameter>
 	<queryString language="SQL">
-		<![CDATA[select
-	bh.bill_hd_id,
-    bh.bill_no as invoice_no,
+		<![CDATA[SELECT
+    bh.bill_hd_id,
+    bh.bill_no AS invoice_no,
     bh.hospital_name,
-    mh.email as hospital_email,
-    bh.hospital_address as registered_loc,
-    case bh.patient_gender
-        when 'Male' then concat('Mr.', bh.patient_display_name)
-        when 'Female' then concat('Ms/Mrs.', bh.patient_display_name)
-    end as patient_name,
-    p.uhid_no as patient_id,
+    mh.email AS hospital_email,
+    bh.hospital_address AS registered_loc,
+
+    CASE bh.patient_gender
+        WHEN 'Male' THEN concat('Mr.', bh.patient_display_name)
+        WHEN 'Female' THEN concat('Ms/Mrs.', bh.patient_display_name)
+    END AS patient_name,
+
+    p.uhid_no AS patient_id,
     bh.patient_age,
     bh.patient_gender,
-    p.p_mobile_number as patient_contact,
+    p.p_mobile_number AS patient_contact,
+
     mh.gstn_no,
-    coalesce(bp.payment_method, 'Cash') as payment_method,
-    coalesce(bh.referred_by, 'self') as referred_by,
+
+    COALESCE(bp.payment_method, 'Cash') AS payment_method,
+
+    -- Payment mode name and payment date
+    mpm.mode_code AS payment_mode,
+    pdv2.payment_date AS payment_date,
+    pdv2.payment_via AS paymentVia,
+
+    COALESCE(bh.referred_by, 'self') AS referred_by,
+
     msc.sac_code,
-    bh.total_amount as order_value,
+
+    bh.total_amount AS order_value,
     bh.discount_amount,
-    bh.tax_total as tax_amount,
-    bh.net_amount as total_amount_value,
-    coalesce(bh.total_paid, 0) as paid_amount,
-    num_to_words(bh.total_paid) as amount_in_words,
-    (bh.net_amount - coalesce(bh.total_paid, 0)) as balance_amount,
-    case
-        when bd.investigation_id is not null then concat('I', bd.investigation_id)
-        when bd.package_id is not null then concat('P', bd.package_id)
-    end as test_code,
-    bd.item_name as test_name,
-    case
-        when bd.investigation_id is null then dip.actual_cost
-        else ipd.price
-    end as price,
+    bh.tax_total AS tax_amount,
+    bh.net_amount AS total_amount_value,
+
+    COALESCE(bh.total_paid, 0) AS paid_amount,
+
+    num_to_words(
+        COALESCE(bh.total_paid, 0)
+    ) AS amount_in_words,
+
+    (
+        bh.net_amount - COALESCE(bh.total_paid, 0)
+    ) AS balance_amount,
+
+    CASE
+        WHEN bd.investigation_id IS NOT NULL
+            THEN concat('I', bd.investigation_id)
+
+        WHEN bd.package_id IS NOT NULL
+            THEN concat('P', bd.package_id)
+    END AS test_code,
+
+    bd.item_name AS test_name,
+
+    CASE
+        WHEN bd.investigation_id IS NULL
+            THEN dip.actual_cost
+        ELSE ipd.price
+    END AS price,
+
     bh.payment_status,
-    (rod.appointment_date + (dmi.report_ready_days * interval '1 day')) as estimated_report_by,
-    rod.lab_ids as lab_id,
+
+    (
+        rod.appointment_date
+        + (
+            dmi.report_ready_days * INTERVAL '1 day'
+        )
+    ) AS estimated_report_by,
+
+    rod.lab_ids AS lab_id,
     rod.lab_order_date,
-    bh.patient_address,
-    bh.billing_date as bill_date,
+
+    -- Patient Address
+    CONCAT_WS(', ',
+        NULLIF(p.p_address1, ''),
+        NULLIF(p.p_address2, ''),
+        NULLIF(p.p_city, ''),
+        NULLIF(md.district_name, ''),
+        NULLIF(ms.state_name, ''),
+        NULLIF(p.p_pincode, '')
+    ) AS patient_address,
+
+    bh.billing_date AS bill_date,
+
     rod.appointment_date,
+
     bh.created_by
-from billing_details bd
-join billing_header bh on bd.bill_hd_id = bh.bill_hd_id
-left join mas_hospital mh on bh.hospital_id = mh.hospital_id
-left join patient p on bh.patient_id = p.patient_id
-left join billing_payments bp on bh.bill_hd_id = bp.billing_hd_id
-left join mas_service_category msc on bh.service_category_id = msc.id
-left join dg_investigation_package dip on bd.package_id = dip.id
-left join investigation_price_details ipd on bd.investigation_id = ipd.investigation_id
-left join dg_mas_investigation dmi on bd.investigation_id = dmi.investigation_id
-left join dg_orderhd doh on bh.hdorder_id = doh.orderhd_id
-left join (
-    select 
+
+FROM billing_details bd
+
+JOIN billing_header bh
+    ON bd.bill_hd_id = bh.bill_hd_id
+
+LEFT JOIN mas_hospital mh
+    ON bh.hospital_id = mh.hospital_id
+
+LEFT JOIN patient p
+    ON bh.patient_id = p.patient_id
+
+-- Patient District
+LEFT JOIN mas_district md
+    ON p.p_district_id = md.id
+
+-- Patient State
+LEFT JOIN mas_state ms
+    ON p.p_state_id = ms.state_id
+
+LEFT JOIN billing_payments bp
+    ON bh.bill_hd_id = bp.billing_hd_id
+
+-- Payment details
+LEFT JOIN payment_details_v2 pdv2
+    ON bh.bill_hd_id = pdv2.billing_hd_id
+
+-- Payment mode master
+LEFT JOIN mas_payment_mode mpm
+    ON pdv2.payment_mode_id = mpm.payment_mode_id
+
+LEFT JOIN mas_service_category msc
+    ON bh.service_category_id = msc.id
+
+LEFT JOIN dg_investigation_package dip
+    ON bd.package_id = dip.id
+
+LEFT JOIN investigation_price_details ipd
+    ON bd.investigation_id = ipd.investigation_id
+
+LEFT JOIN dg_mas_investigation dmi
+    ON bd.investigation_id = dmi.investigation_id
+
+LEFT JOIN dg_orderhd doh
+    ON bh.hdorder_id = doh.orderhd_id
+
+LEFT JOIN (
+    SELECT
         rad_orderhd_id,
-        max(order_accession_no) as lab_ids,
-        max(createdon) as lab_order_date,
-		appointment_date
-    from rad_orderdt
-	group by rad_orderhd_id, appointment_date
-) rod on bh.rad_order_hd_id = rod.rad_orderhd_id
-where bd.payment_status = 'y'
-and bh.service_category_id = 4
-and bh.bill_hd_id = $P{Bill_header_id}]]>
+        MAX(order_accession_no) AS lab_ids,
+        MAX(createdon) AS lab_order_date,
+        appointment_date
+    FROM rad_orderdt
+    GROUP BY
+        rad_orderhd_id,
+        appointment_date
+) rod
+    ON bh.rad_order_hd_id = rod.rad_orderhd_id
+
+WHERE bd.payment_status = 'y'
+  AND bh.service_category_id = 4
+  AND bh.bill_hd_id = $P{Bill_header_id};]]>
 	</queryString>
 	<field name="bill_hd_id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="bill_hd_id"/>
@@ -174,6 +260,21 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 	<field name="payment_method" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="payment_method"/>
 		<property name="com.jaspersoft.studio.field.label" value="payment_method"/>
+	</field>
+	<field name="payment_mode" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="payment_mode"/>
+		<property name="com.jaspersoft.studio.field.label" value="payment_mode"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_payment_mode"/>
+	</field>
+	<field name="payment_date" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="payment_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="payment_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details_v2"/>
+	</field>
+	<field name="paymentvia" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="paymentvia"/>
+		<property name="com.jaspersoft.studio.field.label" value="paymentvia"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details_v2"/>
 	</field>
 	<field name="referred_by" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="referred_by"/>
@@ -291,7 +392,7 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 		</band>
 	</title>
 	<pageHeader>
-		<band height="165" splitType="Stretch">
+		<band height="140" splitType="Stretch">
 			<staticText>
 				<reportElement x="0" y="10" width="555" height="22" uuid="d5c505ca-cddf-44b7-b10f-a275e83c0fb2"/>
 				<textElement textAlignment="Center">
@@ -300,7 +401,7 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 				<text><![CDATA[Bill of Supply]]></text>
 			</staticText>
 			<rectangle>
-				<reportElement mode="Transparent" x="0" y="38" width="554" height="126" uuid="2c758f51-073c-4ee5-80c5-a83ba9a8c5ee"/>
+				<reportElement mode="Transparent" x="0" y="38" width="554" height="102" uuid="2c758f51-073c-4ee5-80c5-a83ba9a8c5ee"/>
 			</rectangle>
 			<staticText>
 				<reportElement x="10" y="44" width="92" height="14" uuid="03f5855e-3c38-4e0f-b8d0-4dbd67815dd4"/>
@@ -351,117 +452,6 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_contact}]]></textFieldExpression>
 			</textField>
-			<line>
-				<reportElement x="51" y="143" width="1" height="21" uuid="90b01f50-8255-4fed-bb99-1bd99567c5e5">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-				</reportElement>
-			</line>
-			<line>
-				<reportElement x="140" y="143" width="1" height="21" uuid="614bf509-df45-4e3a-822f-f8c7609c5508">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-				</reportElement>
-			</line>
-			<line>
-				<reportElement x="331" y="143" width="1" height="21" uuid="dfb3db42-ce20-4798-b5fc-beb907d94dfa">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-				</reportElement>
-			</line>
-			<line>
-				<reportElement x="471" y="143" width="1" height="21" uuid="cdec9062-c65f-4321-85b2-f8f5f59edd9a">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-				</reportElement>
-			</line>
-			<staticText>
-				<reportElement x="0" y="143" width="49" height="20" uuid="555b151c-75d5-42fd-a5c7-94f4e4f94f6d"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
-				</textElement>
-				<text><![CDATA[S. No.]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="51" y="143" width="89" height="20" uuid="d4578a30-0ca2-4d77-ac8e-d511142a8565"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
-				</textElement>
-				<text><![CDATA[Test Code]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="141" y="143" width="129" height="20" uuid="9b04ca09-e2d7-4c6e-8a75-5f4f7a619018"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
-				</textElement>
-				<text><![CDATA[Service Name]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="330" y="143" width="140" height="20" uuid="152d708d-b129-4950-851f-ba61e29740c7"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
-				</textElement>
-				<text><![CDATA[Estimate of Report by (#)]]></text>
-			</staticText>
-			<line>
-				<reportElement x="271" y="143" width="1" height="21" uuid="4afb85c1-7809-4c73-8818-6446c27b18f0">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-				</reportElement>
-			</line>
-			<staticText>
-				<reportElement x="272" y="144" width="61" height="20" uuid="7864c536-d596-4edb-9cf9-731e25b5cc93"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
-				</textElement>
-				<text><![CDATA[SAC Code]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="473" y="145" width="81" height="20" uuid="152079d5-bc03-4925-b1cd-45ad180b889a"/>
-				<box>
-					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
-				</textElement>
-				<text><![CDATA[Price]]></text>
-			</staticText>
-			<line>
-				<reportElement x="0" y="142" width="555" height="1" uuid="cfbc3b50-35a3-4830-bad7-75a8e8089117">
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-					<property name="com.jaspersoft.studio.unit.x" value="px"/>
-					<property name="com.jaspersoft.studio.unit.y" value="px"/>
-				</reportElement>
-			</line>
 			<textField>
 				<reportElement isPrintRepeatedValues="false" x="390" y="73" width="160" height="15" uuid="fe2bac80-2883-4a60-bb79-43037d2e7c57"/>
 				<textElement>
@@ -646,56 +636,189 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 			</textField>
 		</band>
 	</pageHeader>
+	<columnHeader>
+		<band height="28">
+			<line>
+				<reportElement x="51" y="6" width="1" height="21" uuid="d4b177ad-a650-48f8-b6ee-4f8508f23850">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="140" y="6" width="1" height="21" uuid="524218a7-fbc7-4592-8f63-b71612b9c70e">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="331" y="6" width="1" height="21" uuid="84ded789-52b1-4f20-bb55-ad64a6b24101">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="0" y="6" width="49" height="20" uuid="e68525cc-ec3b-40ab-8e6a-41450bddf83f"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S. No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="51" y="6" width="89" height="20" uuid="b7662dad-8a2d-4d32-93a4-871e68073287"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Test Code]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="141" y="6" width="129" height="20" uuid="495b30d8-d068-4478-b6ff-78f9ba2de31d"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Service Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="330" y="6" width="140" height="20" uuid="9c6257cf-22f2-465c-bb0b-b8ba8da2e623"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Estimate of Report by (#)]]></text>
+			</staticText>
+			<line>
+				<reportElement x="271" y="6" width="1" height="21" uuid="95741f96-b564-4dd3-b7e6-9b8cfa108930">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="272" y="7" width="61" height="20" uuid="53e6e72f-8979-4e29-b294-db2cc46760c1"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SAC Code]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="5" width="555" height="1" uuid="79c9e9b4-5ed7-4920-bbdd-d36b90fcc0e1">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="472" y="6" width="81" height="20" uuid="c59937d1-7e09-4a82-a6cf-88b45ef9b375"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Price]]></text>
+			</staticText>
+			<line>
+				<reportElement x="471" y="5" width="1" height="21" uuid="e71ed616-3e01-4e21-a53e-564f1b62b05c">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="554" y="5" width="1" height="21" uuid="1d3f4e1a-2330-4a44-8a51-996aee0e1bc8">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="0" y="6" width="1" height="21" uuid="56c9381f-1613-4348-93a4-6d5a00b52e30">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="0" y="27" width="555" height="1" uuid="371472f8-74b3-40e8-a6ab-9621a6af05c8">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+			</line>
+		</band>
+	</columnHeader>
 	<detail>
 		<band height="21">
-			<textField isBlankWhenNull="true">
-				<reportElement x="140" y="1" width="131" height="15" uuid="63e56a23-aa07-4f44-ba56-93a9e5c25628"/>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="140" y="1" width="131" height="15" uuid="63e56a23-aa07-4f44-ba56-93a9e5c25628"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{test_name}]]></textFieldExpression>
 			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="270" y="1" width="62" height="15" uuid="a4ef14d4-b01c-4bec-921e-b6851f009309"/>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="270" y="1" width="62" height="15" uuid="a4ef14d4-b01c-4bec-921e-b6851f009309"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{sac_code}]]></textFieldExpression>
 			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="471" y="1" width="83" height="15" uuid="f6657fd1-b1fd-4909-844a-b255f5a2da8a"/>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="471" y="1" width="83" height="15" uuid="f6657fd1-b1fd-4909-844a-b255f5a2da8a"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{price}]]></textFieldExpression>
 			</textField>
 			<line>
-				<reportElement x="471" y="-1" width="1" height="21" uuid="8b49ace3-c17c-4090-88b1-e09e550e82fc">
+				<reportElement stretchType="ElementGroupHeight" x="471" y="-1" width="1" height="21" uuid="8b49ace3-c17c-4090-88b1-e09e550e82fc">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 				</reportElement>
 			</line>
 			<line>
-				<reportElement x="331" y="-1" width="1" height="21" uuid="3c75de1d-9e64-4d0c-ac1a-eaa9abb49ca1">
+				<reportElement stretchType="ElementGroupHeight" x="331" y="-1" width="1" height="21" uuid="3c75de1d-9e64-4d0c-ac1a-eaa9abb49ca1">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 				</reportElement>
 			</line>
 			<line>
-				<reportElement x="271" y="-1" width="1" height="21" uuid="8ee17df2-18cf-4db5-ab3c-6c71cde9e20b">
+				<reportElement stretchType="ElementGroupHeight" x="271" y="-1" width="1" height="21" uuid="8ee17df2-18cf-4db5-ab3c-6c71cde9e20b">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 				</reportElement>
 			</line>
 			<line>
-				<reportElement x="140" y="-1" width="1" height="21" uuid="be1a335e-cb40-43b3-a471-08d89f1c5144">
+				<reportElement stretchType="ElementGroupHeight" x="140" y="-1" width="1" height="21" uuid="be1a335e-cb40-43b3-a471-08d89f1c5144">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 				</reportElement>
 			</line>
 			<line>
-				<reportElement x="51" y="-1" width="1" height="21" uuid="ace8eb2f-c19b-4212-b3fa-f38d57a676ac">
+				<reportElement stretchType="ElementGroupHeight" x="51" y="-1" width="1" height="21" uuid="ace8eb2f-c19b-4212-b3fa-f38d57a676ac">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 				</reportElement>
 			</line>
-			<textField>
-				<reportElement x="1" y="1" width="48" height="13" uuid="469d1828-aeec-4f15-b679-7d4db2182ffd"/>
+			<textField textAdjust="StretchHeight">
+				<reportElement positionType="Float" x="1" y="1" width="48" height="13" uuid="469d1828-aeec-4f15-b679-7d4db2182ffd"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
@@ -705,24 +828,24 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 				<reportElement x="0" y="20" width="555" height="1" uuid="4e0d44fa-d3fe-4a96-8e83-c9f6dd19a25d"/>
 			</line>
 			<line>
-				<reportElement x="0" y="-1" width="1" height="21" uuid="ecf2c730-6b56-41fd-9539-8b458eb19cc4">
+				<reportElement stretchType="ElementGroupHeight" x="0" y="-1" width="1" height="21" uuid="ecf2c730-6b56-41fd-9539-8b458eb19cc4">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 				</reportElement>
 			</line>
 			<line>
-				<reportElement x="554" y="-1" width="1" height="21" uuid="587cc31c-7077-4048-9c19-b3181c700c19">
+				<reportElement stretchType="ElementGroupHeight" x="554" y="-1" width="1" height="21" uuid="587cc31c-7077-4048-9c19-b3181c700c19">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 				</reportElement>
 			</line>
-			<textField isBlankWhenNull="true">
-				<reportElement x="52" y="1" width="88" height="15" uuid="e110cb9f-cbe8-4a1f-a45f-bedf1d252e70"/>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="52" y="1" width="88" height="15" uuid="e110cb9f-cbe8-4a1f-a45f-bedf1d252e70"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{test_code}]]></textFieldExpression>
 			</textField>
-			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
-				<reportElement x="333" y="0" width="137" height="15" uuid="843766e9-55a9-43f7-9de0-6d6297c59a94"/>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="333" y="0" width="137" height="15" uuid="843766e9-55a9-43f7-9de0-6d6297c59a94"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
@@ -773,7 +896,7 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 		</band>
 	</pageFooter>
 	<summary>
-		<band height="201">
+		<band height="145">
 			<line>
 				<reportElement isPrintRepeatedValues="false" x="91" y="40" width="1" height="20" isPrintInFirstWholeBand="true" uuid="6af19cac-3cf3-4e0e-8347-f18ace8d959c">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
@@ -961,27 +1084,39 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 					<property name="com.jaspersoft.studio.unit.y" value="px"/>
 				</reportElement>
 			</line>
-			<textField>
+			<textField textAdjust="StretchHeight">
 				<reportElement x="2" y="114" width="551" height="15" uuid="b559670e-028e-4a3b-b9b0-ad3b37207c07"/>
-				<textElement>
+				<textElement markup="html">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
-				<textFieldExpression><![CDATA["Amount in words : " + $F{amount_in_words} + " collected from patient"]]></textFieldExpression>
+				<textFieldExpression><![CDATA["<b>Amount in words :</b> " + $F{amount_in_words} + "."]]></textFieldExpression>
 			</textField>
-			<textField>
+			<textField textAdjust="StretchHeight">
 				<reportElement x="2" y="130" width="551" height="15" uuid="29505c1a-1d10-4186-a9d4-c35e2a58cce2"/>
-				<textElement>
+				<textElement markup="html">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
-				<textFieldExpression><![CDATA["sum of Rs." + $F{paid_amount} + " received with thanks from  " + $F{patient_name}]]></textFieldExpression>
+				<textFieldExpression><![CDATA["<b>Payment remarks</b> - Received ₹"
++ $F{paid_amount}
++ " via "
++ $F{payment_mode}
++ (
+    $F{payment_mode} != null
+    && !$F{payment_mode}.equalsIgnoreCase("Cash")
+    && $F{paymentvia} != null
+    && !$F{paymentvia}.trim().isEmpty()
+    ?
+    " (" + $F{paymentvia} + ")"
+    :
+    ""
+  )
++ " from "
++ $F{patient_name}
++ " on "
++ new java.text.SimpleDateFormat("dd MMM yyyy 'at' hh:mm a")
+    .format($F{payment_date})
++ "."]]></textFieldExpression>
 			</textField>
-			<staticText>
-				<reportElement x="2" y="163" width="100" height="15" uuid="79443d08-e76b-492f-9eae-0189efe68684"/>
-				<textElement textAlignment="Left">
-					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
-				</textElement>
-				<text><![CDATA[Payment Mode(s)]]></text>
-			</staticText>
 			<line>
 				<reportElement x="254" y="18" width="1" height="21" uuid="489a9bd7-72cb-41ff-8d96-78e23a6e1614">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
@@ -1012,26 +1147,6 @@ and bh.bill_hd_id = $P{Bill_header_id}]]>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{tax_amount}]]></textFieldExpression>
 			</textField>
-			<componentElement>
-				<reportElement x="0" y="181" width="555" height="20" uuid="44807b13-20eb-4469-888e-807cc046113f"/>
-				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
-					<datasetRun subDataset="paymentDataset" uuid="f1c16368-03be-4ff2-bce9-72a3a21376c8">
-						<datasetParameter name="bill_id">
-							<datasetParameterExpression><![CDATA[$F{bill_hd_id}]]></datasetParameterExpression>
-						</datasetParameter>
-						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
-					</datasetRun>
-					<jr:listContents height="20" width="555">
-						<textField textAdjust="StretchHeight">
-							<reportElement x="0" y="0" width="555" height="20" uuid="8328971d-d1d9-4d38-9816-6796e4f39863"/>
-							<textElement>
-								<font fontName="DejaVu Sans Condensed" size="10"/>
-							</textElement>
-							<textFieldExpression><![CDATA[$F{payment_mode} + " Payment for Rs." + $F{amount}  + " (Transaction Id : " + $F{payment_reference_no} + ")"]]></textFieldExpression>
-						</textField>
-					</jr:listContents>
-				</jr:list>
-			</componentElement>
 		</band>
 	</summary>
 	<noData>

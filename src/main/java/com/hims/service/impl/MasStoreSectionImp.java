@@ -6,6 +6,7 @@ import com.hims.entity.*;
 import com.hims.entity.repository.MasItemTypeRepository;
 import com.hims.entity.repository.MasStoreSectionRepository;
 import com.hims.entity.repository.UserRepo;
+import com.hims.exception.SDDException;
 import com.hims.request.MasStoreSectionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasStoreSectionResponse;
@@ -13,14 +14,14 @@ import com.hims.response.UserContext;
 import com.hims.service.MasStoreSectionService;
 import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -30,17 +31,23 @@ import java.util.stream.Collectors;
 
 
 @Service
+@RequiredArgsConstructor
 public class MasStoreSectionImp implements MasStoreSectionService {
     private static final Logger log = LoggerFactory.getLogger(MasStateServiceImpl.class);
-    @Autowired
-    private MasItemTypeRepository masItemTypeRepository;
-    @Autowired
-    private UserRepo userRepo;
-    @Autowired
-    private MasStoreSectionRepository masStoreSectionRepository;
+    private final MasItemTypeRepository masItemTypeRepository;
+    private final UserRepo userRepo;
+    private final MasStoreSectionRepository masStoreSectionRepository;
 
-    @Autowired
-    private UserContextService userContextService;
+    private final UserContextService userContextService;
+
+    @Value(("${medicalNonConsumableItemTypeCode}"))
+    private String medicalNonConsumableItemTypeCode;
+
+    @Value(("${medicalConsumableItemTypeCode}"))
+    private String medicalConsumableItemTypeCode;
+
+    @Value(("${drugSectionCode}"))
+    private final String drugSectionCode;
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -219,6 +226,45 @@ public class MasStoreSectionImp implements MasStoreSectionService {
                     "Failed to fetch sections.",
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+    @Override
+    public ApiResponse<List<MasStoreSectionResponse>> getSectionByItemTypeCode(String itemTypeCode) {
+        try {
+            log.info("getSectionByItemTypeCode method started with itemTypeCode = {}",itemTypeCode);
+            List<MasStoreSection> sections;
+            if(AppConstants.SECTION_CODE_NON_DRUG.equalsIgnoreCase(itemTypeCode)){
+                List<String> medicalConsumablesAndNonConsumables = List.of(medicalNonConsumableItemTypeCode, medicalConsumableItemTypeCode);
+                sections=masStoreSectionRepository.findBySectionCodeNotIgnoreCaseAndMasItemType_CodeInOrderBySectionNameAsc(drugSectionCode,medicalConsumablesAndNonConsumables);
+
+            }else if (AppConstants.SECTION_CODE_DRUG.equalsIgnoreCase(itemTypeCode)){
+                sections=masStoreSectionRepository.findBySectionCodeIgnoreCaseOrderBySectionNameAsc(drugSectionCode);
+            }else{
+                throw  new SDDException("Section Code",
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Invalid section code. Please provide Drug or NonDrug as type"
+                );
+            }
+            List<MasStoreSectionResponse> masStoreSectionResponses = sections.stream().map(this::mapToResponse).toList();
+            log.info("getSectionByItemTypeCode method ended with itemTypeCode = {}",itemTypeCode);
+            return ResponseUtils.createSuccessResponse(masStoreSectionResponses, new TypeReference<>() {});
+
+        }catch (SDDException e){
+            log.error("getSectionByItemTypeCode method error ::",e);
+            return  ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>() {},
+                    e.getMessage(),
+                    e.getStatus()
+            );
+        }catch (Exception e){
+           log.error("getSectionByItemTypeCode method error ::",e);
+           return  ResponseUtils.createFailureResponse(null,
+                   new TypeReference<>() {},
+                   AppConstants.INTERNAL_SERVER_ERR_MSG,
+                   HttpStatus.INTERNAL_SERVER_ERROR.value()
+           );
+        }
+
     }
 
     private MasStoreSectionResponse mapToResponse(MasStoreSection masStoreSection) {

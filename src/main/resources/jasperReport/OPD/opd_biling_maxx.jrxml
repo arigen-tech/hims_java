@@ -5,6 +5,8 @@
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="206"/>
 	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="783"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w1" value="890"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w2" value="96"/>
 	<subDataset name="paymentDataset" uuid="673cfb41-afa1-46f2-82b5-7e41e8d7e804">
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
@@ -57,13 +59,18 @@
         SUM(total_paid) AS grand_total_paid
     FROM billing_header
     WHERE bill_hd_id = ANY (
-        string_to_array(CAST($P{Bill_hd_id} AS varchar), ',')::int[]
+        string_to_array(
+            CAST($P{Bill_hd_id} AS varchar),
+            ','
+        )::int[]
     )
 )
+
 SELECT DISTINCT
     bh.bill_hd_id,
     bh.visit_id,
     bh.hospital_address,
+
     p.p_mobile_number AS patient_contact,
 
     CASE bh.patient_gender
@@ -71,13 +78,32 @@ SELECT DISTINCT
         WHEN 'Female' THEN CONCAT('Ms/Mrs.', bh.patient_display_name)
     END AS patient_name,
 
-    CONCAT(bh.patient_age, '/', bh.patient_gender) AS age_sex,
-    bh.patient_address,
+    CONCAT(
+        bh.patient_age,
+        '/',
+        bh.patient_gender
+    ) AS age_sex,
+
+    -- Patient Address
+    CONCAT_WS(', ',
+        NULLIF(p.p_address1, ''),
+        NULLIF(p.p_address2, ''),
+        NULLIF(p.p_city, ''),
+        NULLIF(mdist.district_name, ''),
+        NULLIF(mstate.state_name, ''),
+        NULLIF(p.p_pincode, '')
+    ) AS patient_address,
+
     vi.doctor_name,
+
     CAST(bh.billing_date AS date) AS bill_date,
+
     p.uhid_no AS patient_id,
+
     bh.bill_no,
+
     COALESCE(bh.gstn_bill_no, 'NA') AS gstn_bill,
+
     COALESCE(bh.hospital_gstin, 'NA') AS gstn_no,
 
     CONCAT(
@@ -88,33 +114,52 @@ SELECT DISTINCT
     ) AS opd_service_name,
 
     msc.sac_code,
+
     COALESCE(bd.quantity, 1) AS qty,
+
     bd.base_price,
+
     bd.discount AS discount_amount,
+
     bd.amount_after_discount AS net_amount,
+
     bd.tax_amount AS tax_total,
+
     bd.net_amount AS bill_amount,
 
     CASE
-        WHEN vs.visit_count > 1 THEN vs.grand_total
+        WHEN vs.visit_count > 1
+            THEN vs.grand_total
         ELSE bh.net_amount
     END AS total,
 
     num_to_words(
         CASE
-            WHEN vs.visit_count > 1 THEN vs.grand_total
+            WHEN vs.visit_count > 1
+                THEN vs.grand_total
             ELSE bh.net_amount
         END
     ) AS total_in_words,
 
     CASE
-        WHEN vs.visit_count > 1 THEN vs.grand_total_paid
+        WHEN vs.visit_count > 1
+            THEN vs.grand_total_paid
         ELSE bh.total_paid
     END AS total_paid,
 
-    COALESCE(pd.payment_mode, 'cash') AS payment_mode,
-    COALESCE(pd.payment_reference_no, 'NA') AS payment_reference_number,
-    CAST(pd.payment_date AS date) AS payment_date,
+    -- Payment mode
+    mpm.mode_code AS payment_mode,
+    pdv2.payment_via AS paymentVia,
+
+    -- Payment reference
+    COALESCE(
+        pdv2.payment_reference_no,
+        'NA'
+    ) AS payment_reference_number,
+
+    -- Payment date
+    
+        pdv2.payment_date AS payment_date,
 
     TO_CHAR(
         vi.visit_date,
@@ -134,8 +179,21 @@ LEFT JOIN billing_header bh
 LEFT JOIN patient p
     ON bh.patient_id = p.patient_id
 
-LEFT JOIN payment_details pd
-    ON bh.bill_hd_id = pd.billing_hd_id
+-- Patient District
+LEFT JOIN mas_district mdist
+    ON p.p_district_id = mdist.id
+
+-- Patient State
+LEFT JOIN mas_state mstate
+    ON p.p_state_id = mstate.state_id
+
+-- Payment details V2
+LEFT JOIN payment_details_v2 pdv2
+    ON bh.bill_hd_id = pdv2.billing_hd_id
+
+-- Payment mode master
+LEFT JOIN mas_payment_mode mpm
+    ON pdv2.payment_mode_id = mpm.payment_mode_id
 
 LEFT JOIN visit vi
     ON bh.visit_id = vi.visit_id
@@ -149,7 +207,10 @@ LEFT JOIN dg_orderhd doh
 CROSS JOIN visit_stats vs
 
 WHERE bh.bill_hd_id = ANY (
-    string_to_array(CAST($P{Bill_hd_id} AS varchar), ',')::int[]
+    string_to_array(
+        CAST($P{Bill_hd_id} AS varchar),
+        ','
+    )::int[]
 )
 
 GROUP BY
@@ -158,7 +219,15 @@ GROUP BY
     bh.patient_display_name,
     bh.patient_age,
     bh.patient_gender,
-    bh.patient_address,
+
+    -- Patient address fields
+    p.p_address1,
+    p.p_address2,
+    p.p_city,
+    mdist.district_name,
+    mstate.state_name,
+    p.p_pincode,
+
     vi.doctor_name,
     bh.billing_date,
     p.uhid_no,
@@ -179,9 +248,13 @@ GROUP BY
     bh.total_paid,
     vs.grand_total,
     vs.grand_total_paid,
-    pd.payment_mode,
-    pd.payment_reference_no,
-    pd.payment_date,
+    pdv2.payment_via,
+
+    -- Payment V2 fields
+    mpm.mode_code,
+    pdv2.payment_reference_no,
+    pdv2.payment_date,
+
     vi.visit_date,
     md.department_name,
     bh.created_by,
@@ -305,14 +378,21 @@ GROUP BY
 	<field name="payment_mode" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="payment_mode"/>
 		<property name="com.jaspersoft.studio.field.label" value="payment_mode"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_payment_mode"/>
+	</field>
+	<field name="paymentvia" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="paymentvia"/>
+		<property name="com.jaspersoft.studio.field.label" value="paymentvia"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details_v2"/>
 	</field>
 	<field name="payment_reference_number" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="payment_reference_number"/>
 		<property name="com.jaspersoft.studio.field.label" value="payment_reference_number"/>
 	</field>
-	<field name="payment_date" class="java.sql.Date">
+	<field name="payment_date" class="java.sql.Timestamp">
 		<property name="com.jaspersoft.studio.field.name" value="payment_date"/>
 		<property name="com.jaspersoft.studio.field.label" value="payment_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details_v2"/>
 	</field>
 	<field name="appointment_date" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="appointment_date"/>
@@ -930,53 +1010,51 @@ GROUP BY
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
-			<staticText>
-				<reportElement x="5" y="147" width="110" height="15" uuid="0d1dd1ef-fb59-44c2-be5d-7989279348f7">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				</reportElement>
-				<textElement textAlignment="Left">
-					<font fontName="DejaVu Sans Condensed" isBold="true"/>
-				</textElement>
-				<text><![CDATA[Payment Mode(s)]]></text>
-			</staticText>
 			<line>
 				<reportElement x="125" y="38" width="147" height="1" uuid="5218ee27-c89b-45e8-b5a2-7fe5e54fc03e"/>
 			</line>
-			<textField>
+			<textField textAdjust="StretchHeight">
 				<reportElement x="2" y="104" width="551" height="15" uuid="bc381a6c-0a53-41d4-9e34-18812d25f710"/>
-				<textElement>
+				<textElement markup="html">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
-				<textFieldExpression><![CDATA["Amount in words : " + $F{total_in_words}+ " collected from patient"]]></textFieldExpression>
+				<textFieldExpression><![CDATA["<b>Amount in words :</b> "+ $F{total_in_words} + "."]]></textFieldExpression>
 			</textField>
-			<textField>
+			<textField textAdjust="StretchHeight">
 				<reportElement x="2" y="120" width="551" height="15" uuid="3ebdf29c-db09-40c9-94a1-51f707e1ca54"/>
-				<textElement>
+				<textElement markup="html">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
-				<textFieldExpression><![CDATA["sum of Rs." + $F{total_paid} + " received with thanks from  " + $F{patient_name}]]></textFieldExpression>
+				<textFieldExpression><![CDATA["<b>Payment remarks</b> - "
++
+(
+    $F{total} != null
+    && $F{total}.compareTo(java.math.BigDecimal.ZERO) == 0
+    ?
+    "100% discount applied for Follow-up Consultation"
+    :
+    "Received ₹"
+    + $F{total_paid}
+    + " via "
+    + $F{payment_mode}
+    + (
+        $F{payment_mode} != null
+        && !$F{payment_mode}.equalsIgnoreCase("Cash")
+        && $F{paymentvia} != null
+        && !$F{paymentvia}.trim().isEmpty()
+        ?
+        " (" + $F{paymentvia} + ")"
+        :
+        ""
+      )
+    + " from "
+    + $F{patient_name}
+    + " on "
+    + new java.text.SimpleDateFormat("dd MMM yyyy 'at' hh:mm a")
+        .format($F{payment_date})
+    + "."
+)]]></textFieldExpression>
 			</textField>
-			<componentElement>
-				<reportElement x="0" y="165" width="555" height="20" uuid="1294d079-ee6f-4323-bf4c-65ee2f6ecc80"/>
-				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
-					<datasetRun subDataset="paymentDataset" uuid="4ef98d85-25a1-4f17-ae35-0a3eea90578c">
-						<datasetParameter name="bill_id">
-							<datasetParameterExpression><![CDATA[$F{bill_hd_id}]]></datasetParameterExpression>
-						</datasetParameter>
-						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
-					</datasetRun>
-					<jr:listContents height="20" width="555">
-						<textField textAdjust="StretchHeight">
-							<reportElement x="0" y="0" width="555" height="20" uuid="fe369452-7fb6-461d-adce-ada0683338a7"/>
-							<textElement>
-								<font fontName="DejaVu Sans Condensed" size="10"/>
-							</textElement>
-							<textFieldExpression><![CDATA[$F{payment_mode} + " Payment for Rs." + $F{amount}  + " (Transaction Id : " + $F{payment_reference_no} + ")"]]></textFieldExpression>
-						</textField>
-					</jr:listContents>
-				</jr:list>
-			</componentElement>
 		</band>
 	</summary>
 	<noData>

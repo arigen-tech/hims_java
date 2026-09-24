@@ -5,6 +5,7 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.projection.UserContextProjection;
 import com.hims.response.UserContext;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -57,18 +58,16 @@ public class UserContextService {
     }
 
     private Long getDepartmentIdFromToken() {
-        try {
-            String token = getTokenFromRequest();
-            if (token == null) return null;
-            Claims claims = Jwts.parser()
-                    .setSigningKey(secret)
-                    .parseClaimsJws(token)
-                    .getBody();
+        Claims claims = getCurrentTokenClaims();
+        if (claims == null) {
+            return null;
+        }
 
+        try {
             Object deptIdObj = claims.get("departmentId");
             return deptIdObj != null ? Long.parseLong(deptIdObj.toString()) : null;
-        } catch (Exception e) {
-            log.error("Error extracting departmentId", e);
+        } catch (NumberFormatException ex) {
+            log.debug("Invalid departmentId claim in JWT: {}", ex.getMessage());
             return null;
         }
     }
@@ -90,7 +89,13 @@ public class UserContextService {
 
 
     private String getTokenFromRequest() {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return null;
+        }
+
+        HttpServletRequest request = attributes.getRequest();
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
@@ -100,6 +105,28 @@ public class UserContextService {
 
     public Long getCurrentDepartmentId() {
         return getDepartmentIdFromToken();
+    }
+
+    public String getCurrentUserFullNameFromToken() {
+        Claims claims = getCurrentTokenClaims();
+        return claims == null ? null : claims.get("name", String.class);
+    }
+
+    private Claims getCurrentTokenClaims() {
+        String token = getTokenFromRequest();
+        if (!StringUtils.hasText(token)) {
+            return null;
+        }
+
+        try {
+            return Jwts.parser()
+                    .setSigningKey(secret)
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (JwtException | IllegalArgumentException ex) {
+            log.debug("Unable to parse current JWT: {}", ex.getMessage());
+            return null;
+        }
     }
 
 }

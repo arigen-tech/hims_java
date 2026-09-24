@@ -3,9 +3,10 @@ package com.hims.jwt;
 
 
 import com.hims.entity.User;
+import com.hims.entity.Patient;
 import com.hims.entity.repository.MasEmployeeRepository;
 import com.hims.entity.repository.MasHospitalRepository;
-import com.hims.entity.repository.MasUserTypeRepository;
+import com.hims.entity.repository.PatientRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.exception.SDDException;
 import io.jsonwebtoken.Claims;
@@ -45,6 +46,9 @@ public class JwtHelper {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private PatientRepository patientRepository;
 
     @Autowired
     private MasHospitalRepository masHospitalRepository;
@@ -113,22 +117,25 @@ public class JwtHelper {
 
     // Generate access token for user with additional details
     public String generateAccessToken(User user) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
-        claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
-        claims.put("userId", user.getUserId());
+        Map<String, Object> claims = userClaims(user);
 
         return doGenerateToken(claims, user.getUsername(), jwtTokenValidity);
     }
 
     // Generate refresh token for user
     public String generateRefreshToken(User user) {
+        Map<String, Object> claims = userClaims(user);
+
+        return doGenerateToken(claims, user.getUsername(), refreshTokenValidity);
+    }
+
+    private Map<String, Object> userClaims(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
         claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
         claims.put("userId", user.getUserId());
-
-        return doGenerateToken(claims, user.getUsername(), refreshTokenValidity);
+        claims.put("name", user.getFullName());
+        return claims;
     }
 
 
@@ -186,10 +193,7 @@ public class JwtHelper {
     }
 
     public TokenWithExpiry generateAccessTokenWithExpiry(User user, Long departmentId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
-        claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
-        claims.put("userId", user.getUserId());
+        Map<String, Object> claims = userClaims(user);
         claims.put("departmentId", departmentId);
 
         long currentTimeMillis = System.currentTimeMillis();
@@ -206,10 +210,7 @@ public class JwtHelper {
 
 
     public TokenWithExpiry generateRefreshTokenWithExpiry(User user, Long departmentId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
-        claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
-        claims.put("userId", user.getUserId());
+        Map<String, Object> claims = userClaims(user);
         claims.put("departmentId", departmentId);
 
         long currentTimeMillis = System.currentTimeMillis();
@@ -241,6 +242,9 @@ public class JwtHelper {
         claims.put("principalType", "PATIENT");
         claims.put("mobileNo", mobileNo);
         claims.put("patientId", patientId);
+        claims.put("name", patientId == null ? null : patientRepository.findById(patientId)
+            .map(Patient::getFullName)
+            .orElse(null));
         return claims;
     }
 

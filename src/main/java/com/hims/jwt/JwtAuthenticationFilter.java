@@ -3,6 +3,7 @@ package com.hims.jwt;
 import com.hims.entity.Patient;
 import com.hims.entity.repository.PatientRepository;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -47,8 +48,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 //            }
 
             String authorizationHeader = request.getHeader("Authorization");
+
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-                String token = authorizationHeader.substring(7);
+
+                String token = authorizationHeader.substring(7).trim();
+
+                // Prevent "Bearer null" / "Bearer undefined" / empty token
+                if (token.isEmpty()
+                        || "null".equalsIgnoreCase(token)
+                        || "undefined".equalsIgnoreCase(token)) {
+
+                    logger.warn("Invalid Bearer token received.");
+
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
                 // Check if token is blacklisted
                 if (tokenBlacklistService.isBlacklisted(token)) {
@@ -59,23 +74,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // Extract username and validate token
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
-                    if ("PATIENT".equals(jwtHelper.getClaimFromToken(token,
-                            claims -> claims.get("principalType", String.class)))) {
+
+                    String principalType = jwtHelper.getClaimFromToken(
+                            token,
+                            claims -> claims.get("principalType", String.class)
+                    );
+
+                    if ("PATIENT".equals(principalType)) {
                         authenticatePatient(request, token);
                     } else {
                         String username = extractUsernameFromToken(token);
+
                         if (username != null) {
                             authenticateUser(request, token, username);
                         }
                     }
                 }
+
             } else {
                 logger.info("Invalid or missing Authorization header.");
             }
 
             filterChain.doFilter(request, response);
+
+        } catch (ExpiredJwtException e) {
+            logger.warn("JWT token expired");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (JwtException e) {
+            logger.warn("Invalid JWT token");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         } catch (Exception e) {
-            logger.error("Error occurred while processing the JWT token.", e);
+            logger.error("Unexpected error in JWT filter", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }

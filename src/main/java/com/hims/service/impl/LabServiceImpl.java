@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.LabService;
@@ -116,10 +117,11 @@ public class LabServiceImpl implements LabService {
     @Value("${lab.track-order-status-result.entry}")
     private Long resultEnteredStatusId;
 
-    @Autowired
-    private UserContextService userContextService;
-    @Autowired
-    private MasHospitalRepository masHospitalRepository;
+
+    private final UserContextService userContextService;
+    private final MasHospitalRepository masHospitalRepository;
+
+    private final  MasResultFlagRepository masResultFlagRepository;
 
 
 
@@ -853,6 +855,15 @@ public class LabServiceImpl implements LabService {
                         detail = existingDetailOpt.get();
                         detail.setResult(subReq.getResult());
                         detail.setRemarks(subReq.getRemarks());
+                        detail.setResultFlag(
+                                subReq.getResultFlagId() != null
+                                        ? masResultFlagRepository.findById(subReq.getResultFlagId())
+                                        .orElseThrow(()-> new SDDException("Detect result flag",
+                                                HttpStatus.NOT_FOUND.value(),
+                                                "Invalid Result flag details")
+                                        )
+                                        : null
+                        );
                     } else {
                         // Create new
                         detail = new DgResultEntryDetail();
@@ -863,6 +874,15 @@ public class LabServiceImpl implements LabService {
                         detail.setResult(subReq.getResult());
                         detail.setRemarks(subReq.getRemarks());
                         detail.setResultType(subReq.getResultType());
+                        detail.setResultFlag(
+                                subReq.getResultFlagId() != null
+                                        ? masResultFlagRepository.findById(subReq.getResultFlagId())
+                                        .orElseThrow(()-> new SDDException("Detect result flag",
+                                                HttpStatus.NOT_FOUND.value(),
+                                                "Invalid Result flag details")
+                                        )
+                                        : null
+                        );
                         detail.setValidated("n");
                         detail.setSampleId(masSampleRepository.findById(subReq.getSampleId()).orElse(null));
                         detail.setChargeCodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
@@ -1055,6 +1075,13 @@ public class LabServiceImpl implements LabService {
                 // Update result and remarks
                 detail.setResult(validationReq.getResult());
                 detail.setRemarks(validationReq.getRemarks());
+                detail.setResultFlag(validationReq.getResultFlagId()!=null? masResultFlagRepository.findById(validationReq.getResultFlagId())
+                        .orElseThrow(()->new SDDException("Result flag",
+                                HttpStatus.NOT_FOUND.value(),
+                                "Invalid Result flag"
+                        ))
+                        :
+                        null);
                 if(AppConstants.STATUS_F.equalsIgnoreCase(validationReq.getComparisonType())){
                     detail.setFixedId(dgFixedValueRepository.findById(validationReq.getFixedId()).orElse(null));
                 }
