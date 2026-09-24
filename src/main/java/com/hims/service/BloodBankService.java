@@ -66,4 +66,6 @@ public interface BloodBankService {
            String requestNo,
            String patientName,
            Long wardId);
+
+   ApiResponse<String> updateBloodIssueAndTrackingStatus(BloodIssueStatusRequest request);
 }

@@ -15,5 +15,6 @@ public interface BloodIssueProjection {
     String getUrgency();
     LocalDateTime getRequiredBy();
     LocalDateTime getReservedOn();
+    Long getInventoryId();
 
 }

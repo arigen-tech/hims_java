@@ -123,8 +123,15 @@ public class BloodBankServiceImpl implements BloodBankService {
     @Value("${inventoryStatusReserved}")
     private Long inventoryStatusReserved;
 
-    @Autowired
-    private BloodTrackingStatusMasterRepository bloodTrackingStatusRepository;
+    @Value("${inventoryStatusIssued}")
+    private Long inventoryStatusIssued;
+
+    @Value("${blood.request.status.rejected}")
+    private Long bloodRequestStatusRejected;
+
+    @Value("${blood.request.status.issued}")
+    private Long bloodRequestStatusIssued;
+
     @Autowired
     private BloodComponentInventoryRepository bloodComponentInventoryRepository;
     @Autowired
@@ -984,7 +991,7 @@ public class BloodBankServiceImpl implements BloodBankService {
                 detail.setDetailStatus(AppConstants.STATUS_N.toLowerCase());
                 detail.setCreatedDate(LocalDateTime.now());
                 detail.setCreatedBy(currentUser);
-                detail.setTrackingStatus(bloodTrackingStatusRepository.findById(requestedStatusId).orElseThrow(() -> new RecordNotFoundException("Tracking status not found")));
+                detail.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(requestedStatusId).orElseThrow(() -> new RecordNotFoundException("Tracking status not found")));
                 details.add(detail);
             }
 
@@ -1437,6 +1444,7 @@ public class BloodBankServiceImpl implements BloodBankService {
                     response.setUnitsReserved(projection.getUnitsReserved());
                     response.setRequestDept(projection.getRequestDept());
                     response.setUrgency(projection.getUrgency());
+                    response.setInventoryId(projection.getInventoryId());
                     response.setRequiredBy(
                             DateTimeUtil.formatDateTime(
                                     projection.getRequiredBy()));
@@ -1452,4 +1460,81 @@ public class BloodBankServiceImpl implements BloodBankService {
                 "Pending blood issue data fetched successfully",
                 responsePage);
     }
+
+
+    @Override
+    @Transactional
+    public ApiResponse<String> updateBloodIssueAndTrackingStatus(BloodIssueStatusRequest request) {
+
+        String currentUser = userContextService.getCurrentUserContext().getUserFullName();
+
+        BloodRequestDt bloodRequestDt = bloodRequestDtRepository
+                .findById(request.getRequestDtId())
+                .orElseThrow(() -> new SDDException(
+                        HttpStatus.NOT_FOUND.value(),
+                        "Blood request detail not found"));
+
+        BloodComponentInventory inventory = bloodComponentInventoryRepository
+                .findById(request.getInventoryId())
+                .orElseThrow(() -> new SDDException(
+                        HttpStatus.NOT_FOUND.value(),
+                        "Blood inventory not found"));
+
+        if (Boolean.TRUE.equals(request.getIsIssued())) {
+
+            MasBloodInventoryStatus issuedStatus =
+                    masBloodInventoryStatusRepository.findById(inventoryStatusIssued)
+                            .orElseThrow(() -> new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Issued inventory status not found"));
+
+            bloodRequestDt.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(bloodRequestStatusIssued)
+                    .orElseThrow(() -> new SDDException(
+                            HttpStatus.NOT_FOUND.value(),
+                            "Issued tracking status not found")));
+            bloodRequestDt.setIssuedBy(currentUser);
+            bloodRequestDt.setIssuedDate(LocalDateTime.now());
+
+            inventory.setInventoryStatus(issuedStatus);
+
+        } else if (Boolean.TRUE.equals(request.getIsRejected())) {
+
+            MasBloodInventoryStatus availableStatus =
+                    masBloodInventoryStatusRepository.findById(inventoryStatusAvailable)
+                            .orElseThrow(() -> new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Available inventory status not found"));
+
+            if (request.getRejectedReason() == null ||
+                    request.getRejectedReason().trim().isEmpty()) {
+                throw new SDDException(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Rejected reason is required");
+            }
+
+            bloodRequestDt.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(bloodRequestStatusRejected)
+                    .orElseThrow(() -> new SDDException(
+                            HttpStatus.NOT_FOUND.value(),
+                            "Rejected tracking status not found")));
+            bloodRequestDt.setRejectedBy(currentUser);
+            bloodRequestDt.setRejectedDate(LocalDateTime.now());
+            bloodRequestDt.setRejectedReason(request.getRejectedReason());
+
+            inventory.setInventoryStatus(availableStatus);
+
+        } else {
+            throw new SDDException(
+                    HttpStatus.BAD_REQUEST.value(),
+                    "Either isIssued or isRejected must be true");
+        }
+
+        bloodRequestDtRepository.save(bloodRequestDt);
+        bloodComponentInventoryRepository.save(inventory);
+
+        return new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Blood request status updated successfully",
+                null);
+    }
+
 }

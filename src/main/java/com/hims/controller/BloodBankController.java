@@ -368,4 +368,10 @@ public class BloodBankController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/updateBloodIssueAndTrackingStatus")
+    public ApiResponse<String> updateBloodIssueAndTrackingStatus(
+            @RequestBody BloodIssueStatusRequest request) {
+
+        return bloodBankService.updateBloodIssueAndTrackingStatus(request);
+    }
 }

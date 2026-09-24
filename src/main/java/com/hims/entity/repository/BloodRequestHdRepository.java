@@ -23,6 +23,7 @@ SELECT
     mw.ward_name AS requestDept,
     brd.urgency AS urgency,
     brd.required_by_datetime AS requiredBy,
+    bra.inventory_id AS inventoryId,
     MAX(bra.allocated_date) AS reservedOn
 FROM blood_request_hd brh
 JOIN blood_request_dt brd
@@ -60,7 +61,8 @@ GROUP BY
     mbc.component_name,
     mw.ward_name,
     brd.urgency,
-    brd.required_by_datetime
+    brd.required_by_datetime,
+    bra.inventory_id
 ORDER BY MAX(bra.allocated_date) DESC
 """,
             countQuery = """
