@@ -23,4 +23,5 @@ public class BloodIssueResponse {
     private String urgency;
     private String requiredBy;
     private String reservedOn;
+    private Long inventoryId;
 }
