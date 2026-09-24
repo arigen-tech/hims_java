@@ -16,7 +16,7 @@ public interface RegistrationService {
 
     ApiResponse<PatientRegFollowUpResp> createPatient(PatientRequest patient, OpdPatientDetailRequest opdPatientDetail, List<VisitRequest> visit);
 
-    ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq request);
+    ApiResponse<PatientRegFollowUpResp> updatePatientAndBookingAppointment(PatientFollowUpReq request);
 
     ApiResponse<String> uploadPatientImage(MultipartFile file);
 

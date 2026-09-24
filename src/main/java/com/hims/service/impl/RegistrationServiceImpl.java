@@ -215,7 +215,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     @Transactional
-    public ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq followUpRequest) {
+    public ApiResponse<PatientRegFollowUpResp> updatePatientAndBookingAppointment(PatientFollowUpReq followUpRequest) {
         try {
 
 

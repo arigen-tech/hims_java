@@ -3,10 +3,12 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
+import com.hims.entity.projection.BloodAllocatedProjection;
+import com.hims.entity.projection.BloodIssueProjection;
 import com.hims.entity.repository.*;
 import com.hims.exception.RecordNotFoundException;
+import com.hims.exception.SDDException;
 import com.hims.exception.bloodBankException.DonorSaveException;
-import com.hims.exception.bloodBankException.ScreeningSaveException;
 import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
@@ -14,6 +16,7 @@ import com.hims.service.BloodBankService;
 import com.hims.service.TransactionSequenceService;
 import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.DateTimeUtil;
 import com.hims.utils.HMISTransaction;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,14 +38,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @Slf4j
-public class BloodBankServiceImpl implements BloodBankService{
+public class BloodBankServiceImpl implements BloodBankService {
+    @Autowired
+    BloodDonationDtRepository bloodDonationDtRepository;
     @Autowired
     private BloodDonorRepository bloodDonorRepository;
     @Autowired
@@ -65,15 +71,13 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Autowired
     private MasRelationRepository masRelationRepository;
     @Autowired
-    private  BloodDonationHdrRepository bloodDonationHdrRepository;
+    private BloodDonationHdrRepository bloodDonationHdrRepository;
     @Autowired
     private MasBloodCollectionTypeRepository bloodCollectionTypeRepository;
     @Autowired
     private MasBloodBagTypeRepository masBloodBagTypeRepository;
-
     @Autowired
     private MasBloodDonationStatusRepository masBloodDonationStatusRepository;
-
     @Autowired
     private MasBloodInventoryStatusRepository masBloodInventoryStatusRepository;
     @Autowired
@@ -84,42 +88,49 @@ public class BloodBankServiceImpl implements BloodBankService{
     private MasDepartmentRepository masDepartmentRepository;
     @Autowired
     private TransactionSequenceService transactionSequenceService;
-
+    @Autowired
+    private BloodRequestDtAllocationRepository bloodRequestDtAllocationRepository;
     @Autowired
     private MasWardRepository masWardRepository;
-
     @Value("${bloodDonationStatusCollected}")
     private Long bloodDonationStatusCollected;
-
     @Value("${bloodDonationStatusComponent_Failed}")
     private Long bloodDonationStatusComponent_Failed;
-
     @Value("${bloodDonationStatusComponent_Generated}")
     private Long bloodDonationStatusComponent_Generated;
-
     @Value("${bloodDonationStatus_TEST_FAILED}")
-    private  Long bloodDonationStatus_TEST_FAILED;
-
+    private Long bloodDonationStatus_TEST_FAILED;
     @Value("${bloodDonationStatus_AVAILABLE}")
     private Long bloodDonationStatus_AVAILABLE;
-
     @Value("${donor.screening.temp-fail.cooldown-days}")
     private int tempFailDays;
-
     @Value("${donor.screening.pass.cooldown-days}")
     private int passDays;
-
     @Value("${inventoryStatusAvailable}")
     private Long inventoryStatusAvailable;
+    @Value(("${inventoryStatusAllocated}"))
+    private Long inventoryStatusAllocated;
+    @Value("${blood.request.status.requested}")
+    private Long requestedStatusId;
+    @Value("${blood.request.status.allocated}")
+    private Long allocatedStatusId;
+    @Value("${blood.request.status.partial.allocated}")
+    private Long partiallyAllocatedStatusId;
+    @Value("${blood.request.status.component.reserved}")
+    private Long componentReservedStatusId;
+    @Value("${blood.request.status.crossmatch.failed}")
+    private Long crossmatchFailedStatusId;
+    @Value("${inventoryStatusReserved}")
+    private Long inventoryStatusReserved;
 
     @Autowired
+    private BloodTrackingStatusMasterRepository bloodTrackingStatusRepository;
+    @Autowired
     private BloodComponentInventoryRepository bloodComponentInventoryRepository;
-
     @Autowired
     private MasComponentFailureReasonRepository masComponentFailureReasonRepository;
     @Autowired
     private MasBloodComponentRepository masBloodComponentRepository;
-    @Autowired BloodDonationDtRepository bloodDonationDtRepository;
     @Autowired
     private BloodDonationTestResultRepository bloodDonationTestResultRepository;
     @Autowired
@@ -135,6 +146,20 @@ public class BloodBankServiceImpl implements BloodBankService{
     @Autowired
     private MasHospitalRepository masHospitalRepository;
 
+    @Autowired
+    private BloodTrackingStatusMasterRepository bloodTrackingStatusMasterRepository;
+
+    @Autowired
+    private MasCrossMatchTypeRepository  masCrossMatchTypeRepository;
+
+    @Autowired
+    private BloodCrossmatchHdRepository  bloodCrossmatchHdRepository;
+
+    @Autowired
+    private BloodCrossmatchDtRepository  bloodCrossmatchDtRepository;
+
+    @Autowired
+    private BloodCrossmatchFailedHistoryRepository bloodCrossmatchFailedHistoryRepository;
 
 
     private String generateDonorCode() {
@@ -148,6 +173,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         }
         return prefix + String.format("%04d", nextNumber);
     }
+
     private String generateBagNumber() {
         String year = String.valueOf(LocalDate.now().getYear());
         String prefix = "BAG-" + year + "-";
@@ -162,7 +188,7 @@ public class BloodBankServiceImpl implements BloodBankService{
 
     @Override
     @Transactional
-    public ApiResponse<String> registerDonor(DonorRegistrationRequest request)  {
+    public ApiResponse<String> registerDonor(DonorRegistrationRequest request) {
         log.info("Starting donor registration process");
 
         BloodDonorPersonalDetailsRequest pd = request.getBloodDonorPersonalDetailsRequest();
@@ -174,7 +200,8 @@ public class BloodBankServiceImpl implements BloodBankService{
                 pd.getBloodGroupId());
 
         if (exists) {
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     AppConstants.DONOR_ALREADY_REGISTERED_MSG, HttpStatus.BAD_REQUEST.value()
             );
         }
@@ -187,7 +214,8 @@ public class BloodBankServiceImpl implements BloodBankService{
         log.info("Donor screening details saved successfully with screeningId: {}", screening.getScreeningId());
 
         log.info("Donor registration completed successfully");
-        return ResponseUtils.createSuccessResponse(AppConstants.DONOR_REGISTRATION_SUCCESS_MSG, new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(AppConstants.DONOR_REGISTRATION_SUCCESS_MSG, new TypeReference<>() {
+        });
 
     }
 
@@ -197,21 +225,22 @@ public class BloodBankServiceImpl implements BloodBankService{
     public ApiResponse<String> updateDonor(Long donorId, DonorRegistrationRequest request) {
         BloodDonor donor = bloodDonorRepository.findById(donorId).orElseThrow(() -> new DonorSaveException(AppConstants.DONOR_NOT_FOUND_ERR_MSG));
 
-        updateDonorDetails(donor,request.getBloodDonorPersonalDetailsRequest());
+        updateDonorDetails(donor, request.getBloodDonorPersonalDetailsRequest());
 
         BloodDonorScreening screening = saveDonorScreeningDetails(request.getBloodDonorScreeningRequest(), donor);
 
         BloodDonorScreeningDetailsResponse response = mapToResponse(donor, screening);
 
-        return ResponseUtils.createSuccessResponse(AppConstants.DONOR_UPDATE_AND_SCREENING_SUCCESS_MSG, new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(AppConstants.DONOR_UPDATE_AND_SCREENING_SUCCESS_MSG, new TypeReference<>() {
+        });
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<DonorResponse>> getAllDonor(Long hospitalId,Pageable pageable, String donorName, String mobileNo) {
+    public ApiResponse<Page<DonorResponse>> getAllDonor(Long hospitalId, Pageable pageable, String donorName, String mobileNo) {
         try {
 
-            Page<DonorProjection> projections = bloodDonorRepository.getAllDonor(hospitalId,pageable, donorName, mobileNo);
+            Page<DonorProjection> projections = bloodDonorRepository.getAllDonor(hospitalId, pageable, donorName, mobileNo);
 
             Page<DonorResponse> responsePage = projections.map(p -> {
                 DonorResponse response = new DonorResponse();
@@ -227,11 +256,13 @@ public class BloodBankServiceImpl implements BloodBankService{
                 return response;
             });
 
-            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error occurred while fetching donor list. donorName: {}, mobileNo: {}", donorName, mobileNo, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -239,13 +270,13 @@ public class BloodBankServiceImpl implements BloodBankService{
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<BloodDonorScreeningDetailsResponse> getDonorScreeningDetails(Long donorId,Long hospitalId) {
+    public ApiResponse<BloodDonorScreeningDetailsResponse> getDonorScreeningDetails(Long donorId, Long hospitalId) {
         log.info("Fetching donor screening details for donorId: {}", donorId);
 
         try {
-            BloodDonorDetailsProjection donor = bloodDonorScreeningRepository.getDonorBasicDetails(donorId,hospitalId);
+            BloodDonorDetailsProjection donor = bloodDonorScreeningRepository.getDonorBasicDetails(donorId, hospitalId);
 
-            List<BloodDonorPreviousScreeningProjection> screeningProjections = bloodDonorScreeningRepository.getDonorPreviousScreenings(donorId,hospitalId);
+            List<BloodDonorPreviousScreeningProjection> screeningProjections = bloodDonorScreeningRepository.getDonorPreviousScreenings(donorId, hospitalId);
 
             BloodDonorScreeningDetailsResponse response = new BloodDonorScreeningDetailsResponse();
             response.setDonorId(donor.getDonorId());
@@ -307,8 +338,7 @@ public class BloodBankServiceImpl implements BloodBankService{
                         .equalsIgnoreCase(latest.getDeferralType())) {
 
                     eligible = false;
-                }
-                else if (AppConstants.DONOR_SCREENING_STATUS_FAIL
+                } else if (AppConstants.DONOR_SCREENING_STATUS_FAIL
                         .equalsIgnoreCase(latest.getScreeningResult())
                         && AppConstants.DONOR_SCREENING_TEMPORARILY_DEFERRED
                         .equalsIgnoreCase(latest.getDeferralType())) {
@@ -330,10 +360,12 @@ public class BloodBankServiceImpl implements BloodBankService{
 
             log.info("Successfully fetched donor screening details for donorId: {}", donorId);
 
-            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Error while fetching donor screening details for donorId: {}", donorId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -345,7 +377,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         log.info("Fetching pending blood collection donors");
 
         try {
-            List<BloodDonorCollectionProjection> projections = bloodDonorRepository.findPendingBloodCollection(AppConstants.DONOR_SCREENING_STATUS_PASS,hospitalId);
+            List<BloodDonorCollectionProjection> projections = bloodDonorRepository.findPendingBloodCollection(AppConstants.DONOR_SCREENING_STATUS_PASS, hospitalId);
 
             List<BloodDonorCollectionResponse> responseList = projections.stream().map(projection -> {
                 BloodDonorCollectionResponse response = new BloodDonorCollectionResponse();
@@ -362,11 +394,13 @@ public class BloodBankServiceImpl implements BloodBankService{
             }).toList();
 
             log.info("Fetched {} pending blood collection donors successfully", responseList.size());
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while fetching pending blood collection donors", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INSUFFICIENT_STORAGE.value()
             );
@@ -375,11 +409,11 @@ public class BloodBankServiceImpl implements BloodBankService{
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<BloodDonorCollectionDetailsResponse> pendingBloodCollectionDetails(Long donorId,Long hospitalId) {
+    public ApiResponse<BloodDonorCollectionDetailsResponse> pendingBloodCollectionDetails(Long donorId, Long hospitalId) {
         log.info("Fetching pending blood collection details for donorId: {}", donorId);
 
         try {
-            Optional<BloodDonorCollectionDetailsProjection> optional = bloodDonorRepository.findPendingBloodCollectionDetails(donorId,hospitalId);
+            Optional<BloodDonorCollectionDetailsProjection> optional = bloodDonorRepository.findPendingBloodCollectionDetails(donorId, hospitalId);
 
             BloodDonorCollectionDetailsProjection p = optional.get();
 
@@ -413,11 +447,13 @@ public class BloodBankServiceImpl implements BloodBankService{
             response.setPulse(p.getPulse());
             response.setTemperature(p.getTemperature());
 
-            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {} );
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while fetching pending blood collection details for donorId: {}", donorId, e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
@@ -431,28 +467,30 @@ public class BloodBankServiceImpl implements BloodBankService{
                     bloodCollectionRequest.getDonorId(),
                     bloodCollectionRequest.getScreeningId());
 
-        BloodDonationHdr bloodDonationHdr=new BloodDonationHdr();
-        bloodDonationHdr.setDonorId(bloodDonorRepository.findById(bloodCollectionRequest.getDonorId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.DONOR_ID_NOT_FOUND_ERR_MSG)));
-        bloodDonationHdr.setScreeningId(bloodDonorScreeningRepository.findById(bloodCollectionRequest.getScreeningId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.SCREENING_ID_NOT_FOUND_ERR_MSG)));
-        bloodDonationHdr.setDonationTypeId(masBloodDonationTypeRepository.findById(bloodCollectionRequest.getDonationTypeId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.DONATION_TYPE_NOT_FOUND_ERR_MSG)));
-        bloodDonationHdr.setBagNumber(generateBagNumber());
-        bloodDonationHdr.setCollectionTypeId(bloodCollectionTypeRepository.findById(bloodCollectionRequest.getCollectionTypeId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.COLLECTION_TYPE_NOT_FOUND_ERR_MSG)));
-        bloodDonationHdr.setBagTypeId(masBloodBagTypeRepository.findById(bloodCollectionRequest.getBagTypeId()).orElseThrow(()-> new RecordNotFoundException(AppConstants.BAG_TYPE_NOT_FOUND_ERR_MSG)));
-        bloodDonationHdr.setTotalCollectedVolumeMl(bloodCollectionRequest.getTotalCollectedVolume());
-        bloodDonationHdr.setCreatedDate(LocalDate.now());
-        bloodDonationHdr.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
-        bloodDonationHdr.setDonationDatetime(LocalDateTime.now());
-        bloodDonationHdr.setHospital(masHospitalRepository.findById(userContextService.getCurrentUserContext().getHospitalId()).orElseThrow(()-> new RecordNotFoundException("Hospital Not Found")));
+            BloodDonationHdr bloodDonationHdr = new BloodDonationHdr();
+            bloodDonationHdr.setDonorId(bloodDonorRepository.findById(bloodCollectionRequest.getDonorId()).orElseThrow(() -> new RecordNotFoundException(AppConstants.DONOR_ID_NOT_FOUND_ERR_MSG)));
+            bloodDonationHdr.setScreeningId(bloodDonorScreeningRepository.findById(bloodCollectionRequest.getScreeningId()).orElseThrow(() -> new RecordNotFoundException(AppConstants.SCREENING_ID_NOT_FOUND_ERR_MSG)));
+            bloodDonationHdr.setDonationTypeId(masBloodDonationTypeRepository.findById(bloodCollectionRequest.getDonationTypeId()).orElseThrow(() -> new RecordNotFoundException(AppConstants.DONATION_TYPE_NOT_FOUND_ERR_MSG)));
+            bloodDonationHdr.setBagNumber(generateBagNumber());
+            bloodDonationHdr.setCollectionTypeId(bloodCollectionTypeRepository.findById(bloodCollectionRequest.getCollectionTypeId()).orElseThrow(() -> new RecordNotFoundException(AppConstants.COLLECTION_TYPE_NOT_FOUND_ERR_MSG)));
+            bloodDonationHdr.setBagTypeId(masBloodBagTypeRepository.findById(bloodCollectionRequest.getBagTypeId()).orElseThrow(() -> new RecordNotFoundException(AppConstants.BAG_TYPE_NOT_FOUND_ERR_MSG)));
+            bloodDonationHdr.setTotalCollectedVolumeMl(bloodCollectionRequest.getTotalCollectedVolume());
+            bloodDonationHdr.setCreatedDate(LocalDate.now());
+            bloodDonationHdr.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
+            bloodDonationHdr.setDonationDatetime(LocalDateTime.now());
+            bloodDonationHdr.setHospital(masHospitalRepository.findById(userContextService.getCurrentUserContext().getHospitalId()).orElseThrow(() -> new RecordNotFoundException("Hospital Not Found")));
             bloodDonationHdr.setDonationStatusId(masBloodDonationStatusRepository.findById(bloodDonationStatusCollected).orElseThrow());
 
             bloodDonationHdrRepository.save(bloodDonationHdr);
 
             log.info("Blood collection saved successfully with bagNumber: {}", bloodDonationHdr.getBagNumber());
 
-        return ResponseUtils.createSuccessResponse(AppConstants.BLOOD_COLLECTION_SAVE_SUCCESS_MSG, new TypeReference<>() {} );
+            return ResponseUtils.createSuccessResponse(AppConstants.BLOOD_COLLECTION_SAVE_SUCCESS_MSG, new TypeReference<>() {
+            });
         } catch (Exception e) {
             log.error("Unexpected exception occurred while saving blood collection", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
@@ -464,18 +502,20 @@ public class BloodBankServiceImpl implements BloodBankService{
     public ApiResponse<List<PendingComponentGenerationResponse>> pendingComponentGenerationList(Long hospitalId) {
         log.info("Fetching pending component generation list from repository");
         try {
-            List<PendingComponentGenerationResponse> pendingComponentGenerationList = bloodDonationHdrRepository.pendingComponentGenerationList(bloodDonationStatusCollected,hospitalId);
+            List<PendingComponentGenerationResponse> pendingComponentGenerationList = bloodDonationHdrRepository.pendingComponentGenerationList(bloodDonationStatusCollected, hospitalId);
 
             log.info("Pending component generation list fetched successfully. Total records: {}",
                     pendingComponentGenerationList != null ? pendingComponentGenerationList.size() : 0);
 
 
-            return ResponseUtils.createSuccessResponse(pendingComponentGenerationList, new TypeReference<>() {}
+            return ResponseUtils.createSuccessResponse(pendingComponentGenerationList, new TypeReference<>() {
+                    }
             );
 
         } catch (Exception e) {
             log.error("Exception occurred while fetching pending component generation list", e);
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    },
                     AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
@@ -500,12 +540,14 @@ public class BloodBankServiceImpl implements BloodBankService{
             bloodDonationHdrRepository.save(bloodDonationHdr);
             log.info("Component failure reason updated successfully for donationId: {}", donationId);
 
-            return ResponseUtils.createSuccessResponse(AppConstants.COMPONENT_FAILURE_REASON_UPDATE_SUCCESS_MSG, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(AppConstants.COMPONENT_FAILURE_REASON_UPDATE_SUCCESS_MSG, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while failing component generation for donationId: {}", donationId, e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG ,
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -543,13 +585,15 @@ public class BloodBankServiceImpl implements BloodBankService{
             donationHdr.setDonationStatusId(masBloodDonationStatusRepository.findById(bloodDonationStatusComponent_Generated).orElseThrow());
             bloodDonationHdrRepository.save(donationHdr);
             log.info("Component generation saved successfully for donationId: {}", request.getDonationId());
-            return ResponseUtils.createSuccessResponse(AppConstants.COMPONENT_GENERATION_SAVE_SUCCESS_MSG, new TypeReference<>() {}
+            return ResponseUtils.createSuccessResponse(AppConstants.COMPONENT_GENERATION_SAVE_SUCCESS_MSG, new TypeReference<>() {
+                    }
             );
 
         } catch (Exception e) {
             log.error("Error while saving component generation for donationId: {}", request.getDonationId(), e);
 
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG,
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
+                    }, AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -560,7 +604,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         try {
             List<PendingForMandatoryTestingProjection> projectionList =
                     bloodDonationHdrRepository
-                            .pendingForMandatoryTestingList(bloodDonationStatusComponent_Generated,hospitalId);
+                            .pendingForMandatoryTestingList(bloodDonationStatusComponent_Generated, hospitalId);
 
             List<PendingForMandatoryTestingResponse> responseList =
                     projectionList.stream()
@@ -580,14 +624,16 @@ public class BloodBankServiceImpl implements BloodBankService{
                             ))
                             .toList();
 
-            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {});
+            return ResponseUtils.createSuccessResponse(responseList, new TypeReference<>() {
+            });
 
         } catch (Exception e) {
             log.error("Error while fetching pending mandatory testing list", e);
 
             return ResponseUtils.createFailureResponse(
                     null,
-                    new TypeReference<>() {},
+                    new TypeReference<>() {
+                    },
                     AppConstants.INTERNAL_SERVER_ERR_MSG,
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
@@ -630,7 +676,7 @@ public class BloodBankServiceImpl implements BloodBankService{
 
             for (BloodDonationDt dt : components) {
                 dt.setComponentStatus(availableStatus);
-              
+
             }
             bloodDonationDtRepository.saveAll(components);
         } else {
@@ -642,38 +688,50 @@ public class BloodBankServiceImpl implements BloodBankService{
         bloodDonationHdrRepository.save(bloodDonationHdr);
 
         return ResponseUtils.createSuccessResponse(
-                AppConstants.MANDATORY_TEST_ENTRY_SUCCESS_MSG, new TypeReference<>() {});
+                AppConstants.MANDATORY_TEST_ENTRY_SUCCESS_MSG, new TypeReference<>() {
+                });
     }
 
     @Override
-    public ApiResponse<?> getBloodStock(BloodStockFilterRequest req) {
+    public ApiResponse<?> getBloodStock(BloodStockFilterRequest req, Pageable pageable) {
 
         if (AppConstants.SUMMARY.equalsIgnoreCase(req.getViewType())) {
-            List<BloodStockSummaryProjection> list = bloodComponentInventoryRepository.getSummary(
+
+            Page<BloodStockSummaryProjection> page =
+                    bloodComponentInventoryRepository.getSummary(
                             req.getBloodGroupId(),
                             req.getComponentId(),
                             req.getInventoryStatus(),
                             req.getCollectionType(),
                             req.getExpiryFilter(),
-                    req.getHospitalId(),
-                    AppConstants.COMPONENT_CRYO.toLowerCase(),
-                    AppConstants.COMPONENT_PLASMA.toLowerCase(),
-                    AppConstants.COMPONENT_PLT.toLowerCase(),
-                    AppConstants.COMPONENT_PRBC.toLowerCase());
-            return ResponseUtils.createSuccessResponse(list, new TypeReference<>() {});
+                            req.getHospitalId(),
+                            AppConstants.COMPONENT_CRYO.toLowerCase(),
+                            AppConstants.COMPONENT_PLASMA.toLowerCase(),
+                            AppConstants.COMPONENT_PLT.toLowerCase(),
+                            AppConstants.COMPONENT_PRBC.toLowerCase(),
+                            pageable
+                    );
+
+            return ResponseUtils.createSuccessResponse(
+                    page,
+                    new TypeReference<>() {}
+            );
 
         } else {
-            List<BloodStockDetailedProjection> list = bloodComponentInventoryRepository.getDetailed(
-                            req.getBloodGroupId(),
-                            req.getComponentId(),
-                            req.getInventoryStatus(),
-                            req.getCollectionType(),
-                            req.getExpiryFilter());
-            return ResponseUtils.createSuccessResponse(list, new TypeReference<>() {});
+            Page<BloodStockDetailedProjection> list = bloodComponentInventoryRepository.getDetailed(
+                    req.getBloodGroupId(),
+                    req.getComponentId(),
+                    req.getInventoryStatus(),
+                    req.getExpiryFilter(),
+                    userContextService.getCurrentUserContext().getHospitalId(),
+                    pageable);
+            return ResponseUtils.createSuccessResponse(list, new TypeReference<>() {
+            });
         }
     }
+
     @Transactional
-    public BloodDonor saveDonorDetails(BloodDonorPersonalDetailsRequest personalDetailsRequest){
+    public BloodDonor saveDonorDetails(BloodDonorPersonalDetailsRequest personalDetailsRequest) {
         try {
             BloodDonor donor = new BloodDonor();
             donor.setDonorCode(generateDonorCode());
@@ -720,12 +778,13 @@ public class BloodBankServiceImpl implements BloodBankService{
             donor.setHospital(masHospitalRepository.findById(userContextService.getCurrentUserContext().getHospitalId()).orElseThrow(() -> new RecordNotFoundException("Hospital Not Found")));
 
             return bloodDonorRepository.save(donor);
-        }catch (Exception ex){
+        } catch (Exception ex) {
             throw new DonorSaveException(AppConstants.DONOR_SAVE_FAILED_ERR_MSG, ex);
         }
     }
+
     @Transactional
-    public BloodDonorScreening saveDonorScreeningDetails(BloodDonorScreeningRequest donorScreeningRequest,BloodDonor donor){
+    public BloodDonorScreening saveDonorScreeningDetails(BloodDonorScreeningRequest donorScreeningRequest, BloodDonor donor) {
         try {
             BloodDonorScreening screening = new BloodDonorScreening();
             screening.setDonor(donor);
@@ -736,7 +795,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             screening.setBloodPressure(donorScreeningRequest.getBloodPressure());
             screening.setPulseRate(donorScreeningRequest.getPulseRate());
             screening.setTemperature(donorScreeningRequest.getTemperature());
-            if(donorScreeningRequest.getScreeningResult().equalsIgnoreCase(AppConstants.DONOR_SCREENING_STATUS_PASS)){
+            if (donorScreeningRequest.getScreeningResult().equalsIgnoreCase(AppConstants.DONOR_SCREENING_STATUS_PASS)) {
                 screening.setScreeningResult(donorScreeningRequest.getScreeningResult().toLowerCase());
                 donor.setDonorScreeningStatus(donorScreeningRequest.getScreeningResult().toLowerCase());
                 screening.setDeferralType(null);
@@ -745,7 +804,7 @@ public class BloodBankServiceImpl implements BloodBankService{
                 donor.setDeferralUptoDate(null);
 
 
-            }else if(donorScreeningRequest.getScreeningResult().equalsIgnoreCase(AppConstants.DONOR_SCREENING_STATUS_FAIL)){
+            } else if (donorScreeningRequest.getScreeningResult().equalsIgnoreCase(AppConstants.DONOR_SCREENING_STATUS_FAIL)) {
 
                 screening.setScreeningResult(donorScreeningRequest.getScreeningResult().toLowerCase());
                 donor.setDonorScreeningStatus(donorScreeningRequest.getScreeningResult().toLowerCase());
@@ -762,13 +821,13 @@ public class BloodBankServiceImpl implements BloodBankService{
             screening.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
             screening.setHospital(masHospitalRepository.findById(userContextService.getCurrentUserContext().getHospitalId()).orElseThrow(() -> new RecordNotFoundException("Hospital Not Found")));
             return bloodDonorScreeningRepository.save(screening);
-        }catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
             throw ex;
         }
     }
 
-    private BloodDonorScreeningDetailsResponse mapToResponse(BloodDonor donor , BloodDonorScreening screening) {
+    private BloodDonorScreeningDetailsResponse mapToResponse(BloodDonor donor, BloodDonorScreening screening) {
         BloodDonorScreeningDetailsResponse response = new BloodDonorScreeningDetailsResponse();
         response.setDonorId(donor.getDonorId());
         response.setDonorCode(donor.getDonorCode());
@@ -815,6 +874,7 @@ public class BloodBankServiceImpl implements BloodBankService{
         donor.setPincode(pd.getPinCode());
         bloodDonorRepository.save(donor);
     }
+
     @Transactional
     private void createInventoryEntries(BloodDonationHdr hdr) {
 
@@ -845,6 +905,7 @@ public class BloodBankServiceImpl implements BloodBankService{
             bloodComponentInventoryRepository.save(inventory);
         }
     }
+
     @Transactional
     public void uploadMultipleDocs(BloodDonationHdr bloodDonationHdr, List<MultipartFile> files) {
 
@@ -923,7 +984,7 @@ public class BloodBankServiceImpl implements BloodBankService{
                 detail.setDetailStatus(AppConstants.STATUS_N.toLowerCase());
                 detail.setCreatedDate(LocalDateTime.now());
                 detail.setCreatedBy(currentUser);
-
+                detail.setTrackingStatus(bloodTrackingStatusRepository.findById(requestedStatusId).orElseThrow(() -> new RecordNotFoundException("Tracking status not found")));
                 details.add(detail);
             }
 
@@ -931,7 +992,8 @@ public class BloodBankServiceImpl implements BloodBankService{
 
             return ResponseUtils.createSuccessResponse(
                     null,
-                    new TypeReference<String>() {},
+                    new TypeReference<String>() {
+                    },
                     "Blood request created successfully"
             );
 
@@ -966,45 +1028,49 @@ public class BloodBankServiceImpl implements BloodBankService{
 
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<BloodTrackingProjection> projectionPage = bloodRequestDtRepository.getBloodRequestTrackingList(
-                        inpatientNo, patientName, pageable);
+        Page<BloodTrackingProjection> projectionPage =
+                bloodRequestDtRepository.getBloodRequestTrackingList(
+                        inpatientNo,
+                        patientName,
+                        pageable);
 
         Page<BloodTrackingResponse> responsePage = projectionPage.map(p -> {
+            BloodTrackingResponse response = new BloodTrackingResponse();
 
-                    BloodTrackingResponse response = new BloodTrackingResponse();
-                    response.setRequestNo(p.getRequestNo());
-                    response.setInpatientId(p.getInpatientId());
-                    response.setInpatientNo(p.getInpatientNo());
-                    response.setPatientId(p.getPatientId());
-                    response.setPatientName(p.getPatientName());
-                    response.setBloodGroup(p.getBloodGroup());
-                    response.setComponent(p.getComponent());
-                    response.setBloodGroupId(p.getBloodGroupId());
-                    response.setComponentId(p.getComponentId());
-                    response.setUnits(p.getUnits());
-                    response.setUrgency(p.getUrgency());
-                    response.setRequestedDateTime(p.getRequestedDateTime());
-                    response.setRequiredByDateTime(p.getRequiredByDateTime());
-                    response.setRequestedWard(p.getRequestedWard());
-//                    response.setTrackingStatus(p.getTrackingStatus());
-                    return response;
-                });
+            response.setRequestDtId(p.getRequestDtId());
+            response.setRequestNo(p.getRequestNo());
+            response.setInpatientId(p.getInpatientId());
+            response.setInpatientNo(p.getInpatientNo());
+            response.setPatientId(p.getPatientId());
+            response.setPatientName(p.getPatientName());
+            response.setBloodGroup(p.getBloodGroup());
+            response.setComponent(p.getComponent());
+            response.setBloodGroupId(p.getBloodGroupId());
+            response.setComponentId(p.getComponentId());
+            response.setUnits(p.getUnits());
+            response.setUrgency(p.getUrgency());
+            response.setRequestedDateTime(p.getRequestedDateTime());
+            response.setRequiredByDateTime(p.getRequiredByDateTime());
+            response.setRequestedWard(p.getRequestedWard());
+            response.setTrackingStatus(p.getTrackingStatus());
 
-        return ResponseUtils.createSuccessResponse(responsePage ,new TypeReference<>() {}
-        );
+            return response;
+        });
+
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
+        });
     }
 
 
     @Override
     public ApiResponse<List<BloodInventoryResponse>> getAvailableInventory(BloodInventoryRequest request) {
 
-        List<BloodInventoryProjection> inventoryList =
-                bloodComponentInventoryRepository.findAvailableBloodInventory(
-                        request.getPatientBloodGroupId(),
-                        request.getComponentId(),
-                        AppConstants.STATUS_Y.toLowerCase(),
-                        inventoryStatusAvailable
-                );
+        List<BloodInventoryProjection> inventoryList = bloodComponentInventoryRepository.findAvailableBloodInventory(
+                request.getPatientBloodGroupId(),
+                request.getComponentId(),
+                AppConstants.STATUS_Y.toLowerCase(),
+                inventoryStatusAvailable
+        );
 
         List<BloodInventoryResponse> responseList = inventoryList.stream()
                 .map(this::mapToBloodInventoryResponse)
@@ -1017,11 +1083,8 @@ public class BloodBankServiceImpl implements BloodBankService{
         );
     }
 
-    private BloodInventoryResponse mapToBloodInventoryResponse(
-            BloodInventoryProjection projection) {
-
+    private BloodInventoryResponse mapToBloodInventoryResponse(BloodInventoryProjection projection) {
         BloodInventoryResponse response = new BloodInventoryResponse();
-
         response.setInventoryId(projection.getInventoryId());
         response.setUnitNo(projection.getUnitNo());
         response.setBloodGroupId(projection.getBloodGroupId());
@@ -1035,4 +1098,358 @@ public class BloodBankServiceImpl implements BloodBankService{
         return response;
     }
 
+
+    @Override
+    @Transactional
+    public ApiResponse<String> allocateBloodUnits(BloodRequestAllocationRequest request) {
+
+        try {
+            String currentUser = userContextService.getCurrentUserContext().getUserFullName();
+            int totalAllocated = 0;
+            for (BloodRequestDetailAllocationRequest detailRequest : request.getDetails()) {
+
+                BloodRequestDt requestDt = bloodRequestDtRepository.findById(detailRequest.getRequestDtId()
+                ).orElseThrow(() ->
+                        new RecordNotFoundException(
+                                "Blood request detail not found: "
+                                        + detailRequest.getRequestDtId()
+                        ));
+
+                int allocatedForDetail = 0;
+
+                for (Long inventoryId : detailRequest.getInventoryIds()) {
+
+                    BloodComponentInventory inventory =
+                            bloodComponentInventoryRepository.findById(inventoryId)
+                                    .orElseThrow(() ->
+                                            new RecordNotFoundException(
+                                                    "Blood inventory not found: "
+                                                            + inventoryId
+                                            ));
+
+                    // Prevent duplicate allocation
+                    boolean alreadyAllocated =
+                            bloodRequestDtAllocationRepository
+                                    .existsByBloodRequestDtAndInventory(
+                                            requestDt,
+                                            inventory
+                                    );
+
+                    if (alreadyAllocated) {
+                        continue;
+                    }
+
+                    BloodRequestDtAllocation allocation = new BloodRequestDtAllocation();
+                    allocation.setBloodRequestDt(requestDt);
+                    allocation.setInventory(inventory);
+                    allocation.setAllocatedUnits(1);
+                    allocation.setAllocatedDate(LocalDateTime.now());
+                    allocation.setCreatedBy(currentUser);
+                    bloodRequestDtAllocationRepository.save(allocation);
+
+
+                    inventory.setInventoryStatus(
+                            masBloodInventoryStatusRepository
+                                    .findById(inventoryStatusAllocated)
+                                    .orElseThrow(() ->
+                                            new RecordNotFoundException(
+                                                    "Allocated inventory status not found"))
+                    );
+                    inventory.setReservationDatetime(LocalDateTime.now());
+
+                    bloodComponentInventoryRepository.save(inventory);
+
+
+                    allocatedForDetail++;
+                    totalAllocated++;
+                }
+
+                // Update fulfilled units for this particular request detail
+                int currentFulfilled = requestDt.getFulfilledUnits() == null ? 0 : requestDt.getFulfilledUnits();
+                requestDt.setFulfilledUnits(currentFulfilled + allocatedForDetail);
+
+                // Update detail status
+                if (requestDt.getFulfilledUnits() >= requestDt.getUnitsRequired()) {
+                    requestDt.setTrackingStatus(
+                            bloodTrackingStatusMasterRepository
+                                    .findById(allocatedStatusId)
+                                    .orElseThrow(() ->
+                                            new RecordNotFoundException(
+                                                    "Allocated tracking status not found"))
+                    );
+                } else if (requestDt.getFulfilledUnits() > 0) {
+                    requestDt.setTrackingStatus(
+                            bloodTrackingStatusMasterRepository
+                                    .findById(partiallyAllocatedStatusId)
+                                    .orElseThrow(() ->
+                                            new RecordNotFoundException(
+                                                    "Partially allocated tracking status not found"))
+                    );
+                }
+
+                bloodRequestDtRepository.save(requestDt);
+            }
+
+            return ResponseUtils.createSuccessResponse(
+                    totalAllocated + " blood unit(s) allocated successfully",
+                    new TypeReference<>() {
+                    }
+            );
+        } catch (Exception e) {
+            log.error("Error while allocating blood units", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Failed to allocate blood units",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+
+    @Override
+    public ApiResponse<Page<BloodTrackingResponse>> getAllPendingBloodRequest(
+            int page,
+            int size,
+            String patientName,
+            Long wardId) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<BloodTrackingProjection> projectionPage =
+                bloodRequestDtRepository.getBloodRequestTrackingList(
+                        patientName,
+                        wardId,
+                        requestedStatusId,
+                        partiallyAllocatedStatusId,
+                        pageable);
+
+        Page<BloodTrackingResponse> responsePage = projectionPage.map(p -> {
+
+            BloodTrackingResponse response = new BloodTrackingResponse();
+
+            response.setRequestDtId(p.getRequestDtId());
+            response.setRequestNo(p.getRequestNo());
+            response.setInpatientId(p.getInpatientId());
+            response.setInpatientNo(p.getInpatientNo());
+            response.setPatientId(p.getPatientId());
+            response.setPatientName(p.getPatientName());
+            response.setBloodGroup(p.getBloodGroup());
+            response.setComponent(p.getComponent());
+            response.setBloodGroupId(p.getBloodGroupId());
+            response.setComponentId(p.getComponentId());
+            response.setUnits(p.getUnits());
+            response.setUrgency(p.getUrgency());
+            response.setRequestedDateTime(p.getRequestedDateTime());
+            response.setRequiredByDateTime(p.getRequiredByDateTime());
+            response.setRequestedWard(p.getRequestedWard());
+            response.setTrackingStatus(p.getTrackingStatus());
+
+            return response;
+        });
+
+        return ResponseUtils.createSuccessResponse(
+                responsePage,
+                new TypeReference<>() {
+                });
+    }
+    @Override
+    public ApiResponse<Page<BloodAllocatedResponse>> getAllocatedBloodRequestList(
+            int page,
+            int size,
+            String patientName,
+            Long wardId) {
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "requestDtId"));
+
+        Page<BloodAllocatedProjection> projectionPage =
+                bloodRequestDtAllocationRepository.getAllocatedBloodRequestList(
+                        patientName,
+                        wardId,
+                        allocatedStatusId,
+                        partiallyAllocatedStatusId,
+                        pageable);
+        Page<BloodAllocatedResponse> responsePage = projectionPage.map(projection -> {
+                    BloodAllocatedResponse response = new BloodAllocatedResponse();
+                    response.setRequestHdId(projection.getRequestHdId());
+                    response.setRequestDtId(projection.getRequestDtId());
+                    response.setRequestNo(projection.getRequestNo());
+                    response.setInpatientId(projection.getInpatientId());
+                    response.setInpatientNo(projection.getInpatientNo());
+                    response.setPatientId(projection.getPatientId());
+                    response.setPatientName(projection.getPatientName());
+                    response.setBloodGroup(projection.getBloodGroup());
+                    response.setComponent(projection.getComponent());
+                    response.setUnitsRequired(projection.getUnitsRequired());
+                    response.setUnitsAllocated(projection.getUnitsAllocated());
+                    response.setWard(projection.getWard());
+                    response.setUrgency(projection.getUrgency());
+                    response.setRequestedOn(DateTimeUtil.formatDateTime(projection.getRequestedOn()));
+                    response.setRequiredBy(DateTimeUtil.formatDateTime(projection.getRequiredBy()));
+                    response.setTrackingStatusId(projection.getTrackingStatusId());
+                    response.setAge(Period.between(projection.getDob(), LocalDate.now()).getYears());
+                    response.setGender(projection.getGender());
+                    response.setUnitExpiryDate(DateTimeUtil.formatDate(projection.getUnitExpiry()));
+                    response.setUnitVolume(projection.getUnitVolume().toString());
+                    response.setUnitNumber(projection.getUnitNumber());
+                    response.setInventoryId(projection.getInventoryId());
+                    return response;
+                });
+
+        return new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Allocated blood request list fetched successfully",
+                responsePage
+        );
+    }
+
+
+    @Override
+    @Transactional
+    public ApiResponse<String> saveCrossmatch(BloodCrossmatchRequest request) {
+        String currentUser=userContextService.getCurrentUserContext().getUserFullName();
+        Long currentUserId=userContextService.getCurrentUserContext().getUserId();
+
+        BloodRequestHd bloodRequest=bloodRequestHdRepository.findById(request.getRequestHdId())
+                .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Blood request not found"));
+        BloodRequestDt bloodRequestDt=bloodRequestDtRepository.findById(request.getRequestDtId())
+                .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Blood request detail not found"));
+        MasCrossMatchType crossmatchType=masCrossMatchTypeRepository.findById(request.getCrossmatchTypeId())
+                .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Crossmatch type not found"));
+
+        BloodCrossmatchHd crossmatchHd=new BloodCrossmatchHd();
+        crossmatchHd.setBloodRequestHd(bloodRequest);
+        crossmatchHd.setInpatient(bloodRequest.getInpatient());
+        crossmatchHd.setPatient(bloodRequest.getPatient());
+        crossmatchHd.setCrossmatchType(crossmatchType);
+        crossmatchHd.setSampleReceivedDatetime(request.getSampleReceivedDatetime());
+        crossmatchHd.setCrossmatchDatetime(request.getCrossmatchDatetime());
+        crossmatchHd.setOverallResult(request.getOverallResult());
+        crossmatchHd.setRemarks(request.getRemarks());
+        crossmatchHd.setCreatedDate(LocalDateTime.now());
+        crossmatchHd.setCreatedBy(currentUser);
+
+        BloodCrossmatchHd savedHeader=bloodCrossmatchHdRepository.save(crossmatchHd);
+        int compatibleCount=0;
+        int incompatibleCount=0;
+
+        for(BloodCrossmatchUnitRequest unit:request.getUnits()){
+            BloodComponentInventory inventory=bloodComponentInventoryRepository.findById(unit.getInventoryId())
+                    .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Inventory not found for ID: "+unit.getInventoryId()));
+
+            BloodCrossmatchDt crossmatchDt=new BloodCrossmatchDt();
+            crossmatchDt.setCrossmatchHd(savedHeader);
+            crossmatchDt.setInventory(inventory);
+            crossmatchDt.setUnitNo(unit.getUnitNo());
+            crossmatchDt.setCompatibilityResult(unit.getCompatibilityResult());
+            crossmatchDt.setTestDate(unit.getTestDate());
+            crossmatchDt.setRemarks(unit.getRemarks());
+            crossmatchDt.setCreatedDate(LocalDateTime.now());
+            crossmatchDt.setCreatedBy(currentUser);
+            bloodCrossmatchDtRepository.save(crossmatchDt);
+
+            if(AppConstants.COMPATIBLE.equalsIgnoreCase(unit.getCompatibilityResult())){
+                inventory.setInventoryStatus(masBloodInventoryStatusRepository.findById(inventoryStatusReserved)
+                        .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Reserved inventory status not found")));
+                inventory.setReservedForPatientId(bloodRequest.getPatient().getId());
+                inventory.setReservedForInpatientId(bloodRequest.getInpatient().getInpatientId());
+                inventory.setReservationDatetime(LocalDateTime.now());
+                compatibleCount++;
+            }else if(AppConstants.INCOMPATIBLE.equalsIgnoreCase(unit.getCompatibilityResult())){
+                inventory.setInventoryStatus(masBloodInventoryStatusRepository.findById(inventoryStatusAvailable)
+                        .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Available inventory status not found")));
+                inventory.setReservedForPatientId(null);
+                inventory.setReservedForInpatientId(null);
+                inventory.setReservationDatetime(null);
+
+                BloodCrossmatchFailedHistory failedHistory=new BloodCrossmatchFailedHistory();
+                failedHistory.setBloodRequestDt(bloodRequestDt);
+                failedHistory.setInpatient(bloodRequest.getInpatient());
+                failedHistory.setInventory(inventory);
+                failedHistory.setFailedDate(LocalDateTime.now());
+                failedHistory.setSubmittedBy(currentUserId);
+                failedHistory.setRemarks(unit.getRemarks()!=null?unit.getRemarks():request.getRemarks());
+                bloodCrossmatchFailedHistoryRepository.save(failedHistory);
+                incompatibleCount++;
+            }
+            bloodComponentInventoryRepository.save(inventory);
+        }
+
+        int totalUnits=request.getUnits().size();
+        if(incompatibleCount>0){
+            bloodRequestDt.setTrackingStatus(
+                    bloodTrackingStatusMasterRepository.findById(crossmatchFailedStatusId)
+                            .orElseThrow(()->new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Crossmatch failed tracking status not found"
+                            ))
+            );
+        }else if(compatibleCount==totalUnits&&totalUnits>0){
+            bloodRequestDt.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(componentReservedStatusId)
+                    .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Component reserved tracking status not found")));
+        }else if(compatibleCount>0&&incompatibleCount>0){
+            bloodRequestDt.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(partiallyAllocatedStatusId)
+                    .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Partially allocated tracking status not found")));
+        }else if(incompatibleCount==totalUnits&&totalUnits>0){
+            bloodRequestDt.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(allocatedStatusId)
+                    .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Allocated tracking status not found")));
+        }
+
+        bloodRequestDtRepository.save(bloodRequestDt);
+        return new ApiResponse<>(HttpStatus.OK.value(),"Cross-match saved successfully",null);
+    }
+
+
+
+    @Override
+    public ApiResponse<Page<BloodIssueResponse>> getPendingBloodIssue(
+            int page,
+            int size,
+            String requestNo,
+            String patientName,
+            Long wardId) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<BloodIssueProjection> projectionPage =
+                bloodRequestHdRepository.getPendingBloodIssue(
+                        requestNo,
+                        patientName,
+                        wardId,
+                        pageable);
+
+        Page<BloodIssueResponse> responsePage =
+                projectionPage.map(projection -> {
+
+                    BloodIssueResponse response =
+                            new BloodIssueResponse();
+
+                    response.setRequestHdId(projection.getRequestHdId());
+                    response.setRequestDtId(projection.getRequestDtId());
+                    response.setRequestNo(projection.getRequestNo());
+                    response.setInpatientNo(projection.getInpatientNo());
+                    response.setPatientName(projection.getPatientName());
+                    response.setBloodGroup(projection.getBloodGroup());
+                    response.setComponent(projection.getComponent());
+                    response.setUnitsReserved(projection.getUnitsReserved());
+                    response.setRequestDept(projection.getRequestDept());
+                    response.setUrgency(projection.getUrgency());
+                    response.setRequiredBy(
+                            DateTimeUtil.formatDateTime(
+                                    projection.getRequiredBy()));
+                    response.setReservedOn(
+                            DateTimeUtil.formatDateTime(
+                                    projection.getReservedOn()));
+
+                    return response;
+                });
+
+        return new ApiResponse<>(
+                HttpStatus.OK.value(),
+                "Pending blood issue data fetched successfully",
+                responsePage);
+    }
 }

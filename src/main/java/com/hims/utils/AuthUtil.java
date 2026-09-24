@@ -1,15 +1,7 @@
 package com.hims.utils;
 
-import com.hims.entity.LabOrderTrackingStatus;
-import com.hims.entity.MasServiceCategory;
-import com.hims.entity.User;
-import com.hims.entity.repository.MasServiceCategoryRepository;
 import com.hims.entity.repository.UserRepo;
-import com.hims.request.LabInvestigationReq;
-import com.hims.request.LabRadioInvestigationRequest;
-import com.hims.response.UserContext;
 import com.hims.service.UserContextService;
-import com.hims.service.impl.AppSetupServicesImpl;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,15 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 @Component
 public class AuthUtil {
@@ -39,10 +26,6 @@ public class AuthUtil {
 
     @Value("${jwt.secret}")
     private String secret;
-
-//    public User getCurrentUser() {
-//        return userContextService.getCurrentUser();
-//    }
 
 
     public Long getCurrentDepartmentId() {
@@ -76,7 +59,4 @@ public class AuthUtil {
         }
     }
 
-//    public String getCurrentUserFullName(){
-//        return getCurrentUser().getFullName();
-//    }
 }
