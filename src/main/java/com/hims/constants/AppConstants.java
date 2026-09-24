@@ -244,4 +244,8 @@ public class AppConstants {
     public static final String NUMERIC_RANGE_REGEX = "^-?\\d*\\.?\\d+\\s*-\\s*-?\\d*\\.?\\d+$";
     public static final String THRESHOLD_REGEX     = "^[<>]=?\\s*-?\\d*\\.?\\d+$";
     public static final String MULTI_VALUE_REGEX   = "[,;\\n]";
+
+
+    public static final String COMPATIBLE = "compatible";
+    public static final String INCOMPATIBLE = "incompatible";
 }

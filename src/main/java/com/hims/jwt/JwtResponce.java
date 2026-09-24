@@ -21,5 +21,6 @@ public class JwtResponce {
     private long departmentId;
     private String departmentName;
     private String departmentCode;
+    private String loggedInUserName;
 
 }
