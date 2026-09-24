@@ -941,7 +941,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
         validateDuplicateAppointment(visit, patient.getId(), null);
-        UserContext userContext = userContextService.getCurrentUserContext();
+        String userContext = userContextService.getCurrentUserFullNameFromToken();
 
 //        LocalDate visitDate = visit.getVisitDate().atZone(ZoneOffset.UTC).toLocalDate();
 //        LocalDate tokenStartTime = visit.getTokenStartTime().atZone(ZoneOffset.UTC).toLocalDate();
@@ -1366,7 +1366,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
 
     private Patient updatePatientDetails(PatientRequest request, boolean followUp) {
-        UserContext userContext = userContextService.getCurrentUserContext();
+        String userContext = userContextService.getCurrentUserFullNameFromToken();
         if (userContext == null) {
             log.info("current user not found");
             throw new RuntimeException("Current user not found");
@@ -1376,7 +1376,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         patient.setUhidNo(request.getUhidNo());
         patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(userContext.getUserFullName());
+        patient.setLastChgBy(userContext);
         patient.setPatientFn(request.getPatientFn());
         patient.setPatientMn(request.getPatientMn());
         patient.setPatientLn(request.getPatientLn());
