@@ -543,16 +543,25 @@ public interface PaymentRefundRepository extends JpaRepository<PaymentRefund, Lo
             pr.refund_reason AS refundReason,
             pr.gateway_refund_id AS gatewayRefundId,
             pr.refund_processed_at AS refundDate,
-            COALESCE(mps.payment_status_name, 'PENDING') AS refundStatus,
+            CASE
+                WHEN mps.payment_status_code = 'REFUNDED' THEN
+                    CASE
+                        WHEN pr.gateway_reference_type IS NULL
+                             OR pr.gateway_reference_no IS NULL
+                        THEN 'PROCESSED'
+                        ELSE 'REFUNDED'
+                    END
+                ELSE 'PENDING'
+            END AS refundStatus,
             mpg.payment_gateway_id AS paymentModeId,
             mpg.gateway_code AS paymentModeCode,
             mpg.gateway_name AS paymentModeName,
             d.department_name AS departmentName
-        FROM payment_refund pr
-        INNER JOIN payment_details_v2 pd ON pd.payment_id = pr.payment_id
-        INNER JOIN billing_header bh ON bh.bill_hd_id = pd.billing_hd_id
-        INNER JOIN patient p ON p.patient_id = bh.patient_id
-        INNER JOIN visit v ON v.visit_id = bh.visit_id
+        FROM visit v
+        INNER JOIN patient p ON p.patient_id = v.patient_id
+        LEFT JOIN billing_header bh ON bh.visit_id = v.visit_id
+        LEFT JOIN payment_details_v2 pd ON pd.billing_hd_id = bh.bill_hd_id
+        LEFT JOIN payment_refund pr ON pr.payment_id = pd.payment_id
         LEFT JOIN mas_gender g ON g.id = p.p_gender_id
         LEFT JOIN mas_department d ON d.department_id = v.department_id
         LEFT JOIN mas_department_type dt ON dt.department_type_id = d.department_type_id
@@ -562,25 +571,22 @@ public interface PaymentRefundRepository extends JpaRepository<PaymentRefund, Lo
         WHERE v.hospital_id = :hospitalId
           AND v.patient_id = :patientId
           AND LOWER(v.visit_status) = 'c'
-          AND LOWER(v.billing_status) = 'y'
           AND LOWER(dt.department_type_code) = LOWER(:departmentType)
-          AND COALESCE(bh.net_amount, 0) > 0
         ORDER BY v.cancelled_datetime DESC, pr.refund_id DESC
         """,
         countQuery = """
-        SELECT COUNT(pr.refund_id)
-        FROM payment_refund pr
-        INNER JOIN payment_details_v2 pd ON pd.payment_id = pr.payment_id
-        INNER JOIN billing_header bh ON bh.bill_hd_id = pd.billing_hd_id
-        INNER JOIN visit v ON v.visit_id = bh.visit_id
+                SELECT COUNT(DISTINCT v.visit_id)
+                FROM visit v
+                INNER JOIN patient p ON p.patient_id = v.patient_id
+                LEFT JOIN billing_header bh ON bh.visit_id = v.visit_id
+                LEFT JOIN payment_details_v2 pd ON pd.billing_hd_id = bh.bill_hd_id
+                LEFT JOIN payment_refund pr ON pr.payment_id = pd.payment_id
         INNER JOIN mas_department d ON d.department_id = v.department_id
         INNER JOIN mas_department_type dt ON dt.department_type_id = d.department_type_id
         WHERE v.hospital_id = :hospitalId
           AND v.patient_id = :patientId
           AND LOWER(v.visit_status) = 'c'
-          AND LOWER(v.billing_status) = 'y'
           AND LOWER(dt.department_type_code) = LOWER(:departmentType)
-          AND COALESCE(bh.net_amount, 0) > 0
         """,
         nativeQuery = true)
     Page<PaidCancelledAppointmentProjection> findMobileCancelledRefundAppointments(
