@@ -3,6 +3,7 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.constants.PaymentStatusCode;
+import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.BillingException;
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -140,6 +142,9 @@ public class BillingServiceImpl implements BillingService {
 
     @Autowired
     MasHospitalRepository masHospitalRepository;
+
+    @Autowired
+    private SMSUtility smsUtility;
 
 
     @Override
@@ -740,26 +745,17 @@ public class BillingServiceImpl implements BillingService {
             if (visit == null) {
                 throw new SDDException(billHeaderId,"Visit not linked with OPD Bill Header " );
             }
-
-//            PaymentDetail paymentDetail = new PaymentDetail();
-//            paymentDetail.setPaymentMode(request.getMode());
-//            paymentDetail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-//            paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
-//            paymentDetail.setPaymentDate(Instant.now());
-//            paymentDetail.setAmount(netAmount);
-//            paymentDetail.setCreatedBy(currentUser.getFullName());
-//            paymentDetail.setCreatedAt(Instant.now());
-//            paymentDetail.setUpdatedAt(Instant.now());
-//            paymentDetail.setBillingHd(header);
-//            paymentDetailRepository.save(paymentDetail);
-
-
+            PaymentDetailsV2 payment;
             if(!paymentDetailsV2Repository.existsByBillingHeader_Id(header.getId())){
-//                Optional<PaymentDetailsV2> paymentDetailsV2 =
-//                        paymentDetailsV2Repository.findByBillingHeader_Id(header.getId());
+                payment=savePaymentDetailsV2(header,request);
+            }else{
 
-//                savePaymentDetailsV2(paymentDetailsV2.get(),header,request);
-                savePaymentDetailsV2(header,request);
+                payment=  paymentDetailsV2Repository.findByBillingHeader_Id(header.getId())
+                        .orElseThrow(()-> new SDDException("Payment Details",
+                                HttpStatus.NOT_FOUND.value(),
+                                "Payment Details not found for this billing "
+                        ));
+
             }
 
 
@@ -781,6 +777,9 @@ public class BillingServiceImpl implements BillingService {
             item.setTokenNo(visit.getTokenNo());
             item.setDoctorName(visit.getDoctorName());
             paymentItemList.add(item);
+
+            generateInvoiceSMSNotification(header,payment,"OPD");
+
         }
         res.setMsg("Success");
         res.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -816,10 +815,18 @@ public class BillingServiceImpl implements BillingService {
 
 //            PaymentDetail saved = paymentDetailRepository.save(paymentDetail);
 
+            PaymentDetailsV2 payment;
             if(!paymentDetailsV2Repository.existsByBillingHeader_Id(billingHeader.getId())){
 //                Optional<PaymentDetailsV2> paymentDetailsV2 = paymentDetailsV2Repository.findByBillingHeader_Id(billingHeader.getId());
 //                savePaymentDetailsV2(paymentDetailsV2.get(),billingHeader,request);
-                savePaymentDetailsV2(billingHeader,request);
+                payment=savePaymentDetailsV2(billingHeader,request);
+            }else{
+                Optional<PaymentDetailsV2> paymentOpt
+                        = paymentDetailsV2Repository.findByBillingHeader_Id(billingHeader.getId());
+                 payment = paymentOpt.orElseThrow(() -> new SDDException("Payment Details",
+                        HttpStatus.NOT_FOUND.value(),
+                        "Payment details not found for the given billing"
+                ));
             }
 
 
@@ -880,9 +887,11 @@ public class BillingServiceImpl implements BillingService {
                 res.setPaymentStatus(AppConstants.PAYMENT_PARTIAL_PENDING.toLowerCase());
             }
 
-            labHdRepository.save(orderHd);
+            DgOrderHd save = labHdRepository.save(orderHd);
             if (visit != null) visitRepository.save(visit);
             billingHeaderRepository.save(billingHeader);
+
+            generateInvoiceSMSNotification(billingHeader,payment,"Lab");
 
             res.setBillNo(billingHeader.getBillNo());
             res.setMsg("Success");
@@ -937,11 +946,21 @@ public class BillingServiceImpl implements BillingService {
 //
 //                paymentDetailRepository.save(paymentDetail);
 
+                PaymentDetailsV2 payment;
+
                 if(!paymentDetailsV2Repository.existsByBillingHeader_Id(billingHeader.getId())){
 //                    Optional<PaymentDetailsV2> paymentDetailsV2 = paymentDetailsV2Repository.findByBillingHeader_Id(billingHeader.getId());
 //                    savePaymentDetailsV2(paymentDetailsV2.get(),header,request);
 
-                    savePaymentDetailsV2(billingHeader,request);
+                    payment=savePaymentDetailsV2(billingHeader,request);
+                }else{
+
+                   payment=  paymentDetailsV2Repository.findByBillingHeader_Id(billingHeader.getId())
+                                     .orElseThrow(()-> new SDDException("Payment Details",
+                                             HttpStatus.NOT_FOUND.value(),
+                                             "Payment Details not found or this bill number "+billingHeader.getBillNo()
+                                     ));
+
                 }
 
                 // INVESTIGATION LOOP SAME
@@ -1001,6 +1020,7 @@ public class BillingServiceImpl implements BillingService {
                 visitOpt.ifPresent(visitRepository::save);
                 billingHeaderRepository.save(billingHeader);
 
+                generateInvoiceSMSNotification(billingHeader,payment,"Radiology");
                 res.setBillNo(billingHeader.getBillNo());
             }
             res.setMsg("Success");
@@ -1914,7 +1934,7 @@ public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatie
     }
 
 //    private void savePaymentDetailsV2(PaymentDetailsV2 paymentDetailsV2,BillingHeader billingHeader,PaymentUpdateRequest request){
-   private void savePaymentDetailsV2(BillingHeader billingHeader,PaymentUpdateRequest request){
+   private PaymentDetailsV2 savePaymentDetailsV2(BillingHeader billingHeader,PaymentUpdateRequest request){
 
     try {
             if(billingHeader==null){
@@ -1974,12 +1994,32 @@ public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatie
 
         PaymentDetailsV2 saved = paymentDetailsV2Repository.save(payment);
 
+
+
         log.info("PaymentDetail saved, id={}", saved.getPaymentId());
+        return saved;
 
         }catch (Exception e){
             log.error("savePaymentDetailsV2 method error :: ",e);
             throw  e;
         }
+    }
+
+    private void generateInvoiceSMSNotification(BillingHeader billingHeader,PaymentDetailsV2 payment,String serviceName){
+
+        Map<String, String> variables = new HashMap<>();
+
+        variables.put("var1", billingHeader.getPatientDisplayName());
+        variables.put("var2", billingHeader.getBillNo());
+        variables.put("var3", payment.getAmount().toString());
+        variables.put("var4",serviceName);
+        variables.put("var5",paymentUtils.getPaymentGateway(payment.getPaymentGateway()).getGatewayName());
+        variables.put("var6",billingHeader.getHospitalMobileNo());
+
+        smsUtility.sendSMS(billingHeader.getPatient().getPatientMobileNumber(), SMSTemplate.INVOICE_NOTIFICATION, variables);
+
+        log.info("Invoice notification SMS sent for patient : {}", billingHeader.getPatientDisplayName());
+
     }
 
 

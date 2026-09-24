@@ -342,7 +342,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         try {
             log.info("Saving IPD patient details started for patientId: {}", request.getPatientId());
             UserContext user=userContextService.getCurrentUserContext();
-            Optional<MasHospital> masHospital=masHospitalRepository.findById(user.getHospitalId());
+            MasHospital masHospital = masHospitalRepository.findById(user.getHospitalId())
+                    .orElseThrow(() ->
+                            new RuntimeException("Hospital not found with id: " + user.getHospitalId()));
             Patient patient = patientRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new RuntimeException("Patient not found with id: " + request.getPatientId()));
             Visit visit = null;
@@ -383,7 +385,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
                 variables.put("var3", inpatient.getAdmissionNo());
                 variables.put("var4", inpatient.getAdmittingWardId()!= null ? inpatient.getAdmittingWardId().getWardName() : "");
-                variables.put("var5", masHospital.get().getContactNumber());
+                variables.put("var5", masHospital.getContactNumber());
 
 
                 smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.ADMISSION_CONFIRMATION, variables);
@@ -2424,7 +2426,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                         || response.getOutstandingAmount() == null
                         || !ipBillStatusFinal.equals(response.getBillStatusId())
                         || !ipPaymentStatusPaid.equals(response.getPaymentStatusId())
-                        || response.getOutstandingAmount().compareTo(BigDecimal.ZERO) != 0) {
+                        || response.getOutstandingAmount().compareTo(BigDecimal.ZERO) > 0) {
 
                     return ResponseUtils.createFailureResponse(
                             null,
@@ -2844,13 +2846,16 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
             // If Bill Final and Outstanding = 0 then Payment Status = Paid
 
-            if (outstandingAmount.compareTo(BigDecimal.ZERO) == 0
+            if (outstandingAmount.compareTo(BigDecimal.ZERO) <= 0
                     && ipdBillingHeader.getBillStatus() != null
                     && ipdBillingHeader.getBillStatus().getBillStatusId().equals(ipBillStatusFinal)) {
 
-                ipdBillingHeader.setPaymentStatus(masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid)
-                        .orElseThrow(() -> new RuntimeException("Paid status not found")));
+                ipdBillingHeader.setPaymentStatus(
+                        masIpdPaymentStatusRepository.findById(ipPaymentStatusPaid)
+                                .orElseThrow(() -> new RuntimeException("Paid status not found"))
+                );
             }
+
             ipdBillingHeaderRepository.save(ipdBillingHeader);
             // =========================
             // Advance Payment SMS

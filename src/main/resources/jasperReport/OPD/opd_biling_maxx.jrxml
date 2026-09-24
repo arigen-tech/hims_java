@@ -5,6 +5,8 @@
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="206"/>
 	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="783"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w1" value="890"/>
+	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w2" value="96"/>
 	<subDataset name="paymentDataset" uuid="673cfb41-afa1-46f2-82b5-7e41e8d7e804">
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
@@ -147,6 +149,7 @@ SELECT DISTINCT
 
     -- Payment mode
     mpm.mode_code AS payment_mode,
+    pdv2.payment_via AS paymentVia,
 
     -- Payment reference
     COALESCE(
@@ -155,9 +158,8 @@ SELECT DISTINCT
     ) AS payment_reference_number,
 
     -- Payment date
-    CAST(
-        pdv2.payment_date AS date
-    ) AS payment_date,
+    
+        pdv2.payment_date AS payment_date,
 
     TO_CHAR(
         vi.visit_date,
@@ -246,6 +248,7 @@ GROUP BY
     bh.total_paid,
     vs.grand_total,
     vs.grand_total_paid,
+    pdv2.payment_via,
 
     -- Payment V2 fields
     mpm.mode_code,
@@ -377,13 +380,19 @@ GROUP BY
 		<property name="com.jaspersoft.studio.field.label" value="payment_mode"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="mas_payment_mode"/>
 	</field>
+	<field name="paymentvia" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="paymentvia"/>
+		<property name="com.jaspersoft.studio.field.label" value="paymentvia"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details_v2"/>
+	</field>
 	<field name="payment_reference_number" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="payment_reference_number"/>
 		<property name="com.jaspersoft.studio.field.label" value="payment_reference_number"/>
 	</field>
-	<field name="payment_date" class="java.sql.Date">
+	<field name="payment_date" class="java.sql.Timestamp">
 		<property name="com.jaspersoft.studio.field.name" value="payment_date"/>
 		<property name="com.jaspersoft.studio.field.label" value="payment_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details_v2"/>
 	</field>
 	<field name="appointment_date" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="appointment_date"/>
@@ -1016,11 +1025,35 @@ GROUP BY
 				<textElement markup="html">
 					<font fontName="DejaVu Sans Condensed" size="10"/>
 				</textElement>
-				<textFieldExpression><![CDATA["<b>Payment remarks</b> - Received ₹"+ $F{total_paid}+ " via "+ $F{payment_mode}+ " from "
-+ $F{patient_name}
-+ " on "
-+ new java.text.SimpleDateFormat("dd MMM yyyy 'at' hh:mm a").format($F{payment_date})
-+ "."]]></textFieldExpression>
+				<textFieldExpression><![CDATA["<b>Payment remarks</b> - "
++
+(
+    $F{total} != null
+    && $F{total}.compareTo(java.math.BigDecimal.ZERO) == 0
+    ?
+    "100% discount applied for Follow-up Consultation"
+    :
+    "Received ₹"
+    + $F{total_paid}
+    + " via "
+    + $F{payment_mode}
+    + (
+        $F{payment_mode} != null
+        && !$F{payment_mode}.equalsIgnoreCase("Cash")
+        && $F{paymentvia} != null
+        && !$F{paymentvia}.trim().isEmpty()
+        ?
+        " (" + $F{paymentvia} + ")"
+        :
+        ""
+      )
+    + " from "
+    + $F{patient_name}
+    + " on "
+    + new java.text.SimpleDateFormat("dd MMM yyyy 'at' hh:mm a")
+        .format($F{payment_date})
+    + "."
+)]]></textFieldExpression>
 			</textField>
 		</band>
 	</summary>

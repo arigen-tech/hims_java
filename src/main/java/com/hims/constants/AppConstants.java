@@ -235,4 +235,13 @@ public class AppConstants {
     public static final String WEBHOOK_RECEIVED_STATUS = "RECEIVED";
     public static final String SECTION_CODE_NON_DRUG = "NON_DRUG";
     public static final String SECTION_CODE_DRUG = "DRUG";
+
+    public static final String NORMAL   = "NORMAL";
+    public static final String LOW      = "LOW";
+    public static final String HIGH     = "HIGH";
+    public static final String ABNORMAL = "ABNORMAL";
+
+    public static final String NUMERIC_RANGE_REGEX = "^-?\\d*\\.?\\d+\\s*-\\s*-?\\d*\\.?\\d+$";
+    public static final String THRESHOLD_REGEX     = "^[<>]=?\\s*-?\\d*\\.?\\d+$";
+    public static final String MULTI_VALUE_REGEX   = "[,;\\n]";
 }
