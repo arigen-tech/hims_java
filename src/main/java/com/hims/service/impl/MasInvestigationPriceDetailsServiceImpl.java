@@ -29,9 +29,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -59,6 +62,18 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             log.warn("User not found for username: {}", username);
         }
         return user;
+    }
+
+    /** Null-safe BigDecimal comparison (ignores scale differences like 1.0 vs 1.00). */
+    private boolean isSameAmount(BigDecimal a, BigDecimal b) {
+        if (a == null || b == null) {
+            return a == null && b == null;
+        }
+        return a.compareTo(b) == 0;
+    }
+
+    private boolean isNegative(BigDecimal value) {
+        return value != null && value.compareTo(BigDecimal.ZERO) < 0;
     }
 
     @Override
@@ -108,7 +123,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             );
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("getAllPriceDetails() error ::", e);
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},
@@ -142,6 +157,15 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             return ResponseUtils.createNotFoundResponse(
                     "Investigation not found with id: " + request.getInvestigationId(),
                     HttpStatus.NOT_FOUND.value()
+            );
+        }
+
+        if (isNegative(request.getPrice()) || isNegative(request.getIpdPrice())) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Price and IPD price cannot be negative",
+                    HttpStatus.BAD_REQUEST.value()
             );
         }
 
@@ -179,6 +203,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
         details.setToDate(request.getToDt());
         details.setLastChgDt(LocalTime.now());
         details.setPrice(request.getPrice());
+        details.setIpdPrice(request.getIpdPrice());
         details.setLastChgBy(String.valueOf(userContext.getUserId()));
         details.setStatus("y");
 
@@ -196,8 +221,9 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
         try {
             log.info("updatePriceDetails() Started...");
 
-            if(request.getFromDt().isEqual(request.getToDt())){
-                return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Date For Modification",HttpStatus.BAD_REQUEST.value());
+            if (request.getFromDt().isEqual(request.getToDt())) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Invalid Date For Modification", HttpStatus.BAD_REQUEST.value());
             }
 
             // 1. Fetch existing record
@@ -209,8 +235,8 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             }
 
             // 2. Validate current user
-            UserContext userContext = userContextService.getCurrentUserContext();
-            if (userContext == null) {
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -240,6 +266,15 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                         HttpStatus.BAD_REQUEST.value());
             }
 
+            // 4b. Validate prices
+            if (isNegative(request.getPrice()) || isNegative(request.getIpdPrice())) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Price and IPD price cannot be negative",
+                        HttpStatus.BAD_REQUEST.value());
+            }
+
             // 5. SAME investigation rules
             if (currentRecord.getInvestigation()
                     .getInvestigationId()
@@ -249,21 +284,24 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                         request.getFromDt().isEqual(currentRecord.getFromDate());
 
                 boolean samePrice =
-                        request.getPrice().compareTo(currentRecord.getPrice()) == 0;
+                        isSameAmount(request.getPrice(), currentRecord.getPrice());
+
+                boolean sameIpdPrice =
+                        isSameAmount(request.getIpdPrice(), currentRecord.getIpdPrice());
 
                 boolean reducingToDate =
                         request.getToDt().isBefore(currentRecord.getToDate());
 
-                //  ALLOW: closing the price period
-                if (sameFromDate && samePrice && reducingToDate) {
+                // ALLOW: closing the price period (no price change of any kind)
+                if (sameFromDate && samePrice && sameIpdPrice && reducingToDate) {
                     // allowed – do nothing here
                 }
-                //  ALLOW: exact same date range (price correction)
+                // ALLOW: exact same date range (price / IPD price correction)
                 else if (request.getFromDt().isEqual(currentRecord.getFromDate())
                         && request.getToDt().isEqual(currentRecord.getToDate())) {
                     // allowed
                 }
-                //  BLOCK everything else
+                // BLOCK everything else
                 else if (!request.getFromDt().isAfter(currentRecord.getToDate())) {
                     return ResponseUtils.createFailureResponse(
                             null,
@@ -273,7 +311,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                 }
             }
 
-            // 6. Overlap check with OTHER records (unchanged)
+            // 6. Overlap check with OTHER records
             List<MasInvestigationPriceDetails> existingRecords =
                     repository.findByInvestigation_investigationId(requestedInvestigationId);
 
@@ -292,12 +330,13 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                         HttpStatus.CONFLICT.value());
             }
 
-            // 7. Update record (ONLY UPDATE)
+            // 7. Update record
             currentRecord.setInvestigation(investigationOpt.get());
             currentRecord.setFromDate(request.getFromDt());
             currentRecord.setToDate(request.getToDt());
             currentRecord.setPrice(request.getPrice());
-            currentRecord.setLastChgBy(String.valueOf(userContext.getUserId()));
+            currentRecord.setLastChgBy(userContextService.getCurrentUserFullNameFromToken());
+            currentRecord.setIpdPrice(request.getIpdPrice());
             currentRecord.setLastChgDt(LocalDateTime.now().toLocalTime());
 
             MasInvestigationPriceDetails updated = repository.save(currentRecord);
@@ -344,7 +383,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
             MasInvestigationPriceDetails details = detailsOpt.get();
             details.setStatus(status);
             details.setLastChgDt(LocalTime.now());
-            details.setLastChgBy(String.valueOf(userContext.getUserId()));
+            details.setLastChgBy(userContext.getUserFullName());
 
             MasInvestigationPriceDetails updated = repository.save(details);
             return ResponseUtils.createSuccessResponse(mapToResponse(updated), new TypeReference<>() {});
@@ -361,10 +400,12 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
         response.setToDt(entity.getToDate());
         response.setLastChgDt(entity.getLastChgDt());
         response.setPrice(entity.getPrice());
+        response.setIpdPrice(entity.getIpdPrice());
         response.setStatus(entity.getStatus());
         response.setLastChgBy(entity.getLastChgBy());
         return response;
     }
+
     private MasInvestigationPriceDetailsProjectionResponse convertedToResponse(
             MasInvestigationPriceDetailsProjection projection) {
         return new MasInvestigationPriceDetailsProjectionResponse(
@@ -374,6 +415,7 @@ public class MasInvestigationPriceDetailsServiceImpl implements MasInvestigation
                 projection.getFromDt(),
                 projection.getToDt(),
                 projection.getPrice(),
+                projection.getIpdPrice(),
                 projection.getStatus()
         );
     }

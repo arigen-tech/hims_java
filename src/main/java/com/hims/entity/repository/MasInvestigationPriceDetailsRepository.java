@@ -59,6 +59,7 @@ public interface MasInvestigationPriceDetailsRepository extends JpaRepository<Ma
         m.fromDate AS fromDt,
         m.toDate AS toDt,
         m.price AS price,
+        m.ipdPrice AS ipdPrice,
         m.status AS status
     FROM MasInvestigationPriceDetails m
     LEFT JOIN m.investigation i
@@ -79,6 +80,7 @@ public interface MasInvestigationPriceDetailsRepository extends JpaRepository<Ma
         m.fromDate AS fromDt,
         m.toDate AS toDt,
         m.price AS price,
+        m.ipdPrice AS ipdPrice,
         m.status AS status
     FROM MasInvestigationPriceDetails m
     LEFT JOIN m.investigation i
