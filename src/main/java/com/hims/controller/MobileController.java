@@ -58,6 +58,13 @@ public class MobileController {
         return new ResponseEntity<>(mobileLoginService.loginRequest(request), HttpStatus.OK);
     }
 
+    @PostMapping("/switchPatient")
+    public ApiResponse<AuthResponse> switchPatient(
+            @RequestParam Long patientId,
+            @RequestParam String mobileNumber) {
+        return mobileLoginService.switchPatient(patientId, mobileNumber);
+    }
+
     @PostMapping("/verifyOtp")
     public ApiResponse<?>  verifyOtp(@RequestBody @Valid OtpRequest otpRequest) {
         try {
@@ -96,23 +103,7 @@ public class MobileController {
                     .map(pl -> {
                         Patient patient = patientRepository.findById(pl.getPatientId()).orElse(null);
                         if (patient == null) return null;
-
-                        PatientIdResponse pid = new PatientIdResponse();
-                        pid.setPatientId(patient.getId());
-                        String fullName = Stream.of(
-                                        patient.getPatientFn(),
-                                        patient.getPatientMn(),
-                                        patient.getPatientLn()
-                                ).filter(Objects::nonNull)
-                                .filter(s -> !s.trim().isEmpty())
-                                .collect(Collectors.joining(" "));
-
-                        pid.setPatientName(fullName.isEmpty() ? null : fullName);
-                        pid.setAge(patient.getPatientAge());
-                        pid.setGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
-                        pid.setPatientPhoneNumber(patient.getPatientMobileNumber());
-                        pid.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null);
-                        return pid;
+                    return toPatientIdResponse(patient);
                     })
                     .toList();
             authResponse.setPatientIdResponseList(patientIdList);
@@ -128,6 +119,23 @@ public class MobileController {
             );
         }
     }
+
+    private PatientIdResponse toPatientIdResponse(Patient patient) {
+            PatientIdResponse patientResponse = new PatientIdResponse();
+            patientResponse.setPatientId(patient.getId());
+            String fullName = Stream.of(patient.getPatientFn(), patient.getPatientMn(), patient.getPatientLn())
+                .filter(Objects::nonNull)
+                .filter(name -> !name.trim().isEmpty())
+                .collect(Collectors.joining(" "));
+            patientResponse.setPatientName(fullName.isEmpty() ? null : fullName);
+            patientResponse.setAge(patient.getPatientAge());
+            patientResponse.setGender(patient.getPatientGender() != null
+                ? patient.getPatientGender().getGenderName() : null);
+            patientResponse.setPatientPhoneNumber(patient.getPatientMobileNumber());
+            patientResponse.setRelation(patient.getPatientRelation() != null
+                ? patient.getPatientRelation().getRelationName() : null);
+            return patientResponse;
+            }
     private ResponseEntity<ApiResponse> createErrorResponse(String message) {
         return ResponseEntity.badRequest().body(new ApiResponse("error", message, null));
     }

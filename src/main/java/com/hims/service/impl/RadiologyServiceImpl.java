@@ -585,6 +585,10 @@ public class RadiologyServiceImpl implements RadiologyService {
     public Visit createVisitForLabRadio(Patient patient,Long department) {
         User user = userContextService.getCurrentUser();
         MasHospital hospital = masHospitalRepository.findById(user.getHospital().getId()).orElseThrow(() -> new RuntimeException("Invalid hospital"));
+        return createVisitForLabRadio(patient, department, hospital);
+    }
+
+    private Visit createVisitForLabRadio(Patient patient, Long department, MasHospital hospital) {
         MasDepartment dept = masDepartmentRepository.findById(department).orElseThrow(() -> new RuntimeException("Invalid department"));
         Long token = visitRepository.countTokensForToday(hospital.getId(), dept.getId());
         Visit visit = new Visit();
@@ -787,13 +791,18 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Override
     public LabRadioUpdateResponse updatePatientDetailsAndBooking(LabRadioUpdateRequest request) {
 
-        if (request == null || request.getPatient() == null) {
+        if (request == null || (request.getPatient() == null && request.getPatientId() == null)) {
             throw new SDDException("patient", 400, "Patient data is required");
         }
 
-        log.info("Starting patient update and radiology booking for patient ID: {}", request.getPatient().getId());
+        log.info("Starting patient update and radiology booking for patient ID: {}",
+            request.getPatientId() != null ? request.getPatientId() : request.getPatient().getId());
 
-        Patient patient = patientService.updatePatientDetails(request.getPatient(), true);
+        Patient patient = request.getPatientId() != null
+            ? patientRepository.findById(request.getPatientId())
+            .orElseThrow(() -> new SDDException("patient", 404,
+                "Patient not found with id: " + request.getPatientId()))
+            : patientService.updatePatientDetails(request.getPatient(), true);
 
         if (patient == null) {
             throw new SDDException("patient", 500, "Failed to update patient");
@@ -805,21 +814,31 @@ public class RadiologyServiceImpl implements RadiologyService {
             return new LabRadioUpdateResponse(null, null, "Patient updated successfully");
         }
 
-        boolean radBillingEnabled =
-                patient.getPatientHospital() != null
-                        && AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling());
+        Long hospitalId = request.getPatient() != null ? request.getPatient().getPatientHospitalId() : null;
+        if (hospitalId == null && patient.getPatientHospital() != null) {
+            hospitalId = patient.getPatientHospital().getId();
+        }
+        if (hospitalId == null) {
+            throw new SDDException("hospital", 400, "Hospital ID is required");
+        }
 
-        Visit visit = createVisitForLabRadio(patient, radiologyDepartment);
+        final Long resolvedHospitalId = hospitalId;
+        MasHospital hospital = masHospitalRepository.findById(resolvedHospitalId)
+                .orElseThrow(() -> new SDDException("hospital", 400, "Invalid hospital ID: " + resolvedHospitalId));
+        boolean radBillingEnabled = AppConstants.STATUS_Y.equalsIgnoreCase(hospital.getRadioBilling());
+        String userName = userContextService.getCurrentUserFullNameFromToken();
+        if (userName == null || userName.isBlank()) {
+            throw new SDDException("user", 401, "Current user not found");
+        }
+        UserContext bookingContext = new UserContext(null, null, null, resolvedHospitalId, null, userName);
+
+        Visit visit = createVisitForLabRadio(patient, radiologyDepartment, hospital);
 
         MasServiceCategory serviceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
 
         if (serviceCategory == null) {
             throw new SDDException("serviceCategory", 400, "Invalid service category");
         }
-
-//        UserContext userContext = userContextService.getCurrentUserContext();
-        UserContext userContext = userContextService.getCurrentUserContext();
-        String userName = userContext.getUserFullName();
 
         List<Long> investigationIds = new ArrayList<>();
         List<Long> packageIds = new ArrayList<>();
@@ -880,7 +899,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                 }
 
                 BillingHeader billing = billingService.saveBillingHeaderIfEnabled(
-                        radBillingEnabled, orderHd, visit, userContext,
+                    radBillingEnabled, orderHd, visit, bookingContext,
                         amount.getTotal(), amount.getTax(), amount.getDiscount(),
                         serviceCategoryRad, true
                 );
@@ -900,7 +919,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                             continue;
                         }
 
-                       saveRadOrderDetail(orderHd, billing, inv, entity, serviceCategoryRad);
+                       saveRadOrderDetail(orderHd, billing, inv, entity, serviceCategoryRad, userName);
 
                     } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(inv.getType())) {
 
@@ -914,8 +933,8 @@ public class RadiologyServiceImpl implements RadiologyService {
                                 packageMappingsMap.getOrDefault(inv.getId(), new ArrayList<>());
 
                         for (PackageInvestigationMapping map : mappings) {
-                            saveRadOrderDetailForPackage(
-                                    orderHd, billing, inv, map.getInvestId(), pkg, serviceCategoryRad
+                                saveRadOrderDetailForPackage(
+                                    orderHd, billing, inv, map.getInvestId(), pkg, serviceCategoryRad, userName
                             );
                         }
                     }
@@ -1309,9 +1328,9 @@ public class RadiologyServiceImpl implements RadiologyService {
         hd.setVisit(visit);
         hd.setDepartment(visit.getDepartment());
         hd.setHospital(visit.getHospital());
-        UserContext userContext = userContextService.getCurrentUserContext();
-        hd.setCreatedBy(userContext.getUserFullName());
-        hd.setLastChgBy(userContext.getUserFullName());
+        // UserContext userContext = userContextService.getCurrentUserContext();
+        hd.setCreatedBy(userName);
+        hd.setLastChgBy(userName);
         RadOrderHd save = radOrderHdRepository.save(hd);
         Map<String, String> variables = new HashMap<>();
 
@@ -1337,6 +1356,12 @@ public class RadiologyServiceImpl implements RadiologyService {
                                          DgMasInvestigation entity, String serviceCategoryCode) {
 
         UserContext userContext = userContextService.getCurrentUserContext();
+        return saveRadOrderDetail(hd, billing, inv, entity, serviceCategoryCode, userContext.getUserFullName());
+    }
+
+    private RadOrderDt saveRadOrderDetail(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                          DgMasInvestigation entity, String serviceCategoryCode, String userName) {
+
         RadOrderDt dt = new RadOrderDt();
         dt.setRadOrderhd(hd);
         dt.setSubChargecode(entity.getSubChargeCodeId());
@@ -1351,8 +1376,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
-        dt.setCreatedby(userContext.getUserFullName());
-        dt.setLastChgBy(userContext.getUserFullName());
+        dt.setCreatedby(userName);
+        dt.setLastChgBy(userName);
         dt.setInvestigation(entity);
 
         RadOrderDt saved = radOrderDtRepository.save(dt);
@@ -1370,6 +1395,13 @@ public class RadiologyServiceImpl implements RadiologyService {
                                                    String serviceCategoryCode) {
 
         UserContext userContext = userContextService.getCurrentUserContext();
+        return saveRadOrderDetailForPackage(hd, billing, inv, investEntity, pkg, serviceCategoryCode,
+            userContext.getUserFullName());
+        }
+
+        private RadOrderDt saveRadOrderDetailForPackage(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                DgMasInvestigation investEntity, DgInvestigationPackage pkg,
+                                String serviceCategoryCode, String userName) {
 
         RadOrderDt dt = new RadOrderDt();
         dt.setRadOrderhd(hd);
@@ -1385,8 +1417,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
-        dt.setCreatedby(userContext.getUserFullName());
-        dt.setLastChgBy(userContext.getUserFullName());
+        dt.setCreatedby(userName);
+        dt.setLastChgBy(userName);
         dt.setInvestigation(investEntity);
         dt.setPackageId(pkg);
 
