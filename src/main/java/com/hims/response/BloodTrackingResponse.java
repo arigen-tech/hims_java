@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class BloodTrackingResponse {
+    private Long requestDtId;
     private Long inpatientId;
     private String requestNo;
     private String inpatientNo;

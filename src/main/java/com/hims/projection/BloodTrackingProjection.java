@@ -3,6 +3,7 @@ package com.hims.projection;
 import java.time.LocalDateTime;
 
 public interface BloodTrackingProjection {
+    Long getRequestDtId();
     String getRequestNo();
     Long getInpatientId();
     String getInpatientNo();

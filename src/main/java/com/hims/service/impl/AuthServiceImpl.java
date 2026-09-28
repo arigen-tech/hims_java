@@ -258,6 +258,7 @@ public class AuthServiceImpl implements AuthService {
                     .departmentId(departmentId)
                     .departmentName(userDepartmentId.getDepartment().getDepartmentName())
                     .departmentCode(userDepartmentId.getDepartment().getDepartmentCode())
+                    .loggedInUserName(user.getFullName())
                     .build();
 
 

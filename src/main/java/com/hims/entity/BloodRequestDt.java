@@ -60,5 +60,20 @@ public class BloodRequestDt {
     @JoinColumn(name = "tracking_status_id", nullable = false)
     private BloodTrackingStatusMaster trackingStatus;
 
+    @Column(name = "rejected_by")
+    private String rejectedBy;
+
+    @Column(name = "rejected_date")
+    private LocalDateTime rejectedDate;
+
+    @Column(name = "rejected_reason", length = 500)
+    private String rejectedReason;
+
+
+    @Column(name = "issued_by")
+    private String issuedBy;
+
+    @Column(name = "issued_date")
+    private LocalDateTime issuedDate;
 
 }

@@ -3,14 +3,11 @@ package com.hims.entity.repository;
 import com.hims.entity.BillingHeader;
 import com.hims.entity.Visit;
 import com.hims.projection.*;
-import com.hims.response.BillingHeaderResponse;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -178,6 +175,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
               AND LOWER(bh.payment_status) IN 
                   (LOWER(:paymentStatusPending), LOWER(:paymentStatusPartial))
               AND bh.service_category_id = opd_cat.id
+                AND v.visit_date >= CURRENT_DATE
             
             ORDER BY v.visit_date DESC
             """, nativeQuery = true)

@@ -49,10 +49,10 @@ public class RegistrationController {
      * Update existing patient details
      */
     @PostMapping("/updatePatient")
-    public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> updatePatient(
+    public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> updatePatientAndBookingAppointment(
             @RequestBody PatientFollowUpReq request) {
-        log.info("POST /registration/updatePatient called");
-        ApiResponse<PatientRegFollowUpResp> response = registrationService.updatePatient(request);
+        log.info("POST /registration/updatePatientAndBookingAppointment called");
+        ApiResponse<PatientRegFollowUpResp> response = registrationService.updatePatientAndBookingAppointment(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
