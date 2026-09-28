@@ -124,6 +124,8 @@ public class AppConstants {
     public static final String BLOOD_ACKNOWLEDGEMENT_ACCEPTED = "ACCEPTED";
     public static final String BLOOD_ACKNOWLEDGEMENT_REJECTED = "REJECTED";
     public static final String BLOOD_ISSUE_COMPATIBLE_STATUS = "COMPATIBLE";
+    public static final String BLOOD_UNIT_ISSUED_SUCCESS = "Blood unit issued successfully";
+    public static final String BLOOD_UNIT_REJECTED_SUCCESS ="Blood unit rejected successfully";
 
     public static final String STATUS_S = "S";
     public static final String STATUS_P = "P";

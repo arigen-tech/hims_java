@@ -1801,10 +1801,6 @@ public class BloodBankServiceImpl implements BloodBankService {
 
                 BloodRequestDt bloodRequestDt = allocation.getBloodRequestDt();
 
-                bloodRequestDt.setRejectedBy(currentUser);
-                bloodRequestDt.setRejectedDate(LocalDateTime.now());
-                bloodRequestDt.setRejectedReason(request.getRejectedReason());
-
                 bloodRequestDtRepository.save(bloodRequestDt);
             }
 
@@ -1814,8 +1810,8 @@ public class BloodBankServiceImpl implements BloodBankService {
             return new ApiResponse<>(
                     HttpStatus.OK.value(),
                     Boolean.TRUE.equals(request.getIsIssued())
-                            ? "Blood unit issued successfully"
-                            : "Blood unit rejected successfully",
+                            ? AppConstants.BLOOD_UNIT_ISSUED_SUCCESS
+                            : AppConstants.BLOOD_UNIT_REJECTED_SUCCESS,
                     null);
 
         } catch (Exception e) {
@@ -1846,8 +1842,7 @@ public class BloodBankServiceImpl implements BloodBankService {
             BloodRequestDtAllocation allocation = bloodRequestDtAllocationRepository.findById(request.getAllocationId())
                     .orElseThrow(() -> new RecordNotFoundException(
                             "Blood allocation not found: " + request.getAllocationId()));
-            if (allocation.getTrackingStatus() == null
-                    || !"ISSUED".equalsIgnoreCase(allocation.getTrackingStatus().getStatusCode())) {
+            if (allocation.getTrackingStatus() == null || bloodRequestStatusIssued == allocation.getTrackingStatus().getStatusId()) {
                 throw new IllegalArgumentException("Only issued blood units can be acknowledged");
             }
             if (bloodRequestAcknowledgementRepository.existsByAllocation_AllocationId(request.getAllocationId())) {
@@ -1860,7 +1855,7 @@ public class BloodBankServiceImpl implements BloodBankService {
             acknowledgement.setBloodRequestDt(requestDt);
             acknowledgement.setAllocation(allocation);
             acknowledgement.setAcknowledgementStatus(
-                    Boolean.TRUE.equals(request.getAccepted()) ? "ACCEPTED" : "REJECTED");
+                    Boolean.TRUE.equals(request.getAccepted()) ? AppConstants.BLOOD_ACKNOWLEDGEMENT_ACCEPTED : AppConstants.BLOOD_ACKNOWLEDGEMENT_REJECTED);
             acknowledgement.setRemarks(request.getRemarks());
             acknowledgement.setAcknowledgedDate(LocalDateTime.now());
             Long currentUserId = userContextService.getCurrentUserContext().getUserId();
