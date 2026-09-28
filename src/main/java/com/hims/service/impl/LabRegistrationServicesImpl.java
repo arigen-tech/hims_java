@@ -357,6 +357,10 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     public Visit createVisitForLabRadio(Patient patient,Long department) {
         UserContext user = userContextService.getCurrentUserContext();
         MasHospital hospital = masHospitalRepository.findById(user.getHospitalId()).orElseThrow(() -> new RuntimeException("Invalid hospital"));
+        return createVisitForLabRadio(patient, department, hospital);
+    }
+
+    private Visit createVisitForLabRadio(Patient patient, Long department, MasHospital hospital) {
         MasDepartment dept = masDepartmentRepository.findById(department).orElseThrow(() -> new RuntimeException("Invalid department"));
         Long token = visitRepository.countTokensForToday(hospital.getId(), dept.getId());
         Visit visit = new Visit();
@@ -449,11 +453,10 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
         log.info("Starting lab update + booking");
 
-//        UserContext userContext = userContextService.getCurrentUserContext();
-        UserContext userContext = userContextService.getCurrentUserContext();
+        String username = userContextService.getCurrentUserFullNameFromToken();
         Long departmentId = laboratoryDepartment;
 
-        if (userContext == null) {
+        if (username == null || username.isBlank()) {
             throw new SDDException("user", 401, "Current user not found");
         }
 
@@ -474,11 +477,23 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                patient = patientRepository.getReferenceById(labReq.getPatientId());
          }
 
-            MasHospital patientHospital = patient.getPatientHospital();
-            boolean labBillingEnabled = patientHospital != null
-                            && AppConstants.STATUS_Y.equalsIgnoreCase(patientHospital.getLabBilling());
+            Long hospitalId = labReq.getPatient() != null
+                    ? labReq.getPatient().getPatientHospitalId()
+                    : null;
+            if (hospitalId == null && patient.getPatientHospital() != null) {
+                hospitalId = patient.getPatientHospital().getId();
+            }
+            if (hospitalId == null) {
+                throw new SDDException("hospital", 400, "Hospital ID is required");
+            }
 
-            Visit savedVisit = createVisitForLabRadio(patient, laboratoryDepartment);
+                final Long resolvedHospitalId = hospitalId;
+                MasHospital hospital = masHospitalRepository.findById(resolvedHospitalId)
+                    .orElseThrow(() -> new SDDException("hospital", 400, "Invalid hospital ID: " + resolvedHospitalId));
+                UserContext bookingContext = new UserContext(null, null, null, resolvedHospitalId, null, username);
+            boolean labBillingEnabled = AppConstants.STATUS_Y.equalsIgnoreCase(hospital.getLabBilling());
+
+            Visit savedVisit = createVisitForLabRadio(patient, laboratoryDepartment, hospital);
 
             List<LabRadioInvestigationRequest> invList = labReq.getInvestigationReq();
 
@@ -519,14 +534,14 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                     }
                 }
 
-                DgOrderHd savedHd = saveLabOrderHeader(patient, savedVisit, userContext, date, labBillingEnabled);
+                DgOrderHd savedHd = saveLabOrderHeader(patient, savedVisit, bookingContext, date, labBillingEnabled);
 
                 if (savedHd == null) {
                     throw new SDDException("order", 500, "Failed to create order");
                 }
 
                 BillingHeader billingHeader = billingService.saveBillingHeaderIfEnabled(
-                        labBillingEnabled, savedHd, savedVisit, userContext,
+                        labBillingEnabled, savedHd, savedVisit, bookingContext,
                         sum, tax, disc,
                         serviceCategoryLab, false
                 );
@@ -542,7 +557,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         DgMasInvestigation invEntity = investigation.findById(inv.getId())
                                 .orElseThrow(() -> new SDDException("investigation", 400, "Invalid investigation ID: " + inv.getId()));
 
-                        saveLabOrderDetail(savedHd, billingHeader, inv, invEntity, userContext, serviceCategoryLab);
+                        saveLabOrderDetail(savedHd, billingHeader, inv, invEntity, bookingContext, serviceCategoryLab);
 
                     } else if (AppConstants.PACKAGE.equalsIgnoreCase(inv.getType())) {
 
@@ -553,7 +568,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
                         for (PackageInvestigationMapping map : mappings) {
                          saveLabOrderDetailForPackage(
-                                    savedHd, billingHeader, inv, map.getInvestId(), pkg, userContext
+                                    savedHd, billingHeader, inv, map.getInvestId(), pkg, bookingContext
                             );
                         }
 

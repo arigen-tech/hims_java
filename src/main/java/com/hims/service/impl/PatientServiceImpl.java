@@ -460,7 +460,7 @@ public class PatientServiceImpl implements PatientService {
     }
 
     public Patient updatePatientDetails(PatientRequest request, boolean followUp) {
-        UserContext userContext = userContextService.getCurrentUserContext();
+        String userContext = userContextService.getCurrentUserFullNameFromToken();
         if (userContext == null) {
             log.info("current user not found");
             throw new RuntimeException("Current user not found");
@@ -470,7 +470,7 @@ public class PatientServiceImpl implements PatientService {
 
         patient.setUpdatedOn(Instant.now());
         patient.setUhidNo(patient.getUhidNo());
-        patient.setLastChgBy(userContext.getUserFullName());
+        patient.setLastChgBy(userContext);
         patient.setPatientFn(request.getPatientFn());
         patient.setPatientMn(request.getPatientMn());
         patient.setPatientLn(request.getPatientLn());
