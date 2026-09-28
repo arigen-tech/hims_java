@@ -25,6 +25,32 @@ public interface MasEmployeeRepository extends JpaRepository<MasEmployee, Long> 
 
     List<MasEmployee> findByEmployeeIdInAndRoleIdIdAndStatusIgnoreCaseAndFirstNameContainingIgnoreCaseOrderByFirstNameAsc(List<Long> employeeIds, Long roleId, String a, String keyword);
 
+        @Query(value = """
+                SELECT DISTINCT e.*
+                FROM mas_employee e
+                JOIN users u ON u.employee_id = e.emp_id
+                JOIN user_department ud ON ud.user_id = u.user_id
+                JOIN mas_department d ON d.department_id = ud.department_id
+                WHERE d.hospital_id = :hospitalId
+                    AND d.department_type_id = :departmentTypeId
+                    AND e.role_id = :roleId
+                    AND LOWER(e.status) = LOWER(:employeeStatus)
+                    AND (
+                                LOWER(COALESCE(e.emp_fn, '')) LIKE LOWER(CONCAT('%', :searchInput, '%'))
+                         OR LOWER(COALESCE(e.emp_mn, '')) LIKE LOWER(CONCAT('%', :searchInput, '%'))
+                         OR LOWER(COALESCE(e.emp_ln, '')) LIKE LOWER(CONCAT('%', :searchInput, '%'))
+                         OR LOWER(CONCAT_WS(' ', e.emp_fn, e.emp_mn, e.emp_ln)) LIKE LOWER(CONCAT('%', :searchInput, '%'))
+                    )
+                ORDER BY e.emp_fn ASC, e.emp_mn ASC, e.emp_ln ASC
+                """, nativeQuery = true)
+        List<MasEmployee> findActiveDoctorsByHospitalAndNameNative(
+                        @Param("hospitalId") Long hospitalId,
+                        @Param("departmentTypeId") Long departmentTypeId,
+                        @Param("roleId") Long roleId,
+                        @Param("employeeStatus") String employeeStatus,
+                        @Param("searchInput") String searchInput
+        );
+
     @Query(
             value = """
             SELECT 
