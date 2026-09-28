@@ -34,6 +34,7 @@ import java.nio.file.Paths;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -1389,9 +1390,10 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         }
 
         //  Get Speciality Department Name
+        String normalizedSearchInput = searchInput.trim();
         List<MasDepartment> departments = masDepartmentRepository
-                            .findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(
-                                    hospitalId, opdDepartmentTypeId, searchInput.trim());
+            .findByHospitalAndDepartmentTypeAndNameNative(
+                hospitalId, opdDepartmentTypeId, normalizedSearchInput);
 
         List<SpecialitiesResponse> deptResponseList =
                 departments.stream().map(dept -> {
@@ -1402,34 +1404,11 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 }).toList();
 
 
-        //  Get Doctors Name
-
-            List<Long> opdDepartmentIds = masDepartmentRepository.findDepartmentIdsByDepartmentTypeId(opdDepartmentTypeId);
-
-            List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartment_IdIn(opdDepartmentIds);
-
-        List<Long> userIds = userDepartments.stream()
-                .map(UserDepartment::getUser)
-                .filter(Objects::nonNull)
-                .map(User::getUserId)
-                .distinct()
-                .toList();
-
-            List<Long> employeeIds = userDepartments.stream()
-                            .map(UserDepartment::getUser)
-                            .filter(Objects::nonNull)
-                            .map(User::getEmployee)
-                            .filter(Objects::nonNull)
-                            .map(MasEmployee::getEmployeeId)
-                            .distinct()
-                            .toList();
-
-
+        // Get doctors whose first, middle, last, or complete name matches the search.
         List<MasEmployee> doctors =
                 masEmployeeRepository
-                        .findByEmployeeIdInAndRoleIdIdAndStatusIgnoreCaseAndFirstNameContainingIgnoreCaseOrderByFirstNameAsc(
-                                employeeIds, roleId, "A", searchInput
-                        );
+                .findActiveDoctorsByHospitalAndNameNative(
+                    hospitalId, opdDepartmentTypeId, roleId, "A", normalizedSearchInput);
 
         if (doctors.isEmpty()) {
             log.info("No doctors found for search input: {}", searchInput);
@@ -1440,18 +1419,27 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 .map(MasEmployee::getEmployeeId)
                 .toList();
 
-        Map<Long, User> employeeIdToUserMap = userRepo.findUsersByEmployee_EmployeeIdIn(doctorEmployeeIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        u -> u.getEmployee().getEmployeeId(),
-                        u -> u,
-                        (existing, replacement) -> existing
-                ));
+        Map<Long, User> employeeIdToUserMap = doctorEmployeeIds.isEmpty()
+            ? Collections.emptyMap()
+            : userRepo.findUsersByEmployee_EmployeeIdIn(doctorEmployeeIds)
+            .stream()
+            .collect(Collectors.toMap(
+                u -> u.getEmployee().getEmployeeId(),
+                u -> u,
+                (existing, replacement) -> existing
+            ));
+
+            List<Long> userIds = employeeIdToUserMap.values().stream()
+                .map(User::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
 
         //Get Service OPD details for doctors and session details for doctors in batch to avoid N+1 problem
 
-        Map<Long, MasServiceOpd> serviceOpdMap = masServiceOpdRepository
-                .getOPDServiceByUserIds(userIds)
+            Map<Long, MasServiceOpd> serviceOpdMap = userIds.isEmpty()
+                ? Collections.emptyMap()
+                : masServiceOpdRepository.getOPDServiceByUserIds(userIds)
                 .stream()
                 .collect(Collectors.toMap(
                         s -> s.getDoctorId().getUserId(),
@@ -1459,8 +1447,9 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                         (existing, replacement) -> existing
                 ));
 
-        List<Object[]> allSessions = appSetupRepository
-                .findDistinctDoctorSessionNextDayBatch(userIds);
+        List<Object[]> allSessions = userIds.isEmpty()
+            ? Collections.emptyList()
+            : appSetupRepository.findDistinctDoctorSessionNextDayBatch(userIds);
         Map<Long, List<Object[]>> sessionMap = allSessions.stream()
                 .collect(Collectors.groupingBy(r -> ((Number) r[0]).longValue()));
 
@@ -1474,15 +1463,17 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             User user = employeeIdToUserMap.get(emp.getEmployeeId());
             if (user == null) {
                 log.warn("No user found for employee ID: {}", emp.getEmployeeId());
-                return dto;
+                return null;
             }
 
             // Set basic doctor information
             dto.setDoctorId(user.getUserId());
             dto.setYearOfExperience(user.getEmployee().getYearOfExperience() + " years");
-            dto.setDoctorName(emp.getFirstName() +
-                    (emp.getLastName() != null && !emp.getLastName().trim().isEmpty()
-                            ? " " + emp.getLastName() : ""));
+                dto.setDoctorName(Stream.of(emp.getFirstName(), emp.getMiddleName(), emp.getLastName())
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(namePart -> !namePart.isEmpty())
+                    .collect(Collectors.joining(" ")));
 
             // Get consultancy fee from preloaded map created outside of loop
 
@@ -1503,7 +1494,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             dto.setSessionResponseLists(sessionList);
 
             return dto;
-        }).toList();
+        }).filter(Objects::nonNull).toList();
 
         if (deptResponseList.isEmpty() && doctorResponseList.isEmpty()) {
             return ResponseUtils.createFailureResponse(
