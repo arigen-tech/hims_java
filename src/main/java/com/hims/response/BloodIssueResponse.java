@@ -13,6 +13,7 @@ public class BloodIssueResponse {
 
     private Long requestHdId;
     private Long requestDtId;
+    private Long allocationId;
     private String requestNo;
     private String inpatientNo;
     private String patientName;

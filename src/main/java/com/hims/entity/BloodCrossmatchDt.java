@@ -41,4 +41,9 @@ public class BloodCrossmatchDt {
 
     @Column(name = "created_by", length = 200)
     private String createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "allocation_id")
+    private BloodRequestDtAllocation allocation;
+
 }

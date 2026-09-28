@@ -4,8 +4,7 @@ import lombok.Data;
 
 @Data
 public class BloodIssueStatusRequest {
-    private Long requestDtId;
-    private Long inventoryId;
+    private Long allocationId;
     private Boolean isIssued;
     private Boolean isRejected;
     private String rejectedReason;

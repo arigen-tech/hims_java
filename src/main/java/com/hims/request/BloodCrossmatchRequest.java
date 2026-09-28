@@ -13,6 +13,9 @@ public class BloodCrossmatchRequest {
     private Long inpatientId;
     private Long patientId;
     private Long crossmatchTypeId;
+    private Long allocationId;
+    private Long trackingStatusId;
+    private Long bloodGroupId;
     private Boolean isEmergency;
     private LocalDateTime sampleReceivedDatetime;
     private LocalDateTime crossmatchDatetime;

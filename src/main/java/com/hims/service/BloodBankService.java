@@ -40,7 +40,7 @@ public interface BloodBankService {
 
    ApiResponse<String> createBloodRequest(BloodRequestRequest request);
 
-   ApiResponse<Page<BloodTrackingResponse>> getBloodRequestTrackingList(int page, int size, String inpatientNo, String patientName);
+   ApiResponse<Page<BloodTrackingResponse>> getBloodRequestTrackingList(int page, int size, String inpatientNo, String patientName, String requestNo);
 
    ApiResponse<List<BloodInventoryResponse>> getAvailableInventory(BloodInventoryRequest request);
 
@@ -68,4 +68,6 @@ public interface BloodBankService {
            Long wardId);
 
    ApiResponse<String> updateBloodIssueAndTrackingStatus(BloodIssueStatusRequest request);
+
+   ApiResponse<String> acknowledgeBloodRequest(BloodAcknowledgementRequest request);
 }

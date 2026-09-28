@@ -120,6 +120,11 @@ public class AppConstants {
     public static final String INPATIENT_NOT_FOUND_ERR_MSG = "Invalid Inpatient Id, Inpatient not found";
     public static final String INPATIENT_AND_VISIT_NOT_FOUND_ERR_MSG = "Visit/Inpatient not found";
 
+
+    public static final String BLOOD_ACKNOWLEDGEMENT_ACCEPTED = "ACCEPTED";
+    public static final String BLOOD_ACKNOWLEDGEMENT_REJECTED = "REJECTED";
+    public static final String BLOOD_ISSUE_COMPATIBLE_STATUS = "COMPATIBLE";
+
     public static final String STATUS_S = "S";
     public static final String STATUS_P = "P";
     public static final String STATUS_F = "F";

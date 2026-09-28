@@ -120,17 +120,20 @@ public class BloodBankServiceImpl implements BloodBankService {
     private Long componentReservedStatusId;
     @Value("${blood.request.status.crossmatch.failed}")
     private Long crossmatchFailedStatusId;
+    @Value("${blood.request.status.crossmatch.completed}")
+    private Long crossmatchCompletedStatusId;
     @Value("${inventoryStatusReserved}")
     private Long inventoryStatusReserved;
-
     @Value("${inventoryStatusIssued}")
     private Long inventoryStatusIssued;
-
     @Value("${blood.request.status.rejected}")
     private Long bloodRequestStatusRejected;
 
     @Value("${blood.request.status.issued}")
     private Long bloodRequestStatusIssued;
+
+    @Value("${blood.request.status.partially.issued}")
+    private Long bloodRequestStatusPartiallyIssued;
 
     @Autowired
     private BloodComponentInventoryRepository bloodComponentInventoryRepository;
@@ -167,6 +170,9 @@ public class BloodBankServiceImpl implements BloodBankService {
 
     @Autowired
     private BloodCrossmatchFailedHistoryRepository bloodCrossmatchFailedHistoryRepository;
+
+    @Autowired
+    private BloodRequestAcknowledgementRepository  bloodRequestAcknowledgementRepository;
 
 
     private String generateDonorCode() {
@@ -972,6 +978,12 @@ public class BloodBankServiceImpl implements BloodBankService {
 
             BloodRequestHd savedHeader = bloodRequestHdRepository.save(bloodRequestHd);
 
+            BloodTrackingStatusMaster requestedStatus =
+                    bloodTrackingStatusMasterRepository.findById(requestedStatusId)
+                            .orElseThrow(() ->
+                                    new RecordNotFoundException("Requested tracking status not found"));
+
+
             List<BloodRequestDt> details = new ArrayList<>();
 
             for (BloodRequirementDetailRequest detailRequest : request.getBloodRequirementDetails()) {
@@ -991,7 +1003,7 @@ public class BloodBankServiceImpl implements BloodBankService {
                 detail.setDetailStatus(AppConstants.STATUS_N.toLowerCase());
                 detail.setCreatedDate(LocalDateTime.now());
                 detail.setCreatedBy(currentUser);
-                detail.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(requestedStatusId).orElseThrow(() -> new RecordNotFoundException("Tracking status not found")));
+                detail.setTrackingStatus(requestedStatus);
                 details.add(detail);
             }
 
@@ -1031,7 +1043,8 @@ public class BloodBankServiceImpl implements BloodBankService {
             int page,
             int size,
             String inpatientNo,
-            String patientName) {
+            String patientName,
+            String requestNo) {
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -1039,9 +1052,19 @@ public class BloodBankServiceImpl implements BloodBankService {
                 bloodRequestDtRepository.getBloodRequestTrackingList(
                         inpatientNo,
                         patientName,
-                        pageable);
+                        requestNo,
+                        bloodRequestStatusIssued,
+                        bloodRequestStatusPartiallyIssued,
+                        allocatedStatusId,
+                        crossmatchCompletedStatusId,
+                        crossmatchFailedStatusId,
+                        bloodRequestStatusRejected,
+                        AppConstants.BLOOD_ACKNOWLEDGEMENT_ACCEPTED,
+                        pageable
+                );
 
         Page<BloodTrackingResponse> responsePage = projectionPage.map(p -> {
+
             BloodTrackingResponse response = new BloodTrackingResponse();
 
             response.setRequestDtId(p.getRequestDtId());
@@ -1051,23 +1074,61 @@ public class BloodBankServiceImpl implements BloodBankService {
             response.setPatientId(p.getPatientId());
             response.setPatientName(p.getPatientName());
             response.setBloodGroup(p.getBloodGroup());
-            response.setComponent(p.getComponent());
             response.setBloodGroupId(p.getBloodGroupId());
+            response.setComponent(p.getComponent());
             response.setComponentId(p.getComponentId());
+
             response.setUnits(p.getUnits());
+            response.setAllocatedUnits(p.getAllocatedUnits());
+            response.setFulfilledUnits(p.getFulfilledUnits());
+            response.setFailedUnits(p.getFailedUnits());
+            response.setPendingUnits(p.getPendingUnits());
+
+            response.setAllocationIds(p.getAllocationIds());
+
             response.setUrgency(p.getUrgency());
             response.setRequestedDateTime(p.getRequestedDateTime());
-            response.setRequiredByDateTime(p.getRequiredByDateTime());
             response.setRequestedWard(p.getRequestedWard());
+            response.setRequestedBy(p.getRequestedBy());
+            response.setRequiredByDateTime(p.getRequiredByDateTime());
             response.setTrackingStatus(p.getTrackingStatus());
+
+            Integer acknowledgedUnits =
+                    p.getAcknowledgedUnits() == null ? 0 : p.getAcknowledgedUnits();
+
+            Integer fulfilledUnits =
+                    p.getFulfilledUnits() == null ? 0 : p.getFulfilledUnits();
+
+            response.setAcknowledgedUnits(acknowledgedUnits);
+
+            response.setPendingAcknowledgementUnits(
+                    Math.max(fulfilledUnits - acknowledgedUnits, 0)
+            );
+
+            response.setCanAcknowledge(
+                    fulfilledUnits > acknowledgedUnits
+            );
+
+            if (fulfilledUnits == 0) {
+                response.setAcknowledgementStatus("NOT_ISSUED");
+            } else if (acknowledgedUnits == 0) {
+                response.setAcknowledgementStatus("PENDING");
+            } else if (acknowledgedUnits < fulfilledUnits) {
+                response.setAcknowledgementStatus("PARTIALLY_ACKNOWLEDGED");
+            } else {
+                response.setAcknowledgementStatus("FULLY_ACKNOWLEDGED");
+            }
+
+            response.setAcceptedUnits(acknowledgedUnits);
 
             return response;
         });
 
-        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {
-        });
+        return ResponseUtils.createSuccessResponse(
+                responsePage,
+                new TypeReference<>() {}
+        );
     }
-
 
     @Override
     public ApiResponse<List<BloodInventoryResponse>> getAvailableInventory(BloodInventoryRequest request) {
@@ -1109,89 +1170,128 @@ public class BloodBankServiceImpl implements BloodBankService {
     @Override
     @Transactional
     public ApiResponse<String> allocateBloodUnits(BloodRequestAllocationRequest request) {
-
         try {
             String currentUser = userContextService.getCurrentUserContext().getUserFullName();
             int totalAllocated = 0;
+
+            MasBloodInventoryStatus allocatedInventoryStatus =
+                    masBloodInventoryStatusRepository.findById(inventoryStatusAllocated)
+                            .orElseThrow(() -> new RecordNotFoundException(
+                                    "Allocated inventory status not found"));
+
+            BloodTrackingStatusMaster allocatedTrackingStatus =
+                    bloodTrackingStatusMasterRepository.findById(allocatedStatusId)
+                            .orElseThrow(() -> new RecordNotFoundException(
+                                    "Allocated tracking status not found"));
+
+            BloodTrackingStatusMaster partiallyAllocatedTrackingStatus =
+                    bloodTrackingStatusMasterRepository.findById(partiallyAllocatedStatusId)
+                            .orElseThrow(() -> new RecordNotFoundException(
+                                    "Partially allocated tracking status not found"));
+
             for (BloodRequestDetailAllocationRequest detailRequest : request.getDetails()) {
 
-                BloodRequestDt requestDt = bloodRequestDtRepository.findById(detailRequest.getRequestDtId()
-                ).orElseThrow(() ->
-                        new RecordNotFoundException(
-                                "Blood request detail not found: "
-                                        + detailRequest.getRequestDtId()
-                        ));
+                BloodRequestDt requestDt =
+                        bloodRequestDtRepository.findById(detailRequest.getRequestDtId())
+                                .orElseThrow(() -> new RecordNotFoundException(
+                                        "Blood request detail not found: "
+                                                + detailRequest.getRequestDtId()));
+
+                int requiredUnits = requestDt.getUnitsRequired() == null
+                        ? 0
+                        : requestDt.getUnitsRequired();
+
+                int allocatedUnits =
+                        bloodRequestDtAllocationRepository.getAllocatedUnits(requestDt);
+
+                int remainingUnits = requiredUnits - allocatedUnits;
+
+                if (remainingUnits <= 0) {
+                    throw new IllegalArgumentException(
+                            "All required units are already allocated for request detail: "
+                                    + requestDt.getRequestDtId());
+                }
+
+                List<Long> inventoryIds = detailRequest.getInventoryIds()
+                        .stream()
+                        .distinct()
+                        .toList();
+
+                if (inventoryIds.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "No inventory selected for request detail: "
+                                    + requestDt.getRequestDtId());
+                }
+
+                if (inventoryIds.size() > remainingUnits) {
+                    throw new IllegalArgumentException(
+                            "Cannot allocate " + inventoryIds.size()
+                                    + " unit(s). Only " + remainingUnits
+                                    + " unit(s) remaining for request detail: "
+                                    + requestDt.getRequestDtId());
+                }
 
                 int allocatedForDetail = 0;
 
-                for (Long inventoryId : detailRequest.getInventoryIds()) {
+                for (Long inventoryId : inventoryIds) {
 
                     BloodComponentInventory inventory =
                             bloodComponentInventoryRepository.findById(inventoryId)
-                                    .orElseThrow(() ->
-                                            new RecordNotFoundException(
-                                                    "Blood inventory not found: "
-                                                            + inventoryId
-                                            ));
+                                    .orElseThrow(() -> new RecordNotFoundException(
+                                            "Blood inventory not found: "
+                                                    + inventoryId));
 
-                    // Prevent duplicate allocation
+                    if (inventory.getInventoryStatus() == null
+                            || !inventory.getInventoryStatus()
+                            .getInventoryStatusId()
+                            .equals(inventoryStatusAvailable)) {
+
+                        throw new IllegalArgumentException(
+                                "Inventory " + inventoryId
+                                        + " is not available for allocation");
+                    }
+
                     boolean alreadyAllocated =
                             bloodRequestDtAllocationRepository
                                     .existsByBloodRequestDtAndInventory(
                                             requestDt,
-                                            inventory
-                                    );
+                                            inventory);
 
                     if (alreadyAllocated) {
-                        continue;
+                        throw new IllegalArgumentException(
+                                "Inventory " + inventoryId
+                                        + " is already allocated for request detail "
+                                        + requestDt.getRequestDtId());
                     }
 
-                    BloodRequestDtAllocation allocation = new BloodRequestDtAllocation();
+                    BloodRequestDtAllocation allocation =
+                            new BloodRequestDtAllocation();
+
                     allocation.setBloodRequestDt(requestDt);
                     allocation.setInventory(inventory);
                     allocation.setAllocatedUnits(1);
                     allocation.setAllocatedDate(LocalDateTime.now());
                     allocation.setCreatedBy(currentUser);
+
+                    allocation.setTrackingStatus(allocatedTrackingStatus);
+
                     bloodRequestDtAllocationRepository.save(allocation);
 
-
-                    inventory.setInventoryStatus(
-                            masBloodInventoryStatusRepository
-                                    .findById(inventoryStatusAllocated)
-                                    .orElseThrow(() ->
-                                            new RecordNotFoundException(
-                                                    "Allocated inventory status not found"))
-                    );
+                    inventory.setInventoryStatus(allocatedInventoryStatus);
                     inventory.setReservationDatetime(LocalDateTime.now());
 
                     bloodComponentInventoryRepository.save(inventory);
-
 
                     allocatedForDetail++;
                     totalAllocated++;
                 }
 
-                // Update fulfilled units for this particular request detail
-                int currentFulfilled = requestDt.getFulfilledUnits() == null ? 0 : requestDt.getFulfilledUnits();
-                requestDt.setFulfilledUnits(currentFulfilled + allocatedForDetail);
+                int newAllocatedUnits = allocatedUnits + allocatedForDetail;
 
-                // Update detail status
-                if (requestDt.getFulfilledUnits() >= requestDt.getUnitsRequired()) {
-                    requestDt.setTrackingStatus(
-                            bloodTrackingStatusMasterRepository
-                                    .findById(allocatedStatusId)
-                                    .orElseThrow(() ->
-                                            new RecordNotFoundException(
-                                                    "Allocated tracking status not found"))
-                    );
-                } else if (requestDt.getFulfilledUnits() > 0) {
-                    requestDt.setTrackingStatus(
-                            bloodTrackingStatusMasterRepository
-                                    .findById(partiallyAllocatedStatusId)
-                                    .orElseThrow(() ->
-                                            new RecordNotFoundException(
-                                                    "Partially allocated tracking status not found"))
-                    );
+                if (newAllocatedUnits >= requiredUnits) {
+                    requestDt.setTrackingStatus(allocatedTrackingStatus);
+                } else if (newAllocatedUnits > 0) {
+                    requestDt.setTrackingStatus(partiallyAllocatedTrackingStatus);
                 }
 
                 bloodRequestDtRepository.save(requestDt);
@@ -1202,18 +1302,18 @@ public class BloodBankServiceImpl implements BloodBankService {
                     new TypeReference<>() {
                     }
             );
+
         } catch (Exception e) {
             log.error("Error while allocating blood units", e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+
             return ResponseUtils.createFailureResponse(
                     null,
-                    "Failed to allocate blood units",
+                    "Failed to allocate blood units: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
     }
-
-
     @Override
     public ApiResponse<Page<BloodTrackingResponse>> getAllPendingBloodRequest(
             int page,
@@ -1224,11 +1324,11 @@ public class BloodBankServiceImpl implements BloodBankService {
         Pageable pageable = PageRequest.of(page, size);
 
         Page<BloodTrackingProjection> projectionPage =
-                bloodRequestDtRepository.getBloodRequestTrackingList(
+                bloodRequestDtRepository.getAllPendingBloodRequests(
                         patientName,
                         wardId,
-                        requestedStatusId,
-                        partiallyAllocatedStatusId,
+                        crossmatchFailedStatusId,
+                        bloodRequestStatusRejected,
                         pageable);
 
         Page<BloodTrackingResponse> responsePage = projectionPage.map(p -> {
@@ -1242,14 +1342,19 @@ public class BloodBankServiceImpl implements BloodBankService {
             response.setPatientId(p.getPatientId());
             response.setPatientName(p.getPatientName());
             response.setBloodGroup(p.getBloodGroup());
-            response.setComponent(p.getComponent());
             response.setBloodGroupId(p.getBloodGroupId());
+            response.setComponent(p.getComponent());
             response.setComponentId(p.getComponentId());
             response.setUnits(p.getUnits());
+            response.setAllocatedUnits(p.getAllocatedUnits());
+            response.setFulfilledUnits(p.getFulfilledUnits());
+            response.setFailedUnits(p.getFailedUnits());
+            response.setPendingUnits(p.getPendingUnits());
             response.setUrgency(p.getUrgency());
             response.setRequestedDateTime(p.getRequestedDateTime());
             response.setRequiredByDateTime(p.getRequiredByDateTime());
             response.setRequestedWard(p.getRequestedWard());
+            response.setRequestedBy(p.getRequestedBy());
             response.setTrackingStatus(p.getTrackingStatus());
 
             return response;
@@ -1260,6 +1365,8 @@ public class BloodBankServiceImpl implements BloodBankService {
                 new TypeReference<>() {
                 });
     }
+
+
     @Override
     public ApiResponse<Page<BloodAllocatedResponse>> getAllocatedBloodRequestList(
             int page,
@@ -1277,34 +1384,42 @@ public class BloodBankServiceImpl implements BloodBankService {
                         patientName,
                         wardId,
                         allocatedStatusId,
-                        partiallyAllocatedStatusId,
+                        inventoryStatusAllocated,
                         pageable);
+
         Page<BloodAllocatedResponse> responsePage = projectionPage.map(projection -> {
-                    BloodAllocatedResponse response = new BloodAllocatedResponse();
-                    response.setRequestHdId(projection.getRequestHdId());
-                    response.setRequestDtId(projection.getRequestDtId());
-                    response.setRequestNo(projection.getRequestNo());
-                    response.setInpatientId(projection.getInpatientId());
-                    response.setInpatientNo(projection.getInpatientNo());
-                    response.setPatientId(projection.getPatientId());
-                    response.setPatientName(projection.getPatientName());
-                    response.setBloodGroup(projection.getBloodGroup());
-                    response.setComponent(projection.getComponent());
-                    response.setUnitsRequired(projection.getUnitsRequired());
-                    response.setUnitsAllocated(projection.getUnitsAllocated());
-                    response.setWard(projection.getWard());
-                    response.setUrgency(projection.getUrgency());
-                    response.setRequestedOn(DateTimeUtil.formatDateTime(projection.getRequestedOn()));
-                    response.setRequiredBy(DateTimeUtil.formatDateTime(projection.getRequiredBy()));
-                    response.setTrackingStatusId(projection.getTrackingStatusId());
-                    response.setAge(Period.between(projection.getDob(), LocalDate.now()).getYears());
-                    response.setGender(projection.getGender());
-                    response.setUnitExpiryDate(DateTimeUtil.formatDate(projection.getUnitExpiry()));
-                    response.setUnitVolume(projection.getUnitVolume().toString());
-                    response.setUnitNumber(projection.getUnitNumber());
-                    response.setInventoryId(projection.getInventoryId());
-                    return response;
-                });
+            BloodAllocatedResponse response = new BloodAllocatedResponse();
+
+            response.setRequestHdId(projection.getRequestHdId());
+            response.setRequestDtId(projection.getRequestDtId());
+            response.setAllocationId(projection.getAllocationId());
+            response.setRequestNo(projection.getRequestNo());
+            response.setInpatientId(projection.getInpatientId());
+            response.setInpatientNo(projection.getInpatientNo());
+            response.setPatientId(projection.getPatientId());
+            response.setPatientName(projection.getPatientName());
+            response.setBloodGroup(projection.getBloodGroup());
+            response.setComponent(projection.getComponent());
+            response.setUnitsRequired(projection.getUnitsRequired());
+            response.setUnitsAllocated(projection.getUnitsAllocated());
+            response.setWard(projection.getWard());
+            response.setUrgency(projection.getUrgency());
+            response.setRequestedOn(DateTimeUtil.formatDateTime(projection.getRequestedOn()));
+            response.setRequiredBy(DateTimeUtil.formatDateTime(projection.getRequiredBy()));
+            response.setTrackingStatusId(projection.getTrackingStatusId());
+            response.setAge(
+                    Period.between(projection.getDob(), LocalDate.now()).getYears()
+            );
+            response.setGender(projection.getGender());
+            response.setUnitExpiryDate(
+                    DateTimeUtil.formatDate(projection.getUnitExpiry())
+            );
+            response.setUnitVolume(projection.getUnitVolume().toString());
+            response.setUnitNumber(projection.getUnitNumber());
+            response.setInventoryId(projection.getInventoryId());
+
+            return response;
+        });
 
         return new ApiResponse<>(
                 HttpStatus.OK.value(),
@@ -1317,98 +1432,206 @@ public class BloodBankServiceImpl implements BloodBankService {
     @Override
     @Transactional
     public ApiResponse<String> saveCrossmatch(BloodCrossmatchRequest request) {
-        String currentUser=userContextService.getCurrentUserContext().getUserFullName();
-        Long currentUserId=userContextService.getCurrentUserContext().getUserId();
+        try {
+            String currentUser = userContextService.getCurrentUserContext().getUserFullName();
+            Long currentUserId = userContextService.getCurrentUserContext().getUserId();
 
-        BloodRequestHd bloodRequest=bloodRequestHdRepository.findById(request.getRequestHdId())
-                .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Blood request not found"));
-        BloodRequestDt bloodRequestDt=bloodRequestDtRepository.findById(request.getRequestDtId())
-                .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Blood request detail not found"));
-        MasCrossMatchType crossmatchType=masCrossMatchTypeRepository.findById(request.getCrossmatchTypeId())
-                .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Crossmatch type not found"));
+            BloodRequestHd bloodRequest = bloodRequestHdRepository.findById(request.getRequestHdId())
+                    .orElseThrow(() -> new SDDException(
+                            HttpStatus.NOT_FOUND.value(), "Blood request not found"));
 
-        BloodCrossmatchHd crossmatchHd=new BloodCrossmatchHd();
-        crossmatchHd.setBloodRequestHd(bloodRequest);
-        crossmatchHd.setInpatient(bloodRequest.getInpatient());
-        crossmatchHd.setPatient(bloodRequest.getPatient());
-        crossmatchHd.setCrossmatchType(crossmatchType);
-        crossmatchHd.setSampleReceivedDatetime(request.getSampleReceivedDatetime());
-        crossmatchHd.setCrossmatchDatetime(request.getCrossmatchDatetime());
-        crossmatchHd.setOverallResult(request.getOverallResult());
-        crossmatchHd.setRemarks(request.getRemarks());
-        crossmatchHd.setCreatedDate(LocalDateTime.now());
-        crossmatchHd.setCreatedBy(currentUser);
+            BloodRequestDt bloodRequestDt = bloodRequestDtRepository.findById(request.getRequestDtId())
+                    .orElseThrow(() -> new SDDException(
+                            HttpStatus.NOT_FOUND.value(), "Blood request detail not found"));
 
-        BloodCrossmatchHd savedHeader=bloodCrossmatchHdRepository.save(crossmatchHd);
-        int compatibleCount=0;
-        int incompatibleCount=0;
+            MasCrossMatchType crossmatchType = masCrossMatchTypeRepository.findById(request.getCrossmatchTypeId())
+                    .orElseThrow(() -> new SDDException(
+                            HttpStatus.NOT_FOUND.value(), "Crossmatch type not found"));
 
-        for(BloodCrossmatchUnitRequest unit:request.getUnits()){
-            BloodComponentInventory inventory=bloodComponentInventoryRepository.findById(unit.getInventoryId())
-                    .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Inventory not found for ID: "+unit.getInventoryId()));
-
-            BloodCrossmatchDt crossmatchDt=new BloodCrossmatchDt();
-            crossmatchDt.setCrossmatchHd(savedHeader);
-            crossmatchDt.setInventory(inventory);
-            crossmatchDt.setUnitNo(unit.getUnitNo());
-            crossmatchDt.setCompatibilityResult(unit.getCompatibilityResult());
-            crossmatchDt.setTestDate(unit.getTestDate());
-            crossmatchDt.setRemarks(unit.getRemarks());
-            crossmatchDt.setCreatedDate(LocalDateTime.now());
-            crossmatchDt.setCreatedBy(currentUser);
-            bloodCrossmatchDtRepository.save(crossmatchDt);
-
-            if(AppConstants.COMPATIBLE.equalsIgnoreCase(unit.getCompatibilityResult())){
-                inventory.setInventoryStatus(masBloodInventoryStatusRepository.findById(inventoryStatusReserved)
-                        .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Reserved inventory status not found")));
-                inventory.setReservedForPatientId(bloodRequest.getPatient().getId());
-                inventory.setReservedForInpatientId(bloodRequest.getInpatient().getInpatientId());
-                inventory.setReservationDatetime(LocalDateTime.now());
-                compatibleCount++;
-            }else if(AppConstants.INCOMPATIBLE.equalsIgnoreCase(unit.getCompatibilityResult())){
-                inventory.setInventoryStatus(masBloodInventoryStatusRepository.findById(inventoryStatusAvailable)
-                        .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Available inventory status not found")));
-                inventory.setReservedForPatientId(null);
-                inventory.setReservedForInpatientId(null);
-                inventory.setReservationDatetime(null);
-
-                BloodCrossmatchFailedHistory failedHistory=new BloodCrossmatchFailedHistory();
-                failedHistory.setBloodRequestDt(bloodRequestDt);
-                failedHistory.setInpatient(bloodRequest.getInpatient());
-                failedHistory.setInventory(inventory);
-                failedHistory.setFailedDate(LocalDateTime.now());
-                failedHistory.setSubmittedBy(currentUserId);
-                failedHistory.setRemarks(unit.getRemarks()!=null?unit.getRemarks():request.getRemarks());
-                bloodCrossmatchFailedHistoryRepository.save(failedHistory);
-                incompatibleCount++;
-            }
-            bloodComponentInventoryRepository.save(inventory);
-        }
-
-        int totalUnits=request.getUnits().size();
-        if(incompatibleCount>0){
-            bloodRequestDt.setTrackingStatus(
-                    bloodTrackingStatusMasterRepository.findById(crossmatchFailedStatusId)
-                            .orElseThrow(()->new SDDException(
+            BloodTrackingStatusMaster crossmatchCompletedStatus =
+                    bloodTrackingStatusMasterRepository.findById(crossmatchCompletedStatusId)
+                            .orElseThrow(() -> new SDDException(
                                     HttpStatus.NOT_FOUND.value(),
-                                    "Crossmatch failed tracking status not found"
-                            ))
+                                    "Crossmatch completed tracking status not found"));
+
+            BloodTrackingStatusMaster crossmatchFailedStatus =
+                    bloodTrackingStatusMasterRepository.findById(crossmatchFailedStatusId)
+                            .orElseThrow(() -> new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Crossmatch failed tracking status not found"));
+
+            BloodTrackingStatusMaster componentReservedStatus =
+                    bloodTrackingStatusMasterRepository.findById(componentReservedStatusId)
+                            .orElseThrow(() -> new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Component reserved tracking status not found"));
+
+            MasBloodInventoryStatus reservedInventoryStatus =
+                    masBloodInventoryStatusRepository.findById(inventoryStatusReserved)
+                            .orElseThrow(() -> new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Reserved inventory status not found"));
+
+            MasBloodInventoryStatus availableInventoryStatus =
+                    masBloodInventoryStatusRepository.findById(inventoryStatusAvailable)
+                            .orElseThrow(() -> new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Available inventory status not found"));
+
+            List<BloodCrossmatchUnitRequest> units = request.getUnits();
+
+            if (units == null || units.isEmpty()) {
+                throw new SDDException(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "At least one blood unit is required");
+            }
+
+            int compatibleCount = 0;
+            int incompatibleCount = 0;
+
+            BloodCrossmatchHd crossmatchHd = null;
+
+            for (BloodCrossmatchUnitRequest unit : units) {
+
+                BloodRequestDtAllocation allocation =
+                        bloodRequestDtAllocationRepository.findById(unit.getAllocationId())
+                                .orElseThrow(() -> new SDDException(
+                                        HttpStatus.NOT_FOUND.value(),
+                                        "Allocation not found: " + unit.getAllocationId()));
+
+                if (!allocation.getBloodRequestDt().getRequestDtId()
+                        .equals(bloodRequestDt.getRequestDtId())) {
+                    throw new SDDException(
+                            HttpStatus.BAD_REQUEST.value(),
+                            "Allocation does not belong to request detail: "
+                                    + unit.getAllocationId());
+                }
+
+                BloodComponentInventory inventory =
+                        bloodComponentInventoryRepository.findById(unit.getInventoryId())
+                                .orElseThrow(() -> new SDDException(
+                                        HttpStatus.NOT_FOUND.value(),
+                                        "Inventory not found: " + unit.getInventoryId()));
+
+                if (!allocation.getInventory().getInventoryId()
+                        .equals(inventory.getInventoryId())) {
+                    throw new SDDException(
+                            HttpStatus.BAD_REQUEST.value(),
+                            "Inventory does not belong to allocation: "
+                                    + unit.getAllocationId());
+                }
+
+                if (AppConstants.COMPATIBLE.equalsIgnoreCase(unit.getCompatibilityResult())) {
+
+                    if (crossmatchHd == null) {
+                        crossmatchHd = new BloodCrossmatchHd();
+                        crossmatchHd.setBloodRequestHd(bloodRequest);
+                        crossmatchHd.setInpatient(bloodRequest.getInpatient());
+                        crossmatchHd.setPatient(bloodRequest.getPatient());
+                        crossmatchHd.setCrossmatchType(crossmatchType);
+                        crossmatchHd.setSampleReceivedDatetime(request.getSampleReceivedDatetime());
+                        crossmatchHd.setCrossmatchDatetime(request.getCrossmatchDatetime());
+                        crossmatchHd.setOverallResult(request.getOverallResult());
+                        crossmatchHd.setRemarks(request.getRemarks());
+                        crossmatchHd.setCreatedDate(LocalDateTime.now());
+                        crossmatchHd.setCreatedBy(currentUser);
+
+                        crossmatchHd = bloodCrossmatchHdRepository.save(crossmatchHd);
+                    }
+
+                    BloodCrossmatchDt crossmatchDt = new BloodCrossmatchDt();
+                    crossmatchDt.setCrossmatchHd(crossmatchHd);
+                    crossmatchDt.setAllocation(allocation);
+                    crossmatchDt.setInventory(inventory);
+                    crossmatchDt.setUnitNo(unit.getUnitNo());
+                    crossmatchDt.setCompatibilityResult(unit.getCompatibilityResult());
+                    crossmatchDt.setTestDate(unit.getTestDate());
+                    crossmatchDt.setRemarks(unit.getRemarks());
+                    crossmatchDt.setCreatedDate(LocalDateTime.now());
+                    crossmatchDt.setCreatedBy(currentUser);
+
+                    bloodCrossmatchDtRepository.save(crossmatchDt);
+
+                    inventory.setInventoryStatus(reservedInventoryStatus);
+                    inventory.setReservedForPatientId(bloodRequest.getPatient().getId());
+                    inventory.setReservedForInpatientId(
+                            bloodRequest.getInpatient().getInpatientId());
+                    inventory.setReservationDatetime(LocalDateTime.now());
+
+                    bloodComponentInventoryRepository.save(inventory);
+
+                    allocation.setTrackingStatus(crossmatchCompletedStatus);
+                    bloodRequestDtAllocationRepository.save(allocation);
+
+                    compatibleCount++;
+
+                } else if (AppConstants.INCOMPATIBLE.equalsIgnoreCase(
+                        unit.getCompatibilityResult())) {
+
+                    inventory.setInventoryStatus(availableInventoryStatus);
+                    inventory.setReservedForPatientId(null);
+                    inventory.setReservedForInpatientId(null);
+                    inventory.setReservationDatetime(null);
+
+                    bloodComponentInventoryRepository.save(inventory);
+
+                    BloodCrossmatchFailedHistory failedHistory =
+                            new BloodCrossmatchFailedHistory();
+
+                    failedHistory.setBloodRequestDt(bloodRequestDt);
+                    failedHistory.setInpatient(bloodRequest.getInpatient());
+                    failedHistory.setInventory(inventory);
+                    failedHistory.setFailedDate(LocalDateTime.now());
+                    failedHistory.setSubmittedBy(currentUserId);
+                    failedHistory.setRemarks(
+                            unit.getRemarks() != null
+                                    ? unit.getRemarks()
+                                    : request.getRemarks());
+
+                    bloodCrossmatchFailedHistoryRepository.save(failedHistory);
+
+                    allocation.setTrackingStatus(crossmatchFailedStatus);
+                    bloodRequestDtAllocationRepository.save(allocation);
+
+                    incompatibleCount++;
+
+                } else {
+                    throw new SDDException(
+                            HttpStatus.BAD_REQUEST.value(),
+                            "Invalid compatibility result for inventory: "
+                                    + unit.getInventoryId());
+                }
+            }
+
+            if (compatibleCount > 0 && incompatibleCount == 0) {
+                bloodRequestDt.setTrackingStatus(componentReservedStatus);
+
+            } else if (compatibleCount > 0) {
+                bloodRequestDt.setTrackingStatus(crossmatchCompletedStatus);
+
+            } else {
+                bloodRequestDt.setTrackingStatus(crossmatchFailedStatus);
+            }
+
+            bloodRequestDtRepository.save(bloodRequestDt);
+
+            return new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    "Cross-match saved successfully",
+                    null
             );
-        }else if(compatibleCount==totalUnits&&totalUnits>0){
-            bloodRequestDt.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(componentReservedStatusId)
-                    .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Component reserved tracking status not found")));
-        }else if(compatibleCount>0&&incompatibleCount>0){
-            bloodRequestDt.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(partiallyAllocatedStatusId)
-                    .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Partially allocated tracking status not found")));
-        }else if(incompatibleCount==totalUnits&&totalUnits>0){
-            bloodRequestDt.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(allocatedStatusId)
-                    .orElseThrow(()->new SDDException(HttpStatus.NOT_FOUND.value(),"Allocated tracking status not found")));
+
+        } catch (Exception e) {
+            log.error("Error while saving cross-match", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+
+            return new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "Failed to save cross-match: " + e.getMessage(),
+                    null
+            );
         }
-
-        bloodRequestDtRepository.save(bloodRequestDt);
-        return new ApiResponse<>(HttpStatus.OK.value(),"Cross-match saved successfully",null);
     }
-
 
 
     @Override
@@ -1426,16 +1649,19 @@ public class BloodBankServiceImpl implements BloodBankService {
                         requestNo,
                         patientName,
                         wardId,
+                        crossmatchCompletedStatusId,
+                        inventoryStatusReserved,
+                        AppConstants.BLOOD_ISSUE_COMPATIBLE_STATUS,
                         pageable);
 
         Page<BloodIssueResponse> responsePage =
                 projectionPage.map(projection -> {
 
-                    BloodIssueResponse response =
-                            new BloodIssueResponse();
+                    BloodIssueResponse response = new BloodIssueResponse();
 
                     response.setRequestHdId(projection.getRequestHdId());
                     response.setRequestDtId(projection.getRequestDtId());
+                    response.setAllocationId(projection.getAllocationId());
                     response.setRequestNo(projection.getRequestNo());
                     response.setInpatientNo(projection.getInpatientNo());
                     response.setPatientName(projection.getPatientName());
@@ -1446,11 +1672,9 @@ public class BloodBankServiceImpl implements BloodBankService {
                     response.setUrgency(projection.getUrgency());
                     response.setInventoryId(projection.getInventoryId());
                     response.setRequiredBy(
-                            DateTimeUtil.formatDateTime(
-                                    projection.getRequiredBy()));
+                            DateTimeUtil.formatDateTime(projection.getRequiredBy()));
                     response.setReservedOn(
-                            DateTimeUtil.formatDateTime(
-                                    projection.getReservedOn()));
+                            DateTimeUtil.formatDateTime(projection.getReservedOn()));
 
                     return response;
                 });
@@ -1465,76 +1689,196 @@ public class BloodBankServiceImpl implements BloodBankService {
     @Override
     @Transactional
     public ApiResponse<String> updateBloodIssueAndTrackingStatus(BloodIssueStatusRequest request) {
+        try {
+            String currentUser = userContextService.getCurrentUserContext().getUserFullName();
 
-        String currentUser = userContextService.getCurrentUserContext().getUserFullName();
+            if (!Boolean.TRUE.equals(request.getIsIssued())
+                    && !Boolean.TRUE.equals(request.getIsRejected())) {
+                throw new SDDException(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Either isIssued or isRejected must be true");
+            }
 
-        BloodRequestDt bloodRequestDt = bloodRequestDtRepository
-                .findById(request.getRequestDtId())
-                .orElseThrow(() -> new SDDException(
+            if (Boolean.TRUE.equals(request.getIsIssued())
+                    && Boolean.TRUE.equals(request.getIsRejected())) {
+                throw new SDDException(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "isIssued and isRejected cannot both be true");
+            }
+
+            BloodRequestDtAllocation allocation =
+                    bloodRequestDtAllocationRepository.findById(request.getAllocationId())
+                            .orElseThrow(() -> new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Blood allocation not found"));
+
+            BloodComponentInventory inventory = allocation.getInventory();
+
+            if (inventory == null) {
+                throw new SDDException(
                         HttpStatus.NOT_FOUND.value(),
-                        "Blood request detail not found"));
+                        "Blood inventory not found");
+            }
 
-        BloodComponentInventory inventory = bloodComponentInventoryRepository
-                .findById(request.getInventoryId())
-                .orElseThrow(() -> new SDDException(
-                        HttpStatus.NOT_FOUND.value(),
-                        "Blood inventory not found"));
+            BloodTrackingStatusMaster issuedStatus =
+                    bloodTrackingStatusMasterRepository.findById(bloodRequestStatusIssued)
+                            .orElseThrow(() -> new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Issued tracking status not found"));
 
-        if (Boolean.TRUE.equals(request.getIsIssued())) {
+            BloodTrackingStatusMaster partiallyIssuedStatus =
+                    bloodTrackingStatusMasterRepository.findById(bloodRequestStatusPartiallyIssued)
+                            .orElseThrow(() -> new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Partially issued tracking status not found"));
 
-            MasBloodInventoryStatus issuedStatus =
+            BloodTrackingStatusMaster rejectedStatus =
+                    bloodTrackingStatusMasterRepository.findById(bloodRequestStatusRejected)
+                            .orElseThrow(() -> new SDDException(
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Rejected tracking status not found"));
+
+            MasBloodInventoryStatus issuedInventoryStatus =
                     masBloodInventoryStatusRepository.findById(inventoryStatusIssued)
                             .orElseThrow(() -> new SDDException(
                                     HttpStatus.NOT_FOUND.value(),
                                     "Issued inventory status not found"));
 
-            bloodRequestDt.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(bloodRequestStatusIssued)
-                    .orElseThrow(() -> new SDDException(
-                            HttpStatus.NOT_FOUND.value(),
-                            "Issued tracking status not found")));
-            bloodRequestDt.setIssuedBy(currentUser);
-            bloodRequestDt.setIssuedDate(LocalDateTime.now());
-
-            inventory.setInventoryStatus(issuedStatus);
-
-        } else if (Boolean.TRUE.equals(request.getIsRejected())) {
-
-            MasBloodInventoryStatus availableStatus =
+            MasBloodInventoryStatus availableInventoryStatus =
                     masBloodInventoryStatusRepository.findById(inventoryStatusAvailable)
                             .orElseThrow(() -> new SDDException(
                                     HttpStatus.NOT_FOUND.value(),
                                     "Available inventory status not found"));
 
-            if (request.getRejectedReason() == null ||
-                    request.getRejectedReason().trim().isEmpty()) {
-                throw new SDDException(
-                        HttpStatus.BAD_REQUEST.value(),
-                        "Rejected reason is required");
+            if (Boolean.TRUE.equals(request.getIsIssued())) {
+
+                if (!inventory.getInventoryStatus()
+                        .getInventoryStatusId()
+                        .equals(inventoryStatusReserved)) {
+                    throw new SDDException(
+                            HttpStatus.BAD_REQUEST.value(),
+                            "Only reserved blood unit can be issued");
+                }
+
+                allocation.setTrackingStatus(issuedStatus);
+                inventory.setInventoryStatus(issuedInventoryStatus);
+
+                BloodRequestDt bloodRequestDt = allocation.getBloodRequestDt();
+
+                int fulfilledUnits = bloodRequestDt.getFulfilledUnits() == null
+                        ? 0
+                        : bloodRequestDt.getFulfilledUnits();
+
+                fulfilledUnits++;
+
+                bloodRequestDt.setFulfilledUnits(fulfilledUnits);
+                bloodRequestDt.setIssuedBy(currentUser);
+                bloodRequestDt.setIssuedDate(LocalDateTime.now());
+
+                if (fulfilledUnits >= bloodRequestDt.getUnitsRequired()) {
+                    bloodRequestDt.setTrackingStatus(issuedStatus);
+                } else {
+                    bloodRequestDt.setTrackingStatus(partiallyIssuedStatus);
+                }
+
+                bloodRequestDtRepository.save(bloodRequestDt);
+
+            } else {
+
+                if (request.getRejectedReason() == null
+                        || request.getRejectedReason().trim().isEmpty()) {
+                    throw new SDDException(
+                            HttpStatus.BAD_REQUEST.value(),
+                            "Rejected reason is required");
+                }
+
+                allocation.setTrackingStatus(rejectedStatus);
+
+                inventory.setInventoryStatus(availableInventoryStatus);
+                inventory.setReservedForPatientId(null);
+                inventory.setReservedForInpatientId(null);
+                inventory.setReservationDatetime(null);
+
+                BloodRequestDt bloodRequestDt = allocation.getBloodRequestDt();
+
+                bloodRequestDt.setRejectedBy(currentUser);
+                bloodRequestDt.setRejectedDate(LocalDateTime.now());
+                bloodRequestDt.setRejectedReason(request.getRejectedReason());
+
+                bloodRequestDtRepository.save(bloodRequestDt);
             }
 
-            bloodRequestDt.setTrackingStatus(bloodTrackingStatusMasterRepository.findById(bloodRequestStatusRejected)
-                    .orElseThrow(() -> new SDDException(
-                            HttpStatus.NOT_FOUND.value(),
-                            "Rejected tracking status not found")));
-            bloodRequestDt.setRejectedBy(currentUser);
-            bloodRequestDt.setRejectedDate(LocalDateTime.now());
-            bloodRequestDt.setRejectedReason(request.getRejectedReason());
+            bloodRequestDtAllocationRepository.save(allocation);
+            bloodComponentInventoryRepository.save(inventory);
 
-            inventory.setInventoryStatus(availableStatus);
+            return new ApiResponse<>(
+                    HttpStatus.OK.value(),
+                    Boolean.TRUE.equals(request.getIsIssued())
+                            ? "Blood unit issued successfully"
+                            : "Blood unit rejected successfully",
+                    null);
 
-        } else {
-            throw new SDDException(
-                    HttpStatus.BAD_REQUEST.value(),
-                    "Either isIssued or isRejected must be true");
+        } catch (Exception e) {
+            log.error("Error while updating blood issue status", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+
+            return new ApiResponse<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "Failed to update blood issue status: " + e.getMessage(),
+                    null);
         }
-
-        bloodRequestDtRepository.save(bloodRequestDt);
-        bloodComponentInventoryRepository.save(inventory);
-
-        return new ApiResponse<>(
-                HttpStatus.OK.value(),
-                "Blood request status updated successfully",
-                null);
     }
 
+    @Override
+    @Transactional
+    public ApiResponse<String> acknowledgeBloodRequest(
+            BloodAcknowledgementRequest request) {
+        try {
+            if (request.getAllocationId() == null) {
+                throw new IllegalArgumentException("Allocation ID is required");
+            }
+            if (request.getAccepted() == null) {
+                throw new IllegalArgumentException("Acknowledgement decision is required");
+            }
+            if (!request.getAccepted() && (request.getRemarks() == null || request.getRemarks().trim().isEmpty())) {
+                throw new IllegalArgumentException("Remarks are required when rejecting blood");
+            }
+            BloodRequestDtAllocation allocation = bloodRequestDtAllocationRepository.findById(request.getAllocationId())
+                    .orElseThrow(() -> new RecordNotFoundException(
+                            "Blood allocation not found: " + request.getAllocationId()));
+            if (allocation.getTrackingStatus() == null
+                    || !"ISSUED".equalsIgnoreCase(allocation.getTrackingStatus().getStatusCode())) {
+                throw new IllegalArgumentException("Only issued blood units can be acknowledged");
+            }
+            if (bloodRequestAcknowledgementRepository.existsByAllocation_AllocationId(request.getAllocationId())) {
+                throw new IllegalArgumentException("Blood unit is already acknowledged");
+            }
+            BloodRequestDt requestDt = allocation.getBloodRequestDt();
+            BloodRequestHd requestHd = requestDt.getBloodRequestHd();
+            BloodRequestAcknowledgement acknowledgement = new BloodRequestAcknowledgement();
+            acknowledgement.setBloodRequestHd(requestHd);
+            acknowledgement.setBloodRequestDt(requestDt);
+            acknowledgement.setAllocation(allocation);
+            acknowledgement.setAcknowledgementStatus(
+                    Boolean.TRUE.equals(request.getAccepted()) ? "ACCEPTED" : "REJECTED");
+            acknowledgement.setRemarks(request.getRemarks());
+            acknowledgement.setAcknowledgedDate(LocalDateTime.now());
+            Long currentUserId = userContextService.getCurrentUserContext().getUserId();
+            acknowledgement.setAcknowledgedBy(currentUserId);
+            bloodRequestAcknowledgementRepository.save(acknowledgement);
+            return ResponseUtils.createSuccessResponse(
+                    Boolean.TRUE.equals(request.getAccepted())
+                            ? "Blood unit accepted successfully"
+                            : "Blood unit rejected successfully",
+                    new TypeReference<>() {
+                    });
+        } catch (Exception e) {
+            log.error("Error while acknowledging blood request", e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Failed to acknowledge blood request: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
 }
