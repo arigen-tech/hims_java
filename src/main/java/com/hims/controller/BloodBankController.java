@@ -294,10 +294,11 @@ public class BloodBankController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(required = false) String inpatientNo,
-            @RequestParam(required = false) String patientName) {
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String requestNo) {
 
         return bloodBankService.getBloodRequestTrackingList(
-                page, size, inpatientNo, patientName);
+                page, size, inpatientNo, patientName, requestNo);
     }
 
     @GetMapping("/getAllPendingBloodRequests")
@@ -374,4 +375,11 @@ public class BloodBankController {
 
         return bloodBankService.updateBloodIssueAndTrackingStatus(request);
     }
+
+    @PutMapping("/acknowledgeBloodRequest")
+    public ApiResponse<String> acknowledgeBloodRequest(
+            @RequestBody BloodAcknowledgementRequest request) {
+        return bloodBankService.acknowledgeBloodRequest(request);
+    }
+
 }

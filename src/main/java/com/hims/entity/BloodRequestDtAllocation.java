@@ -33,4 +33,10 @@ public class BloodRequestDtAllocation {
 
     @Column(name = "created_by")
     private String createdBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tracking_status_id")
+    private BloodTrackingStatusMaster trackingStatus;
+
+
 }

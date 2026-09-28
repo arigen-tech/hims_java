@@ -37,4 +37,9 @@ public class BloodCrossmatchFailedHistory {
 
     @Column(name = "remarks", nullable = false, length = 500)
     private String remarks;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "allocation_id")
+    private BloodRequestDtAllocation allocation;
+
 }

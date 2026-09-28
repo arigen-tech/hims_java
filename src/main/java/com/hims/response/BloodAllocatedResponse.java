@@ -8,6 +8,7 @@ public class BloodAllocatedResponse {
     private Long requestHdId;
     private Long requestDtId;
     private String requestNo;
+    private Long allocationId;
 
     private Long inpatientId;
     private String inpatientNo;
