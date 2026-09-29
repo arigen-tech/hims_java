@@ -6,6 +6,7 @@ import com.hims.entity.PatientLogin;
 import com.hims.entity.repository.PatientLoginRepository;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.jwt.JwtHelper;
+import com.hims.projection.PatientVisitStatusCountProjection;
 import com.hims.request.LoginRequest;
 import com.hims.request.OtpRequest;
 import com.hims.response.*;
@@ -178,6 +179,13 @@ public class MobileController {
     ) {
         String resolvedPatientName = patientName != null ? patientName : name;
         return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, resolvedPatientName, deptTypeCode, includeAllHistory, payment, visitStatus);
+    }
+
+    @GetMapping("/getPatientVisitStatusCounts")
+    public ApiResponse<PatientVisitStatusCountProjection> getPatientVisitStatusCounts(
+            @RequestParam Long hospitalId,
+            @RequestParam Long patientId) {
+        return masEmployeeService.getPatientVisitStatusCounts(hospitalId, patientId);
     }
 
     @GetMapping("/getCancelledRefundAppointments")

@@ -1527,6 +1527,27 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             Pageable pageable
     );
 
+        @Query(value = """
+            SELECT
+            patient_id AS "patientId",
+            patient_name AS "patientName",
+            mobile_no AS "mobileNo",
+            opd_pending_count AS "opdPendingCount",
+            opd_complete_count AS "opdCompleteCount",
+            lab_pending_count AS "labPendingCount",
+            lab_complete_count AS "labCompleteCount",
+            rad_pending_count AS "radPendingCount",
+            rad_complete_count AS "radCompleteCount",
+            total_pending_count AS "totalPendingCount",
+            total_complete_count AS "totalCompleteCount",
+            prescription_count AS "prescriptionCount"
+            FROM public.get_patient_visit_status_counts(:hospitalId, :patientId)
+            """, nativeQuery = true)
+        List<PatientVisitStatusCountProjection> getPatientVisitStatusCounts(
+            @Param("hospitalId") Long hospitalId,
+            @Param("patientId") Long patientId
+        );
+
 
     }
 
