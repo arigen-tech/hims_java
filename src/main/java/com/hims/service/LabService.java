@@ -46,6 +46,17 @@ public interface LabService {
                                                                                          int size
     );
 
+    ApiResponse<Page<LabInvestigationReportHeaderResponse>> getInvestigationReportHeaders(
+            Long hospitalId,
+            String mobileNo,
+            String patientName,
+            Long patientId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            int page,
+            int size
+    );
+
     ApiResponse<Page<LabDetailedTATReportResponse>> getDetailedTatReports(
             Long hospitalId,
             Long investigationId,

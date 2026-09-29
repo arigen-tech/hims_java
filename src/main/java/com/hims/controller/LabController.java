@@ -721,6 +721,28 @@ public class LabController {
         );
     }
 
+        @GetMapping("/investigationsReport/headers")
+        public ResponseEntity<?> searchLabReportHeaders(
+                        @RequestParam Long hospitalId,
+                        @RequestParam(required = false) String patientMobileNumber,
+                        @RequestParam(required = false) String patientName,
+                        @RequestParam(required = false) Long patientId,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "5") int size) {
+                return ResponseEntity.ok(labService.getInvestigationReportHeaders(
+                                hospitalId,
+                                patientMobileNumber,
+                                patientName,
+                                patientId,
+                                fromDate,
+                                toDate,
+                                page,
+                                size
+                ));
+        }
+
     /**
      * Fetch Detailed Laboratory Turn Around Time (TAT) Report
      *

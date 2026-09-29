@@ -1350,6 +1350,55 @@ public class LabServiceImpl implements LabService {
     }
 
     @Override
+    public ApiResponse<Page<LabInvestigationReportHeaderResponse>> getInvestigationReportHeaders(
+            Long hospitalId,
+            String mobileNo,
+            String patientName,
+            Long patientId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            int page,
+            int size
+    ) {
+        try {
+            String mobileFilter = mobileNo == null || mobileNo.isBlank()
+                    ? null
+                    : "%" + mobileNo.trim() + "%";
+            String patientNameFilter = patientName == null || patientName.isBlank()
+                    ? null
+                    : "%" + patientName.trim().toLowerCase() + "%";
+
+            Pageable pageable = PageRequest.of(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.DESC, "resultDate", "resultTime")
+            );
+
+            Page<LabInvestigationReportHeaderResponse> response =
+                    dgResultEntryHeaderRepository.getInvestigationReportHeaders(
+                            hospitalId,
+                            mobileFilter,
+                            patientNameFilter,
+                            patientId,
+                            fromDate,
+                            toDate,
+                            AppConstants.STATUS_Y,
+                            pageable
+                    );
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error fetching lab investigation report headers", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Internal Server Error",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
     public ApiResponse<Page<LabDetailedTATReportResponse>> getDetailedTatReports(
             Long hospitalId,
             Long investigationId,
