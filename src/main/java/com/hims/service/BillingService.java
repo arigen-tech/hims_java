@@ -53,6 +53,11 @@ public interface BillingService {
      */
     ApiResponse<List<PendingBillingResponse>> getLabRadiologyBillingDetails(Long billingHdId, String serviceCategoryCode);
 
+        /**
+         * Get Lab/Radiology billing details by billing header ID regardless of payment status
+         */
+        ApiResponse<List<PendingBillingResponse>> getLabRadiologyBillingDetailsAll(Long billingHdId, String serviceCategoryCode);
+
     /**
      * Search invoice details by patient name, phone or registration number
      */

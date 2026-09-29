@@ -1308,6 +1308,43 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
+    @Override
+    public ApiResponse<List<PendingBillingResponse>> getLabRadiologyBillingDetailsAll(Long billingHdId, String serviceCategoryCode) {
+        try {
+
+            MasServiceCategory serviceCategory =
+                    masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
+
+            Long categoryId = serviceCategory.getId();
+
+            List<LabRadioBillingDetailsProjection> detailsList =
+                    billingHeaderRepository.getBillingDetailsByBillingHdId(billingHdId, categoryId);
+
+            PendingBillingResponse response = mapPendingBilling(detailsList);
+
+            List<PendingBillingResponse> responses = new ArrayList<>();
+            if (response != null) {
+                responses.add(response);
+            }
+
+            return ResponseUtils.createSuccessResponse(
+                    responses,
+                    new TypeReference<List<PendingBillingResponse>>() {
+                    }
+            );
+
+        } catch (Exception e) {
+            log.error("Error fetching Lab/Radiology billing details for all payment statuses", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {
+                    },
+                    "Internal Server Error",
+                    500
+            );
+        }
+    }
+
     public PendingBillingResponse mapPendingBilling(List<LabRadioBillingDetailsProjection> rows) {
 
         List<Long> billIds = new ArrayList<>();
