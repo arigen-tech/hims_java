@@ -103,6 +103,20 @@ List<MasDepartmentResponse> findActiveWardDepartments(
 
     List<MasDepartment> findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(Long hospitalId, Long opdDeptTypeId, String searchInput);
 
+        @Query(value = """
+                SELECT d.*
+                FROM mas_department d
+                WHERE d.hospital_id = :hospitalId
+                    AND d.department_type_id = :departmentTypeId
+                    AND LOWER(COALESCE(d.department_name, '')) LIKE LOWER(CONCAT('%', :searchInput, '%'))
+                ORDER BY d.department_name ASC
+                """, nativeQuery = true)
+        List<MasDepartment> findByHospitalAndDepartmentTypeAndNameNative(
+                        @Param("hospitalId") Long hospitalId,
+                        @Param("departmentTypeId") Long departmentTypeId,
+                        @Param("searchInput") String searchInput
+        );
+
     List<MasDepartment> findByHospitalIdAndDepartmentTypeId(Long hospitalId, Long opdId);
 
     List<MasDepartment> findByDepartmentTypeId(Long opdId);
