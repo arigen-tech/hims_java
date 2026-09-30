@@ -35,6 +35,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(AUTH_WHITELIST).permitAll()  // Swagger paths
                         .requestMatchers("/authController/login").permitAll()
+                        .requestMatchers("/authController/refreshToken").permitAll()
                         .requestMatchers("/authController/getUsersRole/{userName}").permitAll()
                         .requestMatchers("/apiTest/getTest").permitAll()
                        .requestMatchers("/api/v1/abdm/**").permitAll()
@@ -45,6 +46,7 @@ public class SecurityConfig {
                         .requestMatchers("master/user-departments/**").permitAll()
                         .requestMatchers("/mobileController/mLogin").permitAll()
                         .requestMatchers("/mobileController/verifyOtp").permitAll()
+                        .requestMatchers("/mobileController/refreshToken").permitAll()
                         .requestMatchers("report/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/userType/**").permitAll()

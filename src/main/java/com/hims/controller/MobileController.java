@@ -9,9 +9,11 @@ import com.hims.jwt.JwtHelper;
 import com.hims.projection.PatientVisitStatusCountProjection;
 import com.hims.request.LoginRequest;
 import com.hims.request.OtpRequest;
+import com.hims.request.RefreshTokenRequest;
 import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
 import com.hims.service.BillingService;
+import com.hims.service.AuthService;
 import com.hims.service.MobileLoginService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +49,8 @@ public class MobileController {
     private final MasEmployeeService masEmployeeService;
     
     private final BillingService billingService;
+
+    private final AuthService authService;
     
     private final PatientLoginRepository patientLoginRepository;
     private final PatientRepository patientRepository;
@@ -119,6 +123,11 @@ public class MobileController {
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
+    }
+
+    @PostMapping("/refreshToken")
+    public ApiResponse<?> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
+        return authService.refreshToken(request);
     }
 
     private PatientIdResponse toPatientIdResponse(Patient patient) {

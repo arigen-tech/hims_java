@@ -118,6 +118,7 @@ public class JwtHelper {
     // Generate access token for user with additional details
     public String generateAccessToken(User user) {
         Map<String, Object> claims = userClaims(user);
+        claims.put("tokenType", "access");
 
         return doGenerateToken(claims, user.getUsername(), jwtTokenValidity);
     }
@@ -125,6 +126,7 @@ public class JwtHelper {
     // Generate refresh token for user
     public String generateRefreshToken(User user) {
         Map<String, Object> claims = userClaims(user);
+        claims.put("tokenType", "refresh");
 
         return doGenerateToken(claims, user.getUsername(), refreshTokenValidity);
     }
@@ -195,6 +197,7 @@ public class JwtHelper {
     public TokenWithExpiry generateAccessTokenWithExpiry(User user, Long departmentId) {
         Map<String, Object> claims = userClaims(user);
         claims.put("departmentId", departmentId);
+        claims.put("tokenType", "access");
 
         long currentTimeMillis = System.currentTimeMillis();
         String token = Jwts.builder()
@@ -212,6 +215,7 @@ public class JwtHelper {
     public TokenWithExpiry generateRefreshTokenWithExpiry(User user, Long departmentId) {
         Map<String, Object> claims = userClaims(user);
         claims.put("departmentId", departmentId);
+        claims.put("tokenType", "refresh");
 
         long currentTimeMillis = System.currentTimeMillis();
         String token = Jwts.builder()
@@ -225,16 +229,54 @@ public class JwtHelper {
         return new TokenWithExpiry(token, currentTimeMillis + refreshTokenValidity * 1000);
     }
 
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = getAllClaimsFromToken(token);
+            String tokenType = claims.get("tokenType", String.class);
+            if (tokenType != null) {
+                return "refresh".equalsIgnoreCase(tokenType);
+            }
+
+            String principalType = claims.get("principalType", String.class);
+            Date issuedAt = claims.getIssuedAt();
+            Date expiration = claims.getExpiration();
+            return "PATIENT".equalsIgnoreCase(principalType)
+                    && issuedAt != null
+                    && expiration != null
+                    && (expiration.getTime() - issuedAt.getTime()) / 1000 == patientRefreshTokenValidity;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public Long getDepartmentIdFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("departmentId", Long.class));
+    }
+
 //for mobile scection to generate token.......
     // 🔹 Generate Token for mobile
     public String mobileGenerateToken(String mobileNo, Long patientId) {
-        return mobileDoGenerateToken(mobileClaims(mobileNo, patientId),
-            "patient:" + patientId, patientTokenValidity);
+        Map<String, Object> claims = mobileClaims(mobileNo, patientId);
+        claims.put("tokenType", "access");
+        return mobileDoGenerateToken(claims, "patient:" + patientId, patientTokenValidity);
     }
 
     public String mobileGenerateRefreshToken(String mobileNo, Long patientId) {
-        return mobileDoGenerateToken(mobileClaims(mobileNo, patientId),
-            "patient:" + patientId, patientRefreshTokenValidity);
+        Map<String, Object> claims = mobileClaims(mobileNo, patientId);
+        claims.put("tokenType", "refresh");
+        return mobileDoGenerateToken(claims, "patient:" + patientId, patientRefreshTokenValidity);
+    }
+
+    public String getPrincipalTypeFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("principalType", String.class));
+    }
+
+    public Long getPatientIdFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("patientId", Long.class));
+    }
+
+    public String getMobileNoFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("mobileNo", String.class));
     }
 
     private Map<String, Object> mobileClaims(String mobileNo, Long patientId) {
