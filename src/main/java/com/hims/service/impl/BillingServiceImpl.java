@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.NotificationType;
 import com.hims.constants.PaymentStatusCode;
 import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
@@ -22,6 +23,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -145,6 +147,9 @@ public class BillingServiceImpl implements BillingService {
 
     @Autowired
     private SMSUtility smsUtility;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
 
     @Override
@@ -778,7 +783,20 @@ public class BillingServiceImpl implements BillingService {
             item.setDoctorName(visit.getDoctorName());
             paymentItemList.add(item);
 
-            generateInvoiceSMSNotification(header,payment,"OPD");
+            Map<String, String> opdVariables = buildNotificationVariables(header, payment, "OPD");
+
+            eventPublisher.publishEvent(
+                    new NotificationEvent(
+                            NotificationType.INVOICE_GENERATED,
+                            header.getPatient().getPatientMobileNumber(),
+                            opdVariables
+                    )
+            );
+
+            log.info(
+                    "OPD Invoice notification event published for patient: {}",
+                    visit.getPatient().getFullName()
+            );
 
         }
         res.setMsg("Success");
@@ -887,11 +905,24 @@ public class BillingServiceImpl implements BillingService {
                 res.setPaymentStatus(AppConstants.PAYMENT_PARTIAL_PENDING.toLowerCase());
             }
 
-            DgOrderHd save = labHdRepository.save(orderHd);
+            labHdRepository.save(orderHd);
             if (visit != null) visitRepository.save(visit);
-            billingHeaderRepository.save(billingHeader);
+            BillingHeader save = billingHeaderRepository.save(billingHeader);
 
-            generateInvoiceSMSNotification(billingHeader,payment,"Lab");
+            Map<String, String> labVariables = buildNotificationVariables(billingHeader, payment, "Lab");
+
+            eventPublisher.publishEvent(
+                    new NotificationEvent(
+                            NotificationType.INVOICE_GENERATED,
+                            save.getPatient().getPatientMobileNumber(),
+                            labVariables
+                    )
+            );
+
+            log.info(
+                    "Lab Invoice notification event published for patient: {}",
+                    visit.getPatient().getFullName()
+            );
 
             res.setBillNo(billingHeader.getBillNo());
             res.setMsg("Success");
@@ -1020,7 +1051,19 @@ public class BillingServiceImpl implements BillingService {
                 visitOpt.ifPresent(visitRepository::save);
                 billingHeaderRepository.save(billingHeader);
 
-                generateInvoiceSMSNotification(billingHeader,payment,"Radiology");
+                Map<String, String> radiologyVariables = buildNotificationVariables(billingHeader, payment, "Radiology");
+                eventPublisher.publishEvent(
+                        new NotificationEvent(
+                                NotificationType.INVOICE_GENERATED,
+                                billingHeader.getPatient().getPatientMobileNumber(),
+                                radiologyVariables
+                        )
+                );
+
+                log.info(
+                        "Radiology Invoice notification event published for patient: {}",
+                        billingHeader.getPatient().getFullName()
+                );
                 res.setBillNo(billingHeader.getBillNo());
             }
             res.setMsg("Success");
@@ -2005,7 +2048,7 @@ public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatie
         }
     }
 
-    private void generateInvoiceSMSNotification(BillingHeader billingHeader,PaymentDetailsV2 payment,String serviceName){
+    private Map<String,String> buildNotificationVariables(BillingHeader billingHeader,PaymentDetailsV2 payment,String serviceName){
 
         Map<String, String> variables = new HashMap<>();
 
@@ -2016,9 +2059,10 @@ public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatie
         variables.put("var5",paymentUtils.getPaymentGateway(payment.getPaymentGateway()).getGatewayName());
         variables.put("var6",billingHeader.getHospitalMobileNo());
 
-        smsUtility.sendSMS(billingHeader.getPatient().getPatientMobileNumber(), SMSTemplate.INVOICE_NOTIFICATION, variables);
+//        smsUtility.sendSMS(billingHeader.getPatient().getPatientMobileNumber(), SMSTemplate.INVOICE_NOTIFICATION, variables);
 
-        log.info("Invoice notification SMS sent for patient : {}", billingHeader.getPatientDisplayName());
+        log.info("Invoice notification variables : {}", variables);
+        return  variables;
 
     }
 

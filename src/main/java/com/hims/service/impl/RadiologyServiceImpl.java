@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.NotificationType;
 import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -99,6 +101,9 @@ public class RadiologyServiceImpl implements RadiologyService {
 
     @Autowired
     private  SMSUtility smsUtility;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
 
     @Override
@@ -1339,12 +1344,22 @@ public class RadiologyServiceImpl implements RadiologyService {
         String formattedDate =  save!=null?save.getOrderTime()
                 .format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a", Locale.ENGLISH))
                 .toUpperCase():"";
-        log.info("Lab booking formatted date :",formattedDate);
         variables.put("var4",formattedDate);
 
-        smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.OTHER_APPOINTMENT, variables);
+        String patientMobileNumber = patient.getPatientMobileNumber();
 
-        log.info("Radiology Booking confirmation SMS sent for patient : {}", patient.getFullName());
+        eventPublisher.publishEvent(
+                new NotificationEvent(
+                        NotificationType.OTHER_APPOINTMENT_BOOKED,
+                        patientMobileNumber,
+                        variables
+                )
+        );
+
+        log.info(
+                "Rad booking notification event published for patient: {}",
+                patient.getFullName()
+        );
 
         return save;
     }

@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.NotificationType;
 import com.hims.constants.PaymentStatusCode;
 import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -160,6 +162,9 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Autowired
     private SMSUtility smsUtility;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
 
 
@@ -529,15 +534,28 @@ public class RegistrationServiceImpl implements RegistrationService {
             variables.put("var1", visit.getPatient().getFullName());
             variables.put("var2", visit.getDepartment().getDepartmentName());
 
-            String formattedDate =  visit.getVisitDate()
-                    .format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a", Locale.ENGLISH))
+            String formattedDate = visit.getVisitDate()
+                    .format(DateTimeFormatter.ofPattern(
+                            "dd MMM yyyy hh:mm a",
+                            Locale.ENGLISH
+                    ))
                     .toUpperCase();
-            variables.put("var3",formattedDate);
-            variables.put("var5",visit.getHospital().getContactNumber());
 
-            smsUtility.sendSMS(visit.getPatient().getPatientMobileNumber(), SMSTemplate.APPOINTMENT_CANCEL, variables);
+            variables.put("var3", formattedDate);
+            variables.put("var5", visit.getHospital().getContactNumber());
 
-            log.info("Booking cancel confirmation SMS sent for patient : {}", visit.getPatient().getFullName());
+            eventPublisher.publishEvent(
+                    new NotificationEvent(
+                            NotificationType.APPOINTMENT_CANCELLED,
+                            visit.getPatient().getPatientMobileNumber(),
+                            variables
+                    )
+            );
+
+            log.info(
+                    "Appointment cancellation notification event published for patient: {}",
+                    visit.getPatient().getFullName()
+            );
         }catch (Exception e){
             log.error("cancelAppointment method error :: ",e);
             throw e;
@@ -677,6 +695,19 @@ public class RegistrationServiceImpl implements RegistrationService {
         log.info("Appointment reschedule formatted date :",formattedDate);
         variables.put("var4",formattedDate);
         variables.put("var5",save.getHospital().getContactNumber());
+
+        eventPublisher.publishEvent(
+                new NotificationEvent(
+                        NotificationType.APPOINTMENT_RESCHEDULED,
+                        save.getPatient().getPatientMobileNumber(),
+                        variables
+                )
+        );
+
+        log.info(
+                "Appointment reschedule notification event published for patient: {}",
+                save.getPatient().getFullName()
+        );
 
 
         smsUtility.sendSMS(save.getPatient().getPatientMobileNumber(), SMSTemplate.RESCHEDULED_APPOINTMENT, variables);
