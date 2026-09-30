@@ -1305,6 +1305,7 @@ public class LabServiceImpl implements LabService {
             String mobileNo,
             String patientName,
             Long patientId,
+            boolean ipd,
             LocalDate fromDate,
             LocalDate toDate,
             int page,
@@ -1324,7 +1325,18 @@ public class LabServiceImpl implements LabService {
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "resultEntryId.resultDate", "resultEntryId.resultTime"));
             Page<LabInvestigationsReportResponse> response =
-                    dgResultEntryDetailRepository.getLabInvestigationsReport(
+                    (ipd
+                            ? dgResultEntryDetailRepository.getIpdLabInvestigationsReport(
+                                    hospitalId,
+                                    mobileNo,
+                                    patientName,
+                                    patientId,
+                                    fromDate,
+                                    toDate,
+                                    AppConstants.STATUS_Y,
+                                    pageable
+                            )
+                            : dgResultEntryDetailRepository.getLabInvestigationsReport(
                             hospitalId,
                             mobileNo,
                             patientName,
@@ -1333,7 +1345,7 @@ public class LabServiceImpl implements LabService {
                             toDate,
                             AppConstants.STATUS_Y,
                             pageable
-                    );
+                    ));
 
             log.info("getAllInvestigationsReport method ended with mobileNo={}, patientName={}, fromDate={}, toDate={}", mobileNo, patientName, fromDate, toDate);
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});

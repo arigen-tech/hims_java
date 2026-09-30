@@ -191,7 +191,8 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
         COALESCE(u.middleName, ''), ' ',
         COALESCE(u.lastName, '')
     ),
-    h.resultDate
+    h.resultDate,
+    oh.orderDate
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h
@@ -221,6 +222,64 @@ AND ( :patientName IS NULL OR LOWER(CONCAT(
             @Param("patientName") String patientName,
             @Param("patientId") Long patientId,
 
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("resultValidationStatus") String resultValidationStatus,
+            Pageable pageable
+    );
+
+    @Query("""
+SELECT new com.hims.response.LabInvestigationsReportResponse(
+    h.resultEntryId,
+    d.resultEntryDetailId,
+    oh.id,
+    COALESCE(inv.investigationName, ''),
+    CONCAT(
+        COALESCE(p.patientFn, ''), ' ',
+        COALESCE(p.patientMn, ''), ' ',
+        COALESCE(p.patientLn, '')
+    ),
+    p.patientMobileNumber,
+    g.genderName,
+    p.patientAge,
+    uom.name,
+    d.result,
+    d.normalRange,
+    h.resultEnteredBy,
+    CONCAT(
+        COALESCE(u.firstName, ''), ' ',
+        COALESCE(u.middleName, ''), ' ',
+        COALESCE(u.lastName, '')
+    ),
+    h.resultDate,
+    oh.orderDate
+)
+FROM DgResultEntryDetail d
+JOIN d.resultEntryId h
+JOIN h.inpatient inpatient
+JOIN inpatient.patient p
+LEFT JOIN p.patientGender g
+LEFT JOIN d.investigationId inv
+LEFT JOIN d.uomId uom
+LEFT JOIN h.orderHd oh
+LEFT JOIN User u ON u.userId = h.resultVerifiedBy
+WHERE h.hospitalId.id = :hospitalId
+AND (:patientId IS NULL OR p.id = :patientId)
+AND LOWER(d.validated) = LOWER(:resultValidationStatus)
+AND h.resultDate >= COALESCE(:fromDate, h.resultDate)
+AND h.resultDate <= COALESCE(:toDate, h.resultDate)
+AND (:mobileNo IS NULL OR p.patientMobileNumber LIKE :mobileNo)
+AND (:patientName IS NULL OR LOWER(CONCAT(
+        COALESCE(p.patientFn, ''), ' ',
+        COALESCE(p.patientMn, ''), ' ',
+        COALESCE(p.patientLn, '')
+    )) LIKE :patientName)
+""")
+    Page<LabInvestigationsReportResponse> getIpdLabInvestigationsReport(
+            @Param("hospitalId") Long hospitalId,
+            @Param("mobileNo") String mobileNo,
+            @Param("patientName") String patientName,
+            @Param("patientId") Long patientId,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("resultValidationStatus") String resultValidationStatus,

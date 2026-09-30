@@ -27,6 +27,7 @@ public class LabInvestigationsReportResponse {
     private String resultEnteredBy;
     private String resultValidatedBy;
     private LocalDate investigationDate;
+    private LocalDate orderDate;
 
 
 }
