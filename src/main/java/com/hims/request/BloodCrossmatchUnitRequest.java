@@ -7,6 +7,7 @@ import java.time.LocalDate;
 @Data
 public class BloodCrossmatchUnitRequest {
 
+    private Long allocationId;
     private Long inventoryId;
     private String unitNo;
     private String compatibilityResult;

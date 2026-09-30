@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.NotificationType;
 import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -123,6 +125,12 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
     @Autowired
     private  SMSUtility smsUtility;
+
+    @Autowired
+    private  WhatsAppNotificationService whatsAppNotificationService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
 
     private LabOrderTrackingStatus getOrderedStatus() {
@@ -581,28 +589,40 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                         throw new SDDException("type", 400, "Invalid investigation type");
                     }
                 }
-                try {
 
-                    Map<String, String> variables = new HashMap<>();
+                String formattedDate = savedHd != null
+                        ? savedHd.getOrderTime()
+                        .format(DateTimeFormatter.ofPattern(
+                                "dd MMM yyyy hh:mm a",
+                                Locale.ENGLISH
+                        ))
+                        .toUpperCase()
+                        : "";
 
-                    variables.put("var1", patient.getFullName());
-                    variables.put("var2", "Lab");
-                    String formattedDate =  savedHd!=null?savedHd.getOrderTime()
-                            .format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a", Locale.ENGLISH))
-                            .toUpperCase():"";
-                    log.info("Lab booking formatted date :",formattedDate);
-                    variables.put("var4",formattedDate);
+                String patientMobileNumber = patient.getPatientMobileNumber();
 
-                    smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.OTHER_APPOINTMENT, variables);
 
-                    log.info("Lab Booking confirmation SMS sent for patient : {}", patient.getFullName());
+                Map<String, String> variables = new HashMap<>();
 
-                } catch (Exception smsException) {
-                    // SMS failure should not affect successful admission
-                    log.error("Lab Booking successfully but SMS sending failed for patient: {}", patient.getFullName(), smsException
-                    );
-                    throw  smsException;
-                }
+                variables.put("var1", patient.getFullName());
+                variables.put("var2", "Lab");
+                variables.put("var4", formattedDate);
+
+
+                eventPublisher.publishEvent(
+                        new NotificationEvent(
+                                NotificationType.OTHER_APPOINTMENT_BOOKED,
+                                patientMobileNumber,
+                               variables
+                        )
+                );
+
+                log.info(
+                        "Lab booking notification event published for patient: {}",
+                        patient.getFullName()
+                );
+
+
             }
             res.setMsg("Success");
 

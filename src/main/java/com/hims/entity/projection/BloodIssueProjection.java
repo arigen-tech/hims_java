@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public interface BloodIssueProjection {
     Long getRequestHdId();
     Long getRequestDtId();
+    Long getAllocationId();
     String getRequestNo();
     String getInpatientNo();
     String getPatientName();
@@ -16,5 +17,4 @@ public interface BloodIssueProjection {
     LocalDateTime getRequiredBy();
     LocalDateTime getReservedOn();
     Long getInventoryId();
-
 }

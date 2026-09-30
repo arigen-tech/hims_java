@@ -322,9 +322,9 @@ public interface PaymentRefundRepository extends JpaRepository<PaymentRefund, Lo
             ELSE 'PENDING'
         END AS refundStatus,
 
-            mpg.payment_gateway_id AS paymentModeId,
-            mpg.gateway_code AS paymentModeCode,
-            mpg.gateway_name AS paymentModeName,
+            mpm.payment_mode_id AS paymentModeId,
+            mpm.mode_code AS paymentModeCode,
+            mpm.mode_name AS paymentModeName,
 
             d.department_name AS departmentName
 
@@ -351,8 +351,8 @@ public interface PaymentRefundRepository extends JpaRepository<PaymentRefund, Lo
         LEFT JOIN mas_department_type dt
             ON dt.department_type_id = d.department_type_id
 
-        LEFT JOIN mas_payment_gateway mpg
-            ON mpg.payment_gateway_id = pr.payment_gateway_id
+        LEFT JOIN mas_payment_mode mpm
+            ON mpm.payment_mode_id = pr.refund_mode_id
 
         LEFT JOIN mas_payment_status mps
             ON mps.payment_status_id = pr.refund_status_id

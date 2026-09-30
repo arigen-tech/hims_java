@@ -8,6 +8,7 @@ public interface BloodAllocatedProjection {
     Long getRequestDtId();
     String getRequestNo();
     Long getInpatientId();
+    Long getAllocationId();
     LocalDate getDob();
     String getGender();
     String getInpatientNo();
