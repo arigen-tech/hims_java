@@ -9,6 +9,7 @@ import com.hims.entity.repository.*;
 import com.hims.exception.RecordNotFoundException;
 import com.hims.exception.SDDException;
 import com.hims.exception.bloodBankException.DonorSaveException;
+import com.hims.helperUtil.HelperUtils;
 import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
@@ -567,6 +568,7 @@ public class BloodBankServiceImpl implements BloodBankService {
     }
 
     @Override
+    @Transactional
     public ApiResponse<String> saveComponentGeneration(SaveComponentGenerationRequest request) {
         log.info("Starting component generation save for donationId: {}", request.getDonationId());
 
@@ -580,10 +582,12 @@ public class BloodBankServiceImpl implements BloodBankService {
                 MasBloodComponent component = masBloodComponentRepository.findById(row.getComponentId())
                         .orElseThrow(() -> new RecordNotFoundException(AppConstants.COMPONENT_NOT_FOUND_ERR_MSG + row.getComponentId()));
 
+                String unitNo = transactionSequenceService.generateTransactionNumber(HelperUtils.getBloodUnitTransactionType(component.getComponentCode()), userContextService.getCurrentUserContext().getHospitalId());
+
                 BloodDonationDt dt = new BloodDonationDt();
                 dt.setDonationHdId(donationHdr);
                 dt.setComponentId(component);
-                dt.setUnitNo(row.getUnitNo().trim());
+                dt.setUnitNo(unitNo);
                 dt.setVolumeMl(row.getVolumeMl());
                 dt.setExpiryDate(row.getExpiryDate());
                 dt.setCreatedDate(LocalDateTime.now());
@@ -604,6 +608,7 @@ public class BloodBankServiceImpl implements BloodBankService {
 
         } catch (Exception e) {
             log.error("Error while saving component generation for donationId: {}", request.getDonationId(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
 
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     }, AppConstants.INTERNAL_SERVER_ERR_MSG,

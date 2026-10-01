@@ -9,11 +9,11 @@ import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.request.LabInvestigationReq;
 import com.hims.request.LabRadioInvestigationRequest;
+import com.hims.utils.HMISTransaction;
 import com.hims.utils.RandomNumGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -22,7 +22,10 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
@@ -327,6 +330,21 @@ public class HelperUtils {
         }
         log.warn("No price found for investigation ID: {}", investigation.getInvestigationId());
         return BigDecimal.ZERO;
+    }
+
+
+    public static HMISTransaction getBloodUnitTransactionType(String componentCode) {
+        if (componentCode == null) throw new IllegalArgumentException("Blood component code cannot be null");
+        return switch (componentCode.trim().toUpperCase()) {
+            case "WB" -> HMISTransaction.BLOOD_UNIT_WB_NO;
+            case "PRBC" -> HMISTransaction.BLOOD_UNIT_PRBC_NO;
+            case "PLT" -> HMISTransaction.BLOOD_UNIT_PLT_NO;
+            case "CRYO" -> HMISTransaction.BLOOD_UNIT_CRYO_NO;
+            case "FFP" -> HMISTransaction.BLOOD_UNIT_FFP_NO;
+            case "SDP" -> HMISTransaction.BLOOD_UNIT_SDP_NO;
+            default -> throw new IllegalArgumentException(
+                    "Invalid blood component code: " + componentCode);
+        };
     }
 
 
