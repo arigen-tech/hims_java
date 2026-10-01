@@ -7,6 +7,7 @@ import com.hims.request.ContextSwitchRequest;
 import com.hims.jwt.JwtRequest;
 import com.hims.jwt.JwtResponce;
 import com.hims.request.PasswordChangeReq;
+import com.hims.request.RefreshTokenRequest;
 import com.hims.request.ResetPasswordReq;
 import com.hims.request.UserCreationReq;
 import com.hims.request.UserDetailsReq;
@@ -18,6 +19,7 @@ import com.hims.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +62,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<JwtResponce>> login(@RequestBody JwtRequest request) {
         return new ResponseEntity<>(authService.login(request), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Refresh access and refresh tokens")
+    @PostMapping("/refreshToken")
+    public ResponseEntity<ApiResponse<?>> refreshToken(
+            @Valid @RequestBody RefreshTokenRequest request) {
+        return new ResponseEntity<>(authService.refreshToken(request), HttpStatus.OK);
     }
 
     @Operation(summary = "This API is used to switch active department for the logged-in user.")

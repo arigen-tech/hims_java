@@ -1244,16 +1244,25 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
 
     @Override
-    public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size) {
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, Long patientId, String patientName, String phoneNumber, int page, int size) {
         try {
-            User currentUser = userContextService.getCurrentUser();
-            MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
+            Long hospitalId = null;
+            try {
+                User currentUser = userContextService.getCurrentUser();
+                if (currentUser != null && currentUser.getHospital() != null
+                        && currentUser.getHospital().getId() != null) {
+                    hospitalId = masHospitalRepository.findById(currentUser.getHospital().getId())
+                            .map(MasHospital::getId)
+                            .orElse(null);
+                }
+            } catch (Exception e) {
+                log.warn("Unable to resolve current user for PACS study list; skipping hospital filter", e);
+            }
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdOn"));
-            Page<RadiologyProjection> paged = radOrderDtRepository.getRadiologyPACSStudyList(masHospital.getId(),AppConstants.STATUS_Y, modality, patientLike, phoneLike, pageable);
+            Page<RadiologyProjection> paged = radOrderDtRepository.getRadiologyPACSStudyList(hospitalId, AppConstants.STATUS_Y, modality, patientId, patientLike, phoneLike, pageable);
             Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
             return ResponseUtils.createSuccessResponse(
                     response, new TypeReference<Page<RadiologyRequisitionResponse>>() {}
@@ -1286,6 +1295,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         r.setStudyStatus(p.getStudyStatus());
         r.setStudyDate(p.getStudyDatetime() != null ? p.getStudyDatetime().toLocalDate() : null);
         r.setStudyTime(p.getStudyDatetime());
+        r.setHospitalId(p.getHospitalId());
         return r;
     }
 

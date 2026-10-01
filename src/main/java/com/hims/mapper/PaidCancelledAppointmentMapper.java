@@ -47,6 +47,8 @@ import com.hims.request.PaidCancelledAppointmentResponse;
 import com.hims.response.MobileCancelledRefundResponse;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneId;
+
 @Component
 public class PaidCancelledAppointmentMapper {
 
@@ -70,9 +72,12 @@ public class PaidCancelledAppointmentMapper {
         response.setDoctorName(projection.getDoctorName());
         response.setDepartmentId(projection.getDepartmentId());
         response.setDepartmentName(projection.getDepartmentName());
-        response.setAppointmentDate(projection.getAppointmentDate());
+        response.setAppointmentDate(projection.getAppointmentDate() == null ? null
+            : HelperUtils.convertLocalDateTimeToDDMMYYYYHHmmSS(projection.getAppointmentDate().atStartOfDay()));
         response.setAppointmentTime(projection.getAppointmentTime());
-        response.setCancellationDateTime(projection.getCancellationDateTime());
+        response.setCancellationDateTime(projection.getCancellationDateTime() == null ? null
+            : HelperUtils.convertLocalDateTimeToDDMMYYYYHHmmSS(
+                projection.getCancellationDateTime().atZone(ZoneId.of("Asia/Kolkata")).toLocalDateTime()));
         response.setCancelledBy(projection.getCancelledBy());
         response.setCancellationReason(projection.getCancellationReason());
         response.setBillingAmount(projection.getBillingAmount());

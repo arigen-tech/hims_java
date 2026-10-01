@@ -7,6 +7,7 @@ import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.projection.AppointmentHistoryProjection;
+import com.hims.projection.PatientVisitStatusCountProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
@@ -2012,6 +2013,23 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
+    }
+
+    @Override
+    public ApiResponse<PatientVisitStatusCountProjection> getPatientVisitStatusCounts(Long hospitalId, Long patientId) {
+        List<PatientVisitStatusCountProjection> results =
+                visitRepository.getPatientVisitStatusCounts(hospitalId, patientId);
+
+        if (results.isEmpty()) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "No visit status counts found for this patient",
+                    HttpStatus.NOT_FOUND.value()
+            );
+        }
+
+        return ResponseUtils.createSuccessResponse(results.get(0), new TypeReference<>() {});
     }
 
     private List<Long> resolveDepartmentIdsByTypeCodes(String deptTypeCode) {

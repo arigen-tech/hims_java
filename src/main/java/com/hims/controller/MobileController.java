@@ -6,11 +6,14 @@ import com.hims.entity.PatientLogin;
 import com.hims.entity.repository.PatientLoginRepository;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.jwt.JwtHelper;
+import com.hims.projection.PatientVisitStatusCountProjection;
 import com.hims.request.LoginRequest;
 import com.hims.request.OtpRequest;
+import com.hims.request.RefreshTokenRequest;
 import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
 import com.hims.service.BillingService;
+import com.hims.service.AuthService;
 import com.hims.service.MobileLoginService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,6 +49,8 @@ public class MobileController {
     private final MasEmployeeService masEmployeeService;
     
     private final BillingService billingService;
+
+    private final AuthService authService;
     
     private final PatientLoginRepository patientLoginRepository;
     private final PatientRepository patientRepository;
@@ -120,6 +125,11 @@ public class MobileController {
         }
     }
 
+    @PostMapping("/refreshToken")
+    public ApiResponse<?> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
+        return authService.refreshToken(request);
+    }
+
     private PatientIdResponse toPatientIdResponse(Patient patient) {
             PatientIdResponse patientResponse = new PatientIdResponse();
             patientResponse.setPatientId(patient.getId());
@@ -178,6 +188,13 @@ public class MobileController {
     ) {
         String resolvedPatientName = patientName != null ? patientName : name;
         return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, resolvedPatientName, deptTypeCode, includeAllHistory, payment, visitStatus);
+    }
+
+    @GetMapping("/getPatientVisitStatusCounts")
+    public ApiResponse<PatientVisitStatusCountProjection> getPatientVisitStatusCounts(
+            @RequestParam Long hospitalId,
+            @RequestParam Long patientId) {
+        return masEmployeeService.getPatientVisitStatusCounts(hospitalId, patientId);
     }
 
     @GetMapping("/getCancelledRefundAppointments")

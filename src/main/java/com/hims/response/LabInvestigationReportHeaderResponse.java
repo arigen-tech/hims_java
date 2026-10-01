@@ -1,33 +1,28 @@
 package com.hims.response;
 
+import java.time.LocalDate;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class LabInvestigationsReportResponse {
+public class LabInvestigationReportHeaderResponse {
 
     private Long resultEntryHeaderId;
-    private Long resultEntryDetailsId;
     private Long orderHdId;
-    private String investigationName;
+    private LocalDate resultDate;
+    private String resultNo;
+    private String remarks;
     private String patientName;
+    private Long patientId;
     private String phnNum;
     private String gender;
     private String age;
-    private String unit;
-    private String result;
-    private String range;
     private String resultEnteredBy;
     private String resultValidatedBy;
-    private LocalDate investigationDate;
-    private LocalDate orderDate;
-
-
 }

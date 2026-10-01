@@ -20,6 +20,7 @@ public interface RadiologyProjection {
     LocalDateTime getOrderTime();
     LocalDate getOrderDate();
     String getDepartment();
+    Long getHospitalId();
     String getReportStatus();
     String getStudyStatus();
     LocalDateTime getStudyDatetime();

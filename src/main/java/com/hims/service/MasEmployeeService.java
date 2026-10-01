@@ -1,6 +1,7 @@
 package com.hims.service;
 
 import com.hims.entity.MasEmployee;
+import com.hims.projection.PatientVisitStatusCountProjection;
 import com.hims.request.MasEmployeeRequest;
 import com.hims.response.*;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,4 +35,6 @@ public interface MasEmployeeService {
     ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistory(Long hospitalId, Long patientId, String mobileNo);
 
     ApiResponse<List<AppointmentBookingHistoryResponseDetails>> appointmentHistoryList(Long hospitalId, Long patientId, String mobileNo, String patientName, String deptTypeCode, Boolean includeAllHistory, String payment, String visitStatus);
+
+    ApiResponse<PatientVisitStatusCountProjection> getPatientVisitStatusCounts(Long hospitalId, Long patientId);
 }

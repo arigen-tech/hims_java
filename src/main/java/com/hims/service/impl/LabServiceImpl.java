@@ -1305,6 +1305,7 @@ public class LabServiceImpl implements LabService {
             String mobileNo,
             String patientName,
             Long patientId,
+            boolean ipd,
             LocalDate fromDate,
             LocalDate toDate,
             int page,
@@ -1324,7 +1325,18 @@ public class LabServiceImpl implements LabService {
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "resultEntryId.resultDate", "resultEntryId.resultTime"));
             Page<LabInvestigationsReportResponse> response =
-                    dgResultEntryDetailRepository.getLabInvestigationsReport(
+                    (ipd
+                            ? dgResultEntryDetailRepository.getIpdLabInvestigationsReport(
+                                    hospitalId,
+                                    mobileNo,
+                                    patientName,
+                                    patientId,
+                                    fromDate,
+                                    toDate,
+                                    AppConstants.STATUS_Y,
+                                    pageable
+                            )
+                            : dgResultEntryDetailRepository.getLabInvestigationsReport(
                             hospitalId,
                             mobileNo,
                             patientName,
@@ -1333,13 +1345,62 @@ public class LabServiceImpl implements LabService {
                             toDate,
                             AppConstants.STATUS_Y,
                             pageable
-                    );
+                    ));
 
             log.info("getAllInvestigationsReport method ended with mobileNo={}, patientName={}, fromDate={}, toDate={}", mobileNo, patientName, fromDate, toDate);
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
 
         } catch (Exception e) {
             log.error("Error occurred in getAllLabReports()", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Internal Server Error",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<Page<LabInvestigationReportHeaderResponse>> getInvestigationReportHeaders(
+            Long hospitalId,
+            String mobileNo,
+            String patientName,
+            Long patientId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            int page,
+            int size
+    ) {
+        try {
+            String mobileFilter = mobileNo == null || mobileNo.isBlank()
+                    ? null
+                    : "%" + mobileNo.trim() + "%";
+            String patientNameFilter = patientName == null || patientName.isBlank()
+                    ? null
+                    : "%" + patientName.trim().toLowerCase() + "%";
+
+            Pageable pageable = PageRequest.of(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.DESC, "resultDate", "resultTime")
+            );
+
+            Page<LabInvestigationReportHeaderResponse> response =
+                    dgResultEntryHeaderRepository.getInvestigationReportHeaders(
+                            hospitalId,
+                            mobileFilter,
+                            patientNameFilter,
+                            patientId,
+                            fromDate,
+                            toDate,
+                            AppConstants.STATUS_Y,
+                            pageable
+                    );
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error fetching lab investigation report headers", e);
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},

@@ -12,6 +12,8 @@ public interface PatientLoginRepository extends JpaRepository<PatientLogin, Long
 
     Optional<PatientLogin> findByPatientId(Long patientId);
 
+    boolean existsByMobileNoAndPatientId(String mobileNo, Long patientId);
+
    // PatientLogin findTopByMobileNoOrderByPatientLoginIdDesc(String mobileNo);
 
    // List<PatientLogin> findTopByMobileNoInOrderByPatientLoginIdDesc(String mobileNo);

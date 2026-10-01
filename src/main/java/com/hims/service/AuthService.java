@@ -7,6 +7,7 @@ import com.hims.jwt.JwtRequest;
 import com.hims.jwt.JwtResponce;
 import com.hims.request.ContextSwitchRequest;
 import com.hims.request.PasswordChangeReq;
+import com.hims.request.RefreshTokenRequest;
 import com.hims.request.ResetPasswordReq;
 import com.hims.request.UserCreationReq;
 import com.hims.request.UserDetailsReq;
@@ -25,6 +26,8 @@ public interface AuthService {
     ApiResponse<DefaultResponse> createFirstUser(UserCreationReq userCreationReq);
 
     ApiResponse<JwtResponce> login(JwtRequest request);
+
+    ApiResponse<?> refreshToken(RefreshTokenRequest request);
 
     ApiResponse<JwtResponce> switchContext(ContextSwitchRequest request, Principal principal);
 

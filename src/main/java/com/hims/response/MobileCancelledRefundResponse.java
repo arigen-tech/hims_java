@@ -20,9 +20,9 @@ public class MobileCancelledRefundResponse {
     private String doctorName;
     private Long departmentId;
     private String departmentName;
-    private LocalDate appointmentDate;
+    private String appointmentDate;
     private String appointmentTime;
-    private Instant cancellationDateTime;
+    private String cancellationDateTime;
     private String cancelledBy;
     private String cancellationReason;
     private Long billingAmount;

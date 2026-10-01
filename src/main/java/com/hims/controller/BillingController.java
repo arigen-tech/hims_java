@@ -102,6 +102,17 @@ public class BillingController {
     }
 
     /**
+     * Get Lab/Radiology billing details regardless of payment status
+     */
+    @GetMapping("/getLabRadiologyBillingDetailsAll/{billingHdId}")
+    public ApiResponse<List<PendingBillingResponse>> getLabRadiologyBillingDetailsAll(
+            @PathVariable Long billingHdId,
+            @RequestParam String serviceCategoryCode) {
+        log.info("Get all Lab/Radiology billing details API called for billingHdId={}", billingHdId);
+        return billingService.getLabRadiologyBillingDetailsAll(billingHdId, serviceCategoryCode);
+    }
+
+    /**
      * Search invoice details by patient name, phone or registration number
      */
     @GetMapping("/searchInvoiceDetails")

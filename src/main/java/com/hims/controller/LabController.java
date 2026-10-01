@@ -673,6 +673,8 @@ public class LabController {
      * - Hospital ID: Filters records for the specified hospital
      * - Patient Mobile Number: Optional partial search filter for patient mobile number
      * - Patient Name: Optional partial search filter for patient name (case-insensitive)
+        * - Patient ID: Optional filter for the selected OPD/IPD patient
+        * - IPD: Optional flag; when true, patient data is resolved through the result header's inpatient
      * - From Date: Optional start date filter for result entry date
      * - To Date: Optional end date filter for result entry date
      * - Result Validation Status: Fixed filter for validated results ('Y')
@@ -690,6 +692,8 @@ public class LabController {
      * @param hospitalId ID of the hospital (required)
      * @param patientMobileNumber Patient mobile number for search (optional, supports partial match)
      * @param patientName Patient name for search (optional, supports partial match, case-insensitive)
+        * @param patientId Patient ID for search (optional)
+        * @param ipd When true, fetches patient details through dg_result_entry_header.inpatient_id (default: false)
      * @param fromDate Start date for result entry search (optional, ISO date format)
      * @param toDate End date for result entry search (optional, ISO date format)
      * @param page Page number for pagination (optional, default: 0)
@@ -702,6 +706,7 @@ public class LabController {
             @RequestParam(required = false) String patientMobileNumber,
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) Long patientId,
+            @RequestParam(name = "IPD", defaultValue = "false") boolean ipd,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(defaultValue = "0") int page,
@@ -713,6 +718,7 @@ public class LabController {
                         patientMobileNumber,
                         patientName,
                         patientId,
+                        ipd,
                         fromDate,
                         toDate,
                         page,
@@ -720,6 +726,28 @@ public class LabController {
                 )
         );
     }
+
+        @GetMapping("/investigationsReport/headers")
+        public ResponseEntity<?> searchLabReportHeaders(
+                        @RequestParam Long hospitalId,
+                        @RequestParam(required = false) String patientMobileNumber,
+                        @RequestParam(required = false) String patientName,
+                        @RequestParam(required = false) Long patientId,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "5") int size) {
+                return ResponseEntity.ok(labService.getInvestigationReportHeaders(
+                                hospitalId,
+                                patientMobileNumber,
+                                patientName,
+                                patientId,
+                                fromDate,
+                                toDate,
+                                page,
+                                size
+                ));
+        }
 
     /**
      * Fetch Detailed Laboratory Turn Around Time (TAT) Report
