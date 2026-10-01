@@ -36,7 +36,7 @@ public interface RadiologyService {
     ApiResponse<String> saveDetailsReportForRadiology(RadiologyReportRequest request,String status);
     ApiResponse<RadiologyReportResponse> getDetailsReportForRadiology(Long radOrderDtId);
 
-    ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size);
+    ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, Long patientId, String patientName, String phoneNumber, int page, int size);
 
     ApiResponse<List<Map<String, Object>>> orderTrackingByInpatientIdOrAccesionNo(Long inpatientId, String accesionNo);
 

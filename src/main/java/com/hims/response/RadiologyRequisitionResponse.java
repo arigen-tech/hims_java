@@ -25,5 +25,6 @@ public class RadiologyRequisitionResponse {
     private String studyStatus;
     private LocalDate studyDate;
     private LocalDateTime studyTime;
+    private Long hospitalId;
 
 }

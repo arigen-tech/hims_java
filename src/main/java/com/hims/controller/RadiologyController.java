@@ -104,11 +104,12 @@ public class RadiologyController {
     @GetMapping("/getPACSStudyList")
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(
             @RequestParam(required = false) Long modality,
+            @RequestParam(required = false) Long patientId,
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) String phoneNumber,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
-        return radiologyService.getPACSStudyList(modality, patientName, phoneNumber, page, size);
+        return radiologyService.getPACSStudyList(modality, patientId, patientName, phoneNumber, page, size);
     }
 
     @GetMapping("/orderTrackingByInpatientIdOrAccesionNo")

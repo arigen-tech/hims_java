@@ -108,6 +108,7 @@ select
   sc.subName as modalityName,
   inv.investigationId as investigationId,
   inv.investigationName as investigationName,
+              hd.hospital.id as hospitalId,
   hd.orderTime as orderTime,
   hd.orderDate as orderDate,
   hd.department.departmentName as department
@@ -165,6 +166,7 @@ select
  hd.orderTime as orderTime,
  hd.orderDate as orderDate,
  hd.department.departmentName as department,
+ hd.hospital.id as hospitalId,
   pacs.studyDatetime as studyDatetime
 
 from RadOrderDt dt
@@ -175,9 +177,10 @@ join dt.investigation inv
 left join PacsHmisStudy pacs
        on pacs.orderNo = dt.orderAccessionNo
       and pacs.uhid = p.uhidNo
-where hd.hospital.id = :hospitalId
+where (:hospitalId is null or hd.hospital.id = :hospitalId)
   and lower(dt.studyStatus) = lower(:studyStatus)
   and (:modalityId is null or sc.subId = :modalityId)
+  and (:patientId is null or p.id = :patientId)
   and (
         :patientName is null
         or lower(
@@ -200,6 +203,7 @@ where hd.hospital.id = :hospitalId
             @Param("hospitalId") Long hospitalId,
             @Param("studyStatus") String studyStatus,
             @Param("modalityId") Long modalityId,
+            @Param("patientId") Long patientId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,
             Pageable pageable
