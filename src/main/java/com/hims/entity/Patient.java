@@ -48,6 +48,10 @@ public class Patient {
     @JoinColumn(name = "p_gender_id")
     private MasGender patientGender;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "blood_group_id")
+    private MasBloodGroup bloodGroup;
+
     @Size(max = 70)
     @Column(name = "p_email_id", length = 70)
     private String patientEmailId;
