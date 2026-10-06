@@ -61,6 +61,8 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     MasGenderRepository masGenderRepository;
     @Autowired
+    MasBloodGroupRepository masBloodGroupRepository;
+    @Autowired
     MasRelationRepository masRelationRepository;
     @Autowired
     MasMaritalStatusRepository masMaritalStatusRepository;
@@ -200,6 +202,42 @@ public class PatientServiceImpl implements PatientService {
     }
 
 
+
+    @Override
+    public ApiResponse<PatientRegFollowUpResp> registerFamilyMember(PatientFamilyMemberRegistrationRequest request) {
+        masRelationRepository.findById(request.getPatientRelationId())
+                .orElseThrow(() -> new EntityNotFoundException("patient relation not found"));
+
+        PatientRequest patientRequest = new PatientRequest();
+        patientRequest.setPatientFn(request.getPatientFn());
+        patientRequest.setPatientMn(request.getPatientMn());
+        patientRequest.setPatientLn(request.getPatientLn());
+        patientRequest.setPatientDob(request.getPatientDob());
+        patientRequest.setPatientAge(request.getPatientAge());
+        patientRequest.setPatientGenderId(request.getPatientGenderId());
+        patientRequest.setBloodGroupId(request.getBloodGroupId());
+        patientRequest.setPatientEmailId(request.getPatientEmailId());
+        patientRequest.setPatientMobileNumber(request.getPatientMobileNumber());
+        patientRequest.setPatientRelationId(request.getPatientRelationId());
+        patientRequest.setPatientMaritalStatusId(request.getPatientMaritalStatusId());
+        patientRequest.setEmerFn(request.getEmerFn());
+        patientRequest.setEmerLn(request.getEmerLn());
+        patientRequest.setEmerMobile(request.getEmerMobile());
+        patientRequest.setPatientAddress1(request.getPatientAddress1());
+        patientRequest.setPatientAddress2(request.getPatientAddress2());
+        patientRequest.setPatientCountryId(request.getPatientCountryId());
+        patientRequest.setPatientStateId(request.getPatientStateId());
+        patientRequest.setPatientDistrictId(request.getPatientDistrictId());
+        patientRequest.setPatientPincode(request.getPatientPincode());
+        patientRequest.setPatientCity(request.getPatientCity());
+
+        Patient patient = savePatientForPatientPortal(patientRequest);
+        patientLoginService.savePatientLogin(patient);
+
+        PatientRegFollowUpResp response = new PatientRegFollowUpResp();
+        response.setPatient(PatientMapper.mapToDTO(patient));
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    }
 
     public OPDBillingPatientResponse buildFinalResponse(Patient patient, List<Visit> savedVisits) {
         OPDBillingPatientResponse response = new OPDBillingPatientResponse();
@@ -503,6 +541,11 @@ public class PatientServiceImpl implements PatientService {
                 .flatMap(masGenderRepository::findById)
                 .ifPresent(patient::setPatientGender);
 
+        if (request.getBloodGroupId() != null) {
+            patient.setBloodGroup(masBloodGroupRepository.findById(request.getBloodGroupId())
+                    .orElseThrow(() -> new EntityNotFoundException("blood group not found")));
+        }
+
         Optional.ofNullable(request.getPatientRelationId())
                 .flatMap(masRelationRepository::findById)
                 .ifPresent(patient::setPatientRelation);
@@ -684,9 +727,27 @@ public class PatientServiceImpl implements PatientService {
 
     public Patient savePatient(PatientRequest request, boolean followUp) {
         UserContext userContext = userContextService.getCurrentUserContext();
-        if (userContext == null){
-            log.info("current users not found");
+        if (userContext == null) {
+            throw new IllegalStateException("Current user context not found");
         }
+        MasHospital hospital = masHospitalRepository.findById(userContext.getHospitalId())
+                .orElseThrow(() -> new EntityNotFoundException("hospital not found"));
+        return savePatient(request, followUp, userContext.getUserFullName(), hospital);
+    }
+
+    private Patient savePatientForPatientPortal(PatientRequest request) {
+        String userFullName = userContextService.getCurrentUserFullNameFromToken();
+        if (userFullName == null || userFullName.isBlank()) {
+            throw new IllegalStateException("Current patient name not found in token");
+        }
+        return savePatient(request, false, userFullName, null);
+    }
+
+    private Patient savePatient(
+            PatientRequest request,
+            boolean followUp,
+            String createdBy,
+            MasHospital hospital) {
 
         Patient patient = new Patient();
 
@@ -719,14 +780,19 @@ public class PatientServiceImpl implements PatientService {
         patient.setRegDate(request.getRegDate());
         patient.setCreatedOn(Instant.now());
         patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(userContext.getUserFullName());
-        patient.setPatientHospital(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new EntityNotFoundException("hospital not found")));
+        patient.setLastChgBy(createdBy);
+        patient.setPatientHospital(hospital);
         patient.setPatientAbhaId(request.getPatientAbhaId());
 
 
         Optional.ofNullable(request.getPatientGenderId())
                 .flatMap(masGenderRepository::findById)
                 .ifPresent(patient::setPatientGender);
+
+        if (request.getBloodGroupId() != null) {
+            patient.setBloodGroup(masBloodGroupRepository.findById(request.getBloodGroupId())
+                    .orElseThrow(() -> new EntityNotFoundException("blood group not found")));
+        }
 
         Optional.ofNullable(request.getPatientRelationId())
                 .flatMap(masRelationRepository::findById)

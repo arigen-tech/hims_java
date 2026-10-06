@@ -15,6 +15,8 @@ import java.util.List;
 public interface PatientService {
     ApiResponse<PatientRegFollowUpResp> registerPatientWithOpd(PatientRequest patient, OpdPatientDetailRequest opdPatientDetail, List<VisitRequest> visit);
 
+    ApiResponse<PatientRegFollowUpResp> registerFamilyMember(PatientFamilyMemberRegistrationRequest request);
+
     ApiResponse<PatientRegFollowUpResp> updatePatient(PatientFollowUpReq request);
     ApiResponse<String> uploadImage(MultipartFile file);
 
