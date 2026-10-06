@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Lab_investigation_report" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="64a7418b-a86b-43e1-af1d-d034e8220358">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
@@ -68,7 +68,7 @@
 		</box>
 	</style>
 	<subDataset name="units" uuid="d14b49e4-1dbb-4b3c-887c-64246afa458e">
-		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hmis_db"/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 		<parameter name="sub_chargecode_id" class="java.lang.Long"/>
 		<parameter name="investigation_id" class="java.lang.Long"/>
@@ -112,6 +112,7 @@ history_rows AS (
         dsch.collection_time::time AS collection_time,
         dsch.collection_time AS collection_ts,
         dred.result,
+        dred.result_flag_id,
         du.uom_name AS unit
     FROM selected_order so
     JOIN dg_result_entry_header dreh
@@ -153,6 +154,7 @@ SELECT
     collection_time,
     collection_ts,
     result,
+    result_flag_id,
     unit
 FROM ranked_history
 WHERE history_rank <= 5
@@ -160,13 +162,43 @@ ORDER BY
     collection_ts DESC,
     sub_investigation_name]]>
 		</queryString>
-		<field name="sub_investigation_name" class="java.lang.String"/>
-		<field name="method_name" class="java.lang.String"/>
-		<field name="collection_date" class="java.sql.Date"/>
-		<field name="collection_time" class="java.sql.Time"/>
-		<field name="collection_ts" class="java.sql.Timestamp"/>
-		<field name="result" class="java.lang.String"/>
-		<field name="unit" class="java.lang.String"/>
+		<field name="sub_investigation_name" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="sub_investigation_name"/>
+			<property name="com.jaspersoft.studio.field.label" value="sub_investigation_name"/>
+		</field>
+		<field name="method_name" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="method_name"/>
+			<property name="com.jaspersoft.studio.field.label" value="method_name"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="mas_investigation_methodology"/>
+		</field>
+		<field name="collection_date" class="java.sql.Date">
+			<property name="com.jaspersoft.studio.field.name" value="collection_date"/>
+			<property name="com.jaspersoft.studio.field.label" value="collection_date"/>
+		</field>
+		<field name="collection_time" class="java.sql.Time">
+			<property name="com.jaspersoft.studio.field.name" value="collection_time"/>
+			<property name="com.jaspersoft.studio.field.label" value="collection_time"/>
+		</field>
+		<field name="collection_ts" class="java.sql.Timestamp">
+			<property name="com.jaspersoft.studio.field.name" value="collection_ts"/>
+			<property name="com.jaspersoft.studio.field.label" value="collection_ts"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="dg_sample_collection_header"/>
+		</field>
+		<field name="result" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="result"/>
+			<property name="com.jaspersoft.studio.field.label" value="result"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="dg_result_entry_detail"/>
+		</field>
+		<field name="result_flag_id" class="java.lang.Long">
+			<property name="com.jaspersoft.studio.field.name" value="result_flag_id"/>
+			<property name="com.jaspersoft.studio.field.label" value="result_flag_id"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="dg_result_entry_detail"/>
+		</field>
+		<field name="unit" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="unit"/>
+			<property name="com.jaspersoft.studio.field.label" value="unit"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="dg_uom"/>
+		</field>
 	</subDataset>
 	<subDataset name="unit_bioref" uuid="85d61754-5d16-4223-ad8b-175ac5ca8372">
 		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
@@ -640,13 +672,18 @@ ORDER BY
 						</crosstabTotalColumnHeader>
 					</columnGroup>
 					<measure name="result_MEASURE" class="java.lang.String">
-						<measureExpression><![CDATA[$F{result}]]></measureExpression>
+						<measureExpression><![CDATA[$F{result_flag_id} != null &&
+($F{result_flag_id}.intValue() == 2 ||
+ $F{result_flag_id}.intValue() == 3 ||
+ $F{result_flag_id}.intValue() == 4)
+? "<span style='color:red;'>" + $F{result} + "</span>"
+: $F{result}]]></measureExpression>
 					</measure>
 					<crosstabCell width="60" height="30">
 						<cellContents mode="Opaque" style="Crosstab_CD">
-							<textField>
+							<textField textAdjust="StretchHeight" isBlankWhenNull="true">
 								<reportElement x="0" y="0" width="60" height="30" uuid="a0e1aac9-9e2a-4f5b-a7b1-99c09783faa1"/>
-								<textElement>
+								<textElement markup="html">
 									<font size="10"/>
 								</textElement>
 								<textFieldExpression><![CDATA[$V{result_MEASURE}]]></textFieldExpression>
