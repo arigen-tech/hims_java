@@ -2084,8 +2084,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                             userContext,
                             appointmentDate,
                             now,
-                            orderedStatus,
-                            item.getRemarks()
+                            orderedStatus
+//                            ,item.getRemarks()
                     );
                     labDtRepository.save(orderDt);
                     saveInvestigationBillingDetails(inpatient, billingCategory, master);
@@ -2107,8 +2107,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                             savedHd,
                             master,
                             userContext,
-                            appointmentDate,
-                            item.getRemarks()
+                            appointmentDate
+//                            ,item.getRemarks()
                     );
                     radOrderDtRepository.save(orderDt);
                     saveInvestigationBillingDetails(inpatient, billingCategory, master);
@@ -3407,7 +3407,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         return hd;
     }
 
-    private DgOrderDt buildLabOrderDetail(DgOrderHd orderHd, DgMasInvestigation investigation, UserContext userContext, LocalDate appointmentDate, LocalTime now, LabOrderTrackingStatus orderedStatus, String remarks) {
+    private DgOrderDt buildLabOrderDetail(DgOrderHd orderHd, DgMasInvestigation investigation, UserContext userContext, LocalDate appointmentDate, LocalTime now, LabOrderTrackingStatus orderedStatus
+//            , String remarks
+    ) {
         DgOrderDt dt = new DgOrderDt();
         dt.setOrderHd(orderHd);
         dt.setInvestigation(investigation);
@@ -3424,7 +3426,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         dt.setCreatedOn(HMISUtil.getCurrentLocalDateTime());
         dt.setMsgSent(AppConstants.STATUS_N.toLowerCase());
         dt.setOrderTrackingStatus(orderedStatus);
-        dt.setRemarks(remarks);
+//        dt.setRemarks(remarks);
         return dt;
     }
 
@@ -3446,7 +3448,9 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         return hd;
     }
 
-    private RadOrderDt buildRadiologyOrderDetail(RadOrderHd orderHd, DgMasInvestigation investigation, UserContext userContext, LocalDate appointmentDate, String remarks) {
+    private RadOrderDt buildRadiologyOrderDetail(RadOrderHd orderHd, DgMasInvestigation investigation, UserContext userContext, LocalDate appointmentDate
+//            , String remarks
+    ) {
         RadOrderDt dt = new RadOrderDt();
         dt.setRadOrderhd(orderHd);
         dt.setInvestigation(investigation);
@@ -3461,7 +3465,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         dt.setOrderStatus(AppConstants.STATUS_Y.toLowerCase());
         dt.setCreatedby(userContext.getUserFullName());
         dt.setLastChgBy(userContext.getUserFullName());
-        dt.setRemarks(remarks);
+//        dt.setRemarks(remarks);
         return dt;
     }
 
