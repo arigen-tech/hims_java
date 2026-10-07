@@ -183,8 +183,14 @@ LEFT JOIN blood_tracking_status_master allocatedStatus
 
 LEFT JOIN blood_tracking_status_master crossmatchFailedStatus
     ON crossmatchFailedStatus.status_id=:crossmatchFailedStatusId
+    
+ WHERE
+    (
+        :inpatientId IS NULL
+        OR brh.inpatient_id=:inpatientId 
+    )   
 
-WHERE
+AND
     (
         :inpatientNo IS NULL
         OR :inpatientNo=''
@@ -221,7 +227,12 @@ LEFT JOIN inpatient i
 LEFT JOIN patient p
     ON p.patient_id=brh.patient_id
 
-WHERE
+ WHERE
+    (
+        :inpatientId IS NULL
+        OR brh.inpatient_id=:inpatientId 
+    )   
+AND
     (
         :inpatientNo IS NULL
         OR :inpatientNo=''
@@ -245,6 +256,7 @@ AND (
 """,
             nativeQuery = true)
     Page<BloodTrackingProjection> getBloodRequestTrackingList(
+            @Param("inpatientId")Long inpatientId,
             @Param("inpatientNo") String inpatientNo,
             @Param("patientName") String patientName,
             @Param("requestNo") String requestNo,
