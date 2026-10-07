@@ -28,6 +28,6 @@ public class LabInvestigationsReportResponse {
     private String resultValidatedBy;
     private LocalDate investigationDate;
     private LocalDate orderDate;
-
+    private Long resultFlagId;
 
 }

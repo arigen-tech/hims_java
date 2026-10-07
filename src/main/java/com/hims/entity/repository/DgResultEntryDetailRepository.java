@@ -192,7 +192,8 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
         COALESCE(u.lastName, '')
     ),
     h.resultDate,
-    oh.orderDate
+    oh.orderDate,
+    d.resultFlag.resultFlagId
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h
@@ -252,7 +253,8 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
         COALESCE(u.lastName, '')
     ),
     h.resultDate,
-    oh.orderDate
+    oh.orderDate,
+    d.resultFlag.resultFlagId
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h
