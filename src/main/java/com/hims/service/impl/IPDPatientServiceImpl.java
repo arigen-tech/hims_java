@@ -4322,8 +4322,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         response.setBedId(p.getBedId());
         response.setBed(p.getBed());
 
-        response.setAdmissionDateTime(p.getAdmissionDateTime());
-        response.setDischargeDate(p.getDischargeDate());
+        response.setAdmissionDateTime(DateTimeUtil.formatDateTime(p.getAdmissionDateTime()));
+        response.setDischargeDate(DateTimeUtil.formatDateTime(p.getDischargeDate()));
 
         response.setCategoryId(p.getCategoryId());
         response.setCategoryName(p.getCategoryName());

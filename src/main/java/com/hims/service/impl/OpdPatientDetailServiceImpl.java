@@ -16,6 +16,7 @@ import com.hims.response.*;
 import com.hims.service.*;
 import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.DateTimeUtil;
 import com.hims.utils.HMISTransaction;
 import com.hims.utils.ResponseUtils;
 import com.hims.utils.StockFound;
@@ -2799,7 +2800,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             response.setSpecialty(projection.getSpecialty());
             response.setDoctorName(projection.getDoctorName());
             response.setNisNo(projection.getNisNo());
-            response.setVisitDateTime(projection.getVisitDateTime());
+            response.setVisitDateTime(DateTimeUtil.formatDateTime(projection.getVisitDateTime()));
             response.setPrescriptionHdId(projection.getPrescriptionHdId());
             response.setPrescriptionStatus(projection.getPrescriptionStatus());
 
@@ -2813,4 +2814,3 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
 
 }
-

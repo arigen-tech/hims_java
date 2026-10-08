@@ -1287,14 +1287,16 @@ public class RadiologyServiceImpl implements RadiologyService {
         r.setModality(p.getModalityName());
         r.setModalityId(p.getModalityId());
         r.setInvestigationName(p.getInvestigationName());
-        r.setOrderDate(p.getOrderDate());
-        r.setOrderTime(p.getOrderTime());
+        r.setOrderDate(DateTimeUtil.formatDate(p.getOrderDate()));
+        r.setOrderTime(DateTimeUtil.formatDateTime(p.getOrderTime()));
         r.setDepartment(p.getDepartment());
         r.setRadOrderDtId(p.getRadOrderdtId());
         r.setReportStatus(p.getReportStatus());
         r.setStudyStatus(p.getStudyStatus());
-        r.setStudyDate(p.getStudyDatetime() != null ? p.getStudyDatetime().toLocalDate() : null);
-        r.setStudyTime(p.getStudyDatetime());
+        r.setStudyDate(p.getStudyDatetime() != null
+                ? DateTimeUtil.formatDate(p.getStudyDatetime().toLocalDate())
+                : null);
+        r.setStudyTime(DateTimeUtil.formatDateTime(p.getStudyDatetime()));
         r.setHospitalId(p.getHospitalId());
         return r;
     }
@@ -1313,8 +1315,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         MasSubChargeCode sc = dt.getSubChargecode();
         dto.setModality(sc.getSubName());
         dto.setInvestigationName(dt.getInvestigation() != null ? dt.getInvestigation().getInvestigationName() : null);
-        dto.setOrderDate(hd.getOrderDate());
-        dto.setOrderTime(hd.getOrderTime());
+        dto.setOrderDate(DateTimeUtil.formatDate(hd.getOrderDate()));
+        dto.setOrderTime(DateTimeUtil.formatDateTime(hd.getOrderTime()));
         dto.setDepartment(hd.getDepartment() != null ? hd.getDepartment().getDepartmentName() : null);
 
         return dto;

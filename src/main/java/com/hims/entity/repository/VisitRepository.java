@@ -1485,7 +1485,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             COALESCE(u.middleName, ''), ' ',
             COALESCE(u.lastName, '')
         )) AS doctorName,
-        CAST(v.visitDate AS string) AS visitDateTime
+        v.visitDate AS visitDateTime
     FROM Visit v
     JOIN v.patient p
     LEFT JOIN v.iniDoctor u
@@ -1550,4 +1550,3 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
 
 
     }
-
