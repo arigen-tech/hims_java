@@ -1244,14 +1244,15 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
 
     @Override
-    public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, Long patientId, String patientName, String phoneNumber, int page, int size) {
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, Long patientId, String patientName, String phoneNumber, String status, int page, int size) {
         try {
             Long hospitalId = getCurrentHospitalIdForPacs();
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdOn"));
-            Page<RadiologyProjection> paged = radOrderDtRepository.getRadiologyPACSStudyList(hospitalId, AppConstants.STATUS_Y, modality, patientId, patientLike, phoneLike, pageable);
+            String reportStatus = status == null ? null : status.toLowerCase();
+            Page<RadiologyProjection> paged = radOrderDtRepository.getRadiologyPACSStudyList(hospitalId, AppConstants.STATUS_Y, reportStatus, modality, patientId, patientLike, phoneLike, pageable);
             Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
             return ResponseUtils.createSuccessResponse(
                     response, new TypeReference<Page<RadiologyRequisitionResponse>>() {}

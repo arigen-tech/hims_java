@@ -182,6 +182,7 @@ where (:hospitalId is null or hd.hospital.id = :hospitalId)
   and lower(dt.studyStatus) = lower(:studyStatus)
   and (:modalityId is null or sc.subId = :modalityId)
   and (:patientId is null or p.id = :patientId)
+  and (:reportStatus is null or lower(dt.reportStatus) = :reportStatus)
   and (
         :patientName is null
         or lower(
@@ -203,6 +204,7 @@ where (:hospitalId is null or hd.hospital.id = :hospitalId)
     Page<RadiologyProjection> getRadiologyPACSStudyList(
             @Param("hospitalId") Long hospitalId,
             @Param("studyStatus") String studyStatus,
+            @Param("reportStatus") String reportStatus,
             @Param("modalityId") Long modalityId,
             @Param("patientId") Long patientId,
             @Param("patientName") String patientName,
