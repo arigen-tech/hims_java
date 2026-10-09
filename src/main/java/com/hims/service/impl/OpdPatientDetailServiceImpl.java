@@ -16,6 +16,7 @@ import com.hims.response.*;
 import com.hims.service.*;
 import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.DateTimeUtil;
 import com.hims.utils.HMISTransaction;
 import com.hims.utils.ResponseUtils;
 import com.hims.utils.StockFound;
@@ -2778,11 +2779,15 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     @Override
-    public ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(Pageable pageable, String mobileNumber, String patientName, Long hospitalId, Long patientId) {
+    public ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(
+            Pageable pageable, String mobileNumber, String patientName, Long hospitalId, Long patientId, Long departmentId) {
 
-        log.info("Fetching OPD reports for visitId: {}, page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        log.info("Fetching OPD reports. patientId: {}, departmentId: {}, page: {}, size: {}",
+                patientId, departmentId, pageable.getPageNumber(), pageable.getPageSize());
 
-        Page<OpdReportListProjection> projections = visitRepository.getOpdReportsList(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE, mobileNumber, patientName, patientId, pageable);
+        Page<OpdReportListProjection> projections = visitRepository.getOpdReportsList(
+                AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE,
+                mobileNumber, patientName, patientId, hospitalId, departmentId, pageable);
 
         Page<OpdReportListResponse> responses = projections.map(projection -> {
 
@@ -2799,7 +2804,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             response.setSpecialty(projection.getSpecialty());
             response.setDoctorName(projection.getDoctorName());
             response.setNisNo(projection.getNisNo());
-            response.setVisitDateTime(projection.getVisitDateTime());
+            response.setVisitDateTime(DateTimeUtil.formatDateTime(projection.getVisitDateTime()));
             response.setPrescriptionHdId(projection.getPrescriptionHdId());
             response.setPrescriptionStatus(projection.getPrescriptionStatus());
 
@@ -2810,7 +2815,18 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         });
     }
 
+    @Override
+    public ApiResponse<List<OpdReportDepartmentResponse>> getOpdReportDepartmentList(Long patientId, Long hospitalId) {
+        List<OpdReportDepartmentResponse> departments = visitRepository.getOpdReportDepartments(
+                        AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE, patientId, hospitalId)
+                .stream()
+                .map(projection -> new OpdReportDepartmentResponse(
+                        projection.getDepartmentId(), projection.getDepartmentName()))
+                .toList();
+
+        return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {
+        });
+    }
 
 
 }
-

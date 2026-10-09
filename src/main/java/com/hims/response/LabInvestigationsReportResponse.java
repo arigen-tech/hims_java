@@ -1,5 +1,6 @@
 package com.hims.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,8 +27,10 @@ public class LabInvestigationsReportResponse {
     private String range;
     private String resultEnteredBy;
     private String resultValidatedBy;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate investigationDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate orderDate;
-
+    private Long resultFlagId;
 
 }
