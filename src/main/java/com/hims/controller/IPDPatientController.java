@@ -624,7 +624,7 @@ public class IPDPatientController {
         return response;
     }
 
-    @GetMapping("/getPerviousDietOrderHistory")
+    @GetMapping("/getPreviousDietOrderHistory")
     public ResponseEntity<ApiResponse<List<PreviousDietHistoryResponse>>> getPreviousDietHistory(@RequestParam Long inpatientId) {
         log.info("Request received to fetch previous diet history. inpatientId={}", inpatientId);
         ApiResponse<List<PreviousDietHistoryResponse>> response = ipdPatientService.getPreviousDietHistory(inpatientId);

@@ -13,21 +13,27 @@ import java.util.Optional;
 @Repository
 public interface IpDietOrderRepository extends JpaRepository<IpDietOrder,Long> {
     @Query("""
-    SELECT new com.hims.response.PreviousDietHistoryResponse(
-        ido.inpatient.inpatientId,
-        ido.dietOrderId,
-        ido.dietType.dietTypeId,
-        ido.dietType.dietTypeName,
-        ido.fromDate,
-        ido.toDate,
-        ido.specialInstruction,
-        ido.orderedBy.userName,
-        ido.status
-    )
-    FROM IpDietOrder ido
-    WHERE ido.inpatient.inpatientId = :inpatientId
-    ORDER BY ido.dietOrderId ASC
-    """)
+SELECT new com.hims.response.PreviousDietHistoryResponse(
+    ido.inpatient.inpatientId,
+    ido.dietOrderId,
+    ido.dietType.dietTypeId,
+    ido.dietType.dietTypeName,
+    ido.fromDate,
+    ido.toDate,
+    ido.specialInstruction,
+    TRIM(CONCAT(
+        CONCAT(
+            CONCAT(COALESCE(ido.orderedBy.firstName, ''), ' '),
+            CONCAT(COALESCE(ido.orderedBy.middleName, ''), ' ')
+        ),
+        COALESCE(ido.orderedBy.lastName, '')
+    )),
+    ido.status
+)
+FROM IpDietOrder ido
+WHERE ido.inpatient.inpatientId = :inpatientId
+ORDER BY ido.dietOrderId ASC
+""")
     List<PreviousDietHistoryResponse> getPreviousDietHistory(
             @Param("inpatientId") Long inpatientId
     );

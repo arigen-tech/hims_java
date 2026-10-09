@@ -4133,8 +4133,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
             ipDietOrder.setLastUpdateDate(LocalDateTime.now());
             ipDietOrder.setLastUpdatedBy(userContext.getUserFullName());
             ipDietOrder.setStatus(AppConstants.IP_ACTIVE_DIET);
-            ipDietOrder.setRemark(request.getRemark());
-            ipDietOrderRepository.save(ipDietOrder);
+                ipDietOrderRepository.save(ipDietOrder);
 
             return ResponseUtils.createSuccessResponse("Diet order saved successfully", new TypeReference<>() {});
 
@@ -4396,8 +4395,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
 
                 // Find Batch Stock
 
-                StoreItemBatchStock stock = storeItemBatchStockRepository.findByItemIdAndBatchNoForUpdate(request.getItemId(), request.getBatchNo(),departmentId)
-                                .orElseThrow(() -> new RuntimeException("Batch not found for itemId=" + request.getItemId() + ", batchNo=" + request.getBatchNo()));
+                StoreItemBatchStock stock = storeItemBatchStockRepository.findById(request.getBatchStockId())
+                                .orElseThrow(() -> new RuntimeException("Batch not found for stock id: " + request.getBatchStockId()));
 
                 BigDecimal currentQty = stock.getClosingStock() != null ? BigDecimal.valueOf(stock.getClosingStock()) : BigDecimal.ZERO;
 
@@ -4415,7 +4414,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 stock.setIpdIssueQty(updatedIpdIssueQty);
                 storeItemBatchStockRepository.save(stock);
 
-                log.info("Stock updated for batchNo={}, before={}, after={}", request.getBatchNo(), currentQty, updatedQty);
+                log.info("Stock updated for batchNo={}, before={}, after={}", stock.getBatchNo(), currentQty, updatedQty);
 
                 // Store IpMedicineIssue
 
@@ -4424,8 +4423,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 ipMedicineIssue.setInpatient(inpatient);
                 ipMedicineIssue.setItem(stock.getItemId());
                 ipMedicineIssue.setBatch(stock);
-                ipMedicineIssue.setBatchNo(request.getBatchNo());
-                ipMedicineIssue.setExpiryDate(request.getExpiryDate());
+                ipMedicineIssue.setBatchNo(stock.getBatchNo());
+                ipMedicineIssue.setExpiryDate(stock.getExpiryDate());
                 ipMedicineIssue.setIssueQty(request.getRequestQty());
                 ipMedicineIssue.setIssueDatetime(LocalDateTime.now());
                 ipMedicineIssue.setIssuedBy(userContext.getUserId());
@@ -4433,7 +4432,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 ipMedicineIssue.setCreatedOn(LocalDateTime.now());
                 ipMedicineIssue.setLastChgBy(userContext.getUserId());
                 ipMedicineIssue.setLastChgOn(LocalDateTime.now());
-                ipMedicineIssue.setRemarks(request.getRemark());
 
                 ipMedicineIssueRepository.save(ipMedicineIssue);
 
@@ -4445,10 +4443,10 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 ipConsumableTxn.setItemName(stock.getItemId().getNomenclature());
                 ipConsumableTxn.setQuantity(request.getRequestQty());
                 ipConsumableTxn.setUom(stock.getItemId().getUnitAU().getUnitName());
-                ipConsumableTxn.setBatchNo(request.getBatchNo());
-                ipConsumableTxn.setExpiryDate(request.getExpiryDate());
-                ipConsumableTxn.setUsageDatetime(request.getDateTime());
-                ipConsumableTxn.setUsedBy(request.getGivenBy());
+                ipConsumableTxn.setBatchNo(stock.getBatchNo());
+                ipConsumableTxn.setExpiryDate(stock.getExpiryDate());
+                ipConsumableTxn.setUsageDatetime(HMISUtil.getCurrentLocalDateTime());
+                ipConsumableTxn.setUsedBy(userContext.getUserFullName());
                 if (request.getProcedureId() != null) {
                     IpProcedureTxn procedureTxn = ipProcedureTxnRepository.findById(request.getProcedureId()).orElseThrow(() ->
                                     new RuntimeException("Procedure transaction not found: " +request.getProcedureId()));
@@ -4456,7 +4454,6 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 } else {
                     ipConsumableTxn.setProcedureTxnId(null);
                 }
-                ipConsumableTxn.setRemarks(request.getRemark());
                 ipConsumableTxn.setCreatedBy(userContext.getUserFullName());
                 ipConsumableTxn.setCreatedAt(LocalDateTime.now());
 

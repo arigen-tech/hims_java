@@ -11,5 +11,4 @@ public class DietOrderRequest {
     private String specialInstruction;
     private LocalDate effectiveFrom;
     private Long orderedBy;
-    private String remark;
 }
