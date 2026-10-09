@@ -2779,11 +2779,15 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
     }
 
     @Override
-    public ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(Pageable pageable, String mobileNumber, String patientName, Long hospitalId, Long patientId) {
+    public ApiResponse<Page<OpdReportListResponse>> getOpdReportsList(
+            Pageable pageable, String mobileNumber, String patientName, Long hospitalId, Long patientId, Long departmentId) {
 
-        log.info("Fetching OPD reports for visitId: {}, page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        log.info("Fetching OPD reports. patientId: {}, departmentId: {}, page: {}, size: {}",
+                patientId, departmentId, pageable.getPageNumber(), pageable.getPageSize());
 
-        Page<OpdReportListProjection> projections = visitRepository.getOpdReportsList(AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE, mobileNumber, patientName, patientId, pageable);
+        Page<OpdReportListProjection> projections = visitRepository.getOpdReportsList(
+                AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE,
+                mobileNumber, patientName, patientId, hospitalId, departmentId, pageable);
 
         Page<OpdReportListResponse> responses = projections.map(projection -> {
 
@@ -2811,6 +2815,18 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         });
     }
 
+    @Override
+    public ApiResponse<List<OpdReportDepartmentResponse>> getOpdReportDepartmentList(Long patientId, Long hospitalId) {
+        List<OpdReportDepartmentResponse> departments = visitRepository.getOpdReportDepartments(
+                        AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE, patientId, hospitalId)
+                .stream()
+                .map(projection -> new OpdReportDepartmentResponse(
+                        projection.getDepartmentId(), projection.getDepartmentName()))
+                .toList();
+
+        return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {
+        });
+    }
 
 
 }

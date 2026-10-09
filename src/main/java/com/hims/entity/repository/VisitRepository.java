@@ -1516,6 +1516,14 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
                     :patientId IS NULL
                     OR p.id = :patientId
                 )
+      AND (
+          :hospitalId IS NULL
+          OR v.hospital.id = :hospitalId
+      )
+      AND (
+          :departmentId IS NULL
+          OR d.id = :departmentId
+      )
     ORDER BY v.visitDate DESC
     """)
     Page<OpdReportListProjection> getOpdReportsList(
@@ -1524,7 +1532,31 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("mobileNo") String mobileNo,
             @Param("patientName") String patientName,
             @Param("patientId") Long patientId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
             Pageable pageable
+    );
+
+    @Query("""
+        SELECT DISTINCT d.id AS departmentId, d.departmentName AS departmentName
+        FROM Visit v
+        JOIN v.patient p
+        JOIN v.department d
+        JOIN d.departmentType dt
+        WHERE v.visitStatus = :visitStatus
+          AND dt.departmentTypeCode = :departmentTypeCode
+          AND p.id = :patientId
+          AND (
+              :hospitalId IS NULL
+              OR v.hospital.id = :hospitalId
+          )
+        ORDER BY d.departmentName
+    """)
+    List<OpdReportDepartmentProjection> getOpdReportDepartments(
+            @Param("visitStatus") String visitStatus,
+            @Param("departmentTypeCode") String departmentTypeCode,
+            @Param("patientId") Long patientId,
+            @Param("hospitalId") Long hospitalId
     );
 
         @Query(value = """
