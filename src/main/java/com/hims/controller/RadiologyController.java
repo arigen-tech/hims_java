@@ -112,6 +112,12 @@ public class RadiologyController {
         return radiologyService.getPACSStudyList(modality, patientId, patientName, phoneNumber, page, size);
     }
 
+    @GetMapping("/getPACSModalityList")
+    public ApiResponse<List<RadiologyModalityResponse>> getPACSModalityList(
+            @RequestParam Long patientId) {
+        return radiologyService.getPACSModalityList(patientId);
+    }
+
     @GetMapping("/orderTrackingByInpatientIdOrAccesionNo")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> orderTrackingByInpatientIdOrAccesionNo(
             @RequestParam(required = false) Long inpatientId,
@@ -120,4 +126,3 @@ public class RadiologyController {
     }
 
 }
-

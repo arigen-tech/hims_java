@@ -5,6 +5,7 @@ import com.hims.request.*;
 import com.hims.response.ApiResponse;
 import com.hims.response.LabRadioUpdateResponse;
 import com.hims.response.LabRadiologyRegistrationResponse;
+import com.hims.response.RadiologyModalityResponse;
 import com.hims.response.RadiologyReportResponse;
 import com.hims.response.RadiologyRequisitionResponse;
 import org.springframework.data.domain.Page;
@@ -37,6 +38,8 @@ public interface RadiologyService {
     ApiResponse<RadiologyReportResponse> getDetailsReportForRadiology(Long radOrderDtId);
 
     ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, Long patientId, String patientName, String phoneNumber, int page, int size);
+
+    ApiResponse<List<RadiologyModalityResponse>> getPACSModalityList(Long patientId);
 
     ApiResponse<List<Map<String, Object>>> orderTrackingByInpatientIdOrAccesionNo(Long inpatientId, String accesionNo);
 

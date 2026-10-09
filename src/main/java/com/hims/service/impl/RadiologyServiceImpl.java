@@ -1246,18 +1246,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Override
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, Long patientId, String patientName, String phoneNumber, int page, int size) {
         try {
-            Long hospitalId = null;
-            try {
-                User currentUser = userContextService.getCurrentUser();
-                if (currentUser != null && currentUser.getHospital() != null
-                        && currentUser.getHospital().getId() != null) {
-                    hospitalId = masHospitalRepository.findById(currentUser.getHospital().getId())
-                            .map(MasHospital::getId)
-                            .orElse(null);
-                }
-            } catch (Exception e) {
-                log.warn("Unable to resolve current user for PACS study list; skipping hospital filter", e);
-            }
+            Long hospitalId = getCurrentHospitalIdForPacs();
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
@@ -1274,6 +1263,40 @@ public class RadiologyServiceImpl implements RadiologyService {
                     null, new TypeReference<>() {}, "Internal Server Error", 500
             );
         }
+    }
+
+    @Override
+    public ApiResponse<List<RadiologyModalityResponse>> getPACSModalityList(Long patientId) {
+        try {
+            List<RadiologyModalityResponse> modalities = radOrderDtRepository.findPacsModalitiesByPatient(
+                            getCurrentHospitalIdForPacs(), AppConstants.STATUS_Y, patientId)
+                    .stream()
+                    .map(projection -> new RadiologyModalityResponse(
+                            projection.getModalityId(), projection.getModalityName()))
+                    .toList();
+
+            return ResponseUtils.createSuccessResponse(modalities, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching PACS modalities for patientId={}", patientId, e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal Server Error", 500
+            );
+        }
+    }
+
+    private Long getCurrentHospitalIdForPacs() {
+        try {
+            User currentUser = userContextService.getCurrentUser();
+            if (currentUser != null && currentUser.getHospital() != null
+                    && currentUser.getHospital().getId() != null) {
+                return masHospitalRepository.findById(currentUser.getHospital().getId())
+                        .map(MasHospital::getId)
+                        .orElse(null);
+            }
+        } catch (Exception e) {
+            log.warn("Unable to resolve current user for PACS study list; skipping hospital filter", e);
+        }
+        return null;
     }
 
     private RadiologyRequisitionResponse toResponse(RadiologyProjection p) {
