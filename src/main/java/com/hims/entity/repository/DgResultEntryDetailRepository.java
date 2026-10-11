@@ -192,7 +192,8 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
         COALESCE(u.lastName, '')
     ),
     h.resultDate,
-    oh.orderDate
+    oh.orderDate,
+    d.resultFlag.resultFlagId
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h
@@ -215,12 +216,14 @@ AND ( :patientName IS NULL OR LOWER(CONCAT(
         COALESCE(p.patientMn, ''), ' ',
         COALESCE(p.patientLn, '')
     )) LIKE :patientName )
+AND (:investigationName IS NULL OR LOWER(COALESCE(inv.investigationName, '')) LIKE :investigationName)
 """)
     Page<LabInvestigationsReportResponse> getLabInvestigationsReport(
             @Param("hospitalId") Long hospitalId,
             @Param("mobileNo") String mobileNo,
             @Param("patientName") String patientName,
             @Param("patientId") Long patientId,
+            @Param("investigationName") String investigationName,
 
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
@@ -252,7 +255,8 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
         COALESCE(u.lastName, '')
     ),
     h.resultDate,
-    oh.orderDate
+    oh.orderDate,
+    d.resultFlag.resultFlagId
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h
@@ -274,12 +278,14 @@ AND (:patientName IS NULL OR LOWER(CONCAT(
         COALESCE(p.patientMn, ''), ' ',
         COALESCE(p.patientLn, '')
     )) LIKE :patientName)
+AND (:investigationName IS NULL OR LOWER(COALESCE(inv.investigationName, '')) LIKE :investigationName)
 """)
     Page<LabInvestigationsReportResponse> getIpdLabInvestigationsReport(
             @Param("hospitalId") Long hospitalId,
             @Param("mobileNo") String mobileNo,
             @Param("patientName") String patientName,
             @Param("patientId") Long patientId,
+            @Param("investigationName") String investigationName,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("resultValidationStatus") String resultValidationStatus,

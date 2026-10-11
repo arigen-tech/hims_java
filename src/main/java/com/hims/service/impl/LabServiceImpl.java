@@ -1308,6 +1308,7 @@ public class LabServiceImpl implements LabService {
             boolean ipd,
             LocalDate fromDate,
             LocalDate toDate,
+            String investigationName,
             int page,
             int size
     ) {
@@ -1322,6 +1323,9 @@ public class LabServiceImpl implements LabService {
                     ? null
                     : "%" + patientName.trim().toLowerCase() + "%";
 
+            investigationName = (investigationName == null || investigationName.trim().isEmpty())
+                    ? null
+                    : "%" + investigationName.trim().toLowerCase() + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "resultEntryId.resultDate", "resultEntryId.resultTime"));
             Page<LabInvestigationsReportResponse> response =
@@ -1331,6 +1335,7 @@ public class LabServiceImpl implements LabService {
                                     mobileNo,
                                     patientName,
                                     patientId,
+                                    investigationName,
                                     fromDate,
                                     toDate,
                                     AppConstants.STATUS_Y,
@@ -1341,6 +1346,7 @@ public class LabServiceImpl implements LabService {
                             mobileNo,
                             patientName,
                             patientId,
+                            investigationName,
                             fromDate,
                             toDate,
                             AppConstants.STATUS_Y,

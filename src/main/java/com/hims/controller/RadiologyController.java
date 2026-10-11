@@ -107,9 +107,16 @@ public class RadiologyController {
             @RequestParam(required = false) Long patientId,
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
-        return radiologyService.getPACSStudyList(modality, patientId, patientName, phoneNumber, page, size);
+        return radiologyService.getPACSStudyList(modality, patientId, patientName, phoneNumber, status, page, size);
+    }
+
+    @GetMapping("/getPACSModalityList")
+    public ApiResponse<List<RadiologyModalityResponse>> getPACSModalityList(
+            @RequestParam Long patientId) {
+        return radiologyService.getPACSModalityList(patientId);
     }
 
     @GetMapping("/orderTrackingByInpatientIdOrAccesionNo")
@@ -120,4 +127,3 @@ public class RadiologyController {
     }
 
 }
-

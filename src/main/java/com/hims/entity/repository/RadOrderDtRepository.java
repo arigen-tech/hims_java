@@ -4,6 +4,7 @@ import com.hims.entity.DgOrderDt;
 import com.hims.entity.RadOrderDt;
 import com.hims.entity.RadOrderHd;
 import com.hims.projection.RadiologyBillingProjection;
+import com.hims.projection.RadiologyModalityProjection;
 import com.hims.projection.RadiologyProjection;
 import io.netty.handler.codec.http2.Http2Connection;
 import org.springframework.data.domain.Page;
@@ -181,6 +182,7 @@ where (:hospitalId is null or hd.hospital.id = :hospitalId)
   and lower(dt.studyStatus) = lower(:studyStatus)
   and (:modalityId is null or sc.subId = :modalityId)
   and (:patientId is null or p.id = :patientId)
+  and (:reportStatus is null or lower(dt.reportStatus) = :reportStatus)
   and (
         :patientName is null
         or lower(
@@ -202,11 +204,29 @@ where (:hospitalId is null or hd.hospital.id = :hospitalId)
     Page<RadiologyProjection> getRadiologyPACSStudyList(
             @Param("hospitalId") Long hospitalId,
             @Param("studyStatus") String studyStatus,
+            @Param("reportStatus") String reportStatus,
             @Param("modalityId") Long modalityId,
             @Param("patientId") Long patientId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,
             Pageable pageable
+    );
+
+    @Query("""
+        SELECT DISTINCT sc.subId AS modalityId, sc.subName AS modalityName
+        FROM RadOrderDt dt
+        JOIN dt.radOrderhd hd
+        JOIN hd.patient p
+        JOIN dt.subChargecode sc
+        WHERE (:hospitalId IS NULL OR hd.hospital.id = :hospitalId)
+          AND LOWER(dt.studyStatus) = LOWER(:studyStatus)
+          AND p.id = :patientId
+        ORDER BY sc.subName
+        """)
+    List<RadiologyModalityProjection> findPacsModalitiesByPatient(
+            @Param("hospitalId") Long hospitalId,
+            @Param("studyStatus") String studyStatus,
+            @Param("patientId") Long patientId
     );
 
     @Query(value = """

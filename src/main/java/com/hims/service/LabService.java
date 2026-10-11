@@ -43,6 +43,7 @@ public interface LabService {
                                                                                          boolean ipd,
                                                                                          LocalDate fromDate,
                                                                                          LocalDate toDate,
+                                                                                         String investigationName,
                                                                                          int page,
                                                                                          int size
     );

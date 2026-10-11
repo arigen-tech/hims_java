@@ -3,8 +3,6 @@ package com.hims.response;
 import lombok.Data;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
 public class RadiologyRequisitionResponse {
@@ -17,14 +15,14 @@ public class RadiologyRequisitionResponse {
     private String modality;
     private Long modalityId;
     private String investigationName;
-    private LocalDate orderDate;
-    private LocalDateTime orderTime;
+    private String orderDate;
+    private String orderTime;
     private String Department;
     private Long radOrderDtId;
     private String reportStatus;
     private String studyStatus;
-    private LocalDate studyDate;
-    private LocalDateTime studyTime;
+    private String studyDate;
+    private String studyTime;
     private Long hospitalId;
 
 }

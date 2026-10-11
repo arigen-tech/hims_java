@@ -1244,25 +1244,15 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
 
     @Override
-    public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, Long patientId, String patientName, String phoneNumber, int page, int size) {
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, Long patientId, String patientName, String phoneNumber, String status, int page, int size) {
         try {
-            Long hospitalId = null;
-            try {
-                User currentUser = userContextService.getCurrentUser();
-                if (currentUser != null && currentUser.getHospital() != null
-                        && currentUser.getHospital().getId() != null) {
-                    hospitalId = masHospitalRepository.findById(currentUser.getHospital().getId())
-                            .map(MasHospital::getId)
-                            .orElse(null);
-                }
-            } catch (Exception e) {
-                log.warn("Unable to resolve current user for PACS study list; skipping hospital filter", e);
-            }
+            Long hospitalId = getCurrentHospitalIdForPacs();
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdOn"));
-            Page<RadiologyProjection> paged = radOrderDtRepository.getRadiologyPACSStudyList(hospitalId, AppConstants.STATUS_Y, modality, patientId, patientLike, phoneLike, pageable);
+            String reportStatus = status == null ? null : status.toLowerCase();
+            Page<RadiologyProjection> paged = radOrderDtRepository.getRadiologyPACSStudyList(hospitalId, AppConstants.STATUS_Y, reportStatus, modality, patientId, patientLike, phoneLike, pageable);
             Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
             return ResponseUtils.createSuccessResponse(
                     response, new TypeReference<Page<RadiologyRequisitionResponse>>() {}
@@ -1276,6 +1266,40 @@ public class RadiologyServiceImpl implements RadiologyService {
         }
     }
 
+    @Override
+    public ApiResponse<List<RadiologyModalityResponse>> getPACSModalityList(Long patientId) {
+        try {
+            List<RadiologyModalityResponse> modalities = radOrderDtRepository.findPacsModalitiesByPatient(
+                            getCurrentHospitalIdForPacs(), AppConstants.STATUS_Y, patientId)
+                    .stream()
+                    .map(projection -> new RadiologyModalityResponse(
+                            projection.getModalityId(), projection.getModalityName()))
+                    .toList();
+
+            return ResponseUtils.createSuccessResponse(modalities, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching PACS modalities for patientId={}", patientId, e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal Server Error", 500
+            );
+        }
+    }
+
+    private Long getCurrentHospitalIdForPacs() {
+        try {
+            User currentUser = userContextService.getCurrentUser();
+            if (currentUser != null && currentUser.getHospital() != null
+                    && currentUser.getHospital().getId() != null) {
+                return masHospitalRepository.findById(currentUser.getHospital().getId())
+                        .map(MasHospital::getId)
+                        .orElse(null);
+            }
+        } catch (Exception e) {
+            log.warn("Unable to resolve current user for PACS study list; skipping hospital filter", e);
+        }
+        return null;
+    }
+
     private RadiologyRequisitionResponse toResponse(RadiologyProjection p) {
         RadiologyRequisitionResponse r = new RadiologyRequisitionResponse();
         r.setAccessionNo(p.getOrderAccessionNo());
@@ -1287,14 +1311,16 @@ public class RadiologyServiceImpl implements RadiologyService {
         r.setModality(p.getModalityName());
         r.setModalityId(p.getModalityId());
         r.setInvestigationName(p.getInvestigationName());
-        r.setOrderDate(p.getOrderDate());
-        r.setOrderTime(p.getOrderTime());
+        r.setOrderDate(DateTimeUtil.formatDate(p.getOrderDate()));
+        r.setOrderTime(DateTimeUtil.formatDateTime(p.getOrderTime()));
         r.setDepartment(p.getDepartment());
         r.setRadOrderDtId(p.getRadOrderdtId());
         r.setReportStatus(p.getReportStatus());
         r.setStudyStatus(p.getStudyStatus());
-        r.setStudyDate(p.getStudyDatetime() != null ? p.getStudyDatetime().toLocalDate() : null);
-        r.setStudyTime(p.getStudyDatetime());
+        r.setStudyDate(p.getStudyDatetime() != null
+                ? DateTimeUtil.formatDate(p.getStudyDatetime().toLocalDate())
+                : null);
+        r.setStudyTime(DateTimeUtil.formatDateTime(p.getStudyDatetime()));
         r.setHospitalId(p.getHospitalId());
         return r;
     }
@@ -1313,8 +1339,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         MasSubChargeCode sc = dt.getSubChargecode();
         dto.setModality(sc.getSubName());
         dto.setInvestigationName(dt.getInvestigation() != null ? dt.getInvestigation().getInvestigationName() : null);
-        dto.setOrderDate(hd.getOrderDate());
-        dto.setOrderTime(hd.getOrderTime());
+        dto.setOrderDate(DateTimeUtil.formatDate(hd.getOrderDate()));
+        dto.setOrderTime(DateTimeUtil.formatDateTime(hd.getOrderTime()));
         dto.setDepartment(hd.getDepartment() != null ? hd.getDepartment().getDepartmentName() : null);
 
         return dto;

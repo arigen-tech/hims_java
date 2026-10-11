@@ -696,6 +696,7 @@ public class LabController {
         * @param ipd When true, fetches patient details through dg_result_entry_header.inpatient_id (default: false)
      * @param fromDate Start date for result entry search (optional, ISO date format)
      * @param toDate End date for result entry search (optional, ISO date format)
+     * @param investigationName Investigation name to search (optional)
      * @param page Page number for pagination (optional, default: 0)
      * @param size Number of records per page (optional, default: 5)
      * @return Paginated list of laboratory investigations report with complete test details
@@ -709,6 +710,7 @@ public class LabController {
             @RequestParam(name = "IPD", defaultValue = "false") boolean ipd,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String investigationName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
@@ -721,6 +723,7 @@ public class LabController {
                         ipd,
                         fromDate,
                         toDate,
+                        investigationName,
                         page,
                         size
                 )
@@ -1185,4 +1188,3 @@ public class LabController {
     }
 
 }
-
