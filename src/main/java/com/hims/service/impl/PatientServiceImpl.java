@@ -209,6 +209,7 @@ public class PatientServiceImpl implements PatientService {
                 .orElseThrow(() -> new EntityNotFoundException("patient relation not found"));
 
         PatientRequest patientRequest = new PatientRequest();
+        patientRequest.setPatientHospitalId(request.getHospitalId());
         patientRequest.setPatientFn(request.getPatientFn());
         patientRequest.setPatientMn(request.getPatientMn());
         patientRequest.setPatientLn(request.getPatientLn());
@@ -740,7 +741,9 @@ public class PatientServiceImpl implements PatientService {
         if (userFullName == null || userFullName.isBlank()) {
             throw new IllegalStateException("Current patient name not found in token");
         }
-        return savePatient(request, false, userFullName, null);
+        MasHospital hospital = masHospitalRepository.findById(request.getPatientHospitalId())
+                .orElseThrow(() -> new EntityNotFoundException("hospital not found"));
+        return savePatient(request, false, userFullName, hospital);
     }
 
     private Patient savePatient(
