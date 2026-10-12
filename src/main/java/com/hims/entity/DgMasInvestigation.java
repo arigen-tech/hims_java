@@ -29,7 +29,7 @@ public class DgMasInvestigation {
     private String quantity;
     @Column(name = "normal_value", length =20)
     private String normalValue;
-    @Column(name = "last_chg_by", length =12)
+    @Column(name = "last_chg_by", length =100)
     private String lastChgBy;
     @Column(name = "last_chg_date")
     private Instant lastChgDate;

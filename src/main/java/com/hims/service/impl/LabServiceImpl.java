@@ -298,7 +298,7 @@ public class LabServiceImpl implements LabService {
                         containerWiseMap =
                         detailsList.stream()
                                 .collect(Collectors.groupingBy(
-                                        SampleCollectionInvestigationReq::getSampleId
+                                        SampleCollectionInvestigationReq::getCollectionId
                                 ));
 
                 int dailySequence = dgSampleCollectionDetailsRepository.getNextSequenceValue().intValue();

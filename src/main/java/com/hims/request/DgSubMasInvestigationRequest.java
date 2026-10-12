@@ -19,6 +19,7 @@ public class DgSubMasInvestigationRequest {
     private String fixedValueExpectedResult;
     private Integer printOrder;
     private Long parentAutoCompleteInvestigationId;
+    private Long methodologyId;
 
 
     private List<DgFixedValueRequest> fixedValues;

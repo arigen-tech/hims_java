@@ -83,6 +83,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     @Autowired
     private UserContextService userContextService;
 
+    @Autowired
+    private MasInvestigationMethodologyRepository masInvestigationMethodologyRepository;
+
 
     @Override
     public ApiResponse<List<DgMasInvestigationPriceDetailsResponse>> getPriceDetails(String genderApplicable,Boolean radioFlag) {
@@ -680,6 +683,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 
         if(masInvestigation != null){
             for (DgSubMasInvestigationRequest subInvestObj : multiRequest.getMasInvestReq()) {
+
                 if (subInvestObj.getSubInvestigationId() == null || subInvestObj.getSubInvestigationId() == 0) {
 //                    adding sub_mas_investigation here
                     DgSubMasInvestigation newSubObj = new DgSubMasInvestigation();
@@ -723,6 +727,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                     }
                     newSubObj.setInvestigationId(masInvestigation);
                     newSubObj.setFixedValueExpectedValue(subInvestObj.getFixedValueExpectedResult());
+                    newSubObj.setMethodology(masInvestigationMethodologyRepository.findById(subInvestObj.getMethodologyId()).orElse(null));
                     subInvestigationRepo.save(newSubObj);
 
 //                    condition for comparison type
@@ -800,6 +805,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         existing.setComparisonType(subInvestObj.getComparisonType());
                         existing.setLastChgBy(userContext.getUserFullName());
                         existing.setPrintOrder(subInvestObj.getPrintOrder());
+                        existing.setMethodology(masInvestigationMethodologyRepository.findById(subInvestObj.getMethodologyId()).orElse(null));
                         if (subInvestObj.getParentAutoCompleteInvestigationId() != null) {
                             existing.setParentAutoCompeteInvestigationId(
                                     dgMasInvestigationRepo
@@ -1012,6 +1018,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             resp.setUomId(sub.getUomId() != null ? sub.getUomId().getId() : null);
             resp.setInvestigationId(sub.getInvestigationId() != null ? sub.getInvestigationId().getInvestigationId() : null);
             resp.setFixedValueExpectedResult(sub.getFixedValueExpectedValue());
+            resp.setMethodologyId(sub.getMethodology() != null ? sub.getMethodology().getMethodId() : null);
 
             // attach fixed + normal values for this subInvestigation
             resp.setFixedValueResponseList(fixedBySub.getOrDefault(sub.getSubInvestigationId(), Collections.emptyList()));

@@ -6,6 +6,7 @@ import com.hims.utils.NotificationEvent;
 import com.hims.utils.SMSUtility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -16,6 +17,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationEventListener {
+
+    @Value("${sms.enabled}")
+    private Boolean shouldSendSMS;
 
     private final SMSUtility smsUtility;
     private final WhatsAppNotificationService whatsAppNotificationService;
@@ -70,7 +74,8 @@ public class NotificationEventListener {
             smsUtility.sendSMS(
                     event.mobileNumber(),
                     SMSTemplate.OTHER_APPOINTMENT,
-                    data
+                    data,
+                    shouldSendSMS
             );
 
             log.info(
@@ -126,7 +131,8 @@ public class NotificationEventListener {
             smsUtility.sendSMS(
                     event.mobileNumber(),
                     SMSTemplate.APPOINTMENT_CANCEL,
-                    variables
+                    variables,
+                    shouldSendSMS
             );
 
         } catch (Exception e) {
@@ -164,7 +170,8 @@ public class NotificationEventListener {
             smsUtility.sendSMS(
                     event.mobileNumber(),
                     SMSTemplate.RESCHEDULED_APPOINTMENT,
-                    data
+                    data,
+                    shouldSendSMS
             );
 
         } catch (Exception e) {
@@ -209,7 +216,8 @@ public class NotificationEventListener {
             smsUtility.sendSMS(
                     event.mobileNumber(),
                     SMSTemplate.INVOICE_NOTIFICATION,
-                    data
+                    data,
+                    shouldSendSMS
             );
 
 

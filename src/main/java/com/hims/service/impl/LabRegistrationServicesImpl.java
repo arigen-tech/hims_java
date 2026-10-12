@@ -132,6 +132,8 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
+    @Value("${sms.enabled}")
+    private Boolean shouldSendSMS;
 
     private LabOrderTrackingStatus getOrderedStatus() {
         if (cachedOrderedStatus == null) {
@@ -993,7 +995,7 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 log.info("Lab booking formatted date :",formattedDate);
                 variables.put("var4",formattedDate);
 
-                smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.OTHER_APPOINTMENT, variables);
+                smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.OTHER_APPOINTMENT, variables,shouldSendSMS);
 
                 log.info("Lab Booking confirmation SMS sent for patient : {}", patient.getFullName());
 
