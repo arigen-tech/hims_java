@@ -1502,6 +1502,7 @@ public class ReportController {
         params.put("component_id", safeComponentId);
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
@@ -1553,6 +1554,7 @@ public class ReportController {
         params.put("component_id", safeComponentId);
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
@@ -1560,6 +1562,58 @@ public class ReportController {
                 return buildPdfResponse(viewPdf, ReportConstants.BLOOD_INVENTORY_STOCK_DETAIL_REPORT);
             } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
                 JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.BLOOD_INVENTORY_STOCK_DETAIL_JASPER, params, dataSource);
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/componentWiseStockReport", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintComponentWiseStockReport(
+            @RequestParam (required = false) String bloodGroupId,
+            @RequestParam (required = false) Long componentId,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        List<Long> bloodGroupIds = null;
+
+        if (bloodGroupId != null && !bloodGroupId.trim().isEmpty()) {
+            bloodGroupIds = Arrays.stream(bloodGroupId.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+
+            // Optional: handle empty result after filtering
+            if (bloodGroupIds.isEmpty()) {
+                bloodGroupIds = null;
+            }
+        }
+
+        Long safeComponentId = componentId != null ? componentId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("blood_group_id", bloodGroupIds);
+        params.put("component_id", safeComponentId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.COMPONENT_WISE_STOCK_JASPER, params, dataSource);
+                return buildPdfResponse(viewPdf, ReportConstants.COMPONENT_WISE_STOCK_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.COMPONENT_WISE_STOCK_JASPER, params, dataSource);
                 JasperReportUtil.printJasperReport(jasperPrint);
                 return ResponseEntity.ok().build();
             }else {
