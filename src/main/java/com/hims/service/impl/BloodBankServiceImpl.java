@@ -1047,6 +1047,7 @@ public class BloodBankServiceImpl implements BloodBankService {
     public ApiResponse<Page<BloodTrackingResponse>> getBloodRequestTrackingList(
             int page,
             int size,
+            Long inpatientId,
             String inpatientNo,
             String patientName,
             String requestNo) {
@@ -1055,6 +1056,7 @@ public class BloodBankServiceImpl implements BloodBankService {
 
         Page<BloodTrackingProjection> projectionPage =
                 bloodRequestDtRepository.getBloodRequestTrackingList(
+                        inpatientId,
                         inpatientNo,
                         patientName,
                         requestNo,

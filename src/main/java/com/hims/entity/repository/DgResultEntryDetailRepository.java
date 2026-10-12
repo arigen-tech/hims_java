@@ -193,7 +193,8 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
     ),
     h.resultDate,
     oh.orderDate,
-    d.resultFlag.resultFlagId
+    d.resultFlag.resultFlagId,
+    d.resultFlag.flagName
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h
@@ -256,7 +257,8 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
     ),
     h.resultDate,
     oh.orderDate,
-    d.resultFlag.resultFlagId
+    d.resultFlag.resultFlagId,
+    d.resultFlag.flagName
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h

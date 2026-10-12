@@ -293,12 +293,13 @@ public class BloodBankController {
     public ApiResponse<Page<BloodTrackingResponse>> getBloodRequestTrackingList(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) Long inpatientId,
             @RequestParam(required = false) String inpatientNo,
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) String requestNo) {
 
         return bloodBankService.getBloodRequestTrackingList(
-                page, size, inpatientNo, patientName, requestNo);
+                page, size,inpatientId, inpatientNo, patientName, requestNo);
     }
 
     @GetMapping("/getAllPendingBloodRequests")

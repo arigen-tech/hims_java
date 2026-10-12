@@ -12,6 +12,6 @@ public class LabRadioInvestigationRequest {
     private BigDecimal actualAmount;
     private BigDecimal discountedAmount;
     private String type;
-    private String remarks;
+//    private String remarks;
 
 }
