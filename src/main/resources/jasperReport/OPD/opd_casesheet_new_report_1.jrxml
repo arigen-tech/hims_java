@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="opd_casesheet_new_report_1" pageWidth="421" pageHeight="595" whenNoDataType="NoDataSection" columnWidth="361" leftMargin="30" rightMargin="30" topMargin="20" bottomMargin="20" isFloatColumnFooter="true" uuid="51d46c60-0842-4dd4-a6f2-0638e7b5b15a">
 	<property name="ireport.scriptlethandling" value="0"/>
 	<property name="ireport.encoding" value="UTF-8"/>
@@ -45,7 +45,8 @@
     opd.working_diag,
     opd.admission_flag,
     opd.referral_flag,
-    opd.final_medical_advice
+    opd.final_medical_advice,
+    opd.follow_up_flag
 FROM opd_patient_details opd
 LEFT JOIN patient p
     ON opd.patient_id = p.patient_id
@@ -171,6 +172,11 @@ WHERE opd.visit_id = $P{visit_id}]]>
 	<field name="final_medical_advice" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="final_medical_advice"/>
 		<property name="com.jaspersoft.studio.field.label" value="final_medical_advice"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_patient_details"/>
+	</field>
+	<field name="follow_up_flag" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="follow_up_flag"/>
+		<property name="com.jaspersoft.studio.field.label" value="follow_up_flag"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="opd_patient_details"/>
 	</field>
 	<group name="A">
@@ -616,7 +622,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 			</subreport>
 			<subreport isUsingCache="true">
 				<reportElement positionType="Float" x="1" y="110" width="359" height="11" uuid="52ac575c-4c3f-4ccf-a52f-eb1d5a4a28c9">
-					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{referral_flag})]]></printWhenExpression>
+					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{follow_up_flag})]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>

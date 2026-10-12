@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="IPD_detailed_bill" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="00ba3de7-c717-4902-a6b0-d477028690d0">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<parameter name="inpatientId" class="java.lang.Integer"/>
+	<parameter name="path" class="java.lang.String"/>
 	<queryString>
 		<![CDATA[SELECT
     bh.bill_id,
@@ -239,308 +240,312 @@ WHERE bh.inpatient_id = $P{inpatientId}]]>
 		<band splitType="Stretch"/>
 	</background>
 	<title>
-		<band height="289" splitType="Stretch">
+		<band height="298" splitType="Stretch">
 			<staticText>
-				<reportElement x="0" y="21" width="555" height="16" uuid="0efbfa6b-1e5b-451a-8a28-3df892681640"/>
+				<reportElement x="0" y="61" width="555" height="16" uuid="0efbfa6b-1e5b-451a-8a28-3df892681640"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Final Invoice cum Bill of Supply Inpatient Bill (Detailed)]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="62" width="83" height="14" uuid="07b56e71-a645-4476-92ab-93aa4e9eb960"/>
+				<reportElement x="8" y="94" width="83" height="14" uuid="07b56e71-a645-4476-92ab-93aa4e9eb960"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[IPNO]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="82" width="82" height="14" uuid="a719c3fe-de17-42b3-b333-e8e8369b9575"/>
+				<reportElement x="8" y="114" width="82" height="14" uuid="a719c3fe-de17-42b3-b333-e8e8369b9575"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Patient Name]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="102" width="82" height="14" uuid="103d815e-fa32-4d8d-9013-adfeac5d6eaf"/>
+				<reportElement x="8" y="134" width="82" height="14" uuid="103d815e-fa32-4d8d-9013-adfeac5d6eaf"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Patient Address]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="122" width="82" height="14" uuid="f12611da-07eb-4fc3-8837-97958021289e"/>
+				<reportElement x="8" y="154" width="82" height="14" uuid="f12611da-07eb-4fc3-8837-97958021289e"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Ward/Bed]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="142" width="82" height="14" uuid="7c2965cc-c051-40f5-87e8-5b04bb0ce22e"/>
+				<reportElement x="8" y="174" width="82" height="14" uuid="7c2965cc-c051-40f5-87e8-5b04bb0ce22e"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Company]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="162" width="82" height="14" uuid="721e3fcb-9e9f-40d0-8062-f14b204aae01"/>
+				<reportElement x="8" y="194" width="82" height="14" uuid="721e3fcb-9e9f-40d0-8062-f14b204aae01"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Company GSTIN]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="182" width="82" height="14" uuid="804c22b3-9b14-4cb5-9259-28b8fc76feae"/>
+				<reportElement x="8" y="214" width="82" height="14" uuid="804c22b3-9b14-4cb5-9259-28b8fc76feae"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Company State]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="202" width="82" height="25" uuid="34ed8c89-60df-4b6a-8554-cb77b168b2a1"/>
+				<reportElement x="8" y="234" width="82" height="25" uuid="34ed8c89-60df-4b6a-8554-cb77b168b2a1"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Company Credit Limit]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="8" y="233" width="82" height="25" uuid="e1908723-4997-42e7-b277-ca1c2785d0c8"/>
+				<reportElement x="8" y="265" width="82" height="25" uuid="e1908723-4997-42e7-b277-ca1c2785d0c8"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Insurance Company]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="291" y="62" width="105" height="14" uuid="f14e6f87-974f-46e7-b0c6-caa3f45920fd"/>
+				<reportElement x="291" y="94" width="105" height="14" uuid="f14e6f87-974f-46e7-b0c6-caa3f45920fd"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Patient ID]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="291" y="82" width="105" height="14" uuid="059de966-ed2d-48cc-bfcb-197f9a32508a"/>
+				<reportElement x="291" y="114" width="105" height="14" uuid="059de966-ed2d-48cc-bfcb-197f9a32508a"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Admit Date & Time]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="291" y="102" width="105" height="14" uuid="0076715e-138c-421a-b9e3-7db12a801d02"/>
+				<reportElement x="291" y="134" width="105" height="14" uuid="0076715e-138c-421a-b9e3-7db12a801d02"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[GSTIN No.]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="291" y="122" width="105" height="14" uuid="7421bc3e-273b-4907-85b9-fab15a0850be"/>
+				<reportElement x="291" y="154" width="105" height="14" uuid="7421bc3e-273b-4907-85b9-fab15a0850be"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[SAC Code]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="291" y="142" width="105" height="14" uuid="7e5c3cd4-22a6-419f-952f-6ce150d60f5c"/>
+				<reportElement x="291" y="174" width="105" height="14" uuid="7e5c3cd4-22a6-419f-952f-6ce150d60f5c"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Place Of Supply]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="95" y="62" width="3" height="14" uuid="04a17662-4cf5-48c0-9139-44b86662308a"/>
+				<reportElement x="95" y="94" width="3" height="14" uuid="04a17662-4cf5-48c0-9139-44b86662308a"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="95" y="82" width="3" height="14" uuid="b921146a-9e34-4995-8622-5afc9126a858"/>
+				<reportElement x="95" y="114" width="3" height="14" uuid="b921146a-9e34-4995-8622-5afc9126a858"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="95" y="102" width="3" height="14" uuid="80568b83-ae2c-4dc5-90d9-14e3be957904"/>
+				<reportElement x="95" y="134" width="3" height="14" uuid="80568b83-ae2c-4dc5-90d9-14e3be957904"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="95" y="122" width="3" height="14" uuid="d099d5d6-aa6d-43d6-a7fe-23a1e243758c"/>
+				<reportElement x="95" y="154" width="3" height="14" uuid="d099d5d6-aa6d-43d6-a7fe-23a1e243758c"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="95" y="142" width="3" height="14" uuid="05e9ea39-59dc-4f74-ae7e-edfe4e2e978e"/>
+				<reportElement x="95" y="174" width="3" height="14" uuid="05e9ea39-59dc-4f74-ae7e-edfe4e2e978e"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="95" y="162" width="3" height="14" uuid="4c03e9af-de7a-4cc4-a483-4bcc5d3032b4"/>
+				<reportElement x="95" y="194" width="3" height="14" uuid="4c03e9af-de7a-4cc4-a483-4bcc5d3032b4"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="95" y="182" width="3" height="14" uuid="e7089518-422e-4c92-a8e7-1805dd880ac1"/>
+				<reportElement x="95" y="214" width="3" height="14" uuid="e7089518-422e-4c92-a8e7-1805dd880ac1"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="401" y="62" width="3" height="14" uuid="c9759c45-3eab-4b98-9d48-176b78432f4c"/>
+				<reportElement x="401" y="94" width="3" height="14" uuid="c9759c45-3eab-4b98-9d48-176b78432f4c"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="401" y="82" width="3" height="14" uuid="9b4f3cbb-ffa0-4c16-ad5b-6e54bf82a8eb"/>
+				<reportElement x="401" y="114" width="3" height="14" uuid="9b4f3cbb-ffa0-4c16-ad5b-6e54bf82a8eb"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="401" y="102" width="3" height="14" uuid="f96c965c-2251-4f84-8f04-8153752d325b"/>
+				<reportElement x="401" y="134" width="3" height="14" uuid="f96c965c-2251-4f84-8f04-8153752d325b"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="401" y="122" width="3" height="14" uuid="711f724d-a27d-4df3-9c2a-b19368e825e0"/>
+				<reportElement x="401" y="154" width="3" height="14" uuid="711f724d-a27d-4df3-9c2a-b19368e825e0"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="401" y="142" width="3" height="14" uuid="db559106-7c4b-4657-8504-215f60c9ad67"/>
+				<reportElement x="401" y="174" width="3" height="14" uuid="db559106-7c4b-4657-8504-215f60c9ad67"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="95" y="202" width="3" height="20" uuid="cba68705-511e-4c87-8ce6-6597656cec55"/>
+				<reportElement x="95" y="234" width="3" height="20" uuid="cba68705-511e-4c87-8ce6-6597656cec55"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="95" y="233" width="3" height="20" uuid="77e936d7-b70a-4238-ab10-502500112cd6"/>
+				<reportElement x="95" y="265" width="3" height="20" uuid="77e936d7-b70a-4238-ab10-502500112cd6"/>
 				<textElement textAlignment="Center">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<textField>
-				<reportElement x="101" y="62" width="140" height="14" uuid="2a4f87dc-35fb-49e9-9a19-100aebb271c9"/>
+				<reportElement x="101" y="94" width="140" height="14" uuid="2a4f87dc-35fb-49e9-9a19-100aebb271c9"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{ipno}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="101" y="82" width="140" height="14" uuid="c004a582-1cc1-40d5-b2b2-a86e49c8740a"/>
+				<reportElement x="101" y="114" width="140" height="14" uuid="c004a582-1cc1-40d5-b2b2-a86e49c8740a"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="101" y="102" width="140" height="14" uuid="064fe795-8413-4b33-990e-ceead4d6efac"/>
+				<reportElement x="101" y="134" width="140" height="14" uuid="064fe795-8413-4b33-990e-ceead4d6efac"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_address}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="101" y="122" width="140" height="14" uuid="be4b9f04-4043-4397-9bce-0e659b65160b"/>
+				<reportElement x="101" y="154" width="140" height="14" uuid="be4b9f04-4043-4397-9bce-0e659b65160b"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{ward_bed}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="101" y="142" width="140" height="14" uuid="52f6bce1-e7d5-4e00-af27-95c2fad75036"/>
+				<reportElement x="101" y="174" width="140" height="14" uuid="52f6bce1-e7d5-4e00-af27-95c2fad75036"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Company"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="101" y="162" width="140" height="14" uuid="915cc3ab-2b1a-4d51-8635-70c4c9c340ac"/>
+				<reportElement x="101" y="194" width="140" height="14" uuid="915cc3ab-2b1a-4d51-8635-70c4c9c340ac"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Company GSTIN"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="101" y="182" width="140" height="14" uuid="92653c64-64ff-4da1-bf8a-114fe5e972cd"/>
+				<reportElement x="101" y="214" width="140" height="14" uuid="92653c64-64ff-4da1-bf8a-114fe5e972cd"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Company State"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="101" y="202" width="140" height="25" uuid="66b94550-f85d-477c-8b81-e51aa92e7277"/>
+				<reportElement x="101" y="234" width="140" height="25" uuid="66b94550-f85d-477c-8b81-e51aa92e7277"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Company Credit Limit"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="101" y="233" width="140" height="25" uuid="8942384f-cf2c-440b-874a-bd019d5ed632"/>
+				<reportElement x="101" y="265" width="140" height="25" uuid="8942384f-cf2c-440b-874a-bd019d5ed632"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Insurance Company"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="407" y="62" width="105" height="14" uuid="c7db0c87-0e1a-4c86-879c-17178edd3249"/>
+				<reportElement x="407" y="94" width="105" height="14" uuid="c7db0c87-0e1a-4c86-879c-17178edd3249"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{patient_id}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="407" y="82" width="105" height="14" uuid="0d4f6d21-5380-4d76-9cd9-0f8d73c65d39"/>
+				<reportElement x="407" y="114" width="105" height="14" uuid="0d4f6d21-5380-4d76-9cd9-0f8d73c65d39"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{admission_date_time}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="407" y="102" width="105" height="14" uuid="0a3f5c27-b113-4a17-bd77-4484044009de"/>
+				<reportElement x="407" y="134" width="105" height="14" uuid="0a3f5c27-b113-4a17-bd77-4484044009de"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA["GSTIN No."]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="407" y="122" width="105" height="14" uuid="c25e39d0-2cda-434d-b054-127d6c7b9b50"/>
+				<reportElement x="407" y="154" width="105" height="14" uuid="c25e39d0-2cda-434d-b054-127d6c7b9b50"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA["SAC Code"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="407" y="142" width="105" height="14" uuid="7d1eae71-a3b3-4f6b-bcb0-a01ee43f7adf"/>
+				<reportElement x="407" y="174" width="105" height="14" uuid="7d1eae71-a3b3-4f6b-bcb0-a01ee43f7adf"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Place Of Supply"]]></textFieldExpression>
 			</textField>
+			<image>
+				<reportElement x="9" y="2" width="171" height="50" uuid="ef9a3b22-0834-449b-8a32-2db5c7056aa1"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
 		</band>
 	</title>
 	<pageHeader>
