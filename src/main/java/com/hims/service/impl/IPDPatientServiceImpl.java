@@ -90,6 +90,8 @@ public class IPDPatientServiceImpl implements IPDPatientService {
     private final IpDiagnosisEntryRepository ipDiagnosisEntryRepository;
     private final SaveIpdBillingDetails saveIpdBillingDetails;
     private final SMSUtility smsUtility;
+    @Value("${sms.enabled}")
+    private Boolean shouldSendSMS;
 
     @Autowired
     MasGenderRepository masGenderRepository;
@@ -388,7 +390,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 variables.put("var5", masHospital.getContactNumber());
 
 
-                smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.ADMISSION_CONFIRMATION, variables);
+                smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.ADMISSION_CONFIRMATION, variables,shouldSendSMS);
 
                 log.info("Admission confirmation SMS sent for inpatientId: {}", inpatient.getInpatientId());
 
@@ -2560,7 +2562,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     smsVariables.put("var2", dischargeDateTime);
                     smsVariables.put("var3",summary.getDischargeNumber() );
                     smsVariables.put("var4", masHospital.get().getContactNumber());
-                    smsUtility.sendSMS(mobile, SMSTemplate.DISCHARGE_NOTIFICATION, smsVariables);
+                    smsUtility.sendSMS(mobile, SMSTemplate.DISCHARGE_NOTIFICATION, smsVariables,shouldSendSMS);
                     log.info("Discharge notification SMS sent successfully. inpatientId: {}, dischargeNo: {}", request.getInpatientId(),
                             summary.getDischargeNumber() );
 
@@ -2878,7 +2880,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                 smsVariables.put("var3", admissionNo);
                 smsVariables.put("var4", receiptNo);
 
-                smsUtility.sendSMS(mobile, SMSTemplate.ADVANCE_DEPOSIT, smsVariables);
+                smsUtility.sendSMS(mobile, SMSTemplate.ADVANCE_DEPOSIT, smsVariables,shouldSendSMS);
 
                 log.info("IPD Advance Payment SMS sent successfully for admissionNo: {}, receiptNo: {}", admissionNo,receiptNo
                 );

@@ -5,7 +5,6 @@ import com.hims.constants.AppConstants;
 import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
-import com.hims.exception.RecordNotFoundException;
 import com.hims.exception.SDDException;
 import com.hims.exception.patientRegistrationException.AppSetupNotFoundException;
 import com.hims.exception.patientRegistrationException.TokenAlreadyBookedException;
@@ -15,9 +14,6 @@ import com.hims.mapper.PatientMapper;
 import com.hims.mapper.RazorpayPrefillPatientMapper;
 import com.hims.mapper.VisitMapper;
 import com.hims.projection.CancelledAppointmentProjection;
-import com.hims.projection.OpdPreConsultationProjection;
-import com.hims.projection.PatientProjection;
-import com.hims.projection.PatientWaitingListProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
@@ -32,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
@@ -46,7 +41,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.*;
 import java.time.format.TextStyle;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -149,6 +143,8 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     private UserContextService userContextService;
 
+    @Value("${sms.enabled}")
+    private Boolean shouldSendSMS;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -852,7 +848,7 @@ public class PatientServiceImpl implements PatientService {
         variables.put("var1", patient.getFullName());
         variables.put("var2", patient.getId().toString());
 
-        smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.REGISTRATION, variables);
+        smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.REGISTRATION, variables,shouldSendSMS);
 
         log.info("Lab Booking confirmation SMS sent for patient : {}", patient.getFullName());
         return patient;

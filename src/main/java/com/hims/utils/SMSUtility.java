@@ -33,12 +33,18 @@ public class SMSUtility {
     @Value("${sms.module}")
     private String smsModule;
 
-    public String sendSMS(
+    public void sendSMS(
             String mobile,
             SMSTemplate smsTemplate,
-            Map<String, String> variables) {
+            Map<String, String> variables,
+            boolean shouldSend) {
 
         try {
+
+            if (!shouldSend) {
+                log.info("SMS sending skipped for {}", smsTemplate.getDescription());
+                return ;
+            }
 
             StringBuilder uri = new StringBuilder(smsApiUrl);
 
@@ -100,7 +106,7 @@ public class SMSUtility {
                     response
             );
 
-            return response;
+
 
         } catch (Exception e) {
 
@@ -110,13 +116,7 @@ public class SMSUtility {
                     mobile,
                     e
             );
-
-            return ResponseUtils.getReturnMsg(
-                    "0",
-                    "Unable to send "
-                            + smsTemplate.getDescription()
-                            + " SMS"
-            );
+            throw  e;
         }
     }
 

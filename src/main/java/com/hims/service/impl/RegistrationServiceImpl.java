@@ -167,6 +167,8 @@ public class RegistrationServiceImpl implements RegistrationService {
     private ApplicationEventPublisher eventPublisher;
 
 
+    @Value("${sms.enabled}")
+    private Boolean shouldSendSMS;
 
 
     @Override
@@ -710,7 +712,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         );
 
 
-        smsUtility.sendSMS(save.getPatient().getPatientMobileNumber(), SMSTemplate.RESCHEDULED_APPOINTMENT, variables);
+        smsUtility.sendSMS(save.getPatient().getPatientMobileNumber(), SMSTemplate.RESCHEDULED_APPOINTMENT, variables,shouldSendSMS);
 
         log.info("Appointment reschedule SMS sent for patient : {}", save.getPatient().getFullName());
 

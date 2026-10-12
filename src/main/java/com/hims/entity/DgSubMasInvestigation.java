@@ -73,5 +73,9 @@ public class DgSubMasInvestigation {
     @JoinColumn(name = "parent_autocomplete_investigation_id")
     private DgMasInvestigation parentAutoCompeteInvestigationId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "method_id")
+    private MasInvestigationMethodology methodology;
+
 
 }
